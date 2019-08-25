@@ -16,8 +16,9 @@
         <item name="android:layout_marginTop">32dp</item>
         <item name="android:layout_marginEnd">32dp</item>
         <item name="android:layout_marginBottom">32dp</item>
-        <item name="android:onClick">actionButton</item>
+        <item name="android:onClick">clickActionButton</item>
         <item name="android:text">@string/actionbutton_label</item>
+        <item name="android:focusableInTouchMode">true</item>
     </style>
 
 </resources>

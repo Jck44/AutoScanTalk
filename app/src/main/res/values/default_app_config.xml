@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <integer name="timer_start_delay_milliseconds">1000</integer>
+    <integer name="timer_interval_milliseconds">1000</integer>
+    <integer name="max_last_saved_actions">5</integer>
+    <bool name="enableAutoScan">true</bool>
+</resources>

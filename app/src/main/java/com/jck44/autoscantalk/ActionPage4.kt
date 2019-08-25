@@ -14,20 +14,39 @@ class ActionPage4 : AppCompatActivity() {
 
     private var lastButtons = mutableListOf<Button>()
     private val logger = Logger.getLogger(javaClass.name)
+    private val timer = Timer()
+    private var timerTask : FocusTimerTask? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_action_page_4)
 
-        val timer = Timer()
-        var timerTask = FocusTimerTask(getChildren(window.decorView))
-        timer.scheduleAtFixedRate(timerTask, 1000, 1000)
+        val enableAutoScan = resources.getBoolean(R.bool.enableAutoScan)
 
+        if(enableAutoScan)
+            startAutoScan()
+    }
+
+    private fun startAutoScan(){
+
+        val autoScanStartDelay = resources.getInteger(R.integer.timer_start_delay_milliseconds).toLong()
+        val autoScanInterval = resources.getInteger(R.integer.timer_interval_milliseconds).toLong()
+
+        if(timerTask == null)
+            timerTask = FocusTimerTask(getChildren(window.decorView))
+        timer.scheduleAtFixedRate(timerTask, autoScanStartDelay, autoScanInterval)
+    }
+
+    private fun resetAutoScan(){
+        timerTask?.cancel()
+        timer.purge()
+        timerTask = null
+        startAutoScan()
 
     }
 
-    inline fun <reified T : View> getChildren(view: View): List<T> {
+    private inline fun <reified T : View> getChildren(view: View): List<T> {
         var childrenOfType = mutableListOf<T>()
-        val allChildren = (view as ViewGroup).getAllViews()
+        val allChildren = (view as ViewGroup).`access$getAllViews`()
         for(child in allChildren){
             if(child is T)
                 childrenOfType.add(child)
@@ -35,7 +54,7 @@ class ActionPage4 : AppCompatActivity() {
         return childrenOfType.toList()
     }
 
-    protected fun View.getAllViews(): List<View> {
+    private fun View.getAllViews(): List<View> {
         if (this !is ViewGroup || childCount == 0) return listOf(this)
 
         return children
@@ -44,13 +63,15 @@ class ActionPage4 : AppCompatActivity() {
             .plus(this as View).asReversed()
     }
 
-    fun actionButton(view: View) {
-        var previousActionsText = ""
-
-
-        val previousActions = findViewById<TextView>(R.id.textView_previousActions)
+    fun clickActionButton(view: View) {
         val currentButton = findViewById<Button>(view.id)
-        while(lastButtons.count() > 5) {
+        logger.info("Button (id:${currentButton.id}) clicked.")
+
+        var previousActionsText = ""
+        val maxLastSavedActions = resources.getInteger(R.integer.max_last_saved_actions)
+        val previousActions = findViewById<TextView>(R.id.textView_previousActions)
+
+        while(lastButtons.count() > maxLastSavedActions) {
             val action = lastButtons.first()
 
             lastButtons.removeAt(1)
@@ -60,9 +81,13 @@ class ActionPage4 : AppCompatActivity() {
         logger.info("Added buttonAction with id:${currentButton.id} to ${::lastButtons.name}")
 
         for(lastAction in lastButtons){
-            previousActionsText += lastAction.text.toString() + System.getProperty("line.separator")
+            previousActionsText += lastAction.text.toString() + " (id:${lastAction.id})" + System.getProperty("line.separator")
         }
 
         previousActions.apply { text = previousActionsText.trim()}
+        resetAutoScan()
     }
+
+    @PublishedApi
+    internal fun View.`access$getAllViews`() = getAllViews()
 }
