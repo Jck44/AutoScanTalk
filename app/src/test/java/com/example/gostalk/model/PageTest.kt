@@ -9,8 +9,8 @@ class PageTest {
     private val validButtonConfig = ButtonConfig(
         id = "btn1",
         label = "Label 1",
-        auditoryCue = TextToSpeechCue("Hint 1"),
-        action = SpeakTextAction("Action 1")
+        auditoryCue = AuditoryCue.TextToSpeechCue("Hint 1"),
+        action = Action.SpeakTextAction("Action 1")
     )
 
     @Test
