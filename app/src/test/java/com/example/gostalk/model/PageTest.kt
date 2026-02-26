@@ -10,7 +10,7 @@ class PageTest {
         id = "btn1",
         label = "Label 1",
         auditoryCue = AuditoryCue.TextToSpeechCue("Hint 1"),
-        action = Action.SpeakTextAction("Action 1")
+        buttonAction = ButtonAction.SpeakTextAction("Action 1")
     )
 
     @Test

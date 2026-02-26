@@ -8,18 +8,21 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import com.example.gostalk.model.Action
+import com.example.gostalk.model.SpeakTextButtonAction
 import com.example.gostalk.model.AuditoryCue
 import com.example.gostalk.model.ButtonConfig
 import com.example.gostalk.model.Page
 import com.example.gostalk.ui.PageScreen
 import com.example.gostalk.ui.PageViewModel // Import für PageViewModel
+import com.example.gostalk.ui.PageViewModelFactory
 import com.example.gostalk.ui.theme.GoSTalkTheme
 
 class MainActivity : ComponentActivity() {
 
     // ViewModel Instanz holen
-    private val pageViewModel: PageViewModel by viewModels()
+    private val pageViewModel: PageViewModel by viewModels {
+        PageViewModelFactory(application, emptyMap())
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,7 +38,7 @@ class MainActivity : ComponentActivity() {
                 else ButtonConfig(
                     id = "btn$index",
                     label = "Button ${index + 1}",
-                    action = Action.SpeakTextAction("Aktion für Button ${index + 1}"),
+                    buttonAction = SpeakTextButtonAction("Aktion für Button ${index + 1}"),
                     auditoryCue = AuditoryCue.TextToSpeechCue("Hinweis Button ${index + 1}")
                 )
             }
