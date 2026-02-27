@@ -26,9 +26,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -42,7 +41,6 @@ import com.example.gostalk.model.ButtonConfig // Behalten, falls direkt verwende
 @Composable
 fun PageScreen(
     pageViewModel: PageViewModel, // ViewModel als Parameter
-    onNavigateToSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     // States aus dem ViewModel beobachten
@@ -60,18 +58,18 @@ fun PageScreen(
         return
     }
 
+    DisposableEffect(page) {
+        pageViewModel.resumeScanningIfEnabled()
+        
+        onDispose {
+            pageViewModel.stopScanning()
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(page.name) },
-                actions = {
-                    IconButton(onClick = {
-                        pageViewModel.stopScanning()
-                        onNavigateToSettings()
-                    }) {
-                        Icon(imageVector = Icons.Default.Settings, contentDescription = "Einstellungen")
-                    }
-                }
+                title = { Text(page.name) }
             )
         }
     ) { paddingValues ->

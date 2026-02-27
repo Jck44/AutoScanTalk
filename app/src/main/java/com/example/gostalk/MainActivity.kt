@@ -17,6 +17,8 @@ import com.example.gostalk.model.AuditoryCue
 import com.example.gostalk.model.ButtonConfig
 import com.example.gostalk.model.Page
 import com.example.gostalk.ui.PageScreen
+import com.example.gostalk.ui.StartScreen
+import com.example.gostalk.ui.PageListScreen
 import com.example.gostalk.ui.PageViewModel // Import für PageViewModel
 import com.example.gostalk.ui.PageViewModelFactory
 import com.example.gostalk.ui.SettingsScreen
@@ -129,18 +131,30 @@ class MainActivity : ComponentActivity() {
                 ) {
                     val navController = rememberNavController()
 
-                    NavHost(navController = navController, startDestination = "main") {
+                    NavHost(navController = navController, startDestination = "start") {
+                        composable("start") {
+                            StartScreen(
+                                onNavigateToUserMode = { navController.navigate("main") },
+                                onNavigateToSettings = { navController.navigate("settings") }
+                            )
+                        }
                         composable("main") {
                             // PageViewModel an PageScreen übergeben
                             PageScreen(
                                 pageViewModel = pageViewModel,
-                                onNavigateToSettings = { navController.navigate("settings") },
                                 modifier = Modifier.fillMaxSize()
                             )
                         }
                         composable("settings") {
                             SettingsScreen(
                                 settingsViewModel = settingsViewModel,
+                                onNavigateBack = { navController.popBackStack() },
+                                onNavigateToPageManager = { navController.navigate("page_list") }
+                            )
+                        }
+                        composable("page_list") {
+                            PageListScreen(
+                                pageViewModel = pageViewModel,
                                 onNavigateBack = { navController.popBackStack() }
                             )
                         }

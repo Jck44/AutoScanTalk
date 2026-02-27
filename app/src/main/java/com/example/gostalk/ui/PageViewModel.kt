@@ -12,6 +12,7 @@ import com.example.gostalk.model.SpeakTextButtonAction
 import com.example.gostalk.tts.TextToSpeechHelper
 import com.example.gostalk.data.SettingsRepository
 import com.example.gostalk.data.PageDao
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,6 +20,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 class PageViewModel(
     application: Application,
@@ -43,7 +45,16 @@ class PageViewModel(
                 setScanDelay(delay)
             }
         }
+        
+        viewModelScope.launch {
+            pageDao.getAllPagesFlow().collect { pages ->
+                _allPages.value = pages
+            }
+        }
     }
+
+    private val _allPages = MutableStateFlow<List<Page>>(emptyList())
+    val allPages: StateFlow<List<Page>> = _allPages.asStateFlow()
 
     private val _currentPage = MutableStateFlow<Page?>(null)
     val currentPage: StateFlow<Page?> = _currentPage.asStateFlow()
@@ -73,6 +84,9 @@ class PageViewModel(
         _currentPage.value = page
         stopScanning()
         _focusedButtonIndex.value = null
+    }
+
+    fun resumeScanningIfEnabled() {
         if (settingsRepository.autoStartScanning) {
             startScanning()
         }
@@ -154,6 +168,7 @@ class PageViewModel(
                     val nextPage = pageDao.getPageById(action.pageId)
                     if (nextPage != null) {
                         loadPage(nextPage) // Lädt die neue Seite
+                        resumeScanningIfEnabled() // Restart scanning for the new page
                         logAction("Navigiert zu Seite: ${nextPage.name} (ID: ${action.pageId})")
                     } else {
                         logAction("Fehler: Seite mit ID '${action.pageId}' nicht gefunden.")
@@ -178,6 +193,25 @@ class PageViewModel(
                 updatedActions.removeLast()
             }
             updatedActions
+        }
+    }
+
+    fun createNewPage(name: String, rows: Int, columns: Int) {
+        val newPage = Page(
+            id = UUID.randomUUID().toString(),
+            name = name,
+            rows = rows,
+            columns = columns,
+            buttonConfigs = List(rows * columns) { null } // Leeres Grid
+        )
+        viewModelScope.launch(Dispatchers.IO) {
+            pageDao.insertPage(newPage)
+        }
+    }
+
+    fun deletePage(page: Page) {
+        viewModelScope.launch(Dispatchers.IO) {
+            pageDao.deletePage(page)
         }
     }
 
