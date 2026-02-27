@@ -25,6 +25,12 @@ class SettingsViewModel(
     private val _selectedLanguageTag = MutableStateFlow("default")
     val selectedLanguageTag: StateFlow<String> = _selectedLanguageTag.asStateFlow()
 
+    private val _availableVoices = MutableStateFlow<List<android.speech.tts.Voice>>(emptyList())
+    val availableVoices: StateFlow<List<android.speech.tts.Voice>> = _availableVoices.asStateFlow()
+
+    private val _selectedVoiceName = MutableStateFlow<String?>(null)
+    val selectedVoiceName: StateFlow<String?> = _selectedVoiceName.asStateFlow()
+
     private val _autoStartScanning = MutableStateFlow(true)
     val autoStartScanning: StateFlow<Boolean> = _autoStartScanning.asStateFlow()
 
@@ -37,10 +43,12 @@ class SettingsViewModel(
     init {
         // Initiale Einstellungen laden
         _selectedLanguageTag.value = settingsRepository.ttsLanguage ?: "default"
+        _selectedVoiceName.value = settingsRepository.ttsVoiceName
         _autoStartScanning.value = settingsRepository.autoStartScanning
         _scanDelayInput.value = settingsRepository.scanDelayMillis.toString()
         _defaultStartPageId.value = settingsRepository.defaultStartPageId
         loadAvailableLanguages()
+        loadAvailableVoices()
     }
 
     fun loadAvailableLanguages() {
@@ -49,14 +57,35 @@ class SettingsViewModel(
         }
     }
 
+    fun loadAvailableVoices() {
+        if (tempTtsHelper.isReady) {
+            _availableVoices.value = tempTtsHelper.getAvailableVoices(_selectedLanguageTag.value)
+        }
+    }
+
     fun setTtsLanguage(languageTag: String) {
         val tagToSave = if (languageTag == "default") null else languageTag
         settingsRepository.ttsLanguage = tagToSave
         _selectedLanguageTag.value = languageTag
         
+        // Sprache geändert => Stimme zurücksetzen, da alte Stimme zur alten Sprache gehört
+        settingsRepository.ttsVoiceName = null
+        _selectedVoiceName.value = null
+        
+        // Aktualisiere die Dropdowns
+        loadAvailableVoices()
+        
         // Sprache sofort anwenden und Feedback geben
-        tempTtsHelper.setLanguage(languageTag)
+        tempTtsHelper.setLanguageAndVoice(languageTag, null)
         tempTtsHelper.speak("Sprache geändert")
+    }
+
+    fun setTtsVoice(voiceName: String?) {
+        settingsRepository.ttsVoiceName = voiceName
+        _selectedVoiceName.value = voiceName
+        
+        tempTtsHelper.setVoice(voiceName)
+        tempTtsHelper.speak("Stimme ausgewählt")
     }
 
     fun setAutoStartScanning(enabled: Boolean) {

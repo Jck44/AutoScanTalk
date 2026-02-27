@@ -35,11 +35,15 @@ class PageViewModel(
 
     init {
         ttsHelper = TextToSpeechHelper(application.applicationContext)
-        
         // Settings live überwachen
         viewModelScope.launch {
-            settingsRepository.ttsLanguageFlow.collect { newLanguage ->
-                ttsHelper?.setLanguage(newLanguage)
+            kotlinx.coroutines.flow.combine(
+                settingsRepository.ttsLanguageFlow,
+                settingsRepository.ttsVoiceNameFlow
+            ) { lang, voice ->
+                Pair(lang, voice)
+            }.collect { (newLanguage, newVoice) ->
+                ttsHelper?.setLanguageAndVoice(newLanguage, newVoice)
             }
         }
 

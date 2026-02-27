@@ -51,14 +51,24 @@ fun SettingsScreen(
     val scanDelayInput by settingsViewModel.scanDelayInput.collectAsState()
     val defaultStartPageId by settingsViewModel.defaultStartPageId.collectAsState()
     val allPages by pageViewModel.allPages.collectAsState()
+    val availableVoices by settingsViewModel.availableVoices.collectAsState()
+    val selectedVoiceName by settingsViewModel.selectedVoiceName.collectAsState()
 
     var expandedLanguage by remember { mutableStateOf(false) }
     var expandedStartPage by remember { mutableStateOf(false) }
+    var expandedVoice by remember { mutableStateOf(false) }
 
     // Versuche regelmäßig die Sprachen zu laden, falls sie initial noch nicht da waren
     LaunchedEffect(expandedLanguage) {
         if (expandedLanguage && availableLanguages.isEmpty()) {
             settingsViewModel.loadAvailableLanguages()
+        }
+    }
+    
+    // Versuche die Stimmen initial zu laden, wenn das Menü geöffnet wird
+    LaunchedEffect(expandedVoice) {
+        if (expandedVoice && availableVoices.isEmpty()) {
+            settingsViewModel.loadAvailableVoices()
         }
     }
 
@@ -181,6 +191,78 @@ fun SettingsScreen(
                             onClick = {
                                 settingsViewModel.setTtsLanguage(locale.toLanguageTag())
                                 expandedLanguage = false
+                            }
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // -- NEW: Voice Selection Dropdown --
+            fun formatVoiceName(technicalName: String): String {
+                var name = technicalName.lowercase()
+                // Entferne gängige Locale-Prefixe (z.B. de-de-, en-us-)
+                val prefixRegex = Regex("^[a-z]{2}-[a-z]{2}-")
+                name = name.replace(prefixRegex, "")
+                
+                // Entferne technische Suffixe
+                name = name.replace("-network", "").replace("-local", "")
+                
+                // Ersetze Trennzeichen durch Leerzeichen
+                name = name.replace("-x-", " ").replace("-", " ")
+                
+                return name.split(" ").filter { it.isNotBlank() }
+                    .joinToString(" ") { word -> word.replaceFirstChar { it.uppercase() } }
+                    .ifEmpty { "Stimme" }
+            }
+
+            Box(modifier = Modifier.fillMaxWidth()) {
+                val currentVoiceDisplayName = if (selectedVoiceName.isNullOrEmpty()) {
+                    "Standard"
+                } else {
+                    formatVoiceName(selectedVoiceName ?: "")
+                }
+
+                OutlinedTextField(
+                    value = currentVoiceDisplayName,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Stimme wählen") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { expandedVoice = true }
+                )
+
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clickable { expandedVoice = true }
+                )
+
+                DropdownMenu(
+                    expanded = expandedVoice,
+                    onDismissRequest = { expandedVoice = false },
+                    modifier = Modifier.fillMaxWidth(0.9f)
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Standard") },
+                        onClick = {
+                            settingsViewModel.setTtsVoice(null)
+                            expandedVoice = false
+                        }
+                    )
+
+                    availableVoices.forEach { voice ->
+                        val isNetwork = voice.features?.contains("networkTts") == true
+                        val qualityHint = if (isNetwork) " (Online/HQ)" else " (Lokal)"
+                        val readableName = formatVoiceName(voice.name)
+                        
+                        DropdownMenuItem(
+                            text = { Text("$readableName$qualityHint") },
+                            onClick = {
+                                settingsViewModel.setTtsVoice(voice.name)
+                                expandedVoice = false
                             }
                         )
                     }
