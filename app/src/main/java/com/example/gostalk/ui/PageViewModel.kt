@@ -10,6 +10,7 @@ import com.example.gostalk.model.NavigateToPageButtonAction
 import com.example.gostalk.model.Page
 import com.example.gostalk.model.SpeakTextButtonAction
 import com.example.gostalk.tts.TextToSpeechHelper
+import com.example.gostalk.data.SettingsRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,13 +21,21 @@ import kotlinx.coroutines.launch
 
 class PageViewModel(
     application: Application,
-    private val pagesRepository: Map<String, Page> // Repository für alle Seiten
+    private val pagesRepository: Map<String, Page>, // Repository für alle Seiten
+    private val settingsRepository: SettingsRepository
 ) : AndroidViewModel(application) {
 
     private var ttsHelper: TextToSpeechHelper? = null
 
     init {
         ttsHelper = TextToSpeechHelper(application.applicationContext)
+        
+        // Settings live überwachen
+        viewModelScope.launch {
+            settingsRepository.ttsLanguageFlow.collect { newLanguage ->
+                ttsHelper?.setLanguage(newLanguage)
+            }
+        }
     }
 
     private val _currentPage = MutableStateFlow<Page?>(null)
@@ -170,12 +179,13 @@ class PageViewModel(
 // ViewModel Factory, um Parameter an den PageViewModel zu übergeben
 class PageViewModelFactory(
     private val application: Application,
-    private val pagesRepository: Map<String, Page>
+    private val pagesRepository: Map<String, Page>,
+    private val settingsRepository: SettingsRepository
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(PageViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return PageViewModel(application, pagesRepository) as T
+            return PageViewModel(application, pagesRepository, settingsRepository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

@@ -8,6 +8,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.example.gostalk.data.SettingsRepository
 import com.example.gostalk.model.SpeakTextButtonAction
 import com.example.gostalk.model.AuditoryCue
 import com.example.gostalk.model.ButtonConfig
@@ -15,17 +19,28 @@ import com.example.gostalk.model.Page
 import com.example.gostalk.ui.PageScreen
 import com.example.gostalk.ui.PageViewModel // Import für PageViewModel
 import com.example.gostalk.ui.PageViewModelFactory
+import com.example.gostalk.ui.SettingsScreen
+import com.example.gostalk.ui.SettingsViewModel
+import com.example.gostalk.ui.SettingsViewModelFactory
 import com.example.gostalk.ui.theme.GoSTalkTheme
 
 class MainActivity : ComponentActivity() {
 
-    // ViewModel Instanz holen
-    private val pageViewModel: PageViewModel by viewModels {
-        PageViewModelFactory(application, emptyMap())
-    }
+    private lateinit var settingsRepository: SettingsRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        settingsRepository = SettingsRepository(applicationContext)
+
+        // ViewModels manuell initialisieren, da wir Repository durchreichen
+        val pageViewModel: PageViewModel by viewModels {
+            PageViewModelFactory(application, emptyMap(), settingsRepository)
+        }
+
+        val settingsViewModel: SettingsViewModel by viewModels {
+            SettingsViewModelFactory(application, settingsRepository)
+        }
 
         // Beispielseite erstellen (kann später aus einer Datenquelle geladen werden)
         val samplePage = Page(
@@ -53,11 +68,24 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    // PageViewModel an PageScreen übergeben
-                    PageScreen(
-                        pageViewModel = pageViewModel,
-                        modifier = Modifier.fillMaxSize()
-                    )
+                    val navController = rememberNavController()
+
+                    NavHost(navController = navController, startDestination = "main") {
+                        composable("main") {
+                            // PageViewModel an PageScreen übergeben
+                            PageScreen(
+                                pageViewModel = pageViewModel,
+                                onNavigateToSettings = { navController.navigate("settings") },
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                        composable("settings") {
+                            SettingsScreen(
+                                settingsViewModel = settingsViewModel,
+                                onNavigateBack = { navController.popBackStack() }
+                            )
+                        }
+                    }
                 }
             }
         }

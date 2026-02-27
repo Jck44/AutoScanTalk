@@ -19,8 +19,15 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -31,9 +38,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.gostalk.model.ButtonConfig // Behalten, falls direkt verwendet
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PageScreen(
     pageViewModel: PageViewModel, // ViewModel als Parameter
+    onNavigateToSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     // States aus dem ViewModel beobachten
@@ -51,11 +60,25 @@ fun PageScreen(
         return
     }
 
-    Column(
-        modifier = modifier.padding(16.dp)
-    ) {
-        // Button Grid
-        LazyVerticalGrid(
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(page.name) },
+                actions = {
+                    IconButton(onClick = onNavigateToSettings) {
+                        Icon(imageVector = Icons.Default.Settings, contentDescription = "Einstellungen")
+                    }
+                }
+            )
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = modifier
+                .padding(paddingValues)
+                .padding(16.dp)
+        ) {
+            // Button Grid
+            LazyVerticalGrid(
             columns = GridCells.Fixed(page.columns),
             modifier = Modifier
                 .fillMaxWidth()
@@ -141,4 +164,4 @@ fun PageScreen(
         }
     }
 }
-
+}
