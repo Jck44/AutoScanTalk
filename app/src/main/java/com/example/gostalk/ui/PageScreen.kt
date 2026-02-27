@@ -70,11 +70,7 @@ fun PageScreen(
                 if (buttonConfig != null) {
                     Button(
                         onClick = {
-                            // Klick auf Button selbst könnte Fokus setzen und aktivieren
-                            // oder nur aktivieren, wenn bereits fokussiert.
-                            // Fürs Erste lassen wir die Aktivierung über den separaten Button unten.
-                            // Man könnte hier auch pageViewModel.stopScanning() aufrufen
-                            // und pageViewModel.activateButtonAtIndex(globalIndex) (müsste implementiert werden)
+                            pageViewModel.activateButtonAtIndex(globalIndex)
                         },
                         modifier = Modifier
                             .aspectRatio(1f) // Sorgt für quadratische Buttons

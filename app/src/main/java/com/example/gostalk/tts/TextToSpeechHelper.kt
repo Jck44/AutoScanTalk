@@ -1,45 +1,50 @@
 package com.example.gostalk.tts
 
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import android.speech.tts.TextToSpeech
 import android.util.Log
+import android.widget.Toast
 import java.util.Locale
 
 class TextToSpeechHelper(
-    context: Context,
-    private val onReady: (() -> Unit)? = null,
-    private val onError: ((String) -> Unit)? = null
+    private val context: Context
 ) : TextToSpeech.OnInitListener {
 
     private var tts: TextToSpeech? = null
     private var initialized = false
+    val isReady: Boolean get() = initialized
+    private val handler = Handler(Looper.getMainLooper())
 
     init {
         try {
             tts = TextToSpeech(context, this)
         } catch (e: Exception) {
-            Log.e("TextToSpeechHelper", "Error initializing TTS", e)
-            onError?.invoke("Error initializing TTS: ${e.message}")
+            showToast("Error initializing TTS: ${e.message}")
         }
     }
 
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
-            // Versuche Deutsch als Sprache einzustellen
             val result = tts?.setLanguage(Locale.GERMAN)
             if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                Log.w("TextToSpeechHelper", "German language is not supported or missing data, using default.")
-                // Fallback zur Gerätesprache
+                showToast("German language missing/unsupported. Using default.")
                 tts?.setLanguage(Locale.getDefault())
             } else {
-                Log.i("TextToSpeechHelper", "TTS initialized successfully with German.")
+                showToast("TTS initialized with German.")
             }
             initialized = true
-            onReady?.invoke()
         } else {
-            Log.e("TextToSpeechHelper", "TTS initialization failed with status: $status")
-            onError?.invoke("TTS initialization failed with status: $status")
+            showToast("TTS init failed! Status code: $status")
             initialized = false
+        }
+    }
+
+    private fun showToast(message: String) {
+        Log.e("TextToSpeechHelper", message)
+        handler.post {
+            Toast.makeText(context, "TTS Debug: $message", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -47,8 +52,7 @@ class TextToSpeechHelper(
         if (initialized && tts != null) {
             tts?.speak(text, queueMode, null, null)
         } else {
-            Log.w("TextToSpeechHelper", "TTS not initialized, cannot speak: '$text'")
-            onError?.invoke("TTS not initialized, cannot speak.")
+            showToast("TTS not initialized, cannot speak.")
         }
     }
 
@@ -56,6 +60,5 @@ class TextToSpeechHelper(
         tts?.stop()
         tts?.shutdown()
         initialized = false
-        Log.i("TextToSpeechHelper", "TTS shut down.")
     }
 }

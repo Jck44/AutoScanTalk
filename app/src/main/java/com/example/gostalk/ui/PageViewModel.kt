@@ -23,12 +23,11 @@ class PageViewModel(
     private val pagesRepository: Map<String, Page> // Repository für alle Seiten
 ) : AndroidViewModel(application) {
 
-    private val ttsHelper = TextToSpeechHelper(application.applicationContext) {
-        _ttsReady.value = true
-    }
+    private var ttsHelper: TextToSpeechHelper? = null
 
-    private val _ttsReady = MutableStateFlow(false)
-    val ttsReady: StateFlow<Boolean> = _ttsReady.asStateFlow()
+    init {
+        ttsHelper = TextToSpeechHelper(application.applicationContext)
+    }
 
     private val _currentPage = MutableStateFlow<Page?>(null)
     val currentPage: StateFlow<Page?> = _currentPage.asStateFlow()
@@ -84,8 +83,16 @@ class PageViewModel(
             for ((globalIndex, buttonConfig) in activeButtonsWithGlobalIndices) {
                 _focusedButtonIndex.value = globalIndex
                 val cue = buttonConfig.auditoryCue
-                if (cue is AuditoryCue.TextToSpeechCue && _ttsReady.value) {
-                    ttsHelper.speak(cue.text)
+
+                // Wait up to ~2 seconds if TTS is not ready yet for the very first item
+                var retries = 0
+                while (ttsHelper?.isReady != true && retries < 20) {
+                    delay(100)
+                    retries++
+                }
+
+                if (cue is AuditoryCue.TextToSpeechCue && ttsHelper?.isReady == true) {
+                    ttsHelper?.speak(cue.text)
                 }
                 delay(scanDelayMillis)
             }
@@ -98,15 +105,18 @@ class PageViewModel(
         _focusedButtonIndex.value = null
     }
 
-    fun activateFocusedButton() {
+    fun activateButtonAtIndex(index: Int) {
         val page = _currentPage.value ?: return
-        val focusedIdx = _focusedButtonIndex.value ?: return
-        val buttonConfig = page.buttonConfigs.getOrNull(focusedIdx) ?: return
+        val buttonConfig = page.buttonConfigs.getOrNull(index) ?: return
+        
+        // When user directly activates, they might want to stop the auto-scanning focus loop
+        stopScanning()
+        _focusedButtonIndex.value = index
 
         when (val action = buttonConfig.buttonAction) {
             is SpeakTextButtonAction -> {
-                if (_ttsReady.value) {
-                    ttsHelper.speak(action.textToSpeech)
+                if (ttsHelper?.isReady == true) {
+                    ttsHelper?.speak(action.textToSpeech)
                     logAction("Gesprochen: \"${action.textToSpeech}\"")
                 } else {
                     logAction("Sprechen (TTS nicht bereit): \"${action.textToSpeech}\"")
@@ -114,8 +124,8 @@ class PageViewModel(
             }
             is NavigateToPageButtonAction -> {
                 action.ttsFeedback?.let { feedback ->
-                    if (_ttsReady.value) {
-                        ttsHelper.speak(feedback)
+                    if (ttsHelper?.isReady == true) {
+                        ttsHelper?.speak(feedback)
                         logAction("Navigations-Feedback: \"$feedback\"")
                     } else {
                         logAction("Nav-Feedback (TTS nicht bereit): \"$feedback\"")
@@ -127,11 +137,16 @@ class PageViewModel(
                 } ?: run {
                     logAction("Fehler: Seite mit ID '${action.pageId}' nicht gefunden.")
                     // Optional: Fehler-TTS ausgeben
-                    if (_ttsReady.value) ttsHelper.speak("Seite nicht gefunden")
+                    if (ttsHelper?.isReady == true) ttsHelper?.speak("Seite nicht gefunden")
                 }
             }
             // Hier könnten weitere Action-Typen behandelt werden
         }
+    }
+
+    fun activateFocusedButton() {
+        val focusedIdx = _focusedButtonIndex.value ?: return
+        activateButtonAtIndex(focusedIdx)
     }
 
     private fun logAction(actionText: String) {
@@ -147,7 +162,7 @@ class PageViewModel(
 
     override fun onCleared() {
         super.onCleared()
-        ttsHelper.shutdown()
+        ttsHelper?.shutdown()
         scanJob?.cancel()
     }
 }
