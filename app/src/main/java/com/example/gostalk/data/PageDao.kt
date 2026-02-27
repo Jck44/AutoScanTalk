@@ -22,6 +22,9 @@ interface PageDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPage(page: Page)
 
+    @androidx.room.Update
+    suspend fun updatePage(page: Page)
+
     @Delete
     suspend fun deletePage(page: Page)
 }

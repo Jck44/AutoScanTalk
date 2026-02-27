@@ -209,6 +209,23 @@ class PageViewModel(
         }
     }
 
+    fun updateButtonConfig(pageId: String, index: Int, newConfig: com.example.gostalk.model.ButtonConfig?) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val page = pageDao.getPageById(pageId)
+            if (page != null && index in page.buttonConfigs.indices) {
+                val updatedConfigs = page.buttonConfigs.toMutableList()
+                updatedConfigs[index] = newConfig
+                val updatedPage = page.copy(buttonConfigs = updatedConfigs)
+                pageDao.updatePage(updatedPage)
+                
+                // If it's the currently active page being viewed/edited, refresh the state
+                if (_currentPage.value?.id == pageId) {
+                    _currentPage.value = updatedPage
+                }
+            }
+        }
+    }
+
     fun deletePage(page: Page) {
         viewModelScope.launch(Dispatchers.IO) {
             pageDao.deletePage(page)

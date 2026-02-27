@@ -1,5 +1,6 @@
 package com.example.gostalk.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -44,7 +45,8 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun PageListScreen(
     pageViewModel: PageViewModel,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onEditPage: (String) -> Unit
 ) {
     val allPages by pageViewModel.allPages.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
@@ -78,7 +80,9 @@ fun PageListScreen(
         ) {
             items(allPages) { page ->
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onEditPage(page.id) },
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
                     Row(

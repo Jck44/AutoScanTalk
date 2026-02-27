@@ -19,6 +19,7 @@ import com.example.gostalk.model.Page
 import com.example.gostalk.ui.PageScreen
 import com.example.gostalk.ui.StartScreen
 import com.example.gostalk.ui.PageListScreen
+import com.example.gostalk.ui.PageEditorScreen
 import com.example.gostalk.ui.PageViewModel // Import für PageViewModel
 import com.example.gostalk.ui.PageViewModelFactory
 import com.example.gostalk.ui.SettingsScreen
@@ -155,8 +156,21 @@ class MainActivity : ComponentActivity() {
                         composable("page_list") {
                             PageListScreen(
                                 pageViewModel = pageViewModel,
-                                onNavigateBack = { navController.popBackStack() }
+                                onNavigateBack = { navController.popBackStack() },
+                                onEditPage = { pageId ->
+                                    navController.navigate("page_editor/$pageId")
+                                }
                             )
+                        }
+                        composable("page_editor/{pageId}") { backStackEntry ->
+                            val pageId = backStackEntry.arguments?.getString("pageId")
+                            if (pageId != null) {
+                                PageEditorScreen(
+                                    pageId = pageId,
+                                    pageViewModel = pageViewModel,
+                                    onNavigateBack = { navController.popBackStack() }
+                                )
+                            }
                         }
                     }
                 }
