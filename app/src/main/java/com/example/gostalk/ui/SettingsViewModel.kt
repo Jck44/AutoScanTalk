@@ -31,11 +31,15 @@ class SettingsViewModel(
     private val _scanDelayInput = MutableStateFlow("1000")
     val scanDelayInput: StateFlow<String> = _scanDelayInput.asStateFlow()
 
+    private val _defaultStartPageId = MutableStateFlow<String?>(null)
+    val defaultStartPageId: StateFlow<String?> = _defaultStartPageId.asStateFlow()
+
     init {
         // Initiale Einstellungen laden
         _selectedLanguageTag.value = settingsRepository.ttsLanguage ?: "default"
         _autoStartScanning.value = settingsRepository.autoStartScanning
         _scanDelayInput.value = settingsRepository.scanDelayMillis.toString()
+        _defaultStartPageId.value = settingsRepository.defaultStartPageId
         loadAvailableLanguages()
     }
 
@@ -70,6 +74,11 @@ class SettingsViewModel(
         if (parsed != null && parsed >= 100L) {
             settingsRepository.scanDelayMillis = parsed
         }
+    }
+
+    fun setDefaultStartPageId(pageId: String?) {
+        settingsRepository.defaultStartPageId = pageId
+        _defaultStartPageId.value = pageId
     }
 
     override fun onCleared() {

@@ -10,6 +10,9 @@ import com.example.gostalk.model.NavigateToPageButtonAction
 import com.example.gostalk.model.Page
 import com.example.gostalk.model.SpeakTextButtonAction
 import com.example.gostalk.tts.TextToSpeechHelper
+import com.example.gostalk.model.ButtonConfig
+import com.example.gostalk.model.importexport.ImportExportData
+import com.google.gson.Gson
 import com.example.gostalk.data.SettingsRepository
 import com.example.gostalk.data.PageDao
 import kotlinx.coroutines.Dispatchers
@@ -229,6 +232,83 @@ class PageViewModel(
     fun deletePage(page: Page) {
         viewModelScope.launch(Dispatchers.IO) {
             pageDao.deletePage(page)
+        }
+    }
+
+    fun importFromJson(jsonString: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                android.util.Log.d("GoSTalkImport", "Starting import mapping parsing...")
+                val gson = Gson()
+                val importData = gson.fromJson(jsonString, ImportExportData::class.java)
+
+                if (importData?.pages == null) {
+                    android.util.Log.e("GoSTalkImport", "Parsed JSON was invalid or missing 'pages'")
+                    launch(Dispatchers.Main) { onError("Ungültiges JSON-Format. Seiten fehlen.") }
+                    return@launch
+                }
+                
+                android.util.Log.d("GoSTalkImport", "Parsed ${importData.pages.size} pages. Committing to Room DB...")
+
+                // 1. Generate new UUIDs for all imported pages to map their relationships
+                val pageIdMap = mutableMapOf<String, String>()
+                importData.pages.forEach {
+                    pageIdMap[it.importId] = UUID.randomUUID().toString()
+                }
+
+                // 2. Map pages and buttons
+                val newPages = importData.pages.map { importPage ->
+                    val pageId = pageIdMap[importPage.importId] ?: UUID.randomUUID().toString()
+
+                    // Create empty grid
+                    val buttonConfigs = MutableList<ButtonConfig?>(importPage.rows * importPage.columns) { null }
+
+                    importPage.buttons.forEach { importButton ->
+                        if (importButton.index <= Int.MAX_VALUE) {
+                            val safeIndex = importButton.index.toInt()
+                            if (safeIndex in buttonConfigs.indices) {
+                                val auditoryCue = if (!importButton.auditoryCueText.isNullOrBlank()) {
+                                    AuditoryCue.TextToSpeechCue(importButton.auditoryCueText)
+                                } else null
+
+                            val action = when (importButton.action?.type?.uppercase()) {
+                                "NAVIGATE" -> {
+                                    val targetId = pageIdMap[importButton.action.targetPageImportId] ?: ""
+                                    NavigateToPageButtonAction(targetId, importButton.action.ttsFeedback)
+                                }
+                                "SPEAK" -> SpeakTextButtonAction(importButton.action.textToSpeech ?: importButton.label)
+                                else -> SpeakTextButtonAction(importButton.label) // Fallback
+                            }
+
+                            buttonConfigs[safeIndex] = ButtonConfig(
+                                id = UUID.randomUUID().toString(),
+                                label = importButton.label,
+                                auditoryCue = auditoryCue,
+                                buttonAction = action
+                            )
+                        }
+                    }
+                }
+
+                    Page(
+                        id = pageId,
+                        name = importPage.name,
+                        rows = importPage.rows,
+                        columns = importPage.columns,
+                        buttonConfigs = buttonConfigs
+                    )
+                }
+
+                // 3. Save to DB
+                newPages.forEach { pageDao.insertPage(it) }
+                android.util.Log.d("GoSTalkImport", "Successfully committed ${newPages.size} pages to Database")
+                
+                launch(Dispatchers.Main) { onSuccess() }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                android.util.Log.e("GoSTalkImport", "Exception during import: ${e.message}")
+                launch(Dispatchers.Main) { onError("Fehler beim Import: ${e.message}") }
+            }
         }
     }
 

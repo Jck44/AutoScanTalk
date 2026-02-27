@@ -121,9 +121,6 @@ class MainActivity : ComponentActivity() {
             SettingsViewModelFactory(application, settingsRepository)
         }
 
-        // Die Startseite ins ViewModel laden
-        pageViewModel.loadPage(samplePage)
-
         setContent {
             GoSTalkTheme {
                 Surface(
@@ -135,7 +132,23 @@ class MainActivity : ComponentActivity() {
                     NavHost(navController = navController, startDestination = "start") {
                         composable("start") {
                             StartScreen(
-                                onNavigateToUserMode = { navController.navigate("main") },
+                                onNavigateToUserMode = { 
+                                    // Dynamische Startseite laden BEVOR wir navigieren
+                                    val startId = settingsRepository.defaultStartPageId
+                                    CoroutineScope(Dispatchers.IO).launch {
+                                        val startPage = if (startId != null) {
+                                            pageDao.getPageById(startId)
+                                        } else null
+                                        
+                                        val finalPage = startPage ?: pageDao.getAllPages().firstOrNull() ?: samplePage
+                                        
+                                        // Zurück auf Main-Thread wechseln zum Laden
+                                        kotlinx.coroutines.withContext(Dispatchers.Main) {
+                                            pageViewModel.loadPage(finalPage)
+                                            navController.navigate("main")
+                                        }
+                                    }
+                                },
                                 onNavigateToSettings = { navController.navigate("settings") }
                             )
                         }
@@ -149,6 +162,7 @@ class MainActivity : ComponentActivity() {
                         composable("settings") {
                             SettingsScreen(
                                 settingsViewModel = settingsViewModel,
+                                pageViewModel = pageViewModel,
                                 onNavigateBack = { navController.popBackStack() },
                                 onNavigateToPageManager = { navController.navigate("page_list") }
                             )

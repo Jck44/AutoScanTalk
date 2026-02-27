@@ -36,10 +36,32 @@ class SettingsRepository(context: Context) {
             _scanDelayFlow.value = value
         }
 
+    private val _defaultStartPageIdFlow = MutableStateFlow(prefs.getString(KEY_DEFAULT_START_PAGE_ID, null))
+    val defaultStartPageIdFlow: StateFlow<String?> = _defaultStartPageIdFlow.asStateFlow()
+
+    var defaultStartPageId: String?
+        get() = prefs.getString(KEY_DEFAULT_START_PAGE_ID, null)
+        set(value) {
+            prefs.edit().putString(KEY_DEFAULT_START_PAGE_ID, value).apply()
+            _defaultStartPageIdFlow.value = value
+        }
+
+    private val _ttsVoiceNameFlow = MutableStateFlow(prefs.getString(KEY_TTS_VOICE_NAME, null))
+    val ttsVoiceNameFlow: StateFlow<String?> = _ttsVoiceNameFlow.asStateFlow()
+
+    var ttsVoiceName: String?
+        get() = prefs.getString(KEY_TTS_VOICE_NAME, null)
+        set(value) {
+            prefs.edit().putString(KEY_TTS_VOICE_NAME, value).apply()
+            _ttsVoiceNameFlow.value = value
+        }
+
     companion object {
         private const val PREFS_NAME = "gostalk_settings"
         private const val KEY_TTS_LANGUAGE = "tts_language"
+        private const val KEY_TTS_VOICE_NAME = "tts_voice_name"
         private const val KEY_AUTO_START_SCANNING = "auto_start_scanning"
         private const val KEY_SCAN_DELAY_MILLIS = "scan_delay_millis"
+        private const val KEY_DEFAULT_START_PAGE_ID = "default_start_page_id"
     }
 }

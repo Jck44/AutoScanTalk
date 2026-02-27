@@ -38,8 +38,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import java.io.BufferedReader
+import java.io.InputStreamReader
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,6 +56,31 @@ fun PageListScreen(
     val allPages by pageViewModel.allPages.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
 
+    val context = LocalContext.current
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let {
+            try {
+                context.contentResolver.openInputStream(it)?.use { inputStream ->
+                    val reader = BufferedReader(InputStreamReader(inputStream))
+                    val jsonContent = reader.readText()
+                    pageViewModel.importFromJson(
+                        jsonString = jsonContent,
+                        onSuccess = {
+                            android.widget.Toast.makeText(context, "Import erfolgreich!", android.widget.Toast.LENGTH_SHORT).show()
+                        },
+                        onError = { errorMsg ->
+                            android.widget.Toast.makeText(context, errorMsg, android.widget.Toast.LENGTH_LONG).show()
+                        }
+                    )
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -61,6 +91,11 @@ fun PageListScreen(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Zurück"
                         )
+                    }
+                },
+                actions = {
+                    Button(onClick = { importLauncher.launch("application/json") }) {
+                        Text("Import JSON")
                     }
                 }
             )

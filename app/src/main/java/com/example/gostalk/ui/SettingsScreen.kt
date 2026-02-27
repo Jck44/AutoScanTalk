@@ -41,6 +41,7 @@ import java.util.Locale
 @Composable
 fun SettingsScreen(
     settingsViewModel: SettingsViewModel,
+    pageViewModel: PageViewModel,
     onNavigateBack: () -> Unit,
     onNavigateToPageManager: () -> Unit
 ) {
@@ -48,12 +49,15 @@ fun SettingsScreen(
     val availableLanguages by settingsViewModel.availableLanguages.collectAsState()
     val autoStartScanning by settingsViewModel.autoStartScanning.collectAsState()
     val scanDelayInput by settingsViewModel.scanDelayInput.collectAsState()
+    val defaultStartPageId by settingsViewModel.defaultStartPageId.collectAsState()
+    val allPages by pageViewModel.allPages.collectAsState()
 
-    var expanded by remember { mutableStateOf(false) }
+    var expandedLanguage by remember { mutableStateOf(false) }
+    var expandedStartPage by remember { mutableStateOf(false) }
 
     // Versuche regelmäßig die Sprachen zu laden, falls sie initial noch nicht da waren
-    LaunchedEffect(expanded) {
-        if (expanded && availableLanguages.isEmpty()) {
+    LaunchedEffect(expandedLanguage) {
+        if (expandedLanguage && availableLanguages.isEmpty()) {
             settingsViewModel.loadAvailableLanguages()
         }
     }
@@ -77,6 +81,58 @@ fun SettingsScreen(
                 .padding(16.dp)
         ) {
             Text(
+                text = "Standard Startseite (Nutzer Modus)",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Box(modifier = Modifier.fillMaxWidth()) {
+                val currentStartPageName = allPages.find { it.id == defaultStartPageId }?.name ?: "Automatisch (Erste Seite)"
+
+                OutlinedTextField(
+                    value = currentStartPageName,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Startseite wählen") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { expandedStartPage = true }
+                )
+
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clickable { expandedStartPage = true }
+                )
+
+                DropdownMenu(
+                    expanded = expandedStartPage,
+                    onDismissRequest = { expandedStartPage = false },
+                    modifier = Modifier.fillMaxWidth(0.9f)
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Automatisch (Erste Seite)") },
+                        onClick = {
+                            settingsViewModel.setDefaultStartPageId(null)
+                            expandedStartPage = false
+                        }
+                    )
+                    
+                    allPages.forEach { page ->
+                        DropdownMenuItem(
+                            text = { Text(page.name) },
+                            onClick = {
+                                settingsViewModel.setDefaultStartPageId(page.id)
+                                expandedStartPage = false
+                            }
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
                 text = "Text-to-Speech Sprache",
                 style = MaterialTheme.typography.titleMedium
             )
@@ -96,26 +152,26 @@ fun SettingsScreen(
                     label = { Text("Sprache wählen") },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { expanded = true }
+                        .clickable { expandedLanguage = true }
                 )
 
                 // Ein transparentes Overlay, da clickables auf TextFields manchmal Probleme machen
                 Box(
                     modifier = Modifier
                         .matchParentSize()
-                        .clickable { expanded = true }
+                        .clickable { expandedLanguage = true }
                 )
 
                 DropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false },
+                    expanded = expandedLanguage,
+                    onDismissRequest = { expandedLanguage = false },
                     modifier = Modifier.fillMaxWidth(0.9f)
                 ) {
                     DropdownMenuItem(
                         text = { Text("System default (${Locale.getDefault().displayName})") },
                         onClick = {
                             settingsViewModel.setTtsLanguage("default")
-                            expanded = false
+                            expandedLanguage = false
                         }
                     )
 
@@ -124,7 +180,7 @@ fun SettingsScreen(
                             text = { Text(locale.displayName) },
                             onClick = {
                                 settingsViewModel.setTtsLanguage(locale.toLanguageTag())
-                                expanded = false
+                                expandedLanguage = false
                             }
                         )
                     }
