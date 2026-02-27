@@ -18,8 +18,11 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.foundation.layout.Row
+import androidx.compose.ui.Alignment
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -28,6 +31,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import java.util.Locale
 
@@ -39,6 +44,8 @@ fun SettingsScreen(
 ) {
     val selectedLanguage by settingsViewModel.selectedLanguageTag.collectAsState()
     val availableLanguages by settingsViewModel.availableLanguages.collectAsState()
+    val autoStartScanning by settingsViewModel.autoStartScanning.collectAsState()
+    val scanDelayInput by settingsViewModel.scanDelayInput.collectAsState()
 
     var expanded by remember { mutableStateOf(false) }
 
@@ -121,6 +128,44 @@ fun SettingsScreen(
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Checkbox/Switch für Auto-Start Scanning
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { settingsViewModel.setAutoStartScanning(!autoStartScanning) }
+                    .padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Automatisches Scannen beim Start",
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.weight(1f)
+                )
+                Switch(
+                    checked = autoStartScanning,
+                    onCheckedChange = { settingsViewModel.setAutoStartScanning(it) }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            OutlinedTextField(
+                value = scanDelayInput,
+                onValueChange = { settingsViewModel.setScanDelayInput(it) },
+                label = { Text("Scangeschwindigkeit (ms)") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth()
+            )
+            
+            Text(
+                text = "Wie viele Millisekunden soll beim automatischen Scannen gewartet werden?",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp, start = 4.dp)
+            )
         }
     }
 }

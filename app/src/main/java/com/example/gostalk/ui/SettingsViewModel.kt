@@ -25,9 +25,17 @@ class SettingsViewModel(
     private val _selectedLanguageTag = MutableStateFlow("default")
     val selectedLanguageTag: StateFlow<String> = _selectedLanguageTag.asStateFlow()
 
+    private val _autoStartScanning = MutableStateFlow(true)
+    val autoStartScanning: StateFlow<Boolean> = _autoStartScanning.asStateFlow()
+
+    private val _scanDelayInput = MutableStateFlow("1000")
+    val scanDelayInput: StateFlow<String> = _scanDelayInput.asStateFlow()
+
     init {
         // Initiale Einstellungen laden
         _selectedLanguageTag.value = settingsRepository.ttsLanguage ?: "default"
+        _autoStartScanning.value = settingsRepository.autoStartScanning
+        _scanDelayInput.value = settingsRepository.scanDelayMillis.toString()
         loadAvailableLanguages()
     }
 
@@ -45,6 +53,23 @@ class SettingsViewModel(
         // Sprache sofort anwenden und Feedback geben
         tempTtsHelper.setLanguage(languageTag)
         tempTtsHelper.speak("Sprache geändert")
+    }
+
+    fun setAutoStartScanning(enabled: Boolean) {
+        settingsRepository.autoStartScanning = enabled
+        _autoStartScanning.value = enabled
+    }
+
+    fun setScanDelayInput(input: String) {
+        // Erlaube nur Ziffern im Textfeld
+        val digitsOnly = input.filter { it.isDigit() }
+        _scanDelayInput.value = digitsOnly
+        
+        // Speichere ab 100ms ein, um Abstürze / irre schnelles Scannen zu vermeiden
+        val parsed = digitsOnly.toLongOrNull()
+        if (parsed != null && parsed >= 100L) {
+            settingsRepository.scanDelayMillis = parsed
+        }
     }
 
     override fun onCleared() {

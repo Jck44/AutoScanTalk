@@ -36,6 +36,12 @@ class PageViewModel(
                 ttsHelper?.setLanguage(newLanguage)
             }
         }
+
+        viewModelScope.launch {
+            settingsRepository.scanDelayFlow.collect { delay ->
+                setScanDelay(delay)
+            }
+        }
     }
 
     private val _currentPage = MutableStateFlow<Page?>(null)
@@ -48,7 +54,8 @@ class PageViewModel(
     val lastActions: StateFlow<List<String>> = _lastActions.asStateFlow()
 
     private var scanJob: Job? = null
-    private var scanDelayMillis: Long = 2000
+    // Standardverzögerung verknüpft mit Memory
+    private var scanDelayMillis: Long = settingsRepository.scanDelayMillis
 
     // Initialisierung: Lade eine Startseite, falls vorhanden (z.B. die erste aus dem Repository)
     // Diese Logik muss in MainActivity.kt verschoben oder angepasst werden,
@@ -65,7 +72,9 @@ class PageViewModel(
         _currentPage.value = page
         stopScanning()
         _focusedButtonIndex.value = null
-        startScanning()
+        if (settingsRepository.autoStartScanning) {
+            startScanning()
+        }
     }
 
     fun setScanDelay(delayMillis: Long) {
