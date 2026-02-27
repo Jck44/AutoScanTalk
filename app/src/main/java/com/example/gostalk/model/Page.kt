@@ -1,7 +1,11 @@
 package com.example.gostalk.model
 
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
+@Entity(tableName = "pages")
 data class Page(
-    val id: String,
+    @PrimaryKey val id: String,
     val name: String,
     val rows: Int = 4,
     val columns: Int = 4,

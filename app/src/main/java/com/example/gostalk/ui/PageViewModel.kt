@@ -11,6 +11,7 @@ import com.example.gostalk.model.Page
 import com.example.gostalk.model.SpeakTextButtonAction
 import com.example.gostalk.tts.TextToSpeechHelper
 import com.example.gostalk.data.SettingsRepository
+import com.example.gostalk.data.PageDao
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,7 +22,7 @@ import kotlinx.coroutines.launch
 
 class PageViewModel(
     application: Application,
-    private val pagesRepository: Map<String, Page>, // Repository für alle Seiten
+    private val pageDao: PageDao,
     private val settingsRepository: SettingsRepository
 ) : AndroidViewModel(application) {
 
@@ -149,13 +150,15 @@ class PageViewModel(
                         logAction("Nav-Feedback (TTS nicht bereit): \"$feedback\"")
                     }
                 }
-                pagesRepository[action.pageId]?.let { nextPage ->
-                    loadPage(nextPage) // Lädt die neue Seite
-                    logAction("Navigiert zu Seite: ${nextPage.name} (ID: ${action.pageId})")
-                } ?: run {
-                    logAction("Fehler: Seite mit ID '${action.pageId}' nicht gefunden.")
-                    // Optional: Fehler-TTS ausgeben
-                    if (ttsHelper?.isReady == true) ttsHelper?.speak("Seite nicht gefunden")
+                viewModelScope.launch {
+                    val nextPage = pageDao.getPageById(action.pageId)
+                    if (nextPage != null) {
+                        loadPage(nextPage) // Lädt die neue Seite
+                        logAction("Navigiert zu Seite: ${nextPage.name} (ID: ${action.pageId})")
+                    } else {
+                        logAction("Fehler: Seite mit ID '${action.pageId}' nicht gefunden.")
+                        if (ttsHelper?.isReady == true) ttsHelper?.speak("Seite nicht gefunden")
+                    }
                 }
             }
             // Hier könnten weitere Action-Typen behandelt werden
@@ -188,13 +191,13 @@ class PageViewModel(
 // ViewModel Factory, um Parameter an den PageViewModel zu übergeben
 class PageViewModelFactory(
     private val application: Application,
-    private val pagesRepository: Map<String, Page>,
+    private val pageDao: PageDao,
     private val settingsRepository: SettingsRepository
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(PageViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return PageViewModel(application, pagesRepository, settingsRepository) as T
+            return PageViewModel(application, pageDao, settingsRepository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

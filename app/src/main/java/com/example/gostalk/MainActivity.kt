@@ -24,6 +24,10 @@ import com.example.gostalk.ui.SettingsViewModel
 import com.example.gostalk.ui.SettingsViewModelFactory
 import com.example.gostalk.ui.theme.GoSTalkTheme
 import com.example.gostalk.model.NavigateToPageButtonAction
+import com.example.gostalk.data.AppDatabase
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
@@ -93,10 +97,21 @@ class MainActivity : ComponentActivity() {
             }
         )
 
+        // Database Initialization
+        val db = AppDatabase.getDatabase(applicationContext)
+        val pageDao = db.pageDao()
+
+        // Populate Database if empty
+        CoroutineScope(Dispatchers.IO).launch {
+            if (pageDao.getAllPages().isEmpty()) {
+                pageDao.insertPage(samplePage)
+                pageDao.insertPage(secondPage)
+            }
+        }
+
         // ViewModels manuell initialisieren, da wir Repository durchreichen
-        val pageMap = mapOf("page1" to samplePage, "page2" to secondPage)
         val pageViewModel: PageViewModel by viewModels {
-            PageViewModelFactory(application, pageMap, settingsRepository)
+            PageViewModelFactory(application, pageDao, settingsRepository)
         }
 
         val settingsViewModel: SettingsViewModel by viewModels {
