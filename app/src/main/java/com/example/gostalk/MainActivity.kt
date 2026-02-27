@@ -39,6 +39,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
+        com.example.gostalk.tts.VoiceDebugger(this).start()
+        
         settingsRepository = SettingsRepository(applicationContext)
 
         // Zweite Seite erstellen

@@ -254,7 +254,7 @@ fun SettingsScreen(
                     )
 
                     availableVoices.forEach { voice ->
-                        val isNetwork = voice.features?.contains("networkTts") == true
+                        val isNetwork = voice.isNetworkConnectionRequired
                         val qualityHint = if (isNetwork) " (Online/HQ)" else " (Lokal)"
                         val readableName = formatVoiceName(voice.name)
                         
