@@ -65,7 +65,10 @@ fun PageScreen(
             TopAppBar(
                 title = { Text(page.name) },
                 actions = {
-                    IconButton(onClick = onNavigateToSettings) {
+                    IconButton(onClick = {
+                        pageViewModel.stopScanning()
+                        onNavigateToSettings()
+                    }) {
                         Icon(imageVector = Icons.Default.Settings, contentDescription = "Einstellungen")
                     }
                 }
