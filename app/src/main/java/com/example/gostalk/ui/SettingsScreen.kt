@@ -209,8 +209,10 @@ fun SettingsScreen(
                 // Entferne technische Suffixe
                 name = name.replace("-network", "").replace("-local", "")
                 
-                // Ersetze Trennzeichen durch Leerzeichen
-                name = name.replace("-x-", " ").replace("-", " ")
+                // Ersetze Trennzeichen "-x-" und alleinstehende "x" durch Leerzeichen bzw. löschen
+                name = name.replace("-x-", " ")
+                name = name.replace(Regex("\\bx\\b"), " ")
+                name = name.replace("-", " ")
                 
                 return name.split(" ").filter { it.isNotBlank() }
                     .joinToString(" ") { word -> word.replaceFirstChar { it.uppercase() } }
@@ -254,7 +256,8 @@ fun SettingsScreen(
                     )
 
                     availableVoices.forEach { voice ->
-                        val isNetwork = voice.isNetworkConnectionRequired
+                        // Fallback check against the name itself if the API flag is unreliable across devices
+                        val isNetwork = voice.isNetworkConnectionRequired || voice.name.lowercase().contains("network")
                         val qualityHint = if (isNetwork) " (Online/HQ)" else " (Lokal)"
                         val readableName = formatVoiceName(voice.name)
                         

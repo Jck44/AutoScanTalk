@@ -17,16 +17,27 @@ class VoiceDebugger(private val context: Context) : TextToSpeech.OnInitListener 
             val germanLocale = Locale.forLanguageTag("de-DE")
             val voices = tts?.voices?.filter { it.locale.language == germanLocale.language }
             
-            Log.d("VoiceDebugger", "--- DUMPING GERMAN VOICES ---")
+            val logBuilder = StringBuilder()
+            logBuilder.appendLine("--- DUMPING GERMAN VOICES ---")
             voices?.forEach { voice ->
-                Log.d("VoiceDebugger", "Name: ${voice.name}")
-                Log.d("VoiceDebugger", "Quality: ${voice.quality}")
-                Log.d("VoiceDebugger", "Latency: ${voice.latency}")
-                Log.d("VoiceDebugger", "Network Required: ${voice.isNetworkConnectionRequired}")
-                Log.d("VoiceDebugger", "Features: ${voice.features.joinToString()}")
-                Log.d("VoiceDebugger", "----------------------------")
+                logBuilder.appendLine("Name: ${voice.name}")
+                logBuilder.appendLine("Quality: ${voice.quality}")
+                logBuilder.appendLine("Latency: ${voice.latency}")
+                logBuilder.appendLine("Network Required: ${voice.isNetworkConnectionRequired}")
+                logBuilder.appendLine("Features: ${voice.features?.joinToString()}")
+                logBuilder.appendLine("----------------------------")
             }
-            Log.d("VoiceDebugger", "--- END DUMP ---")
+            logBuilder.appendLine("--- END DUMP ---")
+            
+            val logOutput = logBuilder.toString()
+            Log.e("VoiceDebugger", logOutput)
+            
+            try {
+                val file = java.io.File(context.filesDir, "voice_dump.txt")
+                file.writeText(logOutput)
+            } catch (e: Exception) {
+                Log.e("VoiceDebugger", "Failed to write voice dump file: \${e.message}")
+            }
         }
     }
 }
