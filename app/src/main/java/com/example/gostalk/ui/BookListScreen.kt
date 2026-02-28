@@ -41,6 +41,9 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+import androidx.compose.material.icons.filled.Edit
+import com.example.gostalk.model.Book
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookListScreen(
@@ -49,6 +52,7 @@ fun BookListScreen(
 ) {
     val allBooks by bookViewModel.allBooks.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
+    var bookToEdit by remember { mutableStateOf<Book?>(null) }
 
     Scaffold(
         topBar = {
@@ -83,7 +87,7 @@ fun BookListScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column {
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = book.name,
                                 style = MaterialTheme.typography.titleMedium
@@ -96,14 +100,23 @@ fun BookListScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                        IconButton(
-                            onClick = { bookViewModel.deleteBook(book) }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = "Buch löschen",
-                                tint = MaterialTheme.colorScheme.error
-                            )
+                        Row {
+                            IconButton(onClick = { bookToEdit = book }) {
+                                Icon(
+                                    imageVector = Icons.Default.Edit,
+                                    contentDescription = "Buch umbenennen",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            IconButton(
+                                onClick = { bookViewModel.deleteBook(book) }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = "Buch löschen",
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            }
                         }
                     }
                 }
@@ -140,6 +153,44 @@ fun BookListScreen(
                 dismissButton = {
                     Button(
                         onClick = { showAddDialog = false },
+                        colors = ButtonDefaults.textButtonColors()
+                    ) {
+                        Text("Abbrechen")
+                    }
+                }
+            )
+        }
+
+        bookToEdit?.let { book ->
+            var editBookName by remember { mutableStateOf(book.name) }
+
+            AlertDialog(
+                onDismissRequest = { bookToEdit = null },
+                title = { Text("Buch umbenennen") },
+                text = {
+                    OutlinedTextField(
+                        value = editBookName,
+                        onValueChange = { editBookName = it },
+                        label = { Text("Name des Buches") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            if (editBookName.isNotBlank()) {
+                                bookViewModel.updateBookName(book, editBookName)
+                                bookToEdit = null
+                            }
+                        }
+                    ) {
+                        Text("Speichern")
+                    }
+                },
+                dismissButton = {
+                    Button(
+                        onClick = { bookToEdit = null },
                         colors = ButtonDefaults.textButtonColors()
                     ) {
                         Text("Abbrechen")

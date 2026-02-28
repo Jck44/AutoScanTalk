@@ -46,6 +46,9 @@ import androidx.compose.ui.unit.dp
 import java.io.BufferedReader
 import java.io.InputStreamReader
 
+import androidx.compose.material.icons.filled.Edit
+import com.example.gostalk.model.Page
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PageListScreen(
@@ -56,6 +59,7 @@ fun PageListScreen(
     val allPages by pageViewModel.allPages.collectAsState()
     val activeBookId by pageViewModel.activeBookId.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
+    var pageToEdit by remember { mutableStateOf<Page?>(null) }
 
     val context = LocalContext.current
     val importLauncher = rememberLauncherForActivityResult(
@@ -87,7 +91,7 @@ fun PageListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Seiten verwalten") },
+                title = { Text("Seiten verwenden") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
@@ -130,7 +134,7 @@ fun PageListScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column {
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = page.name,
                                 style = MaterialTheme.typography.titleMedium
@@ -141,14 +145,23 @@ fun PageListScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                        IconButton(
-                            onClick = { pageViewModel.deletePage(page) }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = "Seite löschen",
-                                tint = MaterialTheme.colorScheme.error
-                            )
+                        Row {
+                            IconButton(onClick = { pageToEdit = page }) {
+                                Icon(
+                                    imageVector = Icons.Default.Edit,
+                                    contentDescription = "Seite umbenennen",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            IconButton(
+                                onClick = { pageViewModel.deletePage(page) }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = "Seite löschen",
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            }
                         }
                     }
                 }
@@ -163,6 +176,44 @@ fun PageListScreen(
                     val newId = pageViewModel.createNewPage(name, rows, cols, targetBookId)
                     showAddDialog = false
                     onEditPage(newId)
+                }
+            )
+        }
+
+        pageToEdit?.let { page ->
+            var editPageName by remember { mutableStateOf(page.name) }
+
+            AlertDialog(
+                onDismissRequest = { pageToEdit = null },
+                title = { Text("Seite umbenennen") },
+                text = {
+                    OutlinedTextField(
+                        value = editPageName,
+                        onValueChange = { editPageName = it },
+                        label = { Text("Name der Seite") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            if (editPageName.isNotBlank()) {
+                                pageViewModel.updatePageName(page.id, editPageName)
+                                pageToEdit = null
+                            }
+                        }
+                    ) {
+                        Text("Speichern")
+                    }
+                },
+                dismissButton = {
+                    Button(
+                        onClick = { pageToEdit = null },
+                        colors = ButtonDefaults.textButtonColors()
+                    ) {
+                        Text("Abbrechen")
+                    }
                 }
             )
         }

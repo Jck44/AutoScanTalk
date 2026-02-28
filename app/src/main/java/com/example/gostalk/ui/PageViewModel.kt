@@ -277,6 +277,20 @@ class PageViewModel(
         }
     }
 
+    fun updatePageName(pageId: String, newName: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val page = pageDao.getPageById(pageId)
+            if (page != null) {
+                val updatedPage = page.copy(name = newName)
+                pageDao.updatePage(updatedPage)
+                
+                if (_currentPage.value?.id == pageId) {
+                    _currentPage.value = updatedPage
+                }
+            }
+        }
+    }
+
     fun deletePage(page: Page) {
         viewModelScope.launch(Dispatchers.IO) {
             pageDao.deletePage(page)

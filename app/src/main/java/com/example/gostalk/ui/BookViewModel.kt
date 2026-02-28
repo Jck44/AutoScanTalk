@@ -44,6 +44,13 @@ class BookViewModel(
         }
     }
 
+    fun updateBookName(book: Book, newName: String) {
+        val updatedBook = book.copy(name = newName)
+        viewModelScope.launch(Dispatchers.IO) {
+            bookDao.updateBook(updatedBook)
+        }
+    }
+
     fun deleteBook(book: Book) {
         viewModelScope.launch(Dispatchers.IO) {
             bookDao.deleteBook(book)
