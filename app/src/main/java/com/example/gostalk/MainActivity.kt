@@ -43,7 +43,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        com.example.gostalk.tts.VoiceDebugger(this).start()
+        com.example.gostalk.tts.VoiceDebugger(applicationContext).start()
         
         settingsRepository = SettingsRepository(applicationContext)
         val defaultBookId = "book-default"
@@ -180,6 +180,7 @@ class MainActivity : ComponentActivity() {
                                     }
                                 },
                                 onNavigateToSettings = { navController.navigate("settings") },
+                                onNavigateToPageManager = { navController.navigate("page_list") },
                                 onNavigateToBooks = { navController.navigate("book_list") }
                             )
                         }
@@ -194,8 +195,7 @@ class MainActivity : ComponentActivity() {
                             SettingsScreen(
                                 settingsViewModel = settingsViewModel,
                                 pageViewModel = pageViewModel,
-                                onNavigateBack = { navController.popBackStack() },
-                                onNavigateToPageManager = { navController.navigate("page_list") }
+                                onNavigateBack = { navController.popBackStack() }
                             )
                         }
                         composable("page_list") {

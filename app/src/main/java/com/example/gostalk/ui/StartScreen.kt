@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
@@ -25,6 +26,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 fun StartScreen(
     onNavigateToUserMode: () -> Unit,
     onNavigateToSettings: () -> Unit,
+    onNavigateToPageManager: () -> Unit,
     onNavigateToBooks: () -> Unit
 ) {
     Column(
@@ -63,6 +65,25 @@ fun StartScreen(
             )
             Spacer(Modifier.size(ButtonDefaults.IconSpacing))
             Text("Nutzer Modus", style = MaterialTheme.typography.titleMedium)
+        }
+        
+        Spacer(modifier = Modifier.height(24.dp))
+        
+        Button(
+            onClick = onNavigateToPageManager,
+            modifier = Modifier
+                .size(height = 80.dp, width = 240.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.tertiary
+            )
+        ) {
+            Icon(
+                androidx.compose.material.icons.Icons.Filled.Edit,
+                contentDescription = "Seiten verwalten",
+                modifier = Modifier.size(ButtonDefaults.IconSize)
+            )
+            Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+            Text("Seiten verwalten", style = MaterialTheme.typography.titleMedium)
         }
         
         Spacer(modifier = Modifier.height(24.dp))

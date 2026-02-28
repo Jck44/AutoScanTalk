@@ -11,6 +11,8 @@ import com.example.gostalk.model.Page
 import com.example.gostalk.model.SpeakTextButtonAction
 import com.example.gostalk.tts.TextToSpeechHelper
 import com.example.gostalk.model.ButtonConfig
+import com.example.gostalk.core.ScannerEngine
+import com.example.gostalk.core.ActionExecutor
 import com.example.gostalk.model.importexport.ImportExportData
 import com.google.gson.Gson
 import com.example.gostalk.data.SettingsRepository
@@ -47,15 +49,20 @@ class PageViewModel(
     private val _currentPage = MutableStateFlow<Page?>(null)
     val currentPage: StateFlow<Page?> = _currentPage.asStateFlow()
 
-    private val _focusedButtonIndex = MutableStateFlow<Int?>(null)
-    val focusedButtonIndex: StateFlow<Int?> = _focusedButtonIndex.asStateFlow()
-
     private val _lastActions = MutableStateFlow<List<String>>(emptyList())
     val lastActions: StateFlow<List<String>> = _lastActions.asStateFlow()
 
-    private var scanJob: Job? = null
-    // Standardverzögerung verknüpft mit Memory
-    private var scanDelayMillis: Long = settingsRepository.scanDelayMillis
+    val scannerEngine = ScannerEngine(viewModelScope, ttsHelper)
+    val focusedButtonIndex: StateFlow<Int?> = scannerEngine.focusedButtonIndex
+
+    val actionExecutor = ActionExecutor(
+        scope = viewModelScope,
+        pageRepository = pageRepository,
+        ttsHelper = ttsHelper,
+        onLoadPage = { page -> loadPage(page) },
+        onResumeScanning = { resumeScanningIfEnabled() },
+        onLogAction = { actionText -> logAction(actionText) }
+    )
 
     fun setActiveBookId(bookId: String?) {
         _activeBookId.value = bookId
@@ -65,6 +72,10 @@ class PageViewModel(
         if (ttsHelper == null) {
             ttsHelper = TextToSpeechHelper(application.applicationContext)
         }
+        // Ensure engines get the initialized TTS instance
+        scannerEngine.ttsHelper = ttsHelper
+        actionExecutor.ttsHelper = ttsHelper
+
         // Settings live überwachen
         viewModelScope.launch {
             kotlinx.coroutines.flow.combine(
@@ -109,8 +120,7 @@ class PageViewModel(
 
     fun loadPage(page: Page) {
         _currentPage.value = page
-        stopScanning()
-        _focusedButtonIndex.value = null
+        scannerEngine.stopScanning()
     }
 
     fun resumeScanningIfEnabled() {
@@ -120,50 +130,19 @@ class PageViewModel(
     }
 
     fun setScanDelay(delayMillis: Long) {
-        scanDelayMillis = delayMillis
-        if (scanJob?.isActive == true) {
+        scannerEngine.scanDelayMillis = delayMillis
+        if (settingsRepository.autoStartScanning) {
             startScanning()
         }
     }
 
     fun startScanning() {
-        scanJob?.cancel()
         val page = _currentPage.value ?: return
-        val activeButtonsWithGlobalIndices = page.buttonConfigs
-            .mapIndexedNotNull { index, buttonConfig ->
-                if (buttonConfig != null) Pair(index, buttonConfig) else null
-            }
-
-        if (activeButtonsWithGlobalIndices.isEmpty()) {
-            _focusedButtonIndex.value = null
-            return
-        }
-
-        scanJob = viewModelScope.launch {
-            for ((globalIndex, buttonConfig) in activeButtonsWithGlobalIndices) {
-                _focusedButtonIndex.value = globalIndex
-                val cue = buttonConfig.auditoryCue
-
-                // Wait up to ~2 seconds if TTS is not ready yet for the very first item
-                var retries = 0
-                while (ttsHelper?.isReady != true && retries < 20) {
-                    delay(100)
-                    retries++
-                }
-
-                if (ttsHelper?.isReady == true) {
-                    val cueText = (cue as? AuditoryCue.TextToSpeechCue)?.text?.takeIf { it.isNotBlank() } ?: buttonConfig.label
-                    ttsHelper?.speak(cueText)
-                }
-                delay(scanDelayMillis)
-            }
-            _focusedButtonIndex.value = null
-        }
+        scannerEngine.startScanning(page.buttonConfigs)
     }
 
     fun stopScanning() {
-        scanJob?.cancel()
-        _focusedButtonIndex.value = null
+        scannerEngine.stopScanning()
     }
 
     fun activateButtonAtIndex(index: Int) {
@@ -171,47 +150,14 @@ class PageViewModel(
         val buttonConfig = page.buttonConfigs.getOrNull(index) ?: return
         
         // When user directly activates, they might want to stop the auto-scanning focus loop
-        stopScanning()
-        _focusedButtonIndex.value = index
+        scannerEngine.stopScanning()
+        scannerEngine.setFocusedIndex(index)
 
-        when (val action = buttonConfig.buttonAction) {
-            is SpeakTextButtonAction -> {
-                val textToSpeak = buttonConfig.spokenText?.takeIf { it.isNotBlank() } ?: action.textToSpeech
-                if (ttsHelper?.isReady == true) {
-                    ttsHelper?.speak(textToSpeak)
-                    logAction("Gesprochen: \"$textToSpeak\"")
-                } else {
-                    logAction("Sprechen (TTS nicht bereit): \"$textToSpeak\"")
-                }
-            }
-            is NavigateToPageButtonAction -> {
-                val feedback = buttonConfig.spokenText?.takeIf { it.isNotBlank() } ?: action.ttsFeedback
-                feedback?.let { fb ->
-                    if (ttsHelper?.isReady == true) {
-                        ttsHelper?.speak(fb)
-                        logAction("Navigations-Feedback: \"$fb\"")
-                    } else {
-                        logAction("Nav-Feedback (TTS nicht bereit): \"$fb\"")
-                    }
-                }
-                viewModelScope.launch {
-                    val nextPage = pageRepository.getPageById(action.pageId)
-                    if (nextPage != null) {
-                        loadPage(nextPage) // Lädt die neue Seite
-                        resumeScanningIfEnabled() // Restart scanning for the new page
-                        logAction("Navigiert zu Seite: ${nextPage.name} (ID: ${action.pageId})")
-                    } else {
-                        logAction("Fehler: Seite mit ID '${action.pageId}' nicht gefunden.")
-                        if (ttsHelper?.isReady == true) ttsHelper?.speak("Seite nicht gefunden")
-                    }
-                }
-            }
-            // Hier könnten weitere Action-Typen behandelt werden
-        }
+        actionExecutor.executeButtonAction(buttonConfig)
     }
 
     fun activateFocusedButton() {
-        val focusedIdx = _focusedButtonIndex.value ?: return
+        val focusedIdx = focusedButtonIndex.value ?: return
         activateButtonAtIndex(focusedIdx)
     }
 
@@ -379,7 +325,7 @@ class PageViewModel(
     override fun onCleared() {
         super.onCleared()
         ttsHelper?.shutdown()
-        scanJob?.cancel()
+        scannerEngine.clear()
     }
 }
 

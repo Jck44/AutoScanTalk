@@ -42,8 +42,7 @@ import java.util.Locale
 fun SettingsScreen(
     settingsViewModel: SettingsViewModel,
     pageViewModel: PageViewModel,
-    onNavigateBack: () -> Unit,
-    onNavigateToPageManager: () -> Unit
+    onNavigateBack: () -> Unit
 ) {
     val selectedLanguage by settingsViewModel.selectedLanguageTag.collectAsState()
     val availableLanguages by settingsViewModel.availableLanguages.collectAsState()
@@ -310,14 +309,6 @@ fun SettingsScreen(
                 modifier = Modifier.padding(top = 4.dp, start = 4.dp)
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Button(
-                onClick = onNavigateToPageManager,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Seiten verwalten")
-            }
         }
     }
 }
