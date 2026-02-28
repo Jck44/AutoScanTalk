@@ -18,8 +18,7 @@ data class SpeakTextButtonAction(
  * Optionally, it can provide TTS feedback when executed.
  */
 data class NavigateToPageButtonAction(
-    val pageId: String,
-    val ttsFeedback: String? = null // Optionaler TTS-Text für diese spezifische Aktion
+    val pageId: String
 ) : ButtonAction()
 
 // Zukünftige Aktionen könnten hier als weitere data classes hinzugefügt werden,

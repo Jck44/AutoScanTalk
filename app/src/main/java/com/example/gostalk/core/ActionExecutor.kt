@@ -40,7 +40,7 @@ class ActionExecutor(
                 }
             }
             is NavigateToPageButtonAction -> {
-                val feedback = buttonConfig.spokenText?.takeIf { it.isNotBlank() } ?: action.ttsFeedback
+                val feedback = buttonConfig.spokenText?.takeIf { it.isNotBlank() }
                 
                 // Closure to execute the actual navigation
                 val performNavigation = {

@@ -58,7 +58,6 @@ fun ButtonConfigDialog(
     // Navigation Details
     val navAction = initialConfig?.buttonAction as? NavigateToPageButtonAction
     var navigateToPageId by remember { mutableStateOf(navAction?.pageId ?: "") }
-    var navigateTtsFeedback by remember { mutableStateOf(navAction?.ttsFeedback ?: "") }
     var expandedPageSelect by remember { mutableStateOf(false) }
 
     AlertDialog(
@@ -154,14 +153,6 @@ fun ButtonConfigDialog(
                             }
                         }
                     }
-
-                    OutlinedTextField(
-                        value = navigateTtsFeedback,
-                        onValueChange = { navigateTtsFeedback = it },
-                        label = { Text("Navigations-Ansage (optional)") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
                 }
             }
         },
@@ -170,7 +161,7 @@ fun ButtonConfigDialog(
                 onClick = {
                     if (label.isNotBlank()) {
                         val action: ButtonAction = if (selectedActionType == "Zu Seite navigieren") {
-                            NavigateToPageButtonAction(pageId = navigateToPageId, ttsFeedback = navigateTtsFeedback.takeIf { it.isNotBlank() })
+                            NavigateToPageButtonAction(pageId = navigateToPageId)
                         } else {
                             // We use the new spokenText as primary for textToSpeech, fallback to label for legacy support 
                             // in PageViewModel if it checks action.textToSpeech natively.

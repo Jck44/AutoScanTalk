@@ -120,17 +120,6 @@ class PageViewModel(
         }
     }
 
-    // Initialisierung: Lade eine Startseite, falls vorhanden (z.B. die erste aus dem Repository)
-    // Diese Logik muss in MainActivity.kt verschoben oder angepasst werden,
-    // da wir die erste Seite jetzt dort explizit laden.
-    /*
-    init {
-        pagesRepository.values.firstOrNull()?.let {
-            loadPage(it)
-        }
-    }
-    */
-
     fun loadPage(page: Page) {
         _currentPage.value = page
         scannerEngine.stopScanning()
@@ -224,9 +213,9 @@ class PageViewModel(
                 buttonConfigs[totalSlots - 1] = ButtonConfig(
                     id = UUID.randomUUID().toString(),
                     label = "zurück zum Start",
+                    spokenText = "Zurück zur Startseite",
                     buttonAction = NavigateToPageButtonAction(
-                        pageId = homePageId,
-                        ttsFeedback = "Zurück zur Startseite"
+                        pageId = homePageId
                     ),
                     auditoryCue = AuditoryCue.TextToSpeechCue("Zurück zur Startseite")
                 )
@@ -323,7 +312,7 @@ class PageViewModel(
                             val action = when (importButton.action?.type?.uppercase()) {
                                 "NAVIGATE" -> {
                                     val targetId = pageIdMap[importButton.action.targetPageImportId] ?: ""
-                                    NavigateToPageButtonAction(targetId, importButton.action.ttsFeedback)
+                                    NavigateToPageButtonAction(targetId)
                                 }
                                 "SPEAK" -> SpeakTextButtonAction(importButton.action.textToSpeech ?: importButton.label)
                                 else -> SpeakTextButtonAction(importButton.label) // Fallback
@@ -332,6 +321,7 @@ class PageViewModel(
                             buttonConfigs[safeIndex] = ButtonConfig(
                                 id = UUID.randomUUID().toString(),
                                 label = importButton.label,
+                                spokenText = importButton.action?.ttsFeedback,
                                 auditoryCue = auditoryCue,
                                 buttonAction = action
                             )
@@ -369,7 +359,6 @@ class PageViewModel(
     }
 }
 
-// ViewModel Factory, um Parameter an den PageViewModel zu übergeben
 class PageViewModelFactory(
     private val application: Application,
     private val pageRepository: PageRepository,

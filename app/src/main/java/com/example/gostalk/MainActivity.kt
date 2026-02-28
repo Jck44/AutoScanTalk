@@ -5,7 +5,7 @@ import android.os.Bundle
 import android.view.KeyEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.viewModels // Import für by viewModels
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -23,7 +23,7 @@ import com.example.gostalk.ui.PageScreen
 import com.example.gostalk.ui.StartScreen
 import com.example.gostalk.ui.PageListScreen
 import com.example.gostalk.ui.PageEditorScreen
-import com.example.gostalk.ui.PageViewModel // Import für PageViewModel
+import com.example.gostalk.ui.PageViewModel
 import com.example.gostalk.ui.PageViewModelFactory
 import com.example.gostalk.ui.SettingsScreen
 import com.example.gostalk.ui.SettingsViewModel
@@ -80,7 +80,8 @@ class MainActivity : ComponentActivity() {
                 ButtonConfig(
                     id = "p2_btn3",
                     label = "Zurück",
-                    buttonAction = NavigateToPageButtonAction(pageId = "page1", ttsFeedback = "Zurück zur Hauptseite"),
+                    spokenText = "Zurück zur Hauptseite",
+                    buttonAction = NavigateToPageButtonAction(pageId = "page1"),
                     auditoryCue = AuditoryCue.TextToSpeechCue("Zurück zur Hauptseite navigieren")
                 )
             )
@@ -99,7 +100,8 @@ class MainActivity : ComponentActivity() {
                     index == 2 -> ButtonConfig( // 3. Button (Index 2) als Navigation zur zweiten Seite
                         id = "btn_nav_page2",
                         label = "Zur Seite 2",
-                        buttonAction = NavigateToPageButtonAction(pageId = "page2", ttsFeedback = "Zur zweiten Seite"),
+                        spokenText = "Zur zweiten Seite",
+                        buttonAction = NavigateToPageButtonAction(pageId = "page2"),
                         auditoryCue = AuditoryCue.TextToSpeechCue("Zur zweiten Seite navigieren")
                     )
                     else -> ButtonConfig(
@@ -130,7 +132,7 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        // ViewModels manuell initialisieren, da wir Repository durchreichen
+        // ViewModels mit Dependencies initialisieren
         val bookViewModel: BookViewModel by viewModels {
             BookViewModelFactory(application, bookDao)
         }
@@ -189,7 +191,6 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable("main") {
-                            // PageViewModel an PageScreen übergeben
                             PageScreen(
                                 pageViewModel = pageViewModel,
                                 modifier = Modifier.fillMaxSize()
