@@ -78,7 +78,7 @@ fun StartScreen(
             )
         ) {
             Icon(
-                androidx.compose.material.icons.Icons.Filled.Edit,
+                Icons.Filled.Edit,
                 contentDescription = "Seiten verwalten",
                 modifier = Modifier.size(ButtonDefaults.IconSize)
             )
@@ -111,8 +111,8 @@ fun StartScreen(
             onClick = onNavigateToBooks,
             modifier = Modifier.size(height = 60.dp, width = 240.dp)
         ) {
-            androidx.compose.material3.Icon(
-                androidx.compose.material.icons.Icons.AutoMirrored.Filled.ArrowBack,
+            Icon(
+                Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = "Zurück",
                 modifier = Modifier.size(ButtonDefaults.IconSize)
             )

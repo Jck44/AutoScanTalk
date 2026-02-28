@@ -247,7 +247,7 @@ class PageViewModel(
         return newPageId
     }
 
-    fun updateButtonConfig(pageId: String, index: Int, newConfig: com.example.gostalk.model.ButtonConfig?) {
+    fun updateButtonConfig(pageId: String, index: Int, newConfig: ButtonConfig?) {
         viewModelScope.launch(Dispatchers.IO) {
             val page = pageRepository.getPageById(pageId)
             if (page != null && index in page.buttonConfigs.indices) {
