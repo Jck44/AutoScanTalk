@@ -20,11 +20,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 @Composable
 fun StartScreen(
     onNavigateToUserMode: () -> Unit,
-    onNavigateToSettings: () -> Unit
+    onNavigateToSettings: () -> Unit,
+    onNavigateToBooks: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -81,6 +82,21 @@ fun StartScreen(
             )
             Spacer(Modifier.size(ButtonDefaults.IconSpacing))
             Text("Einstellungen", style = MaterialTheme.typography.titleMedium)
+        }
+
+        Spacer(modifier = Modifier.height(48.dp))
+
+        androidx.compose.material3.OutlinedButton(
+            onClick = onNavigateToBooks,
+            modifier = Modifier.size(height = 60.dp, width = 240.dp)
+        ) {
+            androidx.compose.material3.Icon(
+                androidx.compose.material.icons.Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "Zurück",
+                modifier = Modifier.size(ButtonDefaults.IconSize)
+            )
+            Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+            Text("Zurück zu den Büchern")
         }
     }
 }
