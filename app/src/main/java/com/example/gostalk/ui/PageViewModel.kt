@@ -52,12 +52,13 @@ class PageViewModel(
     private val _lastActions = MutableStateFlow<List<String>>(emptyList())
     val lastActions: StateFlow<List<String>> = _lastActions.asStateFlow()
 
-    val scannerEngine = ScannerEngine(viewModelScope, ttsHelper)
+    val scannerEngine = ScannerEngine(viewModelScope, settingsRepository, ttsHelper)
     val focusedButtonIndex: StateFlow<Int?> = scannerEngine.focusedButtonIndex
 
     val actionExecutor = ActionExecutor(
         scope = viewModelScope,
         pageRepository = pageRepository,
+        settingsRepository = settingsRepository,
         ttsHelper = ttsHelper,
         onLoadPage = { page -> loadPage(page) },
         onResumeScanning = { resumeScanningIfEnabled() },

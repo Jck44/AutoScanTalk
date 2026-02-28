@@ -52,10 +52,15 @@ fun SettingsScreen(
     val allPages by pageViewModel.allPages.collectAsState()
     val availableVoices by settingsViewModel.availableVoices.collectAsState()
     val selectedVoiceName by settingsViewModel.selectedVoiceName.collectAsState()
+    val availableAudioDevices by settingsViewModel.availableAudioDevices.collectAsState()
+    val selectedTtsAudioDeviceAddress by settingsViewModel.selectedTtsAudioDeviceAddress.collectAsState()
+    val selectedCuesAudioDeviceAddress by settingsViewModel.selectedCuesAudioDeviceAddress.collectAsState()
 
     var expandedLanguage by remember { mutableStateOf(false) }
     var expandedStartPage by remember { mutableStateOf(false) }
     var expandedVoice by remember { mutableStateOf(false) }
+    var expandedTtsDevice by remember { mutableStateOf(false) }
+    var expandedCuesDevice by remember { mutableStateOf(false) }
 
     // Versuche regelmäßig die Sprachen zu laden, falls sie initial noch nicht da waren
     LaunchedEffect(expandedLanguage) {
@@ -68,6 +73,13 @@ fun SettingsScreen(
     LaunchedEffect(expandedVoice) {
         if (expandedVoice && availableVoices.isEmpty()) {
             settingsViewModel.loadAvailableVoices()
+        }
+    }
+
+    // Aktualisiere Audio-Geräte, wenn Menüs geöffnet werden
+    LaunchedEffect(expandedTtsDevice, expandedCuesDevice) {
+        if (expandedTtsDevice || expandedCuesDevice) {
+            settingsViewModel.loadAvailableAudioDevices()
         }
     }
 
@@ -265,6 +277,110 @@ fun SettingsScreen(
                             onClick = {
                                 settingsViewModel.setTtsVoice(voice.name)
                                 expandedVoice = false
+                            }
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
+                text = "Ausgabegerät: Laut Sprechen (TTS)",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Box(modifier = Modifier.fillMaxWidth()) {
+                val currentTtsDeviceName = settingsViewModel.getResolvedDeviceName(selectedTtsAudioDeviceAddress)
+
+                OutlinedTextField(
+                    value = currentTtsDeviceName,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Audiogerät wählen") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { expandedTtsDevice = true }
+                )
+
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clickable { expandedTtsDevice = true }
+                )
+
+                DropdownMenu(
+                    expanded = expandedTtsDevice,
+                    onDismissRequest = { expandedTtsDevice = false },
+                    modifier = Modifier.fillMaxWidth(0.9f)
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("System-Standard (Automatisch)") },
+                        onClick = {
+                            settingsViewModel.setTtsAudioDevice(null)
+                            expandedTtsDevice = false
+                        }
+                    )
+                    
+                    availableAudioDevices.forEach { device ->
+                        DropdownMenuItem(
+                            text = { Text(device.name) },
+                            onClick = {
+                                settingsViewModel.setTtsAudioDevice(device.address)
+                                expandedTtsDevice = false
+                            }
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
+                text = "Ausgabegerät: Auditory Cues",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Box(modifier = Modifier.fillMaxWidth()) {
+                val currentCuesDeviceName = settingsViewModel.getResolvedDeviceName(selectedCuesAudioDeviceAddress)
+
+                OutlinedTextField(
+                    value = currentCuesDeviceName,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Audiogerät wählen") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { expandedCuesDevice = true }
+                )
+
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clickable { expandedCuesDevice = true }
+                )
+
+                DropdownMenu(
+                    expanded = expandedCuesDevice,
+                    onDismissRequest = { expandedCuesDevice = false },
+                    modifier = Modifier.fillMaxWidth(0.9f)
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("System-Standard (Automatisch)") },
+                        onClick = {
+                            settingsViewModel.setCuesAudioDevice(null)
+                            expandedCuesDevice = false
+                        }
+                    )
+                    
+                    availableAudioDevices.forEach { device ->
+                        DropdownMenuItem(
+                            text = { Text(device.name) },
+                            onClick = {
+                                settingsViewModel.setCuesAudioDevice(device.address)
+                                expandedCuesDevice = false
                             }
                         )
                     }

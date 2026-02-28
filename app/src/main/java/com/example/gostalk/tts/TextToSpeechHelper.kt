@@ -46,9 +46,15 @@ class TextToSpeechHelper(
                 override fun onDone(utteranceId: String?) {
                     val request = playRequests.remove(utteranceId)
                     if (request != null) {
-                        routedAudioPlayer.playAudioFile(request.file, request.deviceAddress) {
-                            request.file.delete()
-                        }
+                        handler.postDelayed({
+                            if (request.file.exists() && request.file.length() > 0) {
+                                routedAudioPlayer.playAudioFile(request.file, request.deviceAddress) {
+                                    request.file.delete()
+                                }
+                            } else {
+                                Log.e("TextToSpeechHelper", "Generated TTS file is empty or missing")
+                            }
+                        }, 50)
                     }
                 }
 
@@ -56,11 +62,19 @@ class TextToSpeechHelper(
                     playRequests.remove(utteranceId)?.file?.delete()
                 }
             })
-            setLanguageAndVoice(pendingLanguageTag, pendingVoiceName)
+            // Verzögern, damit die TTS Engine Zeit hat, das Voice-Array zu befüllen (asynchrones Android Verhalten)
+            handler.postDelayed({
+                applyPendingLanguageAndVoice()
+            }, 300)
         } else {
             showToast("TTS init failed! Status code: $status")
             initialized = false
         }
+    }
+
+    private fun applyPendingLanguageAndVoice() {
+        if (!initialized) return
+        setLanguageAndVoice(pendingLanguageTag, pendingVoiceName)
     }
 
     private fun showToast(message: String) {
@@ -101,9 +115,10 @@ class TextToSpeechHelper(
      * @param voiceName Der exakte Bezeichner der TTS Voice, oder null für den Standard.
      */
     fun setLanguageAndVoice(languageTag: String?, voiceName: String? = null) {
+        pendingLanguageTag = languageTag
+        pendingVoiceName = voiceName
+        
         if (!initialized || tts == null) {
-            pendingLanguageTag = languageTag
-            pendingVoiceName = voiceName
             return
         }
 
@@ -116,16 +131,22 @@ class TextToSpeechHelper(
         val langResult = tts?.setLanguage(locale)
         if (langResult == TextToSpeech.LANG_MISSING_DATA || langResult == TextToSpeech.LANG_NOT_SUPPORTED) {
             showToast("Language $languageTag not supported.")
-            return
+            // Weiter ausführen, auch wenn Sprache fehlt, falls eine Custom-Voice das überschreibt
         }
         
         // Wenn eine spezifische Stimme gewünscht ist, versuche sie zu setzen
         if (!voiceName.isNullOrEmpty()) {
+            if (tts?.voices.isNullOrEmpty()) {
+                Log.d("TextToSpeechHelper", "Voices not yet loaded. Retrying voice application in 500ms...")
+                handler.postDelayed({ applyPendingLanguageAndVoice() }, 500)
+                return
+            }
+
             val voice = tts?.voices?.find { it.name == voiceName }
             if (voice != null) {
                 tts?.voice = voice
             } else {
-                Log.w("TextToSpeechHelper", "Requested voice $voiceName not found, falling back to default.")
+                Log.w("TextToSpeechHelper", "Requested voice $voiceName not found in ${tts?.voices?.size} voices, falling back to default.")
             }
         }
     }

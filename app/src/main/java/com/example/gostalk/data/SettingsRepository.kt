@@ -56,6 +56,26 @@ class SettingsRepository(context: Context) {
             _ttsVoiceNameFlow.value = value
         }
 
+    private val _ttsAudioDeviceAddressFlow = MutableStateFlow(prefs.getString(KEY_TTS_AUDIO_DEVICE, null))
+    val ttsAudioDeviceAddressFlow: StateFlow<String?> = _ttsAudioDeviceAddressFlow.asStateFlow()
+
+    var ttsAudioDeviceAddress: String?
+        get() = prefs.getString(KEY_TTS_AUDIO_DEVICE, null)
+        set(value) {
+            prefs.edit().putString(KEY_TTS_AUDIO_DEVICE, value).apply()
+            _ttsAudioDeviceAddressFlow.value = value
+        }
+
+    private val _cuesAudioDeviceAddressFlow = MutableStateFlow(prefs.getString(KEY_CUES_AUDIO_DEVICE, null))
+    val cuesAudioDeviceAddressFlow: StateFlow<String?> = _cuesAudioDeviceAddressFlow.asStateFlow()
+
+    var cuesAudioDeviceAddress: String?
+        get() = prefs.getString(KEY_CUES_AUDIO_DEVICE, null)
+        set(value) {
+            prefs.edit().putString(KEY_CUES_AUDIO_DEVICE, value).apply()
+            _cuesAudioDeviceAddressFlow.value = value
+        }
+
     companion object {
         private const val PREFS_NAME = "gostalk_settings"
         private const val KEY_TTS_LANGUAGE = "tts_language"
@@ -63,5 +83,7 @@ class SettingsRepository(context: Context) {
         private const val KEY_AUTO_START_SCANNING = "auto_start_scanning"
         private const val KEY_SCAN_DELAY_MILLIS = "scan_delay_millis"
         private const val KEY_DEFAULT_START_PAGE_ID = "default_start_page_id"
+        private const val KEY_TTS_AUDIO_DEVICE = "tts_audio_device_address"
+        private const val KEY_CUES_AUDIO_DEVICE = "cues_audio_device_address"
     }
 }

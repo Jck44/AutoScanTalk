@@ -10,6 +10,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.util.Locale
+import com.example.gostalk.core.AudioDeviceManager
+import com.example.gostalk.model.AudioOutputDevice
 
 class SettingsViewModel(
     application: Application,
@@ -18,6 +20,7 @@ class SettingsViewModel(
 
     // Helper für das Abfragen der verfügbaren Sprachen
     private val tempTtsHelper = TextToSpeechHelper(application)
+    private val audioDeviceManager = AudioDeviceManager(application)
 
     private val _availableLanguages = MutableStateFlow<List<Locale>>(emptyList())
     val availableLanguages: StateFlow<List<Locale>> = _availableLanguages.asStateFlow()
@@ -40,6 +43,15 @@ class SettingsViewModel(
     private val _defaultStartPageId = MutableStateFlow<String?>(null)
     val defaultStartPageId: StateFlow<String?> = _defaultStartPageId.asStateFlow()
 
+    private val _availableAudioDevices = MutableStateFlow<List<AudioOutputDevice>>(emptyList())
+    val availableAudioDevices: StateFlow<List<AudioOutputDevice>> = _availableAudioDevices.asStateFlow()
+
+    private val _selectedTtsAudioDeviceAddress = MutableStateFlow<String?>(null)
+    val selectedTtsAudioDeviceAddress: StateFlow<String?> = _selectedTtsAudioDeviceAddress.asStateFlow()
+
+    private val _selectedCuesAudioDeviceAddress = MutableStateFlow<String?>(null)
+    val selectedCuesAudioDeviceAddress: StateFlow<String?> = _selectedCuesAudioDeviceAddress.asStateFlow()
+
     init {
         // Initiale Einstellungen laden
         _selectedLanguageTag.value = settingsRepository.ttsLanguage ?: "default"
@@ -47,8 +59,16 @@ class SettingsViewModel(
         _autoStartScanning.value = settingsRepository.autoStartScanning
         _scanDelayInput.value = settingsRepository.scanDelayMillis.toString()
         _defaultStartPageId.value = settingsRepository.defaultStartPageId
+        _selectedTtsAudioDeviceAddress.value = settingsRepository.ttsAudioDeviceAddress
+        _selectedCuesAudioDeviceAddress.value = settingsRepository.cuesAudioDeviceAddress
+        
+        // Den lokalen TTS-Helper mit den gespeicherten Werten füttern,
+        // sonst spricht er in den Einstellungen initial in Systemsprache
+        tempTtsHelper.setLanguageAndVoice(_selectedLanguageTag.value, _selectedVoiceName.value)
+
         loadAvailableLanguages()
         loadAvailableVoices()
+        loadAvailableAudioDevices()
     }
 
     fun loadAvailableLanguages() {
@@ -61,6 +81,10 @@ class SettingsViewModel(
         if (tempTtsHelper.isReady) {
             _availableVoices.value = tempTtsHelper.getAvailableVoices(_selectedLanguageTag.value)
         }
+    }
+
+    fun loadAvailableAudioDevices() {
+        _availableAudioDevices.value = audioDeviceManager.getAvailableOutputDevices()
     }
 
     fun setTtsLanguage(languageTag: String) {
@@ -77,7 +101,7 @@ class SettingsViewModel(
         
         // Sprache sofort anwenden und Feedback geben
         tempTtsHelper.setLanguageAndVoice(languageTag, null)
-        tempTtsHelper.speak("Sprache geändert")
+        tempTtsHelper.speakRouted("Sprache geändert", settingsRepository.ttsAudioDeviceAddress)
     }
 
     fun setTtsVoice(voiceName: String?) {
@@ -85,7 +109,7 @@ class SettingsViewModel(
         _selectedVoiceName.value = voiceName
         
         tempTtsHelper.setVoice(voiceName)
-        tempTtsHelper.speak("Stimme ausgewählt")
+        tempTtsHelper.speakRouted("Stimme ausgewählt", settingsRepository.ttsAudioDeviceAddress)
     }
 
     fun setAutoStartScanning(enabled: Boolean) {
@@ -108,6 +132,37 @@ class SettingsViewModel(
     fun setDefaultStartPageId(pageId: String?) {
         settingsRepository.defaultStartPageId = pageId
         _defaultStartPageId.value = pageId
+    }
+
+    fun setTtsAudioDevice(address: String?) {
+        settingsRepository.ttsAudioDeviceAddress = address
+        _selectedTtsAudioDeviceAddress.value = address
+        tempTtsHelper.speakRouted("Ausgabegerät für Sprechen ausgewählt", address)
+    }
+
+    fun setCuesAudioDevice(address: String?) {
+        settingsRepository.cuesAudioDeviceAddress = address
+        _selectedCuesAudioDeviceAddress.value = address
+        tempTtsHelper.speakRouted("Ausgabegerät für Feedback ausgewählt", address)
+    }
+
+    fun getResolvedDeviceName(savedAddress: String?): String {
+        if (savedAddress.isNullOrBlank()) return "System-Standard (Automatisch)"
+        val devices = _availableAudioDevices.value
+        
+        val exactMatch = devices.find { it.address == savedAddress }
+        if (exactMatch != null) return exactMatch.name
+        
+        val parts = savedAddress.split("|", limit = 2)
+        val fallbackPart = if (parts.size > 1) parts[1] else parts[0]
+        
+        val fuzzyMatch = devices.find { device ->
+            val deviceParts = device.address.split("|", limit = 2)
+            val deviceFallback = if (deviceParts.size > 1) deviceParts[1] else deviceParts[0]
+            deviceFallback == fallbackPart
+        }
+        
+        return fuzzyMatch?.name ?: "System-Standard (Automatisch)"
     }
 
     override fun onCleared() {

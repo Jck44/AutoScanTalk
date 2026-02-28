@@ -11,8 +11,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
+import com.example.gostalk.data.SettingsRepository
+
 class ScannerEngine(
     private val scope: CoroutineScope,
+    private val settingsRepository: SettingsRepository,
     var ttsHelper: TextToSpeechHelper? = null
 ) {
     private val _focusedButtonIndex = MutableStateFlow<Int?>(null)
@@ -49,7 +52,7 @@ class ScannerEngine(
 
                 if (ttsHelper?.isReady == true) {
                     val cueText = (cue as? AuditoryCue.TextToSpeechCue)?.text?.takeIf { it.isNotBlank() } ?: buttonConfig.label
-                    ttsHelper?.speak(cueText)
+                    ttsHelper?.speakRouted(cueText, settingsRepository.cuesAudioDeviceAddress)
                 }
                 delay(scanDelayMillis)
             }
