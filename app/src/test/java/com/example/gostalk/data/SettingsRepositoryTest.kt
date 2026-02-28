@@ -35,13 +35,25 @@ class SettingsRepositoryTest {
             mockedPrefsStore.getOrDefault(key, default)
         }
         every { mockPrefs.getLong(any(), any()) } returns 1000L
-        every { mockPrefs.getBoolean(any(), any()) } returns true
+        every { mockPrefs.getBoolean(any(), any()) } answers {
+            val key = args[0] as String
+            val default = args[1] as Boolean
+            mockedPrefsStore.getOrDefault(key, default.toString())?.toBooleanStrictOrNull() ?: default
+        }
         
         // Mock putString
         every { mockEditor.putString(any(), any()) } answers {
             val key = args[0] as String
             val value = args[1] as String?
             mockedPrefsStore[key] = value
+            mockEditor
+        }
+        
+        // Mock putBoolean
+        every { mockEditor.putBoolean(any(), any()) } answers {
+            val key = args[0] as String
+            val value = args[1] as Boolean
+            mockedPrefsStore[key] = value.toString()
             mockEditor
         }
         
@@ -100,5 +112,37 @@ class SettingsRepositoryTest {
         assertNull(mockedPrefsStore["tts_voice_name"])
         assertNull(repository.ttsVoiceName)
         assertNull(repository.ttsVoiceNameFlow.first())
+    }
+
+    @Test
+    fun persistActionLogs_initializesFalse() = runBlocking {
+        every { mockPrefs.getBoolean("persist_action_logs", false) } returns false
+        assertEquals(false, repository.persistActionLogs)
+        assertEquals(false, repository.persistActionLogsFlow.first())
+    }
+
+    @Test
+    fun persistActionLogs_savesAndEmitsValue() = runBlocking {
+        repository.persistActionLogs = true
+
+        assertEquals("true", mockedPrefsStore["persist_action_logs"])
+        assertEquals(true, repository.persistActionLogs)
+        assertEquals(true, repository.persistActionLogsFlow.first())
+    }
+
+    @Test
+    fun actionLogsStorage_initializesNull() = runBlocking {
+        assertNull(repository.actionLogsStorage)
+        assertNull(repository.actionLogsStorageFlow.first())
+    }
+
+    @Test
+    fun actionLogsStorage_savesAndEmitsValue() = runBlocking {
+        val testJson = "[\"Log 1\", \"Log 2\"]"
+        repository.actionLogsStorage = testJson
+
+        assertEquals(testJson, mockedPrefsStore["action_logs_storage"])
+        assertEquals(testJson, repository.actionLogsStorage)
+        assertEquals(testJson, repository.actionLogsStorageFlow.first())
     }
 }

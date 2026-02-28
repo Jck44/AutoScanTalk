@@ -86,6 +86,26 @@ class SettingsRepository(context: Context) {
             _cuesAudioDeviceAddressFlow.value = value
         }
 
+    private val _persistActionLogsFlow = MutableStateFlow(prefs.getBoolean(KEY_PERSIST_ACTION_LOGS, false))
+    val persistActionLogsFlow: StateFlow<Boolean> = _persistActionLogsFlow.asStateFlow()
+
+    var persistActionLogs: Boolean
+        get() = prefs.getBoolean(KEY_PERSIST_ACTION_LOGS, false)
+        set(value) {
+            prefs.edit().putBoolean(KEY_PERSIST_ACTION_LOGS, value).apply()
+            _persistActionLogsFlow.value = value
+        }
+
+    private val _actionLogsStorageFlow = MutableStateFlow(prefs.getString(KEY_ACTION_LOGS_STORAGE, null))
+    val actionLogsStorageFlow: StateFlow<String?> = _actionLogsStorageFlow.asStateFlow()
+
+    var actionLogsStorage: String?
+        get() = prefs.getString(KEY_ACTION_LOGS_STORAGE, null)
+        set(value) {
+            prefs.edit().putString(KEY_ACTION_LOGS_STORAGE, value).apply()
+            _actionLogsStorageFlow.value = value
+        }
+
     companion object {
         private const val PREFS_NAME = "gostalk_settings"
         private const val KEY_TTS_LANGUAGE = "tts_language"
@@ -96,5 +116,7 @@ class SettingsRepository(context: Context) {
         private const val KEY_DEFAULT_START_PAGE_ID = "default_start_page_id"
         private const val KEY_TTS_AUDIO_DEVICE = "tts_audio_device_address"
         private const val KEY_CUES_AUDIO_DEVICE = "cues_audio_device_address"
+        private const val KEY_PERSIST_ACTION_LOGS = "persist_action_logs"
+        private const val KEY_ACTION_LOGS_STORAGE = "action_logs_storage"
     }
 }

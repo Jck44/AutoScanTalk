@@ -55,6 +55,9 @@ class SettingsViewModel(
     private val _selectedCuesAudioDeviceAddress = MutableStateFlow<String?>(null)
     val selectedCuesAudioDeviceAddress: StateFlow<String?> = _selectedCuesAudioDeviceAddress.asStateFlow()
 
+    private val _persistActionLogs = MutableStateFlow(false)
+    val persistActionLogs: StateFlow<Boolean> = _persistActionLogs.asStateFlow()
+
     init {
         // Initiale Einstellungen laden
         _selectedLanguageTag.value = settingsRepository.ttsLanguage ?: "default"
@@ -65,6 +68,7 @@ class SettingsViewModel(
         _defaultStartPageId.value = settingsRepository.defaultStartPageId
         _selectedTtsAudioDeviceAddress.value = settingsRepository.ttsAudioDeviceAddress
         _selectedCuesAudioDeviceAddress.value = settingsRepository.cuesAudioDeviceAddress
+        _persistActionLogs.value = settingsRepository.persistActionLogs
         
         // Den lokalen TTS-Helper mit den gespeicherten Werten füttern,
         // sonst spricht er in den Einstellungen initial in Systemsprache
@@ -136,6 +140,11 @@ class SettingsViewModel(
     fun setResumeScanningFromStart(fromStart: Boolean) {
         settingsRepository.resumeScanningFromStart = fromStart
         _resumeScanningFromStart.value = fromStart
+    }
+
+    fun setPersistActionLogs(enabled: Boolean) {
+        settingsRepository.persistActionLogs = enabled
+        _persistActionLogs.value = enabled
     }
 
     fun setDefaultStartPageId(pageId: String?) {

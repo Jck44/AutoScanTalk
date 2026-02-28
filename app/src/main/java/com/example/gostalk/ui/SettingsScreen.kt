@@ -1,6 +1,8 @@
 package com.example.gostalk.ui
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -56,6 +58,7 @@ fun SettingsScreen(
     val selectedTtsAudioDeviceAddress by settingsViewModel.selectedTtsAudioDeviceAddress.collectAsState()
     val selectedCuesAudioDeviceAddress by settingsViewModel.selectedCuesAudioDeviceAddress.collectAsState()
     val resumeScanningFromStart by settingsViewModel.resumeScanningFromStart.collectAsState()
+    val persistActionLogs by settingsViewModel.persistActionLogs.collectAsState()
 
     var expandedLanguage by remember { mutableStateOf(false) }
     var expandedStartPage by remember { mutableStateOf(false) }
@@ -101,6 +104,7 @@ fun SettingsScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(16.dp)
+                .verticalScroll(rememberScrollState())
         ) {
             Text(
                 text = "Standard Startseite (Nutzer Modus)",
@@ -433,6 +437,33 @@ fun SettingsScreen(
                 Switch(
                     checked = resumeScanningFromStart,
                     onCheckedChange = { settingsViewModel.setResumeScanningFromStart(it) }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Checkbox/Switch für Action Logs Persistence
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { settingsViewModel.setPersistActionLogs(!persistActionLogs) }
+                    .padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Aktionenverlauf speichern",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Text(
+                        text = "Letzte Aktionen auch nach App-Neustart behalten.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Switch(
+                    checked = persistActionLogs,
+                    onCheckedChange = { settingsViewModel.setPersistActionLogs(it) }
                 )
             }
 

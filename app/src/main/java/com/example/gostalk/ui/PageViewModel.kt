@@ -107,6 +107,20 @@ class PageViewModel(
                 _allPages.value = pages
             }
         }
+
+        // Restore action logs if persistence is enabled
+        if (settingsRepository.persistActionLogs) {
+            val savedJson = settingsRepository.actionLogsStorage
+            if (!savedJson.isNullOrBlank()) {
+                try {
+                    val gson = Gson()
+                    val savedList = gson.fromJson(savedJson, Array<String>::class.java).toList()
+                    _lastActions.value = savedList
+                } catch (e: Exception) {
+                    android.util.Log.e("PageViewModel", "Error parsing stored action logs", e)
+                }
+            }
+        }
     }
 
     // Initialisierung: Lade eine Startseite, falls vorhanden (z.B. die erste aus dem Repository)
@@ -184,7 +198,20 @@ class PageViewModel(
             if (updatedActions.size > 100) {
                 updatedActions.removeLast()
             }
+
+            // Save to storage if persistence is enabled
+            if (settingsRepository.persistActionLogs) {
+                settingsRepository.actionLogsStorage = Gson().toJson(updatedActions)
+            }
+
             updatedActions
+        }
+    }
+
+    fun clearActionLogs() {
+        _lastActions.value = emptyList()
+        if (settingsRepository.persistActionLogs) {
+            settingsRepository.actionLogsStorage = "[]" // Or null
         }
     }
 
