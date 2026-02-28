@@ -133,7 +133,7 @@ fun PageScreen(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(140.dp), // Feste Größe für den Scrollbereich
+                .height(210.dp), // Feste Größe für den Scrollbereich
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
