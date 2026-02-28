@@ -6,6 +6,7 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "pages")
 data class Page(
     @PrimaryKey val id: String,
+    val bookId: String,
     val name: String,
     val rows: Int = 4,
     val columns: Int = 4,

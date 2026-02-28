@@ -54,6 +54,7 @@ fun PageListScreen(
     onEditPage: (String) -> Unit
 ) {
     val allPages by pageViewModel.allPages.collectAsState()
+    val activeBookId by pageViewModel.activeBookId.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
@@ -65,8 +66,10 @@ fun PageListScreen(
                 context.contentResolver.openInputStream(it)?.use { inputStream ->
                     val reader = BufferedReader(InputStreamReader(inputStream))
                     val jsonContent = reader.readText()
+                    val targetBookId = activeBookId ?: "book-default"
                     pageViewModel.importFromJson(
                         jsonString = jsonContent,
+                        bookId = targetBookId,
                         onSuccess = {
                             android.widget.Toast.makeText(context, "Import erfolgreich!", android.widget.Toast.LENGTH_SHORT).show()
                         },
@@ -156,7 +159,8 @@ fun PageListScreen(
             AddPageDialog(
                 onDismiss = { showAddDialog = false },
                 onConfirm = { name, rows, cols ->
-                    val newId = pageViewModel.createNewPage(name, rows, cols)
+                    val targetBookId = activeBookId ?: "book-default"
+                    val newId = pageViewModel.createNewPage(name, rows, cols, targetBookId)
                     showAddDialog = false
                     onEditPage(newId)
                 }

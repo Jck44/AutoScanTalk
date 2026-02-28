@@ -68,7 +68,7 @@ class PageViewModelTest {
         val mockTts = mockk<com.example.gostalk.tts.TextToSpeechHelper>(relaxed = true)
 
         viewModel = PageViewModel(application, pageDao, settingsRepository, ttsHelper = mockTts)
-        viewModel.createNewPage("Test Page", rows = 2, columns = 2) 
+        viewModel.createNewPage("Test Page", rows = 2, columns = 2, bookId = "test-book-id")
 
         // Let Coroutines process
         testDispatcher.scheduler.advanceUntilIdle()

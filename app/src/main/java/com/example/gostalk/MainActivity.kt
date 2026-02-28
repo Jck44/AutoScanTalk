@@ -26,6 +26,9 @@ import com.example.gostalk.ui.SettingsScreen
 import com.example.gostalk.ui.SettingsViewModel
 import com.example.gostalk.ui.SettingsViewModelFactory
 import com.example.gostalk.ui.theme.GoSTalkTheme
+import com.example.gostalk.model.Book
+import com.example.gostalk.ui.BookViewModel
+import com.example.gostalk.ui.BookViewModelFactory
 import com.example.gostalk.model.NavigateToPageButtonAction
 import com.example.gostalk.data.AppDatabase
 import kotlinx.coroutines.CoroutineScope
@@ -42,10 +45,12 @@ class MainActivity : ComponentActivity() {
         com.example.gostalk.tts.VoiceDebugger(this).start()
         
         settingsRepository = SettingsRepository(applicationContext)
+        val defaultBookId = "book-default"
 
         // Zweite Seite erstellen
         val secondPage = Page(
             id = "page2",
+            bookId = defaultBookId,
             name = "Zweite Seite",
             columns = 2,
             rows = 2,
@@ -80,6 +85,7 @@ class MainActivity : ComponentActivity() {
         // Hauptseite erstellen
         val samplePage = Page(
             id = "page1",
+            bookId = defaultBookId,
             name = "Hauptseite",
             columns = 4,
             rows = 4,
@@ -105,9 +111,14 @@ class MainActivity : ComponentActivity() {
         // Database Initialization
         val db = AppDatabase.getDatabase(applicationContext)
         val pageDao = db.pageDao()
+        val bookDao = db.bookDao()
 
         // Populate Database if empty
         CoroutineScope(Dispatchers.IO).launch {
+            if (bookDao.getBookById(defaultBookId) == null) {
+                bookDao.insertBook(Book(id = defaultBookId, name = "Standardbuch"))
+            }
+
             if (pageDao.getAllPages().isEmpty()) {
                 pageDao.insertPage(samplePage)
                 pageDao.insertPage(secondPage)
@@ -115,9 +126,14 @@ class MainActivity : ComponentActivity() {
         }
 
         // ViewModels manuell initialisieren, da wir Repository durchreichen
+        val bookViewModel: BookViewModel by viewModels {
+            BookViewModelFactory(application, bookDao)
+        }
+
         val pageViewModel: PageViewModel by viewModels {
             PageViewModelFactory(application, pageDao, settingsRepository)
         }
+        pageViewModel.setActiveBookId(defaultBookId)
 
         val settingsViewModel: SettingsViewModel by viewModels {
             SettingsViewModelFactory(application, settingsRepository)
@@ -131,27 +147,38 @@ class MainActivity : ComponentActivity() {
                 ) {
                     val navController = rememberNavController()
 
-                    NavHost(navController = navController, startDestination = "start") {
+                    NavHost(navController = navController, startDestination = "book_list") {
+                        composable("book_list") {
+                            com.example.gostalk.ui.BookListScreen(
+                                bookViewModel = bookViewModel,
+                                onBookSelected = { selectedBookId ->
+                                    // 1. Set the active book globally
+                                    pageViewModel.setActiveBookId(selectedBookId)
+                                    // 2. Navigate to Mode Selection (StartScreen)
+                                    navController.navigate("start")
+                                }
+                            )
+                        }
                         composable("start") {
                             StartScreen(
                                 onNavigateToUserMode = { 
-                                    // Dynamische Startseite laden BEVOR wir navigieren
                                     val startId = settingsRepository.defaultStartPageId
                                     CoroutineScope(Dispatchers.IO).launch {
                                         val startPage = if (startId != null) {
                                             pageDao.getPageById(startId)
                                         } else null
                                         
-                                        val finalPage = startPage ?: pageDao.getAllPages().firstOrNull() ?: samplePage
+                                        // Wir müssen sicherstellen, dass die gefundene Seite auch zum aktuellen Buch gehört!
+                                        val finalPage = startPage ?: pageDao.getPagesForBook(pageViewModel.activeBookId.value ?: "book-default").firstOrNull() ?: samplePage
                                         
-                                        // Zurück auf Main-Thread wechseln zum Laden
                                         kotlinx.coroutines.withContext(Dispatchers.Main) {
                                             pageViewModel.loadPage(finalPage)
                                             navController.navigate("main")
                                         }
                                     }
                                 },
-                                onNavigateToSettings = { navController.navigate("settings") }
+                                onNavigateToSettings = { navController.navigate("settings") },
+                                onNavigateToBooks = { navController.navigate("book_list") }
                             )
                         }
                         composable("main") {

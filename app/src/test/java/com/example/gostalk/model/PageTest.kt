@@ -13,11 +13,14 @@ class PageTest {
         buttonAction = SpeakTextButtonAction("Action 1")
     )
 
+    private val testBookId = "book-default"
+
     @Test
     fun `Page initialization with valid parameters succeeds`() {
         val buttons = List(16) { validButtonConfig }
-        val page = Page(id = "p1", name = "Test Page", rows = 4, columns = 4, buttonConfigs = buttons)
+        val page = Page(id = "p1", bookId = testBookId, name = "Test Page", rows = 4, columns = 4, buttonConfigs = buttons)
         assertEquals("p1", page.id)
+        assertEquals(testBookId, page.bookId)
         assertEquals("Test Page", page.name)
         assertEquals(4, page.rows)
         assertEquals(4, page.columns)
@@ -27,7 +30,7 @@ class PageTest {
     @Test
     fun `Page initialization with null buttons in list succeeds`() {
         val buttons = listOf(validButtonConfig, null, validButtonConfig, null) // 2x2 grid
-        val page = Page(id = "p2", name = "Page with empty slots", rows = 2, columns = 2, buttonConfigs = buttons)
+        val page = Page(id = "p2", bookId = testBookId, name = "Page with empty slots", rows = 2, columns = 2, buttonConfigs = buttons)
         assertEquals(4, page.buttonConfigs.size)
         assertEquals(validButtonConfig, page.buttonConfigs[0])
         assertEquals(null, page.buttonConfigs[1])
@@ -37,7 +40,7 @@ class PageTest {
     fun `Page initialization throws for zero rows`() {
         val buttons = emptyList<ButtonConfig?>()
         val exception = assertThrows(IllegalArgumentException::class.java) {
-            Page(id = "p_err_row", name = "Error Page", rows = 0, columns = 4, buttonConfigs = buttons)
+            Page(id = "p_err_row", bookId = testBookId, name = "Error Page", rows = 0, columns = 4, buttonConfigs = buttons)
         }
         assertEquals("Rows must be a positive number.", exception.message)
     }
@@ -46,7 +49,7 @@ class PageTest {
     fun `Page initialization throws for zero columns`() {
         val buttons = emptyList<ButtonConfig?>()
         val exception = assertThrows(IllegalArgumentException::class.java) {
-            Page(id = "p_err_col", name = "Error Page", rows = 4, columns = 0, buttonConfigs = buttons)
+            Page(id = "p_err_col", bookId = testBookId, name = "Error Page", rows = 4, columns = 0, buttonConfigs = buttons)
         }
         assertEquals("Columns must be a positive number.", exception.message)
     }
@@ -55,7 +58,7 @@ class PageTest {
     fun `Page initialization throws for negative rows`() {
          val buttons = emptyList<ButtonConfig?>()
         val exception = assertThrows(IllegalArgumentException::class.java) {
-            Page(id = "p_err_neg_row", name = "Error Page", rows = -1, columns = 4, buttonConfigs = buttons)
+            Page(id = "p_err_neg_row", bookId = testBookId, name = "Error Page", rows = -1, columns = 4, buttonConfigs = buttons)
         }
         assertEquals("Rows must be a positive number.", exception.message)
     }
@@ -64,7 +67,7 @@ class PageTest {
     fun `Page initialization throws for negative columns`() {
         val buttons = emptyList<ButtonConfig?>()
         val exception = assertThrows(IllegalArgumentException::class.java) {
-            Page(id = "p_err_neg_col", name = "Error Page", rows = 4, columns = -1, buttonConfigs = buttons)
+            Page(id = "p_err_neg_col", bookId = testBookId, name = "Error Page", rows = 4, columns = -1, buttonConfigs = buttons)
         }
         assertEquals("Columns must be a positive number.", exception.message)
     }
@@ -76,7 +79,7 @@ class PageTest {
         val expectedMessage = "The number of button configurations must match the total grid size (rows * columns). " +
                               "Expected 16, but got 15."
         val exception = assertThrows(IllegalArgumentException::class.java) {
-            Page(id = "p_err_size", name = "Error Page", rows = 4, columns = 4, buttonConfigs = buttons)
+            Page(id = "p_err_size", bookId = testBookId, name = "Error Page", rows = 4, columns = 4, buttonConfigs = buttons)
         }
         assertEquals(expectedMessage, exception.message)
     }
@@ -84,7 +87,7 @@ class PageTest {
     @Test
     fun `Page initialization with empty buttonConfigs for 1x1 grid succeeds if size matches`() {
         val buttons = listOf(null) // 1 button for a 1x1 grid
-        val page = Page(id = "p3", name = "Single Empty Cell Page", rows = 1, columns = 1, buttonConfigs = buttons)
+        val page = Page(id = "p3", bookId = testBookId, name = "Single Empty Cell Page", rows = 1, columns = 1, buttonConfigs = buttons)
         assertEquals(1, page.buttonConfigs.size)
         assertEquals(null, page.buttonConfigs[0])
     }
@@ -96,7 +99,7 @@ class PageTest {
         val expectedMessage = "The number of button configurations must match the total grid size (rows * columns). " +
                               "Expected 4, but got 0."
         val exception = assertThrows(IllegalArgumentException::class.java) {
-            Page(id = "p_err_empty_list", name = "Error Page", rows = 2, columns = 2, buttonConfigs = buttons)
+            Page(id = "p_err_empty_list", bookId = testBookId, name = "Error Page", rows = 2, columns = 2, buttonConfigs = buttons)
         }
         assertEquals(expectedMessage, exception.message)
     }

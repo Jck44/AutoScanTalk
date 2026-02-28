@@ -25,12 +25,40 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.UUID
 
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+
+@OptIn(ExperimentalCoroutinesApi::class)
 class PageViewModel(
     application: Application,
     private val pageDao: PageDao,
     private val settingsRepository: SettingsRepository,
     private var ttsHelper: TextToSpeechHelper? = null
 ) : AndroidViewModel(application) {
+
+    private val _activeBookId = MutableStateFlow<String?>(null)
+    val activeBookId: StateFlow<String?> = _activeBookId.asStateFlow()
+
+    private val _allPages = MutableStateFlow<List<Page>>(emptyList())
+    val allPages: StateFlow<List<Page>> = _allPages.asStateFlow()
+
+    private val _currentPage = MutableStateFlow<Page?>(null)
+    val currentPage: StateFlow<Page?> = _currentPage.asStateFlow()
+
+    private val _focusedButtonIndex = MutableStateFlow<Int?>(null)
+    val focusedButtonIndex: StateFlow<Int?> = _focusedButtonIndex.asStateFlow()
+
+    private val _lastActions = MutableStateFlow<List<String>>(emptyList())
+    val lastActions: StateFlow<List<String>> = _lastActions.asStateFlow()
+
+    private var scanJob: Job? = null
+    // Standardverzögerung verknüpft mit Memory
+    private var scanDelayMillis: Long = settingsRepository.scanDelayMillis
+
+    fun setActiveBookId(bookId: String?) {
+        _activeBookId.value = bookId
+    }
 
     init {
         if (ttsHelper == null) {
@@ -55,27 +83,17 @@ class PageViewModel(
         }
         
         viewModelScope.launch {
-            pageDao.getAllPagesFlow().collect { pages ->
+            _activeBookId.flatMapLatest { bookId ->
+                if (bookId != null) {
+                    pageDao.getPagesForBookFlow(bookId)
+                } else {
+                    flowOf(emptyList()) // No book selected, no pages
+                }
+            }.collect { pages ->
                 _allPages.value = pages
             }
         }
     }
-
-    private val _allPages = MutableStateFlow<List<Page>>(emptyList())
-    val allPages: StateFlow<List<Page>> = _allPages.asStateFlow()
-
-    private val _currentPage = MutableStateFlow<Page?>(null)
-    val currentPage: StateFlow<Page?> = _currentPage.asStateFlow()
-
-    private val _focusedButtonIndex = MutableStateFlow<Int?>(null)
-    val focusedButtonIndex: StateFlow<Int?> = _focusedButtonIndex.asStateFlow()
-
-    private val _lastActions = MutableStateFlow<List<String>>(emptyList())
-    val lastActions: StateFlow<List<String>> = _lastActions.asStateFlow()
-
-    private var scanJob: Job? = null
-    // Standardverzögerung verknüpft mit Memory
-    private var scanDelayMillis: Long = settingsRepository.scanDelayMillis
 
     // Initialisierung: Lade eine Startseite, falls vorhanden (z.B. die erste aus dem Repository)
     // Diese Logik muss in MainActivity.kt verschoben oder angepasst werden,
@@ -132,8 +150,9 @@ class PageViewModel(
                     retries++
                 }
 
-                if (cue is AuditoryCue.TextToSpeechCue && ttsHelper?.isReady == true) {
-                    ttsHelper?.speak(cue.text)
+                if (ttsHelper?.isReady == true) {
+                    val cueText = (cue as? AuditoryCue.TextToSpeechCue)?.text?.takeIf { it.isNotBlank() } ?: buttonConfig.label
+                    ttsHelper?.speak(cueText)
                 }
                 delay(scanDelayMillis)
             }
@@ -206,7 +225,7 @@ class PageViewModel(
         }
     }
 
-    fun createNewPage(name: String, rows: Int, columns: Int): String {
+    fun createNewPage(name: String, rows: Int, columns: Int, bookId: String): String {
         val newPageId = UUID.randomUUID().toString()
         val totalSlots = rows * columns
         val buttonConfigs = MutableList<ButtonConfig?>(totalSlots) { null }
@@ -229,6 +248,7 @@ class PageViewModel(
 
         val newPage = Page(
             id = newPageId,
+            bookId = bookId,
             name = name,
             rows = rows,
             columns = columns,
@@ -263,7 +283,7 @@ class PageViewModel(
         }
     }
 
-    fun importFromJson(jsonString: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
+    fun importFromJson(jsonString: String, bookId: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 android.util.Log.d("GoSTalkImport", "Starting import mapping parsing...")
@@ -320,6 +340,7 @@ class PageViewModel(
 
                     Page(
                         id = pageId,
+                        bookId = bookId,
                         name = importPage.name,
                         rows = importPage.rows,
                         columns = importPage.columns,
