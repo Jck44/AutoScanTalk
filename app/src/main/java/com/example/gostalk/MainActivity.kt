@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.gostalk.data.PageRepository
 import com.example.gostalk.data.SettingsRepository
 import com.example.gostalk.model.SpeakTextButtonAction
 import com.example.gostalk.model.AuditoryCue
@@ -111,6 +112,7 @@ class MainActivity : ComponentActivity() {
         // Database Initialization
         val db = AppDatabase.getDatabase(applicationContext)
         val pageDao = db.pageDao()
+        val pageRepository = PageRepository(pageDao)
         val bookDao = db.bookDao()
 
         // Populate Database if empty
@@ -131,7 +133,7 @@ class MainActivity : ComponentActivity() {
         }
 
         val pageViewModel: PageViewModel by viewModels {
-            PageViewModelFactory(application, pageDao, settingsRepository)
+            PageViewModelFactory(application, pageRepository, settingsRepository)
         }
         pageViewModel.setActiveBookId(defaultBookId)
 
@@ -165,11 +167,11 @@ class MainActivity : ComponentActivity() {
                                     val startId = settingsRepository.defaultStartPageId
                                     CoroutineScope(Dispatchers.IO).launch {
                                         val startPage = if (startId != null) {
-                                            pageDao.getPageById(startId)
+                                            pageRepository.getPageById(startId)
                                         } else null
                                         
                                         // Wir müssen sicherstellen, dass die gefundene Seite auch zum aktuellen Buch gehört!
-                                        val finalPage = startPage ?: pageDao.getPagesForBook(pageViewModel.activeBookId.value ?: "book-default").firstOrNull() ?: samplePage
+                                        val finalPage = startPage ?: pageRepository.getPagesForBook(pageViewModel.activeBookId.value ?: "book-default").firstOrNull() ?: samplePage
                                         
                                         kotlinx.coroutines.withContext(Dispatchers.Main) {
                                             pageViewModel.loadPage(finalPage)

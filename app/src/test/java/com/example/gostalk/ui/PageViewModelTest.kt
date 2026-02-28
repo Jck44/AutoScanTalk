@@ -1,7 +1,7 @@
 package com.example.gostalk.ui
 
 import android.app.Application
-import com.example.gostalk.data.PageDao
+import com.example.gostalk.data.PageRepository
 import com.example.gostalk.data.SettingsRepository
 import com.example.gostalk.model.Page
 import com.example.gostalk.model.NavigateToPageButtonAction
@@ -30,7 +30,7 @@ class PageViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var application: Application
-    private lateinit var pageDao: PageDao
+    private lateinit var pageRepository: PageRepository
     private lateinit var settingsRepository: SettingsRepository
     private lateinit var viewModel: PageViewModel
 
@@ -39,7 +39,7 @@ class PageViewModelTest {
         Dispatchers.setMain(testDispatcher)
 
         application = mockk(relaxed = true)
-        pageDao = mockk(relaxed = true)
+        pageRepository = mockk(relaxed = true)
         settingsRepository = mockk(relaxed = true)
         
         // Mock default flows mapped inside ViewModel init
@@ -48,7 +48,7 @@ class PageViewModelTest {
         every { settingsRepository.scanDelayFlow } returns MutableStateFlow(1000L)
         every { settingsRepository.scanDelayMillis } returns 1000L
         every { settingsRepository.autoStartScanning } returns false
-        every { pageDao.getAllPagesFlow() } returns MutableStateFlow(emptyList())
+        every { pageRepository.getAllPagesFlow() } returns MutableStateFlow(emptyList())
     }
 
     @After
@@ -63,17 +63,17 @@ class PageViewModelTest {
         
         // We need to capture the Page object being inserted into the DB
         val insertedPageSlot = slot<Page>()
-        coEvery { pageDao.insertPage(capture(insertedPageSlot)) } returns Unit
+        coEvery { pageRepository.insertPage(capture(insertedPageSlot)) } returns Unit
         
         val mockTts = mockk<com.example.gostalk.tts.TextToSpeechHelper>(relaxed = true)
 
-        viewModel = PageViewModel(application, pageDao, settingsRepository, ttsHelper = mockTts)
+        viewModel = PageViewModel(application, pageRepository, settingsRepository, ttsHelper = mockTts)
         viewModel.createNewPage("Test Page", rows = 2, columns = 2, bookId = "test-book-id")
 
         // Let Coroutines process
         testDispatcher.scheduler.advanceUntilIdle()
 
-        coVerify { pageDao.insertPage(any()) }
+        coVerify { pageRepository.insertPage(any()) }
         val capturedPage = insertedPageSlot.captured
         
         // 2x2 = 4 slots (indices 0, 1, 2, 3)

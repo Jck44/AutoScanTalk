@@ -1,0 +1,39 @@
+package com.example.gostalk.data
+
+import com.example.gostalk.model.Page
+import kotlinx.coroutines.flow.Flow
+
+class PageRepository(private val pageDao: PageDao) {
+
+    fun getAllPagesFlow(): Flow<List<Page>> {
+        return pageDao.getAllPagesFlow()
+    }
+
+    fun getPagesForBookFlow(bookId: String): Flow<List<Page>> {
+        return pageDao.getPagesForBookFlow(bookId)
+    }
+
+    suspend fun getPageById(id: String): Page? {
+        return pageDao.getPageById(id)
+    }
+
+    suspend fun getAllPages(): List<Page> {
+        return pageDao.getAllPages()
+    }
+
+    suspend fun getPagesForBook(bookId: String): List<Page> {
+        return pageDao.getPagesForBook(bookId)
+    }
+
+    suspend fun insertPage(page: Page) {
+        pageDao.insertPage(page)
+    }
+
+    suspend fun updatePage(page: Page) {
+        pageDao.updatePage(page)
+    }
+
+    suspend fun deletePage(page: Page) {
+        pageDao.deletePage(page)
+    }
+}

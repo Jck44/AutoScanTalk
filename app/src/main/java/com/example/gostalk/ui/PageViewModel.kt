@@ -14,6 +14,7 @@ import com.example.gostalk.model.ButtonConfig
 import com.example.gostalk.model.importexport.ImportExportData
 import com.google.gson.Gson
 import com.example.gostalk.data.SettingsRepository
+import com.example.gostalk.data.PageRepository
 import com.example.gostalk.data.PageDao
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -32,7 +33,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 @OptIn(ExperimentalCoroutinesApi::class)
 class PageViewModel(
     application: Application,
-    private val pageDao: PageDao,
+    private val pageRepository: PageRepository,
     private val settingsRepository: SettingsRepository,
     private var ttsHelper: TextToSpeechHelper? = null
 ) : AndroidViewModel(application) {
@@ -85,7 +86,7 @@ class PageViewModel(
         viewModelScope.launch {
             _activeBookId.flatMapLatest { bookId ->
                 if (bookId != null) {
-                    pageDao.getPagesForBookFlow(bookId)
+                    pageRepository.getPagesForBookFlow(bookId)
                 } else {
                     flowOf(emptyList()) // No book selected, no pages
                 }
@@ -194,7 +195,7 @@ class PageViewModel(
                     }
                 }
                 viewModelScope.launch {
-                    val nextPage = pageDao.getPageById(action.pageId)
+                    val nextPage = pageRepository.getPageById(action.pageId)
                     if (nextPage != null) {
                         loadPage(nextPage) // Lädt die neue Seite
                         resumeScanningIfEnabled() // Restart scanning for the new page
@@ -255,19 +256,19 @@ class PageViewModel(
             buttonConfigs = buttonConfigs
         )
         viewModelScope.launch(Dispatchers.IO) {
-            pageDao.insertPage(newPage)
+            pageRepository.insertPage(newPage)
         }
         return newPageId
     }
 
     fun updateButtonConfig(pageId: String, index: Int, newConfig: com.example.gostalk.model.ButtonConfig?) {
         viewModelScope.launch(Dispatchers.IO) {
-            val page = pageDao.getPageById(pageId)
+            val page = pageRepository.getPageById(pageId)
             if (page != null && index in page.buttonConfigs.indices) {
                 val updatedConfigs = page.buttonConfigs.toMutableList()
                 updatedConfigs[index] = newConfig
                 val updatedPage = page.copy(buttonConfigs = updatedConfigs)
-                pageDao.updatePage(updatedPage)
+                pageRepository.updatePage(updatedPage)
                 
                 // If it's the currently active page being viewed/edited, refresh the state
                 if (_currentPage.value?.id == pageId) {
@@ -279,10 +280,10 @@ class PageViewModel(
 
     fun updatePageName(pageId: String, newName: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            val page = pageDao.getPageById(pageId)
+            val page = pageRepository.getPageById(pageId)
             if (page != null) {
                 val updatedPage = page.copy(name = newName)
-                pageDao.updatePage(updatedPage)
+                pageRepository.updatePage(updatedPage)
                 
                 if (_currentPage.value?.id == pageId) {
                     _currentPage.value = updatedPage
@@ -293,7 +294,7 @@ class PageViewModel(
 
     fun deletePage(page: Page) {
         viewModelScope.launch(Dispatchers.IO) {
-            pageDao.deletePage(page)
+            pageRepository.deletePage(page)
         }
     }
 
@@ -363,7 +364,7 @@ class PageViewModel(
                 }
 
                 // 3. Save to DB
-                newPages.forEach { pageDao.insertPage(it) }
+                newPages.forEach { pageRepository.insertPage(it) }
                 android.util.Log.d("GoSTalkImport", "Successfully committed ${newPages.size} pages to Database")
                 
                 launch(Dispatchers.Main) { onSuccess() }
@@ -385,13 +386,13 @@ class PageViewModel(
 // ViewModel Factory, um Parameter an den PageViewModel zu übergeben
 class PageViewModelFactory(
     private val application: Application,
-    private val pageDao: PageDao,
+    private val pageRepository: PageRepository,
     private val settingsRepository: SettingsRepository
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(PageViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return PageViewModel(application, pageDao, settingsRepository) as T
+            return PageViewModel(application, pageRepository, settingsRepository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
