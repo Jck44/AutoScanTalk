@@ -174,10 +174,14 @@ class PageViewModel(
     }
 
     private fun logAction(actionText: String) {
+        val timeFormat = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault())
+        val timeString = timeFormat.format(java.util.Date())
+        val entry = "[$timeString] $actionText"
+
         _lastActions.update { currentActions ->
             val updatedActions = currentActions.toMutableList()
-            updatedActions.add(0, actionText)
-            if (updatedActions.size > 5) {
+            updatedActions.add(0, entry)
+            if (updatedActions.size > 100) {
                 updatedActions.removeLast()
             }
             updatedActions

@@ -26,7 +26,9 @@ class ActionExecutor(
         
         when (val action = buttonConfig.buttonAction) {
             is SpeakTextButtonAction -> {
-                val textToSpeak = buttonConfig.spokenText?.takeIf { it.isNotBlank() } ?: action.textToSpeech
+                val textToSpeak = buttonConfig.spokenText?.takeIf { it.isNotBlank() } 
+                    ?: action.textToSpeech.takeIf { it.isNotBlank() }
+                    ?: buttonConfig.label
                 if (ttsHelper?.isReady == true) {
                     ttsHelper?.speakRouted(textToSpeak, settingsRepository.ttsAudioDeviceAddress) {
                         onResumeScanning()
