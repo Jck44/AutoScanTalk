@@ -38,6 +38,7 @@ fun ButtonConfigDialog(
 ) {
     // Current State
     var label by remember { mutableStateOf(initialConfig?.label ?: "") }
+    var spokenText by remember { mutableStateOf(initialConfig?.spokenText ?: "") }
     var ttsFeedback by remember { 
         mutableStateOf(
             (initialConfig?.auditoryCue as? AuditoryCue.TextToSpeechCue)?.text ?: ""
@@ -71,6 +72,15 @@ fun ButtonConfigDialog(
                     onValueChange = { label = it },
                     label = { Text("Aufschrift (Label)") },
                     singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                // Explicit Spoken Text Input
+                OutlinedTextField(
+                    value = spokenText,
+                    onValueChange = { spokenText = it },
+                    label = { Text("Gesprochener Text (Optional)") },
+                    singleLine = false,
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -162,7 +172,9 @@ fun ButtonConfigDialog(
                         val action: ButtonAction = if (selectedActionType == "Zu Seite navigieren") {
                             NavigateToPageButtonAction(pageId = navigateToPageId, ttsFeedback = navigateTtsFeedback.takeIf { it.isNotBlank() })
                         } else {
-                            SpeakTextButtonAction(textToSpeech = label)
+                            // We use the new spokenText as primary for textToSpeech, fallback to label for legacy support 
+                            // in PageViewModel if it checks action.textToSpeech natively.
+                            SpeakTextButtonAction(textToSpeech = spokenText.takeIf { it.isNotBlank() } ?: label)
                         }
 
                         val cue = if (ttsFeedback.isNotBlank()) {
@@ -171,7 +183,15 @@ fun ButtonConfigDialog(
                             null
                         }
 
-                        onSave(ButtonConfig(id = buttonId, label = label, buttonAction = action, auditoryCue = cue))
+                        onSave(
+                            ButtonConfig(
+                                id = buttonId, 
+                                label = label, 
+                                spokenText = spokenText.takeIf { it.isNotBlank() },
+                                buttonAction = action, 
+                                auditoryCue = cue
+                            )
+                        )
                     }
                 }
             ) {

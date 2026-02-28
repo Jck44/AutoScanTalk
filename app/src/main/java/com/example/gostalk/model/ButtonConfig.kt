@@ -13,6 +13,7 @@ import java.util.UUID
 data class ButtonConfig(
     val id: String = UUID.randomUUID().toString(),
     val label: String,
+    val spokenText: String? = null,
     val auditoryCue: AuditoryCue?,
     val buttonAction: ButtonAction
 )

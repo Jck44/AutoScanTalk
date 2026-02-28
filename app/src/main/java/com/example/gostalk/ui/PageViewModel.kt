@@ -156,20 +156,22 @@ class PageViewModel(
 
         when (val action = buttonConfig.buttonAction) {
             is SpeakTextButtonAction -> {
+                val textToSpeak = buttonConfig.spokenText?.takeIf { it.isNotBlank() } ?: action.textToSpeech
                 if (ttsHelper?.isReady == true) {
-                    ttsHelper?.speak(action.textToSpeech)
-                    logAction("Gesprochen: \"${action.textToSpeech}\"")
+                    ttsHelper?.speak(textToSpeak)
+                    logAction("Gesprochen: \"$textToSpeak\"")
                 } else {
-                    logAction("Sprechen (TTS nicht bereit): \"${action.textToSpeech}\"")
+                    logAction("Sprechen (TTS nicht bereit): \"$textToSpeak\"")
                 }
             }
             is NavigateToPageButtonAction -> {
-                action.ttsFeedback?.let { feedback ->
+                val feedback = buttonConfig.spokenText?.takeIf { it.isNotBlank() } ?: action.ttsFeedback
+                feedback?.let { fb ->
                     if (ttsHelper?.isReady == true) {
-                        ttsHelper?.speak(feedback)
-                        logAction("Navigations-Feedback: \"$feedback\"")
+                        ttsHelper?.speak(fb)
+                        logAction("Navigations-Feedback: \"$fb\"")
                     } else {
-                        logAction("Nav-Feedback (TTS nicht bereit): \"$feedback\"")
+                        logAction("Nav-Feedback (TTS nicht bereit): \"$fb\"")
                     }
                 }
                 viewModelScope.launch {
