@@ -1,6 +1,7 @@
 package com.example.gostalk
 
 import android.os.Bundle
+import android.view.KeyEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels // Import für by viewModels
@@ -39,6 +40,7 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
 
     private lateinit var settingsRepository: SettingsRepository
+    private lateinit var globalPageViewModel: PageViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -135,6 +137,7 @@ class MainActivity : ComponentActivity() {
         val pageViewModel: PageViewModel by viewModels {
             PageViewModelFactory(application, pageRepository, settingsRepository)
         }
+        globalPageViewModel = pageViewModel
         pageViewModel.setActiveBookId(defaultBookId)
 
         val settingsViewModel: SettingsViewModel by viewModels {
@@ -221,5 +224,30 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (event.action == KeyEvent.ACTION_DOWN && ::globalPageViewModel.isInitialized) {
+            val volumeActivate = settingsRepository.volumeKeysActivate
+            val switchKey = settingsRepository.switchActivationKey.trim()
+            val keyCode = event.keyCode
+
+            val isVolumeKey = keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN
+
+            val isSwitchKey = when (switchKey.lowercase()) {
+                "space", "leertaste" -> keyCode == KeyEvent.KEYCODE_SPACE
+                "enter", "return" -> keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER
+                else -> {
+                    val pressedChar = event.displayLabel.toString()
+                    switchKey.isNotEmpty() && pressedChar.equals(switchKey, ignoreCase = true)
+                }
+            }
+
+            if ((volumeActivate && isVolumeKey) || isSwitchKey) {
+                globalPageViewModel.activateFocusedButton()
+                return true // Event konsumieren
+            }
+        }
+        return super.dispatchKeyEvent(event)
     }
 }

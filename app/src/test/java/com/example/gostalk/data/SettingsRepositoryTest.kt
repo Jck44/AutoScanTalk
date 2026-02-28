@@ -145,4 +145,36 @@ class SettingsRepositoryTest {
         assertEquals(testJson, repository.actionLogsStorage)
         assertEquals(testJson, repository.actionLogsStorageFlow.first())
     }
+
+    @Test
+    fun switchActivationKey_initializesSpace() = runBlocking {
+        every { mockPrefs.getString("switch_activation_key", "Space") } returns "Space"
+        assertEquals("Space", repository.switchActivationKey)
+        assertEquals("Space", repository.switchActivationKeyFlow.first())
+    }
+
+    @Test
+    fun switchActivationKey_savesAndEmitsValue() = runBlocking {
+        repository.switchActivationKey = "Enter"
+
+        assertEquals("Enter", mockedPrefsStore["switch_activation_key"])
+        assertEquals("Enter", repository.switchActivationKey)
+        assertEquals("Enter", repository.switchActivationKeyFlow.first())
+    }
+
+    @Test
+    fun volumeKeysActivate_initializesFalse() = runBlocking {
+        every { mockPrefs.getBoolean("volume_keys_activate", false) } returns false
+        assertEquals(false, repository.volumeKeysActivate)
+        assertEquals(false, repository.volumeKeysActivateFlow.first())
+    }
+
+    @Test
+    fun volumeKeysActivate_savesAndEmitsValue() = runBlocking {
+        repository.volumeKeysActivate = true
+
+        assertEquals("true", mockedPrefsStore["volume_keys_activate"])
+        assertEquals(true, repository.volumeKeysActivate)
+        assertEquals(true, repository.volumeKeysActivateFlow.first())
+    }
 }

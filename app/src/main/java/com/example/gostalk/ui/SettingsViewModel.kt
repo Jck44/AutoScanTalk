@@ -58,6 +58,12 @@ class SettingsViewModel(
     private val _persistActionLogs = MutableStateFlow(false)
     val persistActionLogs: StateFlow<Boolean> = _persistActionLogs.asStateFlow()
 
+    private val _switchActivationKey = MutableStateFlow("Space")
+    val switchActivationKey: StateFlow<String> = _switchActivationKey.asStateFlow()
+
+    private val _volumeKeysActivate = MutableStateFlow(false)
+    val volumeKeysActivate: StateFlow<Boolean> = _volumeKeysActivate.asStateFlow()
+
     init {
         // Initiale Einstellungen laden
         _selectedLanguageTag.value = settingsRepository.ttsLanguage ?: "default"
@@ -69,6 +75,8 @@ class SettingsViewModel(
         _selectedTtsAudioDeviceAddress.value = settingsRepository.ttsAudioDeviceAddress
         _selectedCuesAudioDeviceAddress.value = settingsRepository.cuesAudioDeviceAddress
         _persistActionLogs.value = settingsRepository.persistActionLogs
+        _switchActivationKey.value = settingsRepository.switchActivationKey
+        _volumeKeysActivate.value = settingsRepository.volumeKeysActivate
         
         // Den lokalen TTS-Helper mit den gespeicherten Werten füttern,
         // sonst spricht er in den Einstellungen initial in Systemsprache
@@ -145,6 +153,16 @@ class SettingsViewModel(
     fun setPersistActionLogs(enabled: Boolean) {
         settingsRepository.persistActionLogs = enabled
         _persistActionLogs.value = enabled
+    }
+
+    fun setSwitchActivationKey(key: String) {
+        settingsRepository.switchActivationKey = key
+        _switchActivationKey.value = key
+    }
+
+    fun setVolumeKeysActivate(enabled: Boolean) {
+        settingsRepository.volumeKeysActivate = enabled
+        _volumeKeysActivate.value = enabled
     }
 
     fun setDefaultStartPageId(pageId: String?) {

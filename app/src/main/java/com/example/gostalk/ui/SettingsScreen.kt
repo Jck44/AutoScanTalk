@@ -12,10 +12,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -59,6 +57,8 @@ fun SettingsScreen(
     val selectedCuesAudioDeviceAddress by settingsViewModel.selectedCuesAudioDeviceAddress.collectAsState()
     val resumeScanningFromStart by settingsViewModel.resumeScanningFromStart.collectAsState()
     val persistActionLogs by settingsViewModel.persistActionLogs.collectAsState()
+    val switchActivationKey by settingsViewModel.switchActivationKey.collectAsState()
+    val volumeKeysActivate by settingsViewModel.volumeKeysActivate.collectAsState()
 
     var expandedLanguage by remember { mutableStateOf(false) }
     var expandedStartPage by remember { mutableStateOf(false) }
@@ -481,9 +481,55 @@ fun SettingsScreen(
                 text = "Wie viele Millisekunden soll beim automatischen Scannen gewartet werden?",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp, start = 4.dp, bottom = 24.dp)
+            )
+
+            Text(
+                text = "Hardware Eingabe & Schalter",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = switchActivationKey,
+                onValueChange = { settingsViewModel.setSwitchActivationKey(it) },
+                label = { Text("Zeichen für externen Taster/Switch") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Text(
+                text = "Dieses Zeichen (z.B. Enter, Space, a) löst den fokussierten Button aus.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp, start = 4.dp)
             )
 
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { settingsViewModel.setVolumeKeysActivate(!volumeKeysActivate) }
+                    .padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Lautstärke-Tasten als Auslöser",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Text(
+                        text = "Erlaubt die Button-Aktivierung über die Lauter/Leiser Tasten am Gerät (für Testzwecke).",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Switch(
+                    checked = volumeKeysActivate,
+                    onCheckedChange = { settingsViewModel.setVolumeKeysActivate(it) }
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }

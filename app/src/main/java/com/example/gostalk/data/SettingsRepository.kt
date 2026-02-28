@@ -106,6 +106,26 @@ class SettingsRepository(context: Context) {
             _actionLogsStorageFlow.value = value
         }
 
+    private val _switchActivationKeyFlow = MutableStateFlow(prefs.getString(KEY_SWITCH_ACTIVATION_KEY, "Space") ?: "Space")
+    val switchActivationKeyFlow: StateFlow<String> = _switchActivationKeyFlow.asStateFlow()
+
+    var switchActivationKey: String
+        get() = prefs.getString(KEY_SWITCH_ACTIVATION_KEY, "Space") ?: "Space"
+        set(value) {
+            prefs.edit().putString(KEY_SWITCH_ACTIVATION_KEY, value).apply()
+            _switchActivationKeyFlow.value = value
+        }
+
+    private val _volumeKeysActivateFlow = MutableStateFlow(prefs.getBoolean(KEY_VOLUME_KEYS_ACTIVATE, false))
+    val volumeKeysActivateFlow: StateFlow<Boolean> = _volumeKeysActivateFlow.asStateFlow()
+
+    var volumeKeysActivate: Boolean
+        get() = prefs.getBoolean(KEY_VOLUME_KEYS_ACTIVATE, false)
+        set(value) {
+            prefs.edit().putBoolean(KEY_VOLUME_KEYS_ACTIVATE, value).apply()
+            _volumeKeysActivateFlow.value = value
+        }
+
     companion object {
         private const val PREFS_NAME = "gostalk_settings"
         private const val KEY_TTS_LANGUAGE = "tts_language"
@@ -118,5 +138,7 @@ class SettingsRepository(context: Context) {
         private const val KEY_CUES_AUDIO_DEVICE = "cues_audio_device_address"
         private const val KEY_PERSIST_ACTION_LOGS = "persist_action_logs"
         private const val KEY_ACTION_LOGS_STORAGE = "action_logs_storage"
+        private const val KEY_SWITCH_ACTIVATION_KEY = "switch_activation_key"
+        private const val KEY_VOLUME_KEYS_ACTIVATE = "volume_keys_activate"
     }
 }
