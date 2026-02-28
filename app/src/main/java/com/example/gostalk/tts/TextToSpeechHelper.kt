@@ -6,7 +6,11 @@ import android.os.Looper
 import android.speech.tts.TextToSpeech
 import android.util.Log
 import android.widget.Toast
+import java.io.File
 import java.util.Locale
+import com.example.gostalk.core.AudioDeviceManager
+import com.example.gostalk.tts.RoutedAudioPlayer
+import java.util.concurrent.ConcurrentHashMap
 
 class TextToSpeechHelper(
     private val context: Context
@@ -17,6 +21,13 @@ class TextToSpeechHelper(
     val isReady: Boolean get() = initialized
     private val handler = Handler(Looper.getMainLooper())
     private var pendingLanguageTag: String? = null
+    private var pendingVoiceName: String? = null
+
+    private val audioDeviceManager = AudioDeviceManager(context)
+    private val routedAudioPlayer = RoutedAudioPlayer(context, audioDeviceManager)
+    
+    private data class PlaybackRequest(val file: File, val deviceAddress: String?)
+    private val playRequests = ConcurrentHashMap<String, PlaybackRequest>()
 
     init {
         try {
@@ -29,7 +40,23 @@ class TextToSpeechHelper(
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
             initialized = true
-            setLanguageAndVoice(pendingLanguageTag)
+            tts?.setOnUtteranceProgressListener(object : android.speech.tts.UtteranceProgressListener() {
+                override fun onStart(utteranceId: String?) {}
+
+                override fun onDone(utteranceId: String?) {
+                    val request = playRequests.remove(utteranceId)
+                    if (request != null) {
+                        routedAudioPlayer.playAudioFile(request.file, request.deviceAddress) {
+                            request.file.delete()
+                        }
+                    }
+                }
+
+                override fun onError(utteranceId: String?) {
+                    playRequests.remove(utteranceId)?.file?.delete()
+                }
+            })
+            setLanguageAndVoice(pendingLanguageTag, pendingVoiceName)
         } else {
             showToast("TTS init failed! Status code: $status")
             initialized = false
@@ -44,11 +71,28 @@ class TextToSpeechHelper(
     }
 
     fun speak(text: String, queueMode: Int = TextToSpeech.QUEUE_FLUSH) {
-        if (initialized && tts != null) {
-            tts?.speak(text, queueMode, null, null)
-        } else {
+        speakRouted(text, null, queueMode)
+    }
+
+    fun speakRouted(text: String, deviceAddress: String?, queueMode: Int = TextToSpeech.QUEUE_FLUSH) {
+        if (!initialized || tts == null) {
             showToast("TTS not initialized, cannot speak.")
+            return
         }
+
+        if (deviceAddress == null) {
+            tts?.speak(text, queueMode, null, null)
+            return
+        }
+
+        val utteranceId = "routed_${System.currentTimeMillis()}_${text.hashCode()}"
+        val cacheFile = File(context.cacheDir, "$utteranceId.wav")
+        playRequests[utteranceId] = PlaybackRequest(cacheFile, deviceAddress)
+
+        val params = android.os.Bundle().apply {
+            putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, utteranceId)
+        }
+        tts?.synthesizeToFile(text, params, cacheFile, utteranceId)
     }
 
     /**
@@ -58,7 +102,8 @@ class TextToSpeechHelper(
      */
     fun setLanguageAndVoice(languageTag: String?, voiceName: String? = null) {
         if (!initialized || tts == null) {
-            pendingLanguageTag = languageTag // Puffern bis onInit feuert (Voice buffering omitting for simplicity unless requested)
+            pendingLanguageTag = languageTag
+            pendingVoiceName = voiceName
             return
         }
 

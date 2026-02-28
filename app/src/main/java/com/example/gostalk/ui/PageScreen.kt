@@ -94,25 +94,12 @@ fun PageScreen(
                 val isFocused = globalIndex == focusedButtonIndex
 
                 if (buttonConfig != null) {
-                    Button(
-                        onClick = {
-                            pageViewModel.activateButtonAtIndex(globalIndex)
-                        },
-                        modifier = Modifier
-                            .aspectRatio(1f) // Sorgt für quadratische Buttons
-                            .fillMaxSize(),
-                        shape = MaterialTheme.shapes.medium,
-                        border = if (isFocused) BorderStroke(3.dp, MaterialTheme.colorScheme.primary) else null,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    ) {
-                        Text(
-                            text = buttonConfig.label,
-                            textAlign = TextAlign.Center
-                        )
-                    }
+                    GridButton(
+                        buttonConfig = buttonConfig,
+                        isFocused = isFocused,
+                        isEditorMode = false,
+                        onClick = { pageViewModel.activateButtonAtIndex(globalIndex) }
+                    )
                 } else {
                     // Leerer Platzhalter für null ButtonConfig
                     Spacer(modifier = Modifier

@@ -93,34 +93,15 @@ fun PageEditorScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 itemsIndexed(page.buttonConfigs) { globalIndex, buttonConfig ->
-                    Card(
-                        modifier = Modifier
-                            .aspectRatio(1f)
-                            .clickable {
-                                selectedButtonIndex = globalIndex
-                                showDialog = true
-                            },
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                        border = BorderStroke(
-                            width = 1.dp,
-                            color = MaterialTheme.colorScheme.outlineVariant
-                        ),
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (buttonConfig != null) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
-                        )
-                    ) {
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            Text(
-                                text = buttonConfig?.label ?: "+",
-                                textAlign = TextAlign.Center,
-                                style = if (buttonConfig != null) MaterialTheme.typography.titleMedium else MaterialTheme.typography.displayMedium,
-                                color = if (buttonConfig != null) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.outline
-                            )
+                    GridButton(
+                        buttonConfig = buttonConfig,
+                        isFocused = false,
+                        isEditorMode = true,
+                        onClick = {
+                            selectedButtonIndex = globalIndex
+                            showDialog = true
                         }
-                    }
+                    )
                 }
             }
         }
