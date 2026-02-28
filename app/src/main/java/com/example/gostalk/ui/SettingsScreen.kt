@@ -55,6 +55,7 @@ fun SettingsScreen(
     val availableAudioDevices by settingsViewModel.availableAudioDevices.collectAsState()
     val selectedTtsAudioDeviceAddress by settingsViewModel.selectedTtsAudioDeviceAddress.collectAsState()
     val selectedCuesAudioDeviceAddress by settingsViewModel.selectedCuesAudioDeviceAddress.collectAsState()
+    val resumeScanningFromStart by settingsViewModel.resumeScanningFromStart.collectAsState()
 
     var expandedLanguage by remember { mutableStateOf(false) }
     var expandedStartPage by remember { mutableStateOf(false) }
@@ -405,6 +406,33 @@ fun SettingsScreen(
                 Switch(
                     checked = autoStartScanning,
                     onCheckedChange = { settingsViewModel.setAutoStartScanning(it) }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Checkbox/Switch für Resume Scanning Behavior
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { settingsViewModel.setResumeScanningFromStart(!resumeScanningFromStart) }
+                    .padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Scannen nach Aktion von Beginn starten",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Text(
+                        text = "Aus = Beim zuletzt fokussierten Button fortsetzen",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Switch(
+                    checked = resumeScanningFromStart,
+                    onCheckedChange = { settingsViewModel.setResumeScanningFromStart(it) }
                 )
             }
 

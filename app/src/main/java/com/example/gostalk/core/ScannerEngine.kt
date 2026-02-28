@@ -25,7 +25,7 @@ class ScannerEngine(
     var scanDelayMillis: Long = 1000L
     var isAutoScanningEnabled: Boolean = false
 
-    fun startScanning(buttonConfigs: List<ButtonConfig?>) {
+    fun startScanning(buttonConfigs: List<ButtonConfig?>, startIndex: Int = 0) {
         scanJob?.cancel()
         
         val activeButtonsWithGlobalIndices = buttonConfigs
@@ -38,8 +38,14 @@ class ScannerEngine(
             return
         }
 
+        // Finde den Startpunkt in der gefilterten Liste
+        val startingPosition = activeButtonsWithGlobalIndices.indexOfFirst { it.first >= startIndex }
+            .coerceAtLeast(0)
+
         scanJob = scope.launch {
-            for ((globalIndex, buttonConfig) in activeButtonsWithGlobalIndices) {
+            // Schleife ab dem Startpunkt
+            for (i in startingPosition until activeButtonsWithGlobalIndices.size) {
+                val (globalIndex, buttonConfig) = activeButtonsWithGlobalIndices[i]
                 _focusedButtonIndex.value = globalIndex
                 val cue = buttonConfig.auditoryCue
 
@@ -52,14 +58,30 @@ class ScannerEngine(
 
                 if (ttsHelper?.isReady == true) {
                     val cueText = (cue as? AuditoryCue.TextToSpeechCue)?.text?.takeIf { it.isNotBlank() } ?: buttonConfig.label
-                    ttsHelper?.speakRouted(cueText, settingsRepository.cuesAudioDeviceAddress)
+                    ttsHelper?.speakRouted(
+                        text = cueText, 
+                        deviceAddress = settingsRepository.cuesAudioDeviceAddress,
+                        queueMode = android.speech.tts.TextToSpeech.QUEUE_FLUSH
+                    )
                 }
                 delay(scanDelayMillis)
             }
+            // Wenn wir durch sind, fangen wir normalerweise nicht von vorne an, sondern hören auf oder resetten
             _focusedButtonIndex.value = null
         }
     }
 
+    /**
+     * Stoppt das Scannen temporär, ohne den aktuellen Index zu löschen.
+     * Nützlich, wenn eine Aktion ausgeführt wird.
+     */
+    fun pauseScanning() {
+        scanJob?.cancel()
+    }
+
+    /**
+     * Stoppt das Scannen komplett und setzt den Index zurück.
+     */
     fun stopScanning() {
         scanJob?.cancel()
         _focusedButtonIndex.value = null

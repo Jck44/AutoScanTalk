@@ -16,41 +16,58 @@ class ActionExecutor(
     private val settingsRepository: SettingsRepository,
     var ttsHelper: TextToSpeechHelper?,
     private val onLoadPage: (Page) -> Unit,
+    private val onPauseScanning: () -> Unit,
     private val onResumeScanning: () -> Unit,
     private val onLogAction: (String) -> Unit
 ) {
 
     fun executeButtonAction(buttonConfig: ButtonConfig) {
+        onPauseScanning()
+        
         when (val action = buttonConfig.buttonAction) {
             is SpeakTextButtonAction -> {
                 val textToSpeak = buttonConfig.spokenText?.takeIf { it.isNotBlank() } ?: action.textToSpeech
                 if (ttsHelper?.isReady == true) {
-                    ttsHelper?.speakRouted(textToSpeak, settingsRepository.ttsAudioDeviceAddress)
+                    ttsHelper?.speakRouted(textToSpeak, settingsRepository.ttsAudioDeviceAddress) {
+                        onResumeScanning()
+                    }
                     onLogAction("Gesprochen: \"$textToSpeak\"")
                 } else {
                     onLogAction("Sprechen (TTS nicht bereit): \"$textToSpeak\"")
+                    onResumeScanning()
                 }
             }
             is NavigateToPageButtonAction -> {
                 val feedback = buttonConfig.spokenText?.takeIf { it.isNotBlank() } ?: action.ttsFeedback
-                feedback?.let { fb ->
-                    if (ttsHelper?.isReady == true) {
-                        ttsHelper?.speakRouted(fb, settingsRepository.cuesAudioDeviceAddress)
-                        onLogAction("Navigations-Feedback: \"$fb\"")
-                    } else {
-                        onLogAction("Nav-Feedback (TTS nicht bereit): \"$fb\"")
+                
+                // Closure to execute the actual navigation
+                val performNavigation = {
+                    scope.launch {
+                        val nextPage = pageRepository.getPageById(action.pageId)
+                        if (nextPage != null) {
+                            onLoadPage(nextPage)
+                            // onResumeScanning() is NOT called here because PageScreen's
+                            // DisposableEffect automatically resumes scanning when currentPage changes!
+                            onLogAction("Navigiert zu Seite: ${nextPage.name} (ID: ${action.pageId})")
+                        } else {
+                            onLogAction("Fehler: Seite mit ID '${action.pageId}' nicht gefunden.")
+                            if (ttsHelper?.isReady == true) {
+                                ttsHelper?.speak("Seite nicht gefunden") { onResumeScanning() }
+                            } else {
+                                onResumeScanning()
+                            }
+                        }
                     }
                 }
-                scope.launch {
-                    val nextPage = pageRepository.getPageById(action.pageId)
-                    if (nextPage != null) {
-                        onLoadPage(nextPage)
-                        onResumeScanning()
-                        onLogAction("Navigiert zu Seite: ${nextPage.name} (ID: ${action.pageId})")
-                    } else {
-                        onLogAction("Fehler: Seite mit ID '${action.pageId}' nicht gefunden.")
-                        if (ttsHelper?.isReady == true) ttsHelper?.speak("Seite nicht gefunden")
+
+                if (feedback != null && ttsHelper?.isReady == true) {
+                    ttsHelper?.speakRouted(feedback, settingsRepository.cuesAudioDeviceAddress) {
+                        performNavigation()
                     }
+                    onLogAction("Navigations-Feedback: \"$feedback\"")
+                } else {
+                    if (feedback != null) onLogAction("Nav-Feedback (TTS nicht bereit): \"$feedback\"")
+                    performNavigation()
                 }
             }
         }

@@ -61,6 +61,7 @@ class PageViewModel(
         settingsRepository = settingsRepository,
         ttsHelper = ttsHelper,
         onLoadPage = { page -> loadPage(page) },
+        onPauseScanning = { stopScanningTemporarily() },
         onResumeScanning = { resumeScanningIfEnabled() },
         onLogAction = { actionText -> logAction(actionText) }
     )
@@ -126,7 +127,12 @@ class PageViewModel(
 
     fun resumeScanningIfEnabled() {
         if (settingsRepository.autoStartScanning) {
-            startScanning()
+            val startIndex = if (settingsRepository.resumeScanningFromStart) {
+                0
+            } else {
+                focusedButtonIndex.value ?: 0
+            }
+            startScanning(startIndex)
         }
     }
 
@@ -137,9 +143,13 @@ class PageViewModel(
         }
     }
 
-    fun startScanning() {
+    fun startScanning(startIndex: Int = 0) {
         val page = _currentPage.value ?: return
-        scannerEngine.startScanning(page.buttonConfigs)
+        scannerEngine.startScanning(page.buttonConfigs, startIndex)
+    }
+
+    fun stopScanningTemporarily() {
+        scannerEngine.pauseScanning()
     }
 
     fun stopScanning() {
@@ -150,8 +160,9 @@ class PageViewModel(
         val page = _currentPage.value ?: return
         val buttonConfig = page.buttonConfigs.getOrNull(index) ?: return
         
-        // When user directly activates, they might want to stop the auto-scanning focus loop
-        scannerEngine.stopScanning()
+        // When user directly activates, temporarily stop it so the action executor 
+        // can handle resuming it based on settings after the action finishes
+        stopScanningTemporarily()
         scannerEngine.setFocusedIndex(index)
 
         actionExecutor.executeButtonAction(buttonConfig)

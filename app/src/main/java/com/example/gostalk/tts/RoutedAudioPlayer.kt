@@ -99,4 +99,21 @@ class RoutedAudioPlayer(
             }
         }
     }
+
+    fun stopAll() {
+        val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        activePlayers.keys.forEach { player ->
+            try {
+                if (player.isPlaying) {
+                    player.stop()
+                }
+                player.release()
+                // Communication device cleanup is safer to just call here just in case
+                audioManager.clearCommunicationDevice()
+            } catch (e: Exception) {
+                Log.e("RoutedAudioPlayer", "Error stopping player", e)
+            }
+        }
+        activePlayers.clear()
+    }
 }

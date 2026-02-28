@@ -40,6 +40,9 @@ class SettingsViewModel(
     private val _scanDelayInput = MutableStateFlow("1000")
     val scanDelayInput: StateFlow<String> = _scanDelayInput.asStateFlow()
 
+    private val _resumeScanningFromStart = MutableStateFlow(true)
+    val resumeScanningFromStart: StateFlow<Boolean> = _resumeScanningFromStart.asStateFlow()
+
     private val _defaultStartPageId = MutableStateFlow<String?>(null)
     val defaultStartPageId: StateFlow<String?> = _defaultStartPageId.asStateFlow()
 
@@ -58,6 +61,7 @@ class SettingsViewModel(
         _selectedVoiceName.value = settingsRepository.ttsVoiceName
         _autoStartScanning.value = settingsRepository.autoStartScanning
         _scanDelayInput.value = settingsRepository.scanDelayMillis.toString()
+        _resumeScanningFromStart.value = settingsRepository.resumeScanningFromStart
         _defaultStartPageId.value = settingsRepository.defaultStartPageId
         _selectedTtsAudioDeviceAddress.value = settingsRepository.ttsAudioDeviceAddress
         _selectedCuesAudioDeviceAddress.value = settingsRepository.cuesAudioDeviceAddress
@@ -127,6 +131,11 @@ class SettingsViewModel(
         if (parsed != null && parsed >= 100L) {
             settingsRepository.scanDelayMillis = parsed
         }
+    }
+
+    fun setResumeScanningFromStart(fromStart: Boolean) {
+        settingsRepository.resumeScanningFromStart = fromStart
+        _resumeScanningFromStart.value = fromStart
     }
 
     fun setDefaultStartPageId(pageId: String?) {

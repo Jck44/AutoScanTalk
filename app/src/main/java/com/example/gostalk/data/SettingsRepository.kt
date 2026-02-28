@@ -36,6 +36,16 @@ class SettingsRepository(context: Context) {
             _scanDelayFlow.value = value
         }
 
+    private val _resumeScanningFromStartFlow = MutableStateFlow(prefs.getBoolean(KEY_RESUME_SCANNING_FROM_START, true))
+    val resumeScanningFromStartFlow: StateFlow<Boolean> = _resumeScanningFromStartFlow.asStateFlow()
+
+    var resumeScanningFromStart: Boolean
+        get() = prefs.getBoolean(KEY_RESUME_SCANNING_FROM_START, true) // Standardmäßig von vorn (true)
+        set(value) {
+            prefs.edit().putBoolean(KEY_RESUME_SCANNING_FROM_START, value).apply()
+            _resumeScanningFromStartFlow.value = value
+        }
+
     private val _defaultStartPageIdFlow = MutableStateFlow(prefs.getString(KEY_DEFAULT_START_PAGE_ID, null))
     val defaultStartPageIdFlow: StateFlow<String?> = _defaultStartPageIdFlow.asStateFlow()
 
@@ -82,6 +92,7 @@ class SettingsRepository(context: Context) {
         private const val KEY_TTS_VOICE_NAME = "tts_voice_name"
         private const val KEY_AUTO_START_SCANNING = "auto_start_scanning"
         private const val KEY_SCAN_DELAY_MILLIS = "scan_delay_millis"
+        private const val KEY_RESUME_SCANNING_FROM_START = "resume_scanning_from_start"
         private const val KEY_DEFAULT_START_PAGE_ID = "default_start_page_id"
         private const val KEY_TTS_AUDIO_DEVICE = "tts_audio_device_address"
         private const val KEY_CUES_AUDIO_DEVICE = "cues_audio_device_address"

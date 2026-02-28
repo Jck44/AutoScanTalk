@@ -26,7 +26,7 @@ class TextToSpeechHelper(
     private val audioDeviceManager = AudioDeviceManager(context)
     private val routedAudioPlayer = RoutedAudioPlayer(context, audioDeviceManager)
     
-    private data class PlaybackRequest(val file: File, val deviceAddress: String?)
+    private data class PlaybackRequest(val file: File, val deviceAddress: String?, val onDoneCallback: (() -> Unit)?)
     private val playRequests = ConcurrentHashMap<String, PlaybackRequest>()
 
     init {
@@ -50,16 +50,34 @@ class TextToSpeechHelper(
                             if (request.file.exists() && request.file.length() > 0) {
                                 routedAudioPlayer.playAudioFile(request.file, request.deviceAddress) {
                                     request.file.delete()
+                                    // Invoke the callback if provided, on the main thread
+                                    request.onDoneCallback?.let { callback ->
+                                        handler.post { callback() }
+                                    }
                                 }
                             } else {
                                 Log.e("TextToSpeechHelper", "Generated TTS file is empty or missing")
+                                // Even if file generation fails, we should invoke callback to not block UI flows
+                                request.onDoneCallback?.let { callback ->
+                                    handler.post { callback() }
+                                }
                             }
                         }, 50)
+                    } else if (utteranceId != null && utteranceId.startsWith("direct_")) {
+                        // This was a non-routed default TTS speak call
+                        val callback = directCallbacks.remove(utteranceId)
+                        callback?.let { handler.post { it() } }
                     }
                 }
 
                 override fun onError(utteranceId: String?) {
-                    playRequests.remove(utteranceId)?.file?.delete()
+                    val request = playRequests.remove(utteranceId)
+                    request?.file?.delete()
+                    request?.onDoneCallback?.let { handler.post { it() } }
+                    
+                    if (utteranceId != null && utteranceId.startsWith("direct_")) {
+                        directCallbacks.remove(utteranceId)?.let { handler.post { it() } }
+                    }
                 }
             })
             // Verzögern, damit die TTS Engine Zeit hat, das Voice-Array zu befüllen (asynchrones Android Verhalten)
@@ -84,24 +102,44 @@ class TextToSpeechHelper(
         }
     }
 
-    fun speak(text: String, queueMode: Int = TextToSpeech.QUEUE_FLUSH) {
-        speakRouted(text, null, queueMode)
+    // Support for direct callbacks
+    private val directCallbacks = ConcurrentHashMap<String, () -> Unit>()
+
+    fun speak(text: String, queueMode: Int = TextToSpeech.QUEUE_FLUSH, onDone: (() -> Unit)? = null) {
+        speakRouted(text, null, queueMode, onDone)
     }
 
-    fun speakRouted(text: String, deviceAddress: String?, queueMode: Int = TextToSpeech.QUEUE_FLUSH) {
+    fun speakRouted(text: String, deviceAddress: String?, queueMode: Int = TextToSpeech.QUEUE_FLUSH, onDone: (() -> Unit)? = null) {
         if (!initialized || tts == null) {
             showToast("TTS not initialized, cannot speak.")
+            onDone?.invoke()
             return
         }
 
+        if (queueMode == TextToSpeech.QUEUE_FLUSH) {
+            // Cancel generating TTS and clear old player queues
+            routedAudioPlayer.stopAll()
+            
+            // Invoke all pending callbacks before clearing so UI flows (like scanner) don't hang forever
+            playRequests.values.forEach { it.onDoneCallback?.let { cb -> handler.post { cb() } } }
+            directCallbacks.values.forEach { handler.post { it() } }
+            
+            playRequests.clear()
+            directCallbacks.clear()
+        }
+
         if (deviceAddress == null) {
-            tts?.speak(text, queueMode, null, null)
+            val utteranceId = "direct_${System.currentTimeMillis()}_${text.hashCode()}"
+            if (onDone != null) {
+                directCallbacks[utteranceId] = onDone
+            }
+            tts?.speak(text, queueMode, null, utteranceId)
             return
         }
 
         val utteranceId = "routed_${System.currentTimeMillis()}_${text.hashCode()}"
         val cacheFile = File(context.cacheDir, "$utteranceId.wav")
-        playRequests[utteranceId] = PlaybackRequest(cacheFile, deviceAddress)
+        playRequests[utteranceId] = PlaybackRequest(cacheFile, deviceAddress, onDone)
 
         val params = android.os.Bundle().apply {
             putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, utteranceId)
