@@ -38,14 +38,10 @@ class SettingsRepository(context: Context) {
             _scanDelayFlow.value = value
         }
 
-    private val _resumeScanningFromStartFlow = MutableStateFlow(prefs.getBoolean(KEY_RESUME_SCANNING_FROM_START, true))
-    val resumeScanningFromStartFlow: StateFlow<Boolean> = _resumeScanningFromStartFlow.asStateFlow()
-
     var resumeScanningFromStart: Boolean
         get() = prefs.getBoolean(KEY_RESUME_SCANNING_FROM_START, true) // Standardmäßig von vorn (true)
         set(value) {
             prefs.edit().putBoolean(KEY_RESUME_SCANNING_FROM_START, value).apply()
-            _resumeScanningFromStartFlow.value = value
         }
 
     private val _defaultStartPageIdFlow = MutableStateFlow(prefs.getString(KEY_DEFAULT_START_PAGE_ID, null))
@@ -68,24 +64,16 @@ class SettingsRepository(context: Context) {
             _ttsVoiceNameFlow.value = value
         }
 
-    private val _ttsAudioDeviceAddressFlow = MutableStateFlow(prefs.getString(KEY_TTS_AUDIO_DEVICE, null))
-    val ttsAudioDeviceAddressFlow: StateFlow<String?> = _ttsAudioDeviceAddressFlow.asStateFlow()
-
     var ttsAudioDeviceAddress: String?
         get() = prefs.getString(KEY_TTS_AUDIO_DEVICE, null)
         set(value) {
             prefs.edit().putString(KEY_TTS_AUDIO_DEVICE, value).apply()
-            _ttsAudioDeviceAddressFlow.value = value
         }
-
-    private val _cuesAudioDeviceAddressFlow = MutableStateFlow(prefs.getString(KEY_CUES_AUDIO_DEVICE, null))
-    val cuesAudioDeviceAddressFlow: StateFlow<String?> = _cuesAudioDeviceAddressFlow.asStateFlow()
 
     var cuesAudioDeviceAddress: String?
         get() = prefs.getString(KEY_CUES_AUDIO_DEVICE, null)
         set(value) {
             prefs.edit().putString(KEY_CUES_AUDIO_DEVICE, value).apply()
-            _cuesAudioDeviceAddressFlow.value = value
         }
 
     private val _persistActionLogsFlow = MutableStateFlow(prefs.getBoolean(KEY_PERSIST_ACTION_LOGS, false))
