@@ -28,13 +28,14 @@ import java.util.UUID
 class PageViewModel(
     application: Application,
     private val pageDao: PageDao,
-    private val settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository,
+    private var ttsHelper: TextToSpeechHelper? = null
 ) : AndroidViewModel(application) {
 
-    private var ttsHelper: TextToSpeechHelper? = null
-
     init {
-        ttsHelper = TextToSpeechHelper(application.applicationContext)
+        if (ttsHelper == null) {
+            ttsHelper = TextToSpeechHelper(application.applicationContext)
+        }
         // Settings live überwachen
         viewModelScope.launch {
             kotlinx.coroutines.flow.combine(
@@ -203,17 +204,38 @@ class PageViewModel(
         }
     }
 
-    fun createNewPage(name: String, rows: Int, columns: Int) {
+    fun createNewPage(name: String, rows: Int, columns: Int): String {
+        val newPageId = UUID.randomUUID().toString()
+        val totalSlots = rows * columns
+        val buttonConfigs = MutableList<ButtonConfig?>(totalSlots) { null }
+
+        if (totalSlots > 0) {
+            val homePageId = settingsRepository.defaultStartPageId ?: _allPages.value.firstOrNull()?.id
+            
+            if (homePageId != null) {
+                buttonConfigs[totalSlots - 1] = ButtonConfig(
+                    id = UUID.randomUUID().toString(),
+                    label = "zurück zum Start",
+                    buttonAction = NavigateToPageButtonAction(
+                        pageId = homePageId,
+                        ttsFeedback = "Zurück zur Startseite"
+                    ),
+                    auditoryCue = AuditoryCue.TextToSpeechCue("Zurück zur Startseite")
+                )
+            }
+        }
+
         val newPage = Page(
-            id = UUID.randomUUID().toString(),
+            id = newPageId,
             name = name,
             rows = rows,
             columns = columns,
-            buttonConfigs = List(rows * columns) { null } // Leeres Grid
+            buttonConfigs = buttonConfigs
         )
         viewModelScope.launch(Dispatchers.IO) {
             pageDao.insertPage(newPage)
         }
+        return newPageId
     }
 
     fun updateButtonConfig(pageId: String, index: Int, newConfig: com.example.gostalk.model.ButtonConfig?) {

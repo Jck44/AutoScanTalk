@@ -156,8 +156,9 @@ fun PageListScreen(
             AddPageDialog(
                 onDismiss = { showAddDialog = false },
                 onConfirm = { name, rows, cols ->
-                    pageViewModel.createNewPage(name, rows, cols)
+                    val newId = pageViewModel.createNewPage(name, rows, cols)
                     showAddDialog = false
+                    onEditPage(newId)
                 }
             )
         }

@@ -70,4 +70,7 @@ dependencies {
     
     // Gson for JSON serialization
     implementation("com.google.code.gson:gson:2.10.1")
+
+    // Tests
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
 }
