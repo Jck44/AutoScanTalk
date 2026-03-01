@@ -1,37 +1,5 @@
-package com.andreas_kratzer.ghosttalk.ui
-
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.ui.Alignment
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
-import android.content.res.Configuration
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.*
-import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.ui.unit.dp
-import java.util.Locale
-import com.andreas_kratzer.ghosttalk.util.VoiceUtils
+import androidx.compose.ui.res.stringResource
+import com.andreas_kratzer.ghosttalk.R
 
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
@@ -40,6 +8,7 @@ fun SettingsScreen(
     pageViewModel: PageViewModel,
     onNavigateBack: () -> Unit
 ) {
+    // ... values ...
     val selectedLanguage by settingsViewModel.selectedLanguageTag.collectAsState()
     val availableLanguages by settingsViewModel.availableLanguages.collectAsState()
     val autoStartScanning by settingsViewModel.autoStartScanning.collectAsState()
@@ -89,10 +58,13 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Einstellungen") },
+                title = { Text(stringResource(R.string.settings_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Zurück")
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack, 
+                            contentDescription = stringResource(R.string.back_button_content_description)
+                        )
                     }
                 }
             )
@@ -170,20 +142,21 @@ fun GeneralSettings(
     var expandedStartPage by remember { mutableStateOf(false) }
     var expandedDefaultScanPattern by remember { mutableStateOf(false) }
 
-    PreferenceCategory("Allgemein") {
+    PreferenceCategory(stringResource(R.string.settings_category_general)) {
         // Startseite
         Box(modifier = Modifier.fillMaxWidth()) {
-            val currentStartPageName = allPages.find { it.id == defaultStartPageId }?.name ?: "Automatisch (Erste Seite)"
+            val currentStartPageName = allPages.find { it.id == defaultStartPageId }?.name 
+                ?: stringResource(R.string.settings_start_page_auto)
             OutlinedTextField(
                 value = currentStartPageName,
                 onValueChange = {},
                 readOnly = true,
-                label = { Text("Standard Startseite") },
+                label = { Text(stringResource(R.string.settings_start_page)) },
                 modifier = Modifier.fillMaxWidth().clickable { expandedStartPage = true }
             )
             Box(modifier = Modifier.matchParentSize().clickable { expandedStartPage = true })
             DropdownMenu(expanded = expandedStartPage, onDismissRequest = { expandedStartPage = false }) {
-                DropdownMenuItem(text = { Text("Automatisch (Erste Seite)") }, onClick = {
+                DropdownMenuItem(text = { Text(stringResource(R.string.settings_start_page_auto)) }, onClick = {
                     settingsViewModel.setDefaultStartPageId(null)
                     expandedStartPage = false
                 })
@@ -201,24 +174,24 @@ fun GeneralSettings(
         // Scanmuster
         Box(modifier = Modifier.fillMaxWidth()) {
             val currentPatternLabel = when (defaultScanPattern) {
-                "linear" -> "Button für Button"
-                "row_by_row" -> "Zeilenweise"
-                else -> "Button für Button"
+                "linear" -> stringResource(R.string.settings_pattern_linear)
+                "row_by_row" -> stringResource(R.string.settings_pattern_row_by_row)
+                else -> stringResource(R.string.settings_pattern_linear)
             }
             OutlinedTextField(
                 value = currentPatternLabel,
                 onValueChange = {},
                 readOnly = true,
-                label = { Text("Scanmuster (Standard)") },
+                label = { Text(stringResource(R.string.settings_scan_pattern)) },
                 modifier = Modifier.fillMaxWidth().clickable { expandedDefaultScanPattern = true }
             )
             Box(modifier = Modifier.matchParentSize().clickable { expandedDefaultScanPattern = true })
             DropdownMenu(expanded = expandedDefaultScanPattern, onDismissRequest = { expandedDefaultScanPattern = false }) {
-                DropdownMenuItem(text = { Text("Button für Button") }, onClick = {
+                DropdownMenuItem(text = { Text(stringResource(R.string.settings_pattern_linear)) }, onClick = {
                     settingsViewModel.setDefaultScanPattern("linear")
                     expandedDefaultScanPattern = false
                 })
-                DropdownMenuItem(text = { Text("Zeilenweise") }, onClick = {
+                DropdownMenuItem(text = { Text(stringResource(R.string.settings_pattern_row_by_row)) }, onClick = {
                     settingsViewModel.setDefaultScanPattern("row_by_row")
                     expandedDefaultScanPattern = false
                 })
@@ -245,23 +218,23 @@ fun VoiceSettings(
         if (expandedVoice && availableVoices.isEmpty()) settingsViewModel.loadAvailableVoices()
     }
 
-    PreferenceCategory("Stimme & Sprache") {
+    PreferenceCategory(stringResource(R.string.settings_category_voice)) {
         // Sprache
         Box(modifier = Modifier.fillMaxWidth()) {
             val currentDisplayName = if (selectedLanguage == "default" || selectedLanguage.isEmpty()) {
-                "System Standard (${Locale.getDefault().displayName})"
+                "${stringResource(R.string.settings_system_default)} (${Locale.getDefault().displayName})"
             } else Locale.forLanguageTag(selectedLanguage).displayName
             
             OutlinedTextField(
                 value = currentDisplayName,
                 onValueChange = {},
                 readOnly = true,
-                label = { Text("TTS Sprache") },
+                label = { Text(stringResource(R.string.settings_tts_language)) },
                 modifier = Modifier.fillMaxWidth().clickable { expandedLanguage = true }
             )
             Box(modifier = Modifier.matchParentSize().clickable { expandedLanguage = true })
             DropdownMenu(expanded = expandedLanguage, onDismissRequest = { expandedLanguage = false }) {
-                DropdownMenuItem(text = { Text("System Standard") }, onClick = {
+                DropdownMenuItem(text = { Text(stringResource(R.string.settings_system_default)) }, onClick = {
                     settingsViewModel.setTtsLanguage("default")
                     expandedLanguage = false
                 })
@@ -278,23 +251,29 @@ fun VoiceSettings(
 
         // Stimme
         Box(modifier = Modifier.fillMaxWidth()) {
-            val currentVoiceDisplayName = if (selectedVoiceName.isNullOrEmpty()) "Standard" else VoiceUtils.formatVoiceName(selectedVoiceName)
+            val currentVoiceDisplayName = if (selectedVoiceName.isNullOrEmpty()) {
+                stringResource(R.string.settings_voice_default)
+            } else VoiceUtils.formatVoiceName(selectedVoiceName)
             OutlinedTextField(
                 value = currentVoiceDisplayName,
                 onValueChange = {},
                 readOnly = true,
-                label = { Text("Stimme wählen") },
+                label = { Text(stringResource(R.string.settings_select_voice)) },
                 modifier = Modifier.fillMaxWidth().clickable { expandedVoice = true }
             )
             Box(modifier = Modifier.matchParentSize().clickable { expandedVoice = true })
             DropdownMenu(expanded = expandedVoice, onDismissRequest = { expandedVoice = false }) {
-                DropdownMenuItem(text = { Text("Standard") }, onClick = {
+                DropdownMenuItem(text = { Text(stringResource(R.string.settings_voice_default)) }, onClick = {
                     settingsViewModel.setTtsVoice(null)
                     expandedVoice = false
                 })
                 availableVoices.forEach { voice ->
                     val isNetwork = voice.name.lowercase().contains("network")
-                    val qualityHint = if (isNetwork) " (HQ/Online)" else " (Lokal)"
+                    val qualityHint = if (isNetwork) {
+                        stringResource(R.string.settings_voice_network_hint)
+                    } else {
+                        stringResource(R.string.settings_voice_local_hint)
+                    }
                     DropdownMenuItem(text = { Text("${VoiceUtils.formatVoiceName(voice.name)}$qualityHint") }, onClick = {
                         settingsViewModel.setTtsVoice(voice.name)
                         expandedVoice = false
@@ -319,19 +298,21 @@ fun AudioOutputSettings(
         if (expandedTtsDevice || expandedCuesDevice) settingsViewModel.loadAvailableAudioDevices()
     }
 
-    PreferenceCategory("Audio-Ausgabe") {
+    PreferenceCategory(stringResource(R.string.settings_category_audio)) {
         // TTS Device
         Box(modifier = Modifier.fillMaxWidth()) {
+            val defaultLabel = stringResource(R.string.settings_audio_default)
             OutlinedTextField(
-                value = settingsViewModel.getResolvedDeviceName(selectedTtsAudioDeviceAddress),
+                value = settingsViewModel.getResolvedDeviceName(selectedTtsAudioDeviceAddress)
+                    .takeUnless { it == "System-Standard (Automatisch)" } ?: defaultLabel,
                 onValueChange = {},
                 readOnly = true,
-                label = { Text("Ausgabe: Laut Sprechen") },
+                label = { Text(stringResource(R.string.settings_audio_tts)) },
                 modifier = Modifier.fillMaxWidth().clickable { expandedTtsDevice = true }
             )
             Box(modifier = Modifier.matchParentSize().clickable { expandedTtsDevice = true })
             DropdownMenu(expanded = expandedTtsDevice, onDismissRequest = { expandedTtsDevice = false }) {
-                DropdownMenuItem(text = { Text("System-Standard (Automatisch)") }, onClick = {
+                DropdownMenuItem(text = { Text(stringResource(R.string.settings_audio_default)) }, onClick = {
                     settingsViewModel.setTtsAudioDevice(null)
                     expandedTtsDevice = false
                 })
@@ -348,16 +329,18 @@ fun AudioOutputSettings(
 
         // Cues Device
         Box(modifier = Modifier.fillMaxWidth()) {
+            val defaultLabel = stringResource(R.string.settings_audio_default)
             OutlinedTextField(
-                value = settingsViewModel.getResolvedDeviceName(selectedCuesAudioDeviceAddress),
+                value = settingsViewModel.getResolvedDeviceName(selectedCuesAudioDeviceAddress)
+                    .takeUnless { it == "System-Standard (Automatisch)" } ?: defaultLabel,
                 onValueChange = {},
                 readOnly = true,
-                label = { Text("Ausgabe: Auditory Cues") },
+                label = { Text(stringResource(R.string.settings_audio_cues)) },
                 modifier = Modifier.fillMaxWidth().clickable { expandedCuesDevice = true }
             )
             Box(modifier = Modifier.matchParentSize().clickable { expandedCuesDevice = true })
             DropdownMenu(expanded = expandedCuesDevice, onDismissRequest = { expandedCuesDevice = false }) {
-                DropdownMenuItem(text = { Text("System-Standard (Automatisch)") }, onClick = {
+                DropdownMenuItem(text = { Text(stringResource(R.string.settings_audio_default)) }, onClick = {
                     settingsViewModel.setCuesAudioDevice(null)
                     expandedCuesDevice = false
                 })
@@ -380,16 +363,26 @@ fun ScanningSettings(
     holdingTimeInput: String,
     settingsViewModel: SettingsViewModel
 ) {
-    PreferenceCategory("Scannen & Bedienung") {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable { settingsViewModel.setAutoStartScanning(!autoStartScanning) }) {
-            Text("Auto-Scan beim Start", modifier = Modifier.weight(1f))
+    PreferenceCategory(stringResource(R.string.settings_category_scanning)) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically, 
+            modifier = Modifier.clickable { settingsViewModel.setAutoStartScanning(!autoStartScanning) }
+        ) {
+            Text(stringResource(R.string.settings_auto_scan), modifier = Modifier.weight(1f))
             Switch(checked = autoStartScanning, onCheckedChange = { settingsViewModel.setAutoStartScanning(it) })
         }
         Spacer(modifier = Modifier.height(8.dp))
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable { settingsViewModel.setResumeScanningFromStart(!resumeScanningFromStart) }) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically, 
+            modifier = Modifier.clickable { settingsViewModel.setResumeScanningFromStart(!resumeScanningFromStart) }
+        ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text("Scan nach Aktion neu starten")
-                Text("Aus = Weiter beim letzten Fokus", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.settings_restart_scan))
+                Text(
+                    text = stringResource(R.string.settings_restart_scan_hint), 
+                    style = MaterialTheme.typography.bodySmall, 
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
             Switch(checked = resumeScanningFromStart, onCheckedChange = { settingsViewModel.setResumeScanningFromStart(it) })
         }
@@ -397,7 +390,7 @@ fun ScanningSettings(
         OutlinedTextField(
             value = scanDelayInput,
             onValueChange = { settingsViewModel.setScanDelayInput(it) },
-            label = { Text("Scangeschwindigkeit (ms)") },
+            label = { Text(stringResource(R.string.settings_scan_delay)) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth()
         )
@@ -405,7 +398,7 @@ fun ScanningSettings(
         OutlinedTextField(
             value = holdingTimeInput,
             onValueChange = { settingsViewModel.setHoldingTimeInput(it) },
-            label = { Text("Haltezeit / Doppelklick-Schutz (ms)") },
+            label = { Text(stringResource(R.string.settings_holding_time)) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth()
         )
@@ -418,18 +411,25 @@ fun HardwareSettings(
     volumeKeysActivate: Boolean,
     settingsViewModel: SettingsViewModel
 ) {
-    PreferenceCategory("Hardware & Schalter") {
+    PreferenceCategory(stringResource(R.string.settings_category_hardware)) {
         OutlinedTextField(
             value = switchActivationKey,
             onValueChange = { settingsViewModel.setSwitchActivationKey(it) },
-            label = { Text("Taste für externen Taster (z.B. Space)") },
+            label = { Text(stringResource(R.string.settings_switch_key)) },
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(16.dp))
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable { settingsViewModel.setVolumeKeysActivate(!volumeKeysActivate) }) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically, 
+            modifier = Modifier.clickable { settingsViewModel.setVolumeKeysActivate(!volumeKeysActivate) }
+        ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text("Lautstärke-Tasten als Auslöser")
-                Text("Nutzt Volume +/- zum Bestätigen", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.settings_volume_keys_trigger))
+                Text(
+                    text = stringResource(R.string.settings_volume_keys_hint), 
+                    style = MaterialTheme.typography.bodySmall, 
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
             Switch(checked = volumeKeysActivate, onCheckedChange = { settingsViewModel.setVolumeKeysActivate(it) })
         }
@@ -441,11 +441,18 @@ fun ActionLogSettings(
     persistActionLogs: Boolean,
     settingsViewModel: SettingsViewModel
 ) {
-    PreferenceCategory("Verlauf & System") {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable { settingsViewModel.setPersistActionLogs(!persistActionLogs) }) {
+    PreferenceCategory(stringResource(R.string.settings_category_system)) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically, 
+            modifier = Modifier.clickable { settingsViewModel.setPersistActionLogs(!persistActionLogs) }
+        ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text("Aktionenverlauf speichern")
-                Text("Behält Verlauf auch nach Neustart", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.settings_persist_logs))
+                Text(
+                    text = stringResource(R.string.settings_persist_logs_hint), 
+                    style = MaterialTheme.typography.bodySmall, 
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
             Switch(checked = persistActionLogs, onCheckedChange = { settingsViewModel.setPersistActionLogs(it) })
         }

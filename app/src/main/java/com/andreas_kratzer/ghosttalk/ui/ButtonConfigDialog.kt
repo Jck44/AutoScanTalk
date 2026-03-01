@@ -29,6 +29,9 @@ import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
 
+import androidx.compose.ui.res.stringResource
+import com.andreas_kratzer.ghosttalk.R
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ButtonConfigDialog(
@@ -49,11 +52,14 @@ fun ButtonConfigDialog(
     var isActive by remember { mutableStateOf(initialConfig?.isActive ?: true) }
     
     // Action Type selection
-    val actionTypes = listOf("Text Sprechen", "Zu Seite navigieren")
+    val actionTypeSpeak = stringResource(R.string.button_action_speak_text)
+    val actionTypeNavigate = stringResource(R.string.button_action_navigate_page)
+    val actionTypes = listOf(actionTypeSpeak, actionTypeNavigate)
+    
     var selectedActionType by remember {
         mutableStateOf(
-            if (initialConfig?.buttonAction is NavigateToPageButtonAction) "Zu Seite navigieren" 
-            else "Text Sprechen"
+            if (initialConfig?.buttonAction is NavigateToPageButtonAction) actionTypeNavigate 
+            else actionTypeSpeak
         )
     }
     var expandedActionType by remember { mutableStateOf(false) }
@@ -65,14 +71,14 @@ fun ButtonConfigDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (initialConfig == null) "Neuer Button" else "Button bearbeiten") },
+        title = { Text(if (initialConfig == null) stringResource(R.string.button_dialog_new_title) else stringResource(R.string.button_dialog_edit_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 // Label Input
                 OutlinedTextField(
                     value = label,
                     onValueChange = { label = it },
-                    label = { Text("Aufschrift (Label)") },
+                    label = { Text(stringResource(R.string.button_label_field)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -81,7 +87,7 @@ fun ButtonConfigDialog(
                 OutlinedTextField(
                     value = spokenText,
                     onValueChange = { spokenText = it },
-                    label = { Text("Gesprochener Text (Optional)") },
+                    label = { Text(stringResource(R.string.button_spoken_text_field)) },
                     singleLine = false,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -90,7 +96,7 @@ fun ButtonConfigDialog(
                 OutlinedTextField(
                     value = ttsFeedback,
                     onValueChange = { ttsFeedback = it },
-                    label = { Text("Auditory Cue (Vorlesen beim Scannen)") },
+                    label = { Text(stringResource(R.string.button_auditory_cue_field)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -101,7 +107,7 @@ fun ButtonConfigDialog(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("Ist Aktiv", style = MaterialTheme.typography.bodyLarge)
+                    Text(stringResource(R.string.button_is_active_label), style = MaterialTheme.typography.bodyLarge)
                     Switch(
                         checked = isActive,
                         onCheckedChange = { isActive = it }
@@ -117,7 +123,7 @@ fun ButtonConfigDialog(
                         readOnly = true,
                         value = selectedActionType,
                         onValueChange = { },
-                        label = { Text("Aktion") },
+                        label = { Text(stringResource(R.string.button_action_label)) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedActionType) },
                         colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
                         modifier = Modifier.menuAnchor().fillMaxWidth()
@@ -139,17 +145,17 @@ fun ButtonConfigDialog(
                 }
 
                 // Conditional fields for Navigation
-                if (selectedActionType == "Zu Seite navigieren") {
+                if (selectedActionType == actionTypeNavigate) {
                     ExposedDropdownMenuBox(
                         expanded = expandedPageSelect,
                         onExpandedChange = { expandedPageSelect = !expandedPageSelect }
                     ) {
-                        val selectedPageName = availablePages.find { it.id == navigateToPageId }?.name ?: "Keine Seite ausgewählt"
+                        val selectedPageName = availablePages.find { it.id == navigateToPageId }?.name ?: stringResource(R.string.button_no_page_selected)
                         OutlinedTextField(
                             readOnly = true,
                             value = selectedPageName,
                             onValueChange = { },
-                            label = { Text("Ziel-Seite") },
+                            label = { Text(stringResource(R.string.button_target_page_label)) },
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedPageSelect) },
                             colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
                             modifier = Modifier.menuAnchor().fillMaxWidth()
@@ -176,11 +182,9 @@ fun ButtonConfigDialog(
             Button(
                 onClick = {
                     if (label.isNotBlank()) {
-                        val action: ButtonAction = if (selectedActionType == "Zu Seite navigieren") {
+                        val action: ButtonAction = if (selectedActionType == actionTypeNavigate) {
                             NavigateToPageButtonAction(pageId = navigateToPageId)
                         } else {
-                            // We use the new spokenText as primary for textToSpeech, fallback to label for legacy support 
-                            // in PageViewModel if it checks action.textToSpeech natively.
                             SpeakTextButtonAction(textToSpeech = spokenText.takeIf { it.isNotBlank() } ?: label)
                         }
 
@@ -203,15 +207,15 @@ fun ButtonConfigDialog(
                     }
                 }
             ) {
-                Text("Speichern")
+                Text(stringResource(R.string.action_save))
             }
         },
         dismissButton = {
             Button(
-                onClick = { onSave(null) }, // Return null internally acts as a delete/clear if they press "Löschen"
+                onClick = { onSave(null) },
                 colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
             ) {
-                Text("Leeren / Löschen")
+                Text(stringResource(R.string.action_clear_delete))
             }
         }
     )

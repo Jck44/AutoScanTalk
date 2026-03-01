@@ -1,0 +1,127 @@
+<resources>
+    <string name="app_name">GoSTalk</string>
+    <string name="settings_title">Settings</string>
+    <string name="back_button_content_description">Back</string>
+    
+    <!-- Settings Screen Labels -->
+    <string name="settings_category_general">General</string>
+    <string name="settings_start_page">Default Start Page</string>
+    <string name="settings_start_page_auto">Automatic (First Page)</string>
+    <string name="settings_scan_pattern">Scan Pattern (Default)</string>
+    <string name="settings_pattern_linear">Button by Button</string>
+    <string name="settings_pattern_row_by_row">Row by Row</string>
+    
+    <string name="settings_category_voice">Voice &amp; Language</string>
+    <string name="settings_tts_language">TTS Language</string>
+    <string name="settings_system_default">System Default</string>
+    <string name="settings_select_voice">Select Voice</string>
+    <string name="settings_voice_default">Default</string>
+    <string name="settings_voice_network_hint"> (HQ/Online)</string>
+    <string name="settings_voice_local_hint"> (Local)</string>
+    
+    <string name="settings_category_audio">Audio Output</string>
+    <string name="settings_audio_tts">Output: Speak Out Loud</string>
+    <string name="settings_audio_cues">Output: Auditory Cues</string>
+    <string name="settings_audio_default">System Default (Automatic)</string>
+    
+    <string name="settings_category_scanning">Scanning &amp; Operation</string>
+    <string name="settings_auto_scan">Auto-Scan on Start</string>
+    <string name="settings_restart_scan">Restart Scan After Action</string>
+    <string name="settings_restart_scan_hint">Off = Continue at last focus</string>
+    <string name="settings_scan_delay">Scan Speed (ms)</string>
+    <string name="settings_holding_time">Holding Time / Debounce (ms)</string>
+    
+    <string name="settings_category_hardware">Hardware &amp; Switches</string>
+    <string name="settings_switch_key">External Switch Key (e.g., Space)</string>
+    <string name="settings_volume_keys_trigger">Volume Keys as Trigger</string>
+    <string name="settings_volume_keys_hint">Uses Volume +/- to confirm</string>
+    
+    <string name="settings_category_system">Logs &amp; System</string>
+    <string name="settings_persist_logs">Persist Action Logs</string>
+    <string name="settings_persist_logs_hint">Keeps history after restart</string>
+    
+    <!-- Start Screen -->
+    <string name="start_tagline">Augmentative and Alternative Communication</string>
+    <string name="start_user_mode">User Mode</string>
+    <string name="start_manage_pages">Manage Pages</string>
+    <string name="start_back_to_books">Back to Books</string>
+    <string name="start_button_start_description">Start</string>
+
+    <!-- Book List Screen -->
+    <string name="book_list_title">GhosTTalk - Books</string>
+    <string name="book_add_description">Add new book</string>
+    <string name="book_created_label">Created: %s</string>
+    <string name="book_rename_description">Rename book</string>
+    <string name="book_delete_description">Delete book</string>
+    <string name="book_dialog_new_title">Create New Book</string>
+    <string name="book_dialog_rename_title">Rename Book</string>
+    <string name="book_dialog_delete_title">Delete Book?</string>
+    <string name="book_dialog_delete_confirm">Do you really want to permanently delete the book \"%s\"? All pages within it will be lost.</string>
+    <string name="book_name_label">Name of the book</string>
+    
+    <!-- Shared Actions -->
+    <string name="action_create">Create</string>
+    <string name="action_save">Save</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_delete">Delete</string>
+
+    <!-- Page List Screen -->
+    <string name="page_list_title">Manage Pages</string>
+    <string name="page_add_description">Add new page</string>
+    <string name="page_grid_info">Grid: %1$d Rows x %2$d Columns</string>
+    <string name="page_rename_description">Rename page</string>
+    <string name="page_delete_description">Delete page</string>
+    <string name="page_dialog_delete_title">Delete Page?</string>
+    <string name="page_dialog_delete_confirm">Do you really want to delete the page \"%s\"?</string>
+    <string name="page_dialog_settings_title">Page Settings</string>
+    <string name="page_name_label">Name of the page</string>
+    <string name="page_scan_pattern_override">Scan Pattern (Override)</string>
+    <string name="page_pattern_default">Default (Book)</string>
+    <string name="page_row_announcement_config">Configure Row Announcements:</string>
+    <string name="page_row_label">Row %d</string>
+    
+    <string name="page_dialog_new_title">Create New Page</string>
+    <string name="page_name_field">Page Name</string>
+    <string name="page_rows_field">Rows</string>
+    <string name="page_cols_field">Columns</string>
+    
+    <string name="page_import_success">Import successful!</string>
+    <string name="page_export_success">Export successful!</string>
+    <string name="page_export_error">Export error: %s</string>
+    
+    <string name="action_export_json">Export JSON</string>
+    <string name="action_import_json">Import JSON</string>
+    <string name="action_more">More</string>
+
+    <!-- Page Editor Screen -->
+    <string name="page_editor_title">Editor: %s</string>
+    <string name="page_editor_hint">Tap a field to configure the button.</string>
+    <string name="page_editor_row_name_label">Row Name</string>
+    <string name="page_editor_loading">Page not found or loading...</string>
+
+    <!-- Button Config Dialog -->
+    <string name="button_dialog_new_title">New Button</string>
+    <string name="button_dialog_edit_title">Edit Button</string>
+    <string name="button_label_field">Label</string>
+    <string name="button_spoken_text_field">Spoken Text (Optional)</string>
+    <string name="button_auditory_cue_field">Auditory Cue (TTS feedback during scan) (Optional)</string>
+    <string name="button_is_active_label">Is Active</string>
+    <string name="button_action_label">Action</string>
+    <string name="button_action_speak_text">Speak Text</string>
+    <string name="button_action_navigate_page">Navigate to Page</string>
+    <string name="button_no_page_selected">No page selected</string>
+    <string name="button_target_page_label">Target Page</string>
+    <string name="action_clear_delete">Clear / Delete</string>
+
+    <!-- Page Screen -->
+    <string name="page_loading">Page is loading...</string>
+    <string name="page_action_start_scan">Start Scan</string>
+    <string name="page_action_stop_scan">Stop Scan</string>
+    <string name="page_action_activate_focused">Activate Focused</string>
+    <string name="page_last_actions_title">Last Actions:</string>
+    <string name="page_clear_logs_description">Clear history</string>
+    <string name="page_no_actions_yet">No actions performed yet.</string>
+
+    <!-- Shared -->
+    <string name="error_page_not_found">Page not found</string>
+</resources>

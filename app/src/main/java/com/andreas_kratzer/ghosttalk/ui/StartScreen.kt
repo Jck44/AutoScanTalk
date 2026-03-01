@@ -26,6 +26,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.ui.res.stringResource
+import com.andreas_kratzer.ghosttalk.R
+
 @Composable
 fun StartScreen(
     onNavigateToUserMode: () -> Unit,
@@ -44,8 +47,9 @@ fun StartScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+        // App Name (Logo/Branding - usually stays same or uses resources)
         Text(
-            text = "GhosTTalk",
+            text = stringResource(R.string.app_name),
             style = (if (isLandscape) MaterialTheme.typography.displayMedium else MaterialTheme.typography.displayLarge).copy(
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary
@@ -53,7 +57,7 @@ fun StartScreen(
         )
         
         Text(
-            text = "Unterstützte Kommunikation",
+            text = stringResource(R.string.start_tagline),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -76,11 +80,11 @@ fun StartScreen(
             ) {
                 Icon(
                     Icons.Filled.PlayArrow,
-                    contentDescription = "Start",
+                    contentDescription = stringResource(R.string.start_button_start_description),
                     modifier = Modifier.size(ButtonDefaults.IconSize)
                 )
                 Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                Text("Nutzer Modus", style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.start_user_mode), style = MaterialTheme.typography.titleMedium)
             }
             
             Button(
@@ -94,11 +98,11 @@ fun StartScreen(
             ) {
                 Icon(
                     Icons.Filled.Edit,
-                    contentDescription = "Seiten verwalten",
+                    contentDescription = stringResource(R.string.start_manage_pages),
                     modifier = Modifier.size(ButtonDefaults.IconSize)
                 )
                 Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                Text("Seiten verwalten", style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.start_manage_pages), style = MaterialTheme.typography.titleMedium)
             }
             
             Button(
@@ -112,11 +116,11 @@ fun StartScreen(
             ) {
                 Icon(
                     Icons.Filled.Settings,
-                    contentDescription = "Einstellungen",
+                    contentDescription = stringResource(R.string.settings_title),
                     modifier = Modifier.size(ButtonDefaults.IconSize)
                 )
                 Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                Text("Einstellungen", style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.titleMedium)
             }
         }
 
@@ -128,11 +132,11 @@ fun StartScreen(
         ) {
             Icon(
                 Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "Zurück",
+                contentDescription = stringResource(R.string.back_button_content_description),
                 modifier = Modifier.size(ButtonDefaults.IconSize)
             )
             Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-            Text("Zurück zu den Büchern")
+            Text(stringResource(R.string.start_back_to_books))
         }
     }
 }

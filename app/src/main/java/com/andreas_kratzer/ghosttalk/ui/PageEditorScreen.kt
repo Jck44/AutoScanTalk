@@ -47,6 +47,9 @@ import androidx.compose.ui.text.input.ImeAction
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import java.util.UUID
 
+import androidx.compose.ui.res.stringResource
+import com.andreas_kratzer.ghosttalk.R
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PageEditorScreen(
@@ -63,7 +66,7 @@ fun PageEditorScreen(
 
     if (page == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("Seite nicht gefunden oder wird geladen...")
+            Text(stringResource(R.string.page_editor_loading))
         }
         return
     }
@@ -71,10 +74,10 @@ fun PageEditorScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Editor: ${page.name}") },
+                title = { Text(stringResource(R.string.page_editor_title, page.name)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Zurück")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_button_content_description))
                     }
                 }
             )
@@ -89,12 +92,13 @@ fun PageEditorScreen(
                 .padding(if (isLandscape) 8.dp else 16.dp)
         ) {
             Text(
-                "Tippe auf ein Feld, um den Button zu konfigurieren.",
+                stringResource(R.string.page_editor_hint),
                 style = if (isLandscape) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.padding(bottom = if (isLandscape) 8.dp else 16.dp)
             )
 
             val effectiveScanPattern = page.scanPattern ?: bookDefaultScanPattern
+            val rowDefaultLabelTemplate = stringResource(R.string.page_row_label)
 
             // Button Grid for editing
             LazyVerticalGrid(
@@ -111,7 +115,7 @@ fun PageEditorScreen(
                     if (effectiveScanPattern == "row_by_row") {
                         item(span = { GridItemSpan(maxLineSpan) }) {
                             RowNameEditor(
-                                initialName = page.rowNames.getOrNull(r) ?: "Zeile ${r + 1}",
+                                initialName = page.rowNames.getOrNull(r) ?: rowDefaultLabelTemplate.format(r + 1),
                                 onNameChanged = { newName ->
                                     pageViewModel.updateRowName(page.id, r, newName)
                                 }
@@ -169,7 +173,7 @@ fun RowNameEditor(initialName: String, onNameChanged: (String) -> Unit) {
     OutlinedTextField(
         value = text,
         onValueChange = { text = it },
-        label = { Text("Zeilenname") },
+        label = { Text(stringResource(R.string.page_editor_row_name_label)) },
         singleLine = true,
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
         keyboardActions = KeyboardActions(onDone = { 

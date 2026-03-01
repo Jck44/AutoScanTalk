@@ -1,3 +1,127 @@
 <resources>
-    <string name="app_name">GhosTTalk</string>
+    <string name="app_name">GoSTalk</string>
+    <string name="settings_title">Einstellungen</string>
+    <string name="back_button_content_description">Zurück</string>
+    
+    <!-- Settings Screen Labels -->
+    <string name="settings_category_general">Allgemein</string>
+    <string name="settings_start_page">Standard Startseite</string>
+    <string name="settings_start_page_auto">Automatisch (Erste Seite)</string>
+    <string name="settings_scan_pattern">Scanmuster (Standard)</string>
+    <string name="settings_pattern_linear">Button für Button</string>
+    <string name="settings_pattern_row_by_row">Zeilenweise</string>
+    
+    <string name="settings_category_voice">Stimme &amp; Sprache</string>
+    <string name="settings_tts_language">TTS Sprache</string>
+    <string name="settings_system_default">System Standard</string>
+    <string name="settings_select_voice">Stimme wählen</string>
+    <string name="settings_voice_default">Standard</string>
+    <string name="settings_voice_network_hint"> (HQ/Online)</string>
+    <string name="settings_voice_local_hint"> (Lokal)</string>
+    
+    <string name="settings_category_audio">Audio-Ausgabe</string>
+    <string name="settings_audio_tts">Ausgabe: Laut Sprechen</string>
+    <string name="settings_audio_cues">Ausgabe: Auditory Cues</string>
+    <string name="settings_audio_default">System-Standard (Automatisch)</string>
+    
+    <string name="settings_category_scanning">Scannen &amp; Bedienung</string>
+    <string name="settings_auto_scan">Auto-Scan beim Start</string>
+    <string name="settings_restart_scan">Scan nach Aktion neu starten</string>
+    <string name="settings_restart_scan_hint">Aus = Weiter beim letzten Fokus</string>
+    <string name="settings_scan_delay">Scangeschwindigkeit (ms)</string>
+    <string name="settings_holding_time">Haltezeit / Doppelklick-Schutz (ms)</string>
+    
+    <string name="settings_category_hardware">Hardware &amp; Schalter</string>
+    <string name="settings_switch_key">Taste für externen Taster (z.B. Space)</string>
+    <string name="settings_volume_keys_trigger">Lautstärke-Tasten als Auslöser</string>
+    <string name="settings_volume_keys_hint">Nutzt Volume +/- zum Bestätigen</string>
+    
+    <string name="settings_category_system">Verlauf &amp; System</string>
+    <string name="settings_persist_logs">Aktionenverlauf speichern</string>
+    <string name="settings_persist_logs_hint">Behält Verlauf auch nach Neustart</string>
+    
+    <!-- Start Screen -->
+    <string name="start_tagline">Unterstützte Kommunikation</string>
+    <string name="start_user_mode">Nutzer Modus</string>
+    <string name="start_manage_pages">Seiten verwalten</string>
+    <string name="start_back_to_books">Zurück zu den Büchern</string>
+    <string name="start_button_start_description">Start</string>
+
+    <!-- Book List Screen -->
+    <string name="book_list_title">GhosTTalk - Bücher</string>
+    <string name="book_add_description">Neues Buch hinzufügen</string>
+    <string name="book_created_label">Erstellt: %s</string>
+    <string name="book_rename_description">Buch umbenennen</string>
+    <string name="book_delete_description">Buch löschen</string>
+    <string name="book_dialog_new_title">Neues Buch erstellen</string>
+    <string name="book_dialog_rename_title">Buch umbenennen</string>
+    <string name="book_dialog_delete_title">Buch löschen?</string>
+    <string name="book_dialog_delete_confirm">Möchtest du das Buch \"%s\" wirklich unwiderruflich löschen? Alle darin enthaltenen Seiten gehen verloren.</string>
+    <string name="book_name_label">Name des Buches</string>
+    
+    <!-- Shared Actions -->
+    <string name="action_create">Erstellen</string>
+    <string name="action_save">Speichern</string>
+    <string name="action_cancel">Abbrechen</string>
+    <string name="action_delete">Löschen</string>
+    <string name="action_clear_delete">Leeren / Löschen</string>
+
+    <!-- Page List Screen -->
+    <string name="page_list_title">Seiten verwalten</string>
+    <string name="page_add_description">Neue Seite hinzufügen</string>
+    <string name="page_grid_info">Raster: %1$d Zeilen x %2$d Spalten</string>
+    <string name="page_rename_description">Seite umbenennen</string>
+    <string name="page_delete_description">Seite löschen</string>
+    <string name="page_dialog_delete_title">Seite löschen?</string>
+    <string name="page_dialog_delete_confirm">Möchtest du die Seite \"%s\" wirklich löschen?</string>
+    <string name="page_dialog_settings_title">Seiteneinstellungen</string>
+    <string name="page_name_label">Name der Seite</string>
+    <string name="page_scan_pattern_override">Scanmuster (Überschreiben)</string>
+    <string name="page_pattern_default">Standard (Buch)</string>
+    <string name="page_row_announcement_config">Zeilen-Ansage konfigurieren:</string>
+    <string name="page_row_label">Zeile %d</string>
+    
+    <string name="page_dialog_new_title">Neue Seite erstellen</string>
+    <string name="page_name_field">Seitenname</string>
+    <string name="page_rows_field">Zeilen</string>
+    <string name="page_cols_field">Spalten</string>
+    
+    <string name="page_import_success">Import erfolgreich!</string>
+    <string name="page_export_success">Export erfolgreich!</string>
+    <string name="page_export_error">Fehler beim Export: %s</string>
+    
+    <string name="action_export_json">Export JSON</string>
+    <string name="action_import_json">Import JSON</string>
+    <string name="action_more">Mehr</string>
+
+    <!-- Page Editor Screen -->
+    <string name="page_editor_title">Editor: %s</string>
+    <string name="page_editor_hint">Tippe auf ein Feld, um den Button zu konfigurieren.</string>
+    <string name="page_editor_row_name_label">Zeilenname</string>
+    <string name="page_editor_loading">Seite nicht gefunden oder wird geladen...</string>
+
+    <!-- Button Config Dialog -->
+    <string name="button_dialog_new_title">Neuer Button</string>
+    <string name="button_dialog_edit_title">Button bearbeiten</string>
+    <string name="button_label_field">Aufschrift (Label)</string>
+    <string name="button_spoken_text_field">Gesprochener Text (Optional)</string>
+    <string name="button_auditory_cue_field">Auditory Cue (Vorlesen beim Scannen) (Optional)</string>
+    <string name="button_is_active_label">Ist Aktiv</string>
+    <string name="button_action_label">Aktion</string>
+    <string name="button_action_speak_text">Text Sprechen</string>
+    <string name="button_action_navigate_page">Zu Seite navigieren</string>
+    <string name="button_no_page_selected">Keine Seite ausgewählt</string>
+    <string name="button_target_page_label">Ziel-Seite</string>
+
+    <!-- Page Screen -->
+    <string name="page_loading">Seite wird geladen...</string>
+    <string name="page_action_start_scan">Start Scan</string>
+    <string name="page_action_stop_scan">Stop Scan</string>
+    <string name="page_action_activate_focused">Auslösen</string>
+    <string name="page_last_actions_title">Letzte Aktionen:</string>
+    <string name="page_clear_logs_description">Verlauf leeren</string>
+    <string name="page_no_actions_yet">Noch keine Aktionen ausgeführt.</string>
+
+    <!-- Shared -->
+    <string name="error_page_not_found">Seite nicht gefunden</string>
 </resources>

@@ -48,6 +48,9 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import com.andreas_kratzer.ghosttalk.model.Book
 
+import androidx.compose.ui.res.stringResource
+import com.andreas_kratzer.ghosttalk.R
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookListScreen(
@@ -62,12 +65,12 @@ fun BookListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("GhosTTalk - Bücher") }
+                title = { Text(stringResource(R.string.book_list_title)) }
             )
         },
         floatingActionButton = {
             FloatingActionButton(onClick = { showAddDialog = true }) {
-                Icon(Icons.Default.Add, contentDescription = "Neues Buch hinzufügen")
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.book_add_description))
             }
         }
     ) { paddingValues ->
@@ -103,7 +106,7 @@ fun BookListScreen(
                             Spacer(modifier = Modifier.height(4.dp))
                             val dateFormat = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
                             Text(
-                                text = "Erstellt: ${dateFormat.format(Date(book.createdAt))}",
+                                text = stringResource(R.string.book_created_label, dateFormat.format(Date(book.createdAt))),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -112,7 +115,7 @@ fun BookListScreen(
                             IconButton(onClick = { bookToEdit = book }) {
                                 Icon(
                                     imageVector = Icons.Default.Edit,
-                                    contentDescription = "Buch umbenennen",
+                                    contentDescription = stringResource(R.string.book_rename_description),
                                     tint = MaterialTheme.colorScheme.primary
                                 )
                             }
@@ -121,7 +124,7 @@ fun BookListScreen(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Delete,
-                                    contentDescription = "Buch löschen",
+                                    contentDescription = stringResource(R.string.book_delete_description),
                                     tint = MaterialTheme.colorScheme.error
                                 )
                             }
@@ -136,12 +139,12 @@ fun BookListScreen(
 
             AlertDialog(
                 onDismissRequest = { showAddDialog = false },
-                title = { Text("Neues Buch erstellen") },
+                title = { Text(stringResource(R.string.book_dialog_new_title)) },
                 text = {
                     OutlinedTextField(
                         value = newBookName,
                         onValueChange = { newBookName = it },
-                        label = { Text("Name des Buches") },
+                        label = { Text(stringResource(R.string.book_name_label)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -155,7 +158,7 @@ fun BookListScreen(
                             }
                         }
                     ) {
-                        Text("Erstellen")
+                        Text(stringResource(R.string.action_create))
                     }
                 },
                 dismissButton = {
@@ -163,7 +166,7 @@ fun BookListScreen(
                         onClick = { showAddDialog = false },
                         colors = ButtonDefaults.textButtonColors()
                     ) {
-                        Text("Abbrechen")
+                        Text(stringResource(R.string.action_cancel))
                     }
                 }
             )
@@ -174,12 +177,12 @@ fun BookListScreen(
 
             AlertDialog(
                 onDismissRequest = { bookToEdit = null },
-                title = { Text("Buch umbenennen") },
+                title = { Text(stringResource(R.string.book_dialog_rename_title)) },
                 text = {
                     OutlinedTextField(
                         value = editBookName,
                         onValueChange = { editBookName = it },
-                        label = { Text("Name des Buches") },
+                        label = { Text(stringResource(R.string.book_name_label)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -193,7 +196,7 @@ fun BookListScreen(
                             }
                         }
                     ) {
-                        Text("Speichern")
+                        Text(stringResource(R.string.action_save))
                     }
                 },
                 dismissButton = {
@@ -201,7 +204,7 @@ fun BookListScreen(
                         onClick = { bookToEdit = null },
                         colors = ButtonDefaults.textButtonColors()
                     ) {
-                        Text("Abbrechen")
+                        Text(stringResource(R.string.action_cancel))
                     }
                 }
             )
@@ -210,8 +213,8 @@ fun BookListScreen(
         bookToDelete?.let { book ->
             AlertDialog(
                 onDismissRequest = { bookToDelete = null },
-                title = { Text("Buch löschen?") },
-                text = { Text("Möchtest du das Buch \"${book.name}\" wirklich unwiderruflich löschen? Alle darin enthaltenen Seiten gehen verloren.") },
+                title = { Text(stringResource(R.string.book_dialog_delete_title)) },
+                text = { Text(stringResource(R.string.book_dialog_delete_confirm, book.name)) },
                 confirmButton = {
                     Button(
                         onClick = {
@@ -220,7 +223,7 @@ fun BookListScreen(
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                     ) {
-                        Text("Löschen")
+                        Text(stringResource(R.string.action_delete))
                     }
                 },
                 dismissButton = {
@@ -228,7 +231,7 @@ fun BookListScreen(
                         onClick = { bookToDelete = null },
                         colors = ButtonDefaults.textButtonColors()
                     ) {
-                        Text("Abbrechen")
+                        Text(stringResource(R.string.action_cancel))
                     }
                 }
             )

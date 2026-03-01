@@ -41,6 +41,9 @@ import androidx.compose.ui.platform.LocalConfiguration
 import android.content.res.Configuration
 import androidx.compose.ui.unit.dp
 
+import androidx.compose.ui.res.stringResource
+import com.andreas_kratzer.ghosttalk.R
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PageScreen(
@@ -52,13 +55,12 @@ fun PageScreen(
     val focusedButtonIndex by pageViewModel.focusedButtonIndex.collectAsState()
     val focusedRowIndex by pageViewModel.focusedRowIndex.collectAsState()
     val lastActions by pageViewModel.lastActions.collectAsState()
-    // Optional: val ttsReady by pageViewModel.ttsReady.collectAsState()
 
     val page = currentPage // Zur einfacheren Verwendung
 
     if (page == null) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("Seite wird geladen...")
+            Text(stringResource(R.string.page_loading))
         }
         return
     }
@@ -178,16 +180,16 @@ fun ControlButtons(
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
         Button(onClick = { pageViewModel.startScanning() }) {
-            Text("Start Scan")
+            Text(stringResource(R.string.page_action_start_scan))
         }
         Button(
             onClick = { pageViewModel.activateFocusedButton() },
             enabled = focusedButtonIndex != null || focusedRowIndex != null
         ) {
-            Text("Activate Focused")
+            Text(stringResource(R.string.page_action_activate_focused))
         }
         Button(onClick = { pageViewModel.stopScanning() }) {
-            Text("Stop Scan")
+            Text(stringResource(R.string.page_action_stop_scan))
         }
     }
 }
@@ -211,18 +213,18 @@ fun ActionLogCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = "Letzte Aktionen:", style = MaterialTheme.typography.titleMedium)
+                Text(text = stringResource(R.string.page_last_actions_title), style = MaterialTheme.typography.titleMedium)
                 IconButton(onClick = onClearLogs) {
                     Icon(
                         imageVector = Icons.Default.Delete,
-                        contentDescription = "Verlauf leeren",
+                        contentDescription = stringResource(R.string.page_clear_logs_description),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
 
             if (lastActions.isEmpty()) {
-                Text("Noch keine Aktionen ausgeführt.")
+                Text(stringResource(R.string.page_no_actions_yet))
             } else {
                 LazyColumn(modifier = Modifier.fillMaxSize()) {
                     items(lastActions) { actionText ->
