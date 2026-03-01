@@ -142,6 +142,7 @@ class MainActivity : ComponentActivity() {
         }
         globalPageViewModel = pageViewModel
         pageViewModel.setActiveBookId(defaultBookId)
+        settingsRepository.activeBookId = defaultBookId
 
         val settingsViewModel: SettingsViewModel by viewModels {
             SettingsViewModelFactory(application, settingsRepository)
@@ -160,9 +161,12 @@ class MainActivity : ComponentActivity() {
                             com.example.gostalk.ui.BookListScreen(
                                 bookViewModel = bookViewModel,
                                 onBookSelected = { selectedBookId ->
-                                    // 1. Set the active book globally
+                                    // 1. Set the active book globally for Pages
                                     pageViewModel.setActiveBookId(selectedBookId)
-                                    // 2. Navigate to Mode Selection (StartScreen)
+                                    // 2. Set the active book globally for Settings and Refresh UI State
+                                    settingsRepository.activeBookId = selectedBookId
+                                    settingsViewModel.refresh()
+                                    // 3. Navigate to Mode Selection (StartScreen)
                                     navController.navigate("start")
                                 }
                             )

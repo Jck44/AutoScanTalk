@@ -57,6 +57,12 @@ class SettingsRepositoryTest {
             mockEditor
         }
         
+        // Mock contains
+        every { mockPrefs.contains(any()) } answers {
+            val key = args[0] as String
+            mockedPrefsStore.containsKey(key)
+        }
+
         every { mockEditor.apply() } returns Unit
 
         repository = SettingsRepository(mockContext)
@@ -73,7 +79,7 @@ class SettingsRepositoryTest {
         val testPageId = "page-uuid-1234"
         repository.defaultStartPageId = testPageId
 
-        assertEquals(testPageId, mockedPrefsStore["default_start_page_id"])
+        assertEquals(testPageId, mockedPrefsStore["book-default_default_start_page_id"])
         assertEquals(testPageId, repository.defaultStartPageId)
         assertEquals(testPageId, repository.defaultStartPageIdFlow.first())
     }
@@ -83,7 +89,7 @@ class SettingsRepositoryTest {
         repository.defaultStartPageId = "temp-id"
         repository.defaultStartPageId = null
         
-        assertNull(mockedPrefsStore["default_start_page_id"])
+        assertNull(mockedPrefsStore["book-default_default_start_page_id"])
         assertNull(repository.defaultStartPageId)
         assertNull(repository.defaultStartPageIdFlow.first())
     }
@@ -99,7 +105,7 @@ class SettingsRepositoryTest {
         val testVoiceObjName = "de-de-x-deb-network"
         repository.ttsVoiceName = testVoiceObjName
 
-        assertEquals(testVoiceObjName, mockedPrefsStore["tts_voice_name"])
+        assertEquals(testVoiceObjName, mockedPrefsStore["book-default_tts_voice_name"])
         assertEquals(testVoiceObjName, repository.ttsVoiceName)
         assertEquals(testVoiceObjName, repository.ttsVoiceNameFlow.first())
     }
@@ -109,9 +115,19 @@ class SettingsRepositoryTest {
         repository.ttsVoiceName = "temp-voice"
         repository.ttsVoiceName = null
 
-        assertNull(mockedPrefsStore["tts_voice_name"])
+        assertNull(mockedPrefsStore["book-default_tts_voice_name"])
         assertNull(repository.ttsVoiceName)
         assertNull(repository.ttsVoiceNameFlow.first())
+    }
+
+    @Test
+    fun actionLogsStorage_canBeResetToNull() = runBlocking {
+        repository.actionLogsStorage = "temp-storage"
+        repository.actionLogsStorage = null
+
+        assertNull(mockedPrefsStore["book-default_action_logs_storage"])
+        assertNull(repository.actionLogsStorage)
+        assertNull(repository.actionLogsStorageFlow.first())
     }
 
     @Test
@@ -125,7 +141,7 @@ class SettingsRepositoryTest {
     fun persistActionLogs_savesAndEmitsValue() = runBlocking {
         repository.persistActionLogs = true
 
-        assertEquals("true", mockedPrefsStore["persist_action_logs"])
+        assertEquals("true", mockedPrefsStore["book-default_persist_action_logs"])
         assertEquals(true, repository.persistActionLogs)
         assertEquals(true, repository.persistActionLogsFlow.first())
     }
@@ -138,12 +154,12 @@ class SettingsRepositoryTest {
 
     @Test
     fun actionLogsStorage_savesAndEmitsValue() = runBlocking {
-        val testJson = "[\"Log 1\", \"Log 2\"]"
-        repository.actionLogsStorage = testJson
+        val testStorage = "[\"action1\"]"
+        repository.actionLogsStorage = testStorage
 
-        assertEquals(testJson, mockedPrefsStore["action_logs_storage"])
-        assertEquals(testJson, repository.actionLogsStorage)
-        assertEquals(testJson, repository.actionLogsStorageFlow.first())
+        assertEquals(testStorage, mockedPrefsStore["book-default_action_logs_storage"])
+        assertEquals(testStorage, repository.actionLogsStorage)
+        assertEquals(testStorage, repository.actionLogsStorageFlow.first())
     }
 
     @Test
@@ -155,11 +171,12 @@ class SettingsRepositoryTest {
 
     @Test
     fun switchActivationKey_savesAndEmitsValue() = runBlocking {
-        repository.switchActivationKey = "Enter"
+        val testKey = "Enter"
+        repository.switchActivationKey = testKey
 
-        assertEquals("Enter", mockedPrefsStore["switch_activation_key"])
-        assertEquals("Enter", repository.switchActivationKey)
-        assertEquals("Enter", repository.switchActivationKeyFlow.first())
+        assertEquals(testKey, mockedPrefsStore["book-default_switch_activation_key"])
+        assertEquals(testKey, repository.switchActivationKey)
+        assertEquals(testKey, repository.switchActivationKeyFlow.first())
     }
 
     @Test
@@ -173,7 +190,7 @@ class SettingsRepositoryTest {
     fun volumeKeysActivate_savesAndEmitsValue() = runBlocking {
         repository.volumeKeysActivate = true
 
-        assertEquals("true", mockedPrefsStore["volume_keys_activate"])
+        assertEquals("true", mockedPrefsStore["book-default_volume_keys_activate"])
         assertEquals(true, repository.volumeKeysActivate)
         assertEquals(true, repository.volumeKeysActivateFlow.first())
     }

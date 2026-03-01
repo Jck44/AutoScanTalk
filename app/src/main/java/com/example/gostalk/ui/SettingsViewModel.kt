@@ -65,7 +65,11 @@ class SettingsViewModel(
     val volumeKeysActivate: StateFlow<Boolean> = _volumeKeysActivate.asStateFlow()
 
     init {
-        // Initiale Einstellungen laden
+        refresh()
+    }
+
+    fun refresh() {
+        // Initiale Einstellungen laden oder aktualisieren
         _selectedLanguageTag.value = settingsRepository.ttsLanguage ?: "default"
         _selectedVoiceName.value = settingsRepository.ttsVoiceName
         _autoStartScanning.value = settingsRepository.autoStartScanning
