@@ -19,13 +19,17 @@ import java.util.Collections
 
 class DriveAuthManager private constructor(private val context: Context) {
 
-    private val TAG = "DriveAuthManager"
+    private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     private val credentialManager = CredentialManager.create(context)
     
-    private val _userEmail = MutableStateFlow<String?>(null)
+    private val _userEmail = MutableStateFlow<String?>(prefs.getString(KEY_USER_EMAIL, null))
     val userEmail: StateFlow<String?> = _userEmail.asStateFlow()
 
     companion object {
+        private const val TAG = "DriveAuthManager"
+        private const val PREFS_NAME = "drive_auth_prefs"
+        private const val KEY_USER_EMAIL = "user_email"
+
         @Volatile
         private var INSTANCE: DriveAuthManager? = null
 
@@ -114,6 +118,7 @@ class DriveAuthManager private constructor(private val context: Context) {
         }
 
         _userEmail.value = email
+        prefs.edit().putString(KEY_USER_EMAIL, email).apply()
         Log.e(TAG, "Sign-in verified. User email stored: $email")
         
         return true
@@ -123,6 +128,7 @@ class DriveAuthManager private constructor(private val context: Context) {
         Log.e(TAG, "Signing out...")
         credentialManager.clearCredentialState(ClearCredentialStateRequest())
         _userEmail.value = null
+        prefs.edit().remove(KEY_USER_EMAIL).apply()
     }
 
     fun getDriveCredential(): GoogleAccountCredential? {
