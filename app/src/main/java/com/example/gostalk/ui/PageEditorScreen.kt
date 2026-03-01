@@ -13,6 +13,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Card
@@ -24,6 +27,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -36,6 +40,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.text.input.ImeAction
 import com.example.gostalk.model.ButtonConfig
 import java.util.UUID
 
@@ -47,6 +53,7 @@ fun PageEditorScreen(
     onNavigateBack: () -> Unit
 ) {
     val allPages by pageViewModel.allPages.collectAsState()
+    val bookDefaultScanPattern by pageViewModel.defaultScanPattern.collectAsState()
     val page = allPages.find { it.id == pageId }
 
     var selectedButtonIndex by remember { mutableStateOf<Int?>(null) }
@@ -82,6 +89,8 @@ fun PageEditorScreen(
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
+            val effectiveScanPattern = page.scanPattern ?: bookDefaultScanPattern
+
             // Button Grid for editing
             LazyVerticalGrid(
                 columns = GridCells.Fixed(page.columns),
@@ -92,16 +101,36 @@ fun PageEditorScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                itemsIndexed(page.buttonConfigs) { globalIndex, buttonConfig ->
-                    GridButton(
-                        buttonConfig = buttonConfig,
-                        isFocused = false,
-                        isEditorMode = true,
-                        onClick = {
-                            selectedButtonIndex = globalIndex
-                            showDialog = true
+                val totalRows = page.rows
+                for (r in 0 until totalRows) {
+                    if (effectiveScanPattern == "row_by_row") {
+                        item(span = { GridItemSpan(maxLineSpan) }) {
+                            RowNameEditor(
+                                initialName = page.rowNames.getOrNull(r) ?: "Zeile ${r + 1}",
+                                onNameChanged = { newName ->
+                                    pageViewModel.updateRowName(page.id, r, newName)
+                                }
+                            )
                         }
-                    )
+                    }
+
+                    val startIdx = r * page.columns
+                    val endIdx = minOf(startIdx + page.columns, page.buttonConfigs.size)
+
+                    for (i in startIdx until endIdx) {
+                        item {
+                            val buttonConfig = page.buttonConfigs[i]
+                            GridButton(
+                                buttonConfig = buttonConfig,
+                                isFocused = false,
+                                isEditorMode = true,
+                                onClick = {
+                                    selectedButtonIndex = i
+                                    showDialog = true
+                                }
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -127,4 +156,27 @@ fun PageEditorScreen(
             }
         )
     }
+}
+
+@Composable
+fun RowNameEditor(initialName: String, onNameChanged: (String) -> Unit) {
+    var text by remember(initialName) { mutableStateOf(initialName) }
+    OutlinedTextField(
+        value = text,
+        onValueChange = { text = it },
+        label = { Text("Zeilenname") },
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+        keyboardActions = KeyboardActions(onDone = { 
+            if (text != initialName) onNameChanged(text) 
+        }),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .onFocusChanged { focusState ->
+                if (!focusState.isFocused && text != initialName) {
+                    onNameChanged(text)
+                }
+            }
+    )
 }

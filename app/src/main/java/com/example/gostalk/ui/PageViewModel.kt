@@ -286,6 +286,27 @@ class PageViewModel(
         }
     }
 
+    fun updateRowName(pageId: String, rowIndex: Int, newName: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val page = pageRepository.getPageById(pageId)
+            if (page != null) {
+                val updatedNames = page.rowNames.toMutableList()
+                // Ensure the list is large enough
+                while (updatedNames.size <= rowIndex) {
+                    updatedNames.add("Zeile ${updatedNames.size + 1}")
+                }
+                updatedNames[rowIndex] = newName
+                
+                val updatedPage = page.copy(rowNames = updatedNames)
+                pageRepository.updatePage(updatedPage)
+                
+                if (_currentPage.value?.id == pageId) {
+                    _currentPage.value = updatedPage
+                }
+            }
+        }
+    }
+
     fun deletePage(page: Page) {
         viewModelScope.launch(Dispatchers.IO) {
             pageRepository.deletePage(page)
