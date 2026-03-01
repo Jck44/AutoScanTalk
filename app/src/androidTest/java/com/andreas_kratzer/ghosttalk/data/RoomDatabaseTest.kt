@@ -96,8 +96,9 @@ class RoomDatabaseTest {
         val buttonConfig2 = ButtonConfig(
             id = "b2",
             label = "Nav Label",
+            spokenText = "Going Home",
             auditoryCue = AuditoryCue.TextToSpeechCue("Go Home Hint"),
-            buttonAction = NavigateToPageButtonAction("homeId", "Going Home")
+            buttonAction = NavigateToPageButtonAction("homeId")
         )
 
         val buttons = listOf(buttonConfig1, null, buttonConfig2, null)

@@ -18,18 +18,30 @@ class ActionExecutor(
     private val onLoadPage: (Page) -> Unit,
     private val onPauseScanning: () -> Unit,
     private val onResumeScanning: () -> Unit,
-    private val onLogAction: (String) -> Unit
+    private val onLogAction: (String) -> Unit,
+    private val timeProvider: () -> Long = { System.currentTimeMillis() }
 ) {
-    private var lastExecutionTime = 0L
+    private var lastExecutionTime = -1L
+    private var activeExecutionId = 0
+    private var isSpeaking = false
 
     fun executeButtonAction(buttonConfig: ButtonConfig) {
-        val currentTime = System.currentTimeMillis()
+        val currentTime = timeProvider()
         val holdingTime = settingsRepository.holdingTimeMillis
-        if (currentTime - lastExecutionTime < holdingTime) {
+        
+        if (isSpeaking) {
+            onLogAction("Aktion ignoriert (Sprachausgabe aktiv)")
+            return
+        }
+
+        if (lastExecutionTime != -1L && currentTime - lastExecutionTime < holdingTime) {
             onLogAction("Aktion ignoriert (Haltezeit aktiv: ${holdingTime}ms)")
             return
         }
+        
         lastExecutionTime = currentTime
+        val currentExecutionId = ++activeExecutionId
+        isSpeaking = true
 
         onPauseScanning()
         
@@ -40,12 +52,18 @@ class ActionExecutor(
                     ?: buttonConfig.label
                 if (ttsHelper?.isReady == true) {
                     ttsHelper?.speakRouted(textToSpeak, settingsRepository.ttsAudioDeviceAddress) {
-                        onResumeScanning()
+                        if (currentExecutionId == activeExecutionId) {
+                            isSpeaking = false
+                            onResumeScanning()
+                        }
                     }
                     onLogAction("Gesprochen: \"$textToSpeak\"")
                 } else {
                     onLogAction("Sprechen (TTS nicht bereit): \"$textToSpeak\"")
-                    onResumeScanning()
+                    if (currentExecutionId == activeExecutionId) {
+                        isSpeaking = false
+                        onResumeScanning()
+                    }
                 }
             }
             is NavigateToPageButtonAction -> {
@@ -57,15 +75,26 @@ class ActionExecutor(
                         val nextPage = pageRepository.getPageById(action.pageId)
                         if (nextPage != null) {
                             onLoadPage(nextPage)
-                            // onResumeScanning() is NOT called here because PageScreen's
-                            // DisposableEffect automatically resumes scanning when currentPage changes!
+                            // isSpeaking and onResumeScanning handling for navigation:
+                            // Since Navigation takes time and might have its own TTS feedback,
+                            // we reset isSpeaking only after the navigation is "done" from ActionExecutor perspective.
+                            // Note: PageScreen handles scanner resume via DisposableEffect.
+                            isSpeaking = false 
                             onLogAction("Navigiert zu Seite: ${nextPage.name} (ID: ${action.pageId})")
                         } else {
                             onLogAction("Fehler: Seite mit ID '${action.pageId}' nicht gefunden.")
                             if (ttsHelper?.isReady == true) {
-                                ttsHelper?.speak("Seite nicht gefunden") { onResumeScanning() }
+                                ttsHelper?.speak("Seite nicht gefunden") { 
+                                    if (currentExecutionId == activeExecutionId) {
+                                        isSpeaking = false
+                                        onResumeScanning()
+                                    }
+                                }
                             } else {
-                                onResumeScanning()
+                                if (currentExecutionId == activeExecutionId) {
+                                    isSpeaking = false
+                                    onResumeScanning()
+                                }
                             }
                         }
                     }

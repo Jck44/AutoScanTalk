@@ -152,7 +152,6 @@ class PageViewModel(
         val page = _currentPage.value ?: return
         val buttonConfig = page.buttonConfigs.getOrNull(index) ?: return
         
-        stopScanningTemporarily()
         scannerEngine.setFocusedIndex(index)
         actionExecutor.executeButtonAction(buttonConfig)
     }
