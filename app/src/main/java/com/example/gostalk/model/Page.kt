@@ -10,6 +10,8 @@ data class Page(
     val name: String,
     val rows: Int = 4,
     val columns: Int = 4,
+    val scanPattern: String? = null,
+    val rowNames: List<String> = emptyList(),
     val buttonConfigs: List<ButtonConfig?> // Represents the grid, null for an empty/deactivated button
 ) {
     init {

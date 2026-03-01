@@ -88,4 +88,18 @@ class Converters {
         val type = object : TypeToken<List<ButtonConfig?>>() {}.type
         return gson.fromJson(buttonConfigsString, type)
     }
+
+    @TypeConverter
+    fun fromStringList(strings: List<String>?): String? {
+        if (strings == null) return null
+        val type = object : TypeToken<List<String>>() {}.type
+        return gson.toJson(strings, type)
+    }
+
+    @TypeConverter
+    fun toStringList(stringsString: String?): List<String>? {
+        if (stringsString == null) return null
+        val type = object : TypeToken<List<String>>() {}.type
+        return gson.fromJson(stringsString, type)
+    }
 }

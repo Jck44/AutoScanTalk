@@ -59,12 +59,14 @@ fun SettingsScreen(
     val persistActionLogs by settingsViewModel.persistActionLogs.collectAsState()
     val switchActivationKey by settingsViewModel.switchActivationKey.collectAsState()
     val volumeKeysActivate by settingsViewModel.volumeKeysActivate.collectAsState()
+    val defaultScanPattern by settingsViewModel.defaultScanPattern.collectAsState()
 
     var expandedLanguage by remember { mutableStateOf(false) }
     var expandedStartPage by remember { mutableStateOf(false) }
     var expandedVoice by remember { mutableStateOf(false) }
     var expandedTtsDevice by remember { mutableStateOf(false) }
     var expandedCuesDevice by remember { mutableStateOf(false) }
+    var expandedDefaultScanPattern by remember { mutableStateOf(false) }
 
     // Versuche regelmäßig die Sprachen zu laden, falls sie initial noch nicht da waren
     LaunchedEffect(expandedLanguage) {
@@ -153,6 +155,59 @@ fun SettingsScreen(
                             }
                         )
                     }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
+                text = "Standard Scanmuster (Buch)",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Box(modifier = Modifier.fillMaxWidth()) {
+                val currentPatternLabel = when (defaultScanPattern) {
+                    "linear" -> "Button für Button"
+                    "row_by_row" -> "Zeilenweise"
+                    else -> "Button für Button"
+                }
+
+                OutlinedTextField(
+                    value = currentPatternLabel,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Scanmuster wählen") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { expandedDefaultScanPattern = true }
+                )
+
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clickable { expandedDefaultScanPattern = true }
+                )
+
+                DropdownMenu(
+                    expanded = expandedDefaultScanPattern,
+                    onDismissRequest = { expandedDefaultScanPattern = false },
+                    modifier = Modifier.fillMaxWidth(0.9f)
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Button für Button") },
+                        onClick = {
+                            settingsViewModel.setDefaultScanPattern("linear")
+                            expandedDefaultScanPattern = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Zeilenweise") },
+                        onClick = {
+                            settingsViewModel.setDefaultScanPattern("row_by_row")
+                            expandedDefaultScanPattern = false
+                        }
+                    )
                 }
             }
 

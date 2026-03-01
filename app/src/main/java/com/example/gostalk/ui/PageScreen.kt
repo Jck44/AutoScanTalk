@@ -45,6 +45,7 @@ fun PageScreen(
     // States aus dem ViewModel beobachten
     val currentPage by pageViewModel.currentPage.collectAsState()
     val focusedButtonIndex by pageViewModel.focusedButtonIndex.collectAsState()
+    val focusedRowIndex by pageViewModel.focusedRowIndex.collectAsState()
     val lastActions by pageViewModel.lastActions.collectAsState()
     // Optional: val ttsReady by pageViewModel.ttsReady.collectAsState()
 
@@ -89,11 +90,13 @@ fun PageScreen(
         ) {
             itemsIndexed(page.buttonConfigs) { globalIndex, buttonConfig ->
                 val isFocused = globalIndex == focusedButtonIndex
+                val isRowFocused = focusedRowIndex != null && (globalIndex / page.columns) == focusedRowIndex
 
                 if (buttonConfig != null && buttonConfig.isActive) {
                     GridButton(
                         buttonConfig = buttonConfig,
                         isFocused = isFocused,
+                        isRowFocused = isRowFocused,
                         isEditorMode = false,
                         onClick = { pageViewModel.activateButtonAtIndex(globalIndex) }
                     )
@@ -118,7 +121,7 @@ fun PageScreen(
             }
             Button(
                 onClick = { pageViewModel.activateFocusedButton() },
-                enabled = focusedButtonIndex != null // Nur aktivieren, wenn ein Button fokussiert ist
+                enabled = focusedButtonIndex != null || focusedRowIndex != null // Nur aktivieren, wenn ein Button/Zeile fokussiert ist
             ) {
                 Text("Activate Focused")
             }

@@ -43,6 +43,9 @@ class SettingsViewModel(
     private val _resumeScanningFromStart = MutableStateFlow(true)
     val resumeScanningFromStart: StateFlow<Boolean> = _resumeScanningFromStart.asStateFlow()
 
+    private val _defaultScanPattern = MutableStateFlow("linear")
+    val defaultScanPattern: StateFlow<String> = _defaultScanPattern.asStateFlow()
+
     private val _defaultStartPageId = MutableStateFlow<String?>(null)
     val defaultStartPageId: StateFlow<String?> = _defaultStartPageId.asStateFlow()
 
@@ -75,6 +78,7 @@ class SettingsViewModel(
         _autoStartScanning.value = settingsRepository.autoStartScanning
         _scanDelayInput.value = settingsRepository.scanDelayMillis.toString()
         _resumeScanningFromStart.value = settingsRepository.resumeScanningFromStart
+        _defaultScanPattern.value = settingsRepository.defaultScanPattern
         _defaultStartPageId.value = settingsRepository.defaultStartPageId
         _selectedTtsAudioDeviceAddress.value = settingsRepository.ttsAudioDeviceAddress
         _selectedCuesAudioDeviceAddress.value = settingsRepository.cuesAudioDeviceAddress
@@ -152,6 +156,11 @@ class SettingsViewModel(
     fun setResumeScanningFromStart(fromStart: Boolean) {
         settingsRepository.resumeScanningFromStart = fromStart
         _resumeScanningFromStart.value = fromStart
+    }
+
+    fun setDefaultScanPattern(pattern: String) {
+        settingsRepository.defaultScanPattern = pattern
+        _defaultScanPattern.value = pattern
     }
 
     fun setPersistActionLogs(enabled: Boolean) {

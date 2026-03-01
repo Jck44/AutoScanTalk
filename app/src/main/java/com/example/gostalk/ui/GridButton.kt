@@ -22,6 +22,7 @@ import com.example.gostalk.model.ButtonConfig
 fun GridButton(
     buttonConfig: ButtonConfig?,
     isFocused: Boolean = false,
+    isRowFocused: Boolean = false,
     isEditorMode: Boolean = false,
     onClick: () -> Unit
 ) {
@@ -34,6 +35,8 @@ fun GridButton(
         elevation = CardDefaults.cardElevation(defaultElevation = if (buttonConfig != null) 4.dp else 0.dp),
         border = if (isFocused) {
             BorderStroke(4.dp, MaterialTheme.colorScheme.primary)
+        } else if (isRowFocused) {
+            BorderStroke(3.dp, MaterialTheme.colorScheme.secondary)
         } else if (isEditorMode) {
             BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
         } else null,

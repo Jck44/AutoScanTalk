@@ -65,6 +65,7 @@ class SettingsRepository(context: Context) {
         _actionLogsStorageFlow.value = actionLogsStorage
         _switchActivationKeyFlow.value = switchActivationKey
         _volumeKeysActivateFlow.value = volumeKeysActivate
+        _defaultScanPatternFlow.value = defaultScanPattern
     }
 
     private val _ttsLanguageFlow = MutableStateFlow(getStringScoped(KEY_TTS_LANGUAGE))
@@ -107,6 +108,16 @@ class SettingsRepository(context: Context) {
         set(value) {
             putStringScoped(KEY_DEFAULT_START_PAGE_ID, value)
             _defaultStartPageIdFlow.value = value
+        }
+
+    private val _defaultScanPatternFlow = MutableStateFlow(getStringScoped(KEY_DEFAULT_SCAN_PATTERN, "linear") ?: "linear")
+    val defaultScanPatternFlow: StateFlow<String> = _defaultScanPatternFlow.asStateFlow()
+
+    var defaultScanPattern: String
+        get() = getStringScoped(KEY_DEFAULT_SCAN_PATTERN, "linear") ?: "linear"
+        set(value) {
+            putStringScoped(KEY_DEFAULT_SCAN_PATTERN, value)
+            _defaultScanPatternFlow.value = value
         }
 
     private val _ttsVoiceNameFlow = MutableStateFlow(getStringScoped(KEY_TTS_VOICE_NAME))
@@ -185,5 +196,6 @@ class SettingsRepository(context: Context) {
         private const val KEY_ACTION_LOGS_STORAGE = "action_logs_storage"
         private const val KEY_SWITCH_ACTIVATION_KEY = "switch_activation_key"
         private const val KEY_VOLUME_KEYS_ACTIVATE = "volume_keys_activate"
+        private const val KEY_DEFAULT_SCAN_PATTERN = "default_scan_pattern"
     }
 }

@@ -51,6 +51,8 @@ class PageViewModel(
 
     val scannerEngine = ScannerEngine(viewModelScope, settingsRepository, ttsHelper)
     val focusedButtonIndex: StateFlow<Int?> = scannerEngine.focusedButtonIndex
+    val focusedRowIndex: StateFlow<Int?> = scannerEngine.focusedRowIndex
+    val defaultScanPattern: StateFlow<String> = settingsRepository.defaultScanPatternFlow
 
     val actionExecutor = ActionExecutor(
         scope = viewModelScope,
@@ -145,7 +147,15 @@ class PageViewModel(
 
     fun startScanning(startIndex: Int = 0) {
         val page = _currentPage.value ?: return
-        scannerEngine.startScanning(page.buttonConfigs, startIndex)
+        val defaultPattern = settingsRepository.defaultScanPattern
+        val patternToUse = page.scanPattern ?: defaultPattern
+        scannerEngine.startScanning(
+            buttonConfigs = page.buttonConfigs,
+            startIndex = startIndex,
+            pattern = patternToUse,
+            columns = page.columns,
+            rowNames = page.rowNames
+        )
     }
 
     fun stopScanningTemporarily() {
@@ -169,8 +179,13 @@ class PageViewModel(
     }
 
     fun activateFocusedButton() {
-        val focusedIdx = focusedButtonIndex.value ?: return
-        activateButtonAtIndex(focusedIdx)
+        val focusedIdx = focusedButtonIndex.value
+        val focusedRow = focusedRowIndex.value
+        if (focusedIdx != null) {
+            activateButtonAtIndex(focusedIdx)
+        } else if (focusedRow != null) {
+            scannerEngine.selectCurrentRow()
+        }
     }
 
     private fun logAction(actionText: String) {
@@ -253,11 +268,15 @@ class PageViewModel(
         }
     }
 
-    fun updatePageName(pageId: String, newName: String) {
+    fun updatePageSettings(pageId: String, newName: String, newScanPattern: String?, newRowNames: List<String>) {
         viewModelScope.launch(Dispatchers.IO) {
             val page = pageRepository.getPageById(pageId)
             if (page != null) {
-                val updatedPage = page.copy(name = newName)
+                val updatedPage = page.copy(
+                    name = newName,
+                    scanPattern = newScanPattern,
+                    rowNames = newRowNames
+                )
                 pageRepository.updatePage(updatedPage)
                 
                 if (_currentPage.value?.id == pageId) {

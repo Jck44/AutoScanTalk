@@ -12,6 +12,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -23,6 +26,8 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -63,6 +68,7 @@ fun PageListScreen(
 ) {
     val allPages by pageViewModel.allPages.collectAsState()
     val activeBookId by pageViewModel.activeBookId.collectAsState()
+    val bookDefaultScanPattern by pageViewModel.defaultScanPattern.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
     var pageToEdit by remember { mutableStateOf<Page?>(null) }
     val coroutineScope = rememberCoroutineScope()
@@ -216,24 +222,90 @@ fun PageListScreen(
 
         pageToEdit?.let { page ->
             var editPageName by remember { mutableStateOf(page.name) }
+            var editScanPattern by remember { mutableStateOf(page.scanPattern) }
+            val mutableRowNames = remember { 
+                androidx.compose.runtime.mutableStateListOf<String>().apply {
+                    val initialNames = page.rowNames
+                    for (i in 0 until page.rows) {
+                        add(initialNames.getOrNull(i) ?: "Zeile ${i + 1}")
+                    }
+                }
+            }
+            var expandedPattern by remember { mutableStateOf(false) }
 
             AlertDialog(
                 onDismissRequest = { pageToEdit = null },
-                title = { Text("Seite umbenennen") },
+                title = { Text("Seiteneinstellungen") },
                 text = {
-                    OutlinedTextField(
-                        value = editPageName,
-                        onValueChange = { editPageName = it },
-                        label = { Text("Name der Seite") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    Column(
+                        modifier = Modifier.verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = editPageName,
+                            onValueChange = { editPageName = it },
+                            label = { Text("Name der Seite") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        val currentPatternLabel = when (editScanPattern) {
+                            "linear" -> "Button für Button"
+                            "row_by_row" -> "Zeilenweise"
+                            else -> "Standard (Buch)"
+                        }
+
+                        Box {
+                            OutlinedTextField(
+                                value = currentPatternLabel,
+                                onValueChange = {},
+                                readOnly = true,
+                                label = { Text("Scanmuster (Überschreiben)") },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { expandedPattern = true }
+                            )
+                            Box(modifier = Modifier.matchParentSize().clickable { expandedPattern = true })
+                            DropdownMenu(
+                                expanded = expandedPattern,
+                                onDismissRequest = { expandedPattern = false },
+                                modifier = Modifier.fillMaxWidth(0.8f)
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("Standard (Buch)") },
+                                    onClick = { editScanPattern = null; expandedPattern = false }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Button für Button") },
+                                    onClick = { editScanPattern = "linear"; expandedPattern = false }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Zeilenweise") },
+                                    onClick = { editScanPattern = "row_by_row"; expandedPattern = false }
+                                )
+                            }
+                        }
+
+                        val effectiveScanPattern = editScanPattern ?: bookDefaultScanPattern
+                        if (effectiveScanPattern == "row_by_row") {
+                            Text("Zeilen-Ansage konfigurieren:", style = MaterialTheme.typography.titleSmall)
+                            for (i in 0 until page.rows) {
+                                OutlinedTextField(
+                                    value = mutableRowNames[i],
+                                    onValueChange = { mutableRowNames[i] = it },
+                                    label = { Text("Zeile ${i + 1}") },
+                                    singleLine = true,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                        }
+                    }
                 },
                 confirmButton = {
                     Button(
                         onClick = {
                             if (editPageName.isNotBlank()) {
-                                pageViewModel.updatePageName(page.id, editPageName)
+                                pageViewModel.updatePageSettings(page.id, editPageName, editScanPattern, mutableRowNames.toList())
                                 pageToEdit = null
                             }
                         }
