@@ -1,0 +1,167 @@
+package com.andreas_kratzer.ghosttalk.core.cloud
+
+import android.util.Log
+import com.google.api.client.googleapis.json.GoogleJsonResponseException
+import com.google.api.client.http.FileContent
+import com.google.api.services.drive.Drive
+import com.google.api.services.drive.model.File
+import com.google.api.services.drive.model.FileList
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.io.FileOutputStream
+import java.io.IOException
+
+class DriveServiceHelper(private val driveService: Drive) {
+
+    private val TAG = "DriveServiceHelper"
+
+    /**
+     * Creates a folder in Google Drive.
+     */
+    suspend fun createFolder(folderName: String): String? = withContext(Dispatchers.IO) {
+        val metadata = File().apply {
+            name = folderName
+            mimeType = "application/vnd.google-apps.folder"
+        }
+        try {
+            Log.d(TAG, "Creating folder: $folderName")
+            val googleFile = driveService.files().create(metadata).setFields("id").execute()
+            Log.d(TAG, "Folder created successfully: ${googleFile.id}")
+            googleFile.id
+        } catch (e: com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException) {
+            throw e
+        } catch (e: GoogleJsonResponseException) {
+            Log.e(TAG, "Failed to create folder. Status: ${e.statusCode}, Message: ${e.details.message}")
+            if (e.statusCode == 403) {
+                Log.e(TAG, "403 Forbidden: Check if Drive API is enabled in Google Cloud Console and if the user has given consent.")
+            }
+            null
+        } catch (e: IOException) {
+            Log.e(TAG, "Failed to create folder due to IOException: ${e.message}", e)
+            null
+        }
+    }
+
+    /**
+     * Finds a folder by name.
+     */
+    suspend fun findFolder(folderName: String): String? = withContext(Dispatchers.IO) {
+        val query = "name = '$folderName' and mimeType = 'application/vnd.google-apps.folder' and trashed = false"
+        try {
+            Log.d(TAG, "Searching for folder: $folderName")
+            val result: FileList = driveService.files().list().setQ(query).setFields("files(id, name)").execute()
+            val id = result.files.firstOrNull()?.id
+            Log.d(TAG, "Search result for $folderName: ${id ?: "Not found"}")
+            id
+        } catch (e: com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException) {
+            throw e
+        } catch (e: GoogleJsonResponseException) {
+            Log.e(TAG, "Failed to find folder. Status: ${e.statusCode}, Message: ${e.details.message}")
+            null
+        } catch (e: IOException) {
+            Log.e(TAG, "Failed to find folder due to IOException: ${e.message}", e)
+            null
+        }
+    }
+
+    /**
+     * Uploads a file to a specific folder.
+     */
+    suspend fun uploadFile(
+        parentFolderId: String,
+        file: java.io.File,
+        mimeType: String
+    ): String? = withContext(Dispatchers.IO) {
+        val metadata = File().apply {
+            name = file.name
+            parents = listOf(parentFolderId)
+        }
+        val mediaContent = FileContent(mimeType, file)
+        try {
+            Log.d(TAG, "Uploading file: ${file.name} to folder $parentFolderId")
+            val googleFile = driveService.files().create(metadata, mediaContent).setFields("id").execute()
+            Log.d(TAG, "File uploaded successfully: ${googleFile.id}")
+            googleFile.id
+        } catch (e: com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException) {
+            throw e
+        } catch (e: GoogleJsonResponseException) {
+            Log.e(TAG, "Failed to upload file. Status: ${e.statusCode}, Message: ${e.details.message}")
+            null
+        } catch (e: IOException) {
+            Log.e(TAG, "Failed to upload file due to IOException: ${e.message}", e)
+            null
+        }
+    }
+
+    /**
+     * Updates an existing file.
+     */
+    suspend fun updateFile(
+        fileId: String,
+        file: java.io.File,
+        mimeType: String
+    ): Boolean = withContext(Dispatchers.IO) {
+        val metadata = File().apply {
+            name = file.name
+        }
+        val mediaContent = FileContent(mimeType, file)
+        try {
+            Log.d(TAG, "Updating file: $fileId (${file.name})")
+            driveService.files().update(fileId, metadata, mediaContent).execute()
+            Log.d(TAG, "File updated successfully: $fileId")
+            true
+        } catch (e: com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException) {
+            throw e
+        } catch (e: GoogleJsonResponseException) {
+            Log.e(TAG, "Failed to update file. Status: ${e.statusCode}, Message: ${e.details.message}")
+            false
+        } catch (e: IOException) {
+            Log.e(TAG, "Failed to update file due to IOException: ${e.message}", e)
+            false
+        }
+    }
+
+    /**
+     * Downloads a file from Drive.
+     */
+    suspend fun downloadFile(fileId: String, targetFile: java.io.File): Boolean = withContext(Dispatchers.IO) {
+        try {
+            Log.d(TAG, "Downloading file: $fileId to ${targetFile.absolutePath}")
+            FileOutputStream(targetFile).use { outputStream ->
+                driveService.files().get(fileId).executeMediaAndDownloadTo(outputStream)
+            }
+            Log.d(TAG, "File downloaded successfully: $fileId")
+            true
+        } catch (e: com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException) {
+            throw e
+        } catch (e: GoogleJsonResponseException) {
+            Log.e(TAG, "Failed to download file. Status: ${e.statusCode}, Message: ${e.details.message}")
+            false
+        } catch (e: IOException) {
+            Log.e(TAG, "Failed to download file due to IOException: ${e.message}", e)
+            false
+        }
+    }
+
+    /**
+     * Lists files in a folder.
+     */
+    suspend fun listFiles(folderId: String): List<File> = withContext(Dispatchers.IO) {
+        val query = "'$folderId' in parents and trashed = false"
+        try {
+            Log.d(TAG, "Listing files in folder: $folderId")
+            val result: FileList = driveService.files().list().setQ(query).setFields("files(id, name, modifiedTime)").execute()
+            val files = result.files ?: emptyList()
+            Log.d(TAG, "Found ${files.size} files in folder $folderId")
+            files
+        } catch (e: com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException) {
+            throw e
+        } catch (e: GoogleJsonResponseException) {
+            Log.e(TAG, "Failed to list files. Status: ${e.statusCode}, Message: ${e.details.message}")
+            emptyList()
+        } catch (e: IOException) {
+            Log.e(TAG, "Failed to list files due to IOException: ${e.message}", e)
+            emptyList()
+        }
+    }
+}

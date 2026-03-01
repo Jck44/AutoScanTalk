@@ -10,12 +10,26 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.util.Locale
-import com.andreas_kratzer.ghosttalk.core.AudioDeviceManager
 import com.andreas_kratzer.ghosttalk.model.AudioOutputDevice
+import com.andreas_kratzer.ghosttalk.core.AudioDeviceManager
+import com.andreas_kratzer.ghosttalk.core.cloud.DriveAuthManager
+import com.andreas_kratzer.ghosttalk.domain.CloudSyncUseCase
+import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
+import com.google.api.client.http.javanet.NetHttpTransport
+import com.google.api.client.json.gson.GsonFactory
+import com.google.api.services.drive.Drive
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
+import android.content.Intent
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
 
 class SettingsViewModel(
     application: Application,
-    private val settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository,
+    private val driveAuthManager: DriveAuthManager,
+    private val cloudSyncUseCase: CloudSyncUseCase
 ) : AndroidViewModel(application) {
 
     // Helper für das Abfragen der verfügbaren Sprachen
@@ -70,6 +84,17 @@ class SettingsViewModel(
     private val _holdingTimeInput = MutableStateFlow("0")
     val holdingTimeInput: StateFlow<String> = _holdingTimeInput.asStateFlow()
 
+    private val _isCloudSyncEnabled = MutableStateFlow(false)
+    val isCloudSyncEnabled: StateFlow<Boolean> = _isCloudSyncEnabled.asStateFlow()
+
+    val userEmail: StateFlow<String?> = driveAuthManager.userEmail
+
+    private val _isSyncing = MutableStateFlow(false)
+    val isSyncing: StateFlow<Boolean> = _isSyncing.asStateFlow()
+
+    private val _authIntentFlow = MutableSharedFlow<Intent>()
+    val authIntentFlow = _authIntentFlow.asSharedFlow()
+
     init {
         refresh()
     }
@@ -89,6 +114,7 @@ class SettingsViewModel(
         _switchActivationKey.value = settingsRepository.switchActivationKey
         _volumeKeysActivate.value = settingsRepository.volumeKeysActivate
         _holdingTimeInput.value = settingsRepository.holdingTimeMillis.toString()
+        _isCloudSyncEnabled.value = settingsRepository.isCloudSyncEnabled
         
         // Den lokalen TTS-Helper mit den gespeicherten Werten füttern,
         // sonst spricht er in den Einstellungen initial in Systemsprache
@@ -192,6 +218,80 @@ class SettingsViewModel(
         }
     }
 
+    fun setCloudSyncEnabled(enabled: Boolean) {
+        settingsRepository.isCloudSyncEnabled = enabled
+        _isCloudSyncEnabled.value = enabled
+    }
+
+    fun signIn(context: android.content.Context) {
+        android.util.Log.d("SettingsViewModel", "signIn called")
+        val activity = findActivity(context)
+        if (activity == null) {
+            android.widget.Toast.makeText(context, "Keine Activity gefunden!", android.widget.Toast.LENGTH_SHORT).show()
+            return
+        }
+        
+        viewModelScope.launch {
+            android.widget.Toast.makeText(context, "Anmeldung wird gestartet...", android.widget.Toast.LENGTH_SHORT).show()
+            val result = driveAuthManager.signIn(activity)
+            if (result) {
+                android.widget.Toast.makeText(context, "Anmeldung erfolgreich!", android.widget.Toast.LENGTH_SHORT).show()
+            } else {
+                android.widget.Toast.makeText(context, "Anmeldung fehlgeschlagen. Bitte prüfe, ob ein Google-Konto auf dem Gerät angemeldet ist und die Client ID korrekt konfiguriert wurde.", android.widget.Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    private fun findActivity(context: android.content.Context): android.app.Activity? {
+        var currentContext = context
+        while (currentContext is android.content.ContextWrapper) {
+            if (currentContext is android.app.Activity) return currentContext
+            currentContext = currentContext.baseContext
+        }
+        return null
+    }
+
+    fun signOut() {
+        viewModelScope.launch {
+            driveAuthManager.signOut()
+        }
+    }
+
+    fun syncNow() {
+        val context = getApplication<Application>().applicationContext
+        val credential = driveAuthManager.getDriveCredential()
+        if (credential == null) {
+            android.util.Log.w("SettingsViewModel", "syncNow: No credential available. User might not be signed in.")
+            android.widget.Toast.makeText(context, "Nicht angemeldet!", android.widget.Toast.LENGTH_SHORT).show()
+            return
+        }
+        val bookId = settingsRepository.activeBookId
+        
+        viewModelScope.launch {
+            _isSyncing.value = true
+            android.util.Log.d("SettingsViewModel", "Starting manual sync for book: $bookId")
+            try {
+                val drive = Drive.Builder(
+                    NetHttpTransport(),
+                    GsonFactory.getDefaultInstance(),
+                    credential
+                ).setApplicationName("GhosTTalk").build()
+                
+                cloudSyncUseCase.syncBook(drive, bookId)
+                android.util.Log.d("SettingsViewModel", "Sync completed successfully")
+                android.widget.Toast.makeText(context, "Synchronisierung abgeschlossen", android.widget.Toast.LENGTH_SHORT).show()
+            } catch (e: UserRecoverableAuthIOException) {
+                android.util.Log.w("SettingsViewModel", "UserRecoverableAuthIOException: Emitting auth intent")
+                _authIntentFlow.emit(e.intent)
+            } catch (e: Exception) {
+                android.util.Log.e("SettingsViewModel", "Sync failed with exception: ${e.message}", e)
+                android.widget.Toast.makeText(context, "Fehler bei der Synchronisierung", android.widget.Toast.LENGTH_LONG).show()
+            } finally {
+                _isSyncing.value = false
+            }
+        }
+    }
+
     fun setDefaultStartPageId(pageId: String?) {
         settingsRepository.defaultStartPageId = pageId
         _defaultStartPageId.value = pageId
@@ -241,7 +341,13 @@ class SettingsViewModelFactory(
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(SettingsViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return SettingsViewModel(application, settingsRepository) as T
+            val driveAuthManager = com.andreas_kratzer.ghosttalk.core.cloud.DriveAuthManager.getInstance(application)
+            val db = com.andreas_kratzer.ghosttalk.data.AppDatabase.getDatabase(application)
+            val pageRepo = com.andreas_kratzer.ghosttalk.data.PageRepository(db.pageDao())
+            val importExportManager = com.andreas_kratzer.ghosttalk.core.PageImportExportManager(pageRepo, com.andreas_kratzer.ghosttalk.core.util.AppLogger)
+            val cloudSyncUseCase = com.andreas_kratzer.ghosttalk.domain.CloudSyncUseCase(application, pageRepo, settingsRepository, importExportManager)
+            
+            return SettingsViewModel(application, settingsRepository, driveAuthManager, cloudSyncUseCase) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

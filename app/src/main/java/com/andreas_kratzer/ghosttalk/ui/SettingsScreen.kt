@@ -1,5 +1,36 @@
+package com.andreas_kratzer.ghosttalk.ui
+
+import android.content.res.Configuration
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.util.VoiceUtils
+import java.util.Locale
 
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
@@ -26,6 +57,21 @@ fun SettingsScreen(
     val volumeKeysActivate by settingsViewModel.volumeKeysActivate.collectAsState()
     val defaultScanPattern by settingsViewModel.defaultScanPattern.collectAsState()
     val holdingTimeInput by settingsViewModel.holdingTimeInput.collectAsState()
+
+    val authLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            // User granted permission, trigger sync again
+            settingsViewModel.syncNow()
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        settingsViewModel.authIntentFlow.collect { intent ->
+            authLauncher.launch(intent)
+        }
+    }
 
     var expandedLanguage by remember { mutableStateOf(false) }
     var expandedStartPage by remember { mutableStateOf(false) }
@@ -90,6 +136,8 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.height(24.dp))
                         VoiceSettings(selectedLanguage, availableLanguages, selectedVoiceName, availableVoices, settingsViewModel)
                         Spacer(modifier = Modifier.height(24.dp))
+                        CloudSettings(settingsViewModel)
+                        Spacer(modifier = Modifier.height(24.dp))
                         AudioOutputSettings(availableAudioDevices, selectedTtsAudioDeviceAddress, selectedCuesAudioDeviceAddress, settingsViewModel)
                     }
                     Column(modifier = Modifier.weight(1f)) {
@@ -104,6 +152,8 @@ fun SettingsScreen(
                 GeneralSettings(allPages, defaultStartPageId, defaultScanPattern, settingsViewModel)
                 Spacer(modifier = Modifier.height(24.dp))
                 VoiceSettings(selectedLanguage, availableLanguages, selectedVoiceName, availableVoices, settingsViewModel)
+                Spacer(modifier = Modifier.height(24.dp))
+                CloudSettings(settingsViewModel)
                 Spacer(modifier = Modifier.height(24.dp))
                 AudioOutputSettings(availableAudioDevices, selectedTtsAudioDeviceAddress, selectedCuesAudioDeviceAddress, settingsViewModel)
                 Spacer(modifier = Modifier.height(24.dp))
@@ -432,6 +482,85 @@ fun HardwareSettings(
                 )
             }
             Switch(checked = volumeKeysActivate, onCheckedChange = { settingsViewModel.setVolumeKeysActivate(it) })
+        }
+    }
+}
+
+@Composable
+fun CloudSettings(settingsViewModel: SettingsViewModel) {
+    val isCloudSyncEnabled by settingsViewModel.isCloudSyncEnabled.collectAsState()
+    val userEmail by settingsViewModel.userEmail.collectAsState()
+    val isSyncing by settingsViewModel.isSyncing.collectAsState()
+    
+    PreferenceCategory(stringResource(R.string.settings_category_cloud)) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { settingsViewModel.setCloudSyncEnabled(!isCloudSyncEnabled) },
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(stringResource(R.string.settings_cloud_sync_enabled))
+                Text(
+                    text = stringResource(R.string.settings_cloud_sync_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Switch(
+                checked = isCloudSyncEnabled,
+                onCheckedChange = { settingsViewModel.setCloudSyncEnabled(it) }
+            )
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // Login Status & Sync Controls
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(stringResource(R.string.settings_cloud_status_label), style = MaterialTheme.typography.labelLarge)
+                Text(
+                    if (userEmail != null) {
+                        stringResource(R.string.settings_cloud_status_signed_in_as, userEmail!!)
+                    } else {
+                        stringResource(R.string.settings_cloud_status_not_signed_in)
+                    },
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+            
+            if (userEmail == null) {
+                val context = androidx.compose.ui.platform.LocalContext.current
+                Button(onClick = { settingsViewModel.signIn(context) }) {
+                    Text(stringResource(R.string.settings_cloud_sign_in))
+                }
+            } else {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(
+                        onClick = { settingsViewModel.signOut() }
+                    ) {
+                        Text(stringResource(R.string.settings_cloud_sign_out))
+                    }
+                    Button(
+                        onClick = { settingsViewModel.syncNow() },
+                        enabled = !isSyncing
+                    ) {
+                        if (isSyncing) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text(stringResource(R.string.settings_cloud_sync_now))
+                        }
+                    }
+                }
+            }
         }
     }
 }

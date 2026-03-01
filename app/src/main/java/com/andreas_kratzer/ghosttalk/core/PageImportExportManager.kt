@@ -21,9 +21,11 @@ class PageImportExportManager(
 ) {
     private val gson = Gson()
 
-    suspend fun importFromJson(jsonString: String, bookId: String): Result<Int> = withContext(ioDispatcher) {
+    suspend fun importFromJson(jsonString: String, bookId: String): Result<Int> = importBookFromJson(jsonString, bookId)
+
+    suspend fun importBookFromJson(jsonString: String, bookId: String): Result<Int> = withContext(ioDispatcher) {
         try {
-            logger.d("PageImportExportManager", "Starting import mapping parsing...")
+            logger.d("PageImportExportManager", "Starting import mapping parsing for book $bookId...")
             val importData = gson.fromJson(jsonString, ImportExportData::class.java)
 
             if (importData.pages.isNullOrEmpty()) {
@@ -31,9 +33,11 @@ class PageImportExportManager(
                 return@withContext Result.failure(Exception("Ungültiges JSON-Format. Seiten fehlen."))
             }
 
+            // Optional: Lösche alte Seiten des Buches, falls wir ein komplettes Restore machen (für Sync)
+            // pageRepository.deletePagesForBook(bookId) 
+
             logger.d("PageImportExportManager", "Parsed ${importData.pages.size} pages. Committing to Room DB...")
 
-            // Mapping logic extracted from PageViewModel
             val pageIdMap = mutableMapOf<String, String>()
             importData.pages.forEach { p ->
                 pageIdMap[p.importId] = UUID.randomUUID().toString()
@@ -91,6 +95,11 @@ class PageImportExportManager(
             logger.e("PageImportExportManager", "Exception during import", e)
             Result.failure(e)
         }
+    }
+
+    suspend fun exportBookToJson(bookId: String): String = withContext(ioDispatcher) {
+        val pages = pageRepository.getPagesForBook(bookId)
+        exportToJson(pages)
     }
 
     suspend fun exportToJson(pages: List<Page>): String = withContext(ioDispatcher) {

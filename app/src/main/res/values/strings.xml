@@ -122,6 +122,18 @@
     <string name="page_clear_logs_description">Verlauf leeren</string>
     <string name="page_no_actions_yet">Noch keine Aktionen ausgeführt.</string>
 
+    <!-- Cloud Sync -->
+    <string name="settings_category_cloud">Cloud-Integration</string>
+    <string name="settings_cloud_sync_enabled">Cloud-Synchronisierung aktivieren</string>
+    <string name="settings_cloud_sync_hint">Sichert Bücher automatisch in Google Drive</string>
+    <string name="settings_cloud_status_label">Status:</string>
+    <string name="settings_cloud_status_not_signed_in">Nicht angemeldet</string>
+    <string name="settings_cloud_status_signed_in_as">Angemeldet als %s</string>
+    <string name="settings_cloud_last_sync">Letzte Synchronisierung: %s</string>
+    <string name="settings_cloud_sync_now">Jetzt synchronisieren</string>
+    <string name="settings_cloud_sign_in">Anmelden</string>
+    <string name="settings_cloud_sign_out">Abmelden</string>
+
     <!-- Shared -->
     <string name="error_page_not_found">Seite nicht gefunden</string>
 </resources>

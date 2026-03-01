@@ -67,6 +67,7 @@ class SettingsRepository(context: Context) {
         _volumeKeysActivateFlow.value = volumeKeysActivate
         _defaultScanPatternFlow.value = defaultScanPattern
         _holdingTimeFlow.value = holdingTimeMillis
+        _isCloudSyncEnabledFlow.value = isCloudSyncEnabled
     }
 
     private val _ttsLanguageFlow = MutableStateFlow(getStringScoped(KEY_TTS_LANGUAGE))
@@ -193,6 +194,16 @@ class SettingsRepository(context: Context) {
             _holdingTimeFlow.value = value
         }
 
+    private val _isCloudSyncEnabledFlow = MutableStateFlow(getBooleanScoped(KEY_CLOUD_SYNC_ENABLED, false))
+    val isCloudSyncEnabledFlow: StateFlow<Boolean> = _isCloudSyncEnabledFlow.asStateFlow()
+
+    var isCloudSyncEnabled: Boolean
+        get() = getBooleanScoped(KEY_CLOUD_SYNC_ENABLED, false)
+        set(value) {
+            putBooleanScoped(KEY_CLOUD_SYNC_ENABLED, value)
+            _isCloudSyncEnabledFlow.value = value
+        }
+
     companion object {
         private const val PREFS_NAME = "ghosttalk_settings"
         private const val KEY_TTS_LANGUAGE = "tts_language"
@@ -209,5 +220,6 @@ class SettingsRepository(context: Context) {
         private const val KEY_VOLUME_KEYS_ACTIVATE = "volume_keys_activate"
         private const val KEY_DEFAULT_SCAN_PATTERN = "default_scan_pattern"
         private const val KEY_HOLDING_TIME_MILLIS = "holding_time_millis"
+        private const val KEY_CLOUD_SYNC_ENABLED = "cloud_sync_enabled"
     }
 }
