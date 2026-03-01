@@ -1,0 +1,100 @@
+package com.example.gostalk.core
+
+import com.example.gostalk.model.ButtonConfig
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+
+class RowByRowScanStrategy : ScanStrategy {
+    override suspend fun executeScan(
+        buttonConfigs: List<ButtonConfig?>,
+        columns: Int,
+        rowNames: List<String>,
+        startIndex: Int, // This is startIndex for ROWS in this strategy
+        focusedButtonIndex: MutableStateFlow<Int?>,
+        focusedRowIndex: MutableStateFlow<Int?>,
+        onSpeakCue: suspend (String) -> Unit,
+        delayMillis: Long
+    ) {
+        focusedButtonIndex.value = null
+        
+        val activeRows = mutableListOf<Int>()
+        val totalRows = (buttonConfigs.size + columns - 1) / columns
+        
+        for (r in 0 until totalRows) {
+            val startIdx = r * columns
+            val endIdx = minOf(startIdx + columns, buttonConfigs.size)
+            var hasActive = false
+            for (i in startIdx until endIdx) {
+                val btn = buttonConfigs[i]
+                if (btn != null && btn.isActive) {
+                    hasActive = true
+                    break
+                }
+            }
+            if (hasActive) {
+                activeRows.add(r)
+            }
+        }
+
+        if (activeRows.isEmpty()) {
+            focusedRowIndex.value = null
+            return
+        }
+
+        val startingPosition = activeRows.indexOfFirst { it >= startIndex }.coerceAtLeast(0)
+
+        while (true) {
+            for (i in startingPosition until activeRows.size) {
+                val rowIndex = activeRows[i]
+                focusedRowIndex.value = rowIndex
+
+                val defaultName = "Zeile ${rowIndex + 1}"
+                val cueText = rowNames.getOrNull(rowIndex)?.takeIf { it.isNotBlank() } ?: defaultName
+                onSpeakCue(cueText)
+                
+                delay(delayMillis)
+            }
+            // Loop from start for subsequent passes
+        }
+    }
+
+    /**
+     * Helper to start scanning buttons within a specific row.
+     * This acts as a secondary strategy or a mode of this strategy.
+     */
+    suspend fun executeButtonScanInRow(
+        buttonConfigs: List<ButtonConfig?>,
+        columns: Int,
+        rowIndex: Int,
+        focusedButtonIndex: MutableStateFlow<Int?>,
+        focusedRowIndex: MutableStateFlow<Int?>,
+        onSpeakCue: suspend (String) -> Unit,
+        delayMillis: Long
+    ) {
+        // Keep focusedRowIndex as is (to highlight the row)
+        val activeButtonsInRow = buttonConfigs
+            .mapIndexedNotNull { index, config ->
+                if (config != null && config.isActive && index / columns == rowIndex) {
+                    Pair(index, config)
+                } else null
+            }
+
+        if (activeButtonsInRow.isEmpty()) {
+            focusedButtonIndex.value = null
+            return
+        }
+
+        while (true) {
+            for (i in activeButtonsInRow.indices) {
+                val (globalIndex, buttonConfig) = activeButtonsInRow[i]
+                focusedButtonIndex.value = globalIndex
+                
+                val cueText = (buttonConfig.auditoryCue as? com.example.gostalk.model.AuditoryCue.TextToSpeechCue)?.text 
+                    ?: buttonConfig.label
+                onSpeakCue(cueText)
+                
+                delay(delayMillis)
+            }
+        }
+    }
+}

@@ -11,10 +11,11 @@ import com.example.gostalk.model.Page
 import com.example.gostalk.model.SpeakTextButtonAction
 import com.example.gostalk.tts.TextToSpeechHelper
 import com.example.gostalk.model.ButtonConfig
+import com.google.gson.Gson
 import com.example.gostalk.core.ScannerEngine
 import com.example.gostalk.core.ActionExecutor
 import com.example.gostalk.model.importexport.ImportExportData
-import com.google.gson.Gson
+import com.example.gostalk.core.PageImportExportManager
 import com.example.gostalk.data.SettingsRepository
 import com.example.gostalk.data.PageRepository
 import kotlinx.coroutines.Dispatchers
@@ -24,6 +25,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.UUID
+import com.example.gostalk.core.util.Logger
+import com.example.gostalk.core.util.AppLogger
+import com.example.gostalk.core.util.TestLogger
 
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -34,7 +38,9 @@ class PageViewModel(
     application: Application,
     private val pageRepository: PageRepository,
     private val settingsRepository: SettingsRepository,
-    private var ttsHelper: TextToSpeechHelper? = null
+    private var ttsHelper: TextToSpeechHelper? = null,
+    private val logger: Logger = AppLogger,
+    private val importExportManager: PageImportExportManager = PageImportExportManager(pageRepository, logger)
 ) : AndroidViewModel(application) {
 
     private val _activeBookId = MutableStateFlow<String?>(null)
@@ -49,7 +55,7 @@ class PageViewModel(
     private val _lastActions = MutableStateFlow<List<String>>(emptyList())
     val lastActions: StateFlow<List<String>> = _lastActions.asStateFlow()
 
-    val scannerEngine = ScannerEngine(viewModelScope, settingsRepository, ttsHelper)
+    val scannerEngine = ScannerEngine(viewModelScope, settingsRepository, ttsHelper, logger)
     val focusedButtonIndex: StateFlow<Int?> = scannerEngine.focusedButtonIndex
     val focusedRowIndex: StateFlow<Int?> = scannerEngine.focusedRowIndex
     val defaultScanPattern: StateFlow<String> = settingsRepository.defaultScanPatternFlow
@@ -116,7 +122,7 @@ class PageViewModel(
                     val savedList = gson.fromJson(savedJson, Array<String>::class.java).toList()
                     _lastActions.value = savedList
                 } catch (e: Exception) {
-                    android.util.Log.e("PageViewModel", "Error parsing stored action logs", e)
+                    logger.e("PageViewModel", "Error parsing stored action logs", e)
                 }
             }
         }
@@ -314,145 +320,18 @@ class PageViewModel(
     }
 
     fun importFromJson(jsonString: String, bookId: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                android.util.Log.d("GoSTalkImport", "Starting import mapping parsing...")
-                val gson = Gson()
-                val importData = gson.fromJson(jsonString, ImportExportData::class.java)
-
-                if (importData?.pages == null) {
-                    android.util.Log.e("GoSTalkImport", "Parsed JSON was invalid or missing 'pages'")
-                    launch(Dispatchers.Main) { onError("Ungültiges JSON-Format. Seiten fehlen.") }
-                    return@launch
-                }
-                
-                android.util.Log.d("GoSTalkImport", "Parsed ${importData.pages.size} pages. Committing to Room DB...")
-
-                // 1. Generate new UUIDs for all imported pages to map their relationships
-                val pageIdMap = mutableMapOf<String, String>()
-                importData.pages.forEach {
-                    pageIdMap[it.importId] = UUID.randomUUID().toString()
-                }
-
-                // 2. Map pages and buttons
-                val newPages = importData.pages.map { importPage ->
-                    val pageId = pageIdMap[importPage.importId] ?: UUID.randomUUID().toString()
-
-                    // Create empty grid
-                    val buttonConfigs = MutableList<ButtonConfig?>(importPage.rows * importPage.columns) { null }
-
-                    importPage.buttons.forEach { importButton ->
-                        if (importButton.index <= Int.MAX_VALUE) {
-                            val safeIndex = importButton.index.toInt()
-                            if (safeIndex in buttonConfigs.indices) {
-                                // Skip truly empty dummy buttons often found in generic GoTalk exports (no label, no action)
-                                if (importButton.label.isBlank() || importButton.action == null) {
-                                    buttonConfigs[safeIndex] = null
-                                    return@forEach
-                                }
-
-                                val auditoryCue = if (!importButton.auditoryCueText.isNullOrBlank()) {
-                                    AuditoryCue.TextToSpeechCue(importButton.auditoryCueText)
-                                } else null
-
-                                val action = when (importButton.action?.type?.uppercase()) {
-                                    "NAVIGATE" -> {
-                                        val targetId = pageIdMap[importButton.action.targetPageImportId] ?: ""
-                                        NavigateToPageButtonAction(targetId)
-                                    }
-                                    "SPEAK" -> SpeakTextButtonAction(importButton.action.textToSpeech ?: importButton.label)
-                                    else -> SpeakTextButtonAction(importButton.label) // Fallback
-                                }
-
-                                buttonConfigs[safeIndex] = ButtonConfig(
-                                    id = UUID.randomUUID().toString(),
-                                    label = importButton.label,
-                                    spokenText = importButton.action?.ttsFeedback,
-                                    auditoryCue = auditoryCue,
-                                    isActive = importButton.active ?: true,
-                                    buttonAction = action
-                                )
-                            }
-                        }
-                }
-
-                    Page(
-                        id = pageId,
-                        bookId = bookId,
-                        name = importPage.name,
-                        rows = importPage.rows,
-                        columns = importPage.columns,
-                        buttonConfigs = buttonConfigs
-                    )
-                }
-
-                // 3. Save to DB
-                newPages.forEach { pageRepository.insertPage(it) }
-                android.util.Log.d("GoSTalkImport", "Successfully committed ${newPages.size} pages to Database")
-                
-                launch(Dispatchers.Main) { onSuccess() }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                android.util.Log.e("GoSTalkImport", "Exception during import: ${e.message}")
-                launch(Dispatchers.Main) { onError("Fehler beim Import: ${e.message}") }
+        viewModelScope.launch {
+            val result = importExportManager.importFromJson(jsonString, bookId)
+            result.onSuccess {
+                onSuccess()
+            }.onFailure { e ->
+                onError("Fehler beim Import: ${e.message}")
             }
         }
     }
 
     suspend fun exportToJson(): String {
-        return kotlinx.coroutines.withContext(Dispatchers.IO) {
-            val pages = _allPages.value
-            
-            val importPages = pages.map { page ->
-                val importButtons = mutableListOf<com.example.gostalk.model.importexport.ImportButton>()
-                
-                page.buttonConfigs.forEachIndexed { index, config ->
-                    if (config != null) {
-                        val auditoryCueText = (config.auditoryCue as? AuditoryCue.TextToSpeechCue)?.text
-
-                        val (actionType, textToSpeech, targetPageImportId) = when (val action = config.buttonAction) {
-                            is SpeakTextButtonAction -> Triple("SPEAK", action.textToSpeech, null)
-                            is NavigateToPageButtonAction -> Triple("NAVIGATE", null, action.pageId)
-                            else -> Triple("SPEAK", config.label, null)
-                        }
-
-                        // Set ttsFeedback to spokenText for legacy compat / matching import structure
-                        val importAction = com.example.gostalk.model.importexport.ImportAction(
-                            type = actionType,
-                            textToSpeech = textToSpeech,
-                            targetPageImportId = targetPageImportId,
-                            ttsFeedback = config.spokenText
-                        )
-
-                        importButtons.add(
-                            com.example.gostalk.model.importexport.ImportButton(
-                                index = index.toLong(),
-                                label = config.label,
-                                auditoryCueText = auditoryCueText,
-                                active = config.isActive,
-                                action = importAction
-                            )
-                        )
-                    }
-                }
-
-                com.example.gostalk.model.importexport.ImportPage(
-                    importId = page.id,
-                    name = page.name,
-                    rows = page.rows,
-                    columns = page.columns,
-                    buttons = importButtons
-                )
-            }
-
-            val exportData = com.example.gostalk.model.importexport.ImportExportData(
-                gostalk_import_version = "1.0",
-                appName = "GoSTalk (Export)",
-                pages = importPages
-            )
-
-            Gson().toJson(exportData)
-        }
+        return importExportManager.exportToJson(_allPages.value)
     }
 
     override fun onCleared() {
@@ -470,7 +349,9 @@ class PageViewModelFactory(
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(PageViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return PageViewModel(application, pageRepository, settingsRepository) as T
+            val logger = AppLogger
+            val importExportManager = PageImportExportManager(pageRepository, logger)
+            return PageViewModel(application, pageRepository, settingsRepository, logger = logger, importExportManager = importExportManager) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

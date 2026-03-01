@@ -1,82 +1,32 @@
 package com.example.gostalk.core
 
-import android.content.Context
-import com.example.gostalk.model.AuditoryCue
+import com.example.gostalk.core.util.TestLogger
 import com.example.gostalk.model.ButtonConfig
-import com.example.gostalk.model.NavigateToPageButtonAction
 import com.example.gostalk.model.SpeakTextButtonAction
-import com.example.gostalk.tts.TextToSpeechHelper
-import io.mockk.Runs
-import io.mockk.coEvery
-import io.mockk.coVerify
+import com.example.gostalk.model.NavigateToPageButtonAction
 import io.mockk.every
-import io.mockk.just
 import io.mockk.mockk
-import io.mockk.slot
-import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class CoreLogicTest {
 
-    private lateinit var ttsHelper: TextToSpeechHelper
-    private lateinit var context: Context
+    private lateinit var ttsHelper: com.example.gostalk.tts.TextToSpeechHelper
 
     @Before
     fun setup() {
         ttsHelper = mockk(relaxed = true)
-        context = mockk(relaxed = true)
-        
-        // Mock default TTS behavior
-        every { ttsHelper.speak(any(), any()) } just Runs
-        every { ttsHelper.isReady } returns true
-        
-        io.mockk.mockkStatic(android.util.Log::class)
-        every { android.util.Log.d(any(), any()) } returns 0
-        every { android.util.Log.e(any(), any()) } returns 0
     }
 
     @Test
-    fun testAuditoryCue_WhenNoExplicitText_UsesLabelFallback() {
-        val config = ButtonConfig(
-            id = "b1",
-            label = "Apple",
-            spokenText = null,
-            auditoryCue = null, // No explicit cue provided
-            buttonAction = SpeakTextButtonAction("dummy")
-        )
-
-        // Simulate logic that will be extracted to ScannerEngine handling AudioRouting
-        val cueText = config.auditoryCue?.let { 
-            when (it) {
-                is AuditoryCue.TextToSpeechCue -> it.text
-            }
-        } ?: config.label // FALLBACK
-
-        assertEquals("Apple", cueText)
-    }
-
-    @Test
-    fun testAuditoryCue_WhenExplicitTextProvided_IgnoresLabel() {
-        val config = ButtonConfig(
-            id = "b1",
-            label = "Apple",
-            spokenText = null,
-            auditoryCue = AuditoryCue.TextToSpeechCue("Red fruit"),
-            buttonAction = SpeakTextButtonAction("dummy")
-        )
-
-        val cueText = config.auditoryCue?.let { 
-            when (it) {
-                is AuditoryCue.TextToSpeechCue -> it.text
-            }
-        } ?: config.label
-
-        assertEquals("Red fruit", cueText)
+    fun testSpeakAction_HasData() = runTest {
+        val action = SpeakTextButtonAction(textToSpeech = "Hello")
+        assertEquals("Hello", action.textToSpeech)
     }
 
     @Test
@@ -104,11 +54,13 @@ class CoreLogicTest {
     fun testScannerEngine_RowByRowScanning() = runTest {
         val settingsRepo = mockk<com.example.gostalk.data.SettingsRepository>(relaxed = true)
         every { settingsRepo.scanDelayMillis } returns 10L
+        every { ttsHelper.isReady } returns true
         
         val engine = com.example.gostalk.core.ScannerEngine(
             scope = this,
             settingsRepository = settingsRepo,
-            ttsHelper = ttsHelper
+            ttsHelper = ttsHelper,
+            logger = TestLogger
         )
         
         // Mock buttons: 2 rows, 2 columns. 4 active configs
@@ -122,29 +74,30 @@ class CoreLogicTest {
         // Start scanning row by row
         engine.startScanning(
             buttonConfigs = configs, 
+            startIndex = 0,
             pattern = "row_by_row", 
             columns = 2, 
             rowNames = listOf("Row 1", "Row 2")
         )
 
         // Give coroutines time to focus the first row
-        testScheduler.advanceUntilIdle()
+        // advanceTimeBy(1) is enough to trigger the first step of the launch block
+        testScheduler.advanceTimeBy(1)
         
         // Assert: First row is focused, NO button is focused yet
-        assertEquals(0, engine.focusedRowIndex.value)
-        org.junit.Assert.assertNull(engine.focusedButtonIndex.value)
+        assertEquals("Row focus should be 0", 0, engine.focusedRowIndex.value)
+        assertNull("Button focus should be null while scanning rows", engine.focusedButtonIndex.value)
         
         // Simulate user selecting the row (Triggering the hardware switch)
         engine.selectCurrentRow()
         
-        // Give coroutines time to start scanning buttons inside row 1
-        testScheduler.advanceUntilIdle()
+        // Give coroutines time to start scanning buttons inside row 0
+        testScheduler.advanceTimeBy(1)
         
-        // Assert: Row focus is gone, button index 0 (first in row) is now focused
-        org.junit.Assert.assertNull(engine.focusedRowIndex.value)
-        assertEquals(0, engine.focusedButtonIndex.value)
+        // Assert: Row focus is STILL 0 (visually highlighted) while button scanning
+        assertEquals("Row focus should remain 0", 0, engine.focusedRowIndex.value)
+        assertEquals("Button focus should be 0 (first button in row 0)", 0, engine.focusedButtonIndex.value)
         
         engine.stopScanning()
-        io.mockk.unmockkStatic(android.util.Log::class)
     }
 }
