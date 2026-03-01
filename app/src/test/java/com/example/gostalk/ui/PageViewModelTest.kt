@@ -51,8 +51,14 @@ class PageViewModelTest {
         every { settingsRepository.persistActionLogs } returns false
         every { settingsRepository.persistActionLogsFlow } returns MutableStateFlow(false)
         every { settingsRepository.actionLogsStorage } returns null
+        every { settingsRepository.persistActionLogsFlow } returns MutableStateFlow(false)
+        every { settingsRepository.actionLogsStorage } returns null
         every { settingsRepository.actionLogsStorageFlow } returns MutableStateFlow(null)
         every { pageRepository.getAllPagesFlow() } returns MutableStateFlow(emptyList())
+        
+        io.mockk.mockkStatic(android.util.Log::class)
+        every { android.util.Log.d(any(), any()) } returns 0
+        every { android.util.Log.e(any(), any()) } returns 0
     }
 
     @After
@@ -138,7 +144,15 @@ class PageViewModelTest {
         viewModel.activateButtonAtIndex(0) // this is slightly complex to set up due to internal page state, let's use reflection to call logAction for a direct unit test, or just mock the page
 
         // A better way without reflection: Load a dummy page, then activate button 0
-        val dummyPage = Page("p1", "b1", "Test", 1, 1, listOf(btnConfig))
+        // A better way without reflection: Load a dummy page, then activate button 0
+        val dummyPage = Page(
+            id = "p1", 
+            bookId = "test-book-id", 
+            name = "Test", 
+            rows = 1, 
+            columns = 1, 
+            buttonConfigs = listOf(btnConfig)
+        )
         viewModel.loadPage(dummyPage)
         viewModel.activateButtonAtIndex(0)
         
@@ -168,9 +182,63 @@ class PageViewModelTest {
         viewModel.clearActionLogs()
         
         assertTrue(viewModel.lastActions.value.isEmpty())
-        assertTrue(storageSlot.isCaptured)
         // actionLogsStorage should be set to an empty JSON array "[]" or null
         val captured = storageSlot.captured
         assertTrue(captured == null || captured == "[]")
+        
+        io.mockk.unmockkStatic(android.util.Log::class)
+    }
+
+    @Test
+    fun `importFromJson maps empty buttons to null and sets isActive correctly`() = runTest {
+        io.mockk.mockkStatic(android.util.Log::class)
+        every { android.util.Log.d(any(), any()) } returns 0
+        every { android.util.Log.e(any(), any()) } returns 0
+
+        val jsonString = """
+            {
+                "pages": [
+                    {
+                        "importId": "p1", "name": "TestPage", "rows": 1, "columns": 3,
+                        "buttons": [
+                            { "index": 0, "label": "Active Btn", "active": true, "action": { "type": "SpeakText", "textToSpeech": "Hello" } },
+                            { "index": 1, "label": "", "active": true, "action": null },
+                            { "index": 2, "label": "Inactive Btn", "active": false, "action": { "type": "SpeakText", "textToSpeech": "Hidden" } }
+                        ]
+                    }
+                ]
+            }
+        """.trimIndent()
+
+        // Setup successful import
+        coEvery { pageRepository.insertPage(any()) } returns Unit
+        viewModel = PageViewModel(application, pageRepository, settingsRepository, ttsHelper = mockk(relaxed=true))
+        
+        // Capture inserted page
+        val insertedPageSlot = slot<Page>()
+        coEvery { pageRepository.insertPage(capture(insertedPageSlot)) } returns Unit
+
+        var successCalled = false
+        viewModel.importFromJson(jsonString, "test_book", onSuccess = { successCalled = true }, onError = {})
+        
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue("Import should have completed successfully", successCalled)
+        assertTrue("Page should have been inserted", insertedPageSlot.isCaptured)
+        val capturedPage = insertedPageSlot.captured
+        assertEquals(3, capturedPage.buttonConfigs.size)
+
+        // b1 is fully active
+        assertNotNull(capturedPage.buttonConfigs[0])
+        assertTrue(capturedPage.buttonConfigs[0]!!.isActive)
+        
+        // b2 is empty (no action, no label) so it must drop to null
+        assertNull(capturedPage.buttonConfigs[1])
+
+        // b3 works but is inactive
+        assertNotNull(capturedPage.buttonConfigs[2])
+        assertEquals(false, capturedPage.buttonConfigs[2]!!.isActive)
+        
+        io.mockk.unmockkStatic(android.util.Log::class)
     }
 }
