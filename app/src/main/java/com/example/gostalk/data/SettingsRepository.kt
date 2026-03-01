@@ -87,7 +87,7 @@ class SettingsRepository(context: Context) {
         }
 
     var scanDelayMillis: Long
-        get() = getLongScoped(KEY_SCAN_DELAY_MILLIS, 1000L)
+        get() = getLongScoped(KEY_SCAN_DELAY_MILLIS, 3000L)
         set(value) {
             putLongScoped(KEY_SCAN_DELAY_MILLIS, value)
             _scanDelayFlow.value = value
