@@ -40,6 +40,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalConfiguration
+import android.content.res.Configuration
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.text.input.ImeAction
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
@@ -78,15 +80,18 @@ fun PageEditorScreen(
             )
         }
     ) { paddingValues ->
+        val configuration = LocalConfiguration.current
+        val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
         Column(
             modifier = Modifier
                 .padding(paddingValues)
-                .padding(16.dp)
+                .padding(if (isLandscape) 8.dp else 16.dp)
         ) {
             Text(
                 "Tippe auf ein Feld, um den Button zu konfigurieren.",
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(bottom = 16.dp)
+                style = if (isLandscape) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.padding(bottom = if (isLandscape) 8.dp else 16.dp)
             )
 
             val effectiveScanPattern = page.scanPattern ?: bookDefaultScanPattern

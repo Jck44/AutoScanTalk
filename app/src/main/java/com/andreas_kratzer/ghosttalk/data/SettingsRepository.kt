@@ -66,6 +66,7 @@ class SettingsRepository(context: Context) {
         _switchActivationKeyFlow.value = switchActivationKey
         _volumeKeysActivateFlow.value = volumeKeysActivate
         _defaultScanPatternFlow.value = defaultScanPattern
+        _holdingTimeFlow.value = holdingTimeMillis
     }
 
     private val _ttsLanguageFlow = MutableStateFlow(getStringScoped(KEY_TTS_LANGUAGE))
@@ -182,6 +183,16 @@ class SettingsRepository(context: Context) {
             _volumeKeysActivateFlow.value = value
         }
 
+    private val _holdingTimeFlow = MutableStateFlow(getLongScoped(KEY_HOLDING_TIME_MILLIS, 0L))
+    val holdingTimeFlow: StateFlow<Long> = _holdingTimeFlow.asStateFlow()
+
+    var holdingTimeMillis: Long
+        get() = getLongScoped(KEY_HOLDING_TIME_MILLIS, 0L)
+        set(value) {
+            putLongScoped(KEY_HOLDING_TIME_MILLIS, value)
+            _holdingTimeFlow.value = value
+        }
+
     companion object {
         private const val PREFS_NAME = "ghosttalk_settings"
         private const val KEY_TTS_LANGUAGE = "tts_language"
@@ -197,5 +208,6 @@ class SettingsRepository(context: Context) {
         private const val KEY_SWITCH_ACTIVATION_KEY = "switch_activation_key"
         private const val KEY_VOLUME_KEYS_ACTIVATE = "volume_keys_activate"
         private const val KEY_DEFAULT_SCAN_PATTERN = "default_scan_pattern"
+        private const val KEY_HOLDING_TIME_MILLIS = "holding_time_millis"
     }
 }

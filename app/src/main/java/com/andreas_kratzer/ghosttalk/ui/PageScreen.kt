@@ -18,6 +18,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import com.andreas_kratzer.ghosttalk.model.Page
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -34,6 +37,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
+import android.content.res.Configuration
 import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -73,107 +78,158 @@ fun PageScreen(
             )
         }
     ) { paddingValues ->
-        Column(
-            modifier = modifier
-                .padding(paddingValues)
-                .padding(16.dp)
-        ) {
-            // Button Grid
-            LazyVerticalGrid(
-            columns = GridCells.Fixed(page.columns),
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f), // Nimmt den meisten Platz ein
-            contentPadding = PaddingValues(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            itemsIndexed(page.buttonConfigs) { globalIndex, buttonConfig ->
-                val isFocused = globalIndex == focusedButtonIndex
-                val isRowFocused = focusedRowIndex != null && (globalIndex / page.columns) == focusedRowIndex
+        val configuration = LocalConfiguration.current
+        val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
-                if (buttonConfig != null && buttonConfig.isActive) {
-                    GridButton(
-                        buttonConfig = buttonConfig,
-                        isFocused = isFocused,
-                        isRowFocused = isRowFocused,
-                        isEditorMode = false,
-                        onClick = { pageViewModel.activateButtonAtIndex(globalIndex) }
-                    )
-                } else {
-                    // Leerer Platzhalter für null ButtonConfig oder inaktive Buttons
-                    Spacer(modifier = Modifier
-                        .aspectRatio(1f)
-                        .fillMaxSize())
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Kontroll-Buttons für Testzwecke
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            Button(onClick = { pageViewModel.startScanning() }) {
-                Text("Start Scan")
-            }
-            Button(
-                onClick = { pageViewModel.activateFocusedButton() },
-                enabled = focusedButtonIndex != null || focusedRowIndex != null // Nur aktivieren, wenn ein Button/Zeile fokussiert ist
+        if (isLandscape) {
+            Row(
+                modifier = modifier
+                    .padding(paddingValues)
+                    .padding(16.dp)
+                    .fillMaxSize(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Text("Activate Focused")
+                // Left side: Button Grid
+                Box(modifier = Modifier.weight(0.7f)) {
+                    ButtonGrid(
+                        page = page,
+                        focusedButtonIndex = focusedButtonIndex,
+                        focusedRowIndex = focusedRowIndex,
+                        pageViewModel = pageViewModel
+                    )
+                }
+
+                // Right side: Controls and Logs
+                Column(
+                    modifier = Modifier
+                        .weight(0.3f)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    ControlButtons(pageViewModel, focusedButtonIndex, focusedRowIndex)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    ActionLogCard(lastActions) { pageViewModel.clearActionLogs() }
+                }
             }
-            Button(onClick = { pageViewModel.stopScanning() }) {
-                Text("Stop Scan")
+        } else {
+            Column(
+                modifier = modifier
+                    .padding(paddingValues)
+                    .padding(16.dp)
+                    .fillMaxSize()
+            ) {
+                Box(modifier = Modifier.weight(1f)) {
+                    ButtonGrid(
+                        page = page,
+                        focusedButtonIndex = focusedButtonIndex,
+                        focusedRowIndex = focusedRowIndex,
+                        pageViewModel = pageViewModel
+                    )
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                ControlButtons(pageViewModel, focusedButtonIndex, focusedRowIndex)
+                Spacer(modifier = Modifier.height(16.dp))
+                ActionLogCard(lastActions) { pageViewModel.clearActionLogs() }
             }
         }
+    }
+}
 
-        Spacer(modifier = Modifier.height(16.dp))
+@Composable
+fun ButtonGrid(
+    page: Page,
+    focusedButtonIndex: Int?,
+    focusedRowIndex: Int?,
+    pageViewModel: PageViewModel
+) {
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(page.columns),
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        itemsIndexed(page.buttonConfigs) { globalIndex: Int, buttonConfig: com.andreas_kratzer.ghosttalk.model.ButtonConfig? ->
+            val isFocused = globalIndex == focusedButtonIndex
+            val isRowFocused = focusedRowIndex != null && (globalIndex / page.columns) == focusedRowIndex
 
-        // Bereich für letzte Aktionen
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(210.dp), // Feste Größe für den Scrollbereich
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            if (buttonConfig != null && buttonConfig.isActive) {
+                GridButton(
+                    buttonConfig = buttonConfig,
+                    isFocused = isFocused,
+                    isRowFocused = isRowFocused,
+                    isEditorMode = false,
+                    onClick = { pageViewModel.activateButtonAtIndex(globalIndex) }
+                )
+            } else {
+                Spacer(modifier = Modifier.aspectRatio(1f).fillMaxSize())
+            }
+        }
+    }
+}
+
+@Composable
+fun ControlButtons(
+    pageViewModel: PageViewModel,
+    focusedButtonIndex: Int?,
+    focusedRowIndex: Int?
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
+        Button(onClick = { pageViewModel.startScanning() }) {
+            Text("Start Scan")
+        }
+        Button(
+            onClick = { pageViewModel.activateFocusedButton() },
+            enabled = focusedButtonIndex != null || focusedRowIndex != null
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Letzte Aktionen:",
-                        style = MaterialTheme.typography.titleMedium
+            Text("Activate Focused")
+        }
+        Button(onClick = { pageViewModel.stopScanning() }) {
+            Text("Stop Scan")
+        }
+    }
+}
+
+@Composable
+fun ActionLogCard(
+    lastActions: List<String>,
+    onClearLogs: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(210.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = "Letzte Aktionen:", style = MaterialTheme.typography.titleMedium)
+                IconButton(onClick = onClearLogs) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Verlauf leeren",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    IconButton(
-                        onClick = { pageViewModel.clearActionLogs() },
-                        modifier = Modifier.align(Alignment.CenterVertically)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = "Verlauf leeren",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
                 }
-                
-                if (lastActions.isEmpty()) {
-                    Text("Noch keine Aktionen ausgeführt.")
-                } else {
-                    LazyColumn(modifier = Modifier.fillMaxSize()) {
-                        items(lastActions) { actionText ->
-                            Text("- $actionText")
-                        }
+            }
+
+            if (lastActions.isEmpty()) {
+                Text("Noch keine Aktionen ausgeführt.")
+            } else {
+                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    items(lastActions) { actionText ->
+                        Text("- $actionText")
                     }
                 }
             }
         }
     }
-}
 }

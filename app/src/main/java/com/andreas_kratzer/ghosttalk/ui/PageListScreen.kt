@@ -9,9 +9,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
@@ -126,7 +129,7 @@ fun PageListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Seiten verwenden") },
+                title = { Text("Seiten verwalten") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
@@ -136,14 +139,27 @@ fun PageListScreen(
                     }
                 },
                 actions = {
-                    Button(
-                        onClick = { exportLauncher.launch("GhosTTalk_Export.json") },
-                        modifier = Modifier.padding(end = 8.dp)
-                    ) {
-                        Text("Export JSON")
-                    }
-                    Button(onClick = { importLauncher.launch("application/json") }) {
-                        Text("Import JSON")
+                    val isLandscape = LocalConfiguration.current.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+                    if (isLandscape) {
+                        Button(
+                            onClick = { exportLauncher.launch("GhosTTalk_Export.json") },
+                            modifier = Modifier.padding(end = 8.dp)
+                        ) {
+                            Text("Export JSON")
+                        }
+                        Button(onClick = { importLauncher.launch("application/json") }) {
+                            Text("Import JSON")
+                        }
+                    } else {
+                        // In portrait, maybe use a dropdown or just icons if it's too crowded
+                        var showMenu by remember { mutableStateOf(false) }
+                        IconButton(onClick = { showMenu = true }) {
+                            Icon(Icons.Default.Add, contentDescription = "Mehr")
+                        }
+                        DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                            DropdownMenuItem(text = { Text("Export JSON") }, onClick = { showMenu = false; exportLauncher.launch("GhosTTalk_Export.json") })
+                            DropdownMenuItem(text = { Text("Import JSON") }, onClick = { showMenu = false; importLauncher.launch("application/json") })
+                        }
                     }
                 }
             )
@@ -154,12 +170,15 @@ fun PageListScreen(
             }
         }
     ) { paddingValues ->
-        LazyColumn(
+        LazyVerticalGrid(
+            columns = GridCells.Adaptive(minSize = 300.dp),
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(vertical = 8.dp)
         ) {
             items(allPages) { page ->
                 Card(

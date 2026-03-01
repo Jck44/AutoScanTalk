@@ -20,8 +20,17 @@ class ActionExecutor(
     private val onResumeScanning: () -> Unit,
     private val onLogAction: (String) -> Unit
 ) {
+    private var lastExecutionTime = 0L
 
     fun executeButtonAction(buttonConfig: ButtonConfig) {
+        val currentTime = System.currentTimeMillis()
+        val holdingTime = settingsRepository.holdingTimeMillis
+        if (currentTime - lastExecutionTime < holdingTime) {
+            onLogAction("Aktion ignoriert (Haltezeit aktiv: ${holdingTime}ms)")
+            return
+        }
+        lastExecutionTime = currentTime
+
         onPauseScanning()
         
         when (val action = buttonConfig.buttonAction) {

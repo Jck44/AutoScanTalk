@@ -67,6 +67,9 @@ class SettingsViewModel(
     private val _volumeKeysActivate = MutableStateFlow(false)
     val volumeKeysActivate: StateFlow<Boolean> = _volumeKeysActivate.asStateFlow()
 
+    private val _holdingTimeInput = MutableStateFlow("0")
+    val holdingTimeInput: StateFlow<String> = _holdingTimeInput.asStateFlow()
+
     init {
         refresh()
     }
@@ -85,6 +88,7 @@ class SettingsViewModel(
         _persistActionLogs.value = settingsRepository.persistActionLogs
         _switchActivationKey.value = settingsRepository.switchActivationKey
         _volumeKeysActivate.value = settingsRepository.volumeKeysActivate
+        _holdingTimeInput.value = settingsRepository.holdingTimeMillis.toString()
         
         // Den lokalen TTS-Helper mit den gespeicherten Werten füttern,
         // sonst spricht er in den Einstellungen initial in Systemsprache
@@ -176,6 +180,16 @@ class SettingsViewModel(
     fun setVolumeKeysActivate(enabled: Boolean) {
         settingsRepository.volumeKeysActivate = enabled
         _volumeKeysActivate.value = enabled
+    }
+
+    fun setHoldingTimeInput(input: String) {
+        val digitsOnly = input.filter { it.isDigit() }
+        _holdingTimeInput.value = digitsOnly
+
+        val parsed = digitsOnly.toLongOrNull()
+        if (parsed != null) {
+            settingsRepository.holdingTimeMillis = parsed
+        }
     }
 
     fun setDefaultStartPageId(pageId: String?) {

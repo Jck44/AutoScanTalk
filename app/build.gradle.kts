@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.play.publisher)
 }
 
 android {
@@ -19,8 +20,18 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file(project.findProperty("RELEASE_STORE_FILE") ?: "release.keystore")
+            storePassword = project.findProperty("RELEASE_STORE_PASSWORD")?.toString()
+            keyAlias = project.findProperty("RELEASE_KEY_ALIAS")?.toString()
+            keyPassword = project.findProperty("RELEASE_KEY_PASSWORD")?.toString()
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -38,6 +49,12 @@ android {
     }
     buildFeatures {
         compose = true
+    }
+
+    play {
+        track.set("internal")
+        serviceAccountCredentials.set(file("../service-account.json"))
+        // defaultToAppBundles.set(true)
     }
 }
 
