@@ -30,7 +30,7 @@ class ScannerEngine(
         
         val activeButtonsWithGlobalIndices = buttonConfigs
             .mapIndexedNotNull { index, buttonConfig ->
-                if (buttonConfig != null) Pair(index, buttonConfig) else null
+                if (buttonConfig != null && buttonConfig.isActive) Pair(index, buttonConfig) else null
             }
 
         if (activeButtonsWithGlobalIndices.isEmpty()) {

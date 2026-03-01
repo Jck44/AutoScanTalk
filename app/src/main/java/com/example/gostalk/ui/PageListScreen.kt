@@ -48,6 +48,11 @@ import java.io.InputStreamReader
 
 import androidx.compose.material.icons.filled.Edit
 import com.example.gostalk.model.Page
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.io.OutputStreamWriter
+import androidx.compose.runtime.rememberCoroutineScope
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,7 +65,7 @@ fun PageListScreen(
     val activeBookId by pageViewModel.activeBookId.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
     var pageToEdit by remember { mutableStateOf<Page?>(null) }
-
+    val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
     val importLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -88,6 +93,29 @@ fun PageListScreen(
         }
     }
 
+    val exportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        uri?.let {
+            coroutineScope.launch {
+                try {
+                    val jsonContent = pageViewModel.exportToJson()
+                    withContext(Dispatchers.IO) {
+                        context.contentResolver.openOutputStream(it)?.use { outputStream ->
+                            val writer = OutputStreamWriter(outputStream)
+                            writer.write(jsonContent)
+                            writer.close()
+                        }
+                    }
+                    android.widget.Toast.makeText(context, "Export erfolgreich!", android.widget.Toast.LENGTH_SHORT).show()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    android.widget.Toast.makeText(context, "Fehler beim Export: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -101,6 +129,12 @@ fun PageListScreen(
                     }
                 },
                 actions = {
+                    Button(
+                        onClick = { exportLauncher.launch("GoSTalk_Export.json") },
+                        modifier = Modifier.padding(end = 8.dp)
+                    ) {
+                        Text("Export JSON")
+                    }
                     Button(onClick = { importLauncher.launch("application/json") }) {
                         Text("Import JSON")
                     }

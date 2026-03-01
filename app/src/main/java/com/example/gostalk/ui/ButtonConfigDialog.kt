@@ -11,6 +11,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -18,6 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.gostalk.model.AuditoryCue
@@ -44,6 +46,7 @@ fun ButtonConfigDialog(
             (initialConfig?.auditoryCue as? AuditoryCue.TextToSpeechCue)?.text ?: ""
         ) 
     }
+    var isActive by remember { mutableStateOf(initialConfig?.isActive ?: true) }
     
     // Action Type selection
     val actionTypes = listOf("Text Sprechen", "Zu Seite navigieren")
@@ -91,6 +94,19 @@ fun ButtonConfigDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                // IsActive Toggle
+                androidx.compose.foundation.layout.Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Ist Aktiv", style = MaterialTheme.typography.bodyLarge)
+                    Switch(
+                        checked = isActive,
+                        onCheckedChange = { isActive = it }
+                    )
+                }
 
                 // Action Type Dropdown
                 ExposedDropdownMenuBox(
@@ -179,7 +195,8 @@ fun ButtonConfigDialog(
                                 id = buttonId, 
                                 label = label, 
                                 spokenText = spokenText.takeIf { it.isNotBlank() },
-                                buttonAction = action, 
+                                buttonAction = action,
+                                isActive = isActive,
                                 auditoryCue = cue
                             )
                         )

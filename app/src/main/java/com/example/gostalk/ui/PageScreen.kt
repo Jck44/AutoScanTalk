@@ -90,7 +90,7 @@ fun PageScreen(
             itemsIndexed(page.buttonConfigs) { globalIndex, buttonConfig ->
                 val isFocused = globalIndex == focusedButtonIndex
 
-                if (buttonConfig != null) {
+                if (buttonConfig != null && buttonConfig.isActive) {
                     GridButton(
                         buttonConfig = buttonConfig,
                         isFocused = isFocused,
@@ -98,7 +98,7 @@ fun PageScreen(
                         onClick = { pageViewModel.activateButtonAtIndex(globalIndex) }
                     )
                 } else {
-                    // Leerer Platzhalter für null ButtonConfig
+                    // Leerer Platzhalter für null ButtonConfig oder inaktive Buttons
                     Spacer(modifier = Modifier
                         .aspectRatio(1f)
                         .fillMaxSize())

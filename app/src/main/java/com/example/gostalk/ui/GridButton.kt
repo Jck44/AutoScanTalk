@@ -13,6 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.gostalk.model.ButtonConfig
@@ -24,10 +25,12 @@ fun GridButton(
     isEditorMode: Boolean = false,
     onClick: () -> Unit
 ) {
+    val isActive = buttonConfig?.isActive ?: true
     Card(
         modifier = Modifier
             .aspectRatio(1f)
-            .clickable(onClick = onClick),
+            .clickable(onClick = onClick)
+            .alpha(if (isEditorMode && !isActive) 0.5f else 1f),
         elevation = CardDefaults.cardElevation(defaultElevation = if (buttonConfig != null) 4.dp else 0.dp),
         border = if (isFocused) {
             BorderStroke(4.dp, MaterialTheme.colorScheme.primary)

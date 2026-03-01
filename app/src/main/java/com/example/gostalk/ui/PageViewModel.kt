@@ -305,28 +305,35 @@ class PageViewModel(
                         if (importButton.index <= Int.MAX_VALUE) {
                             val safeIndex = importButton.index.toInt()
                             if (safeIndex in buttonConfigs.indices) {
+                                // Skip truly empty dummy buttons often found in generic GoTalk exports (no label, no action)
+                                if (importButton.label.isBlank() || importButton.action == null) {
+                                    buttonConfigs[safeIndex] = null
+                                    return@forEach
+                                }
+
                                 val auditoryCue = if (!importButton.auditoryCueText.isNullOrBlank()) {
                                     AuditoryCue.TextToSpeechCue(importButton.auditoryCueText)
                                 } else null
 
-                            val action = when (importButton.action?.type?.uppercase()) {
-                                "NAVIGATE" -> {
-                                    val targetId = pageIdMap[importButton.action.targetPageImportId] ?: ""
-                                    NavigateToPageButtonAction(targetId)
+                                val action = when (importButton.action?.type?.uppercase()) {
+                                    "NAVIGATE" -> {
+                                        val targetId = pageIdMap[importButton.action.targetPageImportId] ?: ""
+                                        NavigateToPageButtonAction(targetId)
+                                    }
+                                    "SPEAK" -> SpeakTextButtonAction(importButton.action.textToSpeech ?: importButton.label)
+                                    else -> SpeakTextButtonAction(importButton.label) // Fallback
                                 }
-                                "SPEAK" -> SpeakTextButtonAction(importButton.action.textToSpeech ?: importButton.label)
-                                else -> SpeakTextButtonAction(importButton.label) // Fallback
-                            }
 
-                            buttonConfigs[safeIndex] = ButtonConfig(
-                                id = UUID.randomUUID().toString(),
-                                label = importButton.label,
-                                spokenText = importButton.action?.ttsFeedback,
-                                auditoryCue = auditoryCue,
-                                buttonAction = action
-                            )
+                                buttonConfigs[safeIndex] = ButtonConfig(
+                                    id = UUID.randomUUID().toString(),
+                                    label = importButton.label,
+                                    spokenText = importButton.action?.ttsFeedback,
+                                    auditoryCue = auditoryCue,
+                                    isActive = importButton.active ?: true,
+                                    buttonAction = action
+                                )
+                            }
                         }
-                    }
                 }
 
                     Page(
@@ -349,6 +356,62 @@ class PageViewModel(
                 android.util.Log.e("GoSTalkImport", "Exception during import: ${e.message}")
                 launch(Dispatchers.Main) { onError("Fehler beim Import: ${e.message}") }
             }
+        }
+    }
+
+    suspend fun exportToJson(): String {
+        return kotlinx.coroutines.withContext(Dispatchers.IO) {
+            val pages = _allPages.value
+            
+            val importPages = pages.map { page ->
+                val importButtons = mutableListOf<com.example.gostalk.model.importexport.ImportButton>()
+                
+                page.buttonConfigs.forEachIndexed { index, config ->
+                    if (config != null) {
+                        val auditoryCueText = (config.auditoryCue as? AuditoryCue.TextToSpeechCue)?.text
+
+                        val (actionType, textToSpeech, targetPageImportId) = when (val action = config.buttonAction) {
+                            is SpeakTextButtonAction -> Triple("SPEAK", action.textToSpeech, null)
+                            is NavigateToPageButtonAction -> Triple("NAVIGATE", null, action.pageId)
+                            else -> Triple("SPEAK", config.label, null)
+                        }
+
+                        // Set ttsFeedback to spokenText for legacy compat / matching import structure
+                        val importAction = com.example.gostalk.model.importexport.ImportAction(
+                            type = actionType,
+                            textToSpeech = textToSpeech,
+                            targetPageImportId = targetPageImportId,
+                            ttsFeedback = config.spokenText
+                        )
+
+                        importButtons.add(
+                            com.example.gostalk.model.importexport.ImportButton(
+                                index = index.toLong(),
+                                label = config.label,
+                                auditoryCueText = auditoryCueText,
+                                active = config.isActive,
+                                action = importAction
+                            )
+                        )
+                    }
+                }
+
+                com.example.gostalk.model.importexport.ImportPage(
+                    importId = page.id,
+                    name = page.name,
+                    rows = page.rows,
+                    columns = page.columns,
+                    buttons = importButtons
+                )
+            }
+
+            val exportData = com.example.gostalk.model.importexport.ImportExportData(
+                gostalk_import_version = "1.0",
+                appName = "GoSTalk (Export)",
+                pages = importPages
+            )
+
+            Gson().toJson(exportData)
         }
     }
 

@@ -91,8 +91,7 @@ class CoreLogicTest {
 
     @Test
     fun testNavigateAction_HasData() = runTest {
-        val action = NavigateToPageButtonAction(pageId = "page2", ttsFeedback = null)
+        val action = NavigateToPageButtonAction(pageId = "page2")
         assertEquals("page2", action.pageId)
-        assertEquals(null, action.ttsFeedback)
     }
 }
