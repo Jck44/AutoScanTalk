@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "GoSTalk"
+rootProject.name = "GhosTTalk"
 include(":app")

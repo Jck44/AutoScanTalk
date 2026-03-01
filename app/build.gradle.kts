@@ -6,22 +6,23 @@ plugins {
 }
 
 android {
-    namespace = "com.example.gostalk"
+    namespace = "com.andreas_kratzer.ghosttalk"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.gostalk"
+        applicationId = "com.andreas_kratzer.ghosttalk"
         minSdk = 35
         targetSdk = 36
         versionCode = 1
-        versionName = "1.0"
+        versionName = "0.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
