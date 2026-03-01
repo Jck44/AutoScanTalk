@@ -6,6 +6,9 @@ import com.example.gostalk.core.ScannerEngine
 import com.example.gostalk.core.util.TestLogger
 import com.example.gostalk.data.PageRepository
 import com.example.gostalk.data.SettingsRepository
+import com.example.gostalk.domain.GetPagesUseCase
+import com.example.gostalk.domain.ActionLogUseCase
+import com.example.gostalk.domain.CreatePageUseCase
 import com.example.gostalk.model.*
 import io.mockk.*
 import kotlinx.coroutines.Dispatchers
@@ -25,6 +28,9 @@ class PageViewModelTest {
     private lateinit var pageRepository: PageRepository
     private lateinit var settingsRepository: SettingsRepository
     private lateinit var importExportManager: PageImportExportManager
+    private lateinit var getPagesUseCase: GetPagesUseCase
+    private lateinit var actionLogUseCase: ActionLogUseCase
+    private lateinit var createPageUseCase: CreatePageUseCase
     private lateinit var viewModel: PageViewModel
 
     @Before
@@ -35,8 +41,11 @@ class PageViewModelTest {
         pageRepository = mockk(relaxed = true)
         settingsRepository = mockk(relaxed = true)
         importExportManager = mockk<PageImportExportManager>(relaxed = true)
+        getPagesUseCase = mockk<GetPagesUseCase>(relaxed = true)
+        actionLogUseCase = mockk<ActionLogUseCase>(relaxed = true)
+        createPageUseCase = mockk<CreatePageUseCase>(relaxed = true)
         
-        // Mock default flows mapped inside ViewModel init
+        // Mock default flows
         every { settingsRepository.ttsLanguageFlow } returns MutableStateFlow("default")
         every { settingsRepository.ttsVoiceNameFlow } returns MutableStateFlow(null)
         every { settingsRepository.scanDelayFlow } returns MutableStateFlow(1000L)
@@ -46,7 +55,10 @@ class PageViewModelTest {
         every { settingsRepository.persistActionLogsFlow } returns MutableStateFlow(false)
         every { settingsRepository.actionLogsStorage } returns null
         every { settingsRepository.actionLogsStorageFlow } returns MutableStateFlow(null)
-        every { pageRepository.getAllPagesFlow() } returns MutableStateFlow(emptyList())
+        
+        // Mock UseCase behavior
+        every { getPagesUseCase.execute(any()) } returns MutableStateFlow(emptyList())
+        every { actionLogUseCase.loadSavedLogs() } returns emptyList()
     }
 
     @After
@@ -55,110 +67,66 @@ class PageViewModelTest {
     }
 
     @Test
-    fun `createNewPage injects a Home Button at the last grid slot pointing to defaultStartPageId`() = runTest {
-        val expectedStartPageId = "page-home-999"
-        every { settingsRepository.defaultStartPageId } returns expectedStartPageId
-        
-        // We need to capture the Page object being inserted into the DB
-        val insertedPageSlot = slot<Page>()
-        coEvery { pageRepository.insertPage(capture(insertedPageSlot)) } returns Unit
-        
+    fun `createNewPage delegates to CreatePageUseCase`() = runTest {
         val mockTts = mockk<com.example.gostalk.tts.TextToSpeechHelper>(relaxed = true)
-
-        viewModel = PageViewModel(application, pageRepository, settingsRepository, ttsHelper = mockTts, logger = TestLogger, importExportManager = importExportManager)
-        viewModel.createNewPage("Test Page", rows = 2, columns = 2, bookId = "test-book-id")
-
-        // Let Coroutines process
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        coVerify { pageRepository.insertPage(any()) }
-        val capturedPage = insertedPageSlot.captured
-        
-        // 2x2 = 4 slots (indices 0, 1, 2, 3)
-        assertEquals(4, capturedPage.buttonConfigs.size)
-        
-        // Ensure other slots are null
-        assertNull(capturedPage.buttonConfigs[0])
-        assertNull(capturedPage.buttonConfigs[1])
-        assertNull(capturedPage.buttonConfigs[2])
-        
-        // Verify last slot has the injected button
-        val lastButton = capturedPage.buttonConfigs[3]
-        assertNotNull(lastButton)
-        assertEquals("zurück zum Start", lastButton!!.label)
-        
-        // Verify it navigates to the expected defaultStartPageId
-        assertTrue(lastButton.buttonAction is NavigateToPageButtonAction)
-        val navAction = lastButton.buttonAction as NavigateToPageButtonAction
-        assertEquals(expectedStartPageId, navAction.pageId)
-    }
-
-    @Test
-    fun `init loads action logs when persistActionLogs is true`() = runTest {
-        val savedLogsJson = "[\"[12:00:00] First Log\",\"[12:05:00] Second Log\"]"
-        every { settingsRepository.persistActionLogs } returns true
-        every { settingsRepository.actionLogsStorage } returns savedLogsJson
-        
-        val mockTts = mockk<com.example.gostalk.tts.TextToSpeechHelper>(relaxed = true)
-        viewModel = PageViewModel(application, pageRepository, settingsRepository, ttsHelper = mockTts, logger = TestLogger, importExportManager = importExportManager)
-        
-        testDispatcher.scheduler.advanceUntilIdle()
-        
-        assertEquals(2, viewModel.lastActions.value.size)
-        assertEquals("[12:00:00] First Log", viewModel.lastActions.value[0])
-    }
-
-    @Test
-    fun `logAction saves to storage when persistActionLogs is true`() = runTest {
-        every { settingsRepository.persistActionLogs } returns true
-        every { settingsRepository.actionLogsStorage } returns null
-        
-        // We capture what gets set to actionLogsStorage
-        val storageSlot = slot<String>()
-        every { settingsRepository.actionLogsStorage = capture(storageSlot) } returns Unit
-
-        val mockTts = mockk<com.example.gostalk.tts.TextToSpeechHelper>(relaxed = true)
-        viewModel = PageViewModel(application, pageRepository, settingsRepository, ttsHelper = mockTts, logger = TestLogger, importExportManager = importExportManager)
-        
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        val btnConfig = com.example.gostalk.model.ButtonConfig(
-            id = "b1",
-            label = "Test Action",
-            buttonAction = com.example.gostalk.model.SpeakTextButtonAction("Test Speech"),
-            auditoryCue = null
+        viewModel = PageViewModel(
+            application, pageRepository, settingsRepository, ttsHelper = mockTts, 
+            logger = TestLogger, importExportManager = importExportManager,
+            getPagesUseCase = getPagesUseCase, actionLogUseCase = actionLogUseCase,
+            createPageUseCase = createPageUseCase
         )
-        viewModel.loadPage(Page(id = "p1", bookId = "b1", name = "Test", rows = 1, columns = 1, buttonConfigs = listOf(btnConfig)))
-        viewModel.activateButtonAtIndex(0)
         
+        viewModel.createNewPage("Test Page", rows = 2, columns = 2, bookId = "test-book-id")
         testDispatcher.scheduler.advanceUntilIdle()
 
-        assertTrue(viewModel.lastActions.value.isNotEmpty())
-        assertTrue(viewModel.lastActions.value[0].contains("Test Speech"))
-        
-        assertTrue(storageSlot.isCaptured)
-        assertTrue(storageSlot.captured.contains("Test Speech"))
+        coVerify { createPageUseCase.execute("Test Page", 2, 2, "test-book-id", any()) }
     }
 
     @Test
-    fun `clearActionLog clears state and storage`() = runTest {
-        every { settingsRepository.persistActionLogs } returns true
+    fun `init loads action logs via ActionLogUseCase`() = runTest {
+        val mockLogs = listOf("[12:00:00] Log 1")
+        every { actionLogUseCase.loadSavedLogs() } returns mockLogs
         
-        val storageSlot = slot<String?>()
-        every { settingsRepository.actionLogsStorage = captureNullable(storageSlot) } returns Unit
-
         val mockTts = mockk<com.example.gostalk.tts.TextToSpeechHelper>(relaxed = true)
-        viewModel = PageViewModel(application, pageRepository, settingsRepository, ttsHelper = mockTts, logger = TestLogger, importExportManager = importExportManager)
+        viewModel = PageViewModel(
+            application, pageRepository, settingsRepository, ttsHelper = mockTts, 
+            logger = TestLogger, importExportManager = importExportManager,
+            getPagesUseCase = getPagesUseCase, actionLogUseCase = actionLogUseCase,
+            createPageUseCase = createPageUseCase
+        )
         
-        testDispatcher.scheduler.runCurrent()
+        assertEquals(mockLogs, viewModel.lastActions.value)
+    }
 
-        viewModel.clearActionLogs()
-        testDispatcher.scheduler.runCurrent()
+    @Test
+    fun `logAction calls formatAndAddEntry on ActionLogUseCase`() = runTest {
+        val mockTts = mockk<com.example.gostalk.tts.TextToSpeechHelper>(relaxed = true)
+        viewModel = PageViewModel(
+            application, pageRepository, settingsRepository, ttsHelper = mockTts, 
+            logger = TestLogger, importExportManager = importExportManager,
+            getPagesUseCase = getPagesUseCase, actionLogUseCase = actionLogUseCase,
+            createPageUseCase = createPageUseCase
+        )
         
-        assertTrue(viewModel.lastActions.value.isEmpty())
-        assertTrue("Storage should have been updated", storageSlot.isCaptured)
-        val captured = storageSlot.captured
-        assertTrue(captured == null || captured == "[]")
+        val button = ButtonConfig(label = "Test", auditoryCue = null, buttonAction = SpeakTextButtonAction("Hey"))
+        viewModel.loadPage(Page(id = "p1", bookId = "b1", name = "T", rows = 1, columns = 1, buttonConfigs = listOf(button)))
+        
+        viewModel.activateButtonAtIndex(0)
+        verify { actionLogUseCase.formatAndAddEntry(match { it.contains("Hey") }, any()) }
+    }
+
+    @Test
+    fun `clearActionLog calls clearLogs on ActionLogUseCase`() = runTest {
+        val mockTts = mockk<com.example.gostalk.tts.TextToSpeechHelper>(relaxed = true)
+        viewModel = PageViewModel(
+            application, pageRepository, settingsRepository, ttsHelper = mockTts, 
+            logger = TestLogger, importExportManager = importExportManager,
+            getPagesUseCase = getPagesUseCase, actionLogUseCase = actionLogUseCase,
+            createPageUseCase = createPageUseCase
+        )
+        
+        viewModel.clearActionLogs()
+        verify { actionLogUseCase.clearLogs() }
     }
 
     @Test
@@ -168,7 +136,12 @@ class PageViewModelTest {
 
         var successCalled = false
         val mockTts = mockk<com.example.gostalk.tts.TextToSpeechHelper>(relaxed = true)
-        viewModel = PageViewModel(application, pageRepository, settingsRepository, ttsHelper = mockTts, logger = TestLogger, importExportManager = importExportManager)
+        viewModel = PageViewModel(
+            application, pageRepository, settingsRepository, ttsHelper = mockTts, 
+            logger = TestLogger, importExportManager = importExportManager,
+            getPagesUseCase = getPagesUseCase, actionLogUseCase = actionLogUseCase,
+            createPageUseCase = createPageUseCase
+        )
         viewModel.importFromJson(jsonString, "test_book", onSuccess = { successCalled = true }, onError = {})
         
         testDispatcher.scheduler.advanceUntilIdle()

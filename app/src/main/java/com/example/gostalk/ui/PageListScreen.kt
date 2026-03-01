@@ -194,7 +194,7 @@ fun PageListScreen(
                                 )
                             }
                             IconButton(
-                                onClick = { pageViewModel.deletePage(page) }
+                                onClick = { pageToDelete = page }
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Delete,
@@ -206,6 +206,33 @@ fun PageListScreen(
                     }
                 }
             }
+        }
+
+        pageToDelete?.let { page ->
+            AlertDialog(
+                onDismissRequest = { pageToDelete = null },
+                title = { Text("Seite löschen?") },
+                text = { Text("Möchtest du die Seite \"${page.name}\" wirklich löschen?") },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            pageViewModel.deletePage(page)
+                            pageToDelete = null
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text("Löschen")
+                    }
+                },
+                dismissButton = {
+                    Button(
+                        onClick = { pageToDelete = null },
+                        colors = ButtonDefaults.textButtonColors()
+                    ) {
+                        Text("Abbrechen")
+                    }
+                }
+            )
         }
 
         if (showAddDialog) {

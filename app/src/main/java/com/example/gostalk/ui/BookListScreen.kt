@@ -53,6 +53,7 @@ fun BookListScreen(
     val allBooks by bookViewModel.allBooks.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
     var bookToEdit by remember { mutableStateOf<Book?>(null) }
+    var bookToDelete by remember { mutableStateOf<Book?>(null) }
 
     Scaffold(
         topBar = {
@@ -109,7 +110,7 @@ fun BookListScreen(
                                 )
                             }
                             IconButton(
-                                onClick = { bookViewModel.deleteBook(book) }
+                                onClick = { bookToDelete = book }
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Delete,
@@ -191,6 +192,33 @@ fun BookListScreen(
                 dismissButton = {
                     Button(
                         onClick = { bookToEdit = null },
+                        colors = ButtonDefaults.textButtonColors()
+                    ) {
+                        Text("Abbrechen")
+                    }
+                }
+            )
+        }
+
+        bookToDelete?.let { book ->
+            AlertDialog(
+                onDismissRequest = { bookToDelete = null },
+                title = { Text("Buch löschen?") },
+                text = { Text("Möchtest du das Buch \"${book.name}\" wirklich unwiderruflich löschen? Alle darin enthaltenen Seiten gehen verloren.") },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            bookViewModel.deleteBook(book)
+                            bookToDelete = null
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text("Löschen")
+                    }
+                },
+                dismissButton = {
+                    Button(
+                        onClick = { bookToDelete = null },
                         colors = ButtonDefaults.textButtonColors()
                     ) {
                         Text("Abbrechen")

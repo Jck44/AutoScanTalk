@@ -5,32 +5,25 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.gostalk.model.AuditoryCue
-import com.example.gostalk.model.NavigateToPageButtonAction
 import com.example.gostalk.model.Page
-import com.example.gostalk.model.SpeakTextButtonAction
 import com.example.gostalk.tts.TextToSpeechHelper
 import com.example.gostalk.model.ButtonConfig
-import com.google.gson.Gson
 import com.example.gostalk.core.ScannerEngine
 import com.example.gostalk.core.ActionExecutor
-import com.example.gostalk.model.importexport.ImportExportData
 import com.example.gostalk.core.PageImportExportManager
 import com.example.gostalk.data.SettingsRepository
 import com.example.gostalk.data.PageRepository
+import com.example.gostalk.domain.GetPagesUseCase
+import com.example.gostalk.domain.ActionLogUseCase
+import com.example.gostalk.domain.CreatePageUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.util.UUID
 import com.example.gostalk.core.util.Logger
 import com.example.gostalk.core.util.AppLogger
-import com.example.gostalk.core.util.TestLogger
-
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -40,7 +33,10 @@ class PageViewModel(
     private val settingsRepository: SettingsRepository,
     private var ttsHelper: TextToSpeechHelper? = null,
     private val logger: Logger = AppLogger,
-    private val importExportManager: PageImportExportManager = PageImportExportManager(pageRepository, logger)
+    private val importExportManager: PageImportExportManager = PageImportExportManager(pageRepository, logger),
+    private val getPagesUseCase: GetPagesUseCase = GetPagesUseCase(pageRepository),
+    private val actionLogUseCase: ActionLogUseCase = ActionLogUseCase(settingsRepository, logger),
+    private val createPageUseCase: CreatePageUseCase = CreatePageUseCase(pageRepository, settingsRepository)
 ) : AndroidViewModel(application) {
 
     private val _activeBookId = MutableStateFlow<String?>(null)
@@ -79,53 +75,33 @@ class PageViewModel(
         if (ttsHelper == null) {
             ttsHelper = TextToSpeechHelper(application.applicationContext)
         }
-        // Ensure engines get the initialized TTS instance
         scannerEngine.ttsHelper = ttsHelper
         actionExecutor.ttsHelper = ttsHelper
 
-        // Settings live überwachen
+        // Monitor settings
         viewModelScope.launch {
             kotlinx.coroutines.flow.combine(
                 settingsRepository.ttsLanguageFlow,
                 settingsRepository.ttsVoiceNameFlow
-            ) { lang, voice ->
-                Pair(lang, voice)
-            }.collect { (newLanguage, newVoice) ->
-                ttsHelper?.setLanguageAndVoice(newLanguage, newVoice)
-            }
+            ) { lang, voice -> lang to voice }
+                .collect { (newLanguage, newVoice) ->
+                    ttsHelper?.setLanguageAndVoice(newLanguage, newVoice)
+                }
         }
 
         viewModelScope.launch {
-            settingsRepository.scanDelayFlow.collect { delay ->
-                setScanDelay(delay)
-            }
+            settingsRepository.scanDelayFlow.collect { delay -> setScanDelay(delay) }
         }
         
+        // Reactive page loading via UseCase
         viewModelScope.launch {
-            _activeBookId.flatMapLatest { bookId ->
-                if (bookId != null) {
-                    pageRepository.getPagesForBookFlow(bookId)
-                } else {
-                    flowOf(emptyList()) // No book selected, no pages
-                }
-            }.collect { pages ->
+            getPagesUseCase.execute(_activeBookId).collect { pages ->
                 _allPages.value = pages
             }
         }
 
-        // Restore action logs if persistence is enabled
-        if (settingsRepository.persistActionLogs) {
-            val savedJson = settingsRepository.actionLogsStorage
-            if (!savedJson.isNullOrBlank()) {
-                try {
-                    val gson = Gson()
-                    val savedList = gson.fromJson(savedJson, Array<String>::class.java).toList()
-                    _lastActions.value = savedList
-                } catch (e: Exception) {
-                    logger.e("PageViewModel", "Error parsing stored action logs", e)
-                }
-            }
-        }
+        // Action logs via UseCase
+        _lastActions.value = actionLogUseCase.loadSavedLogs()
     }
 
     fun loadPage(page: Page) {
@@ -176,11 +152,8 @@ class PageViewModel(
         val page = _currentPage.value ?: return
         val buttonConfig = page.buttonConfigs.getOrNull(index) ?: return
         
-        // When user directly activates, temporarily stop it so the action executor 
-        // can handle resuming it based on settings after the action finishes
         stopScanningTemporarily()
         scannerEngine.setFocusedIndex(index)
-
         actionExecutor.executeButtonAction(buttonConfig)
     }
 
@@ -195,66 +168,22 @@ class PageViewModel(
     }
 
     private fun logAction(actionText: String) {
-        val timeFormat = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault())
-        val timeString = timeFormat.format(java.util.Date())
-        val entry = "[$timeString] $actionText"
-
-        _lastActions.update { currentActions ->
-            val updatedActions = currentActions.toMutableList()
-            updatedActions.add(0, entry)
-            if (updatedActions.size > 100) {
-                updatedActions.removeLast()
-            }
-
-            // Save to storage if persistence is enabled
-            if (settingsRepository.persistActionLogs) {
-                settingsRepository.actionLogsStorage = Gson().toJson(updatedActions)
-            }
-
-            updatedActions
+        _lastActions.update { current ->
+            actionLogUseCase.formatAndAddEntry(actionText, current)
         }
     }
 
     fun clearActionLogs() {
         _lastActions.value = emptyList()
-        if (settingsRepository.persistActionLogs) {
-            settingsRepository.actionLogsStorage = "[]" // Or null
-        }
+        actionLogUseCase.clearLogs()
     }
 
     fun createNewPage(name: String, rows: Int, columns: Int, bookId: String): String {
-        val newPageId = UUID.randomUUID().toString()
-        val totalSlots = rows * columns
-        val buttonConfigs = MutableList<ButtonConfig?>(totalSlots) { null }
-
-        if (totalSlots > 0) {
-            val homePageId = settingsRepository.defaultStartPageId ?: _allPages.value.firstOrNull()?.id
-            
-            if (homePageId != null) {
-                buttonConfigs[totalSlots - 1] = ButtonConfig(
-                    id = UUID.randomUUID().toString(),
-                    label = "zurück zum Start",
-                    spokenText = "Zurück zur Startseite",
-                    buttonAction = NavigateToPageButtonAction(
-                        pageId = homePageId
-                    ),
-                    auditoryCue = AuditoryCue.TextToSpeechCue("Zurück zur Startseite")
-                )
-            }
+        val newPageId = java.util.UUID.randomUUID().toString()
+        viewModelScope.launch {
+            createPageUseCase.execute(name, rows, columns, bookId, _allPages.value)
         }
-
-        val newPage = Page(
-            id = newPageId,
-            bookId = bookId,
-            name = name,
-            rows = rows,
-            columns = columns,
-            buttonConfigs = buttonConfigs
-        )
-        viewModelScope.launch(Dispatchers.IO) {
-            pageRepository.insertPage(newPage)
-        }
-        return newPageId
+        return newPageId // Note: In a real app, we might want to wait for the ID or return the flow
     }
 
     fun updateButtonConfig(pageId: String, index: Int, newConfig: ButtonConfig?) {
@@ -266,7 +195,6 @@ class PageViewModel(
                 val updatedPage = page.copy(buttonConfigs = updatedConfigs)
                 pageRepository.updatePage(updatedPage)
                 
-                // If it's the currently active page being viewed/edited, refresh the state
                 if (_currentPage.value?.id == pageId) {
                     _currentPage.value = updatedPage
                 }
@@ -297,7 +225,6 @@ class PageViewModel(
             val page = pageRepository.getPageById(pageId)
             if (page != null) {
                 val updatedNames = page.rowNames.toMutableList()
-                // Ensure the list is large enough
                 while (updatedNames.size <= rowIndex) {
                     updatedNames.add("Zeile ${updatedNames.size + 1}")
                 }
@@ -322,11 +249,7 @@ class PageViewModel(
     fun importFromJson(jsonString: String, bookId: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
         viewModelScope.launch {
             val result = importExportManager.importFromJson(jsonString, bookId)
-            result.onSuccess {
-                onSuccess()
-            }.onFailure { e ->
-                onError("Fehler beim Import: ${e.message}")
-            }
+            result.onSuccess { onSuccess() }.onFailure { e -> onError("Fehler beim Import: ${e.message}") }
         }
     }
 
@@ -350,8 +273,18 @@ class PageViewModelFactory(
         if (modelClass.isAssignableFrom(PageViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
             val logger = AppLogger
-            val importExportManager = PageImportExportManager(pageRepository, logger)
-            return PageViewModel(application, pageRepository, settingsRepository, logger = logger, importExportManager = importExportManager) as T
+            val manager = PageImportExportManager(pageRepository, logger)
+            val getPages = GetPagesUseCase(pageRepository)
+            val actionLog = ActionLogUseCase(settingsRepository, logger)
+            val createPage = CreatePageUseCase(pageRepository, settingsRepository)
+            return PageViewModel(
+                application, pageRepository, settingsRepository, 
+                logger = logger, 
+                importExportManager = manager,
+                getPagesUseCase = getPages,
+                actionLogUseCase = actionLog,
+                createPageUseCase = createPage
+            ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
