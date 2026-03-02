@@ -16,7 +16,15 @@ import com.andreas_kratzer.ghosttalk.data.PageRepository
 import com.andreas_kratzer.ghosttalk.domain.GetPagesUseCase
 import com.andreas_kratzer.ghosttalk.domain.ActionLogUseCase
 import com.andreas_kratzer.ghosttalk.domain.CreatePageUseCase
+import com.andreas_kratzer.ghosttalk.domain.GeminiUseCase
+import com.andreas_kratzer.ghosttalk.core.cloud.DriveAuthManager
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.Dispatchers
+import android.util.Log
+import android.content.Intent
+import android.provider.MediaStore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -36,7 +44,8 @@ class PageViewModel(
     private val importExportManager: PageImportExportManager = PageImportExportManager(pageRepository, logger),
     private val getPagesUseCase: GetPagesUseCase = GetPagesUseCase(pageRepository),
     private val actionLogUseCase: ActionLogUseCase = ActionLogUseCase(settingsRepository, logger),
-    private val createPageUseCase: CreatePageUseCase = CreatePageUseCase(pageRepository, settingsRepository)
+    private val createPageUseCase: CreatePageUseCase = CreatePageUseCase(pageRepository, settingsRepository),
+    private val geminiUseCase: GeminiUseCase? = null
 ) : AndroidViewModel(application) {
 
     private val _activeBookId = MutableStateFlow<String?>(null)
@@ -51,6 +60,9 @@ class PageViewModel(
     private val _lastActions = MutableStateFlow<List<String>>(emptyList())
     val lastActions: StateFlow<List<String>> = _lastActions.asStateFlow()
 
+    private val _authRecoverIntent = MutableSharedFlow<Intent>()
+    val authRecoverIntent: SharedFlow<Intent> = _authRecoverIntent.asSharedFlow()
+
     val scannerEngine = ScannerEngine(viewModelScope, settingsRepository, ttsHelper, logger)
     val focusedButtonIndex: StateFlow<Int?> = scannerEngine.focusedButtonIndex
     val focusedRowIndex: StateFlow<Int?> = scannerEngine.focusedRowIndex
@@ -64,7 +76,11 @@ class PageViewModel(
         onLoadPage = { page -> loadPage(page) },
         onPauseScanning = { stopScanningTemporarily() },
         onResumeScanning = { resumeScanningIfEnabled() },
-        onLogAction = { actionText -> logAction(actionText) }
+        onLogAction = { actionText -> logAction(actionText) },
+        onRecoverableAuthError = { intent -> 
+            viewModelScope.launch { _authRecoverIntent.emit(intent) }
+        },
+        geminiUseCase = geminiUseCase
     )
 
     fun setActiveBookId(bookId: String?) {
@@ -102,6 +118,28 @@ class PageViewModel(
 
         // Action logs via UseCase
         _lastActions.value = actionLogUseCase.loadSavedLogs()
+
+        // Set up Gemini command handlers
+        geminiUseCase?.setAppCommandHandler { command, args ->
+            when (command) {
+                "SPOTIFY_PLAY" -> {
+                    val query = args["query"] ?: return@setAppCommandHandler
+                    viewModelScope.launch {
+                        try {
+                            val intent = Intent(MediaStore.INTENT_ACTION_MEDIA_PLAY_FROM_SEARCH).apply {
+                                putExtra("android.intent.extra.focus", "vnd.android.cursor.item/*")
+                                putExtra("query", query)
+                                putExtra(android.app.SearchManager.QUERY, query)
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                            application.startActivity(intent)
+                        } catch (e: Exception) {
+                            Log.e("PageViewModel", "Failed to launch Spotify", e)
+                        }
+                    }
+                }
+            }
+        }
     }
 
     fun loadPage(page: Page) {
@@ -276,13 +314,31 @@ class PageViewModelFactory(
             val getPages = GetPagesUseCase(pageRepository)
             val actionLog = ActionLogUseCase(settingsRepository, logger)
             val createPage = CreatePageUseCase(pageRepository, settingsRepository)
+            
+            val driveAuthManager = DriveAuthManager.getInstance(application)
+            val gemini = GeminiUseCase(
+                oauthTokenProvider = { 
+                    driveAuthManager.getDriveCredential()?.getToken() 
+                },
+                driveProvider = {
+                    val credential = driveAuthManager.getDriveCredential() ?: return@GeminiUseCase null
+                    com.google.api.services.drive.Drive.Builder(
+                        com.google.api.client.http.javanet.NetHttpTransport(),
+                        com.google.api.client.json.gson.GsonFactory.getDefaultInstance(),
+                        credential
+                    ).setApplicationName("GhosTTalk").build()
+                }
+            )
+
+            @Suppress("UNCHECKED_CAST")
             return PageViewModel(
                 application, pageRepository, settingsRepository, 
                 logger = logger, 
                 importExportManager = manager,
                 getPagesUseCase = getPages,
                 actionLogUseCase = actionLog,
-                createPageUseCase = createPage
+                createPageUseCase = createPage,
+                geminiUseCase = gemini
             ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")

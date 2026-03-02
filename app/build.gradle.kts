@@ -105,6 +105,9 @@ dependencies {
     implementation(libs.google.api.services.drive)
     implementation(libs.google.http.client.gson)
     implementation("com.google.guava:guava:31.1-android")
+    implementation(libs.play.app.update.ktx)
+    implementation(libs.google.generativeai)
+    implementation(libs.gms.play.services.auth)
 
     // Tests
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")

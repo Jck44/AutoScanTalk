@@ -68,6 +68,7 @@ class SettingsRepository(context: Context) {
         _defaultScanPatternFlow.value = defaultScanPattern
         _holdingTimeFlow.value = holdingTimeMillis
         _isCloudSyncEnabledFlow.value = isCloudSyncEnabled
+        _isGeminiEnabledFlow.value = isGeminiEnabled
     }
 
     private val _ttsLanguageFlow = MutableStateFlow(getStringScoped(KEY_TTS_LANGUAGE))
@@ -204,6 +205,16 @@ class SettingsRepository(context: Context) {
             _isCloudSyncEnabledFlow.value = value
         }
 
+    private val _isGeminiEnabledFlow = MutableStateFlow(getBooleanScoped(KEY_GEMINI_ENABLED, false))
+    val isGeminiEnabledFlow: StateFlow<Boolean> = _isGeminiEnabledFlow.asStateFlow()
+
+    var isGeminiEnabled: Boolean
+        get() = getBooleanScoped(KEY_GEMINI_ENABLED, false)
+        set(value) {
+            putBooleanScoped(KEY_GEMINI_ENABLED, value)
+            _isGeminiEnabledFlow.value = value
+        }
+
     companion object {
         private const val PREFS_NAME = "ghosttalk_settings"
         private const val KEY_TTS_LANGUAGE = "tts_language"
@@ -221,5 +232,6 @@ class SettingsRepository(context: Context) {
         private const val KEY_DEFAULT_SCAN_PATTERN = "default_scan_pattern"
         private const val KEY_HOLDING_TIME_MILLIS = "holding_time_millis"
         private const val KEY_CLOUD_SYNC_ENABLED = "cloud_sync_enabled"
+        private const val KEY_GEMINI_ENABLED = "gemini_enabled"
     }
 }

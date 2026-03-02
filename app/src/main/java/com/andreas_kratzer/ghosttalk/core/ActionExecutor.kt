@@ -10,15 +10,22 @@ import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
+import com.andreas_kratzer.ghosttalk.model.GeminiButtonAction
+import com.andreas_kratzer.ghosttalk.domain.GeminiUseCase
+import com.google.android.gms.auth.UserRecoverableAuthException
+import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
+
 class ActionExecutor(
     private val scope: CoroutineScope,
     private val pageRepository: PageRepository,
     private val settingsRepository: SettingsRepository,
+    private val geminiUseCase: GeminiUseCase?,
     var ttsHelper: TextToSpeechHelper?,
     private val onLoadPage: (Page) -> Unit,
     private val onPauseScanning: () -> Unit,
     private val onResumeScanning: () -> Unit,
     private val onLogAction: (String) -> Unit,
+    private val onRecoverableAuthError: (android.content.Intent) -> Unit = {},
     private val timeProvider: () -> Long = { System.currentTimeMillis() }
 ) {
     private var lastExecutionTime = -1L
@@ -29,11 +36,6 @@ class ActionExecutor(
         val currentTime = timeProvider()
         val holdingTime = settingsRepository.holdingTimeMillis
         
-        if (isSpeaking) {
-            onLogAction("Aktion ignoriert (Sprachausgabe aktiv)")
-            return
-        }
-
         if (lastExecutionTime != -1L && currentTime - lastExecutionTime < holdingTime) {
             onLogAction("Aktion ignoriert (Haltezeit aktiv: ${holdingTime}ms)")
             return
@@ -108,6 +110,44 @@ class ActionExecutor(
                 } else {
                     if (feedback != null) onLogAction("Nav-Feedback (TTS nicht bereit): \"$feedback\"")
                     performNavigation()
+                }
+            }
+            is GeminiButtonAction -> {
+                onLogAction("Gemini aufgerufen mit: \"${action.prompt}\"")
+                scope.launch {
+                    try {
+                        val response = geminiUseCase?.generateResponse(action.prompt) 
+                            ?: "Fehler: Gemini Integration nicht verfügbar."
+                        
+                        if (ttsHelper?.isReady == true) {
+                            ttsHelper?.speakRouted(response, settingsRepository.ttsAudioDeviceAddress) {
+                                if (currentExecutionId == activeExecutionId) {
+                                    isSpeaking = false
+                                    onResumeScanning()
+                                }
+                            }
+                        } else {
+                            onLogAction("Gemini Ergebnis: \"$response\"")
+                            if (currentExecutionId == activeExecutionId) {
+                                isSpeaking = false
+                                onResumeScanning()
+                            }
+                        }
+                    } catch (e: UserRecoverableAuthIOException) {
+                        onLogAction("Gemini: Berechtigung erforderlich.")
+                        e.intent?.let { onRecoverableAuthError(it) }
+                        isSpeaking = false
+                        onResumeScanning()
+                    } catch (e: UserRecoverableAuthException) {
+                        onLogAction("Gemini: Berechtigung erforderlich.")
+                        e.intent?.let { onRecoverableAuthError(it) }
+                        isSpeaking = false
+                        onResumeScanning()
+                    } catch (e: Exception) {
+                        onLogAction("Gemini Fehler: ${e.message}")
+                        isSpeaking = false
+                        onResumeScanning()
+                    }
                 }
             }
         }

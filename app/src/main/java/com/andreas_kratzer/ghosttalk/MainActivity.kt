@@ -6,6 +6,7 @@ import android.view.KeyEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -34,6 +35,9 @@ import com.andreas_kratzer.ghosttalk.ui.BookViewModel
 import com.andreas_kratzer.ghosttalk.ui.BookViewModelFactory
 import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.data.AppDatabase
+import com.andreas_kratzer.ghosttalk.core.UpdateManager
+import androidx.activity.result.contract.ActivityResultContracts
+import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -42,12 +46,32 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var settingsRepository: SettingsRepository
     private lateinit var globalPageViewModel: PageViewModel
+    private lateinit var updateManager: UpdateManager
+
+    private val updateLauncher = registerForActivityResult(
+        ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        if (result.resultCode != RESULT_OK) {
+            Log.e("MainActivity", "Update flow failed! Result code: ${result.resultCode}")
+        }
+    }
+
+    private val authLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            Log.d("MainActivity", "Auth consent granted, Gemini should work now.")
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
         com.andreas_kratzer.ghosttalk.tts.VoiceDebugger(applicationContext).start()
         
+        updateManager = UpdateManager(this)
+        updateManager.checkForUpdates(updateLauncher)
+
         settingsRepository = SettingsRepository(applicationContext)
         val defaultBookId = "book-default"
 
@@ -148,6 +172,13 @@ class MainActivity : ComponentActivity() {
             SettingsViewModelFactory(application, settingsRepository)
         }
 
+        // Observe Auth Consent Intent
+        lifecycleScope.launch {
+            pageViewModel.authRecoverIntent.collect { intent ->
+                authLauncher.launch(intent)
+            }
+        }
+
         setContent {
             GhosTTalkTheme {
                 Surface(
@@ -229,6 +260,13 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (::updateManager.isInitialized) {
+            updateManager.resumeUpdateIfInProgress()
         }
     }
 

@@ -26,3 +26,8 @@ Um eine App im Play Store zu veröffentlichen, muss sie signiert sein.
 ## 5. Rechtliches & Store-Präsenz
 - [x] **Datenschutzerklärung**: Erstellt als [PRIVACY_POLICY.md](file:///Users/andreas.kratzer/AndroidStudioProjects/GoSTalk/PRIVACY_POLICY.md). Nach dem Push zu GitHub kannst du den Link (`https://github.com/NUTZERNAME/REPO/blob/main/PRIVACY_POLICY.md`) in der Play Console hinterlegen.
 - [ ] **Store-Assets**: App-Icon (512x512), Feature Graphic (1024x500) und Screenshots vorbereiten.
+
+## 6. Update-Verifizierung
+- [ ] **Versions-Check**: Wurde `versionCode` in der `build.gradle.kts` erhöht?
+- [ ] **Migrationstest**: Bleiben Daten (Bücher/Seiten) nach einem simulierten Update (Installieren einer höheren Version über die alte) erhalten?
+- [ ] **Update-Prompt**: Erscheint der In-App-Update Dialog bei Verfügbarkeit einer neuen Version?

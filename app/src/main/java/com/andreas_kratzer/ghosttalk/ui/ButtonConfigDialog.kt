@@ -28,6 +28,7 @@ import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
+import com.andreas_kratzer.ghosttalk.model.GeminiButtonAction
 
 import androidx.compose.ui.res.stringResource
 import com.andreas_kratzer.ghosttalk.R
@@ -54,12 +55,16 @@ fun ButtonConfigDialog(
     // Action Type selection
     val actionTypeSpeak = stringResource(R.string.button_action_speak_text)
     val actionTypeNavigate = stringResource(R.string.button_action_navigate_page)
-    val actionTypes = listOf(actionTypeSpeak, actionTypeNavigate)
+    val actionTypeGemini = stringResource(R.string.button_action_gemini)
+    val actionTypes = listOf(actionTypeSpeak, actionTypeNavigate, actionTypeGemini)
     
     var selectedActionType by remember {
         mutableStateOf(
-            if (initialConfig?.buttonAction is NavigateToPageButtonAction) actionTypeNavigate 
-            else actionTypeSpeak
+            when (initialConfig?.buttonAction) {
+                is NavigateToPageButtonAction -> actionTypeNavigate
+                is GeminiButtonAction -> actionTypeGemini
+                else -> actionTypeSpeak
+            }
         )
     }
     var expandedActionType by remember { mutableStateOf(false) }
@@ -68,6 +73,10 @@ fun ButtonConfigDialog(
     val navAction = initialConfig?.buttonAction as? NavigateToPageButtonAction
     var navigateToPageId by remember { mutableStateOf(navAction?.pageId ?: "") }
     var expandedPageSelect by remember { mutableStateOf(false) }
+
+    // Gemini Details
+    val geminiAction = initialConfig?.buttonAction as? GeminiButtonAction
+    var geminiPrompt by remember { mutableStateOf(geminiAction?.prompt ?: "") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -176,16 +185,28 @@ fun ButtonConfigDialog(
                         }
                     }
                 }
+
+                // Conditional fields for Gemini
+                if (selectedActionType == actionTypeGemini) {
+                    OutlinedTextField(
+                        value = geminiPrompt,
+                        onValueChange = { geminiPrompt = it },
+                        label = { Text(stringResource(R.string.button_gemini_prompt_field)) },
+                        placeholder = { Text(stringResource(R.string.button_gemini_prompt_hint)) },
+                        singleLine = false,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
         },
         confirmButton = {
             Button(
                 onClick = {
                     if (label.isNotBlank()) {
-                        val action: ButtonAction = if (selectedActionType == actionTypeNavigate) {
-                            NavigateToPageButtonAction(pageId = navigateToPageId)
-                        } else {
-                            SpeakTextButtonAction(textToSpeech = spokenText.takeIf { it.isNotBlank() } ?: label)
+                        val action: ButtonAction = when (selectedActionType) {
+                            actionTypeNavigate -> NavigateToPageButtonAction(pageId = navigateToPageId)
+                            actionTypeGemini -> GeminiButtonAction(prompt = geminiPrompt)
+                            else -> SpeakTextButtonAction(textToSpeech = spokenText.takeIf { it.isNotBlank() } ?: label)
                         }
 
                         val cue = if (ttsFeedback.isNotBlank()) {

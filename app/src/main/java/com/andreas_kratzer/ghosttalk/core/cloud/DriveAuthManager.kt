@@ -140,8 +140,14 @@ class DriveAuthManager private constructor(private val context: Context) {
             return null
         }
 
+        val scopes = listOf(
+            com.google.api.services.drive.DriveScopes.DRIVE_FILE,
+            "https://www.googleapis.com/auth/generative-language.retriever",
+            "https://www.googleapis.com/auth/calendar.events.readonly",
+            "https://www.googleapis.com/auth/tasks.readonly"
+        )
         val credential = GoogleAccountCredential.usingOAuth2(
-            context, Collections.singleton(com.google.api.services.drive.DriveScopes.DRIVE_FILE)
+            context, scopes
         )
         
         // NEW: Assign actual Account object to avoid null name issues in internal GMS code

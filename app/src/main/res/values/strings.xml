@@ -110,8 +110,11 @@
     <string name="button_action_label">Aktion</string>
     <string name="button_action_speak_text">Text Sprechen</string>
     <string name="button_action_navigate_page">Zu Seite navigieren</string>
+    <string name="button_action_gemini">Gemini aufrufen</string>
     <string name="button_no_page_selected">Keine Seite ausgewählt</string>
     <string name="button_target_page_label">Ziel-Seite</string>
+    <string name="button_gemini_prompt_field">Gemini Prompt (Befehl)</string>
+    <string name="button_gemini_prompt_hint">Was soll Gemini tun?</string>
 
     <!-- Page Screen -->
     <string name="page_loading">Seite wird geladen...</string>
@@ -122,17 +125,28 @@
     <string name="page_clear_logs_description">Verlauf leeren</string>
     <string name="page_no_actions_yet">Noch keine Aktionen ausgeführt.</string>
 
+    <!-- Google Account & Services -->
+    <string name="settings_category_google_account">Google Konto &amp; Dienste</string>
+    <string name="settings_google_account_desc">Dieses Konto wird für die Cloud-Sicherung, den Google Kalender/Tasks und die Gemini-KI genutzt.</string>
+    <string name="settings_google_account_status_signed_in_as">Angemeldet als %s</string>
+    <string name="settings_google_account_status_not_signed_in">Nicht angemeldet</string>
+    <string name="settings_google_account_sign_in">Anmelden</string>
+    <string name="settings_google_account_sign_out">Abmelden</string>
+    <string name="settings_google_account_status_label">Status:</string>
+
     <!-- Cloud Sync -->
-    <string name="settings_category_cloud">Cloud-Integration</string>
-    <string name="settings_cloud_sync_enabled">Cloud-Synchronisierung aktivieren</string>
-    <string name="settings_cloud_sync_hint">Sichert Bücher automatisch in Google Drive</string>
-    <string name="settings_cloud_status_label">Status:</string>
-    <string name="settings_cloud_status_not_signed_in">Nicht angemeldet</string>
-    <string name="settings_cloud_status_signed_in_as">Angemeldet als %s</string>
-    <string name="settings_cloud_last_sync">Letzte Synchronisierung: %s</string>
-    <string name="settings_cloud_sync_now">Jetzt synchronisieren</string>
-    <string name="settings_cloud_sign_in">Anmelden</string>
-    <string name="settings_cloud_sign_out">Abmelden</string>
+    <string name="settings_category_cloud">Cloud-Sicherung (Google Drive)</string>
+    <string name="settings_cloud_sync_enabled">Automatische Sicherung aktivieren</string>
+    <string name="settings_cloud_sync_now">Bücher jetzt sichern</string>
+
+    <!-- Gemini Integration -->
+    <string name="settings_category_gemini">Gemini KI-Assistent</string>
+    <string name="settings_gemini_activate_button">Gemini Initialisieren / Testen</string>
+    <string name="settings_gemini_status_enabled">Aktiviert</string>
+    <string name="settings_gemini_status_disabled">Nicht aktiviert</string>
+    <string name="settings_gemini_activation_desc">Tippe auf den Button, um Gemini zu initialisieren und die notwendigen Berechtigungen abzufragen.</string>
+    <string name="settings_gemini_activation_success">Gemini erfolgreich aktiviert!</string>
+    <string name="settings_gemini_activation_error">Fehler bei der Aktivierung: %s</string>
 
     <!-- Shared -->
     <string name="error_page_not_found">Seite nicht gefunden</string>

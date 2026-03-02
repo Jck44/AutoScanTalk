@@ -24,12 +24,15 @@ import android.content.Intent
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
+import com.google.android.gms.auth.UserRecoverableAuthException
+import com.andreas_kratzer.ghosttalk.domain.GeminiUseCase
 
 class SettingsViewModel(
     application: Application,
     private val settingsRepository: SettingsRepository,
     private val driveAuthManager: DriveAuthManager,
-    private val cloudSyncUseCase: CloudSyncUseCase
+    private val cloudSyncUseCase: CloudSyncUseCase,
+    private val geminiUseCaseProvider: (suspend () -> String?) -> GeminiUseCase
 ) : AndroidViewModel(application) {
 
     // Helper für das Abfragen der verfügbaren Sprachen
@@ -87,6 +90,9 @@ class SettingsViewModel(
     private val _isCloudSyncEnabled = MutableStateFlow(false)
     val isCloudSyncEnabled: StateFlow<Boolean> = _isCloudSyncEnabled.asStateFlow()
 
+    private val _isGeminiEnabled = MutableStateFlow(false)
+    val isGeminiEnabled: StateFlow<Boolean> = _isGeminiEnabled.asStateFlow()
+
     val userEmail: StateFlow<String?> = driveAuthManager.userEmail
 
     private val _isSyncing = MutableStateFlow(false)
@@ -115,6 +121,7 @@ class SettingsViewModel(
         _volumeKeysActivate.value = settingsRepository.volumeKeysActivate
         _holdingTimeInput.value = settingsRepository.holdingTimeMillis.toString()
         _isCloudSyncEnabled.value = settingsRepository.isCloudSyncEnabled
+        _isGeminiEnabled.value = settingsRepository.isGeminiEnabled
         
         // Den lokalen TTS-Helper mit den gespeicherten Werten füttern,
         // sonst spricht er in den Einstellungen initial in Systemsprache
@@ -292,6 +299,59 @@ class SettingsViewModel(
         }
     }
 
+    fun activateGemini(context: android.content.Context) {
+        val gemini = geminiUseCaseProvider {
+            driveAuthManager.getDriveCredential()?.getToken()
+        }
+        
+        viewModelScope.launch {
+            try {
+                android.util.Log.d("SettingsViewModel", "Triggering Gemini test call...")
+                val response = gemini.generateResponse("Ping")
+                android.util.Log.d("SettingsViewModel", "Gemini test call response: $response")
+                
+                settingsRepository.isGeminiEnabled = true
+                _isGeminiEnabled.value = true
+                android.widget.Toast.makeText(context, "Gemini aktiv!", android.widget.Toast.LENGTH_SHORT).show()
+            } catch (e: UserRecoverableAuthIOException) {
+                android.util.Log.e("SettingsViewModel", "Caught UserRecoverableAuthIOException, emitting intent", e)
+                e.intent?.let { _authIntentFlow.emit(it) }
+            } catch (e: UserRecoverableAuthException) {
+                android.util.Log.e("SettingsViewModel", "Caught UserRecoverableAuthException, emitting intent", e)
+                e.intent?.let { _authIntentFlow.emit(it) }
+            } catch (e: Exception) {
+                android.util.Log.e("SettingsViewModel", "Gemini activation failed: ${e::class.java.name}: ${e.message}", e)
+                
+                // Debug: List models to Logcat
+                viewModelScope.launch {
+                    val models = gemini.listModels()
+                    android.util.Log.d("SettingsViewModel", "Available Gemini models: $models")
+                }
+                
+                // Try to find a wrapped recoverable exception
+                var cause: Throwable? = e
+                var handled = false
+                while (cause != null) {
+                    if (cause is UserRecoverableAuthIOException) {
+                        cause.intent?.let { _authIntentFlow.emit(it) }
+                        handled = true
+                        break
+                    }
+                    if (cause is UserRecoverableAuthException) {
+                        cause.intent?.let { _authIntentFlow.emit(it) }
+                        handled = true
+                        break
+                    }
+                    cause = cause.cause
+                }
+                
+                if (!handled) {
+                    android.widget.Toast.makeText(context, "Fehler: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
+
     fun setDefaultStartPageId(pageId: String?) {
         settingsRepository.defaultStartPageId = pageId
         _defaultStartPageId.value = pageId
@@ -347,7 +407,22 @@ class SettingsViewModelFactory(
             val importExportManager = com.andreas_kratzer.ghosttalk.core.PageImportExportManager(pageRepo, com.andreas_kratzer.ghosttalk.core.util.AppLogger)
             val cloudSyncUseCase = com.andreas_kratzer.ghosttalk.domain.CloudSyncUseCase(application, pageRepo, settingsRepository, importExportManager)
             
-            return SettingsViewModel(application, settingsRepository, driveAuthManager, cloudSyncUseCase) as T
+            val geminiProvider = { tokenProvider: suspend () -> String? ->
+                com.andreas_kratzer.ghosttalk.domain.GeminiUseCase(
+                    tokenProvider,
+                    driveProvider = {
+                        val credential = driveAuthManager.getDriveCredential() ?: return@GeminiUseCase null
+                        com.google.api.services.drive.Drive.Builder(
+                            com.google.api.client.http.javanet.NetHttpTransport(),
+                            com.google.api.client.json.gson.GsonFactory.getDefaultInstance(),
+                            credential
+                        ).setApplicationName("GhosTTalk").build()
+                    }
+                )
+            }
+            
+            @Suppress("UNCHECKED_CAST")
+            return SettingsViewModel(application, settingsRepository, driveAuthManager, cloudSyncUseCase, geminiProvider) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

@@ -136,7 +136,11 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.height(24.dp))
                         VoiceSettings(selectedLanguage, availableLanguages, selectedVoiceName, availableVoices, settingsViewModel)
                         Spacer(modifier = Modifier.height(24.dp))
+                        GoogleAccountSettings(settingsViewModel)
+                        Spacer(modifier = Modifier.height(24.dp))
                         CloudSettings(settingsViewModel)
+                        Spacer(modifier = Modifier.height(24.dp))
+                        GeminiSettings(settingsViewModel)
                         Spacer(modifier = Modifier.height(24.dp))
                         AudioOutputSettings(availableAudioDevices, selectedTtsAudioDeviceAddress, selectedCuesAudioDeviceAddress, settingsViewModel)
                     }
@@ -153,7 +157,11 @@ fun SettingsScreen(
                 Spacer(modifier = Modifier.height(24.dp))
                 VoiceSettings(selectedLanguage, availableLanguages, selectedVoiceName, availableVoices, settingsViewModel)
                 Spacer(modifier = Modifier.height(24.dp))
+                GoogleAccountSettings(settingsViewModel)
+                Spacer(modifier = Modifier.height(24.dp))
                 CloudSettings(settingsViewModel)
+                Spacer(modifier = Modifier.height(24.dp))
+                GeminiSettings(settingsViewModel)
                 Spacer(modifier = Modifier.height(24.dp))
                 AudioOutputSettings(availableAudioDevices, selectedTtsAudioDeviceAddress, selectedCuesAudioDeviceAddress, settingsViewModel)
                 Spacer(modifier = Modifier.height(24.dp))
@@ -487,6 +495,50 @@ fun HardwareSettings(
 }
 
 @Composable
+fun GoogleAccountSettings(settingsViewModel: SettingsViewModel) {
+    val userEmail by settingsViewModel.userEmail.collectAsState()
+    val context = androidx.compose.ui.platform.LocalContext.current
+
+    PreferenceCategory(stringResource(R.string.settings_category_google_account)) {
+        Text(
+            text = stringResource(R.string.settings_google_account_desc),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        
+        Spacer(modifier = Modifier.height(12.dp))
+        
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = if (userEmail != null) {
+                        stringResource(R.string.settings_google_account_status_signed_in_as, userEmail!!)
+                    } else {
+                        stringResource(R.string.settings_google_account_status_not_signed_in)
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (userEmail != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                )
+            }
+            
+            if (userEmail == null) {
+                Button(onClick = { settingsViewModel.signIn(context) }) {
+                    Text(stringResource(R.string.settings_google_account_sign_in))
+                }
+            } else {
+                OutlinedButton(onClick = { settingsViewModel.signOut() }) {
+                    Text(stringResource(R.string.settings_google_account_sign_out))
+                }
+            }
+        }
+    }
+}
+
+@Composable
 fun CloudSettings(settingsViewModel: SettingsViewModel) {
     val isCloudSyncEnabled by settingsViewModel.isCloudSyncEnabled.collectAsState()
     val userEmail by settingsViewModel.userEmail.collectAsState()
@@ -501,11 +553,6 @@ fun CloudSettings(settingsViewModel: SettingsViewModel) {
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(stringResource(R.string.settings_cloud_sync_enabled))
-                Text(
-                    text = stringResource(R.string.settings_cloud_sync_hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
             Switch(
                 checked = isCloudSyncEnabled,
@@ -515,51 +562,19 @@ fun CloudSettings(settingsViewModel: SettingsViewModel) {
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        // Login Status & Sync Controls
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+        Button(
+            onClick = { settingsViewModel.syncNow() },
+            enabled = !isSyncing && userEmail != null,
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(stringResource(R.string.settings_cloud_status_label), style = MaterialTheme.typography.labelLarge)
-                Text(
-                    if (userEmail != null) {
-                        stringResource(R.string.settings_cloud_status_signed_in_as, userEmail!!)
-                    } else {
-                        stringResource(R.string.settings_cloud_status_not_signed_in)
-                    },
-                    style = MaterialTheme.typography.bodyMedium
+            if (isSyncing) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(18.dp),
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    strokeWidth = 2.dp
                 )
-            }
-            
-            if (userEmail == null) {
-                val context = androidx.compose.ui.platform.LocalContext.current
-                Button(onClick = { settingsViewModel.signIn(context) }) {
-                    Text(stringResource(R.string.settings_cloud_sign_in))
-                }
             } else {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(
-                        onClick = { settingsViewModel.signOut() }
-                    ) {
-                        Text(stringResource(R.string.settings_cloud_sign_out))
-                    }
-                    Button(
-                        onClick = { settingsViewModel.syncNow() },
-                        enabled = !isSyncing
-                    ) {
-                        if (isSyncing) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(18.dp),
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                strokeWidth = 2.dp
-                            )
-                        } else {
-                            Text(stringResource(R.string.settings_cloud_sync_now))
-                        }
-                    }
-                }
+                Text(stringResource(R.string.settings_cloud_sync_now))
             }
         }
     }
@@ -584,6 +599,54 @@ fun ActionLogSettings(
                 )
             }
             Switch(checked = persistActionLogs, onCheckedChange = { settingsViewModel.setPersistActionLogs(it) })
+        }
+    }
+}
+
+@Composable
+fun GeminiSettings(settingsViewModel: SettingsViewModel) {
+    val isGeminiEnabled by settingsViewModel.isGeminiEnabled.collectAsState()
+    val context = androidx.compose.ui.platform.LocalContext.current
+    
+    PreferenceCategory(stringResource(R.string.settings_category_gemini)) {
+        Text(
+            text = stringResource(R.string.settings_gemini_activation_desc),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        
+        Spacer(modifier = Modifier.height(12.dp))
+        
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.settings_google_account_status_label),
+                    style = MaterialTheme.typography.labelLarge
+                )
+                Text(
+                    text = if (isGeminiEnabled) {
+                        stringResource(R.string.settings_gemini_status_enabled)
+                    } else {
+                        stringResource(R.string.settings_gemini_status_disabled)
+                    },
+                    color = if (isGeminiEnabled) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.error
+                    },
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+            
+            Button(
+                onClick = { settingsViewModel.activateGemini(context) }
+            ) {
+                Text(stringResource(R.string.settings_gemini_activate_button))
+            }
         }
     }
 }

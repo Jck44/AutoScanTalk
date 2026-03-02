@@ -21,5 +21,12 @@ data class NavigateToPageButtonAction(
     val pageId: String
 ) : ButtonAction()
 
+/**
+ * An action that triggers a Gemini AI request.
+ */
+data class GeminiButtonAction(
+    val prompt: String
+) : ButtonAction()
+
 // Zukünftige Aktionen könnten hier als weitere data classes hinzugefügt werden,
 // die von `Action` erben.
