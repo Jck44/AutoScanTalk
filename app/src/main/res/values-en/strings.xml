@@ -10,6 +10,10 @@
     <string name="settings_scan_pattern">Scan Pattern (Default)</string>
     <string name="settings_pattern_linear">Button by Button</string>
     <string name="settings_pattern_row_by_row">Row by Row</string>
+    <string name="settings_app_language">App Language (Menus &amp; UI)</string>
+    <string name="settings_app_language_system">System Default</string>
+    <string name="settings_app_language_de">German</string>
+    <string name="settings_app_language_en">English</string>
     
     <string name="settings_category_voice">Voice &amp; Language</string>
     <string name="settings_tts_language">TTS Language</string>

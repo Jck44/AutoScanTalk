@@ -10,6 +10,10 @@
     <string name="settings_scan_pattern">Scanmuster (Standard)</string>
     <string name="settings_pattern_linear">Button für Button</string>
     <string name="settings_pattern_row_by_row">Zeilenweise</string>
+    <string name="settings_app_language">App-Sprache (Menüs &amp; UI)</string>
+    <string name="settings_app_language_system">System-Standard</string>
+    <string name="settings_app_language_de">Deutsch</string>
+    <string name="settings_app_language_en">Englisch</string>
     
     <string name="settings_category_voice">Stimme &amp; Sprache</string>
     <string name="settings_tts_language">TTS Sprache</string>

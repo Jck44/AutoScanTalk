@@ -68,11 +68,16 @@ class SettingsRepository(context: Context) {
         _defaultScanPatternFlow.value = defaultScanPattern
         _holdingTimeFlow.value = holdingTimeMillis
         _isCloudSyncEnabledFlow.value = isCloudSyncEnabled
+        _isCloudSyncEnabledFlow.value = isCloudSyncEnabled
         _isGeminiEnabledFlow.value = isGeminiEnabled
+        _appLanguageFlow.value = appLanguage
     }
 
     private val _ttsLanguageFlow = MutableStateFlow(getStringScoped(KEY_TTS_LANGUAGE))
     val ttsLanguageFlow: StateFlow<String?> = _ttsLanguageFlow.asStateFlow()
+
+    private val _appLanguageFlow = MutableStateFlow(getStringScoped(KEY_APP_LANGUAGE))
+    val appLanguageFlow: StateFlow<String?> = _appLanguageFlow.asStateFlow()
 
     private val _scanDelayFlow = MutableStateFlow(getLongScoped(KEY_SCAN_DELAY_MILLIS, 1000L))
     val scanDelayFlow: StateFlow<Long> = _scanDelayFlow.asStateFlow()
@@ -215,6 +220,13 @@ class SettingsRepository(context: Context) {
             _isGeminiEnabledFlow.value = value
         }
 
+    var appLanguage: String?
+        get() = getStringScoped(KEY_APP_LANGUAGE)
+        set(value) {
+            putStringScoped(KEY_APP_LANGUAGE, value)
+            _appLanguageFlow.value = value
+        }
+
     companion object {
         private const val PREFS_NAME = "ghosttalk_settings"
         private const val KEY_TTS_LANGUAGE = "tts_language"
@@ -233,5 +245,6 @@ class SettingsRepository(context: Context) {
         private const val KEY_HOLDING_TIME_MILLIS = "holding_time_millis"
         private const val KEY_CLOUD_SYNC_ENABLED = "cloud_sync_enabled"
         private const val KEY_GEMINI_ENABLED = "gemini_enabled"
+        private const val KEY_APP_LANGUAGE = "app_language"
     }
 }

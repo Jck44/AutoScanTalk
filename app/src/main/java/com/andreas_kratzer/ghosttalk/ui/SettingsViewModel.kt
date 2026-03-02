@@ -26,6 +26,8 @@ import kotlinx.coroutines.flow.asSharedFlow
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
 import com.google.android.gms.auth.UserRecoverableAuthException
 import com.andreas_kratzer.ghosttalk.domain.GeminiUseCase
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 
 class SettingsViewModel(
     application: Application,
@@ -93,6 +95,9 @@ class SettingsViewModel(
     private val _isGeminiEnabled = MutableStateFlow(false)
     val isGeminiEnabled: StateFlow<Boolean> = _isGeminiEnabled.asStateFlow()
 
+    private val _selectedAppLanguage = MutableStateFlow<String?>("default")
+    val selectedAppLanguage: StateFlow<String?> = _selectedAppLanguage.asStateFlow()
+
     val userEmail: StateFlow<String?> = driveAuthManager.userEmail
 
     private val _isSyncing = MutableStateFlow(false)
@@ -122,6 +127,7 @@ class SettingsViewModel(
         _holdingTimeInput.value = settingsRepository.holdingTimeMillis.toString()
         _isCloudSyncEnabled.value = settingsRepository.isCloudSyncEnabled
         _isGeminiEnabled.value = settingsRepository.isGeminiEnabled
+        _selectedAppLanguage.value = settingsRepository.appLanguage ?: "default"
         
         // Den lokalen TTS-Helper mit den gespeicherten Werten füttern,
         // sonst spricht er in den Einstellungen initial in Systemsprache
@@ -228,6 +234,19 @@ class SettingsViewModel(
     fun setCloudSyncEnabled(enabled: Boolean) {
         settingsRepository.isCloudSyncEnabled = enabled
         _isCloudSyncEnabled.value = enabled
+    }
+
+    fun setAppLanguage(languageCode: String?) {
+        val codeToSave = if (languageCode == "default") null else languageCode
+        settingsRepository.appLanguage = codeToSave
+        _selectedAppLanguage.value = languageCode ?: "default"
+        
+        val appLocale: LocaleListCompat = if (languageCode == null || languageCode == "default") {
+            LocaleListCompat.getEmptyLocaleList()
+        } else {
+            LocaleListCompat.forLanguageTags(languageCode)
+        }
+        AppCompatDelegate.setApplicationLocales(appLocale)
     }
 
     fun signIn(context: android.content.Context) {

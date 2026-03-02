@@ -57,6 +57,7 @@ fun SettingsScreen(
     val volumeKeysActivate by settingsViewModel.volumeKeysActivate.collectAsState()
     val defaultScanPattern by settingsViewModel.defaultScanPattern.collectAsState()
     val holdingTimeInput by settingsViewModel.holdingTimeInput.collectAsState()
+    val selectedAppLanguage by settingsViewModel.selectedAppLanguage.collectAsState()
 
     val authLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -132,6 +133,8 @@ fun SettingsScreen(
                     Column(modifier = Modifier.weight(1f)) {
                         GeneralSettings(allPages, defaultStartPageId, defaultScanPattern, settingsViewModel)
                         Spacer(modifier = Modifier.height(24.dp))
+                        AppLanguageSettings(selectedAppLanguage ?: "default", settingsViewModel)
+                        Spacer(modifier = Modifier.height(24.dp))
                         VoiceSettings(selectedLanguage, availableLanguages, selectedVoiceName, availableVoices, settingsViewModel)
                         Spacer(modifier = Modifier.height(24.dp))
                         GoogleAccountSettings(settingsViewModel)
@@ -152,6 +155,8 @@ fun SettingsScreen(
                 }
             } else {
                 GeneralSettings(allPages, defaultStartPageId, defaultScanPattern, settingsViewModel)
+                Spacer(modifier = Modifier.height(24.dp))
+                AppLanguageSettings(selectedAppLanguage ?: "default", settingsViewModel)
                 Spacer(modifier = Modifier.height(24.dp))
                 VoiceSettings(selectedLanguage, availableLanguages, selectedVoiceName, availableVoices, settingsViewModel)
                 Spacer(modifier = Modifier.height(24.dp))
@@ -644,6 +649,55 @@ fun GeminiSettings(settingsViewModel: SettingsViewModel) {
                 onClick = { settingsViewModel.activateGemini(context) }
             ) {
                 Text(stringResource(R.string.settings_gemini_activate_button))
+            }
+        }
+    }
+}
+
+@Composable
+fun AppLanguageSettings(
+    selectedAppLanguage: String,
+    settingsViewModel: SettingsViewModel
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    PreferenceCategory(stringResource(R.string.settings_app_language)) {
+        Box(modifier = Modifier.fillMaxWidth()) {
+            val currentLabel = when (selectedAppLanguage) {
+                "de" -> stringResource(R.string.settings_app_language_de)
+                "en" -> stringResource(R.string.settings_app_language_en)
+                else -> stringResource(R.string.settings_app_language_system)
+            }
+            OutlinedTextField(
+                value = currentLabel,
+                onValueChange = {},
+                readOnly = true,
+                label = { Text(stringResource(R.string.settings_app_language)) },
+                modifier = Modifier.fillMaxWidth().clickable { expanded = true }
+            )
+            Box(modifier = Modifier.matchParentSize().clickable { expanded = true })
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.settings_app_language_system)) },
+                    onClick = {
+                        settingsViewModel.setAppLanguage("default")
+                        expanded = false
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.settings_app_language_de)) },
+                    onClick = {
+                        settingsViewModel.setAppLanguage("de")
+                        expanded = false
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.settings_app_language_en)) },
+                    onClick = {
+                        settingsViewModel.setAppLanguage("en")
+                        expanded = false
+                    }
+                )
             }
         }
     }
