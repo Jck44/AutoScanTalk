@@ -13,14 +13,15 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import androidx.core.content.edit
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
 import com.google.api.services.drive.DriveScopes
 import java.util.Collections
 
-class DriveAuthManager private constructor(private val context: Context) {
-
-    private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-    private val credentialManager = CredentialManager.create(context)
+class DriveAuthManager private constructor(context: Context) {
+    private val appContext = context.applicationContext
+    private val prefs = appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private val credentialManager = CredentialManager.create(appContext)
     
     private val _userEmail = MutableStateFlow<String?>(prefs.getString(KEY_USER_EMAIL, null))
     val userEmail: StateFlow<String?> = _userEmail.asStateFlow()
@@ -106,7 +107,7 @@ class DriveAuthManager private constructor(private val context: Context) {
 
         // NEW: Check if account exists in system
         try {
-            val am = android.accounts.AccountManager.get(context)
+            val am = android.accounts.AccountManager.get(appContext)
             val accounts = am.getAccountsByType("com.google")
             val exists = accounts.any { it.name.equals(email, ignoreCase = true) }
             Log.e(TAG, "System account check for '$email': Found = $exists")
@@ -118,7 +119,7 @@ class DriveAuthManager private constructor(private val context: Context) {
         }
 
         _userEmail.value = email
-        prefs.edit().putString(KEY_USER_EMAIL, email).apply()
+        prefs.edit { putString(KEY_USER_EMAIL, email) }
         Log.e(TAG, "Sign-in verified. User email stored: $email")
         
         return true
@@ -128,7 +129,7 @@ class DriveAuthManager private constructor(private val context: Context) {
         Log.e(TAG, "Signing out...")
         credentialManager.clearCredentialState(ClearCredentialStateRequest())
         _userEmail.value = null
-        prefs.edit().remove(KEY_USER_EMAIL).apply()
+        prefs.edit { remove(KEY_USER_EMAIL) }
     }
 
     fun getDriveCredential(): GoogleAccountCredential? {
@@ -147,7 +148,7 @@ class DriveAuthManager private constructor(private val context: Context) {
             "https://www.googleapis.com/auth/tasks.readonly"
         )
         val credential = GoogleAccountCredential.usingOAuth2(
-            context, scopes
+            appContext, scopes
         )
         
         // NEW: Assign actual Account object to avoid null name issues in internal GMS code

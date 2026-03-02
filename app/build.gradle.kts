@@ -79,26 +79,33 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-    testImplementation("junit:junit:4.13.2")
-    testImplementation("io.mockk:mockk:1.13.9")
-    androidTestImplementation("androidx.test.ext:junit:1.1.5")
+    
+    testImplementation(libs.junit)
+    testImplementation(libs.mockk)
+    testImplementation(libs.kotlinx.coroutines.test)
+    
+    androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
+    androidTestImplementation(libs.kotlinx.coroutines.test)
+    androidTestImplementation(libs.androidx.room.testing)
+    
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0") // Oder die neueste Version
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3") // Oder die neueste Version
-    implementation("androidx.navigation:navigation-compose:2.7.7")
+    
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.androidx.navigation.compose)
     
     // Room
-    val roomVersion = "2.6.1"
-    implementation("androidx.room:room-runtime:$roomVersion")
-    implementation("androidx.room:room-ktx:$roomVersion")
-    ksp("androidx.room:room-compiler:$roomVersion")
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
     
-    // Gson for JSON serialization
-    implementation("com.google.code.gson:gson:2.10.1")
+    // Utils
+    implementation(libs.gson)
+    implementation(libs.guava)
 
     // Cloud Sync (Google Drive & Credential Manager)
     implementation(libs.androidx.credentials)
@@ -107,13 +114,7 @@ dependencies {
     implementation(libs.google.api.client.android)
     implementation(libs.google.api.services.drive)
     implementation(libs.google.http.client.gson)
-    implementation("com.google.guava:guava:31.1-android")
     implementation(libs.play.app.update.ktx)
     implementation(libs.google.generativeai)
     implementation(libs.gms.play.services.auth)
-
-    // Tests
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
-    androidTestImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
-    androidTestImplementation("androidx.room:room-testing:$roomVersion")
 }

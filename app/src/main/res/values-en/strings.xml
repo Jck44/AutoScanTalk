@@ -108,6 +108,7 @@
     <string name="button_is_active_label">Is Active</string>
     <string name="button_action_label">Action</string>
     <string name="button_action_speak_text">Speak Text</string>
+    <string name="button_action_navigate_page">Navigate to Page</string>
     <string name="button_action_gemini">Call Gemini</string>
     <string name="button_no_page_selected">No page selected</string>
     <string name="button_target_page_label">Target Page</string>
