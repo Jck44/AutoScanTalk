@@ -66,18 +66,10 @@ class SettingsRepository(context: Context) {
         _switchActivationKeyFlow.value = switchActivationKey
         _volumeKeysActivateFlow.value = volumeKeysActivate
         _defaultScanPatternFlow.value = defaultScanPattern
-        _holdingTimeFlow.value = holdingTimeMillis
-        _isCloudSyncEnabledFlow.value = isCloudSyncEnabled
-        _isCloudSyncEnabledFlow.value = isCloudSyncEnabled
-        _isGeminiEnabledFlow.value = isGeminiEnabled
-        _appLanguageFlow.value = appLanguage
     }
 
     private val _ttsLanguageFlow = MutableStateFlow(getStringScoped(KEY_TTS_LANGUAGE))
     val ttsLanguageFlow: StateFlow<String?> = _ttsLanguageFlow.asStateFlow()
-
-    private val _appLanguageFlow = MutableStateFlow(getStringScoped(KEY_APP_LANGUAGE))
-    val appLanguageFlow: StateFlow<String?> = _appLanguageFlow.asStateFlow()
 
     private val _scanDelayFlow = MutableStateFlow(getLongScoped(KEY_SCAN_DELAY_MILLIS, 1000L))
     val scanDelayFlow: StateFlow<Long> = _scanDelayFlow.asStateFlow()
@@ -190,41 +182,28 @@ class SettingsRepository(context: Context) {
             _volumeKeysActivateFlow.value = value
         }
 
-    private val _holdingTimeFlow = MutableStateFlow(getLongScoped(KEY_HOLDING_TIME_MILLIS, 0L))
-    val holdingTimeFlow: StateFlow<Long> = _holdingTimeFlow.asStateFlow()
-
     var holdingTimeMillis: Long
         get() = getLongScoped(KEY_HOLDING_TIME_MILLIS, 0L)
         set(value) {
             putLongScoped(KEY_HOLDING_TIME_MILLIS, value)
-            _holdingTimeFlow.value = value
         }
-
-    private val _isCloudSyncEnabledFlow = MutableStateFlow(getBooleanScoped(KEY_CLOUD_SYNC_ENABLED, false))
-    val isCloudSyncEnabledFlow: StateFlow<Boolean> = _isCloudSyncEnabledFlow.asStateFlow()
 
     var isCloudSyncEnabled: Boolean
         get() = getBooleanScoped(KEY_CLOUD_SYNC_ENABLED, false)
         set(value) {
             putBooleanScoped(KEY_CLOUD_SYNC_ENABLED, value)
-            _isCloudSyncEnabledFlow.value = value
         }
-
-    private val _isGeminiEnabledFlow = MutableStateFlow(getBooleanScoped(KEY_GEMINI_ENABLED, false))
-    val isGeminiEnabledFlow: StateFlow<Boolean> = _isGeminiEnabledFlow.asStateFlow()
 
     var isGeminiEnabled: Boolean
         get() = getBooleanScoped(KEY_GEMINI_ENABLED, false)
         set(value) {
             putBooleanScoped(KEY_GEMINI_ENABLED, value)
-            _isGeminiEnabledFlow.value = value
         }
 
     var appLanguage: String?
         get() = getStringScoped(KEY_APP_LANGUAGE)
         set(value) {
             putStringScoped(KEY_APP_LANGUAGE, value)
-            _appLanguageFlow.value = value
         }
 
     companion object {
