@@ -142,7 +142,7 @@ class DriveAuthManager private constructor(context: Context) {
         }
 
         val scopes = listOf(
-            com.google.api.services.drive.DriveScopes.DRIVE_FILE,
+            DriveScopes.DRIVE_FILE,
             "https://www.googleapis.com/auth/generative-language.retriever",
             "https://www.googleapis.com/auth/calendar.events.readonly",
             "https://www.googleapis.com/auth/tasks.readonly"

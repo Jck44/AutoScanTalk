@@ -401,20 +401,21 @@ class SettingsViewModelFactory(
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(SettingsViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            val driveAuthManager = com.andreas_kratzer.ghosttalk.core.cloud.DriveAuthManager.getInstance(application)
+            val driveAuthManager = DriveAuthManager.getInstance(application)
             val db = com.andreas_kratzer.ghosttalk.data.AppDatabase.getDatabase(application)
             val pageRepo = com.andreas_kratzer.ghosttalk.data.PageRepository(db.pageDao())
             val importExportManager = com.andreas_kratzer.ghosttalk.core.PageImportExportManager(pageRepo, com.andreas_kratzer.ghosttalk.core.util.AppLogger)
-            val cloudSyncUseCase = com.andreas_kratzer.ghosttalk.domain.CloudSyncUseCase(application, pageRepo, settingsRepository, importExportManager)
+            val cloudSyncUseCase =
+                CloudSyncUseCase(application, pageRepo, settingsRepository, importExportManager)
             
             val geminiProvider = { tokenProvider: suspend () -> String? ->
-                com.andreas_kratzer.ghosttalk.domain.GeminiUseCase(
+                GeminiUseCase(
                     tokenProvider,
                     driveProvider = {
                         val credential = driveAuthManager.getDriveCredential() ?: return@GeminiUseCase null
-                        com.google.api.services.drive.Drive.Builder(
-                            com.google.api.client.http.javanet.NetHttpTransport(),
-                            com.google.api.client.json.gson.GsonFactory.getDefaultInstance(),
+                        Drive.Builder(
+                            NetHttpTransport(),
+                            GsonFactory.getDefaultInstance(),
                             credential
                         ).setApplicationName("GhosTTalk").build()
                     }

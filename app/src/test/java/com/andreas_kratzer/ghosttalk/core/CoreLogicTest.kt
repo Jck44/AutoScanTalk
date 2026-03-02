@@ -56,7 +56,7 @@ class CoreLogicTest {
         every { settingsRepo.scanDelayMillis } returns 10L
         every { ttsHelper.isReady } returns true
         
-        val engine = com.andreas_kratzer.ghosttalk.core.ScannerEngine(
+        val engine = ScannerEngine(
             scope = this,
             settingsRepository = settingsRepo,
             ttsHelper = ttsHelper,

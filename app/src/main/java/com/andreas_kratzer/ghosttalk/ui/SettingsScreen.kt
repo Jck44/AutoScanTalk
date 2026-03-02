@@ -32,7 +32,7 @@ import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.util.VoiceUtils
 import java.util.Locale
 
-@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     settingsViewModel: SettingsViewModel,
@@ -74,11 +74,9 @@ fun SettingsScreen(
     }
 
     var expandedLanguage by remember { mutableStateOf(false) }
-    var expandedStartPage by remember { mutableStateOf(false) }
     var expandedVoice by remember { mutableStateOf(false) }
     var expandedTtsDevice by remember { mutableStateOf(false) }
     var expandedCuesDevice by remember { mutableStateOf(false) }
-    var expandedDefaultScanPattern by remember { mutableStateOf(false) }
 
     // Versuche regelmäßig die Sprachen zu laden, falls sie initial noch nicht da waren
     LaunchedEffect(expandedLanguage) {

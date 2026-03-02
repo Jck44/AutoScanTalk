@@ -107,13 +107,13 @@ class PageImportExportManager(
             val buttons = page.buttonConfigs.mapIndexedNotNull { index, config ->
                 config?.let {
                     val importAction = when (val action = it.buttonAction) {
-                        is com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction -> com.andreas_kratzer.ghosttalk.model.importexport.ImportAction(
+                        is SpeakTextButtonAction -> com.andreas_kratzer.ghosttalk.model.importexport.ImportAction(
                             type = "SPEAK",
                             textToSpeech = action.textToSpeech,
                             targetPageImportId = null,
                             ttsFeedback = null
                         )
-                        is com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction -> com.andreas_kratzer.ghosttalk.model.importexport.ImportAction(
+                        is NavigateToPageButtonAction -> com.andreas_kratzer.ghosttalk.model.importexport.ImportAction(
                             type = "NAVIGATE",
                             textToSpeech = null,
                             targetPageImportId = action.pageId,
