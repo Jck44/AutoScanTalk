@@ -70,6 +70,7 @@ class TextToSpeechHelper(
                     }
                 }
 
+                @Deprecated("Deprecated in Java")
                 override fun onError(utteranceId: String?) {
                     val request = playRequests.remove(utteranceId)
                     request?.file?.delete()

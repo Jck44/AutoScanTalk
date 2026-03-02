@@ -23,35 +23,35 @@ abstract class AppDatabase : RoomDatabase() {
         private var INSTANCE: AppDatabase? = null
         
         val MIGRATION_1_2 = object : Migration(1, 2) {
-            override fun migrate(database: SupportSQLiteDatabase) {
+            override fun migrate(db: SupportSQLiteDatabase) {
                 // 1. Create the new books table
-                database.execSQL(
+                db.execSQL(
                     "CREATE TABLE IF NOT EXISTS `books` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, PRIMARY KEY(`id`))"
                 )
 
                 // 2. Generate a Default Book ID and insert it
                 val defaultBookId = "book-default-" + UUID.randomUUID().toString()
                 val currentTime = System.currentTimeMillis()
-                database.execSQL(
+                db.execSQL(
                     "INSERT INTO `books` (`id`, `name`, `createdAt`) VALUES ('$defaultBookId', 'Standardbuch', $currentTime)"
                 )
 
                 // 3. Add the bookId column to the existing pages table
                 // SQLite ALTER TABLE ADD COLUMN allows adding a column. We can set a DEFAULT value or allow NULL.
                 // Since our model defines val bookId: String (NOT NULL), we must provide a default for existing rows.
-                database.execSQL(
+                db.execSQL(
                     "ALTER TABLE `pages` ADD COLUMN `bookId` TEXT NOT NULL DEFAULT '$defaultBookId'"
                 )
             }
         }
 
         val MIGRATION_2_3 = object : Migration(2, 3) {
-            override fun migrate(database: SupportSQLiteDatabase) {
+            override fun migrate(db: SupportSQLiteDatabase) {
                 // Add scanPattern (nullable) and rowNames (not null with default empty JSON array) to pages
-                database.execSQL(
+                db.execSQL(
                     "ALTER TABLE `pages` ADD COLUMN `scanPattern` TEXT DEFAULT NULL"
                 )
-                database.execSQL(
+                db.execSQL(
                     "ALTER TABLE `pages` ADD COLUMN `rowNames` TEXT NOT NULL DEFAULT '[]'"
                 )
             }
@@ -65,7 +65,7 @@ abstract class AppDatabase : RoomDatabase() {
                     "ghosttalk_database"
                 )
                 .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
-                .fallbackToDestructiveMigration()
+                .fallbackToDestructiveMigration(true)
                 .build()
                 INSTANCE = instance
                 instance
