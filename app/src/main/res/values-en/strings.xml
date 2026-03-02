@@ -101,7 +101,7 @@
     <string name="page_editor_title">Editor: %s</string>
     <string name="page_editor_hint">Tap a field to configure the button.</string>
     <string name="page_editor_row_name_label">Row Name</string>
-    <string name="page_editor_loading">Page not found or loading...</string>
+    <string name="page_editor_loading">Page not found or loading…</string>
 
     <!-- Button Config Dialog -->
     <string name="button_dialog_new_title">New Button</string>
