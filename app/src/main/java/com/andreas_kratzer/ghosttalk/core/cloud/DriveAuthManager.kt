@@ -48,6 +48,7 @@ class DriveAuthManager private constructor(context: Context) {
         Log.d(TAG, "Starting signIn process...")
         return try {
             val serverClientId = "974414517482-m4ibjmnj0js4j6tpm3a78r18og3jksdq.apps.googleusercontent.com"
+            @Suppress("KotlinConstantConditions")
             if (serverClientId == "YOUR_SERVER_CLIENT_ID_PLACEHOLDER") {
                 Log.w(TAG, "Using placeholder Server Client ID! This will likely fail.")
             }
