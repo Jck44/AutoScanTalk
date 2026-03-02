@@ -51,7 +51,7 @@ class RoutedAudioPlayer(
                         Log.d("RoutedAudioPlayer", "Routing to ${targetDevice.productName} (address: ${targetDevice.address}): Success=$routed")
                     }
                     
-                    if (isCommunicationDevice && targetDevice != null) {
+                    if (isCommunicationDevice) {
                         val commRouted = audioManager.setCommunicationDevice(targetDevice)
                         Log.d("RoutedAudioPlayer", "setCommunicationDevice: Success=$commRouted")
                     }

@@ -11,7 +11,7 @@ import com.andreas_kratzer.ghosttalk.model.Book
 import com.andreas_kratzer.ghosttalk.model.Page
 import java.util.UUID
 
-@Database(entities = [Page::class, Book::class], version = 3, exportSchema = true)
+@Database(entities = [Page::class, Book::class], version = 3, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
 
