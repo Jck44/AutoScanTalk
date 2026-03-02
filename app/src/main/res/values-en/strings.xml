@@ -108,31 +108,44 @@
     <string name="button_is_active_label">Is Active</string>
     <string name="button_action_label">Action</string>
     <string name="button_action_speak_text">Speak Text</string>
-    <string name="button_action_navigate_page">Navigate to Page</string>
+    <string name="button_action_gemini">Call Gemini</string>
     <string name="button_no_page_selected">No page selected</string>
     <string name="button_target_page_label">Target Page</string>
+    <string name="button_gemini_prompt_field">Gemini Prompt (Command)</string>
+    <string name="button_gemini_prompt_hint">What should Gemini do?</string>
     <string name="action_clear_delete">Clear / Delete</string>
 
     <!-- Page Screen -->
-    <string name="page_loading">Page is loading...</string>
+    <string name="page_loading">Page is loading…</string>
     <string name="page_action_start_scan">Start Scan</string>
     <string name="page_action_stop_scan">Stop Scan</string>
     <string name="page_action_activate_focused">Activate Focused</string>
     <string name="page_last_actions_title">Last Actions:</string>
     <string name="page_clear_logs_description">Clear history</string>
-    <string name="page_no_actions_yet">No_actions performed yet.</string>
+    <string name="page_no_actions_yet">No actions performed yet.</string>
+
+    <!-- Google Account & Services -->
+    <string name="settings_category_google_account">Google Account &amp; Services</string>
+    <string name="settings_google_account_desc">This account is used for Cloud Backup, Google Calendar/Tasks, and Gemini AI.</string>
+    <string name="settings_google_account_status_signed_in_as">Signed in as %s</string>
+    <string name="settings_google_account_status_not_signed_in">Not signed in</string>
+    <string name="settings_google_account_sign_in">Sign In</string>
+    <string name="settings_google_account_sign_out">Sign Out</string>
+    <string name="settings_google_account_status_label">Status:</string>
 
     <!-- Cloud Sync -->
-    <string name="settings_category_cloud">Cloud Integration</string>
-    <string name="settings_cloud_sync_enabled">Enable Cloud Sync</string>
-    <string name="settings_cloud_sync_hint">Automatically backs up books to Google Drive</string>
-    <string name="settings_cloud_status_label">Status:</string>
-    <string name="settings_cloud_status_not_signed_in">Not signed in</string>
-    <string name="settings_cloud_status_signed_in_as">Signed in as %s</string>
-    <string name="settings_cloud_last_sync">Last sync: %s</string>
-    <string name="settings_cloud_sync_now">Sync Now</string>
-    <string name="settings_cloud_sign_in">Sign In</string>
-    <string name="settings_cloud_sign_out">Sign Out</string>
+    <string name="settings_category_cloud">Cloud Backup (Google Drive)</string>
+    <string name="settings_cloud_sync_enabled">Enable automatic backup</string>
+    <string name="settings_cloud_sync_now">Backup books now</string>
+
+    <!-- Gemini Integration -->
+    <string name="settings_category_gemini">Gemini AI Assistant</string>
+    <string name="settings_gemini_activate_button">Initialize / Test Gemini</string>
+    <string name="settings_gemini_status_enabled">Enabled</string>
+    <string name="settings_gemini_status_disabled">Not enabled</string>
+    <string name="settings_gemini_activation_desc">Tap the button to initialize Gemini and request necessary permissions.</string>
+    <string name="settings_gemini_activation_success">Gemini successfully activated!</string>
+    <string name="settings_gemini_activation_error">Activation error: %s</string>
 
     <!-- Shared -->
     <string name="error_page_not_found">Page not found</string>

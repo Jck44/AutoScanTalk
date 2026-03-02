@@ -98,7 +98,7 @@
     <string name="page_editor_title">Editor: %s</string>
     <string name="page_editor_hint">Tippe auf ein Feld, um den Button zu konfigurieren.</string>
     <string name="page_editor_row_name_label">Zeilenname</string>
-    <string name="page_editor_loading">Seite nicht gefunden oder wird geladen...</string>
+    <string name="page_editor_loading">Seite nicht gefunden oder wird geladen…</string>
 
     <!-- Button Config Dialog -->
     <string name="button_dialog_new_title">Neuer Button</string>
@@ -117,7 +117,7 @@
     <string name="button_gemini_prompt_hint">Was soll Gemini tun?</string>
 
     <!-- Page Screen -->
-    <string name="page_loading">Seite wird geladen...</string>
+    <string name="page_loading">Seite wird geladen…</string>
     <string name="page_action_start_scan">Start Scan</string>
     <string name="page_action_stop_scan">Stop Scan</string>
     <string name="page_action_activate_focused">Auslösen</string>
