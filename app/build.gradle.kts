@@ -71,13 +71,6 @@ android {
     }
 }
 
-androidComponents {
-    onVariants { variant ->
-        val kspSourceDir = layout.buildDirectory.dir("generated/ksp/${variant.name}/kotlin")
-        variant.sources.kotlin?.addStaticSourceDirectory(kspSourceDir)
-    }
-}
-
 dependencies {
 
     implementation(libs.androidx.core.ktx)
