@@ -55,20 +55,21 @@ android {
             excludes += "/META-INF/NOTICE"
         }
     }
-    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile>().configureEach {
-        compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
-        }
-    }
     buildFeatures {
         compose = true
     }
+}
 
-    play {
-        track.set("internal")
-        serviceAccountCredentials.set(file("../service-account.json"))
-        // defaultToAppBundles.set(true)
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile>().configureEach {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
     }
+}
+
+play {
+    track.set("internal")
+    serviceAccountCredentials.set(file("../service-account.json"))
+    // defaultToAppBundles.set(true)
 }
 
 dependencies {

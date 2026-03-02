@@ -6,10 +6,9 @@ import android.os.Looper
 import android.speech.tts.TextToSpeech
 import android.util.Log
 import android.widget.Toast
+import com.andreas_kratzer.ghosttalk.core.AudioDeviceManager
 import java.io.File
 import java.util.Locale
-import com.andreas_kratzer.ghosttalk.core.AudioDeviceManager
-import com.andreas_kratzer.ghosttalk.tts.RoutedAudioPlayer
 import java.util.concurrent.ConcurrentHashMap
 
 class TextToSpeechHelper(
