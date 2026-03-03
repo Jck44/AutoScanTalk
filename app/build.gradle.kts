@@ -15,10 +15,14 @@ android {
         applicationId = "com.andreas_kratzer.ghosttalk"
         minSdk = 35
         targetSdk = 36
-        versionCode = 4
+        versionCode = 4 
         versionName = "0.2.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        
+        ndk {
+            debugSymbolLevel = "full"
+        }
     }
 
     signingConfigs {
@@ -39,9 +43,6 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            ndk {
-                debugSymbolLevel = "full"
-            }
         }
     }
     compileOptions {
@@ -58,6 +59,7 @@ android {
     }
     buildFeatures {
         compose = true
+        prefab = true
     }
 }
 
