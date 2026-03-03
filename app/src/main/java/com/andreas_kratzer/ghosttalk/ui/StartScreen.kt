@@ -60,17 +60,17 @@ fun StartScreen(
         @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
         FlowRow(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center,
+            horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
             verticalArrangement = Arrangement.spacedBy(vSpacing),
             maxItemsInEachRow = if (isLandscape) 3 else 1
         ) {
+            val cardModifier = if (isLandscape) Modifier.weight(1f) else Modifier.fillMaxWidth()
+
             GhostTalkCard(
                 title = stringResource(R.string.start_user_mode),
                 icon = Icons.Filled.PlayArrow,
                 onClick = onNavigateToUserMode,
-                modifier = Modifier
-                    .padding(horizontal = 8.dp)
-                    .width(240.dp),
+                modifier = cardModifier,
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                 iconColor = MaterialTheme.colorScheme.primary
             )
@@ -79,9 +79,7 @@ fun StartScreen(
                 title = stringResource(R.string.start_manage_content),
                 icon = Icons.Filled.Edit,
                 onClick = onNavigateToContentManagement,
-                modifier = Modifier
-                    .padding(horizontal = 8.dp)
-                    .width(240.dp),
+                modifier = cardModifier,
                 containerColor = MaterialTheme.colorScheme.tertiaryContainer,
                 iconColor = MaterialTheme.colorScheme.tertiary
             )
@@ -90,9 +88,7 @@ fun StartScreen(
                 title = stringResource(R.string.settings_title),
                 icon = Icons.Filled.Settings,
                 onClick = onNavigateToSettings,
-                modifier = Modifier
-                    .padding(horizontal = 8.dp)
-                    .width(240.dp),
+                modifier = cardModifier,
                 containerColor = MaterialTheme.colorScheme.secondaryContainer,
                 iconColor = MaterialTheme.colorScheme.secondary
             )
@@ -104,7 +100,7 @@ fun StartScreen(
             title = stringResource(R.string.start_back_to_books),
             icon = Icons.AutoMirrored.Filled.ArrowBack,
             onClick = onNavigateToBooks,
-            modifier = Modifier.width(240.dp),
+            modifier = Modifier.fillMaxWidth(),
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
             iconColor = MaterialTheme.colorScheme.onSurfaceVariant
         )
