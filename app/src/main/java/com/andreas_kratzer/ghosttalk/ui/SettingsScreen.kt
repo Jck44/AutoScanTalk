@@ -544,8 +544,12 @@ fun GoogleAccountSettings(settingsViewModel: SettingsViewModel) {
 @Composable
 fun CloudSettings(settingsViewModel: SettingsViewModel) {
     val isCloudSyncEnabled by settingsViewModel.isCloudSyncEnabled.collectAsState()
+    val syncIntervalMinutesInput by settingsViewModel.syncIntervalMinutesInput.collectAsState()
+    val syncMode by settingsViewModel.syncMode.collectAsState()
     val userEmail by settingsViewModel.userEmail.collectAsState()
     val isSyncing by settingsViewModel.isSyncing.collectAsState()
+    
+    var expandedMode by remember { mutableStateOf(false) }
     
     PreferenceCategory(stringResource(R.string.settings_category_cloud)) {
         Row(
@@ -563,21 +567,83 @@ fun CloudSettings(settingsViewModel: SettingsViewModel) {
             )
         }
         
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        Text(
+            text = stringResource(R.string.settings_cloud_sync_desc),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        
         Spacer(modifier = Modifier.height(16.dp))
         
-        Button(
-            onClick = { settingsViewModel.syncNow() },
-            enabled = !isSyncing && userEmail != null,
+        OutlinedTextField(
+            value = syncIntervalMinutesInput,
+            onValueChange = { settingsViewModel.setSyncIntervalMinutesInput(it) },
+            label = { Text(stringResource(R.string.settings_cloud_sync_interval)) },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth()
+        )
+        
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Box(modifier = Modifier.fillMaxWidth()) {
+            val currentModeLabel = when (syncMode) {
+                "BACKUP_ONLY" -> stringResource(R.string.settings_cloud_sync_mode_backup)
+                "RESTORE_ONLY" -> stringResource(R.string.settings_cloud_sync_mode_restore)
+                else -> stringResource(R.string.settings_cloud_sync_mode_two_way)
+            }
+            OutlinedTextField(
+                value = currentModeLabel,
+                onValueChange = {},
+                readOnly = true,
+                label = { Text(stringResource(R.string.settings_cloud_sync_mode)) },
+                modifier = Modifier.fillMaxWidth().clickable { expandedMode = true }
+            )
+            Box(modifier = Modifier.matchParentSize().clickable { expandedMode = true })
+            DropdownMenu(expanded = expandedMode, onDismissRequest = { expandedMode = false }) {
+                DropdownMenuItem(text = { Text(stringResource(R.string.settings_cloud_sync_mode_two_way)) }, onClick = {
+                    settingsViewModel.setSyncMode("TWO_WAY")
+                    expandedMode = false
+                })
+                DropdownMenuItem(text = { Text(stringResource(R.string.settings_cloud_sync_mode_backup)) }, onClick = {
+                    settingsViewModel.setSyncMode("BACKUP_ONLY")
+                    expandedMode = false
+                })
+                DropdownMenuItem(text = { Text(stringResource(R.string.settings_cloud_sync_mode_restore)) }, onClick = {
+                    settingsViewModel.setSyncMode("RESTORE_ONLY")
+                    expandedMode = false
+                })
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            if (isSyncing) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(18.dp),
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    strokeWidth = 2.dp
-                )
-            } else {
-                Text(stringResource(R.string.settings_cloud_sync_now))
+            OutlinedButton(
+                onClick = { settingsViewModel.backupNow() },
+                enabled = !isSyncing && userEmail != null,
+                modifier = Modifier.weight(1f)
+            ) {
+                if (isSyncing) {
+                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                } else {
+                    Text(stringResource(R.string.settings_cloud_backup_now))
+                }
+            }
+            OutlinedButton(
+                onClick = { settingsViewModel.restoreNow() },
+                enabled = !isSyncing && userEmail != null,
+                modifier = Modifier.weight(1f)
+            ) {
+                if (isSyncing) {
+                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                } else {
+                    Text(stringResource(R.string.settings_cloud_restore_now))
+                }
             }
         }
     }

@@ -37,7 +37,8 @@ class SettingsViewModel @Inject constructor(
     private val cloudSyncUseCase: CloudSyncUseCase,
     private val geminiUseCaseFactory: GeminiUseCaseFactory,
     private val tempTtsHelper: TextToSpeechHelper,
-    private val audioDeviceManager: AudioDeviceManager
+    private val audioDeviceManager: AudioDeviceManager,
+    private val workManager: androidx.work.WorkManager
 ) : AndroidViewModel(application) {
 
     private val _availableLanguages = MutableStateFlow<List<Locale>>(emptyList())
@@ -88,6 +89,12 @@ class SettingsViewModel @Inject constructor(
     private val _holdingTimeInput = MutableStateFlow("0")
     val holdingTimeInput: StateFlow<String> = _holdingTimeInput.asStateFlow()
 
+    private val _syncIntervalMinutesInput = MutableStateFlow("15")
+    val syncIntervalMinutesInput: StateFlow<String> = _syncIntervalMinutesInput.asStateFlow()
+
+    private val _syncMode = MutableStateFlow("TWO_WAY")
+    val syncMode: StateFlow<String> = _syncMode.asStateFlow()
+
     private val _isCloudSyncEnabled = MutableStateFlow(false)
     val isCloudSyncEnabled: StateFlow<Boolean> = _isCloudSyncEnabled.asStateFlow()
 
@@ -124,6 +131,8 @@ class SettingsViewModel @Inject constructor(
         _switchActivationKey.value = settingsRepository.switchActivationKey
         _volumeKeysActivate.value = settingsRepository.volumeKeysActivate
         _holdingTimeInput.value = settingsRepository.holdingTimeMillis.toString()
+        _syncIntervalMinutesInput.value = settingsRepository.syncIntervalMinutes.toString()
+        _syncMode.value = settingsRepository.syncMode
         _isCloudSyncEnabled.value = settingsRepository.isCloudSyncEnabled
         _isGeminiEnabled.value = settingsRepository.isGeminiEnabled
         _selectedAppLanguage.value = settingsRepository.appLanguage ?: "default"
@@ -225,14 +234,64 @@ class SettingsViewModel @Inject constructor(
         _holdingTimeInput.value = digitsOnly
 
         val parsed = digitsOnly.toLongOrNull()
-        if (parsed != null) {
+        if (parsed != null && parsed >= 0L) {
             settingsRepository.holdingTimeMillis = parsed
         }
+    }
+
+    fun setSyncIntervalMinutesInput(input: String) {
+        val digitsOnly = input.filter { it.isDigit() }
+        
+        val parsed = digitsOnly.toLongOrNull()
+        if (parsed != null && parsed >= 15L) {
+            _syncIntervalMinutesInput.value = digitsOnly
+            settingsRepository.syncIntervalMinutes = parsed
+        } else {
+            // Clamp UI and value to minimum 15
+            _syncIntervalMinutesInput.value = "15"
+            settingsRepository.syncIntervalMinutes = 15L
+        }
+        
+        // If already enabled, reschedule with new interval
+        if (_isCloudSyncEnabled.value) {
+            scheduleCloudSync()
+        }
+    }
+
+    fun setSyncMode(mode: String) {
+        settingsRepository.syncMode = mode
+        _syncMode.value = mode
+        
+        // Mode change doesn't technically require rescheduling as the worker reads it from repo,
+        // but it's cleaner to have it consistent if we ever change worker params.
     }
 
     fun setCloudSyncEnabled(enabled: Boolean) {
         settingsRepository.isCloudSyncEnabled = enabled
         _isCloudSyncEnabled.value = enabled
+        
+        if (enabled) {
+            scheduleCloudSync()
+        } else {
+            workManager.cancelUniqueWork("CloudSyncWorker")
+        }
+    }
+
+    private fun scheduleCloudSync() {
+        val constraints = androidx.work.Constraints.Builder()
+            .setRequiredNetworkType(androidx.work.NetworkType.CONNECTED)
+            .build()
+        
+        val intervalMin = settingsRepository.syncIntervalMinutes
+        val workRequest = androidx.work.PeriodicWorkRequestBuilder<com.andreas_kratzer.ghosttalk.core.cloud.CloudSyncWorker>(
+            intervalMin, java.util.concurrent.TimeUnit.MINUTES
+        ).setConstraints(constraints).build()
+        
+        workManager.enqueueUniquePeriodicWork(
+            "CloudSyncWorker",
+            androidx.work.ExistingPeriodicWorkPolicy.UPDATE,
+            workRequest
+        )
     }
 
     fun setAppLanguage(languageCode: String?) {
@@ -283,9 +342,21 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun syncNow() {
+        performManualSync(com.andreas_kratzer.ghosttalk.domain.SyncMode.TWO_WAY)
+    }
+
+    fun backupNow(driveOverride: Drive? = null) {
+        performManualSync(com.andreas_kratzer.ghosttalk.domain.SyncMode.BACKUP_ONLY, driveOverride)
+    }
+
+    fun restoreNow(driveOverride: Drive? = null) {
+        performManualSync(com.andreas_kratzer.ghosttalk.domain.SyncMode.RESTORE_ONLY, driveOverride)
+    }
+
+    private fun performManualSync(mode: com.andreas_kratzer.ghosttalk.domain.SyncMode, driveOverride: Drive? = null) {
         val context = getApplication<Application>().applicationContext
         val credential = driveAuthManager.getDriveCredential()
-        if (credential == null) {
+        if (credential == null && driveOverride == null) {
             android.util.Log.w("SettingsViewModel", "syncNow: No credential available. User might not be signed in.")
             android.widget.Toast.makeText(context, "Nicht angemeldet!", android.widget.Toast.LENGTH_SHORT).show()
             return
@@ -294,15 +365,15 @@ class SettingsViewModel @Inject constructor(
         
         viewModelScope.launch {
             _isSyncing.value = true
-            android.util.Log.d("SettingsViewModel", "Starting manual sync for book: $bookId")
+            android.util.Log.d("SettingsViewModel", "Starting manual sync for book: $bookId with mode: $mode")
             try {
-                val drive = Drive.Builder(
+                val drive = driveOverride ?: Drive.Builder(
                     NetHttpTransport(),
                     GsonFactory.getDefaultInstance(),
                     credential
                 ).setApplicationName("GhosTTalk").build()
                 
-                cloudSyncUseCase.syncBook(drive, bookId)
+                cloudSyncUseCase.syncBook(drive, bookId, mode)
                 android.util.Log.d("SettingsViewModel", "Sync completed successfully")
                 android.widget.Toast.makeText(context, "Synchronisierung abgeschlossen", android.widget.Toast.LENGTH_SHORT).show()
             } catch (e: UserRecoverableAuthIOException) {

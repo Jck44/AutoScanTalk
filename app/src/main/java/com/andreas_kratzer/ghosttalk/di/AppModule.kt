@@ -64,4 +64,10 @@ object AppModule {
     fun provideIoDispatcher(): kotlinx.coroutines.CoroutineDispatcher {
         return kotlinx.coroutines.Dispatchers.IO
     }
+
+    @Provides
+    @Singleton
+    fun provideWorkManager(@ApplicationContext context: Context): androidx.work.WorkManager {
+        return androidx.work.WorkManager.getInstance(context)
+    }
 }

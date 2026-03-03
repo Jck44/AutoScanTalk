@@ -9,10 +9,12 @@ import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import com.google.api.services.drive.Drive
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -33,6 +35,7 @@ class SettingsViewModelTest {
     private lateinit var audioDeviceManager: AudioDeviceManager
     private lateinit var tempTtsHelper: TextToSpeechHelper
     private lateinit var geminiUseCaseFactory: com.andreas_kratzer.ghosttalk.domain.GeminiUseCaseFactory
+    private lateinit var workManager: androidx.work.WorkManager
     private lateinit var viewModel: SettingsViewModel
 
     @Before
@@ -46,6 +49,7 @@ class SettingsViewModelTest {
         geminiUseCaseFactory = mockk(relaxed = true)
         tempTtsHelper = mockk(relaxed = true)
         audioDeviceManager = mockk(relaxed = true)
+        workManager = mockk(relaxed = true)
 
         // Mock default flows and properties from SettingsRepository
         every { settingsRepository.ttsLanguage } returns "de"
@@ -64,9 +68,22 @@ class SettingsViewModelTest {
         every { settingsRepository.isCloudSyncEnabled } returns false
         every { settingsRepository.isGeminiEnabled } returns false
         every { settingsRepository.appLanguage } returns "en"
+        every { settingsRepository.syncIntervalMinutes } returns 15L
+        every { settingsRepository.syncMode } returns "TWO_WAY"
 
         // Mock DriveAuthManager flow
         every { driveAuthManager.userEmail } returns MutableStateFlow(null)
+
+        // Mock static Android methods that throw in local JVM tests
+        io.mockk.mockkStatic(android.util.Log::class)
+        every { android.util.Log.d(any(), any()) } returns 0
+        every { android.util.Log.w(any(), any<String>()) } returns 0
+        every { android.util.Log.w(any(), any<String>(), any()) } returns 0
+        every { android.util.Log.e(any(), any(), any()) } returns 0
+
+        io.mockk.mockkStatic(android.widget.Toast::class)
+        val mockToast = mockk<android.widget.Toast>(relaxed = true)
+        every { android.widget.Toast.makeText(any(), any<CharSequence>(), any()) } returns mockToast
 
         viewModel = SettingsViewModel(
             application = application,
@@ -75,13 +92,15 @@ class SettingsViewModelTest {
             cloudSyncUseCase = cloudSyncUseCase,
             geminiUseCaseFactory = geminiUseCaseFactory,
             tempTtsHelper = tempTtsHelper,
-            audioDeviceManager = audioDeviceManager
+            audioDeviceManager = audioDeviceManager,
+            workManager = workManager
         )
     }
 
     @After
     fun tearDown() {
         Dispatchers.resetMain()
+        io.mockk.unmockkAll()
     }
 
     @Test
@@ -118,5 +137,61 @@ class SettingsViewModelTest {
         
         assertEquals(null, viewModel.selectedVoiceName.value)
         verify { settingsRepository.ttsVoiceName = null }
+    }
+
+    @Test
+    fun testSetSyncIntervalMinutesInput_FiltersLettersAndValidates() = runTest {
+        // Test filtering of non-digits
+        viewModel.setSyncIntervalMinutesInput("1a5b")
+        assertEquals("15", viewModel.syncIntervalMinutesInput.value)
+        verify { settingsRepository.syncIntervalMinutes = 15L }
+
+        // Test boundary limits (must be >= 15 for WorkManager constraint)
+        viewModel.setSyncIntervalMinutesInput("5")
+        // The UI should hold the clamped value
+        assertEquals("15", viewModel.syncIntervalMinutesInput.value)
+        verify(exactly = 2) { settingsRepository.syncIntervalMinutes = 15L } 
+    }
+
+    @Test
+    fun testSetSyncMode() = runTest {
+        viewModel.setSyncMode("BACKUP_ONLY")
+        assertEquals("BACKUP_ONLY", viewModel.syncMode.value)
+        verify { settingsRepository.syncMode = "BACKUP_ONLY" }
+    }
+
+    @Test
+    fun testSetCloudSyncEnabled_schedulesOrCancelsWork() = runTest {
+        viewModel.setCloudSyncEnabled(true)
+        verify { settingsRepository.isCloudSyncEnabled = true }
+        verify { workManager.enqueueUniquePeriodicWork("CloudSyncWorker", androidx.work.ExistingPeriodicWorkPolicy.UPDATE, any()) }
+
+        viewModel.setCloudSyncEnabled(false)
+        verify { settingsRepository.isCloudSyncEnabled = false }
+        verify { workManager.cancelUniqueWork("CloudSyncWorker") }
+    }
+
+    @Test
+    fun testBackupNow() = runTest {
+        val driveMock = mockk<Drive>()
+        val bookId = "test-book"
+        every { settingsRepository.activeBookId } returns bookId
+        every { driveAuthManager.getDriveCredential() } returns mockk(relaxed = true)
+
+        viewModel.backupNow(driveMock)
+        advanceUntilIdle()
+        io.mockk.coVerify { cloudSyncUseCase.syncBook(driveMock, bookId, com.andreas_kratzer.ghosttalk.domain.SyncMode.BACKUP_ONLY) }
+    }
+
+    @Test
+    fun testRestoreNow() = runTest {
+        val driveMock = mockk<Drive>()
+        val bookId = "test-book"
+        every { settingsRepository.activeBookId } returns bookId
+        every { driveAuthManager.getDriveCredential() } returns mockk(relaxed = true)
+
+        viewModel.restoreNow(driveMock)
+        advanceUntilIdle()
+        io.mockk.coVerify { cloudSyncUseCase.syncBook(driveMock, bookId, com.andreas_kratzer.ghosttalk.domain.SyncMode.RESTORE_ONLY) }
     }
 }

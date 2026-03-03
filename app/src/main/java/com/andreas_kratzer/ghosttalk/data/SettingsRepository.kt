@@ -206,6 +206,18 @@ class SettingsRepository(context: Context) {
             putStringScoped(KEY_APP_LANGUAGE, value)
         }
 
+    var syncIntervalMinutes: Long
+        get() = getLongScoped(KEY_SYNC_INTERVAL_MINUTES, 15L)
+        set(value) {
+            putLongScoped(KEY_SYNC_INTERVAL_MINUTES, value)
+        }
+
+    var syncMode: String
+        get() = getStringScoped(KEY_SYNC_MODE, "TWO_WAY") ?: "TWO_WAY"
+        set(value) {
+            putStringScoped(KEY_SYNC_MODE, value)
+        }
+
     companion object {
         private const val PREFS_NAME = "ghosttalk_settings"
         private const val KEY_TTS_LANGUAGE = "tts_language"
@@ -225,5 +237,7 @@ class SettingsRepository(context: Context) {
         private const val KEY_CLOUD_SYNC_ENABLED = "cloud_sync_enabled"
         private const val KEY_GEMINI_ENABLED = "gemini_enabled"
         private const val KEY_APP_LANGUAGE = "app_language"
+        private const val KEY_SYNC_INTERVAL_MINUTES = "sync_interval_minutes"
+        private const val KEY_SYNC_MODE = "sync_mode"
     }
 }

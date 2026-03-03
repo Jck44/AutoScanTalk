@@ -34,7 +34,11 @@ class SettingsRepositoryTest {
             val default = args[1] as String?
             mockedPrefsStore.getOrDefault(key, default)
         }
-        every { mockPrefs.getLong(any(), any()) } returns 1000L
+        every { mockPrefs.getLong(any(), any()) } answers {
+            val key = args[0] as String
+            val default = args[1] as Long
+            mockedPrefsStore.getOrDefault(key, default.toString())?.toLongOrNull() ?: default
+        }
         every { mockPrefs.getBoolean(any(), any()) } answers {
             val key = args[0] as String
             val default = args[1] as Boolean
@@ -53,6 +57,14 @@ class SettingsRepositoryTest {
         every { mockEditor.putBoolean(any(), any()) } answers {
             val key = args[0] as String
             val value = args[1] as Boolean
+            mockedPrefsStore[key] = value.toString()
+            mockEditor
+        }
+        
+        // Mock putLong
+        every { mockEditor.putLong(any(), any()) } answers {
+            val key = args[0] as String
+            val value = args[1] as Long
             mockedPrefsStore[key] = value.toString()
             mockEditor
         }
@@ -193,5 +205,34 @@ class SettingsRepositoryTest {
         assertEquals("true", mockedPrefsStore["book-default_volume_keys_activate"])
         assertEquals(true, repository.volumeKeysActivate)
         assertEquals(true, repository.volumeKeysActivateFlow.first())
+    }
+
+    @Test
+    fun syncIntervalMinutes_initializes15() = runBlocking {
+        every { mockPrefs.getLong("sync_interval_minutes", 15L) } returns 15L
+        assertEquals(15L, repository.syncIntervalMinutes)
+    }
+
+    @Test
+    fun syncIntervalMinutes_savesAndEmitsValue() = runBlocking {
+        repository.syncIntervalMinutes = 30L
+
+        assertEquals("30", mockedPrefsStore["book-default_sync_interval_minutes"])
+        assertEquals(30L, repository.syncIntervalMinutes)
+    }
+
+    @Test
+    fun syncMode_initializesTwoWay() = runBlocking {
+        every { mockPrefs.getString("sync_mode", "TWO_WAY") } returns "TWO_WAY"
+        assertEquals("TWO_WAY", repository.syncMode)
+    }
+
+    @Test
+    fun syncMode_savesAndEmitsValue() = runBlocking {
+        val testMode = "BACKUP_ONLY"
+        repository.syncMode = testMode
+
+        assertEquals(testMode, mockedPrefsStore["book-default_sync_mode"])
+        assertEquals(testMode, repository.syncMode)
     }
 }
