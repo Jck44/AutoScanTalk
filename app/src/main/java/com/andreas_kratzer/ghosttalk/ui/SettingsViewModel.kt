@@ -2,6 +2,7 @@ package com.andreas_kratzer.ghosttalk.ui
 
 import android.app.Application
 import android.content.Intent
+import android.speech.tts.Voice
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.AndroidViewModel
@@ -10,6 +11,7 @@ import com.andreas_kratzer.ghosttalk.core.AudioDeviceManager
 import com.andreas_kratzer.ghosttalk.core.cloud.DriveAuthManager
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.domain.CloudSyncUseCase
+import com.andreas_kratzer.ghosttalk.domain.GeminiUseCaseFactory
 import com.andreas_kratzer.ghosttalk.model.AudioOutputDevice
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
 import com.google.android.gms.auth.UserRecoverableAuthException
@@ -33,7 +35,7 @@ class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val driveAuthManager: DriveAuthManager,
     private val cloudSyncUseCase: CloudSyncUseCase,
-    private val geminiUseCaseFactory: com.andreas_kratzer.ghosttalk.domain.GeminiUseCaseFactory,
+    private val geminiUseCaseFactory: GeminiUseCaseFactory,
     private val tempTtsHelper: TextToSpeechHelper,
     private val audioDeviceManager: AudioDeviceManager
 ) : AndroidViewModel(application) {
@@ -328,7 +330,7 @@ class SettingsViewModel @Inject constructor(
                 
                 settingsRepository.isGeminiEnabled = true
                 _isGeminiEnabled.value = true
-                android.widget.Toast.makeText(context, "Gemini aktiv!", android.widget.Toast.LENGTH_SHORT).show()
+                android.widget.Toast.makeText(context, getApplication<Application>().getString(com.andreas_kratzer.ghosttalk.R.string.settings_gemini_activation_success), android.widget.Toast.LENGTH_SHORT).show()
             } catch (e: UserRecoverableAuthIOException) {
                 android.util.Log.e("SettingsViewModel", "Caught UserRecoverableAuthIOException, emitting intent", e)
                 e.intent?.let { _authIntentFlow.emit(it) }
@@ -362,7 +364,8 @@ class SettingsViewModel @Inject constructor(
                 }
                 
                 if (!handled) {
-                    android.widget.Toast.makeText(context, "Fehler: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
+                    val errorMsg = getApplication<Application>().getString(com.andreas_kratzer.ghosttalk.R.string.settings_gemini_activation_error, e.message ?: "Unknown error")
+                    android.widget.Toast.makeText(context, errorMsg, android.widget.Toast.LENGTH_LONG).show()
                 }
             }
         }

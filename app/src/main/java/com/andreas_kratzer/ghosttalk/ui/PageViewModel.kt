@@ -114,7 +114,7 @@ class PageViewModel @Inject constructor(
                                 logAction("Navigiert zu Seite: ${page.name} (ID: ${event.pageId})")
                             } else {
                                 logAction("Fehler: Seite mit ID '${event.pageId}' nicht gefunden.")
-                                ttsHelper?.speak("Seite nicht gefunden") {}
+                                ttsHelper.speak(application.getString(com.andreas_kratzer.ghosttalk.R.string.error_page_not_found)) {}
                             }
                         }
                     }
@@ -138,7 +138,7 @@ class PageViewModel @Inject constructor(
                 settingsRepository.ttsVoiceNameFlow
             ) { lang, voice -> lang to voice }
                 .collect { (newLanguage, newVoice) ->
-                    ttsHelper?.setLanguageAndVoice(newLanguage, newVoice)
+                    ttsHelper.setLanguageAndVoice(newLanguage, newVoice)
                 }
         }
 

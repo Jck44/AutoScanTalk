@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">GoSTalk</string>
     <string name="settings_title">Settings</string>
     <string name="back_button_content_description">Back</string>
@@ -72,7 +72,7 @@
     <!-- Page List Screen -->
     <string name="page_list_title">Manage Pages</string>
     <string name="page_add_description">Add new page</string>
-    <string name="page_grid_info">Grid: %1$d Rows x %2$d Columns</string>
+    <string name="page_grid_info" tools:ignore="PluralsCandidate">Grid: %1$d Rows x %2$d Columns</string>
     <string name="page_rename_description">Rename page</string>
     <string name="page_delete_description">Delete page</string>
     <string name="page_dialog_delete_title">Delete Page?</string>
