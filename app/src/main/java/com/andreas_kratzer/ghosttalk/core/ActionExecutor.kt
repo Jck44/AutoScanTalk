@@ -1,9 +1,11 @@
 package com.andreas_kratzer.ghosttalk.core
 
 import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.domain.GeminiUseCase
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction
 import com.andreas_kratzer.ghosttalk.model.GeminiButtonAction
 import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
@@ -24,6 +26,7 @@ class ActionExecutor(
     private val settingsRepository: SettingsRepository,
     var geminiUseCase: GeminiUseCase?,
     var ttsHelper: TextToSpeechHelper?,
+    private val buttonUsageRepository: ButtonUsageRepository? = null,
     private val timeProvider: () -> Long = { System.currentTimeMillis() }
 ) {
     sealed class ExecutionEvent {
@@ -42,7 +45,7 @@ class ActionExecutor(
     private var lastExecutionTime = -1L
     private var activeExecutionId = 0
 
-    fun executeButtonAction(buttonConfig: ButtonConfig) {
+    fun executeButtonAction(buttonConfig: ButtonConfig, bookId: String? = null) {
         val currentTime = timeProvider()
         val holdingTime = settingsRepository.holdingTimeMillis
         
@@ -60,6 +63,15 @@ class ActionExecutor(
         val currentExecutionId = ++activeExecutionId
         _isExecuting.value = true
 
+        // Record button usage for statistics
+        if (bookId != null && buttonUsageRepository != null) {
+            scope.launch {
+                try {
+                    buttonUsageRepository.recordUsage(bookId, buttonConfig)
+                } catch (_: Exception) { /* Non-critical, don't block action */ }
+            }
+        }
+
         when (val action = buttonConfig.buttonAction) {
             is SpeakTextButtonAction -> {
                 val textToSpeak = buttonConfig.spokenText?.takeIf { it.isNotBlank() } 
@@ -74,6 +86,11 @@ class ActionExecutor(
                     log("Sprechen (TTS nicht bereit): \"$textToSpeak\"")
                     finishExecution(currentExecutionId)
                 }
+            }
+            is FrequentActionButtonAction -> {
+                // Sollte vor der Ausführung durch FrequentActionResolver aufgelöst werden
+                log("Häufigste Aktion (unaufgelöst) ignoriert")
+                finishExecution(currentExecutionId)
             }
             is NavigateToPageButtonAction -> {
                 val feedback = buttonConfig.spokenText?.takeIf { it.isNotBlank() }

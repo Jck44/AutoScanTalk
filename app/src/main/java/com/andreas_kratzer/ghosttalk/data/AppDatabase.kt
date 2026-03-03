@@ -8,15 +8,19 @@ import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.andreas_kratzer.ghosttalk.model.Book
+import com.andreas_kratzer.ghosttalk.model.ButtonUsageStat
 import com.andreas_kratzer.ghosttalk.model.Page
+import com.andreas_kratzer.ghosttalk.model.PageTemplate
 import java.util.UUID
 
-@Database(entities = [Page::class, Book::class], version = 3, exportSchema = false)
+@Database(entities = [Page::class, Book::class, ButtonUsageStat::class, PageTemplate::class], version = 4, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun pageDao(): PageDao
     abstract fun bookDao(): BookDao
+    abstract fun buttonUsageDao(): ButtonUsageDao
+    abstract fun templateDao(): TemplateDao
 
     companion object {
         @Volatile
@@ -57,6 +61,35 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `button_usage_stats` (" +
+                    "`bookId` TEXT NOT NULL, " +
+                    "`buttonConfigId` TEXT NOT NULL, " +
+                    "`label` TEXT NOT NULL, " +
+                    "`actionJson` TEXT NOT NULL, " +
+                    "`usageCount` INTEGER NOT NULL DEFAULT 0, " +
+                    "`lastUsedAt` INTEGER NOT NULL DEFAULT 0, " +
+                    "PRIMARY KEY(`bookId`, `buttonConfigId`))"
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_button_usage_stats_bookId_usageCount` ON `button_usage_stats` (`bookId`, `usageCount`)"
+                )
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `templates` (" +
+                    "`id` TEXT NOT NULL, " +
+                    "`name` TEXT NOT NULL, " +
+                    "`rows` INTEGER NOT NULL, " +
+                    "`columns` INTEGER NOT NULL, " +
+                    "`buttonConfigs` TEXT NOT NULL, " +
+                    "`isBuiltIn` INTEGER NOT NULL, " +
+                    "`createdAt` INTEGER NOT NULL, " +
+                    "PRIMARY KEY(`id`))"
+                )
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -64,7 +97,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "ghosttalk_database"
                 )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                 .fallbackToDestructiveMigration(true)
                 .build()
                 INSTANCE = instance

@@ -4,6 +4,7 @@ import androidx.room.TypeConverter
 import com.andreas_kratzer.ghosttalk.model.AuditoryCue
 import com.andreas_kratzer.ghosttalk.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction
 import com.andreas_kratzer.ghosttalk.model.GeminiButtonAction
 import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
@@ -35,6 +36,10 @@ class ButtonActionAdapter : JsonSerializer<ButtonAction>, JsonDeserializer<Butto
                 jsonObject.addProperty("type", "GeminiButtonAction")
                 jsonObject.add("data", context.serialize(src))
             }
+            is FrequentActionButtonAction -> {
+                jsonObject.addProperty("type", "FrequentActionButtonAction")
+                jsonObject.add("data", context.serialize(src))
+            }
         }
         return jsonObject
     }
@@ -47,6 +52,7 @@ class ButtonActionAdapter : JsonSerializer<ButtonAction>, JsonDeserializer<Butto
             "SpeakTextButtonAction" -> context.deserialize(data, SpeakTextButtonAction::class.java)
             "NavigateToPageButtonAction" -> context.deserialize(data, NavigateToPageButtonAction::class.java)
             "GeminiButtonAction" -> context.deserialize(data, GeminiButtonAction::class.java)
+            "FrequentActionButtonAction" -> context.deserialize(data, FrequentActionButtonAction::class.java)
             else -> throw JsonParseException("Unknown ButtonAction type: $type")
         }
     }

@@ -119,8 +119,10 @@
     <string name="button_action_speak_text">Text Sprechen</string>
     <string name="button_action_navigate_page">Zu Seite navigieren</string>
     <string name="button_action_gemini">Gemini aufrufen</string>
+    <string name="button_action_frequent_action">Häufigste Aktion</string>
     <string name="button_no_page_selected">Keine Seite ausgewählt</string>
     <string name="button_target_page_label">Ziel-Seite</string>
+    <string name="button_frequent_action_rank_label">Rang (1 = Häufigste)</string>
     <string name="button_gemini_prompt_field">Gemini Prompt (Befehl)</string>
     <string name="button_gemini_prompt_hint">Was soll Gemini tun?</string>
 

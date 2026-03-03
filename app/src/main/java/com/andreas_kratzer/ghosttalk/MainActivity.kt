@@ -16,6 +16,9 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.andreas_kratzer.ghosttalk.ui.TemplateScreen
+import com.andreas_kratzer.ghosttalk.ui.TemplateViewModel
 import com.andreas_kratzer.ghosttalk.core.UpdateManager
 import com.andreas_kratzer.ghosttalk.data.PageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
@@ -221,8 +224,31 @@ class MainActivity : AppCompatActivity() {
                             SettingsScreen(
                                 settingsViewModel = settingsViewModel,
                                 pageViewModel = pageViewModel,
-                                onNavigateBack = { navController.popBackStack() }
+                                onNavigateBack = { navController.popBackStack() },
+                                onNavigateToTemplates = { navController.navigate("templates") }
                             )
+                        }
+                        composable("templates") {
+                            val templateViewModel = hiltViewModel<TemplateViewModel>()
+                            TemplateScreen(
+                                templateViewModel = templateViewModel,
+                                onNavigateBack = { navController.popBackStack() },
+                                onTemplateClick = { templateId ->
+                                    navController.navigate("template_editor/$templateId")
+                                }
+                            )
+                        }
+                        composable("template_editor/{templateId}") { backStackEntry ->
+                            val templateId = backStackEntry.arguments?.getString("templateId")
+                            if (templateId != null) {
+                                val templateViewModel = hiltViewModel<TemplateViewModel>()
+                                TemplateEditorScreen(
+                                    templateId = templateId,
+                                    templateViewModel = templateViewModel,
+                                    pageViewModel = pageViewModel,
+                                    onNavigateBack = { navController.popBackStack() }
+                                )
+                            }
                         }
                         composable("page_list") {
                             PageListScreen(

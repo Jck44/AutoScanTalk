@@ -1,10 +1,11 @@
 package com.andreas_kratzer.ghosttalk.core
 
-import com.andreas_kratzer.ghosttalk.data.PageRepository
+import com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
@@ -23,6 +24,7 @@ class ActionExecutorTest {
     private val settingsRepository = mockk<SettingsRepository>(relaxed = true)
     private val ttsHelper = mockk<TextToSpeechHelper>(relaxed = true)
     private val geminiUseCase = mockk<com.andreas_kratzer.ghosttalk.domain.GeminiUseCase>(relaxed = true)
+    private val buttonUsageRepository = mockk<ButtonUsageRepository>(relaxed = true)
 
     private var currentTimeMillis = 0L
     private val timeProvider: () -> Long = { currentTimeMillis }
@@ -39,6 +41,7 @@ class ActionExecutorTest {
         settingsRepository = settingsRepository,
         ttsHelper = ttsHelper,
         geminiUseCase = geminiUseCase,
+        buttonUsageRepository = buttonUsageRepository,
         timeProvider = timeProvider
     )
 
@@ -62,7 +65,7 @@ class ActionExecutorTest {
 
         // 200ms: Nutzer drückt das erste Mal
         currentTimeMillis = 200L
-        actionExecutor.executeButtonAction(buttonConfig)
+        actionExecutor.executeButtonAction(buttonConfig, bookId = "book1")
         runCurrent()
 
         // Verifiziere: isExecuting ist true
@@ -71,7 +74,7 @@ class ActionExecutorTest {
 
         // 310ms: Nutzer drückt nochmal -> Haltezeit (1000ms) ist noch aktiv
         currentTimeMillis = 310L
-        actionExecutor.executeButtonAction(buttonConfig)
+        actionExecutor.executeButtonAction(buttonConfig, bookId = "book1")
         runCurrent()
 
         // Verifiziere: Aktion ignoriert (Log-Event)
@@ -104,7 +107,7 @@ class ActionExecutorTest {
 
         // 1. First action
         currentTimeMillis = 0L
-        actionExecutor.executeButtonAction(button1)
+        actionExecutor.executeButtonAction(button1, bookId = "book1")
         runCurrent()
         assertTrue(actionExecutor.isExecuting.value)
 
@@ -112,7 +115,7 @@ class ActionExecutorTest {
         currentTimeMillis = 1500L
 
         // 3. Second action (T=1500ms, past holding time, but speech A1 still active)
-        actionExecutor.executeButtonAction(button2)
+        actionExecutor.executeButtonAction(button2, bookId = "book1")
         runCurrent()
         
         // Verifiziere: Aktion 2 wird ignoriert, da A1 noch spricht
@@ -127,5 +130,46 @@ class ActionExecutorTest {
         assertEquals(false, actionExecutor.isExecuting.value)
         
         eventsJob.cancel()
+    }
+
+    @Test
+    fun testUsageTrackingRecordsOnExecution() = runTest {
+        val actionExecutor = createExecutor(this)
+        val buttonConfig = ButtonConfig(
+            id = "btn-track",
+            label = "Track Me",
+            auditoryCue = null,
+            buttonAction = SpeakTextButtonAction("Track")
+        )
+
+        val ttsCallback = slot<() -> Unit>()
+        every { ttsHelper.speakRouted(any(), any(), any(), capture(ttsCallback)) } returns Unit
+
+        currentTimeMillis = 0L
+        actionExecutor.executeButtonAction(buttonConfig, bookId = "book1")
+        runCurrent()
+
+        // Verify usage was recorded
+        coVerify(exactly = 1) { buttonUsageRepository.recordUsage("book1", buttonConfig) }
+    }
+
+    @Test
+    fun testUsageTrackingSkippedWithoutBookId() = runTest {
+        val actionExecutor = createExecutor(this)
+        val buttonConfig = ButtonConfig(
+            id = "btn-no-book",
+            label = "No Book",
+            auditoryCue = null,
+            buttonAction = SpeakTextButtonAction("Test")
+        )
+
+        every { ttsHelper.speakRouted(any(), any(), any(), any()) } returns Unit
+
+        currentTimeMillis = 0L
+        actionExecutor.executeButtonAction(buttonConfig) // No bookId
+        runCurrent()
+
+        // Verify usage was NOT recorded (no bookId)
+        coVerify(exactly = 0) { buttonUsageRepository.recordUsage(any(), any()) }
     }
 }

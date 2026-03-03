@@ -7,10 +7,14 @@ import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.andreas_kratzer.ghosttalk.core.ActionExecutor
+import com.andreas_kratzer.ghosttalk.core.FrequentActionResolver
 import com.andreas_kratzer.ghosttalk.core.PageImportExportManager
+import com.andreas_kratzer.ghosttalk.data.TemplateRepository
+import com.andreas_kratzer.ghosttalk.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.core.ScannerEngine
 import com.andreas_kratzer.ghosttalk.core.cloud.DriveAuthManager
 import com.andreas_kratzer.ghosttalk.core.util.Logger
+import com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.data.PageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.domain.ActionLogUseCase
@@ -26,9 +30,12 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -43,6 +50,9 @@ class PageViewModel @Inject constructor(
     private val getPagesUseCase: GetPagesUseCase,
     private val actionLogUseCase: ActionLogUseCase,
     private val createPageUseCase: CreatePageUseCase,
+    private val frequentActionResolver: FrequentActionResolver,
+    private val buttonUsageRepository: ButtonUsageRepository,
+    private val templateRepository: TemplateRepository,
     driveAuthManager: DriveAuthManager,
     logger: Logger,
     private val geminiUseCaseFactory: GeminiUseCaseFactory,
@@ -63,6 +73,13 @@ class PageViewModel @Inject constructor(
     private val _lastActions = MutableStateFlow<List<String>>(emptyList())
     val lastActions: StateFlow<List<String>> = _lastActions.asStateFlow()
 
+    val templates: StateFlow<List<PageTemplate>> = templateRepository.getAllTemplates()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.Eagerly,
+            initialValue = emptyList()
+        )
+
     private val _authRecoverIntent = MutableSharedFlow<Intent>()
     val authRecoverIntent: SharedFlow<Intent> = _authRecoverIntent.asSharedFlow()
 
@@ -75,7 +92,8 @@ class PageViewModel @Inject constructor(
         scope = viewModelScope,
         settingsRepository = settingsRepository,
         ttsHelper = ttsHelper,
-        geminiUseCase = null // Will be set in init
+        geminiUseCase = null, // Will be set in init
+        buttonUsageRepository = buttonUsageRepository
     )
 
     fun setActiveBookId(bookId: String?) {
@@ -193,8 +211,12 @@ class PageViewModel @Inject constructor(
     }
 
     fun loadPage(page: Page) {
-        _currentPage.value = page
-        scannerEngine.stopScanning()
+        viewModelScope.launch {
+            val bookId = _activeBookId.value ?: page.bookId
+            val resolvedPage = frequentActionResolver.resolve(page, bookId)
+            _currentPage.value = resolvedPage
+            scannerEngine.stopScanning()
+        }
     }
 
     fun resumeScanningIfEnabled() {
@@ -241,7 +263,7 @@ class PageViewModel @Inject constructor(
         val buttonConfig = page.buttonConfigs.getOrNull(index) ?: return
         
         scannerEngine.setFocusedIndex(index)
-        actionExecutor.executeButtonAction(buttonConfig)
+        actionExecutor.executeButtonAction(buttonConfig, bookId = _activeBookId.value)
     }
 
     fun activateFocusedButton() {
@@ -265,12 +287,11 @@ class PageViewModel @Inject constructor(
         actionLogUseCase.clearLogs()
     }
 
-    fun createNewPage(name: String, rows: Int, columns: Int, bookId: String): String {
-        val newPageId = java.util.UUID.randomUUID().toString()
+    fun createNewPage(name: String, rows: Int, columns: Int, bookId: String, templateId: String? = null, onCreated: (String) -> Unit) {
         viewModelScope.launch {
-            createPageUseCase.execute(name, rows, columns, bookId, _allPages.value)
+            val generatedId = createPageUseCase.execute(name, rows, columns, bookId, _allPages.value, templateId)
+            onCreated(generatedId)
         }
-        return newPageId // Note: In a real app, we might want to wait for the ID or return the flow
     }
 
     fun updateButtonConfig(pageId: String, index: Int, newConfig: ButtonConfig?) {

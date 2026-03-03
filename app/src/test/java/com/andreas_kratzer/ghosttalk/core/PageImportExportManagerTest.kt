@@ -13,7 +13,9 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.data.TemplateRepository
 import com.andreas_kratzer.ghosttalk.model.AuditoryCue
+import kotlinx.coroutines.flow.flowOf
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -26,8 +28,11 @@ class PageImportExportManagerTest {
     private val testDispatcher = StandardTestDispatcher()
     private val pageRepository: PageRepository = mockk(relaxed = true)
     private val settingsRepository: SettingsRepository = mockk(relaxed = true)
+    private val templateRepository: TemplateRepository = mockk(relaxed = true) {
+        coEvery { getAllTemplates() } returns flowOf(emptyList())
+    }
     private val logger: Logger = TestLogger
-    private val manager = PageImportExportManager(pageRepository, settingsRepository, logger, testDispatcher)
+    private val manager = PageImportExportManager(pageRepository, settingsRepository, templateRepository, logger, testDispatcher)
 
     @Test
     fun `importFromJson maps buttons and isActive correctly`() = runTest(testDispatcher) {

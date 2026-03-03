@@ -39,7 +39,8 @@ import java.util.Locale
 fun SettingsScreen(
     settingsViewModel: SettingsViewModel,
     pageViewModel: PageViewModel,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onNavigateToTemplates: () -> Unit
 ) {
     // ... values ...
     val selectedLanguage by settingsViewModel.selectedLanguageTag.collectAsState()
@@ -133,7 +134,7 @@ fun SettingsScreen(
                     horizontalArrangement = Arrangement.spacedBy(24.dp)
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        GeneralSettings(allPages, defaultStartPageId, defaultScanPattern, settingsViewModel)
+                        GeneralSettings(allPages, defaultStartPageId, defaultScanPattern, settingsViewModel, onNavigateToTemplates)
                         Spacer(modifier = Modifier.height(24.dp))
                         AppLanguageSettings(selectedAppLanguage ?: "default", settingsViewModel)
                         Spacer(modifier = Modifier.height(24.dp))
@@ -156,7 +157,13 @@ fun SettingsScreen(
                     }
                 }
             } else {
-                GeneralSettings(allPages, defaultStartPageId, defaultScanPattern, settingsViewModel)
+                GeneralSettings(
+                    allPages = allPages,
+                    defaultStartPageId = defaultStartPageId,
+                    defaultScanPattern = defaultScanPattern,
+                    settingsViewModel = settingsViewModel,
+                    onNavigateToTemplates = onNavigateToTemplates
+                )
                 Spacer(modifier = Modifier.height(24.dp))
                 AppLanguageSettings(selectedAppLanguage ?: "default", settingsViewModel)
                 Spacer(modifier = Modifier.height(24.dp))
@@ -218,7 +225,8 @@ fun GeneralSettings(
     allPages: List<com.andreas_kratzer.ghosttalk.model.Page>,
     defaultStartPageId: String?,
     defaultScanPattern: String,
-    settingsViewModel: SettingsViewModel
+    settingsViewModel: SettingsViewModel,
+    onNavigateToTemplates: () -> Unit
 ) {
     var expandedStartPage by remember { mutableStateOf(false) }
     var expandedDefaultScanPattern by remember { mutableStateOf(false) }
@@ -275,6 +283,50 @@ fun GeneralSettings(
                     expandedDefaultScanPattern = false
                 })
             }
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // Templates und Statistiken
+        Button(
+            onClick = onNavigateToTemplates,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Templates verwalten")
+        }
+        
+        var showResetDialog by remember { mutableStateOf(false) }
+        OutlinedButton(
+            onClick = { showResetDialog = true },
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+        ) {
+            Text("Häufige Aktionen zurücksetzen")
+        }
+        
+        if (showResetDialog) {
+            AlertDialog(
+                onDismissRequest = { showResetDialog = false },
+                title = { Text("Statistiken zurücksetzen") },
+                text = { Text("Alle Statistiken für 'Häufigste Aktionen' in diesem Buch werden gelöscht. Fortfahren?") },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            val bookId = settingsViewModel.activeBookId ?: "book-default"
+                            settingsViewModel.clearButtonUsageStats(bookId)
+                            showResetDialog = false
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text("Zurücksetzen")
+                    }
+                },
+                dismissButton = {
+                    Button(onClick = { showResetDialog = false }, colors = ButtonDefaults.textButtonColors()) {
+                        Text("Abbrechen")
+                    }
+                }
+            )
         }
         
         Spacer(modifier = Modifier.height(16.dp))

@@ -59,6 +59,19 @@ class ConvertersTest {
     }
 
     @Test
+    fun `ButtonConfig roundtrip with FrequentAction`() {
+        val configs = listOf(
+            ButtonConfig("b1", "Rank 1", auditoryCue = null, buttonAction = com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction(1), isActive = true)
+        )
+
+        val json = converters.fromButtonConfigList(configs)
+        val restored = converters.toButtonConfigList(json!!)
+
+        assertTrue(restored!![0]!!.buttonAction is com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction)
+        assertEquals(1, (restored[0]!!.buttonAction as com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction).rank)
+    }
+
+    @Test
     fun `ButtonConfig roundtrip with AuditoryCue`() {
         val configs = listOf(
             ButtonConfig("b1", "Label", auditoryCue = AuditoryCue.TextToSpeechCue("Cue text"), buttonAction = SpeakTextButtonAction("Speak"), isActive = true)

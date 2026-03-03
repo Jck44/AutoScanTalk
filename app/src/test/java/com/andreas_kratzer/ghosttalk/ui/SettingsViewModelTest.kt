@@ -3,6 +3,7 @@ package com.andreas_kratzer.ghosttalk.ui
 import android.app.Application
 import com.andreas_kratzer.ghosttalk.core.AudioDeviceManager
 import com.andreas_kratzer.ghosttalk.core.cloud.DriveAuthManager
+import com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.domain.CloudSyncUseCase
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
@@ -36,6 +37,7 @@ class SettingsViewModelTest {
     private lateinit var tempTtsHelper: TextToSpeechHelper
     private lateinit var geminiUseCaseFactory: com.andreas_kratzer.ghosttalk.domain.GeminiUseCaseFactory
     private lateinit var workManager: androidx.work.WorkManager
+    private lateinit var buttonUsageRepository: ButtonUsageRepository
     private lateinit var viewModel: SettingsViewModel
 
     @Before
@@ -50,6 +52,7 @@ class SettingsViewModelTest {
         tempTtsHelper = mockk(relaxed = true)
         audioDeviceManager = mockk(relaxed = true)
         workManager = mockk(relaxed = true)
+        buttonUsageRepository = mockk(relaxed = true)
 
         // Mock default flows and properties from SettingsRepository
         every { settingsRepository.ttsLanguage } returns "de"
@@ -93,7 +96,8 @@ class SettingsViewModelTest {
             geminiUseCaseFactory = geminiUseCaseFactory,
             tempTtsHelper = tempTtsHelper,
             audioDeviceManager = audioDeviceManager,
-            workManager = workManager
+            workManager = workManager,
+            buttonUsageRepository = buttonUsageRepository
         )
     }
 

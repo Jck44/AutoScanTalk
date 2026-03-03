@@ -2,7 +2,10 @@ package com.andreas_kratzer.ghosttalk.domain
 
 import com.andreas_kratzer.ghosttalk.data.PageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.data.TemplateRepository
 import com.andreas_kratzer.ghosttalk.model.AuditoryCue
+import com.andreas_kratzer.ghosttalk.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.model.Page
 import io.mockk.coEvery
@@ -22,7 +25,8 @@ class CreatePageUseCaseTest {
 
     private val pageRepository: PageRepository = mockk(relaxed = true)
     private val settingsRepository: SettingsRepository = mockk(relaxed = true)
-    private val useCase = CreatePageUseCase(pageRepository, settingsRepository)
+    private val templateRepository: TemplateRepository = mockk(relaxed = true)
+    private val useCase = CreatePageUseCase(pageRepository, settingsRepository, templateRepository)
 
     @Test
     fun `execute creates page with correct dimensions`() = runTest {
@@ -90,5 +94,45 @@ class CreatePageUseCaseTest {
         // Since no home page, even the last is null
         assertNull(page.buttonConfigs[0])
         assertNull(page.buttonConfigs[1])
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `execute throws exception if grid exceeds 6x6`() = runTest {
+        useCase.execute("Too Big", 7, 6, "book1", emptyList())
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `execute throws exception if template size exceeds 6x6`() = runTest {
+        val badTemplate = PageTemplate(
+            id = "bad", name = "Bad", rows = 6, columns = 7, buttonConfigs = emptyList(), isBuiltIn = false
+        )
+        coEvery { templateRepository.getById("bad") } returns badTemplate
+
+        useCase.execute("Template Too Big", 1, 1, "book1", emptyList(), templateId = "bad")
+    }
+
+    @Test
+    fun `execute applies template and replaces empty home id`() = runTest {
+        val action = NavigateToPageButtonAction("") // Empty pageId
+        val templateConfig = ButtonConfig("b1", "Home", buttonAction = action, auditoryCue = null)
+        val template = PageTemplate(
+            id = "t1", name = "Test", rows = 2, columns = 2, buttonConfigs = listOf(templateConfig), isBuiltIn = false
+        )
+        
+        coEvery { templateRepository.getById("t1") } returns template
+        every { settingsRepository.defaultStartPageId } returns "global-home"
+
+        val pageSlot = slot<Page>()
+        coEvery { pageRepository.insertPage(capture(pageSlot)) } returns Unit
+
+        useCase.execute("From Template", 1, 1, "book1", emptyList(), templateId = "t1")
+
+        val page = pageSlot.captured
+        assertEquals(2, page.rows)
+        assertEquals(2, page.columns)
+        assertEquals(1, page.buttonConfigs.size)
+
+        val replacedAction = page.buttonConfigs[0]?.buttonAction as NavigateToPageButtonAction
+        assertEquals("global-home", replacedAction.pageId)
     }
 }

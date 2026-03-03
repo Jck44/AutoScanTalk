@@ -4,7 +4,17 @@ data class ImportExportData(
     val ghosttalk_import_version: String?,
     val appName: String?,
     val holdingTimeSeconds: Float? = null,
+    val templates: List<ImportTemplate>? = null,
     val pages: List<ImportPage>
+)
+
+data class ImportTemplate(
+    val id: String,
+    val name: String,
+    val rows: Int,
+    val columns: Int,
+    val isBuiltIn: Boolean,
+    val buttons: List<ImportButton>
 )
 
 data class ImportPage(

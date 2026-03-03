@@ -28,5 +28,12 @@ data class GeminiButtonAction(
     val prompt: String
 ) : ButtonAction()
 
+/**
+ * An action that resolves dynamically to the N-th most frequent action.
+ */
+data class FrequentActionButtonAction(
+    val rank: Int  // 1 = häufigste, 2 = zweithäufigste, ...
+) : ButtonAction()
+
 // Zukünftige Aktionen könnten hier als weitere data classes hinzugefügt werden,
 // die von `Action` erben.

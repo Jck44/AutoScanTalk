@@ -9,6 +9,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.andreas_kratzer.ghosttalk.core.AudioDeviceManager
 import com.andreas_kratzer.ghosttalk.core.cloud.DriveAuthManager
+import com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.domain.CloudSyncUseCase
 import com.andreas_kratzer.ghosttalk.domain.GeminiUseCaseFactory
@@ -38,11 +39,14 @@ class SettingsViewModel @Inject constructor(
     private val geminiUseCaseFactory: GeminiUseCaseFactory,
     private val tempTtsHelper: TextToSpeechHelper,
     private val audioDeviceManager: AudioDeviceManager,
-    private val workManager: androidx.work.WorkManager
+    private val workManager: androidx.work.WorkManager,
+    private val buttonUsageRepository: ButtonUsageRepository
 ) : AndroidViewModel(application) {
 
     private val _availableLanguages = MutableStateFlow<List<Locale>>(emptyList())
     val availableLanguages: StateFlow<List<Locale>> = _availableLanguages.asStateFlow()
+
+    val activeBookId: String? get() = settingsRepository.activeBookId
 
     private val _selectedLanguageTag = MutableStateFlow("default")
     val selectedLanguageTag: StateFlow<String> = _selectedLanguageTag.asStateFlow()
@@ -334,6 +338,16 @@ class SettingsViewModel @Inject constructor(
             scheduleCloudSync()
         } else {
             workManager.cancelUniqueWork("CloudSyncWorker")
+        }
+    }
+
+    fun stopCloudSync() {
+        workManager.cancelUniqueWork("CloudSyncWorker")
+    }
+
+    fun clearButtonUsageStats(bookId: String) {
+        viewModelScope.launch {
+            buttonUsageRepository.clearStats(bookId)
         }
     }
 

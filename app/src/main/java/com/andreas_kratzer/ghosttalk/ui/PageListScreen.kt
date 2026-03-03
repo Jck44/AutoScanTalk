@@ -41,6 +41,7 @@ fun PageListScreen(
     onEditPage: (String) -> Unit
 ) {
     val allPages by pageViewModel.allPages.collectAsState()
+    val templates by pageViewModel.templates.collectAsState()
     val activeBookId by pageViewModel.activeBookId.collectAsState()
     val bookDefaultScanPattern by pageViewModel.defaultScanPattern.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
@@ -233,12 +234,14 @@ fun PageListScreen(
 
         if (showAddDialog) {
             AddPageDialog(
+                templates = templates,
                 onDismiss = { showAddDialog = false },
-                onConfirm = { name, rows, cols ->
+                onConfirm = { name, rows, cols, templateId ->
                     val targetBookId = activeBookId ?: "book-default"
-                    val newId = pageViewModel.createNewPage(name, rows, cols, targetBookId)
-                    showAddDialog = false
-                    onEditPage(newId)
+                    pageViewModel.createNewPage(name, rows, cols, targetBookId, templateId) { newId ->
+                        showAddDialog = false
+                        onEditPage(newId)
+                    }
                 }
             )
         }
@@ -350,20 +353,64 @@ fun PageListScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddPageDialog(
+    templates: List<com.andreas_kratzer.ghosttalk.model.PageTemplate>,
     onDismiss: () -> Unit,
-    onConfirm: (name: String, rows: Int, columns: Int) -> Unit
+    onConfirm: (name: String, rows: Int, columns: Int, templateId: String?) -> Unit
 ) {
     var name by remember { mutableStateOf("") }
+    var selectedTemplate by remember { mutableStateOf<com.andreas_kratzer.ghosttalk.model.PageTemplate?>(null) }
     var rowsStr by remember { mutableStateOf("4") }
     var columnsStr by remember { mutableStateOf("4") }
+    var expanded by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.page_dialog_new_title)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                
+                // Template Dropdown
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { expanded = it }
+                ) {
+                    OutlinedTextField(
+                        value = selectedTemplate?.name ?: "Leere Seite (Kein Template)",
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Template (Optional)") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                        modifier = Modifier.fillMaxWidth().menuAnchor()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Leere Seite (Kein Template)") },
+                            onClick = {
+                                selectedTemplate = null
+                                expanded = false
+                            }
+                        )
+                        templates.forEach { template ->
+                            DropdownMenuItem(
+                                text = { Text(template.name) },
+                                onClick = {
+                                    selectedTemplate = template
+                                    rowsStr = template.rows.toString()
+                                    columnsStr = template.columns.toString()
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+                
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
@@ -379,6 +426,7 @@ fun AddPageDialog(
                         label = { Text(stringResource(R.string.page_rows_field)) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true,
+                        readOnly = selectedTemplate != null,
                         modifier = Modifier.weight(1f)
                     )
                     OutlinedTextField(
@@ -387,6 +435,7 @@ fun AddPageDialog(
                         label = { Text(stringResource(R.string.page_cols_field)) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true,
+                        readOnly = selectedTemplate != null,
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -397,10 +446,11 @@ fun AddPageDialog(
                 onClick = {
                     val rows = rowsStr.toIntOrNull() ?: 4
                     val cols = columnsStr.toIntOrNull() ?: 4
-                    if (name.isNotBlank() && rows > 0 && cols > 0) {
-                        onConfirm(name, rows, cols)
+                    if (name.isNotBlank() && rows in 1..6 && cols in 1..6) {
+                        onConfirm(name, rows, cols, selectedTemplate?.id)
                     }
-                }
+                },
+                enabled = name.isNotBlank()
             ) {
                 Text(stringResource(R.string.action_create))
             }

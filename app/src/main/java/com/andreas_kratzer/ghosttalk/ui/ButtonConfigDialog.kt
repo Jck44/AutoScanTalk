@@ -30,6 +30,9 @@ import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.model.GeminiButtonAction
+import com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 
 import androidx.compose.ui.res.stringResource
 import com.andreas_kratzer.ghosttalk.R
@@ -57,13 +60,15 @@ fun ButtonConfigDialog(
     val actionTypeSpeak = stringResource(R.string.button_action_speak_text)
     val actionTypeNavigate = stringResource(R.string.button_action_navigate_page)
     val actionTypeGemini = stringResource(R.string.button_action_gemini)
-    val actionTypes = listOf(actionTypeSpeak, actionTypeNavigate, actionTypeGemini)
+    val actionTypeFrequent = stringResource(R.string.button_action_frequent_action)
+    val actionTypes = listOf(actionTypeSpeak, actionTypeNavigate, actionTypeGemini, actionTypeFrequent)
     
     var selectedActionType by remember {
         mutableStateOf(
             when (initialConfig?.buttonAction) {
                 is NavigateToPageButtonAction -> actionTypeNavigate
                 is GeminiButtonAction -> actionTypeGemini
+                is FrequentActionButtonAction -> actionTypeFrequent
                 else -> actionTypeSpeak
             }
         )
@@ -78,6 +83,10 @@ fun ButtonConfigDialog(
     // Gemini Details
     val geminiAction = initialConfig?.buttonAction as? GeminiButtonAction
     var geminiPrompt by remember { mutableStateOf(geminiAction?.prompt ?: "") }
+
+    // Frequent Action Details
+    val frequentActionDef = initialConfig?.buttonAction as? FrequentActionButtonAction
+    var frequentRank by remember { mutableStateOf((frequentActionDef?.rank ?: 1).toString()) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -197,6 +206,22 @@ fun ButtonConfigDialog(
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
+
+                // Conditional fields for Frequent Action
+                if (selectedActionType == actionTypeFrequent) {
+                    OutlinedTextField(
+                        value = frequentRank,
+                        onValueChange = { newValue -> 
+                            if (newValue.isEmpty() || newValue.all { it.isDigit() }) {
+                                frequentRank = newValue
+                            }
+                        },
+                        label = { Text(stringResource(R.string.button_frequent_action_rank_label)) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
         },
         confirmButton = {
@@ -206,6 +231,7 @@ fun ButtonConfigDialog(
                         val action: ButtonAction = when (selectedActionType) {
                             actionTypeNavigate -> NavigateToPageButtonAction(pageId = navigateToPageId)
                             actionTypeGemini -> GeminiButtonAction(prompt = geminiPrompt)
+                            actionTypeFrequent -> FrequentActionButtonAction(rank = frequentRank.toIntOrNull()?.coerceAtLeast(1) ?: 1)
                             else -> SpeakTextButtonAction(textToSpeech = spokenText.takeIf { it.isNotBlank() } ?: label)
                         }
 
