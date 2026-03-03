@@ -59,11 +59,11 @@ android {
     buildFeatures {
         compose = true
     }
+}
 
-    composeCompiler {
-        metricsDestination = layout.buildDirectory.dir("compose_metrics")
-        reportsDestination = layout.buildDirectory.dir("compose_reports")
-    }
+composeCompiler {
+    metricsDestination = layout.buildDirectory.dir("compose_metrics")
+    reportsDestination = layout.buildDirectory.dir("compose_reports")
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile>().configureEach {

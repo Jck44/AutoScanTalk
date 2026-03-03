@@ -43,8 +43,8 @@ class PageViewModel @Inject constructor(
     private val getPagesUseCase: GetPagesUseCase,
     private val actionLogUseCase: ActionLogUseCase,
     private val createPageUseCase: CreatePageUseCase,
-    private val driveAuthManager: DriveAuthManager,
-    private val logger: Logger,
+    driveAuthManager: DriveAuthManager,
+    logger: Logger,
     private val geminiUseCaseFactory: GeminiUseCaseFactory,
     private val ttsHelper: TextToSpeechHelper
 ) : AndroidViewModel(application) {
