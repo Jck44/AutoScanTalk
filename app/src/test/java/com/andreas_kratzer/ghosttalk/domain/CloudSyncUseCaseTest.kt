@@ -37,7 +37,7 @@ class CloudSyncUseCaseTest {
         every { Log.e(any(), any()) } returns 0
         
         mockkConstructor(com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper::class)
-        every { mockContext.cacheDir } returns File(System.getProperty("java.io.tmpdir"))
+        every { mockContext.cacheDir } returns File(System.getProperty("java.io.tmpdir") ?: "/tmp")
         every { mockSettingsRepository.isCloudSyncEnabled } returns true
         useCase = CloudSyncUseCase(mockContext, mockSettingsRepository, mockImportExportManager)
     }
