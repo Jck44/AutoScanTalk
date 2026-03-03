@@ -1,11 +1,8 @@
 package com.andreas_kratzer.ghosttalk.domain
 
 import android.util.Log
-import com.google.ai.client.generativeai.type.Schema
-import com.google.ai.client.generativeai.type.Tool
-import com.google.ai.client.generativeai.type.defineFunction
-import com.google.api.services.drive.Drive
 import com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper
+import com.google.api.services.drive.Drive
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray

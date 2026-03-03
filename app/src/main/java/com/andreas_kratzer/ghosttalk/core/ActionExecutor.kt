@@ -1,7 +1,6 @@
 package com.andreas_kratzer.ghosttalk.core
-import com.andreas_kratzer.ghosttalk.R
 
-import com.andreas_kratzer.ghosttalk.data.PageRepository
+import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.domain.GeminiUseCase
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
