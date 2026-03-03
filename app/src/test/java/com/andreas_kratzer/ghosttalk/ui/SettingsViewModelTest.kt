@@ -194,4 +194,32 @@ class SettingsViewModelTest {
         advanceUntilIdle()
         io.mockk.coVerify { cloudSyncUseCase.syncBook(driveMock, bookId, com.andreas_kratzer.ghosttalk.domain.SyncMode.RESTORE_ONLY) }
     }
+
+    @Test
+    fun testSetThemeMode() = runTest {
+        viewModel.setThemeMode("DARK")
+        assertEquals("DARK", viewModel.themeMode.value)
+        verify { settingsRepository.themeMode = "DARK" }
+    }
+
+    @Test
+    fun testAudioDeviceList_includesGhostEntries() = runTest {
+        val activeDevice = com.andreas_kratzer.ghosttalk.model.AudioOutputDevice("mac1", "Active Speaker", 0, true)
+        val cachedMac = "mac2"
+        val cachedName = "Old Bluetooth"
+        
+        every { audioDeviceManager.getAvailableOutputDevices() } returns listOf(activeDevice)
+        every { settingsRepository.getDeviceName(cachedMac) } returns cachedName
+        every { settingsRepository.ttsAudioDeviceAddress } returns cachedMac
+        
+        // Trigger a refresh/load
+        viewModel.refresh()
+        
+        val devices = viewModel.availableAudioDevices.value
+        assertEquals(2, devices.size)
+        // Check if the ghost entry is present
+        val ghost = devices.find { it.address == cachedMac }
+        assert(ghost != null)
+        assert(ghost?.name?.contains("(Inaktiv)") == true)
+    }
 }

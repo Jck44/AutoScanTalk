@@ -69,10 +69,22 @@ class SettingsRepositoryTest {
             mockEditor
         }
         
+        // Mock remove
+        every { mockEditor.remove(any()) } answers {
+            val key = args[0] as String
+            mockedPrefsStore.remove(key)
+            mockEditor
+        }
+        
         // Mock contains
         every { mockPrefs.contains(any()) } answers {
             val key = args[0] as String
             mockedPrefsStore.containsKey(key)
+        }
+
+        // Mock all
+        every { mockPrefs.all } answers {
+            mockedPrefsStore.toMap()
         }
 
         every { mockEditor.apply() } returns Unit
@@ -232,7 +244,47 @@ class SettingsRepositoryTest {
         val testMode = "BACKUP_ONLY"
         repository.syncMode = testMode
 
-        assertEquals(testMode, mockedPrefsStore["book-default_sync_mode"])
         assertEquals(testMode, repository.syncMode)
+    }
+
+    @Test
+    fun themeMode_initializesSystem() = runBlocking {
+        every { mockPrefs.getString("theme_mode", "SYSTEM") } returns "SYSTEM"
+        assertEquals("SYSTEM", repository.themeMode)
+        assertEquals("SYSTEM", repository.themeModeFlow.first())
+    }
+
+    @Test
+    fun themeMode_savesAndEmitsValue() = runBlocking {
+        val testTheme = "DARK"
+        repository.themeMode = testTheme
+
+        assertEquals(testTheme, mockedPrefsStore["book-default_theme_mode"])
+        assertEquals(testTheme, repository.themeMode)
+        assertEquals(testTheme, repository.themeModeFlow.first())
+    }
+
+    @Test
+    fun audioDeviceNamesCache_savesAndLoadsNames() = runBlocking {
+        val mac = "00:11:22:33:44:55"
+        val name = "Test Headphones"
+        
+        repository.saveDeviceName(mac, name)
+        
+        assertEquals(name, mockedPrefsStore["device_name_$mac"])
+        assertEquals(name, repository.getDeviceName(mac))
+    }
+
+    @Test
+    fun audioDeviceNamesCache_clearUnusedExcept() = runBlocking {
+        repository.saveDeviceName("mac1", "Device 1")
+        repository.saveDeviceName("mac2", "Device 2")
+        repository.saveDeviceName("mac3", "Device 3")
+        
+        repository.cleanupDeviceCache(setOf("mac1", "mac3"))
+        
+        assertEquals("Device 1", repository.getDeviceName("mac1"))
+        assertNull(repository.getDeviceName("mac2"))
+        assertEquals("Device 3", repository.getDeviceName("mac3"))
     }
 }

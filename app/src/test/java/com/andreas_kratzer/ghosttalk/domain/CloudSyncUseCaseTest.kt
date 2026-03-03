@@ -101,4 +101,53 @@ class CloudSyncUseCaseTest {
         // Verify import was called
         coVerify(exactly = 1) { mockImportExportManager.importBookFromJson(any(), bookId) }
     }
+
+    @Test
+    fun `syncBook with TWO_WAY mode uploads if local is newer`() = runTest {
+        val bookId = "test-book"
+        val now = System.currentTimeMillis()
+        
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder(any()) } returns "folder_1"
+        
+        val remoteFile = com.google.api.services.drive.model.File().apply {
+            id = "file_1"
+            name = "book_$bookId.json"
+            modifiedTime = com.google.api.client.util.DateTime(now - 10000L) // Remote is older
+        }
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("folder_1") } returns listOf(remoteFile)
+        
+        // Mock importExportManager to return data
+        coEvery { mockImportExportManager.exportBookToJson(bookId) } returns "{}"
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().updateFile(any(), any(), any()) } returns true
+
+        // Ensure tempFile has a newer timestamp by mocking its lastModified if needed, 
+        // but it will have 'now' roughly. Remote is 10s older.
+        
+        useCase.syncBook(mockDrive, bookId, SyncMode.TWO_WAY)
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().updateFile("file_1", any(), any()) }
+    }
+
+    @Test
+    fun `syncBook with TWO_WAY mode downloads if remote is newer`() = runTest {
+        val bookId = "test-book"
+        val now = System.currentTimeMillis()
+
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder(any()) } returns "folder_1"
+
+        val remoteFile = com.google.api.services.drive.model.File().apply {
+            id = "file_1"
+            name = "book_$bookId.json"
+            modifiedTime = com.google.api.client.util.DateTime(now + 10000L) // Remote is newer
+        }
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("folder_1") } returns listOf(remoteFile)
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile(any(), any()) } returns true
+
+        useCase.syncBook(mockDrive, bookId, SyncMode.TWO_WAY)
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile("file_1", any()) }
+        coVerify(exactly = 1) { mockImportExportManager.importBookFromJson(any(), bookId) }
+    }
 }
