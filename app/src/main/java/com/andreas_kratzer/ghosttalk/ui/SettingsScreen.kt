@@ -645,6 +645,7 @@ fun CloudSettings(settingsViewModel: SettingsViewModel) {
     val syncMode by settingsViewModel.syncMode.collectAsState()
     val userEmail by settingsViewModel.userEmail.collectAsState()
     val isSyncing by settingsViewModel.isSyncing.collectAsState()
+    val lastSuccessfulSyncTime by settingsViewModel.lastSuccessfulSyncTime.collectAsState()
     
     var expandedMode by remember { mutableStateOf(false) }
     
@@ -660,6 +661,17 @@ fun CloudSettings(settingsViewModel: SettingsViewModel) {
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+        
+        if (lastSuccessfulSyncTime > 0) {
+            val sdf = remember { java.text.SimpleDateFormat("dd.MM.yyyy HH:mm:ss", java.util.Locale.getDefault()) }
+            val formattedDate = remember(lastSuccessfulSyncTime) { sdf.format(java.util.Date(lastSuccessfulSyncTime)) }
+            Text(
+                text = "Letzter erfolgreicher Sync: $formattedDate",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+        }
         
         Box(modifier = Modifier.fillMaxWidth()) {
             val currentModeLabel = when (syncMode) {
@@ -766,7 +778,7 @@ fun ActionLogSettings(
                 confirmButton = {
                     Button(
                         onClick = {
-                            val bookId = settingsViewModel.activeBookId ?: "book-default"
+                            val bookId = settingsViewModel.activeBookId
                             settingsViewModel.clearButtonUsageStats(bookId)
                             showResetDialog = false
                         },

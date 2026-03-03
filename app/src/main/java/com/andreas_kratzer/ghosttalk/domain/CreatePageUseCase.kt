@@ -75,13 +75,17 @@ class CreatePageUseCase @javax.inject.Inject constructor(
             }
         }
 
+        val maxOrderIndex = currentPages.maxOfOrNull { it.orderIndex } ?: -1
+        
         val newPage = Page(
             id = newPageId,
             bookId = bookId,
             name = name,
             rows = finalRows,
             columns = finalColumns,
-            buttonConfigs = buttonConfigs
+            buttonConfigs = buttonConfigs,
+            orderIndex = maxOrderIndex + 1,
+            createdAt = System.currentTimeMillis()
         )
         
         pageRepository.insertPage(newPage)

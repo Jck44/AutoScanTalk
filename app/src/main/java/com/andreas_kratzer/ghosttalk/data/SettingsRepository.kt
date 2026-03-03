@@ -68,7 +68,40 @@ class SettingsRepository(context: Context) {
         _showTestButtonsFlow.value = showTestButtons
         _defaultScanPatternFlow.value = defaultScanPattern
         _themeModeFlow.value = themeMode
+        _pageSortOrderFlow.value = pageSortOrder
+        _templateSortOrderFlow.value = templateSortOrder
+        _lastSuccessfulSyncTimeFlow.value = lastSuccessfulSyncTime
     }
+
+    private val _pageSortOrderFlow = MutableStateFlow(getStringScoped(KEY_PAGE_SORT_ORDER, "MANUAL") ?: "MANUAL")
+    val pageSortOrderFlow: StateFlow<String> = _pageSortOrderFlow.asStateFlow()
+
+    var pageSortOrder: String
+        get() = getStringScoped(KEY_PAGE_SORT_ORDER, "MANUAL") ?: "MANUAL"
+        set(value) {
+            putStringScoped(KEY_PAGE_SORT_ORDER, value)
+            _pageSortOrderFlow.value = value
+        }
+
+    private val _templateSortOrderFlow = MutableStateFlow(getStringScoped(KEY_TEMPLATE_SORT_ORDER, "MANUAL") ?: "MANUAL")
+    val templateSortOrderFlow: StateFlow<String> = _templateSortOrderFlow.asStateFlow()
+
+    var templateSortOrder: String
+        get() = getStringScoped(KEY_TEMPLATE_SORT_ORDER, "MANUAL") ?: "MANUAL"
+        set(value) {
+            putStringScoped(KEY_TEMPLATE_SORT_ORDER, value)
+            _templateSortOrderFlow.value = value
+        }
+
+    private val _lastSuccessfulSyncTimeFlow = MutableStateFlow(getLongScoped(KEY_LAST_SYNC_TIME, 0L))
+    val lastSuccessfulSyncTimeFlow: StateFlow<Long> = _lastSuccessfulSyncTimeFlow.asStateFlow()
+
+    var lastSuccessfulSyncTime: Long
+        get() = getLongScoped(KEY_LAST_SYNC_TIME, 0L)
+        set(value) {
+            putLongScoped(KEY_LAST_SYNC_TIME, value)
+            _lastSuccessfulSyncTimeFlow.value = value
+        }
 
     private val _ttsLanguageFlow = MutableStateFlow(getStringScoped(KEY_TTS_LANGUAGE))
     val ttsLanguageFlow: StateFlow<String?> = _ttsLanguageFlow.asStateFlow()
@@ -292,5 +325,8 @@ class SettingsRepository(context: Context) {
         private const val KEY_SYNC_MODE = "sync_mode"
         private const val KEY_THEME_MODE = "theme_mode"
         private const val KEY_INITIAL_TEMPLATES_CREATED = "initial_templates_created"
+        private const val KEY_PAGE_SORT_ORDER = "page_sort_order"
+        private const val KEY_TEMPLATE_SORT_ORDER = "template_sort_order"
+        private const val KEY_LAST_SYNC_TIME = "last_sync_time"
     }
 }

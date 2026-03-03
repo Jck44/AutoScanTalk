@@ -46,7 +46,7 @@ class SettingsViewModel @Inject constructor(
     private val _availableLanguages = MutableStateFlow<List<Locale>>(emptyList())
     val availableLanguages: StateFlow<List<Locale>> = _availableLanguages.asStateFlow()
 
-    val activeBookId: String? get() = settingsRepository.activeBookId
+    val activeBookId: String get() = settingsRepository.activeBookId
 
     private val _selectedLanguageTag = MutableStateFlow("default")
     val selectedLanguageTag: StateFlow<String> = _selectedLanguageTag.asStateFlow()
@@ -121,6 +121,10 @@ class SettingsViewModel @Inject constructor(
 
     private val _isSyncing = MutableStateFlow(false)
     val isSyncing: StateFlow<Boolean> = _isSyncing.asStateFlow()
+
+    val lastSuccessfulSyncTime: StateFlow<Long> = settingsRepository.lastSuccessfulSyncTimeFlow
+    val pageSortOrder: StateFlow<String> = settingsRepository.pageSortOrderFlow
+    val templateSortOrder: StateFlow<String> = settingsRepository.templateSortOrderFlow
 
     private val _authIntentFlow = MutableSharedFlow<Intent>()
     val authIntentFlow = _authIntentFlow.asSharedFlow()
@@ -350,9 +354,6 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun stopCloudSync() {
-        workManager.cancelUniqueWork("CloudSyncWorker")
-    }
 
     fun clearButtonUsageStats(bookId: String) {
         viewModelScope.launch {
@@ -462,6 +463,7 @@ class SettingsViewModel @Inject constructor(
                 ).setApplicationName("GhosTTalk").build()
                 
                 cloudSyncUseCase.syncBook(drive, bookId, mode)
+                settingsRepository.lastSuccessfulSyncTime = System.currentTimeMillis()
                 android.util.Log.d("SettingsViewModel", "Sync completed successfully")
                 android.widget.Toast.makeText(context, "Synchronisierung abgeschlossen", android.widget.Toast.LENGTH_SHORT).show()
             } catch (e: UserRecoverableAuthIOException) {
@@ -576,6 +578,14 @@ class SettingsViewModel @Inject constructor(
         
         // 3. Fallback
         return "System-Standard (Automatisch)"
+    }
+
+    fun setPageSortOrder(order: com.andreas_kratzer.ghosttalk.model.SortOrder) {
+        settingsRepository.pageSortOrder = order.name
+    }
+
+    fun setTemplateSortOrder(order: com.andreas_kratzer.ghosttalk.model.SortOrder) {
+        settingsRepository.templateSortOrder = order.name
     }
 
     override fun onCleared() {

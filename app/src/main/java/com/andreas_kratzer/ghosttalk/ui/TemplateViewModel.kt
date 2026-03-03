@@ -2,10 +2,13 @@ package com.andreas_kratzer.ghosttalk.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.data.TemplateRepository
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.PageTemplate
+import com.andreas_kratzer.ghosttalk.model.SortOrder
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -15,15 +18,27 @@ import javax.inject.Inject
 
 @HiltViewModel
 class TemplateViewModel @Inject constructor(
-    private val templateRepository: TemplateRepository
+    private val templateRepository: TemplateRepository,
+    private val settingsRepository: SettingsRepository
 ) : ViewModel() {
 
-    val templates: StateFlow<List<PageTemplate>> = templateRepository.getAllTemplates()
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
+    val templates: StateFlow<List<PageTemplate>> = combine(
+        templateRepository.getAllTemplates(),
+        settingsRepository.templateSortOrderFlow
+    ) { templates, sortOrderStr ->
+        val sortOrder = try { SortOrder.valueOf(sortOrderStr) } catch (e: Exception) { SortOrder.MANUAL }
+        when (sortOrder) {
+            SortOrder.MANUAL -> templates.sortedBy { it.orderIndex }
+            SortOrder.NEWEST -> templates.sortedByDescending { it.createdAt }
+            SortOrder.OLDEST -> templates.sortedBy { it.createdAt }
+            SortOrder.A_Z -> templates.sortedBy { it.name.lowercase() }
+            SortOrder.Z_A -> templates.sortedByDescending { it.name.lowercase() }
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
 
     init {
         // Ensure default templates exist when VM starts
@@ -45,13 +60,17 @@ class TemplateViewModel @Inject constructor(
                 buttonConfigs.subList(totalSlots, buttonConfigs.size).clear()
             }
             
+            val maxOrderIndex = templates.value.maxOfOrNull { it.orderIndex } ?: -1
+            
             val newTemplate = PageTemplate(
                 id = UUID.randomUUID().toString(),
                 name = name,
                 rows = rows,
                 columns = columns,
                 buttonConfigs = buttonConfigs,
-                isBuiltIn = false
+                isBuiltIn = false,
+                orderIndex = maxOrderIndex + 1,
+                createdAt = System.currentTimeMillis()
             )
             templateRepository.insert(newTemplate)
         }
@@ -76,6 +95,23 @@ class TemplateViewModel @Inject constructor(
     fun deleteTemplate(template: PageTemplate) {
         viewModelScope.launch {
             templateRepository.delete(template)
+        }
+    }
+
+    fun reorderTemplates(fromIndex: Int, toIndex: Int) {
+        val currentList = templates.value.toMutableList()
+        if (fromIndex !in currentList.indices || toIndex !in currentList.indices) return
+        
+        val item = currentList.removeAt(fromIndex)
+        currentList.add(toIndex, item)
+        
+        viewModelScope.launch {
+            currentList.forEachIndexed { index, template ->
+                if (template.orderIndex != index) {
+                    templateRepository.insert(template.copy(orderIndex = index))
+                }
+            }
+            settingsRepository.templateSortOrder = SortOrder.MANUAL.name
         }
     }
 }

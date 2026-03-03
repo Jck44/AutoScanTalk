@@ -55,6 +55,7 @@ class CloudSyncWorker @AssistedInject constructor(
             Log.d("CloudSyncWorker", "Starting background sync for book: \$bookId with mode: \$mode")
             cloudSyncUseCase.syncBook(drive, bookId, mode)
             Log.d("CloudSyncWorker", "Background sync completed successfully")
+            settingsRepository.lastSuccessfulSyncTime = System.currentTimeMillis()
             Result.success()
         } catch (e: UserRecoverableAuthIOException) {
             Log.w("CloudSyncWorker", "UserRecoverableAuthIOException in background sync. Setup required.")

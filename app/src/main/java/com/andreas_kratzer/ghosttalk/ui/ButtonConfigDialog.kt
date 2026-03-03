@@ -79,6 +79,11 @@ fun ButtonConfigDialog(
     val navAction = initialConfig?.buttonAction as? NavigateToPageButtonAction
     var navigateToPageId by remember { mutableStateOf(navAction?.pageId ?: "") }
     var expandedPageSelect by remember { mutableStateOf(false) }
+    var pageSearchQuery by remember { mutableStateOf("") }
+    val filteredPages = remember(pageSearchQuery, availablePages) {
+        if (pageSearchQuery.isBlank()) availablePages
+        else availablePages.filter { it.name.contains(pageSearchQuery, ignoreCase = true) }
+    }
 
     // Gemini Details
     val geminiAction = initialConfig?.buttonAction as? GeminiButtonAction
@@ -170,25 +175,38 @@ fun ButtonConfigDialog(
                     ) {
                         val selectedPageName = availablePages.find { it.id == navigateToPageId }?.name ?: stringResource(R.string.button_no_page_selected)
                         OutlinedTextField(
-                            readOnly = true,
-                            value = selectedPageName,
-                            onValueChange = { },
+                            value = if (expandedPageSelect) pageSearchQuery else selectedPageName,
+                            onValueChange = { 
+                                if (expandedPageSelect) pageSearchQuery = it 
+                            },
+                            readOnly = !expandedPageSelect,
                             label = { Text(stringResource(R.string.button_target_page_label)) },
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedPageSelect) },
                             colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
-                            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
+                            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable).fillMaxWidth()
                         )
                         ExposedDropdownMenu(
                             expanded = expandedPageSelect,
-                            onDismissRequest = { expandedPageSelect = false }
+                            onDismissRequest = { 
+                                expandedPageSelect = false
+                                pageSearchQuery = ""
+                            }
                         ) {
-                            availablePages.forEach { pageOption ->
+                            filteredPages.forEach { pageOption ->
                                 DropdownMenuItem(
                                     text = { Text(pageOption.name) },
                                     onClick = {
                                         navigateToPageId = pageOption.id
                                         expandedPageSelect = false
+                                        pageSearchQuery = ""
                                     }
+                                )
+                            }
+                            if (filteredPages.isEmpty()) {
+                                DropdownMenuItem(
+                                    text = { Text("Keine Seiten gefunden") },
+                                    onClick = { },
+                                    enabled = false
                                 )
                             }
                         }

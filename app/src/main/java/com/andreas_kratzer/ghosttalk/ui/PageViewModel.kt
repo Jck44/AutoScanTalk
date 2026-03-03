@@ -24,6 +24,7 @@ import com.andreas_kratzer.ghosttalk.domain.GetPagesUseCase
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.model.PageTemplate
+import com.andreas_kratzer.ghosttalk.model.SortOrder
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -52,8 +53,8 @@ class PageViewModel @Inject constructor(
     private val frequentActionResolver: FrequentActionResolver,
     private val buttonUsageRepository: ButtonUsageRepository,
     private val templateRepository: TemplateRepository,
-    driveAuthManager: DriveAuthManager,
-    logger: Logger,
+    private val driveAuthManager: DriveAuthManager,
+    private val logger: Logger,
     private val geminiUseCaseFactory: GeminiUseCaseFactory,
     private val ttsHelper: TextToSpeechHelper
 ) : AndroidViewModel(application) {
@@ -64,7 +65,19 @@ class PageViewModel @Inject constructor(
     val activeBookId: StateFlow<String?> = _activeBookId.asStateFlow()
 
     private val _allPages = MutableStateFlow<List<Page>>(emptyList())
-    val allPages: StateFlow<List<Page>> = _allPages.asStateFlow()
+    val allPages: StateFlow<List<Page>> = kotlinx.coroutines.flow.combine(
+        _allPages,
+        settingsRepository.pageSortOrderFlow
+    ) { pages, sortOrderStr ->
+        val sortOrder = try { SortOrder.valueOf(sortOrderStr) } catch (e: Exception) { SortOrder.MANUAL }
+        when (sortOrder) {
+            SortOrder.MANUAL -> pages.sortedBy { it.orderIndex }
+            SortOrder.NEWEST -> pages.sortedByDescending { it.createdAt }
+            SortOrder.OLDEST -> pages.sortedBy { it.createdAt }
+            SortOrder.A_Z -> pages.sortedBy { it.name.lowercase() }
+            SortOrder.Z_A -> pages.sortedByDescending { it.name.lowercase() }
+        }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     private val _currentPage = MutableStateFlow<Page?>(null)
     val currentPage: StateFlow<Page?> = _currentPage.asStateFlow()
@@ -351,6 +364,25 @@ class PageViewModel @Inject constructor(
     fun deletePage(page: Page) {
         viewModelScope.launch {
             pageRepository.deletePage(page)
+        }
+    }
+
+    fun reorderPages(fromIndex: Int, toIndex: Int) {
+        val currentList = allPages.value.toMutableList()
+        if (fromIndex !in currentList.indices || toIndex !in currentList.indices) return
+        
+        val item = currentList.removeAt(fromIndex)
+        currentList.add(toIndex, item)
+        
+        viewModelScope.launch {
+            // Update indices in DB
+            currentList.forEachIndexed { index, page ->
+                if (page.orderIndex != index) {
+                    pageRepository.updatePage(page.copy(orderIndex = index))
+                }
+            }
+            // Ensure we are in MANUAL mode if user reorders
+            settingsRepository.pageSortOrder = SortOrder.MANUAL.name
         }
     }
 

@@ -12,7 +12,9 @@ data class Page(
     val columns: Int = 4,
     val scanPattern: String? = null,
     val rowNames: List<String> = emptyList(),
-    val buttonConfigs: List<ButtonConfig?> // Represents the grid, null for an empty/deactivated button
+    val buttonConfigs: List<ButtonConfig?>, // Represents the grid, null for an empty/deactivated button
+    val orderIndex: Int = 0,
+    val createdAt: Long = System.currentTimeMillis()
 ) {
     init {
         require(rows > 0) { "Rows must be a positive number." }

@@ -11,5 +11,6 @@ data class PageTemplate(
     val columns: Int,
     val buttonConfigs: List<ButtonConfig?>,
     val isBuiltIn: Boolean = false,
+    val orderIndex: Int = 0,
     val createdAt: Long = System.currentTimeMillis()
 )

@@ -18,6 +18,11 @@ import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.ui.components.GhostTalkCard
 import com.andreas_kratzer.ghosttalk.model.PageTemplate
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.Sort
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.ArrowDownward
+import com.andreas_kratzer.ghosttalk.model.SortOrder
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,6 +42,37 @@ fun TemplateScreen(
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_button_content_description))
+                    }
+                },
+                actions = {
+                    var showSortMenu by remember { mutableStateOf(false) }
+                    val templateSortOrder by templateViewModel.settingsRepository.templateSortOrderFlow.collectAsState("MANUAL")
+                    
+                    IconButton(onClick = { showSortMenu = true }) {
+                        Icon(Icons.Default.Sort, contentDescription = "Sortieren")
+                    }
+                    DropdownMenu(expanded = showSortMenu, onDismissRequest = { showSortMenu = false }) {
+                        SortOrder.values().forEach { order ->
+                            val label = when(order) {
+                                SortOrder.MANUAL -> "Manuell"
+                                SortOrder.NEWEST -> "Neueste zuerst"
+                                SortOrder.OLDEST -> "Älteste zuerst"
+                                SortOrder.A_Z -> "A -> Z"
+                                SortOrder.Z_A -> "Z -> A"
+                            }
+                            DropdownMenuItem(
+                                text = { Text(label) },
+                                onClick = {
+                                    templateViewModel.settingsRepository.templateSortOrder = order.name
+                                    showSortMenu = false
+                                },
+                                trailingIcon = {
+                                    if (templateSortOrder == order.name) {
+                                        Icon(Icons.Default.Check, contentDescription = null)
+                                    }
+                                }
+                            )
+                        }
                     }
                 }
             )
@@ -62,14 +98,33 @@ fun TemplateScreen(
                     icon = Icons.Default.GridView,
                     onClick = { onTemplateClick(template.id) },
                     trailingAction = {
-                        IconButton(
-                            onClick = { templateToDelete = template }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = stringResource(R.string.action_delete),
-                                tint = MaterialTheme.colorScheme.error
-                            )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            val templateSortOrder by templateViewModel.settingsRepository.templateSortOrderFlow.collectAsState("MANUAL")
+                            if (templateSortOrder == "MANUAL") {
+                                Column {
+                                    IconButton(onClick = {
+                                        val index = templates.indexOf(template)
+                                        if (index > 0) templateViewModel.reorderTemplates(index, index - 1)
+                                    }) {
+                                        Icon(Icons.Default.ArrowUpward, contentDescription = "Hoch")
+                                    }
+                                    IconButton(onClick = {
+                                        val index = templates.indexOf(template)
+                                        if (index < templates.size - 1) templateViewModel.reorderTemplates(index, index + 1)
+                                    }) {
+                                        Icon(Icons.Default.ArrowDownward, contentDescription = "Runter")
+                                    }
+                                }
+                            }
+                            IconButton(
+                                onClick = { templateToDelete = template }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = stringResource(R.string.action_delete),
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            }
                         }
                     }
                 )

@@ -27,6 +27,10 @@ import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.ui.components.GhostTalkCard
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Sort
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.ArrowDownward
 import com.andreas_kratzer.ghosttalk.model.Page
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -120,6 +124,42 @@ fun PageListScreen(
                 },
                 actions = {
                     val isLandscape = LocalConfiguration.current.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+                    
+                    // Sort Menu
+                    var showSortMenu by remember { mutableStateOf(false) }
+                    val pageSortOrder by pageViewModel.settingsRepository.pageSortOrderFlow.collectAsState("MANUAL")
+                    
+                    IconButton(onClick = { showSortMenu = true }) {
+                        Icon(
+                            imageVector = androidx.compose.material.icons.filled.Sort,
+                            contentDescription = "Sortieren"
+                        )
+                    }
+                    DropdownMenu(expanded = showSortMenu, onDismissRequest = { showSortMenu = false }) {
+                        val orders = com.andreas_kratzer.ghosttalk.model.SortOrder.values()
+                        orders.forEach { order ->
+                            val label = when(order) {
+                                com.andreas_kratzer.ghosttalk.model.SortOrder.MANUAL -> "Manuell"
+                                com.andreas_kratzer.ghosttalk.model.SortOrder.NEWEST -> "Neueste zuerst"
+                                com.andreas_kratzer.ghosttalk.model.SortOrder.OLDEST -> "Älteste zuerst"
+                                com.andreas_kratzer.ghosttalk.model.SortOrder.A_Z -> "A -> Z"
+                                com.andreas_kratzer.ghosttalk.model.SortOrder.Z_A -> "Z -> A"
+                            }
+                            DropdownMenuItem(
+                                text = { Text(label) },
+                                onClick = {
+                                    pageViewModel.settingsRepository.pageSortOrder = order.name
+                                    showSortMenu = false
+                                },
+                                trailingIcon = {
+                                    if (pageSortOrder == order.name) {
+                                        Icon(androidx.compose.material.icons.filled.Check, contentDescription = null)
+                                    }
+                                }
+                            )
+                        }
+                    }
+
                     if (isLandscape) {
                         Button(
                             onClick = { exportLauncher.launch("GhosTTalk_Export.json") },
@@ -166,7 +206,25 @@ fun PageListScreen(
                     icon = Icons.Default.Description,
                     onClick = { onEditPage(page.id) },
                     trailingAction = {
-                        Row {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            val pageSortOrder by pageViewModel.settingsRepository.pageSortOrderFlow.collectAsState("MANUAL")
+                            if (pageSortOrder == "MANUAL") {
+                                Column {
+                                    IconButton(onClick = { 
+                                        val index = allPages.indexOf(page)
+                                        if (index > 0) pageViewModel.reorderPages(index, index - 1)
+                                    }) {
+                                        Icon(androidx.compose.material.icons.filled.ArrowUpward, contentDescription = "Hoch")
+                                    }
+                                    IconButton(onClick = { 
+                                        val index = allPages.indexOf(page)
+                                        if (index < allPages.size - 1) pageViewModel.reorderPages(index, index + 1)
+                                    }) {
+                                        Icon(androidx.compose.material.icons.filled.ArrowDownward, contentDescription = "Runter")
+                                    }
+                                }
+                            }
+                            
                             IconButton(onClick = { pageToEdit = page }) {
                                 Icon(
                                     imageVector = Icons.Default.Edit,

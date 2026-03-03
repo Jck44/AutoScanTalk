@@ -16,7 +16,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.andreas_kratzer.ghosttalk.ui.TemplateScreen
 import com.andreas_kratzer.ghosttalk.ui.TemplateViewModel
 import com.andreas_kratzer.ghosttalk.core.UpdateManager
