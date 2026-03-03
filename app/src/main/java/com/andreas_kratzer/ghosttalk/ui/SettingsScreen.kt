@@ -774,6 +774,22 @@ fun ActionLogSettings(
             Switch(checked = showPageIdInLog, onCheckedChange = { settingsViewModel.setShowPageIdInLog(it) })
         }
 
+        val experimentalManualSorting by settingsViewModel.experimentalManualSorting.collectAsState()
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.clickable { settingsViewModel.setExperimentalManualSorting(!experimentalManualSorting) }
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(stringResource(R.string.settings_experimental_manual_sorting))
+                Text(
+                    text = stringResource(R.string.settings_experimental_manual_sorting_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Switch(checked = experimentalManualSorting, onCheckedChange = { settingsViewModel.setExperimentalManualSorting(it) })
+        }
+
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
         // Statistiken zurücksetzen

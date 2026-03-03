@@ -72,6 +72,7 @@ class SettingsRepository(context: Context) {
         _templateSortOrderFlow.value = templateSortOrder
         _lastSuccessfulSyncTimeFlow.value = lastSuccessfulSyncTime
         _showPageIdInLogFlow.value = showPageIdInLog
+        _experimentalManualSortingFlow.value = experimentalManualSorting
     }
 
     private val _pageSortOrderFlow = MutableStateFlow(getStringScoped(KEY_PAGE_SORT_ORDER, "MANUAL") ?: "MANUAL")
@@ -112,6 +113,16 @@ class SettingsRepository(context: Context) {
         set(value) {
             putBooleanScoped(KEY_SHOW_PAGE_ID_IN_LOG, value)
             _showPageIdInLogFlow.value = value
+        }
+    
+    private val _experimentalManualSortingFlow = MutableStateFlow(getBooleanScoped(KEY_EXPERIMENTAL_MANUAL_SORTING, false))
+    val experimentalManualSortingFlow: StateFlow<Boolean> = _experimentalManualSortingFlow.asStateFlow()
+
+    var experimentalManualSorting: Boolean
+        get() = getBooleanScoped(KEY_EXPERIMENTAL_MANUAL_SORTING, false)
+        set(value) {
+            putBooleanScoped(KEY_EXPERIMENTAL_MANUAL_SORTING, value)
+            _experimentalManualSortingFlow.value = value
         }
 
     private val _ttsLanguageFlow = MutableStateFlow(getStringScoped(KEY_TTS_LANGUAGE))
@@ -340,5 +351,6 @@ class SettingsRepository(context: Context) {
         private const val KEY_TEMPLATE_SORT_ORDER = "template_sort_order"
         private const val KEY_LAST_SYNC_TIME = "last_sync_time"
         private const val KEY_SHOW_PAGE_ID_IN_LOG = "show_page_id_in_log"
+        private const val KEY_EXPERIMENTAL_MANUAL_SORTING = "experimental_manual_sorting"
     }
 }

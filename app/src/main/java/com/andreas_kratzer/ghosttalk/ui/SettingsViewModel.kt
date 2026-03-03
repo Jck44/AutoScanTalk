@@ -117,6 +117,9 @@ class SettingsViewModel @Inject constructor(
     private val _selectedAppLanguage = MutableStateFlow<String?>("default")
     val selectedAppLanguage: StateFlow<String?> = _selectedAppLanguage.asStateFlow()
 
+    private val _experimentalManualSorting = MutableStateFlow(false)
+    val experimentalManualSorting: StateFlow<Boolean> = _experimentalManualSorting.asStateFlow()
+
     private val _themeMode = MutableStateFlow("SYSTEM")
     val themeMode: StateFlow<String> = _themeMode.asStateFlow()
 
@@ -159,6 +162,7 @@ class SettingsViewModel @Inject constructor(
         _selectedAppLanguage.value = settingsRepository.appLanguage ?: "default"
         _themeMode.value = settingsRepository.themeMode
         _showPageIdInLog.value = settingsRepository.showPageIdInLog
+        _experimentalManualSorting.value = settingsRepository.experimentalManualSorting
         
         updateGeminiToolStatus()
         
@@ -313,6 +317,11 @@ class SettingsViewModel @Inject constructor(
     fun setShowPageIdInLog(enabled: Boolean) {
         settingsRepository.showPageIdInLog = enabled
         _showPageIdInLog.value = enabled
+    }
+
+    fun setExperimentalManualSorting(enabled: Boolean) {
+        settingsRepository.experimentalManualSorting = enabled
+        _experimentalManualSorting.value = enabled
     }
 
     fun setHoldingTimeInput(input: String) {

@@ -22,6 +22,8 @@ class TemplateViewModel @Inject constructor(
     val settingsRepository: SettingsRepository
 ) : ViewModel() {
 
+    val experimentalManualSorting: StateFlow<Boolean> = settingsRepository.experimentalManualSortingFlow
+
     val templates: StateFlow<List<PageTemplate>> = combine(
         templateRepository.getAllTemplates(),
         settingsRepository.templateSortOrderFlow

@@ -36,6 +36,7 @@ fun TemplateScreen(
     onTemplateClick: (String) -> Unit
 ) {
     val templates by templateViewModel.templates.collectAsState()
+    val experimentalSorting by templateViewModel.experimentalManualSorting.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
     var templateToDelete by remember { mutableStateOf<PageTemplate?>(null) }
     val reorderState = rememberReorderableState { from, to ->
@@ -60,7 +61,7 @@ fun TemplateScreen(
                         Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = "Sortieren")
                     }
                     DropdownMenu(expanded = showSortMenu, onDismissRequest = { showSortMenu = false }) {
-                        SortOrder.values().forEach { order ->
+                        SortOrder.values().filter { it != SortOrder.MANUAL || experimentalSorting }.forEach { order ->
                             val label = when(order) {
                                 SortOrder.MANUAL -> "Manuell"
                                 SortOrder.NEWEST -> "Neueste zuerst"
@@ -107,23 +108,29 @@ fun TemplateScreen(
                     subtitle = "Raster: ${template.rows}x${template.columns} " + if (template.isBuiltIn) "(${stringResource(R.string.template_built_in_label)})" else "(${stringResource(R.string.template_custom_label)})",
                     icon = Icons.Default.GridView,
                     onClick = { onTemplateClick(template.id) },
-                    modifier = Modifier.reorderableItem(
-                        state = reorderState,
-                        index = index,
-                        onDrag = {
-                            reorderState.findTargetIndexForList(listState)?.let { targetIndex ->
-                                templateViewModel.reorderTemplates(index, targetIndex)
+                    modifier = if (experimentalSorting) {
+                        Modifier.reorderableItem(
+                            state = reorderState,
+                            index = index,
+                            onDrag = {
+                                reorderState.findTargetIndexForList(listState)?.let { targetIndex ->
+                                    templateViewModel.reorderTemplates(index, targetIndex)
+                                }
                             }
-                        }
-                    ),
+                        )
+                    } else {
+                        Modifier
+                    },
                     trailingAction = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.DragHandle,
-                                contentDescription = "Verschieben",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                                modifier = Modifier.padding(end = 8.dp)
-                            )
+                            if (experimentalSorting) {
+                                Icon(
+                                    imageVector = Icons.Default.DragHandle,
+                                    contentDescription = "Verschieben",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                    modifier = Modifier.padding(end = 8.dp)
+                                )
+                            }
                             
                             IconButton(
                                 onClick = { templateToDelete = template }

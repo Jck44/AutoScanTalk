@@ -52,6 +52,7 @@ fun PageListScreen(
 ) {
     val allPages by pageViewModel.allPages.collectAsState()
     val templates by pageViewModel.templates.collectAsState()
+    val experimentalSorting by pageViewModel.experimentalManualSorting.collectAsState()
     val activeBookId by pageViewModel.activeBookId.collectAsState()
     val bookDefaultScanPattern by pageViewModel.defaultScanPattern.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
@@ -146,7 +147,7 @@ fun PageListScreen(
                     }
                     DropdownMenu(expanded = showSortMenu, onDismissRequest = { showSortMenu = false }) {
                         val orders = com.andreas_kratzer.ghosttalk.model.SortOrder.values()
-                        orders.forEach { order ->
+                        orders.filter { it != com.andreas_kratzer.ghosttalk.model.SortOrder.MANUAL || experimentalSorting }.forEach { order ->
                             val label = when(order) {
                                 com.andreas_kratzer.ghosttalk.model.SortOrder.MANUAL -> "Manuell"
                                 com.andreas_kratzer.ghosttalk.model.SortOrder.NEWEST -> "Neueste zuerst"
@@ -216,23 +217,29 @@ fun PageListScreen(
                     subtitle = stringResource(R.string.page_grid_info, page.rows, page.columns),
                     icon = Icons.Default.Description,
                     onClick = { onEditPage(page.id) },
-                    modifier = Modifier.reorderableItem(
-                        state = reorderState,
-                        index = index,
-                        onDrag = {
-                            reorderState.findTargetIndexForGrid(gridState)?.let { targetIndex ->
-                                pageViewModel.reorderPages(index, targetIndex)
+                    modifier = if (experimentalSorting) {
+                        Modifier.reorderableItem(
+                            state = reorderState,
+                            index = index,
+                            onDrag = {
+                                reorderState.findTargetIndexForGrid(gridState)?.let { targetIndex ->
+                                    pageViewModel.reorderPages(index, targetIndex)
+                                }
                             }
-                        }
-                    ),
+                        )
+                    } else {
+                        Modifier
+                    },
                     trailingAction = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.DragHandle,
-                                contentDescription = "Verschieben",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                                modifier = Modifier.padding(end = 8.dp)
-                            )
+                            if (experimentalSorting) {
+                                Icon(
+                                    imageVector = Icons.Default.DragHandle,
+                                    contentDescription = "Verschieben",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                    modifier = Modifier.padding(end = 8.dp)
+                                )
+                            }
                             
                             IconButton(onClick = { pageToEdit = page }) {
                                 Icon(

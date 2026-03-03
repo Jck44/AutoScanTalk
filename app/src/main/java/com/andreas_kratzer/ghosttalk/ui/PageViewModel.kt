@@ -100,6 +100,7 @@ class PageViewModel @Inject constructor(
     val focusedRowIndex: StateFlow<Int?> = scannerEngine.focusedRowIndex
     val defaultScanPattern: StateFlow<String> = settingsRepository.defaultScanPatternFlow
     val showTestButtons: StateFlow<Boolean> = settingsRepository.showTestButtonsFlow
+    val experimentalManualSorting: StateFlow<Boolean> = settingsRepository.experimentalManualSortingFlow
 
     val actionExecutor = ActionExecutor(
         scope = viewModelScope,
