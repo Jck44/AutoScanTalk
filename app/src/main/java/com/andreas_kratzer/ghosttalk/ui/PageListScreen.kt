@@ -12,6 +12,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -131,7 +132,7 @@ fun PageListScreen(
                     
                     IconButton(onClick = { showSortMenu = true }) {
                         Icon(
-                            imageVector = androidx.compose.material.icons.filled.Sort,
+                            imageVector = Icons.AutoMirrored.Filled.Sort,
                             contentDescription = "Sortieren"
                         )
                     }
@@ -153,7 +154,7 @@ fun PageListScreen(
                                 },
                                 trailingIcon = {
                                     if (pageSortOrder == order.name) {
-                                        Icon(androidx.compose.material.icons.filled.Check, contentDescription = null)
+                                        Icon(Icons.Default.Check, contentDescription = null)
                                     }
                                 }
                             )
@@ -214,13 +215,13 @@ fun PageListScreen(
                                         val index = allPages.indexOf(page)
                                         if (index > 0) pageViewModel.reorderPages(index, index - 1)
                                     }) {
-                                        Icon(androidx.compose.material.icons.filled.ArrowUpward, contentDescription = "Hoch")
+                                        Icon(Icons.Default.ArrowUpward, contentDescription = "Hoch")
                                     }
                                     IconButton(onClick = { 
                                         val index = allPages.indexOf(page)
                                         if (index < allPages.size - 1) pageViewModel.reorderPages(index, index + 1)
                                     }) {
-                                        Icon(androidx.compose.material.icons.filled.ArrowDownward, contentDescription = "Runter")
+                                        Icon(Icons.Default.ArrowDownward, contentDescription = "Runter")
                                     }
                                 }
                             }
@@ -426,7 +427,7 @@ fun AddPageDialog(
                         label = { Text("Template (Optional)") },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                         colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
-                        modifier = Modifier.fillMaxWidth().menuAnchor()
+                        modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
                     )
                     ExposedDropdownMenu(
                         expanded = expanded,

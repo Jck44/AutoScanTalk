@@ -111,6 +111,9 @@ class SettingsViewModel @Inject constructor(
     private val _geminiToolStatus = MutableStateFlow<Map<String, com.andreas_kratzer.ghosttalk.domain.GeminiUseCase.ToolStatus>>(emptyMap())
     val geminiToolStatus: StateFlow<Map<String, com.andreas_kratzer.ghosttalk.domain.GeminiUseCase.ToolStatus>> = _geminiToolStatus.asStateFlow()
 
+    private val _showPageIdInLog = MutableStateFlow(true)
+    val showPageIdInLog: StateFlow<Boolean> = _showPageIdInLog.asStateFlow()
+
     private val _selectedAppLanguage = MutableStateFlow<String?>("default")
     val selectedAppLanguage: StateFlow<String?> = _selectedAppLanguage.asStateFlow()
 
@@ -155,6 +158,7 @@ class SettingsViewModel @Inject constructor(
         _isGeminiEnabled.value = settingsRepository.isGeminiEnabled
         _selectedAppLanguage.value = settingsRepository.appLanguage ?: "default"
         _themeMode.value = settingsRepository.themeMode
+        _showPageIdInLog.value = settingsRepository.showPageIdInLog
         
         updateGeminiToolStatus()
         
@@ -304,6 +308,11 @@ class SettingsViewModel @Inject constructor(
     fun setShowTestButtons(enabled: Boolean) {
         settingsRepository.showTestButtons = enabled
         _showTestButtons.value = enabled
+    }
+
+    fun setShowPageIdInLog(enabled: Boolean) {
+        settingsRepository.showPageIdInLog = enabled
+        _showPageIdInLog.value = enabled
     }
 
     fun setHoldingTimeInput(input: String) {

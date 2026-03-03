@@ -180,11 +180,15 @@ class MainActivity : AppCompatActivity() {
                     // Handle auto-navigation inside setContent to have access to navController
                     androidx.compose.runtime.LaunchedEffect(Unit) {
                         bookViewModel.autoOpenBookEvent.collect { selectedBookId ->
-                            pageViewModel.setActiveBookId(selectedBookId)
-                            settingsRepository.activeBookId = selectedBookId
-                            settingsViewModel.refresh()
-                            navController.navigate("start") {
-                                popUpTo("book_list") { inclusive = true }
+                            // Only navigate automatically if we are still on the book list screen
+                            // This prevents reset loops during orientation changes
+                            if (navController.currentDestination?.route == "book_list") {
+                                pageViewModel.setActiveBookId(selectedBookId)
+                                settingsRepository.activeBookId = selectedBookId
+                                settingsViewModel.refresh()
+                                navController.navigate("start") {
+                                    popUpTo("book_list") { inclusive = true }
+                                }
                             }
                         }
                     }

@@ -19,7 +19,7 @@ import javax.inject.Inject
 @HiltViewModel
 class TemplateViewModel @Inject constructor(
     private val templateRepository: TemplateRepository,
-    private val settingsRepository: SettingsRepository
+    val settingsRepository: SettingsRepository
 ) : ViewModel() {
 
     val templates: StateFlow<List<PageTemplate>> = combine(

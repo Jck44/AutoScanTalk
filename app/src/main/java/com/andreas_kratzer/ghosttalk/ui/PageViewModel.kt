@@ -45,7 +45,7 @@ import javax.inject.Inject
 class PageViewModel @Inject constructor(
     application: Application,
     private val pageRepository: PageRepository,
-    private val settingsRepository: SettingsRepository,
+    val settingsRepository: SettingsRepository,
     private val importExportManager: PageImportExportManager,
     private val getPagesUseCase: GetPagesUseCase,
     private val actionLogUseCase: ActionLogUseCase,
@@ -142,9 +142,11 @@ class PageViewModel @Inject constructor(
                             val page = pageRepository.getPageById(event.pageId)
                             if (page != null) {
                                 loadPage(page)
-                                logAction("Navigiert zu Seite: ${page.name} (ID: ${event.pageId})")
+                                val idSuffix = if (settingsRepository.showPageIdInLog) " (ID: ${event.pageId})" else ""
+                                logAction("Navigiert zu Seite: ${page.name}$idSuffix")
                             } else {
-                                logAction("Fehler: Seite mit ID '${event.pageId}' nicht gefunden.")
+                                val idSuffix = if (settingsRepository.showPageIdInLog) " mit ID '${event.pageId}'" else ""
+                                logAction("Fehler: Seite$idSuffix nicht gefunden.")
                                 ttsHelper.speak(application.getString(com.andreas_kratzer.ghosttalk.R.string.error_page_not_found)) {}
                             }
                         }

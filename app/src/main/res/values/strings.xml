@@ -49,6 +49,8 @@
     <string name="settings_show_test_buttons">Test-Buttons auf Seite anzeigen</string>
     <string name="settings_persist_logs">Aktionen protokollieren</string>
     <string name="settings_persist_logs_hint">Behält Verlauf auch nach Neustart</string>
+    <string name="settings_show_page_id_in_log">Page ID im Verlauf anzeigen</string>
+    <string name="settings_show_page_id_in_log_hint">Zeigt die technische ID der Seite in den Protokollen an</string>
     
     <!-- Start Screen -->
     <string name="start_tagline">Unterstützte Kommunikation</string>
