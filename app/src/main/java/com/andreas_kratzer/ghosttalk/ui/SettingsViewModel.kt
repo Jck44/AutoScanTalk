@@ -34,11 +34,11 @@ import java.util.Locale
 class SettingsViewModel @Inject constructor(
     application: Application,
     private val settingsRepository: SettingsRepository,
-    private val driveAuthManager: com.andreas_kratzer.ghosttalk.core.cloud.DriveAuthManager,
-    private val cloudSyncUseCase: com.andreas_kratzer.ghosttalk.domain.CloudSyncUseCase,
+    private val driveAuthManager: DriveAuthManager,
+    private val cloudSyncUseCase: CloudSyncUseCase,
     private val geminiUseCaseFactory: com.andreas_kratzer.ghosttalk.domain.GeminiUseCaseFactory,
-    private val tempTtsHelper: com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper,
-    private val audioDeviceManager: com.andreas_kratzer.ghosttalk.core.AudioDeviceManager
+    private val tempTtsHelper: TextToSpeechHelper,
+    private val audioDeviceManager: AudioDeviceManager
 ) : AndroidViewModel(application) {
 
     private val _availableLanguages = MutableStateFlow<List<Locale>>(emptyList())

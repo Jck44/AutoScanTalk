@@ -16,8 +16,8 @@ import java.util.UUID
 
 class PageImportExportManager @javax.inject.Inject constructor(
     private val pageRepository: PageRepository,
-    private val logger: com.andreas_kratzer.ghosttalk.core.util.Logger,
-    private val ioDispatcher: kotlinx.coroutines.CoroutineDispatcher = kotlinx.coroutines.Dispatchers.IO
+    private val logger: Logger,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) {
     private val gson = Gson()
 

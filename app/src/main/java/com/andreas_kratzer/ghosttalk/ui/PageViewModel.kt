@@ -45,9 +45,9 @@ class PageViewModel @Inject constructor(
     private val getPagesUseCase: GetPagesUseCase,
     private val actionLogUseCase: ActionLogUseCase,
     private val createPageUseCase: CreatePageUseCase,
-    private val driveAuthManager: com.andreas_kratzer.ghosttalk.core.cloud.DriveAuthManager,
+    private val driveAuthManager: DriveAuthManager,
     private val geminiUseCaseFactory: com.andreas_kratzer.ghosttalk.domain.GeminiUseCaseFactory,
-    private val ttsHelper: com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
+    private val ttsHelper: TextToSpeechHelper
 ) : AndroidViewModel(application) {
 
     private var geminiUseCase: GeminiUseCase? = null

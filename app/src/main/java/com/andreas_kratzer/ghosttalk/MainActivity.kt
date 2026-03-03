@@ -172,7 +172,7 @@ class MainActivity : AppCompatActivity() {
 
                     NavHost(navController = navController, startDestination = "book_list") {
                         composable("book_list") {
-                            com.andreas_kratzer.ghosttalk.ui.BookListScreen(
+                            BookListScreen(
                                 bookViewModel = bookViewModel,
                                 onBookSelected = { selectedBookId ->
                                     // 1. Set the active book globally for Pages

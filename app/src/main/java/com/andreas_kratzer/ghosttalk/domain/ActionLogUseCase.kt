@@ -13,7 +13,7 @@ import java.util.Locale
  */
 class ActionLogUseCase @javax.inject.Inject constructor(
     private val settingsRepository: SettingsRepository,
-    private val logger: com.andreas_kratzer.ghosttalk.core.util.Logger
+    private val logger: Logger
 ) {
     private val gson = Gson()
     private val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
