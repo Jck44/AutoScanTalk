@@ -222,4 +222,38 @@ class SettingsViewModelTest {
         assert(ghost != null)
         assert(ghost?.name?.contains("(Inaktiv)") == true)
     }
+
+    @Test
+    fun testSetGeminiEnabled() = runTest {
+        viewModel.setGeminiEnabled(true)
+        assertEquals(true, viewModel.isGeminiEnabled.value)
+        verify { settingsRepository.isGeminiEnabled = true }
+    }
+
+    @Test
+    fun testActivateGemini_success() = runTest {
+        val geminiMock = mockk<com.andreas_kratzer.ghosttalk.domain.GeminiUseCase>(relaxed = true)
+        every { geminiUseCaseFactory.create(any()) } returns geminiMock
+        io.mockk.coEvery { geminiMock.generateResponse("Ping") } returns "Pong"
+
+        viewModel.activateGemini(application)
+        advanceUntilIdle()
+
+        verify { settingsRepository.isGeminiEnabled = true }
+        assertEquals(true, viewModel.isGeminiEnabled.value)
+    }
+
+    @Test
+    fun testActivateGemini_failure() = runTest {
+        val geminiMock = mockk<com.andreas_kratzer.ghosttalk.domain.GeminiUseCase>(relaxed = true)
+        every { geminiUseCaseFactory.create(any()) } returns geminiMock
+        io.mockk.coEvery { geminiMock.generateResponse("Ping") } throws Exception("API Error")
+        io.mockk.coEvery { geminiMock.listModels() } returns "[]"
+
+        viewModel.activateGemini(application)
+        advanceUntilIdle()
+
+        // Should not enable if test call fails
+        verify(exactly = 0) { settingsRepository.isGeminiEnabled = true }
+    }
 }

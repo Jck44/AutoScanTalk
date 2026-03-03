@@ -31,8 +31,13 @@ class GeminiUseCase(
         private const val BASE_URL_TEMPLATE = "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent"
         private const val LIST_MODELS_URL = "https://generativelanguage.googleapis.com/v1beta/models"
 
-        private var modelInitialized = false
-        private var lastSuccess: Boolean? = null // null: unknown, true: success, false: failed
+        internal var modelInitialized = false
+        internal var lastSuccess: Boolean? = null // null: unknown, true: success, false: failed
+
+        internal fun resetHealthStateForTesting() {
+            modelInitialized = false
+            lastSuccess = null
+        }
     }
     private var appCommandHandler: ((String, Map<String, String>) -> Unit)? = null
 

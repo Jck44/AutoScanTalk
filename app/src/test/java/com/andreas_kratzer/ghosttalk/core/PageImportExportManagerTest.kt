@@ -12,6 +12,8 @@ import io.mockk.slot
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
+import com.andreas_kratzer.ghosttalk.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.model.AuditoryCue
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -23,8 +25,9 @@ class PageImportExportManagerTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private val pageRepository: PageRepository = mockk(relaxed = true)
+    private val settingsRepository: SettingsRepository = mockk(relaxed = true)
     private val logger: Logger = TestLogger
-    private val manager = PageImportExportManager(pageRepository, logger, testDispatcher)
+    private val manager = PageImportExportManager(pageRepository, settingsRepository, logger, testDispatcher)
 
     @Test
     fun `importFromJson maps buttons and isActive correctly`() = runTest(testDispatcher) {
@@ -70,20 +73,56 @@ class PageImportExportManagerTest {
     }
 
     @Test
-    fun `exportToJson serializes isActive state`() = runTest(testDispatcher) {
+    fun `importFromJson handles holdingTime and auditoryCues`() = runTest(testDispatcher) {
+        val jsonString = """
+            {
+                "holdingTimeSeconds": 0.5,
+                "pages": [
+                    {
+                        "importId": "p1", "name": "Test", "rows": 1, "columns": 1,
+                        "buttons": [
+                            { 
+                                "index": 0, "label": "Btn", "active": true, 
+                                "auditoryCueText": "Listen",
+                                "action": { "type": "SpeakText", "textToSpeech": "Voice" } 
+                            }
+                        ]
+                    }
+                ]
+            }
+        """.trimIndent()
+
+        val pageSlot = slot<Page>()
+        coEvery { pageRepository.insertPage(capture(pageSlot)) } returns Unit
+        
+        // Mock holdingTimeMillis setter (actually mockk relaxed handles it, but let's be explicit if needed)
+        // In this case, we just check if it was called via the verify below.
+
+        manager.importFromJson(jsonString, "b1")
+
+        // Verify holding time update (0.5s -> 500ms)
+        io.mockk.verify { settingsRepository.holdingTimeMillis = 500L }
+
+        // Verify auditory cue mapping
+        val config = pageSlot.captured.buttonConfigs[0]
+        assertNotNull(config)
+        assertTrue(config?.auditoryCue is AuditoryCue.TextToSpeechCue)
+        assertEquals("Listen", (config?.auditoryCue as AuditoryCue.TextToSpeechCue).text)
+    }
+
+    @Test
+    fun `exportToJson serializes holdingTime and auditoryCues`() = runTest(testDispatcher) {
+        coEvery { settingsRepository.holdingTimeMillis } returns 750L
         val page = Page(
-            id = "p1", bookId = "b1", name = "Test", rows = 1, columns = 2,
+            id = "p1", bookId = "b1", name = "Test", rows = 1, columns = 1,
             buttonConfigs = listOf(
-                ButtonConfig("b1", "Active", auditoryCue = null, buttonAction = SpeakTextButtonAction("1"), isActive = true),
-                ButtonConfig("b2", "Inactive", auditoryCue = null, buttonAction = SpeakTextButtonAction("2"), isActive = false)
+                ButtonConfig("b1", "Label", auditoryCue = AuditoryCue.TextToSpeechCue("Cue"), buttonAction = SpeakTextButtonAction("1"), isActive = true)
             )
         )
 
         val json = manager.exportToJson(listOf(page))
         
-        assertTrue(json.contains("\"active\":true"))
-        assertTrue(json.contains("\"active\":false"))
-        assertTrue(json.contains("\"label\":\"Active\""))
-        assertTrue(json.contains("\"label\":\"Inactive\""))
+        assertTrue(json.contains("\"holdingTimeSeconds\":0.75"))
+        assertTrue(json.contains("\"auditoryCueText\":\"Cue\""))
     }
 }

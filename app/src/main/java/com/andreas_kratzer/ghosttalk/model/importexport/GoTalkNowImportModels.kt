@@ -3,6 +3,7 @@ package com.andreas_kratzer.ghosttalk.model.importexport
 data class ImportExportData(
     val ghosttalk_import_version: String?,
     val appName: String?,
+    val holdingTimeSeconds: Float? = null,
     val pages: List<ImportPage>
 )
 

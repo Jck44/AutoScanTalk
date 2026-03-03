@@ -2,6 +2,8 @@ package com.andreas_kratzer.ghosttalk.core
 
 import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.andreas_kratzer.ghosttalk.data.PageRepository
+import com.andreas_kratzer.ghosttalk.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.model.AuditoryCue
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.model.Page
@@ -16,6 +18,7 @@ import java.util.UUID
 
 class PageImportExportManager @javax.inject.Inject constructor(
     private val pageRepository: PageRepository,
+    private val settingsRepository: SettingsRepository,
     private val logger: Logger,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) {
@@ -31,6 +34,12 @@ class PageImportExportManager @javax.inject.Inject constructor(
             if (importData.pages.isEmpty()) {
                 logger.e("PageImportExportManager", "Parsed JSON was invalid or missing 'pages'")
                 return@withContext Result.failure(Exception("Ungültiges JSON-Format. Seiten fehlen."))
+            }
+
+            // Sync holding time if present
+            importData.holdingTimeSeconds?.let { seconds ->
+                settingsRepository.holdingTimeMillis = (seconds * 1000).toLong()
+                logger.d("PageImportExportManager", "Updated holdingTimeMillis to ${settingsRepository.holdingTimeMillis}")
             }
 
             // Optional: Lösche alte Seiten des Buches, falls wir ein komplettes Restore machen (für Sync)
@@ -69,7 +78,7 @@ class PageImportExportManager @javax.inject.Inject constructor(
                                 id = UUID.randomUUID().toString(),
                                 label = importButton.label,
                                 buttonAction = action,
-                                auditoryCue = null,
+                                auditoryCue = importButton.auditoryCueText?.let { AuditoryCue.TextToSpeechCue(it) },
                                 isActive = importButton.active ?: true
                             )
                         }
@@ -124,7 +133,7 @@ class PageImportExportManager @javax.inject.Inject constructor(
                     com.andreas_kratzer.ghosttalk.model.importexport.ImportButton(
                         index = index.toLong(),
                         label = it.label,
-                        auditoryCueText = null,
+                        auditoryCueText = (it.auditoryCue as? AuditoryCue.TextToSpeechCue)?.text,
                         action = importAction,
                         active = it.isActive
                     )
@@ -141,6 +150,7 @@ class PageImportExportManager @javax.inject.Inject constructor(
         val exportData = ImportExportData(
             ghosttalk_import_version = "1.0",
             appName = "GhosTTalk (Export)",
+            holdingTimeSeconds = settingsRepository.holdingTimeMillis / 1000f,
             pages = importPages
         )
         gson.toJson(exportData)
