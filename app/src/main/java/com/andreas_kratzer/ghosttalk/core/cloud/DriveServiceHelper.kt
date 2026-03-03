@@ -164,4 +164,26 @@ class DriveServiceHelper(private val driveService: Drive) {
             emptyList()
         }
     }
+    
+    /**
+     * Searches for files by name containing the query string.
+     */
+    suspend fun searchFiles(queryText: String): List<File> = withContext(Dispatchers.IO) {
+        val query = "name contains '$queryText' and trashed = false"
+        try {
+            Log.d(TAG, "Searching for files with query: $queryText")
+            val result: FileList = driveService.files().list().setQ(query).setFields("files(id, name, modifiedTime)").execute()
+            val files = result.files ?: emptyList()
+            Log.d(TAG, "Found ${files.size} files matching '$queryText'")
+            files
+        } catch (e: com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException) {
+            throw e
+        } catch (e: GoogleJsonResponseException) {
+            Log.e(TAG, "Failed to search files. Status: ${e.statusCode}, Message: ${e.details.message}")
+            emptyList()
+        } catch (e: IOException) {
+            Log.e(TAG, "Failed to search files due to IOException: ${e.message}", e)
+            emptyList()
+        }
+    }
 }

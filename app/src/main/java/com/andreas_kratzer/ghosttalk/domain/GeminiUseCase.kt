@@ -46,7 +46,7 @@ class GeminiUseCase(
         Log.d(TAG, "Generating response for prompt: $prompt")
         
         if (!modelInitialized) {
-            tryToSelectBestModel(token)
+            tryToSelectBestModel()
             modelInitialized = true
         }
         
@@ -60,7 +60,7 @@ class GeminiUseCase(
             if (errorMsg.contains("404") || errorMsg.contains("429")) {
                 Log.w(TAG, "Model $activeModelName failed (Error: $errorMsg), attempting to find alternative...")
                 val failedModel = activeModelName
-                if (tryToSelectBestModel(token, excludeName = failedModel)) {
+                if (tryToSelectBestModel(excludeName = failedModel)) {
                     try {
                         val result = performGeneration(token, prompt)
                         lastSuccess = true
@@ -76,7 +76,7 @@ class GeminiUseCase(
         }
     }
 
-    private suspend fun tryToSelectBestModel(token: String, excludeName: String? = null): Boolean {
+    private suspend fun tryToSelectBestModel(excludeName: String? = null): Boolean {
         try {
             val modelsJson = listModels()
             val modelsRoot = JSONObject(modelsJson)
@@ -120,7 +120,7 @@ class GeminiUseCase(
         var currentJson = createInitialRequest(prompt)
         var responseJson: String
         
-        for (turn in 1..5) { // Increased turns for more tool interaction
+        for (_turn in 1..5) { // Increased turns for more tool interaction
             responseJson = callGeminiRest(token, currentJson)
             val root = JSONObject(responseJson)
             val candidate = root.getJSONArray("candidates").getJSONObject(0)
@@ -329,8 +329,13 @@ class GeminiUseCase(
         return try {
             val drive = driveProvider() ?: return "Fehler: Drive nicht verfügbar."
             val helper = DriveServiceHelper(drive)
-            val files = helper.listFiles("root")
-            "Gefundene Dateien: " + files.take(3).joinToString { it.name }
+            val files = if (query.isEmpty()) {
+                helper.listFiles("root")
+            } else {
+                helper.searchFiles(query)
+            }
+            if (files.isEmpty()) return "Keine Dateien gefunden."
+            "Treffer in Drive: " + files.take(3).joinToString { it.name }
         } catch (e: Exception) {
             "Fehler bei Drive Suche: ${e.message}"
         }
