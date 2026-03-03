@@ -139,16 +139,16 @@
     <string name="settings_google_account_status_label">Status:</string>
 
     <!-- Cloud Sync -->
-    <string name="settings_category_cloud">Cloud Backup (Google Drive)</string>
-    <string name="settings_cloud_sync_enabled">Automatic Cloud Sync</string>
+    <string name="settings_category_cloud">Google Drive Sync</string>
+    <string name="settings_cloud_sync_enabled">Automatic Sync</string>
     <string name="settings_cloud_sync_desc">Automatically backs up the current book in the background to Google Drive. The Android system minimum for background services is 15 minutes. Wait times apply. Files may be overwritten based on mode.</string>
     <string name="settings_cloud_sync_interval">Sync Interval (Minutes)</string>
     <string name="settings_cloud_sync_mode">Sync Mode</string>
     <string name="settings_cloud_sync_mode_two_way">2-Way (Backup &amp; Restore)</string>
     <string name="settings_cloud_sync_mode_backup">1-Way (Backup to Google Drive only)</string>
     <string name="settings_cloud_sync_mode_restore">1-Way (Restore from Google Drive only)</string>
-    <string name="settings_cloud_backup_now">Backup current book (To Drive)</string>
-    <string name="settings_cloud_restore_now">Restore current book (From Drive)</string>
+    <string name="settings_cloud_backup_now">Backup</string>
+    <string name="settings_cloud_restore_now">Restore</string>
 
     <!-- Gemini Integration -->
     <string name="settings_category_gemini">Gemini AI Assistant</string>

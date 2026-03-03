@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <array name="com_google_android_gms_fonts_certs">
         <item>@array/com_google_android_gms_fonts_certs_dev</item>
         <item>@array/com_google_android_gms_fonts_certs_prod</item>
     </array>
     <string-array name="com_google_android_gms_fonts_certs_dev">
-        <item>
+        <item tools:ignore="Typos">
             MIIEqDCCApCgAwIBAgIULnS4U71p9DTTaC4/V7h486v2r8UwDQYJKoZIhvcNAQELBQAwGjEYMBYGA1UE
             AwwPR29vZ2xlIERldmVsb3BlcjAeFw0xNzExMDMxNDU2MDVaFw00NTEwMjYxNDU2MDVaMBoxGDAW
             BgNVBAMMD0dvb2dsZSBEZXZlbG9wZXIwggGiMA0GCSqGSIb3DQEBAQUAA4IBjwAwggGKAoIBgQCo
@@ -40,7 +40,7 @@
         </item>
     </string-array>
     <string-array name="com_google_android_gms_fonts_certs_prod">
-        <item>
+        <item tools:ignore="Typos">
             MIIEqDCCApCgAwIBAgIULnS4U71p9DTTaC4/V7h486v2r8UwDQYJKoZIhvcNAQELBQAwGjEYMBYGA1UE
             AwwPR29vZ2xlIERldmVsb3BlcjAeFw0MTIxMDI1MTU1NjM4Fw00MjEwMTcxNTU2MzhZMBoxGDAW
             BgNVBAMMD0dvb2dsZSBEZXZlbG9wZXIwggGiMA0GCSqGSIb3DQEBAQUAA4IBjwAwggGKAoIBgQCo

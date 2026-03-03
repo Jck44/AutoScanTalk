@@ -10,17 +10,18 @@ import com.andreas_kratzer.ghosttalk.core.ActionExecutor
 import com.andreas_kratzer.ghosttalk.core.PageImportExportManager
 import com.andreas_kratzer.ghosttalk.core.ScannerEngine
 import com.andreas_kratzer.ghosttalk.core.cloud.DriveAuthManager
+import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.andreas_kratzer.ghosttalk.data.PageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.domain.ActionLogUseCase
 import com.andreas_kratzer.ghosttalk.domain.CreatePageUseCase
 import com.andreas_kratzer.ghosttalk.domain.GeminiUseCase
+import com.andreas_kratzer.ghosttalk.domain.GeminiUseCaseFactory
 import com.andreas_kratzer.ghosttalk.domain.GetPagesUseCase
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,9 +32,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-
-import com.andreas_kratzer.ghosttalk.core.util.Logger
-import com.andreas_kratzer.ghosttalk.domain.GeminiUseCaseFactory
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -180,7 +178,7 @@ class PageViewModel @Inject constructor(
             }
         }
 
-        ttsHelper.fallbackListener = object : com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper.OnVoiceFallbackListener {
+        ttsHelper.fallbackListener = object : TextToSpeechHelper.OnVoiceFallbackListener {
             override fun onVoiceFallback(originalVoice: String, fallbackVoice: String?, reason: String) {
                 viewModelScope.launch {
                     val message = if (fallbackVoice != null) {
@@ -188,7 +186,7 @@ class PageViewModel @Inject constructor(
                     } else {
                         "Stimme $originalVoice nicht verfügbar (Offline). Fallback auf System-Standard."
                     }
-                    android.widget.Toast.makeText(getApplication<android.app.Application>(), message, android.widget.Toast.LENGTH_LONG).show()
+                    android.widget.Toast.makeText(getApplication<Application>(), message, android.widget.Toast.LENGTH_LONG).show()
                 }
             }
         }

@@ -215,7 +215,7 @@ class TextToSpeechHelper @Inject constructor(
                         Log.i("TextToSpeechHelper", "Falling back from $voiceName to local voice ${localFallback.name}")
                     } else {
                         // Fallback level 2: Use system default for that language
-                        tts?.setLanguage(locale)
+                        tts?.language = locale
                         fallbackListener?.onVoiceFallback(voiceName, null, "No Network, No Local Voice")
                         Log.i("TextToSpeechHelper", "Falling back from $voiceName to system default for ${locale.displayName}")
                     }
@@ -224,7 +224,7 @@ class TextToSpeechHelper @Inject constructor(
                 }
             } else {
                 Log.w("TextToSpeechHelper", "Requested voice $voiceName not found. Falling back to default voice for ${locale.displayName}.")
-                tts?.setLanguage(locale)
+                tts?.language = locale
                 fallbackListener?.onVoiceFallback(voiceName, null, "Voice Not Found")
             }
         }

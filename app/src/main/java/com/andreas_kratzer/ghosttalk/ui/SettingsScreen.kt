@@ -783,35 +783,35 @@ fun ThemeSettings(settingsViewModel: SettingsViewModel) {
 
     Box(modifier = Modifier.fillMaxWidth()) {
         val currentLabel = when (themeMode) {
-            "LIGHT" -> stringResource(com.andreas_kratzer.ghosttalk.R.string.settings_theme_light)
-            "DARK" -> stringResource(com.andreas_kratzer.ghosttalk.R.string.settings_theme_dark)
-            else -> stringResource(com.andreas_kratzer.ghosttalk.R.string.settings_theme_system)
+            "LIGHT" -> stringResource(R.string.settings_theme_light)
+            "DARK" -> stringResource(R.string.settings_theme_dark)
+            else -> stringResource(R.string.settings_theme_system)
         }
         OutlinedTextField(
             value = currentLabel,
             onValueChange = {},
             readOnly = true,
-            label = { Text(stringResource(com.andreas_kratzer.ghosttalk.R.string.settings_theme_mode)) },
+            label = { Text(stringResource(R.string.settings_theme_mode)) },
             modifier = Modifier.fillMaxWidth().clickable { expanded = true }
         )
         Box(modifier = Modifier.matchParentSize().clickable { expanded = true })
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             DropdownMenuItem(
-                text = { Text(stringResource(com.andreas_kratzer.ghosttalk.R.string.settings_theme_system)) },
+                text = { Text(stringResource(R.string.settings_theme_system)) },
                 onClick = {
                     settingsViewModel.setThemeMode("SYSTEM")
                     expanded = false
                 }
             )
             DropdownMenuItem(
-                text = { Text(stringResource(com.andreas_kratzer.ghosttalk.R.string.settings_theme_light)) },
+                text = { Text(stringResource(R.string.settings_theme_light)) },
                 onClick = {
                     settingsViewModel.setThemeMode("LIGHT")
                     expanded = false
                 }
             )
             DropdownMenuItem(
-                text = { Text(stringResource(com.andreas_kratzer.ghosttalk.R.string.settings_theme_dark)) },
+                text = { Text(stringResource(R.string.settings_theme_dark)) },
                 onClick = {
                     settingsViewModel.setThemeMode("DARK")
                     expanded = false

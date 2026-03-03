@@ -51,7 +51,7 @@ class CloudSyncUseCaseTest {
     fun `syncBook with BACKUP_ONLY mode always uploads and overwrites remote`() = runTest {
         // Prepare mocks for a scenario where remote is newer, but BACKUP_ONLY should still overwrite it
         val bookId = "test-book"
-        val mockDriveHelper = mockk<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>(relaxed = true)
+        mockk<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>(relaxed = true)
         
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder(any()) } returns "folder_1"
         

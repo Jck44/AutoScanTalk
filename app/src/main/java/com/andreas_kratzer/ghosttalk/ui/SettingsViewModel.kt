@@ -149,7 +149,7 @@ class SettingsViewModel @Inject constructor(
         loadAvailableVoices()
         loadAvailableAudioDevices()
 
-        tempTtsHelper.fallbackListener = object : com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper.OnVoiceFallbackListener {
+        tempTtsHelper.fallbackListener = object : TextToSpeechHelper.OnVoiceFallbackListener {
             override fun onVoiceFallback(originalVoice: String, fallbackVoice: String?, reason: String) {
                 viewModelScope.launch {
                     val message = if (fallbackVoice != null) {
@@ -157,7 +157,7 @@ class SettingsViewModel @Inject constructor(
                     } else {
                         "Stimme $originalVoice nicht verfügbar (Offline). Fallback auf System-Standard."
                     }
-                    android.widget.Toast.makeText(getApplication<android.app.Application>(), message, android.widget.Toast.LENGTH_LONG).show()
+                    android.widget.Toast.makeText(getApplication<Application>(), message, android.widget.Toast.LENGTH_LONG).show()
                 }
             }
         }
@@ -202,7 +202,7 @@ class SettingsViewModel @Inject constructor(
                     
                     if (fallbackMatch == null) {
                         mergedList.add(
-                            com.andreas_kratzer.ghosttalk.model.AudioOutputDevice(
+                            AudioOutputDevice(
                                 address = selectedAddress,
                                 name = "$cachedName (Inaktiv)",
                                 type = 0,
