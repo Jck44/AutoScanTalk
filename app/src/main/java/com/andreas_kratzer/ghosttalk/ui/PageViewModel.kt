@@ -9,14 +9,13 @@ import androidx.lifecycle.viewModelScope
 import com.andreas_kratzer.ghosttalk.core.ActionExecutor
 import com.andreas_kratzer.ghosttalk.core.FrequentActionResolver
 import com.andreas_kratzer.ghosttalk.core.PageImportExportManager
-import com.andreas_kratzer.ghosttalk.data.TemplateRepository
-import com.andreas_kratzer.ghosttalk.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.core.ScannerEngine
 import com.andreas_kratzer.ghosttalk.core.cloud.DriveAuthManager
 import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.data.PageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.data.TemplateRepository
 import com.andreas_kratzer.ghosttalk.domain.ActionLogUseCase
 import com.andreas_kratzer.ghosttalk.domain.CreatePageUseCase
 import com.andreas_kratzer.ghosttalk.domain.GeminiUseCase
@@ -24,6 +23,7 @@ import com.andreas_kratzer.ghosttalk.domain.GeminiUseCaseFactory
 import com.andreas_kratzer.ghosttalk.domain.GetPagesUseCase
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.Page
+import com.andreas_kratzer.ghosttalk.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -34,7 +34,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch

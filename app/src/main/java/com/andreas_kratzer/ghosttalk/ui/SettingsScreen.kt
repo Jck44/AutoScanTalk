@@ -256,19 +256,27 @@ fun SettingsTextField(
     onValueChange: (String) -> Unit,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default
 ) {
-    TextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = { Text(label) },
-        keyboardOptions = keyboardOptions,
-        modifier = Modifier.fillMaxWidth(),
-        colors = TextFieldDefaults.colors(
-            unfocusedContainerColor = Color.Transparent,
-            focusedContainerColor = Color.Transparent,
-            unfocusedIndicatorColor = Color.Transparent,
-            focusedIndicatorColor = Color.Transparent
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.primary
         )
-    )
+        androidx.compose.foundation.text.BasicTextField(
+            value = value,
+            onValueChange = onValueChange,
+            textStyle = MaterialTheme.typography.bodyLarge.copy(
+                color = MaterialTheme.colorScheme.onSurface
+            ),
+            keyboardOptions = keyboardOptions,
+            modifier = Modifier.fillMaxWidth(),
+            cursorBrush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.primary)
+        )
+    }
 }
 
 @Composable
@@ -653,13 +661,6 @@ fun CloudSettings(settingsViewModel: SettingsViewModel) {
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         
-        SettingsTextField(
-            label = stringResource(R.string.settings_cloud_sync_interval),
-            value = syncIntervalMinutesInput,
-            onValueChange = { settingsViewModel.setSyncIntervalMinutesInput(it) },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-        )
-
         Box(modifier = Modifier.fillMaxWidth()) {
             val currentModeLabel = when (syncMode) {
                 "BACKUP_ONLY" -> stringResource(R.string.settings_cloud_sync_mode_backup)
@@ -686,6 +687,13 @@ fun CloudSettings(settingsViewModel: SettingsViewModel) {
                 })
             }
         }
+
+        SettingsTextField(
+            label = stringResource(R.string.settings_cloud_sync_interval),
+            value = syncIntervalMinutesInput,
+            onValueChange = { settingsViewModel.setSyncIntervalMinutesInput(it) },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+        )
         
         Row(
             modifier = Modifier.fillMaxWidth(),
