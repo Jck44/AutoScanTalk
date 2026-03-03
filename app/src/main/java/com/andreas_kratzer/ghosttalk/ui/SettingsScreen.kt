@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.graphics.Color
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
@@ -224,6 +225,78 @@ fun PreferenceCategory(title: String, content: @Composable ColumnScope.() -> Uni
 }
 
 @Composable
+fun SettingsClickableItem(
+    label: String,
+    value: String,
+    onClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(vertical = 4.dp)
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+    }
+}
+
+@Composable
+fun SettingsTextField(
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default
+) {
+    TextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label) },
+        keyboardOptions = keyboardOptions,
+        modifier = Modifier.fillMaxWidth(),
+        colors = TextFieldDefaults.colors(
+            unfocusedContainerColor = Color.Transparent,
+            focusedContainerColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent,
+            focusedIndicatorColor = Color.Transparent
+        )
+    )
+}
+
+@Composable
+fun SettingsToggleItem(
+    label: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onCheckedChange(!checked) }
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.bodyLarge
+        )
+        Switch(
+            checked = checked,
+            onCheckedChange = { onCheckedChange(it) }
+        )
+    }
+}
+
+@Composable
 fun GeneralSettings(
     allPages: List<com.andreas_kratzer.ghosttalk.model.Page>,
     defaultStartPageId: String?,
@@ -238,14 +311,11 @@ fun GeneralSettings(
         Box(modifier = Modifier.fillMaxWidth()) {
             val currentStartPageName = allPages.find { it.id == defaultStartPageId }?.name 
                 ?: stringResource(R.string.settings_start_page_auto)
-            OutlinedTextField(
+            SettingsClickableItem(
+                label = stringResource(R.string.settings_start_page),
                 value = currentStartPageName,
-                onValueChange = {},
-                readOnly = true,
-                label = { Text(stringResource(R.string.settings_start_page)) },
-                modifier = Modifier.fillMaxWidth().clickable { expandedStartPage = true }
+                onClick = { expandedStartPage = true }
             )
-            Box(modifier = Modifier.matchParentSize().clickable { expandedStartPage = true })
             DropdownMenu(expanded = expandedStartPage, onDismissRequest = { expandedStartPage = false }) {
                 DropdownMenuItem(text = { Text(stringResource(R.string.settings_start_page_auto)) }, onClick = {
                     settingsViewModel.setDefaultStartPageId(null)
@@ -267,14 +337,11 @@ fun GeneralSettings(
                 "row_by_row" -> stringResource(R.string.settings_pattern_row_by_row)
                 else -> stringResource(R.string.settings_pattern_linear)
             }
-            OutlinedTextField(
+            SettingsClickableItem(
+                label = stringResource(R.string.settings_scan_pattern),
                 value = currentPatternLabel,
-                onValueChange = {},
-                readOnly = true,
-                label = { Text(stringResource(R.string.settings_scan_pattern)) },
-                modifier = Modifier.fillMaxWidth().clickable { expandedDefaultScanPattern = true }
+                onClick = { expandedDefaultScanPattern = true }
             )
-            Box(modifier = Modifier.matchParentSize().clickable { expandedDefaultScanPattern = true })
             DropdownMenu(expanded = expandedDefaultScanPattern, onDismissRequest = { expandedDefaultScanPattern = false }) {
                 DropdownMenuItem(text = { Text(stringResource(R.string.settings_pattern_linear)) }, onClick = {
                     settingsViewModel.setDefaultScanPattern("linear")
@@ -316,14 +383,11 @@ fun VoiceSettings(
                 "${stringResource(R.string.settings_system_default)} (${Locale.getDefault().displayName})"
             } else Locale.forLanguageTag(selectedLanguage).displayName
             
-            OutlinedTextField(
+            SettingsClickableItem(
+                label = stringResource(R.string.settings_tts_language),
                 value = currentDisplayName,
-                onValueChange = {},
-                readOnly = true,
-                label = { Text(stringResource(R.string.settings_tts_language)) },
-                modifier = Modifier.fillMaxWidth().clickable { expandedLanguage = true }
+                onClick = { expandedLanguage = true }
             )
-            Box(modifier = Modifier.matchParentSize().clickable { expandedLanguage = true })
             DropdownMenu(expanded = expandedLanguage, onDismissRequest = { expandedLanguage = false }) {
                 DropdownMenuItem(text = { Text(stringResource(R.string.settings_system_default)) }, onClick = {
                     settingsViewModel.setTtsLanguage("default")
@@ -343,14 +407,11 @@ fun VoiceSettings(
             val currentVoiceDisplayName = if (selectedVoiceName.isNullOrEmpty()) {
                 stringResource(R.string.settings_voice_default)
             } else VoiceUtils.formatVoiceName(selectedVoiceName)
-            OutlinedTextField(
+            SettingsClickableItem(
+                label = stringResource(R.string.settings_select_voice),
                 value = currentVoiceDisplayName,
-                onValueChange = {},
-                readOnly = true,
-                label = { Text(stringResource(R.string.settings_select_voice)) },
-                modifier = Modifier.fillMaxWidth().clickable { expandedVoice = true }
+                onClick = { expandedVoice = true }
             )
-            Box(modifier = Modifier.matchParentSize().clickable { expandedVoice = true })
             DropdownMenu(expanded = expandedVoice, onDismissRequest = { expandedVoice = false }) {
                 DropdownMenuItem(text = { Text(stringResource(R.string.settings_voice_default)) }, onClick = {
                     settingsViewModel.setTtsVoice(null)
@@ -391,15 +452,12 @@ fun AudioOutputSettings(
         // TTS Device
         Box(modifier = Modifier.fillMaxWidth()) {
             val defaultLabel = stringResource(R.string.settings_audio_default)
-            OutlinedTextField(
+            SettingsClickableItem(
+                label = stringResource(R.string.settings_audio_tts),
                 value = settingsViewModel.getResolvedDeviceName(selectedTtsAudioDeviceAddress)
                     .takeUnless { it == "System-Standard (Automatisch)" } ?: defaultLabel,
-                onValueChange = {},
-                readOnly = true,
-                label = { Text(stringResource(R.string.settings_audio_tts)) },
-                modifier = Modifier.fillMaxWidth().clickable { expandedTtsDevice = true }
+                onClick = { expandedTtsDevice = true }
             )
-            Box(modifier = Modifier.matchParentSize().clickable { expandedTtsDevice = true })
             DropdownMenu(expanded = expandedTtsDevice, onDismissRequest = { expandedTtsDevice = false }) {
                 DropdownMenuItem(text = { Text(stringResource(R.string.settings_audio_default)) }, onClick = {
                     settingsViewModel.setTtsAudioDevice(null)
@@ -417,15 +475,12 @@ fun AudioOutputSettings(
         // Cues Device
         Box(modifier = Modifier.fillMaxWidth()) {
             val defaultLabel = stringResource(R.string.settings_audio_default)
-            OutlinedTextField(
+            SettingsClickableItem(
+                label = stringResource(R.string.settings_audio_cues),
                 value = settingsViewModel.getResolvedDeviceName(selectedCuesAudioDeviceAddress)
                     .takeUnless { it == "System-Standard (Automatisch)" } ?: defaultLabel,
-                onValueChange = {},
-                readOnly = true,
-                label = { Text(stringResource(R.string.settings_audio_cues)) },
-                modifier = Modifier.fillMaxWidth().clickable { expandedCuesDevice = true }
+                onClick = { expandedCuesDevice = true }
             )
-            Box(modifier = Modifier.matchParentSize().clickable { expandedCuesDevice = true })
             DropdownMenu(expanded = expandedCuesDevice, onDismissRequest = { expandedCuesDevice = false }) {
                 DropdownMenuItem(text = { Text(stringResource(R.string.settings_audio_default)) }, onClick = {
                     settingsViewModel.setCuesAudioDevice(null)
@@ -472,19 +527,17 @@ fun ScanningSettings(
             }
             Switch(checked = resumeScanningFromStart, onCheckedChange = { settingsViewModel.setResumeScanningFromStart(it) })
         }
-        OutlinedTextField(
+        SettingsTextField(
+            label = stringResource(R.string.settings_scan_delay),
             value = scanDelayInput,
             onValueChange = { settingsViewModel.setScanDelayInput(it) },
-            label = { Text(stringResource(R.string.settings_scan_delay)) },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier.fillMaxWidth()
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
         )
-        OutlinedTextField(
+        SettingsTextField(
+            label = stringResource(R.string.settings_holding_time),
             value = holdingTimeInput,
             onValueChange = { settingsViewModel.setHoldingTimeInput(it) },
-            label = { Text(stringResource(R.string.settings_holding_time)) },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier.fillMaxWidth()
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
         )
     }
 }
@@ -495,11 +548,10 @@ fun HardwareSettings(
     settingsViewModel: SettingsViewModel
 ) {
     PreferenceCategory(stringResource(R.string.settings_category_hardware)) {
-        OutlinedTextField(
+        SettingsTextField(
+            label = stringResource(R.string.settings_switch_key),
             value = switchActivationKey,
-            onValueChange = { settingsViewModel.setSwitchActivationKey(it) },
-            label = { Text(stringResource(R.string.settings_switch_key)) },
-            modifier = Modifier.fillMaxWidth()
+            onValueChange = { settingsViewModel.setSwitchActivationKey(it) }
         )
     }
 }
@@ -589,20 +641,11 @@ fun CloudSettings(settingsViewModel: SettingsViewModel) {
     var expandedMode by remember { mutableStateOf(false) }
     
     PreferenceCategory(stringResource(R.string.settings_category_cloud)) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { settingsViewModel.setCloudSyncEnabled(!isCloudSyncEnabled) },
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(stringResource(R.string.settings_cloud_sync_enabled))
-            }
-            Switch(
-                checked = isCloudSyncEnabled,
-                onCheckedChange = { settingsViewModel.setCloudSyncEnabled(it) }
-            )
-        }
+        SettingsToggleItem(
+            label = stringResource(R.string.settings_cloud_sync_enabled),
+            checked = isCloudSyncEnabled,
+            onCheckedChange = { settingsViewModel.setCloudSyncEnabled(it) }
+        )
         
         Text(
             text = stringResource(R.string.settings_cloud_sync_desc),
@@ -610,12 +653,11 @@ fun CloudSettings(settingsViewModel: SettingsViewModel) {
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         
-        OutlinedTextField(
+        SettingsTextField(
+            label = stringResource(R.string.settings_cloud_sync_interval),
             value = syncIntervalMinutesInput,
             onValueChange = { settingsViewModel.setSyncIntervalMinutesInput(it) },
-            label = { Text(stringResource(R.string.settings_cloud_sync_interval)) },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier.fillMaxWidth()
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
         )
 
         Box(modifier = Modifier.fillMaxWidth()) {
@@ -624,14 +666,11 @@ fun CloudSettings(settingsViewModel: SettingsViewModel) {
                 "RESTORE_ONLY" -> stringResource(R.string.settings_cloud_sync_mode_restore)
                 else -> stringResource(R.string.settings_cloud_sync_mode_two_way)
             }
-            OutlinedTextField(
+            SettingsClickableItem(
+                label = stringResource(R.string.settings_cloud_sync_mode),
                 value = currentModeLabel,
-                onValueChange = {},
-                readOnly = true,
-                label = { Text(stringResource(R.string.settings_cloud_sync_mode)) },
-                modifier = Modifier.fillMaxWidth().clickable { expandedMode = true }
+                onClick = { expandedMode = true }
             )
-            Box(modifier = Modifier.matchParentSize().clickable { expandedMode = true })
             DropdownMenu(expanded = expandedMode, onDismissRequest = { expandedMode = false }) {
                 DropdownMenuItem(text = { Text(stringResource(R.string.settings_cloud_sync_mode_two_way)) }, onClick = {
                     settingsViewModel.setSyncMode("TWO_WAY")
@@ -842,14 +881,11 @@ fun AppLanguageSettings(
                 "en" -> stringResource(R.string.settings_app_language_en)
                 else -> stringResource(R.string.settings_app_language_system)
             }
-            OutlinedTextField(
+            SettingsClickableItem(
+                label = stringResource(R.string.settings_app_language),
                 value = currentLabel,
-                onValueChange = {},
-                readOnly = true,
-                label = { Text(stringResource(R.string.settings_app_language)) },
-                modifier = Modifier.fillMaxWidth().clickable { expanded = true }
+                onClick = { expanded = true }
             )
-            Box(modifier = Modifier.matchParentSize().clickable { expanded = true })
             DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.settings_app_language_system)) },
@@ -890,14 +926,11 @@ fun ThemeSettings(settingsViewModel: SettingsViewModel) {
             "DARK" -> stringResource(R.string.settings_theme_dark)
             else -> stringResource(R.string.settings_theme_system)
         }
-        OutlinedTextField(
+        SettingsClickableItem(
+            label = stringResource(R.string.settings_theme_mode),
             value = currentLabel,
-            onValueChange = {},
-            readOnly = true,
-            label = { Text(stringResource(R.string.settings_theme_mode)) },
-            modifier = Modifier.fillMaxWidth().clickable { expanded = true }
+            onClick = { expanded = true }
         )
-        Box(modifier = Modifier.matchParentSize().clickable { expanded = true })
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.settings_theme_system)) },
