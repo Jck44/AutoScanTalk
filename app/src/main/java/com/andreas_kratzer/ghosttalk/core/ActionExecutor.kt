@@ -21,7 +21,6 @@ import kotlinx.coroutines.launch
 
 class ActionExecutor(
     private val scope: CoroutineScope,
-    private val pageRepository: PageRepository,
     private val settingsRepository: SettingsRepository,
     var geminiUseCase: GeminiUseCase?,
     var ttsHelper: TextToSpeechHelper?,

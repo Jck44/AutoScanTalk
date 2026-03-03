@@ -46,8 +46,8 @@ class SettingsViewModel @Inject constructor(
     private val _selectedLanguageTag = MutableStateFlow("default")
     val selectedLanguageTag: StateFlow<String> = _selectedLanguageTag.asStateFlow()
 
-    private val _availableVoices = MutableStateFlow<List<android.speech.tts.Voice>>(emptyList())
-    val availableVoices: StateFlow<List<android.speech.tts.Voice>> = _availableVoices.asStateFlow()
+    private val _availableVoices = MutableStateFlow<List<Voice>>(emptyList())
+    val availableVoices: StateFlow<List<Voice>> = _availableVoices.asStateFlow()
 
     private val _selectedVoiceName = MutableStateFlow<String?>(null)
     val selectedVoiceName: StateFlow<String?> = _selectedVoiceName.asStateFlow()

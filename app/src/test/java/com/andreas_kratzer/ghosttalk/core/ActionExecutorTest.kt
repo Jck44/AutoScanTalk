@@ -20,7 +20,6 @@ import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ActionExecutorTest {
-    private val pageRepository = mockk<PageRepository>(relaxed = true)
     private val settingsRepository = mockk<SettingsRepository>(relaxed = true)
     private val ttsHelper = mockk<TextToSpeechHelper>(relaxed = true)
     private val geminiUseCase = mockk<com.andreas_kratzer.ghosttalk.domain.GeminiUseCase>(relaxed = true)
@@ -37,7 +36,6 @@ class ActionExecutorTest {
 
     private fun createExecutor(scope: kotlinx.coroutines.CoroutineScope) = ActionExecutor(
         scope = scope,
-        pageRepository = pageRepository,
         settingsRepository = settingsRepository,
         ttsHelper = ttsHelper,
         geminiUseCase = geminiUseCase,

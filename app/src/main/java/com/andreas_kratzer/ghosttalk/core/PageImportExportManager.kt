@@ -28,7 +28,7 @@ class PageImportExportManager @javax.inject.Inject constructor(
             logger.d("PageImportExportManager", "Starting import mapping parsing for book $bookId...")
             val importData = gson.fromJson(jsonString, ImportExportData::class.java)
 
-            if (importData.pages.isNullOrEmpty()) {
+            if (importData.pages.isEmpty()) {
                 logger.e("PageImportExportManager", "Parsed JSON was invalid or missing 'pages'")
                 return@withContext Result.failure(Exception("Ungültiges JSON-Format. Seiten fehlen."))
             }

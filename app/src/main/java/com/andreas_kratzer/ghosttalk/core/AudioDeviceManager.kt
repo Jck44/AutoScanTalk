@@ -5,8 +5,11 @@ import android.media.AudioDeviceInfo
 import android.media.AudioManager
 import com.andreas_kratzer.ghosttalk.model.AudioOutputDevice
 
-class AudioDeviceManager @javax.inject.Inject constructor(
-    @dagger.hilt.android.qualifiers.ApplicationContext private val context: Context
+import javax.inject.Inject
+import dagger.hilt.android.qualifiers.ApplicationContext
+
+class AudioDeviceManager @Inject constructor(
+    @param:ApplicationContext private val context: Context
 ) {
 
     private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager

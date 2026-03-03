@@ -23,8 +23,6 @@ class BookViewModel @Inject constructor(
     private val _allBooks = MutableStateFlow<List<Book>>(emptyList())
     val allBooks: StateFlow<List<Book>> = _allBooks.asStateFlow()
 
-    private val _activeBookId = MutableStateFlow<String?>(null)
-    val activeBookId: StateFlow<String?> = _activeBookId.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -34,9 +32,6 @@ class BookViewModel @Inject constructor(
         }
     }
 
-    fun selectBook(id: String) {
-        _activeBookId.value = id
-    }
 
     fun createNewBook(name: String) {
         val newBook = Book(id = UUID.randomUUID().toString(), name = name)

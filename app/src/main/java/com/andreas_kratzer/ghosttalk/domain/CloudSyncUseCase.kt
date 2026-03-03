@@ -12,9 +12,11 @@ import java.io.File
 
 import android.util.Log
 
-class CloudSyncUseCase @javax.inject.Inject constructor(
-    @dagger.hilt.android.qualifiers.ApplicationContext private val context: Context,
-    private val pageRepository: PageRepository,
+import javax.inject.Inject
+import dagger.hilt.android.qualifiers.ApplicationContext
+
+class CloudSyncUseCase @Inject constructor(
+    @param:ApplicationContext private val context: Context,
     private val settingsRepository: SettingsRepository,
     private val importExportManager: PageImportExportManager
 ) {

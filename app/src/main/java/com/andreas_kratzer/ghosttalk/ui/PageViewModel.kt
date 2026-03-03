@@ -32,19 +32,22 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+import com.andreas_kratzer.ghosttalk.core.util.Logger
+import com.andreas_kratzer.ghosttalk.domain.GeminiUseCaseFactory
+
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class PageViewModel @Inject constructor(
     application: Application,
     private val pageRepository: PageRepository,
     private val settingsRepository: SettingsRepository,
-    private val logger: com.andreas_kratzer.ghosttalk.core.util.Logger,
+    logger: Logger,
     private val importExportManager: PageImportExportManager,
     private val getPagesUseCase: GetPagesUseCase,
     private val actionLogUseCase: ActionLogUseCase,
     private val createPageUseCase: CreatePageUseCase,
-    private val driveAuthManager: DriveAuthManager,
-    private val geminiUseCaseFactory: com.andreas_kratzer.ghosttalk.domain.GeminiUseCaseFactory,
+    driveAuthManager: DriveAuthManager,
+    private val geminiUseCaseFactory: GeminiUseCaseFactory,
     private val ttsHelper: TextToSpeechHelper
 ) : AndroidViewModel(application) {
 
@@ -72,7 +75,6 @@ class PageViewModel @Inject constructor(
 
     val actionExecutor = ActionExecutor(
         scope = viewModelScope,
-        pageRepository = pageRepository,
         settingsRepository = settingsRepository,
         ttsHelper = ttsHelper,
         geminiUseCase = null // Will be set in init
