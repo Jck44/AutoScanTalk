@@ -11,9 +11,9 @@ import java.util.Locale
 /**
  * Use case for managing action logs (timestamping, limiting size, and persistence).
  */
-class ActionLogUseCase(
+class ActionLogUseCase @javax.inject.Inject constructor(
     private val settingsRepository: SettingsRepository,
-    private val logger: Logger = AppLogger
+    private val logger: com.andreas_kratzer.ghosttalk.core.util.Logger
 ) {
     private val gson = Gson()
     private val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())

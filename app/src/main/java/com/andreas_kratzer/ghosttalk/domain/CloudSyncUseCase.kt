@@ -12,8 +12,8 @@ import java.io.File
 
 import android.util.Log
 
-class CloudSyncUseCase(
-    private val context: Context,
+class CloudSyncUseCase @javax.inject.Inject constructor(
+    @dagger.hilt.android.qualifiers.ApplicationContext private val context: Context,
     private val pageRepository: PageRepository,
     private val settingsRepository: SettingsRepository,
     private val importExportManager: PageImportExportManager

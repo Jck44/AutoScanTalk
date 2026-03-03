@@ -11,8 +11,8 @@ import java.io.File
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 
-class TextToSpeechHelper(
-    private val context: Context
+class TextToSpeechHelper @javax.inject.Inject constructor(
+    @dagger.hilt.android.qualifiers.ApplicationContext private val context: Context
 ) : TextToSpeech.OnInitListener {
 
     private var tts: TextToSpeech? = null

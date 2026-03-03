@@ -31,6 +31,9 @@ class PageViewModelTest {
     private lateinit var getPagesUseCase: GetPagesUseCase
     private lateinit var actionLogUseCase: ActionLogUseCase
     private lateinit var createPageUseCase: CreatePageUseCase
+    private lateinit var driveAuthManager: com.andreas_kratzer.ghosttalk.core.cloud.DriveAuthManager
+    private lateinit var geminiUseCaseFactory: com.andreas_kratzer.ghosttalk.domain.GeminiUseCaseFactory
+    private lateinit var ttsHelper: com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
     private lateinit var viewModel: PageViewModel
 
     @Before
@@ -44,6 +47,9 @@ class PageViewModelTest {
         getPagesUseCase = mockk<GetPagesUseCase>(relaxed = true)
         actionLogUseCase = mockk<ActionLogUseCase>(relaxed = true)
         createPageUseCase = mockk<CreatePageUseCase>(relaxed = true)
+        driveAuthManager = mockk(relaxed = true)
+        geminiUseCaseFactory = mockk(relaxed = true)
+        ttsHelper = mockk(relaxed = true)
         
         // Mock default flows
         every { settingsRepository.ttsLanguageFlow } returns MutableStateFlow("default")
@@ -66,15 +72,25 @@ class PageViewModelTest {
         Dispatchers.resetMain()
     }
 
+    private fun createViewModel(): PageViewModel {
+        return PageViewModel(
+            application = application,
+            pageRepository = pageRepository,
+            settingsRepository = settingsRepository,
+            logger = TestLogger,
+            importExportManager = importExportManager,
+            getPagesUseCase = getPagesUseCase,
+            actionLogUseCase = actionLogUseCase,
+            createPageUseCase = createPageUseCase,
+            driveAuthManager = driveAuthManager,
+            geminiUseCaseFactory = geminiUseCaseFactory,
+            ttsHelper = ttsHelper
+        )
+    }
+
     @Test
     fun `createNewPage delegates to CreatePageUseCase`() = runTest {
-        val mockTts = mockk<com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper>(relaxed = true)
-        viewModel = PageViewModel(
-            application, pageRepository, settingsRepository, ttsHelper = mockTts, 
-            logger = TestLogger, importExportManager = importExportManager,
-            getPagesUseCase = getPagesUseCase, actionLogUseCase = actionLogUseCase,
-            createPageUseCase = createPageUseCase
-        )
+        viewModel = createViewModel()
         
         viewModel.createNewPage("Test Page", rows = 2, columns = 2, bookId = "test-book-id")
         testDispatcher.scheduler.advanceUntilIdle()
@@ -87,43 +103,26 @@ class PageViewModelTest {
         val mockLogs = listOf("[12:00:00] Log 1")
         every { actionLogUseCase.loadSavedLogs() } returns mockLogs
         
-        val mockTts = mockk<com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper>(relaxed = true)
-        viewModel = PageViewModel(
-            application, pageRepository, settingsRepository, ttsHelper = mockTts, 
-            logger = TestLogger, importExportManager = importExportManager,
-            getPagesUseCase = getPagesUseCase, actionLogUseCase = actionLogUseCase,
-            createPageUseCase = createPageUseCase
-        )
+        viewModel = createViewModel()
         
         assertEquals(mockLogs, viewModel.lastActions.value)
     }
 
     @Test
     fun `logAction calls formatAndAddEntry on ActionLogUseCase`() = runTest {
-        val mockTts = mockk<com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper>(relaxed = true)
-        viewModel = PageViewModel(
-            application, pageRepository, settingsRepository, ttsHelper = mockTts, 
-            logger = TestLogger, importExportManager = importExportManager,
-            getPagesUseCase = getPagesUseCase, actionLogUseCase = actionLogUseCase,
-            createPageUseCase = createPageUseCase
-        )
+        viewModel = createViewModel()
         
         val button = ButtonConfig(label = "Test", auditoryCue = null, buttonAction = SpeakTextButtonAction("Hey"))
         viewModel.loadPage(Page(id = "p1", bookId = "b1", name = "T", rows = 1, columns = 1, buttonConfigs = listOf(button)))
         
         viewModel.activateButtonAtIndex(0)
+        testDispatcher.scheduler.runCurrent()
         verify { actionLogUseCase.formatAndAddEntry(match { it.contains("Hey") }, any()) }
     }
 
     @Test
     fun `clearActionLog calls clearLogs on ActionLogUseCase`() = runTest {
-        val mockTts = mockk<com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper>(relaxed = true)
-        viewModel = PageViewModel(
-            application, pageRepository, settingsRepository, ttsHelper = mockTts, 
-            logger = TestLogger, importExportManager = importExportManager,
-            getPagesUseCase = getPagesUseCase, actionLogUseCase = actionLogUseCase,
-            createPageUseCase = createPageUseCase
-        )
+        viewModel = createViewModel()
         
         viewModel.clearActionLogs()
         verify { actionLogUseCase.clearLogs() }
@@ -135,13 +134,7 @@ class PageViewModelTest {
         coEvery { importExportManager.importFromJson(any(), any()) } returns Result.success(1)
 
         var successCalled = false
-        val mockTts = mockk<com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper>(relaxed = true)
-        viewModel = PageViewModel(
-            application, pageRepository, settingsRepository, ttsHelper = mockTts, 
-            logger = TestLogger, importExportManager = importExportManager,
-            getPagesUseCase = getPagesUseCase, actionLogUseCase = actionLogUseCase,
-            createPageUseCase = createPageUseCase
-        )
+        viewModel = createViewModel()
         viewModel.importFromJson(jsonString, "test_book", onSuccess = { successCalled = true }, onError = {})
         
         testDispatcher.scheduler.advanceUntilIdle()
@@ -149,4 +142,44 @@ class PageViewModelTest {
         assertTrue("Success callback should be called", successCalled)
         coVerify { importExportManager.importFromJson(jsonString, "test_book") }
     }
+
+    @Test
+    fun `startScanning delegates to ScannerEngine`() = runTest {
+        viewModel = createViewModel()
+        
+        val button = ButtonConfig(label = "Test", auditoryCue = null, buttonAction = SpeakTextButtonAction("Hey"), isActive = true)
+        val page = Page(id = "p1", bookId = "b1", name = "T", rows = 1, columns = 1, buttonConfigs = listOf(button))
+        viewModel.loadPage(page)
+        
+        viewModel.startScanning(0)
+        testDispatcher.scheduler.advanceTimeBy(1)
+        val focused = viewModel.focusedButtonIndex.value
+        viewModel.stopScanning()
+        
+        assertEquals(0, focused)
+    }
+
+    @Test
+    fun `activateButtonAtIndex navigation loads new page`() = runTest {
+        val action = NavigateToPageButtonAction(pageId = "p2")
+        val config = ButtonConfig(label = "Nav", auditoryCue = null, buttonAction = action)
+        val p1 = Page(id = "p1", bookId = "b1", name = "P1", rows = 1, columns = 1, buttonConfigs = listOf(config))
+        val p2 = Page(id = "p2", bookId = "b1", name = "P2", rows = 1, columns = 1, buttonConfigs = emptyList())
+        
+        coEvery { pageRepository.getPageById("p2") } returns p2
+
+        viewModel = createViewModel()
+        
+        viewModel.loadPage(p1)
+        assertEquals("p1", viewModel.currentPage.value?.id)
+        
+        // Trigger action via simulating setting a focused index
+        // or directly calling it
+        viewModel.activateButtonAtIndex(0)
+        testDispatcher.scheduler.advanceTimeBy(1)
+        viewModel.stopScanning()
+        
+        assertEquals("p2", viewModel.currentPage.value?.id)
+    }
 }
+

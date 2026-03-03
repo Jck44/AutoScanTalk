@@ -8,6 +8,12 @@ import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 import com.andreas_kratzer.ghosttalk.model.GeminiButtonAction
@@ -19,34 +25,44 @@ class ActionExecutor(
     private val scope: CoroutineScope,
     private val pageRepository: PageRepository,
     private val settingsRepository: SettingsRepository,
-    private val geminiUseCase: GeminiUseCase?,
+    var geminiUseCase: GeminiUseCase?,
     var ttsHelper: TextToSpeechHelper?,
-    private val onLoadPage: (Page) -> Unit,
-    private val onPauseScanning: () -> Unit,
-    private val onResumeScanning: () -> Unit,
-    private val onLogAction: (String) -> Unit,
-    private val onRecoverableAuthError: (android.content.Intent) -> Unit = {},
     private val timeProvider: () -> Long = { System.currentTimeMillis() }
 ) {
+    sealed class ExecutionEvent {
+        data class NavigateToPage(val pageId: String) : ExecutionEvent()
+        data class Log(val message: String) : ExecutionEvent()
+        data class Error(val message: String) : ExecutionEvent()
+        data class RecoverableAuthError(val intent: android.content.Intent) : ExecutionEvent()
+    }
+
+    private val _isExecuting = MutableStateFlow(false)
+    val isExecuting: StateFlow<Boolean> = _isExecuting.asStateFlow()
+
+    private val _events = MutableSharedFlow<ExecutionEvent>()
+    val events: SharedFlow<ExecutionEvent> = _events.asSharedFlow()
+
     private var lastExecutionTime = -1L
     private var activeExecutionId = 0
-    private var isSpeaking = false
 
     fun executeButtonAction(buttonConfig: ButtonConfig) {
         val currentTime = timeProvider()
         val holdingTime = settingsRepository.holdingTimeMillis
         
         if (lastExecutionTime != -1L && currentTime - lastExecutionTime < holdingTime) {
-            onLogAction("Aktion ignoriert (Haltezeit aktiv: ${holdingTime}ms)")
+            log("Aktion ignoriert (Haltezeit aktiv: ${holdingTime}ms)")
+            return
+        }
+        
+        if (_isExecuting.value) {
+            log("Aktion ignoriert (Sprachausgabe aktiv)")
             return
         }
         
         lastExecutionTime = currentTime
         val currentExecutionId = ++activeExecutionId
-        isSpeaking = true
+        _isExecuting.value = true
 
-        onPauseScanning()
-        
         when (val action = buttonConfig.buttonAction) {
             is SpeakTextButtonAction -> {
                 val textToSpeak = buttonConfig.spokenText?.takeIf { it.isNotBlank() } 
@@ -54,18 +70,12 @@ class ActionExecutor(
                     ?: buttonConfig.label
                 if (ttsHelper?.isReady == true) {
                     ttsHelper?.speakRouted(textToSpeak, settingsRepository.ttsAudioDeviceAddress) {
-                        if (currentExecutionId == activeExecutionId) {
-                            isSpeaking = false
-                            onResumeScanning()
-                        }
+                        finishExecution(currentExecutionId)
                     }
-                    onLogAction("Gesprochen: \"$textToSpeak\"")
+                    log("Gesprochen: \"$textToSpeak\"")
                 } else {
-                    onLogAction("Sprechen (TTS nicht bereit): \"$textToSpeak\"")
-                    if (currentExecutionId == activeExecutionId) {
-                        isSpeaking = false
-                        onResumeScanning()
-                    }
+                    log("Sprechen (TTS nicht bereit): \"$textToSpeak\"")
+                    finishExecution(currentExecutionId)
                 }
             }
             is NavigateToPageButtonAction -> {
@@ -74,31 +84,10 @@ class ActionExecutor(
                 // Closure to execute the actual navigation
                 val performNavigation = {
                     scope.launch {
-                        val nextPage = pageRepository.getPageById(action.pageId)
-                        if (nextPage != null) {
-                            onLoadPage(nextPage)
-                            // isSpeaking and onResumeScanning handling for navigation:
-                            // Since Navigation takes time and might have its own TTS feedback,
-                            // we reset isSpeaking only after the navigation is "done" from ActionExecutor perspective.
-                            // Note: PageScreen handles scanner resume via DisposableEffect.
-                            isSpeaking = false 
-                            onLogAction("Navigiert zu Seite: ${nextPage.name} (ID: ${action.pageId})")
-                        } else {
-                            onLogAction("Fehler: Seite mit ID '${action.pageId}' nicht gefunden.")
-                            if (ttsHelper?.isReady == true) {
-                                ttsHelper?.speak("Seite nicht gefunden") { 
-                                    if (currentExecutionId == activeExecutionId) {
-                                        isSpeaking = false
-                                        onResumeScanning()
-                                    }
-                                }
-                            } else {
-                                if (currentExecutionId == activeExecutionId) {
-                                    isSpeaking = false
-                                    onResumeScanning()
-                                }
-                            }
-                        }
+                        emitEvent(ExecutionEvent.NavigateToPage(action.pageId))
+                        // Reset isExecuting immediately for navigation as the ViewModel/Screen 
+                        // handles the new state.
+                        finishExecution(currentExecutionId)
                     }
                 }
 
@@ -106,14 +95,14 @@ class ActionExecutor(
                     ttsHelper?.speakRouted(feedback, settingsRepository.cuesAudioDeviceAddress) {
                         performNavigation()
                     }
-                    onLogAction("Navigations-Feedback: \"$feedback\"")
+                    log("Navigations-Feedback: \"$feedback\"")
                 } else {
-                    if (feedback != null) onLogAction("Nav-Feedback (TTS nicht bereit): \"$feedback\"")
+                    if (feedback != null) log("Nav-Feedback (TTS nicht bereit): \"$feedback\"")
                     performNavigation()
                 }
             }
             is GeminiButtonAction -> {
-                onLogAction("Gemini aufgerufen mit: \"${action.prompt}\"")
+                log("Gemini aufgerufen mit: \"${action.prompt}\"")
                 scope.launch {
                     try {
                         val response = geminiUseCase?.generateResponse(action.prompt) 
@@ -121,35 +110,41 @@ class ActionExecutor(
                         
                         if (ttsHelper?.isReady == true) {
                             ttsHelper?.speakRouted(response, settingsRepository.ttsAudioDeviceAddress) {
-                                if (currentExecutionId == activeExecutionId) {
-                                    isSpeaking = false
-                                    onResumeScanning()
-                                }
+                                finishExecution(currentExecutionId)
                             }
                         } else {
-                            onLogAction("Gemini Ergebnis: \"$response\"")
-                            if (currentExecutionId == activeExecutionId) {
-                                isSpeaking = false
-                                onResumeScanning()
-                            }
+                            log("Gemini Ergebnis: \"$response\"")
+                            finishExecution(currentExecutionId)
                         }
                     } catch (e: UserRecoverableAuthIOException) {
-                        onLogAction("Gemini: Berechtigung erforderlich.")
-                        e.intent?.let { onRecoverableAuthError(it) }
-                        isSpeaking = false
-                        onResumeScanning()
+                        log("Gemini: Berechtigung erforderlich.")
+                        e.intent?.let { emitEvent(ExecutionEvent.RecoverableAuthError(it)) }
+                        finishExecution(currentExecutionId)
                     } catch (e: UserRecoverableAuthException) {
-                        onLogAction("Gemini: Berechtigung erforderlich.")
-                        e.intent?.let { onRecoverableAuthError(it) }
-                        isSpeaking = false
-                        onResumeScanning()
+                        log("Gemini: Berechtigung erforderlich.")
+                        e.intent?.let { emitEvent(ExecutionEvent.RecoverableAuthError(it)) }
+                        finishExecution(currentExecutionId)
                     } catch (e: Exception) {
-                        onLogAction("Gemini Fehler: ${e.message}")
-                        isSpeaking = false
-                        onResumeScanning()
+                        log("Gemini Fehler: ${e.message}")
+                        finishExecution(currentExecutionId)
                     }
                 }
             }
         }
     }
+
+    private fun finishExecution(executionId: Int) {
+        if (executionId == activeExecutionId) {
+            _isExecuting.value = false
+        }
+    }
+
+    private fun log(message: String) {
+        scope.launch { _events.emit(ExecutionEvent.Log(message)) }
+    }
+
+    private suspend fun emitEvent(event: ExecutionEvent) {
+        _events.emit(event)
+    }
 }
+

@@ -26,25 +26,26 @@ import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
-import com.andreas_kratzer.ghosttalk.ui.BookViewModel
-import com.andreas_kratzer.ghosttalk.ui.BookViewModelFactory
-import com.andreas_kratzer.ghosttalk.ui.PageEditorScreen
-import com.andreas_kratzer.ghosttalk.ui.PageListScreen
-import com.andreas_kratzer.ghosttalk.ui.PageScreen
-import com.andreas_kratzer.ghosttalk.ui.PageViewModel
-import com.andreas_kratzer.ghosttalk.ui.PageViewModelFactory
-import com.andreas_kratzer.ghosttalk.ui.SettingsScreen
-import com.andreas_kratzer.ghosttalk.ui.SettingsViewModel
-import com.andreas_kratzer.ghosttalk.ui.SettingsViewModelFactory
-import com.andreas_kratzer.ghosttalk.ui.StartScreen
+import com.andreas_kratzer.ghosttalk.ui.*
 import com.andreas_kratzer.ghosttalk.ui.theme.GhosTTalkTheme
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var settingsRepository: SettingsRepository
+    @Inject lateinit var settingsRepository: SettingsRepository
+    @Inject lateinit var pageRepository: PageRepository
+    @Inject lateinit var bookRepository: com.andreas_kratzer.ghosttalk.data.BookRepository
+    @Inject lateinit var pageDao: com.andreas_kratzer.ghosttalk.data.PageDao
+
+    private val bookViewModel: BookViewModel by viewModels()
+    private val pageViewModel: PageViewModel by viewModels()
+    private val settingsViewModel: SettingsViewModel by viewModels()
+
     private lateinit var globalPageViewModel: PageViewModel
     private lateinit var updateManager: UpdateManager
 
@@ -72,7 +73,7 @@ class MainActivity : AppCompatActivity() {
         updateManager = UpdateManager(this)
         updateManager.checkForUpdates(updateLauncher)
 
-        settingsRepository = SettingsRepository(applicationContext)
+
         val defaultBookId = "book-default"
 
         // Zweite Seite erstellen
@@ -138,16 +139,10 @@ class MainActivity : AppCompatActivity() {
             }
         )
 
-        // Database Initialization
-        val db = AppDatabase.getDatabase(applicationContext)
-        val pageDao = db.pageDao()
-        val pageRepository = PageRepository(pageDao)
-        val bookDao = db.bookDao()
-
         // Populate Database if empty
         CoroutineScope(Dispatchers.IO).launch {
-            if (bookDao.getBookById(defaultBookId) == null) {
-                bookDao.insertBook(Book(id = defaultBookId, name = "Standardbuch"))
+            if (bookRepository.getBookById(defaultBookId) == null) {
+                bookRepository.insertBook(Book(id = defaultBookId, name = "Standardbuch"))
             }
 
             if (pageDao.getAllPages().isEmpty()) {
@@ -156,21 +151,9 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // ViewModels mit Dependencies initialisieren
-        val bookViewModel: BookViewModel by viewModels {
-            BookViewModelFactory(application, bookDao)
-        }
-
-        val pageViewModel: PageViewModel by viewModels {
-            PageViewModelFactory(application, pageRepository, settingsRepository)
-        }
         globalPageViewModel = pageViewModel
         pageViewModel.setActiveBookId(defaultBookId)
         settingsRepository.activeBookId = defaultBookId
-
-        val settingsViewModel: SettingsViewModel by viewModels {
-            SettingsViewModelFactory(application, settingsRepository)
-        }
 
         // Observe Auth Consent Intent
         lifecycleScope.launch {
@@ -242,7 +225,7 @@ class MainActivity : AppCompatActivity() {
                             PageListScreen(
                                 pageViewModel = pageViewModel,
                                 onNavigateBack = { navController.popBackStack() },
-                                onEditPage = { pageId ->
+                                onEditPage = { pageId: String ->
                                     navController.navigate("page_editor/$pageId")
                                 }
                             )

@@ -18,7 +18,10 @@ import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccoun
 import com.google.api.services.drive.DriveScopes
 import java.util.Collections
 
-class DriveAuthManager private constructor(context: Context) {
+@javax.inject.Singleton
+class DriveAuthManager @javax.inject.Inject constructor(
+    @dagger.hilt.android.qualifiers.ApplicationContext context: Context
+) {
     private val appContext = context.applicationContext
     private val prefs = appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     private val credentialManager = CredentialManager.create(appContext)
@@ -30,18 +33,6 @@ class DriveAuthManager private constructor(context: Context) {
         private const val TAG = "DriveAuthManager"
         private const val PREFS_NAME = "drive_auth_prefs"
         private const val KEY_USER_EMAIL = "user_email"
-
-        @Volatile
-        private var INSTANCE: DriveAuthManager? = null
-
-        fun getInstance(context: Context): DriveAuthManager {
-            return INSTANCE ?: synchronized(this) {
-                val instance = DriveAuthManager(context.applicationContext)
-                INSTANCE = instance
-                Log.d("DriveAuthManager", "New DriveAuthManager instance created (Singleton)")
-                instance
-            }
-        }
     }
 
     suspend fun signIn(activityContext: Context): Boolean {

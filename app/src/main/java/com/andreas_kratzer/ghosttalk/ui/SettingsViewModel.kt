@@ -20,25 +20,26 @@ import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecovera
 import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.gson.GsonFactory
 import com.google.api.services.drive.Drive
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 import java.util.Locale
 
-class SettingsViewModel(
+@HiltViewModel
+class SettingsViewModel @Inject constructor(
     application: Application,
     private val settingsRepository: SettingsRepository,
-    private val driveAuthManager: DriveAuthManager,
-    private val cloudSyncUseCase: CloudSyncUseCase,
-    private val geminiUseCaseProvider: (suspend () -> String?) -> GeminiUseCase
+    private val driveAuthManager: com.andreas_kratzer.ghosttalk.core.cloud.DriveAuthManager,
+    private val cloudSyncUseCase: com.andreas_kratzer.ghosttalk.domain.CloudSyncUseCase,
+    private val geminiUseCaseFactory: com.andreas_kratzer.ghosttalk.domain.GeminiUseCaseFactory,
+    private val tempTtsHelper: com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper,
+    private val audioDeviceManager: com.andreas_kratzer.ghosttalk.core.AudioDeviceManager
 ) : AndroidViewModel(application) {
-
-    // Helper für das Abfragen der verfügbaren Sprachen
-    private val tempTtsHelper = TextToSpeechHelper(application)
-    private val audioDeviceManager = AudioDeviceManager(application)
 
     private val _availableLanguages = MutableStateFlow<List<Locale>>(emptyList())
     val availableLanguages: StateFlow<List<Locale>> = _availableLanguages.asStateFlow()
@@ -318,7 +319,7 @@ class SettingsViewModel(
     }
 
     fun activateGemini(context: android.content.Context) {
-        val gemini = geminiUseCaseProvider {
+        val gemini = geminiUseCaseFactory.create {
             driveAuthManager.getDriveCredential()?.getToken()
         }
         
@@ -409,40 +410,5 @@ class SettingsViewModel(
     override fun onCleared() {
         super.onCleared()
         tempTtsHelper.shutdown()
-    }
-}
-
-class SettingsViewModelFactory(
-    private val application: Application,
-    private val settingsRepository: SettingsRepository
-) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(SettingsViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            val driveAuthManager = DriveAuthManager.getInstance(application)
-            val db = com.andreas_kratzer.ghosttalk.data.AppDatabase.getDatabase(application)
-            val pageRepo = com.andreas_kratzer.ghosttalk.data.PageRepository(db.pageDao())
-            val importExportManager = com.andreas_kratzer.ghosttalk.core.PageImportExportManager(pageRepo, com.andreas_kratzer.ghosttalk.core.util.AppLogger)
-            val cloudSyncUseCase =
-                CloudSyncUseCase(application, pageRepo, settingsRepository, importExportManager)
-            
-            val geminiProvider = { tokenProvider: suspend () -> String? ->
-                GeminiUseCase(
-                    tokenProvider,
-                    driveProvider = {
-                        val credential = driveAuthManager.getDriveCredential() ?: return@GeminiUseCase null
-                        Drive.Builder(
-                            NetHttpTransport(),
-                            GsonFactory.getDefaultInstance(),
-                            credential
-                        ).setApplicationName("GhosTTalk").build()
-                    }
-                )
-            }
-            
-            @Suppress("UNCHECKED_CAST")
-            return SettingsViewModel(application, settingsRepository, driveAuthManager, cloudSyncUseCase, geminiProvider) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

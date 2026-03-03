@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.play.publisher)
+    alias(libs.plugins.hilt)
 }
 
 android {
@@ -124,4 +125,13 @@ dependencies {
     implementation(libs.play.app.update.ktx)
     implementation(libs.google.generativeai)
     implementation(libs.gms.play.services.auth)
+    
+    // Hilt
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+    implementation(libs.hilt.navigation.compose)
+    testImplementation(libs.hilt.android.testing)
+    kspTest(libs.hilt.compiler)
+    androidTestImplementation(libs.hilt.android.testing)
+    kspAndroidTest(libs.hilt.compiler)
 }

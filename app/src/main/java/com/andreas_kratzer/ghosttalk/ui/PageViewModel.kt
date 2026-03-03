@@ -19,34 +19,38 @@ import com.andreas_kratzer.ghosttalk.domain.CreatePageUseCase
 import com.andreas_kratzer.ghosttalk.domain.GeminiUseCase
 import com.andreas_kratzer.ghosttalk.core.cloud.DriveAuthManager
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import android.util.Log
 import android.content.Intent
 import android.provider.MediaStore
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
-import com.andreas_kratzer.ghosttalk.core.util.Logger
-import com.andreas_kratzer.ghosttalk.core.util.AppLogger
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class PageViewModel(
+@HiltViewModel
+class PageViewModel @Inject constructor(
     application: Application,
     private val pageRepository: PageRepository,
     private val settingsRepository: SettingsRepository,
-    private var ttsHelper: TextToSpeechHelper? = null,
-    private val logger: Logger = AppLogger,
-    private val importExportManager: PageImportExportManager = PageImportExportManager(pageRepository, logger),
-    private val getPagesUseCase: GetPagesUseCase = GetPagesUseCase(pageRepository),
-    private val actionLogUseCase: ActionLogUseCase = ActionLogUseCase(settingsRepository, logger),
-    private val createPageUseCase: CreatePageUseCase = CreatePageUseCase(pageRepository, settingsRepository),
-    private val geminiUseCase: GeminiUseCase? = null
+    private val logger: com.andreas_kratzer.ghosttalk.core.util.Logger,
+    private val importExportManager: PageImportExportManager,
+    private val getPagesUseCase: GetPagesUseCase,
+    private val actionLogUseCase: ActionLogUseCase,
+    private val createPageUseCase: CreatePageUseCase,
+    private val driveAuthManager: com.andreas_kratzer.ghosttalk.core.cloud.DriveAuthManager,
+    private val geminiUseCaseFactory: com.andreas_kratzer.ghosttalk.domain.GeminiUseCaseFactory,
+    private val ttsHelper: com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
 ) : AndroidViewModel(application) {
+
+    private var geminiUseCase: GeminiUseCase? = null
 
     private val _activeBookId = MutableStateFlow<String?>(null)
     val activeBookId: StateFlow<String?> = _activeBookId.asStateFlow()
@@ -73,14 +77,7 @@ class PageViewModel(
         pageRepository = pageRepository,
         settingsRepository = settingsRepository,
         ttsHelper = ttsHelper,
-        onLoadPage = { page -> loadPage(page) },
-        onPauseScanning = { stopScanningTemporarily() },
-        onResumeScanning = { resumeScanningIfEnabled() },
-        onLogAction = { actionText -> logAction(actionText) },
-        onRecoverableAuthError = { intent -> 
-            viewModelScope.launch { _authRecoverIntent.emit(intent) }
-        },
-        geminiUseCase = geminiUseCase
+        geminiUseCase = null // Will be set in init
     )
 
     fun setActiveBookId(bookId: String?) {
@@ -88,11 +85,53 @@ class PageViewModel(
     }
 
     init {
-        if (ttsHelper == null) {
-            ttsHelper = TextToSpeechHelper(application.applicationContext)
+        geminiUseCase = geminiUseCaseFactory.create {
+            driveAuthManager.getDriveCredential()?.getToken()
         }
+        actionExecutor.geminiUseCase = geminiUseCase
+        
         scannerEngine.ttsHelper = ttsHelper
         actionExecutor.ttsHelper = ttsHelper
+
+        // Observe ActionExecutor status
+        viewModelScope.launch {
+            actionExecutor.isExecuting.collect { isExecuting ->
+                if (isExecuting) {
+                    stopScanningTemporarily()
+                } else {
+                    resumeScanningIfEnabled()
+                }
+            }
+        }
+
+        // Observe ActionExecutor events
+        viewModelScope.launch {
+            actionExecutor.events.collect { event ->
+                when (event) {
+                    is ActionExecutor.ExecutionEvent.NavigateToPage -> {
+                        viewModelScope.launch(Dispatchers.IO) {
+                            val page = pageRepository.getPageById(event.pageId)
+                            if (page != null) {
+                                loadPage(page)
+                                logAction("Navigiert zu Seite: ${page.name} (ID: ${event.pageId})")
+                            } else {
+                                logAction("Fehler: Seite mit ID '${event.pageId}' nicht gefunden.")
+                                ttsHelper?.speak("Seite nicht gefunden") {}
+                            }
+                        }
+                    }
+                    is ActionExecutor.ExecutionEvent.Log -> {
+                        logAction(event.message)
+                    }
+                    is ActionExecutor.ExecutionEvent.Error -> {
+                        logAction("Fehler: ${event.message}")
+                    }
+                    is ActionExecutor.ExecutionEvent.RecoverableAuthError -> {
+                        _authRecoverIntent.emit(event.intent)
+                    }
+                }
+            }
+        }
 
         // Monitor settings
         viewModelScope.launch {
@@ -296,51 +335,7 @@ class PageViewModel(
 
     override fun onCleared() {
         super.onCleared()
-        ttsHelper?.shutdown()
+        ttsHelper.shutdown()
         scannerEngine.clear()
-    }
-}
-
-class PageViewModelFactory(
-    private val application: Application,
-    private val pageRepository: PageRepository,
-    private val settingsRepository: SettingsRepository
-) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(PageViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            val logger = AppLogger
-            val manager = PageImportExportManager(pageRepository, logger)
-            val getPages = GetPagesUseCase(pageRepository)
-            val actionLog = ActionLogUseCase(settingsRepository, logger)
-            val createPage = CreatePageUseCase(pageRepository, settingsRepository)
-            
-            val driveAuthManager = DriveAuthManager.getInstance(application)
-            val gemini = GeminiUseCase(
-                oauthTokenProvider = { 
-                    driveAuthManager.getDriveCredential()?.getToken() 
-                },
-                driveProvider = {
-                    val credential = driveAuthManager.getDriveCredential() ?: return@GeminiUseCase null
-                    com.google.api.services.drive.Drive.Builder(
-                        com.google.api.client.http.javanet.NetHttpTransport(),
-                        com.google.api.client.json.gson.GsonFactory.getDefaultInstance(),
-                        credential
-                    ).setApplicationName("GhosTTalk").build()
-                }
-            )
-
-            @Suppress("UNCHECKED_CAST")
-            return PageViewModel(
-                application, pageRepository, settingsRepository, 
-                logger = logger, 
-                importExportManager = manager,
-                getPagesUseCase = getPages,
-                actionLogUseCase = actionLog,
-                createPageUseCase = createPage,
-                geminiUseCase = gemini
-            ) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

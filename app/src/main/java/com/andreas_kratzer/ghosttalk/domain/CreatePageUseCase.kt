@@ -11,7 +11,7 @@ import java.util.UUID
 /**
  * Use case for creating a new page with a default home button.
  */
-class CreatePageUseCase(
+class CreatePageUseCase @javax.inject.Inject constructor(
     private val pageRepository: PageRepository,
     private val settingsRepository: SettingsRepository
 ) {

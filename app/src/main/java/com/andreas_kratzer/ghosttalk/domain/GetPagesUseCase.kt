@@ -10,7 +10,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 /**
  * Use case to get the reactive list of pages for a specific book.
  */
-class GetPagesUseCase(private val pageRepository: PageRepository) {
+class GetPagesUseCase @javax.inject.Inject constructor(private val pageRepository: PageRepository) {
     @OptIn(ExperimentalCoroutinesApi::class)
     fun execute(activeBookIdFlow: Flow<String?>): Flow<List<Page>> {
         return activeBookIdFlow.flatMapLatest { bookId ->
