@@ -13,7 +13,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.ui.components.GhostTalkCard
 import com.andreas_kratzer.ghosttalk.model.PageTemplate
+import androidx.compose.material.icons.filled.GridView
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,17 +33,17 @@ fun TemplateScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Templates verwalten") },
+                title = { Text(stringResource(R.string.template_manage_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Zurück")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_button_content_description))
                     }
                 }
             )
         },
         floatingActionButton = {
             FloatingActionButton(onClick = { showAddDialog = true }) {
-                Icon(Icons.Default.Add, contentDescription = "Template hinzufügen")
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.template_create_new))
             }
         }
     ) { paddingValues ->
@@ -52,53 +56,31 @@ fun TemplateScreen(
             contentPadding = PaddingValues(vertical = 8.dp)
         ) {
             items(templates) { template ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(enabled = !template.isBuiltIn) { 
-                            onTemplateClick(template.id) 
-                        },
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = template.name,
-                                style = MaterialTheme.typography.titleMedium
+                GhostTalkCard(
+                    title = template.name,
+                    subtitle = "Raster: ${template.rows}x${template.columns} " + if (template.isBuiltIn) "(${stringResource(R.string.template_built_in_label)})" else "(${stringResource(R.string.template_custom_label)})",
+                    icon = Icons.Default.GridView,
+                    onClick = { onTemplateClick(template.id) },
+                    trailingAction = {
+                        IconButton(
+                            onClick = { templateToDelete = template }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = stringResource(R.string.action_delete),
+                                tint = MaterialTheme.colorScheme.error
                             )
-                            Text(
-                                text = "Grid: ${template.rows}x${template.columns} " + if (template.isBuiltIn) "(Standard)" else "(Benutzerdefiniert)",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        if (!template.isBuiltIn) {
-                            IconButton(
-                                onClick = { templateToDelete = template }
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = "Löschen",
-                                    tint = MaterialTheme.colorScheme.error
-                                )
-                            }
                         }
                     }
-                }
+                )
             }
         }
 
         templateToDelete?.let { template ->
             AlertDialog(
                 onDismissRequest = { templateToDelete = null },
-                title = { Text("Template löschen") },
-                text = { Text("Möchten Sie das Template '${template.name}' wirklich löschen?") },
+                title = { Text(stringResource(R.string.template_delete_title)) },
+                text = { Text(stringResource(R.string.template_delete_confirm, template.name)) },
                 confirmButton = {
                     Button(
                         onClick = {
@@ -141,17 +123,17 @@ fun AddTemplateDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Neues Template erstellen") },
+        title = { Text(stringResource(R.string.template_create_new)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Template Name") },
+                    label = { Text(stringResource(R.string.template_name_label)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
-                
+
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(
                         value = rowsStr,

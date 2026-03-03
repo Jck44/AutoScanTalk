@@ -44,14 +44,18 @@
     <string name="settings_volume_keys_trigger">Lautstärke-Tasten als Auslöser</string>
     <string name="settings_volume_keys_hint">Nutzt Volume +/- zum Bestätigen</string>
     
-    <string name="settings_category_system">Verlauf &amp; System</string>
-    <string name="settings_persist_logs">Aktionenverlauf speichern</string>
+    <string name="settings_category_system">System</string>
+    <string name="settings_category_test">Test-Einstellungen</string>
+    <string name="settings_show_test_buttons">Test-Buttons auf Seite anzeigen</string>
+    <string name="settings_persist_logs">Aktionen protokollieren</string>
     <string name="settings_persist_logs_hint">Behält Verlauf auch nach Neustart</string>
     
     <!-- Start Screen -->
     <string name="start_tagline">Unterstützte Kommunikation</string>
     <string name="start_user_mode">Nutzer Modus</string>
     <string name="start_manage_pages">Seiten verwalten</string>
+    <string name="start_manage_content">Inhalte verwalten</string>
+    <string name="start_manage_templates">Vorlagen verwalten</string>
     <string name="start_back_to_books">Zurück zu den Büchern</string>
     <string name="start_button_start_description">Start</string>
 
@@ -113,7 +117,7 @@
     <string name="button_dialog_edit_title">Button bearbeiten</string>
     <string name="button_label_field">Aufschrift (Label)</string>
     <string name="button_spoken_text_field">Gesprochener Text (Optional)</string>
-    <string name="button_auditory_cue_field">Auditory Cue (Vorlesen beim Scannen) (Optional)</string>
+    <string name="button_auditory_cue_field">Hinweistext für Benutzer (Optional)</string>
     <string name="button_is_active_label">Ist Aktiv</string>
     <string name="button_action_label">Aktion</string>
     <string name="button_action_speak_text">Text Sprechen</string>
@@ -181,4 +185,18 @@
 
     <!-- Shared -->
     <string name="error_page_not_found">Seite nicht gefunden</string>
+
+    <!-- Vorlagen (Templates) -->
+    <string name="template_title">Vorlagen</string>
+    <string name="template_manage_title">Vorlagen verwalten</string>
+    <string name="template_name_label">Name der Vorlage</string>
+    <string name="template_built_in_label">Standard</string>
+    <string name="template_custom_label">Benutzerdefiniert</string>
+    <string name="template_delete_title">Vorlage löschen</string>
+    <string name="template_delete_confirm">Möchten Sie die Vorlage \"%s\" wirklich löschen?</string>
+    <string name="template_create_new">Neue Vorlage erstellen</string>
+    <string name="template_edit_title">Vorlage: %s</string>
+    <string name="template_editor_hint">Tippe auf ein Feld, um es zu belegen</string>
+    <string name="template_loading">Vorlage wird geladen…</string>
+    <string name="template_action_frequent">Häufigste Aktion</string>
 </resources>

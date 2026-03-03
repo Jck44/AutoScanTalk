@@ -59,7 +59,6 @@ class TemplateViewModel @Inject constructor(
 
     fun updateButtonConfig(templateId: String, index: Int, config: ButtonConfig?) {
         val currentTemplate = templates.value.find { it.id == templateId } ?: return
-        if (currentTemplate.isBuiltIn) return
         
         val newConfigs = currentTemplate.buttonConfigs.toMutableList()
         if (index in newConfigs.indices) {
@@ -69,14 +68,12 @@ class TemplateViewModel @Inject constructor(
     }
 
     fun updateTemplate(template: PageTemplate) {
-        if (template.isBuiltIn) return
         viewModelScope.launch {
             templateRepository.insert(template)
         }
     }
 
     fun deleteTemplate(template: PageTemplate) {
-        if (template.isBuiltIn) return
         viewModelScope.launch {
             templateRepository.delete(template)
         }

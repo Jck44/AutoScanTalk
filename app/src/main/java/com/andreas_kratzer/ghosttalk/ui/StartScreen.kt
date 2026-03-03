@@ -26,14 +26,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.foundation.layout.width
 import androidx.compose.ui.res.stringResource
 import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.ui.components.GhostTalkCard
 
 @Composable
 fun StartScreen(
     onNavigateToUserMode: () -> Unit,
     onNavigateToSettings: () -> Unit,
-    onNavigateToPageManager: () -> Unit,
+    onNavigateToContentManagement: () -> Unit,
     onNavigateToBooks: () -> Unit
 ) {
     val configuration = LocalConfiguration.current
@@ -71,72 +73,49 @@ fun StartScreen(
             verticalArrangement = Arrangement.spacedBy(vSpacing),
             maxItemsInEachRow = if (isLandscape) 3 else 1
         ) {
-            Button(
+            GhostTalkCard(
+                title = stringResource(R.string.start_user_mode),
+                icon = Icons.Filled.PlayArrow,
                 onClick = onNavigateToUserMode,
                 modifier = Modifier
                     .padding(horizontal = 8.dp)
-                    .size(height = 80.dp, width = 240.dp),
-                contentPadding = ButtonDefaults.ButtonWithIconContentPadding
-            ) {
-                Icon(
-                    Icons.Filled.PlayArrow,
-                    contentDescription = stringResource(R.string.start_button_start_description),
-                    modifier = Modifier.size(ButtonDefaults.IconSize)
-                )
-                Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                Text(stringResource(R.string.start_user_mode), style = MaterialTheme.typography.titleMedium)
-            }
+                    .width(240.dp),
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                iconColor = MaterialTheme.colorScheme.primary
+            )
             
-            Button(
-                onClick = onNavigateToPageManager,
+            GhostTalkCard(
+                title = stringResource(R.string.start_manage_content),
+                icon = Icons.Filled.Edit,
+                onClick = onNavigateToContentManagement,
                 modifier = Modifier
                     .padding(horizontal = 8.dp)
-                    .size(height = 80.dp, width = 240.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.tertiary
-                )
-            ) {
-                Icon(
-                    Icons.Filled.Edit,
-                    contentDescription = stringResource(R.string.start_manage_pages),
-                    modifier = Modifier.size(ButtonDefaults.IconSize)
-                )
-                Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                Text(stringResource(R.string.start_manage_pages), style = MaterialTheme.typography.titleMedium)
-            }
+                    .width(240.dp),
+                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                iconColor = MaterialTheme.colorScheme.tertiary
+            )
             
-            Button(
+            GhostTalkCard(
+                title = stringResource(R.string.settings_title),
+                icon = Icons.Filled.Settings,
                 onClick = onNavigateToSettings,
                 modifier = Modifier
                     .padding(horizontal = 8.dp)
-                    .size(height = 80.dp, width = 240.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondary
-                )
-            ) {
-                Icon(
-                    Icons.Filled.Settings,
-                    contentDescription = stringResource(R.string.settings_title),
-                    modifier = Modifier.size(ButtonDefaults.IconSize)
-                )
-                Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.titleMedium)
-            }
+                    .width(240.dp),
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                iconColor = MaterialTheme.colorScheme.secondary
+            )
         }
 
         Spacer(modifier = Modifier.height(if (isLandscape) 32.dp else 48.dp))
 
-        androidx.compose.material3.OutlinedButton(
+        GhostTalkCard(
+            title = stringResource(R.string.start_back_to_books),
+            icon = Icons.AutoMirrored.Filled.ArrowBack,
             onClick = onNavigateToBooks,
-            modifier = Modifier.size(height = 60.dp, width = 240.dp)
-        ) {
-            Icon(
-                Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = stringResource(R.string.back_button_content_description),
-                modifier = Modifier.size(ButtonDefaults.IconSize)
-            )
-            Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-            Text(stringResource(R.string.start_back_to_books))
-        }
+            modifier = Modifier.width(240.dp),
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            iconColor = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }

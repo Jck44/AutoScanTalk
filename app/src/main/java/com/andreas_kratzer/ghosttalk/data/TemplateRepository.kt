@@ -10,7 +10,8 @@ import java.util.UUID
 import javax.inject.Inject
 
 class TemplateRepository @Inject constructor(
-    private val templateDao: TemplateDao
+    private val templateDao: TemplateDao,
+    private val settingsRepository: SettingsRepository
 ) {
 
     fun getAllTemplates(): Flow<List<PageTemplate>> {
@@ -26,15 +27,15 @@ class TemplateRepository @Inject constructor(
     }
 
     suspend fun delete(template: PageTemplate) {
-        if (!template.isBuiltIn) {
-            templateDao.deleteTemplate(template)
-        }
+        templateDao.deleteTemplate(template)
     }
 
     /**
      * Initializes the built-in templates if they don't exist yet.
      */
     suspend fun ensureBuiltInTemplates() {
+        if (settingsRepository.initialTemplatesCreated) return
+
         // Built-in 1: "Häufigste Aktionen" (4x4)
         val frequentId = "builtin_frequent"
         if (templateDao.getTemplateById(frequentId) == null) {
@@ -49,7 +50,7 @@ class TemplateRepository @Inject constructor(
             templateDao.insertTemplate(
                 PageTemplate(
                     id = frequentId,
-                    name = "Häufigste Aktionen",
+                    name = "Vorlage: Häufigste Aktionen",
                     rows = 4,
                     columns = 4,
                     buttonConfigs = frequentButtons,
@@ -85,7 +86,7 @@ class TemplateRepository @Inject constructor(
             templateDao.insertTemplate(
                 PageTemplate(
                     id = yesNoId,
-                    name = "Ja / Nein",
+                    name = "Vorlage: Ja / Nein",
                     rows = 4,
                     columns = 4,
                     buttonConfigs = yesNoButtons,
@@ -93,5 +94,7 @@ class TemplateRepository @Inject constructor(
                 )
             )
         }
+        
+        settingsRepository.initialTemplatesCreated = true
     }
 }

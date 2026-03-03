@@ -25,6 +25,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.ui.components.GhostTalkCard
+import androidx.compose.material.icons.filled.Description
 import com.andreas_kratzer.ghosttalk.model.Page
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -158,30 +160,12 @@ fun PageListScreen(
             contentPadding = PaddingValues(vertical = 8.dp)
         ) {
             items(allPages) { page ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onEditPage(page.id) },
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = page.name,
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            Text(
-                                text = stringResource(R.string.page_grid_info, page.rows, page.columns),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+                GhostTalkCard(
+                    title = page.name,
+                    subtitle = stringResource(R.string.page_grid_info, page.rows, page.columns),
+                    icon = Icons.Default.Description,
+                    onClick = { onEditPage(page.id) },
+                    trailingAction = {
                         Row {
                             IconButton(onClick = { pageToEdit = page }) {
                                 Icon(
@@ -201,7 +185,7 @@ fun PageListScreen(
                             }
                         }
                     }
-                }
+                )
             }
         }
 

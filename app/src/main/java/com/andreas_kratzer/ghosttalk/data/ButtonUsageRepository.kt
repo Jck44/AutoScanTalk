@@ -22,6 +22,11 @@ class ButtonUsageRepository @Inject constructor(
      * Records a button press. Increments the usage counter or creates a new entry.
      */
     suspend fun recordUsage(bookId: String, buttonConfig: ButtonConfig) {
+        // Ignore FrequentActionButtonAction to prevent ranking loops
+        if (buttonConfig.buttonAction is com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction) {
+            return
+        }
+        
         val existing = dao.getStatForButton(bookId, buttonConfig.id)
         val stat = if (existing != null) {
             existing.copy(

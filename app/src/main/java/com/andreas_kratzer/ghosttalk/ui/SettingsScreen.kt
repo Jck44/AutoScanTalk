@@ -39,8 +39,7 @@ import java.util.Locale
 fun SettingsScreen(
     settingsViewModel: SettingsViewModel,
     pageViewModel: PageViewModel,
-    onNavigateBack: () -> Unit,
-    onNavigateToTemplates: () -> Unit
+    onNavigateBack: () -> Unit
 ) {
     // ... values ...
     val selectedLanguage by settingsViewModel.selectedLanguageTag.collectAsState()
@@ -58,6 +57,7 @@ fun SettingsScreen(
     val persistActionLogs by settingsViewModel.persistActionLogs.collectAsState()
     val switchActivationKey by settingsViewModel.switchActivationKey.collectAsState()
     val volumeKeysActivate by settingsViewModel.volumeKeysActivate.collectAsState()
+    val showTestButtons by settingsViewModel.showTestButtons.collectAsState()
     val defaultScanPattern by settingsViewModel.defaultScanPattern.collectAsState()
     val holdingTimeInput by settingsViewModel.holdingTimeInput.collectAsState()
     val selectedAppLanguage by settingsViewModel.selectedAppLanguage.collectAsState()
@@ -134,7 +134,7 @@ fun SettingsScreen(
                     horizontalArrangement = Arrangement.spacedBy(24.dp)
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        GeneralSettings(allPages, defaultStartPageId, defaultScanPattern, settingsViewModel, onNavigateToTemplates)
+                        GeneralSettings(allPages, defaultStartPageId, defaultScanPattern, settingsViewModel)
                         Spacer(modifier = Modifier.height(24.dp))
                         AppLanguageSettings(selectedAppLanguage ?: "default", settingsViewModel)
                         Spacer(modifier = Modifier.height(24.dp))
@@ -151,7 +151,9 @@ fun SettingsScreen(
                     Column(modifier = Modifier.weight(1f)) {
                         ScanningSettings(autoStartScanning, resumeScanningFromStart, scanDelayInput, holdingTimeInput, settingsViewModel)
                         Spacer(modifier = Modifier.height(24.dp))
-                        HardwareSettings(switchActivationKey, volumeKeysActivate, settingsViewModel)
+                        HardwareSettings(switchActivationKey, settingsViewModel)
+                        Spacer(modifier = Modifier.height(24.dp))
+                        TestSettings(showTestButtons, volumeKeysActivate, settingsViewModel)
                         Spacer(modifier = Modifier.height(24.dp))
                         ActionLogSettings(persistActionLogs, settingsViewModel)
                     }
@@ -161,8 +163,7 @@ fun SettingsScreen(
                     allPages = allPages,
                     defaultStartPageId = defaultStartPageId,
                     defaultScanPattern = defaultScanPattern,
-                    settingsViewModel = settingsViewModel,
-                    onNavigateToTemplates = onNavigateToTemplates
+                    settingsViewModel = settingsViewModel
                 )
                 Spacer(modifier = Modifier.height(24.dp))
                 AppLanguageSettings(selectedAppLanguage ?: "default", settingsViewModel)
@@ -179,7 +180,9 @@ fun SettingsScreen(
                 Spacer(modifier = Modifier.height(24.dp))
                 ScanningSettings(autoStartScanning, resumeScanningFromStart, scanDelayInput, holdingTimeInput, settingsViewModel)
                 Spacer(modifier = Modifier.height(24.dp))
-                HardwareSettings(switchActivationKey, volumeKeysActivate, settingsViewModel)
+                HardwareSettings(switchActivationKey, settingsViewModel)
+                Spacer(modifier = Modifier.height(24.dp))
+                TestSettings(showTestButtons, volumeKeysActivate, settingsViewModel)
                 Spacer(modifier = Modifier.height(24.dp))
                 ActionLogSettings(persistActionLogs, settingsViewModel)
             }
@@ -225,8 +228,7 @@ fun GeneralSettings(
     allPages: List<com.andreas_kratzer.ghosttalk.model.Page>,
     defaultStartPageId: String?,
     defaultScanPattern: String,
-    settingsViewModel: SettingsViewModel,
-    onNavigateToTemplates: () -> Unit
+    settingsViewModel: SettingsViewModel
 ) {
     var expandedStartPage by remember { mutableStateOf(false) }
     var expandedDefaultScanPattern by remember { mutableStateOf(false) }
@@ -287,14 +289,7 @@ fun GeneralSettings(
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        // Templates und Statistiken
-        Button(
-            onClick = onNavigateToTemplates,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Templates verwalten")
-        }
-        
+        // Statistiken zurücksetzen
         var showResetDialog by remember { mutableStateOf(false) }
         OutlinedButton(
             onClick = { showResetDialog = true },
@@ -535,7 +530,6 @@ fun ScanningSettings(
 @Composable
 fun HardwareSettings(
     switchActivationKey: String,
-    volumeKeysActivate: Boolean,
     settingsViewModel: SettingsViewModel
 ) {
     PreferenceCategory(stringResource(R.string.settings_category_hardware)) {
@@ -545,6 +539,24 @@ fun HardwareSettings(
             label = { Text(stringResource(R.string.settings_switch_key)) },
             modifier = Modifier.fillMaxWidth()
         )
+    }
+}
+
+@Composable
+fun TestSettings(
+    showTestButtons: Boolean,
+    volumeKeysActivate: Boolean,
+    settingsViewModel: SettingsViewModel
+) {
+    PreferenceCategory(stringResource(R.string.settings_category_test)) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically, 
+            modifier = Modifier.clickable { settingsViewModel.setShowTestButtons(!showTestButtons) }
+        ) {
+            Text(stringResource(R.string.settings_show_test_buttons), modifier = Modifier.weight(1f))
+            Switch(checked = showTestButtons, onCheckedChange = { settingsViewModel.setShowTestButtons(it) })
+        }
+        
         Row(
             verticalAlignment = Alignment.CenterVertically, 
             modifier = Modifier.clickable { settingsViewModel.setVolumeKeysActivate(!volumeKeysActivate) }

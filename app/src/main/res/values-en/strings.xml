@@ -52,6 +52,8 @@
     <string name="start_tagline">Augmentative and Alternative Communication</string>
     <string name="start_user_mode">User Mode</string>
     <string name="start_manage_pages">Manage Pages</string>
+    <string name="start_manage_content">Manage Content</string>
+    <string name="start_manage_templates">Manage Templates</string>
     <string name="start_back_to_books">Back to Books</string>
     <string name="start_button_start_description">Start</string>
 
@@ -179,4 +181,18 @@
 
     <!-- Shared -->
     <string name="error_page_not_found">Page not found</string>
+
+    <!-- Templates -->
+    <string name="template_title">Templates</string>
+    <string name="template_manage_title">Manage Templates</string>
+    <string name="template_name_label">Template Name</string>
+    <string name="template_built_in_label">Standard</string>
+    <string name="template_custom_label">Custom</string>
+    <string name="template_delete_title">Delete Template</string>
+    <string name="template_delete_confirm">Do you really want to delete the template \"%s\"?</string>
+    <string name="template_create_new">Create New Template</string>
+    <string name="template_edit_title">Template: %s</string>
+    <string name="template_editor_hint">Tap a field to assign it</string>
+    <string name="template_loading">Loading template…</string>
+    <string name="template_action_frequent">Frequent Action</string>
 </resources>

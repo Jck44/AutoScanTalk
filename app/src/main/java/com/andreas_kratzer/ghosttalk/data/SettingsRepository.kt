@@ -65,6 +65,7 @@ class SettingsRepository(context: Context) {
         _actionLogsStorageFlow.value = actionLogsStorage
         _switchActivationKeyFlow.value = switchActivationKey
         _volumeKeysActivateFlow.value = volumeKeysActivate
+        _showTestButtonsFlow.value = showTestButtons
         _defaultScanPatternFlow.value = defaultScanPattern
         _themeModeFlow.value = themeMode
     }
@@ -193,6 +194,16 @@ class SettingsRepository(context: Context) {
             _volumeKeysActivateFlow.value = value
         }
 
+    private val _showTestButtonsFlow = MutableStateFlow(getBooleanScoped(KEY_SHOW_TEST_BUTTONS, false))
+    val showTestButtonsFlow: StateFlow<Boolean> = _showTestButtonsFlow.asStateFlow()
+
+    var showTestButtons: Boolean
+        get() = getBooleanScoped(KEY_SHOW_TEST_BUTTONS, false)
+        set(value) {
+            putBooleanScoped(KEY_SHOW_TEST_BUTTONS, value)
+            _showTestButtonsFlow.value = value
+        }
+
     var holdingTimeMillis: Long
         get() = getLongScoped(KEY_HOLDING_TIME_MILLIS, 0L)
         set(value) {
@@ -209,6 +220,12 @@ class SettingsRepository(context: Context) {
         get() = getBooleanScoped(KEY_GEMINI_ENABLED, false)
         set(value) {
             putBooleanScoped(KEY_GEMINI_ENABLED, value)
+        }
+
+    var initialTemplatesCreated: Boolean
+        get() = prefs.getBoolean(KEY_INITIAL_TEMPLATES_CREATED, false)
+        set(value) {
+            prefs.edit().putBoolean(KEY_INITIAL_TEMPLATES_CREATED, value).apply()
         }
 
     var appLanguage: String?
@@ -265,6 +282,7 @@ class SettingsRepository(context: Context) {
         private const val KEY_ACTION_LOGS_STORAGE = "action_logs_storage"
         private const val KEY_SWITCH_ACTIVATION_KEY = "switch_activation_key"
         private const val KEY_VOLUME_KEYS_ACTIVATE = "volume_keys_activate"
+        private const val KEY_SHOW_TEST_BUTTONS = "show_test_buttons"
         private const val KEY_DEFAULT_SCAN_PATTERN = "default_scan_pattern"
         private const val KEY_HOLDING_TIME_MILLIS = "holding_time_millis"
         private const val KEY_CLOUD_SYNC_ENABLED = "cloud_sync_enabled"
@@ -273,5 +291,6 @@ class SettingsRepository(context: Context) {
         private const val KEY_SYNC_INTERVAL_MINUTES = "sync_interval_minutes"
         private const val KEY_SYNC_MODE = "sync_mode"
         private const val KEY_THEME_MODE = "theme_mode"
+        private const val KEY_INITIAL_TEMPLATES_CREATED = "initial_templates_created"
     }
 }

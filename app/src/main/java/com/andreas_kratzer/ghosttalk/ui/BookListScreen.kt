@@ -50,6 +50,7 @@ import com.andreas_kratzer.ghosttalk.model.Book
 
 import androidx.compose.ui.res.stringResource
 import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.ui.components.GhostTalkCard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -85,32 +86,13 @@ fun BookListScreen(
             contentPadding = PaddingValues(vertical = 8.dp)
         ) {
             items(allBooks) { book ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onBookSelected(book.id) },
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = book.name,
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            val dateFormat = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
-                            Text(
-                                text = stringResource(R.string.book_created_label, dateFormat.format(Date(book.createdAt))),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+                val dateFormat = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
+                GhostTalkCard(
+                    title = book.name,
+                    subtitle = stringResource(R.string.book_created_label, dateFormat.format(Date(book.createdAt))),
+                    icon = Icons.Default.Edit, // Books usually don't have a specific icon, but we can use Edit or a custom one
+                    onClick = { onBookSelected(book.id) },
+                    trailingAction = {
                         Row {
                             IconButton(onClick = { bookToEdit = book }) {
                                 Icon(
@@ -130,7 +112,7 @@ fun BookListScreen(
                             }
                         }
                     }
-                }
+                )
             }
         }
 

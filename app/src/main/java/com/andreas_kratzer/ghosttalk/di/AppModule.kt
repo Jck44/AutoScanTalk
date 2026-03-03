@@ -93,7 +93,10 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideTemplateRepository(templateDao: TemplateDao): TemplateRepository {
-        return TemplateRepository(templateDao)
+    fun provideTemplateRepository(
+        templateDao: TemplateDao,
+        settingsRepository: SettingsRepository
+    ): TemplateRepository {
+        return TemplateRepository(templateDao, settingsRepository)
     }
 }

@@ -210,8 +210,15 @@ class MainActivity : AppCompatActivity() {
                                     }
                                 },
                                 onNavigateToSettings = { navController.navigate("settings") },
-                                onNavigateToPageManager = { navController.navigate("page_list") },
+                                onNavigateToContentManagement = { navController.navigate("content_management") },
                                 onNavigateToBooks = { navController.navigate("book_list") }
+                            )
+                        }
+                        composable("content_management") {
+                            ContentManagementScreen(
+                                onNavigateToPageManager = { navController.navigate("page_list") },
+                                onNavigateToTemplateManager = { navController.navigate("templates") },
+                                onNavigateBack = { navController.popBackStack() }
                             )
                         }
                         composable("main") {
@@ -224,8 +231,7 @@ class MainActivity : AppCompatActivity() {
                             SettingsScreen(
                                 settingsViewModel = settingsViewModel,
                                 pageViewModel = pageViewModel,
-                                onNavigateBack = { navController.popBackStack() },
-                                onNavigateToTemplates = { navController.navigate("templates") }
+                                onNavigateBack = { navController.popBackStack() }
                             )
                         }
                         composable("templates") {

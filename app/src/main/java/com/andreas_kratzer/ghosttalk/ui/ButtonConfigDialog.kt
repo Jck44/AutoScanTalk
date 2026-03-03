@@ -93,6 +93,19 @@ fun ButtonConfigDialog(
         title = { Text(if (initialConfig == null) stringResource(R.string.button_dialog_new_title) else stringResource(R.string.button_dialog_edit_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                // IsActive Toggle (Moved to top)
+                androidx.compose.foundation.layout.Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(stringResource(R.string.button_is_active_label), style = MaterialTheme.typography.bodyLarge)
+                    Switch(
+                        checked = isActive,
+                        onCheckedChange = { isActive = it }
+                    )
+                }
+
                 // Label Input
                 OutlinedTextField(
                     value = label,
@@ -111,7 +124,7 @@ fun ButtonConfigDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                // Auditory Cue (Hover/Scan feedback)
+                // Hinweistext (formerly Auditory Cue)
                 OutlinedTextField(
                     value = ttsFeedback,
                     onValueChange = { ttsFeedback = it },
@@ -119,19 +132,6 @@ fun ButtonConfigDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
-
-                // IsActive Toggle
-                androidx.compose.foundation.layout.Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(stringResource(R.string.button_is_active_label), style = MaterialTheme.typography.bodyLarge)
-                    Switch(
-                        checked = isActive,
-                        onCheckedChange = { isActive = it }
-                    )
-                }
 
                 // Action Type Dropdown
                 ExposedDropdownMenuBox(
