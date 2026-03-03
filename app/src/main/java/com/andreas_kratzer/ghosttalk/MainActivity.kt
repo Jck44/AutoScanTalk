@@ -166,6 +166,21 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // Observe Auto-open single book event
+        lifecycleScope.launch {
+            bookViewModel.autoOpenBookEvent.collect { selectedBookId ->
+                // Do nothing if we are already not on book_list
+                // Actually, this event comes from BookListScreen's ViewModel
+                // We perform the same setup logic as in the NavHost
+                pageViewModel.setActiveBookId(selectedBookId)
+                settingsRepository.activeBookId = selectedBookId
+                settingsViewModel.refresh()
+                // Navigation to "start" is handled inside setContent or here if we have a navController reference
+                // But we can't easily access navController here. 
+                // Better approach: NavHost starts at "book_list" and we navigate from there.
+            }
+        }
+
         setContent {
             val themeMode by settingsViewModel.themeMode.collectAsState()
             
@@ -175,6 +190,18 @@ class MainActivity : AppCompatActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     val navController = rememberNavController()
+
+                    // Handle auto-navigation inside setContent to have access to navController
+                    androidx.compose.runtime.LaunchedEffect(Unit) {
+                        bookViewModel.autoOpenBookEvent.collect { selectedBookId ->
+                            pageViewModel.setActiveBookId(selectedBookId)
+                            settingsRepository.activeBookId = selectedBookId
+                            settingsViewModel.refresh()
+                            navController.navigate("start") {
+                                popUpTo("book_list") { inclusive = true }
+                            }
+                        }
+                    }
 
                     NavHost(navController = navController, startDestination = "book_list") {
                         composable("book_list") {

@@ -208,7 +208,7 @@ fun PreferenceCategory(title: String, content: @Composable ColumnScope.() -> Uni
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = MaterialTheme.shapes.extraLarge,
-            color = MaterialTheme.colorScheme.surfaceContainerLow,
+            color = MaterialTheme.colorScheme.surfaceContainer,
             tonalElevation = 1.dp
         ) {
             Column(
@@ -287,44 +287,6 @@ fun GeneralSettings(
             }
         }
         
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        // Statistiken zurücksetzen
-        var showResetDialog by remember { mutableStateOf(false) }
-        OutlinedButton(
-            onClick = { showResetDialog = true },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
-        ) {
-            Text("Häufige Aktionen zurücksetzen")
-        }
-        
-        if (showResetDialog) {
-            AlertDialog(
-                onDismissRequest = { showResetDialog = false },
-                title = { Text("Statistiken zurücksetzen") },
-                text = { Text("Alle Statistiken für 'Häufigste Aktionen' in diesem Buch werden gelöscht. Fortfahren?") },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            val bookId = settingsViewModel.activeBookId ?: "book-default"
-                            settingsViewModel.clearButtonUsageStats(bookId)
-                            showResetDialog = false
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                    ) {
-                        Text("Zurücksetzen")
-                    }
-                },
-                dismissButton = {
-                    Button(onClick = { showResetDialog = false }, colors = ButtonDefaults.textButtonColors()) {
-                        Text("Abbrechen")
-                    }
-                }
-            )
-        }
-        
-        Spacer(modifier = Modifier.height(16.dp))
         ThemeSettings(settingsViewModel)
     }
 }
@@ -586,8 +548,6 @@ fun GoogleAccountSettings(settingsViewModel: SettingsViewModel) {
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         
-        Spacer(modifier = Modifier.height(12.dp))
-        
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -657,8 +617,6 @@ fun CloudSettings(settingsViewModel: SettingsViewModel) {
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth()
         )
-        
-        Spacer(modifier = Modifier.height(16.dp))
 
         Box(modifier = Modifier.fillMaxWidth()) {
             val currentModeLabel = when (syncMode) {
@@ -739,6 +697,43 @@ fun ActionLogSettings(
                 )
             }
             Switch(checked = persistActionLogs, onCheckedChange = { settingsViewModel.setPersistActionLogs(it) })
+        }
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+        // Statistiken zurücksetzen
+        var showResetDialog by remember { mutableStateOf(false) }
+        TextButton(
+            onClick = { showResetDialog = true },
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+        ) {
+            Text("Häufige Aktionen zurücksetzen")
+        }
+        
+        if (showResetDialog) {
+            AlertDialog(
+                onDismissRequest = { showResetDialog = false },
+                title = { Text("Statistiken zurücksetzen") },
+                text = { Text("Alle Statistiken für 'Häufigste Aktionen' in diesem Buch werden gelöscht. Fortfahren?") },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            val bookId = settingsViewModel.activeBookId ?: "book-default"
+                            settingsViewModel.clearButtonUsageStats(bookId)
+                            showResetDialog = false
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text("Zurücksetzen")
+                    }
+                },
+                dismissButton = {
+                    Button(onClick = { showResetDialog = false }, colors = ButtonDefaults.textButtonColors()) {
+                        Text("Abbrechen")
+                    }
+                }
+            )
         }
     }
 }

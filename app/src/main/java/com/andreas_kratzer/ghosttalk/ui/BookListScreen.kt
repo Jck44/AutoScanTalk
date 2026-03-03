@@ -50,7 +50,7 @@ import com.andreas_kratzer.ghosttalk.model.Book
 
 import androidx.compose.ui.res.stringResource
 import com.andreas_kratzer.ghosttalk.R
-import com.andreas_kratzer.ghosttalk.ui.components.GhostTalkCard
+import com.andreas_kratzer.ghosttalk.ui.components.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,7 +66,12 @@ fun BookListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.book_list_title)) }
+                title = {
+                    AppBrandHeader(
+                        isLandscape = true, // Smaller version for TopAppBar
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             )
         },
         floatingActionButton = {

@@ -55,6 +55,7 @@ fun PageScreen(
     val focusedButtonIndex by pageViewModel.focusedButtonIndex.collectAsState()
     val focusedRowIndex by pageViewModel.focusedRowIndex.collectAsState()
     val lastActions by pageViewModel.lastActions.collectAsState()
+    val showTestButtons by pageViewModel.showTestButtons.collectAsState()
 
     val page = currentPage // Zur einfacheren Verwendung
 
@@ -107,8 +108,10 @@ fun PageScreen(
                         .weight(0.3f)
                         .verticalScroll(rememberScrollState())
                 ) {
-                    ControlButtons(pageViewModel, focusedButtonIndex, focusedRowIndex)
-                    Spacer(modifier = Modifier.height(16.dp))
+                    if (showTestButtons) {
+                        ControlButtons(pageViewModel, focusedButtonIndex, focusedRowIndex)
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
                     ActionLogCard(lastActions) { pageViewModel.clearActionLogs() }
                 }
             }
@@ -128,8 +131,10 @@ fun PageScreen(
                     )
                 }
                 Spacer(modifier = Modifier.height(16.dp))
-                ControlButtons(pageViewModel, focusedButtonIndex, focusedRowIndex)
-                Spacer(modifier = Modifier.height(16.dp))
+                if (showTestButtons) {
+                    ControlButtons(pageViewModel, focusedButtonIndex, focusedRowIndex)
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
                 ActionLogCard(lastActions) { pageViewModel.clearActionLogs() }
             }
         }

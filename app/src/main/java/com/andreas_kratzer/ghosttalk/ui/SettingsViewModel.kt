@@ -90,6 +90,9 @@ class SettingsViewModel @Inject constructor(
     private val _volumeKeysActivate = MutableStateFlow(false)
     val volumeKeysActivate: StateFlow<Boolean> = _volumeKeysActivate.asStateFlow()
 
+    private val _showTestButtons = MutableStateFlow(false)
+    val showTestButtons: StateFlow<Boolean> = _showTestButtons.asStateFlow()
+
     private val _holdingTimeInput = MutableStateFlow("0")
     val holdingTimeInput: StateFlow<String> = _holdingTimeInput.asStateFlow()
 
@@ -140,6 +143,7 @@ class SettingsViewModel @Inject constructor(
         _persistActionLogs.value = settingsRepository.persistActionLogs
         _switchActivationKey.value = settingsRepository.switchActivationKey
         _volumeKeysActivate.value = settingsRepository.volumeKeysActivate
+        _showTestButtons.value = settingsRepository.showTestButtons
         _holdingTimeInput.value = settingsRepository.holdingTimeMillis.toString()
         _syncIntervalMinutesInput.value = settingsRepository.syncIntervalMinutes.toString()
         _syncMode.value = settingsRepository.syncMode
@@ -291,6 +295,11 @@ class SettingsViewModel @Inject constructor(
     fun setVolumeKeysActivate(enabled: Boolean) {
         settingsRepository.volumeKeysActivate = enabled
         _volumeKeysActivate.value = enabled
+    }
+
+    fun setShowTestButtons(enabled: Boolean) {
+        settingsRepository.showTestButtons = enabled
+        _showTestButtons.value = enabled
     }
 
     fun setHoldingTimeInput(input: String) {

@@ -29,7 +29,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.foundation.layout.width
 import androidx.compose.ui.res.stringResource
 import com.andreas_kratzer.ghosttalk.R
-import com.andreas_kratzer.ghosttalk.ui.components.GhostTalkCard
+import com.andreas_kratzer.ghosttalk.ui.components.*
 
 @Composable
 fun StartScreen(
@@ -49,19 +49,10 @@ fun StartScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // App Name (Logo/Branding - usually stays same or uses resources)
-        Text(
-            text = stringResource(R.string.app_name),
-            style = (if (isLandscape) MaterialTheme.typography.displayMedium else MaterialTheme.typography.displayLarge).copy(
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
-        )
-        
-        Text(
-            text = stringResource(R.string.start_tagline),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+        // App Header (Logo + Branding)
+        AppBrandHeader(
+            isLandscape = isLandscape,
+            modifier = Modifier.fillMaxWidth()
         )
         
         Spacer(modifier = Modifier.height(if (isLandscape) 32.dp else 64.dp))

@@ -7,8 +7,11 @@ import com.andreas_kratzer.ghosttalk.data.BookRepository
 import com.andreas_kratzer.ghosttalk.model.Book
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -23,11 +26,20 @@ class BookViewModel @Inject constructor(
     private val _allBooks = MutableStateFlow<List<Book>>(emptyList())
     val allBooks: StateFlow<List<Book>> = _allBooks.asStateFlow()
 
+    private val _autoOpenBookEvent = MutableSharedFlow<String>()
+    val autoOpenBookEvent: SharedFlow<String> = _autoOpenBookEvent.asSharedFlow()
+
+    private var hasAutoOpened = false
+
 
     init {
         viewModelScope.launch {
             bookRepository.getAllBooks().collect { books ->
                 _allBooks.value = books
+                if (!hasAutoOpened && books.size == 1) {
+                    hasAutoOpened = true
+                    _autoOpenBookEvent.emit(books[0].id)
+                }
             }
         }
     }
