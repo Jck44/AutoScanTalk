@@ -21,6 +21,7 @@ import com.andreas_kratzer.ghosttalk.domain.CreatePageUseCase
 import com.andreas_kratzer.ghosttalk.domain.GeminiUseCase
 import com.andreas_kratzer.ghosttalk.domain.GeminiUseCaseFactory
 import com.andreas_kratzer.ghosttalk.domain.GetPagesUseCase
+import com.andreas_kratzer.ghosttalk.domain.PredictNextActionUseCase
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.model.PageTemplate
@@ -56,7 +57,8 @@ class PageViewModel @Inject constructor(
     private val driveAuthManager: DriveAuthManager,
     private val logger: Logger,
     private val geminiUseCaseFactory: GeminiUseCaseFactory,
-    private val ttsHelper: TextToSpeechHelper
+    private val ttsHelper: TextToSpeechHelper,
+    private val predictNextActionUseCase: PredictNextActionUseCase
 ) : AndroidViewModel(application) {
 
     private var geminiUseCase: GeminiUseCase? = null
@@ -84,6 +86,9 @@ class PageViewModel @Inject constructor(
 
     private val _lastActions = MutableStateFlow<List<String>>(emptyList())
     val lastActions: StateFlow<List<String>> = _lastActions.asStateFlow()
+
+    private val _smartPredictions = MutableStateFlow<List<String>>(emptyList())
+    val smartPredictions: StateFlow<List<String>> = _smartPredictions.asStateFlow()
 
     val templates: StateFlow<List<PageTemplate>> = templateRepository.getAllTemplates()
         .stateIn(
@@ -142,9 +147,9 @@ class PageViewModel @Inject constructor(
                         viewModelScope.launch {
                             val page = pageRepository.getPageById(event.pageId)
                             if (page != null) {
-                                loadPage(page)
                                 val idSuffix = if (settingsRepository.showPageIdInLog) " (ID: ${event.pageId})" else ""
                                 logAction("Navigiert zu Seite: ${page.name}$idSuffix")
+                                loadPage(page)
                             } else {
                                 val idSuffix = if (settingsRepository.showPageIdInLog) " mit ID '${event.pageId}'" else ""
                                 logAction("Fehler: Seite$idSuffix nicht gefunden.")
@@ -178,6 +183,39 @@ class PageViewModel @Inject constructor(
 
         viewModelScope.launch {
             settingsRepository.scanDelayFlow.collect { delay -> setScanDelay(delay) }
+        }
+
+        // Gemini Prediction Triggers
+        viewModelScope.launch {
+            // Trigger prediction when page changes OR when action log changes
+            kotlinx.coroutines.flow.combine(
+                _currentPage,
+                _lastActions,
+                settingsRepository.smartPredictionDelayMillisFlow
+            ) { page, _, delay -> page to delay }
+                .collect { (page, delay) ->
+                    if (page != null) {
+                        // Check if at least one SMART_PREDICTION button exists
+                        val hasPredictor = page.buttonConfigs.any { 
+                            (it?.buttonAction as? com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction) != null 
+                        }
+                        
+                        if (hasPredictor) {
+                            val bookId = _activeBookId.value
+                            if (bookId != null) {
+                                // Clear current while waiting? User didn't specify, but let's keep old for less Flicker
+                                kotlinx.coroutines.delay(delay) // Debounce using the configurable delay
+                                try {
+                                    _smartPredictions.value = predictNextActionUseCase.predict(page, bookId)
+                                } catch (e: Exception) {
+                                    Log.e("PageViewModel", "Smart Prediction failed", e)
+                                }
+                            }
+                        } else {
+                            _smartPredictions.value = emptyList()
+                        }
+                    }
+                }
         }
         
         // Reactive page loading via UseCase
@@ -228,10 +266,21 @@ class PageViewModel @Inject constructor(
 
     fun loadPage(page: Page) {
         viewModelScope.launch {
+            val isSamePage = _currentPage.value?.id == page.id
+            
+            if (isSamePage) {
+                // Keep focus index if it's just a dynamic update (Stats)
+                scannerEngine.pauseScanning()
+            } else {
+                scannerEngine.stopScanning()
+            }
+            
             val bookId = _activeBookId.value ?: page.bookId
             val resolvedPage = frequentActionResolver.resolve(page, bookId)
             _currentPage.value = resolvedPage
-            scannerEngine.stopScanning()
+            
+            // Ensure scanning restarts after page is fully loaded and frequent actions resolved
+            resumeScanningIfEnabled()
         }
     }
 
@@ -279,7 +328,46 @@ class PageViewModel @Inject constructor(
         val buttonConfig = page.buttonConfigs.getOrNull(index) ?: return
         
         scannerEngine.setFocusedIndex(index)
+        
+        val smartAction = buttonConfig.buttonAction as? com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
+        if (smartAction != null) {
+            val prediction = _smartPredictions.value.getOrNull(smartAction.rank - 1)
+            if (prediction != null) {
+                resolveSmartPrediction(prediction)
+                return
+            }
+        }
+        
         actionExecutor.executeButtonAction(buttonConfig, bookId = _activeBookId.value)
+    }
+
+    private fun resolveSmartPrediction(prediction: String) {
+        viewModelScope.launch {
+            // Check if it's a page name (Navigation)
+            val allPages = _allPages.value
+            val targetPage = allPages.find { it.name.equals(prediction, ignoreCase = true) }
+            
+            if (targetPage != null) {
+                actionExecutor.executeButtonAction(
+                    com.andreas_kratzer.ghosttalk.model.ButtonConfig(
+                        label = targetPage.name,
+                        auditoryCue = null,
+                        buttonAction = com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction(targetPage.id)
+                    ),
+                    bookId = _activeBookId.value
+                )
+            } else {
+                // Otherwise treat as SpeakText
+                actionExecutor.executeButtonAction(
+                    com.andreas_kratzer.ghosttalk.model.ButtonConfig(
+                        label = prediction,
+                        auditoryCue = null,
+                        buttonAction = com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction(prediction)
+                    ),
+                    bookId = _activeBookId.value
+                )
+            }
+        }
     }
 
     fun activateFocusedButton() {

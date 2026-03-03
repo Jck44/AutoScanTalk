@@ -47,18 +47,18 @@
     <string name="settings_category_system">Logs &amp; System</string>
     <string name="settings_persist_logs">Persist Action Logs</string>
     <string name="settings_persist_logs_hint">Keeps history after restart</string>
+    <string name="settings_show_page_id_in_log">Show Page ID in History</string>
+    <string name="settings_show_page_id_in_log_hint">Shows the technical ID of the page in the logs</string>
+    <string name="settings_experimental_manual_sorting">Manual Sorting (Experimental)</string>
+    <string name="settings_experimental_manual_sorting_hint">Enables sorting of pages and templates via Drag &amp; Drop. (In development)</string>
     
     <!-- Start Screen -->
     <string name="start_tagline">Augmentative and Alternative Communication</string>
     <string name="start_user_mode">User Mode</string>
-    <string name="start_manage_pages">Manage Pages</string>
     <string name="start_manage_content">Manage Content</string>
-    <string name="start_manage_templates">Manage Templates</string>
     <string name="start_back_to_books">Back to Books</string>
-    <string name="start_button_start_description">Start</string>
 
     <!-- Book List Screen -->
-    <string name="book_list_title">GhostTalk - Books</string>
     <string name="book_add_description">Add new book</string>
     <string name="book_created_label">Created: %s</string>
     <string name="book_rename_description">Rename book</string>
@@ -120,8 +120,11 @@
     <string name="button_action_speak_text">Speak Text</string>
     <string name="button_action_navigate_page">Navigate to Page</string>
     <string name="button_action_gemini">Call Gemini</string>
+    <string name="button_action_frequent_action">Frequent Action</string>
+    <string name="button_action_smart_prediction">Gemini Prediction</string>
     <string name="button_no_page_selected">No page selected</string>
     <string name="button_target_page_label">Target Page</string>
+    <string name="button_smart_prediction_rank_label">Prediction Rank (1 = Most Likely)</string>
     <string name="button_gemini_prompt_field">Gemini Prompt (Command)</string>
     <string name="button_gemini_prompt_hint">What should Gemini do?</string>
     <string name="action_clear_delete">Clear / Delete</string>
@@ -165,6 +168,8 @@
     <string name="settings_gemini_activation_success">Gemini successfully activated!</string>
     <string name="settings_gemini_activation_error">Activation error: %s</string>
     <string name="settings_gemini_enable">Enable Gemini AI</string>
+    <string name="settings_gemini_prediction_delay">Prediction Delay (ms)</string>
+    <string name="settings_gemini_prediction_delay_hint">Time after navigation/action before Gemini is asked. Higher values save API limits.</string>
     <string name="settings_gemini_tools_title">Available Features (Tools):</string>
     <string name="settings_gemini_tool_status_active">Active</string>
     <string name="settings_gemini_tool_status_requires_auth">Sign-in required</string>
@@ -178,12 +183,12 @@
     <string name="settings_gemini_tool_weather">Weather Information</string>
     <string name="settings_gemini_tool_spotify">Spotify Control</string>
     <string name="error_gemini_disabled">Check Gemini in Settings</string>
+    <string name="error_gemini_quota_reached">Gemini limit reached. Please wait %d seconds.</string>
 
     <!-- Shared -->
     <string name="error_page_not_found">Page not found</string>
 
     <!-- Templates -->
-    <string name="template_title">Templates</string>
     <string name="template_manage_title">Manage Templates</string>
     <string name="template_name_label">Template Name</string>
     <string name="template_built_in_label">Standard</string>
@@ -194,5 +199,4 @@
     <string name="template_edit_title">Template: %s</string>
     <string name="template_editor_hint">Tap a field to assign it</string>
     <string name="template_loading">Loading template…</string>
-    <string name="template_action_frequent">Frequent Action</string>
 </resources>

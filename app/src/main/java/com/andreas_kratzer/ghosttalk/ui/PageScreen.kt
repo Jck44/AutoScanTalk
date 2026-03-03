@@ -55,6 +55,7 @@ fun PageScreen(
     val focusedButtonIndex by pageViewModel.focusedButtonIndex.collectAsState()
     val focusedRowIndex by pageViewModel.focusedRowIndex.collectAsState()
     val lastActions by pageViewModel.lastActions.collectAsState()
+    val smartPredictions by pageViewModel.smartPredictions.collectAsState()
     val showTestButtons by pageViewModel.showTestButtons.collectAsState()
 
     val page = currentPage // Zur einfacheren Verwendung
@@ -98,6 +99,7 @@ fun PageScreen(
                         page = page,
                         focusedButtonIndex = focusedButtonIndex,
                         focusedRowIndex = focusedRowIndex,
+                        smartPredictions = smartPredictions,
                         pageViewModel = pageViewModel
                     )
                 }
@@ -127,6 +129,7 @@ fun PageScreen(
                         page = page,
                         focusedButtonIndex = focusedButtonIndex,
                         focusedRowIndex = focusedRowIndex,
+                        smartPredictions = smartPredictions,
                         pageViewModel = pageViewModel
                     )
                 }
@@ -146,6 +149,7 @@ fun ButtonGrid(
     page: Page,
     focusedButtonIndex: Int?,
     focusedRowIndex: Int?,
+    smartPredictions: List<String>,
     pageViewModel: PageViewModel
 ) {
     LazyVerticalGrid(
@@ -160,11 +164,16 @@ fun ButtonGrid(
             val isRowFocused = focusedRowIndex != null && (globalIndex / page.columns) == focusedRowIndex
 
             if (buttonConfig != null && buttonConfig.isActive) {
+                val overrideLabel = (buttonConfig.buttonAction as? com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction)?.let { smartAction ->
+                    smartPredictions.getOrNull(smartAction.rank - 1)
+                }
+
                 GridButton(
                     buttonConfig = buttonConfig,
                     isFocused = isFocused,
                     isRowFocused = isRowFocused,
                     isEditorMode = false,
+                    overrideLabel = overrideLabel,
                     onClick = { pageViewModel.activateButtonAtIndex(globalIndex) }
                 )
             } else {

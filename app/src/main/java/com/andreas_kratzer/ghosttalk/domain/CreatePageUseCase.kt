@@ -44,8 +44,8 @@ class CreatePageUseCase @javax.inject.Inject constructor(
             }
 
             buttonConfigs = template.buttonConfigs.map { config ->
-                if (config?.buttonAction is NavigateToPageButtonAction) {
-                    val action = config.buttonAction as NavigateToPageButtonAction
+                val action = config?.buttonAction
+                if (action is NavigateToPageButtonAction) {
                     if (action.pageId.isEmpty() && homePageId != null) {
                         // Dynamically fill the "Zurück zum Start" pageId
                         config.copy(buttonAction = action.copy(pageId = homePageId))

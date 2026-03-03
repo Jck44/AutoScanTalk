@@ -73,6 +73,7 @@ class SettingsRepository(context: Context) {
         _lastSuccessfulSyncTimeFlow.value = lastSuccessfulSyncTime
         _showPageIdInLogFlow.value = showPageIdInLog
         _experimentalManualSortingFlow.value = experimentalManualSorting
+        _smartPredictionDelayMillisFlow.value = smartPredictionDelayMillis
     }
 
     private val _pageSortOrderFlow = MutableStateFlow(getStringScoped(KEY_PAGE_SORT_ORDER, "MANUAL") ?: "MANUAL")
@@ -105,11 +106,11 @@ class SettingsRepository(context: Context) {
             _lastSuccessfulSyncTimeFlow.value = value
         }
 
-    private val _showPageIdInLogFlow = MutableStateFlow(getBooleanScoped(KEY_SHOW_PAGE_ID_IN_LOG, true))
+    private val _showPageIdInLogFlow = MutableStateFlow(getBooleanScoped(KEY_SHOW_PAGE_ID_IN_LOG, false))
     val showPageIdInLogFlow: StateFlow<Boolean> = _showPageIdInLogFlow.asStateFlow()
 
     var showPageIdInLog: Boolean
-        get() = getBooleanScoped(KEY_SHOW_PAGE_ID_IN_LOG, true)
+        get() = getBooleanScoped(KEY_SHOW_PAGE_ID_IN_LOG, false)
         set(value) {
             putBooleanScoped(KEY_SHOW_PAGE_ID_IN_LOG, value)
             _showPageIdInLogFlow.value = value
@@ -123,6 +124,16 @@ class SettingsRepository(context: Context) {
         set(value) {
             putBooleanScoped(KEY_EXPERIMENTAL_MANUAL_SORTING, value)
             _experimentalManualSortingFlow.value = value
+        }
+
+    private val _smartPredictionDelayMillisFlow = MutableStateFlow(getLongScoped(KEY_SMART_PREDICTION_DELAY, 2000L))
+    val smartPredictionDelayMillisFlow: StateFlow<Long> = _smartPredictionDelayMillisFlow.asStateFlow()
+
+    var smartPredictionDelayMillis: Long
+        get() = getLongScoped(KEY_SMART_PREDICTION_DELAY, 2000L)
+        set(value) {
+            putLongScoped(KEY_SMART_PREDICTION_DELAY, value)
+            _smartPredictionDelayMillisFlow.value = value
         }
 
     private val _ttsLanguageFlow = MutableStateFlow(getStringScoped(KEY_TTS_LANGUAGE))
@@ -352,5 +363,6 @@ class SettingsRepository(context: Context) {
         private const val KEY_LAST_SYNC_TIME = "last_sync_time"
         private const val KEY_SHOW_PAGE_ID_IN_LOG = "show_page_id_in_log"
         private const val KEY_EXPERIMENTAL_MANUAL_SORTING = "experimental_manual_sorting"
+        private const val KEY_SMART_PREDICTION_DELAY = "smart_prediction_delay"
     }
 }

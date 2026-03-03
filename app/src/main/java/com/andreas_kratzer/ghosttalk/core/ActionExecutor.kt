@@ -9,6 +9,7 @@ import com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction
 import com.andreas_kratzer.ghosttalk.model.GeminiButtonAction
 import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
+import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
 import com.google.android.gms.auth.UserRecoverableAuthException
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
@@ -152,6 +153,10 @@ class ActionExecutor(
                         finishExecution(currentExecutionId)
                     }
                 }
+            }
+            is SmartPredictionButtonAction -> {
+                log("Smart Prediction button clicked (Rank: ${action.rank}). Actual execution handled in ViewModel.")
+                finishExecution(currentExecutionId)
             }
         }
     }

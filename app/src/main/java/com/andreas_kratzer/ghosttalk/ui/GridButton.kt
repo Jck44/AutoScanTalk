@@ -24,6 +24,7 @@ fun GridButton(
     isFocused: Boolean = false,
     isRowFocused: Boolean = false,
     isEditorMode: Boolean = false,
+    overrideLabel: String? = null,
     onClick: () -> Unit
 ) {
     val isActive = buttonConfig?.isActive ?: true
@@ -56,7 +57,7 @@ fun GridButton(
         ) {
             if (buttonConfig != null) {
                 AutoSizeText(
-                    text = buttonConfig.label,
+                    text = overrideLabel ?: buttonConfig.label,
                     color = if (isEditorMode) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else if (isEditorMode) {

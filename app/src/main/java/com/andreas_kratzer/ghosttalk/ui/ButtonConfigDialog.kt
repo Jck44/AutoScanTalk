@@ -31,6 +31,7 @@ import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.model.GeminiButtonAction
 import com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction
+import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 
@@ -61,7 +62,8 @@ fun ButtonConfigDialog(
     val actionTypeNavigate = stringResource(R.string.button_action_navigate_page)
     val actionTypeGemini = stringResource(R.string.button_action_gemini)
     val actionTypeFrequent = stringResource(R.string.button_action_frequent_action)
-    val actionTypes = listOf(actionTypeSpeak, actionTypeNavigate, actionTypeGemini, actionTypeFrequent)
+    val actionTypeSmart = stringResource(R.string.button_action_smart_prediction)
+    val actionTypes = listOf(actionTypeSpeak, actionTypeNavigate, actionTypeGemini, actionTypeFrequent, actionTypeSmart)
     
     var selectedActionType by remember {
         mutableStateOf(
@@ -69,6 +71,7 @@ fun ButtonConfigDialog(
                 is NavigateToPageButtonAction -> actionTypeNavigate
                 is GeminiButtonAction -> actionTypeGemini
                 is FrequentActionButtonAction -> actionTypeFrequent
+                is SmartPredictionButtonAction -> actionTypeSmart
                 else -> actionTypeSpeak
             }
         )
@@ -93,6 +96,10 @@ fun ButtonConfigDialog(
     // Frequent Action Details
     val frequentActionDef = initialConfig?.buttonAction as? FrequentActionButtonAction
     var frequentRank by remember { mutableStateOf((frequentActionDef?.rank ?: 1).toString()) }
+
+    // Smart Prediction Details
+    val smartActionDef = initialConfig?.buttonAction as? SmartPredictionButtonAction
+    var smartRank by remember { mutableStateOf((smartActionDef?.rank ?: 1).toString()) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -230,12 +237,28 @@ fun ButtonConfigDialog(
                 if (selectedActionType == actionTypeFrequent) {
                     OutlinedTextField(
                         value = frequentRank,
-                        onValueChange = { newValue -> 
+                        onValueChange = { newValue ->
                             if (newValue.isEmpty() || newValue.all { it.isDigit() }) {
                                 frequentRank = newValue
                             }
                         },
-                        label = { Text(stringResource(R.string.button_frequent_action_rank_label)) },
+                        label = { Text(stringResource(R.string.button_smart_prediction_rank_label)) }, // Reusing same rank label
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                // Conditional fields for Smart Prediction
+                if (selectedActionType == actionTypeSmart) {
+                    OutlinedTextField(
+                        value = smartRank,
+                        onValueChange = { newValue -> 
+                            if (newValue.isEmpty() || newValue.all { it.isDigit() }) {
+                                smartRank = newValue
+                            }
+                        },
+                        label = { Text(stringResource(R.string.button_smart_prediction_rank_label)) },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth()
@@ -251,6 +274,7 @@ fun ButtonConfigDialog(
                             actionTypeNavigate -> NavigateToPageButtonAction(pageId = navigateToPageId)
                             actionTypeGemini -> GeminiButtonAction(prompt = geminiPrompt)
                             actionTypeFrequent -> FrequentActionButtonAction(rank = frequentRank.toIntOrNull()?.coerceAtLeast(1) ?: 1)
+                            actionTypeSmart -> SmartPredictionButtonAction(rank = smartRank.toIntOrNull()?.coerceAtLeast(1) ?: 1)
                             else -> SpeakTextButtonAction(textToSpeech = spokenText.takeIf { it.isNotBlank() } ?: label)
                         }
 

@@ -57,14 +57,10 @@
     <!-- Start Screen -->
     <string name="start_tagline">Unterstützte Kommunikation</string>
     <string name="start_user_mode">Nutzer Modus</string>
-    <string name="start_manage_pages">Seiten verwalten</string>
     <string name="start_manage_content">Inhalte verwalten</string>
-    <string name="start_manage_templates">Vorlagen verwalten</string>
     <string name="start_back_to_books">Zurück zu den Büchern</string>
-    <string name="start_button_start_description">Start</string>
 
     <!-- Book List Screen -->
-    <string name="book_list_title">GhostTalk - Bücher</string>
     <string name="book_add_description">Neues Buch hinzufügen</string>
     <string name="book_created_label">Erstellt: %s</string>
     <string name="book_rename_description">Buch umbenennen</string>
@@ -128,9 +124,10 @@
     <string name="button_action_navigate_page">Zu Seite navigieren</string>
     <string name="button_action_gemini">Gemini aufrufen</string>
     <string name="button_action_frequent_action">Häufigste Aktion</string>
+    <string name="button_action_smart_prediction">Gemini Vorhersage</string>
     <string name="button_no_page_selected">Keine Seite ausgewählt</string>
     <string name="button_target_page_label">Ziel-Seite</string>
-    <string name="button_frequent_action_rank_label">Rang (1 = Häufigste)</string>
+    <string name="button_smart_prediction_rank_label">Vorhersage-Rang (1 = Wahrscheinlichste)</string>
     <string name="button_gemini_prompt_field">Gemini Prompt (Befehl)</string>
     <string name="button_gemini_prompt_hint">Was soll Gemini tun?</string>
 
@@ -150,7 +147,6 @@
     <string name="settings_google_account_status_not_signed_in">Nicht angemeldet</string>
     <string name="settings_google_account_sign_in">Anmelden</string>
     <string name="settings_google_account_sign_out">Abmelden</string>
-    <string name="settings_google_account_status_label">Status:</string>
 
     <!-- Cloud Sync -->
     <string name="settings_category_cloud">Google Drive Sync</string>
@@ -167,12 +163,12 @@
     <!-- Gemini Integration -->
     <string name="settings_category_gemini">Gemini KI-Assistent</string>
     <string name="settings_gemini_activate_button">Gemini Initialisieren / Testen</string>
-    <string name="settings_gemini_status_enabled">Aktiviert</string>
-    <string name="settings_gemini_status_disabled">Nicht aktiviert</string>
     <string name="settings_gemini_activation_desc">Tippe auf den Button, um Gemini zu initialisieren und die notwendigen Berechtigungen abzufragen.</string>
     <string name="settings_gemini_activation_success">Gemini erfolgreich aktiviert!</string>
     <string name="settings_gemini_activation_error">Aktivierungsfehler: %s</string>
     <string name="settings_gemini_enable">Gemini KI aktivieren</string>
+    <string name="settings_gemini_prediction_delay">Vorhersage-Verzögerung (ms)</string>
+    <string name="settings_gemini_prediction_delay_hint">Zeit nach Navigation/Aktion, bevor Gemini gefragt wird. Höhere Werte schonen API-Limits.</string>
     <string name="settings_gemini_tools_title">Verfügbare Funktionen (Tools):</string>
     <string name="settings_gemini_tool_status_active">Aktiv</string>
     <string name="settings_gemini_tool_status_requires_auth">Anmeldung erforderlich</string>
@@ -186,12 +182,12 @@
     <string name="settings_gemini_tool_weather">Wetter Informationen</string>
     <string name="settings_gemini_tool_spotify">Spotify Steuerung</string>
     <string name="error_gemini_disabled">Gemini in Einstellungen prüfen</string>
+    <string name="error_gemini_quota_reached">Gemini-Limit erreicht. Bitte %d Sekunden warten.</string>
 
     <!-- Shared -->
     <string name="error_page_not_found">Seite nicht gefunden</string>
 
     <!-- Vorlagen (Templates) -->
-    <string name="template_title">Vorlagen</string>
     <string name="template_manage_title">Vorlagen verwalten</string>
     <string name="template_name_label">Name der Vorlage</string>
     <string name="template_built_in_label">Standard</string>
@@ -202,5 +198,4 @@
     <string name="template_edit_title">Vorlage: %s</string>
     <string name="template_editor_hint">Tippe auf ein Feld, um es zu belegen</string>
     <string name="template_loading">Vorlage wird geladen…</string>
-    <string name="template_action_frequent">Häufigste Aktion</string>
 </resources>

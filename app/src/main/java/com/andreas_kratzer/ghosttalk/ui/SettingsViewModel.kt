@@ -128,6 +128,9 @@ class SettingsViewModel @Inject constructor(
     private val _isSyncing = MutableStateFlow(false)
     val isSyncing: StateFlow<Boolean> = _isSyncing.asStateFlow()
 
+    private val _smartPredictionDelayMillisInput = MutableStateFlow("2000")
+    val smartPredictionDelayMillisInput: StateFlow<String> = _smartPredictionDelayMillisInput.asStateFlow()
+
     val lastSuccessfulSyncTime: StateFlow<Long> = settingsRepository.lastSuccessfulSyncTimeFlow
     val pageSortOrder: StateFlow<String> = settingsRepository.pageSortOrderFlow
     val templateSortOrder: StateFlow<String> = settingsRepository.templateSortOrderFlow
@@ -137,6 +140,12 @@ class SettingsViewModel @Inject constructor(
 
     init {
         refresh()
+        
+        viewModelScope.launch {
+            settingsRepository.smartPredictionDelayMillisFlow.collect {
+                _smartPredictionDelayMillisInput.value = it.toString()
+            }
+        }
     }
 
     fun refresh() {
@@ -604,6 +613,16 @@ class SettingsViewModel @Inject constructor(
 
     fun setTemplateSortOrder(order: com.andreas_kratzer.ghosttalk.model.SortOrder) {
         settingsRepository.templateSortOrder = order.name
+    }
+
+    fun setSmartPredictionDelayInput(input: String) {
+        val digitsOnly = input.filter { it.isDigit() }
+        _smartPredictionDelayMillisInput.value = digitsOnly
+
+        val parsed = digitsOnly.toLongOrNull()
+        if (parsed != null && parsed >= 0L) {
+            settingsRepository.smartPredictionDelayMillis = parsed
+        }
     }
 
     override fun onCleared() {

@@ -35,5 +35,12 @@ data class FrequentActionButtonAction(
     val rank: Int  // 1 = häufigste, 2 = zweithäufigste, ...
 ) : ButtonAction()
 
+/**
+ * An action that resolves dynamically to the N-th smart prediction from Gemini.
+ */
+data class SmartPredictionButtonAction(
+    val rank: Int = 1 // 1 = most likely, 2 = second, ...
+) : ButtonAction()
+
 // Zukünftige Aktionen könnten hier als weitere data classes hinzugefügt werden,
 // die von `Action` erben.
