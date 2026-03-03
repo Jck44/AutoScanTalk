@@ -26,7 +26,10 @@ class BookViewModel @Inject constructor(
     private val _allBooks = MutableStateFlow<List<Book>>(emptyList())
     val allBooks: StateFlow<List<Book>> = _allBooks.asStateFlow()
 
-    private val _autoOpenBookEvent = MutableSharedFlow<String>()
+    private val _autoOpenBookEvent = MutableSharedFlow<String>(
+        replay = 1,
+        onBufferOverflow = kotlinx.coroutines.channels.BufferOverflow.DROP_OLDEST
+    )
     val autoOpenBookEvent: SharedFlow<String> = _autoOpenBookEvent.asSharedFlow()
 
     private var hasAutoOpened = false
