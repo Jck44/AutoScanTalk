@@ -1,4 +1,5 @@
 package com.andreas_kratzer.ghosttalk.core
+import com.andreas_kratzer.ghosttalk.R
 
 import com.andreas_kratzer.ghosttalk.data.PageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
@@ -102,6 +103,15 @@ class ActionExecutor(
                 log("Gemini aufgerufen mit: \"${action.prompt}\"")
                 scope.launch {
                     try {
+                        if (!settingsRepository.isGeminiEnabled) {
+                            val errorMsg = ttsHelper?.context?.getString(R.string.error_gemini_disabled) 
+                                ?: "Gemini in Einstellungen prüfen"
+                            ttsHelper?.speakRouted(errorMsg, settingsRepository.ttsAudioDeviceAddress) {
+                                finishExecution(currentExecutionId)
+                            }
+                            return@launch
+                        }
+
                         val response = geminiUseCase?.generateResponse(action.prompt) 
                             ?: "Fehler: Gemini Integration nicht verfügbar."
                         

@@ -21,12 +21,19 @@ class GeminiUseCase(
     private val oauthTokenProvider: suspend () -> String?,
     private val driveProvider: suspend () -> Drive?
 ) {
+    enum class ToolStatus {
+        AVAILABLE,
+        REQUIRES_AUTH,
+        FAILED,
+        PENDING
+    }
     private val TAG = "GeminiUseCase"
     private var activeModelName = "gemini-2.0-flash" 
     private val BASE_URL_TEMPLATE = "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent"
     private val LIST_MODELS_URL = "https://generativelanguage.googleapis.com/v1beta/models"
 
     private var modelInitialized = false
+    private var lastSuccess: Boolean? = null // null: unknown, true: success, false: failed
 
     private var appCommandHandler: ((String, Map<String, String>) -> Unit)? = null
 
@@ -45,16 +52,22 @@ class GeminiUseCase(
         }
         
         try {
-            return@withContext performGeneration(token, prompt)
+            val result = performGeneration(token, prompt)
+            lastSuccess = true
+            return@withContext result
         } catch (e: Exception) {
+            lastSuccess = false
             val errorMsg = e.message ?: ""
             if (errorMsg.contains("404") || errorMsg.contains("429")) {
                 Log.w(TAG, "Model $activeModelName failed (Error: $errorMsg), attempting to find alternative...")
                 val failedModel = activeModelName
                 if (tryToSelectBestModel(token, excludeName = failedModel)) {
                     try {
-                        return@withContext performGeneration(token, prompt)
+                        val result = performGeneration(token, prompt)
+                        lastSuccess = true
+                        return@withContext result
                     } catch (retryEx: Exception) {
+                        lastSuccess = false
                         Log.e(TAG, "Retry with fallback model $activeModelName failed: ${retryEx.message}")
                     }
                 }
@@ -192,10 +205,8 @@ class GeminiUseCase(
                 }))
             }))
             val toolsArray = JSONArray()
-            // 1. Google Search Grounding
-            toolsArray.put(JSONObject().apply {
-                put("google_search_retrieval", JSONObject())
-            })
+            // NOTE: Built-in tools (google_search) and custom functions cannot be combined as of now.
+            // Prioritizing custom functions for GhostTalk.
             // 2. Custom Functions
             toolsArray.put(JSONObject().apply {
                 put("function_declarations", JSONArray().apply {
@@ -294,19 +305,24 @@ class GeminiUseCase(
         val args = call.optJSONObject("args")
         Log.d(TAG, "Executing tool: $name with args: $args")
         
-        return when (name) {
-            "search_drive" -> executeDriveSearch(args?.optString("query") ?: "")
-            "get_weather" -> executeWeatherFetch(args?.optString("location") ?: "Berlin")
-            "wikipedia_search" -> executeWikipediaSearch(args?.optString("topic") ?: "")
-            "list_calendar_events" -> executeCalendarFetch(token)
-            "list_tasks" -> executeTasksFetch(token)
-            "play_on_spotify" -> {
-                val q = args?.optString("query") ?: ""
-                appCommandHandler?.invoke("SPOTIFY_PLAY", mapOf("query" to q))
-                "Spotify wurde mit der Suche '$q' gestartet."
+        return try {
+            when (name) {
+                "search_drive" -> executeDriveSearch(args?.optString("query") ?: "")
+                "get_weather" -> executeWeatherFetch(args?.optString("location") ?: "Berlin")
+                "wikipedia_search" -> executeWikipediaSearch(args?.optString("topic") ?: "")
+                "list_calendar_events" -> executeCalendarFetch(token)
+                "list_tasks" -> executeTasksFetch(token)
+                "play_on_spotify" -> {
+                    val q = args?.optString("query") ?: ""
+                    appCommandHandler?.invoke("SPOTIFY_PLAY", mapOf("query" to q))
+                    "Spotify wurde mit der Suche '$q' gestartet."
+                }
+                "control_home" -> executeHomeControl(args?.optString("device") ?: "", args?.optString("action") ?: "")
+                else -> "Funktion nicht gefunden."
             }
-            "control_home" -> executeHomeControl(args?.optString("device") ?: "", args?.optString("action") ?: "")
-            else -> "Funktion nicht gefunden."
+        } catch (e: Exception) {
+            Log.e(TAG, "Tool $name execution failed", e)
+            "[Fehler im Tool $name: ${e.message}. Fahre fort, falls möglich.]"
         }
     }
 
@@ -421,5 +437,33 @@ class GeminiUseCase(
         } catch (e: Exception) {
             "Tasks-Fehler: ${e.message}"
         }
+    }
+
+    fun getToolStatus(isUserSignedIn: Boolean): Map<String, ToolStatus> {
+        val statusMap = mutableMapOf<String, ToolStatus>()
+        
+        val baseStatus = when (lastSuccess) {
+            true -> ToolStatus.AVAILABLE
+            false -> ToolStatus.FAILED
+            null -> ToolStatus.PENDING
+        }
+
+        // Static tools
+        statusMap["wikipedia_search"] = baseStatus
+        statusMap["get_weather"] = baseStatus
+        statusMap["play_on_spotify"] = baseStatus
+        
+        // Auth-dependent tools
+        val authStatus = if (!isUserSignedIn) {
+            ToolStatus.REQUIRES_AUTH
+        } else {
+            baseStatus
+        }
+        
+        statusMap["search_drive"] = authStatus
+        statusMap["list_calendar_events"] = authStatus
+        statusMap["list_tasks"] = authStatus
+        
+        return statusMap
     }
 }

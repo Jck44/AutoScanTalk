@@ -101,6 +101,9 @@ class SettingsViewModel @Inject constructor(
     private val _isGeminiEnabled = MutableStateFlow(false)
     val isGeminiEnabled: StateFlow<Boolean> = _isGeminiEnabled.asStateFlow()
 
+    private val _geminiToolStatus = MutableStateFlow<Map<String, com.andreas_kratzer.ghosttalk.domain.GeminiUseCase.ToolStatus>>(emptyMap())
+    val geminiToolStatus: StateFlow<Map<String, com.andreas_kratzer.ghosttalk.domain.GeminiUseCase.ToolStatus>> = _geminiToolStatus.asStateFlow()
+
     private val _selectedAppLanguage = MutableStateFlow<String?>("default")
     val selectedAppLanguage: StateFlow<String?> = _selectedAppLanguage.asStateFlow()
 
@@ -140,6 +143,8 @@ class SettingsViewModel @Inject constructor(
         _isGeminiEnabled.value = settingsRepository.isGeminiEnabled
         _selectedAppLanguage.value = settingsRepository.appLanguage ?: "default"
         _themeMode.value = settingsRepository.themeMode
+        
+        updateGeminiToolStatus()
         
         // Den lokalen TTS-Helper mit den gespeicherten Werten füttern,
         // sonst spricht er in den Einstellungen initial in Systemsprache
@@ -448,6 +453,17 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    fun setGeminiEnabled(enabled: Boolean) {
+        settingsRepository.isGeminiEnabled = enabled
+        _isGeminiEnabled.value = enabled
+        updateGeminiToolStatus()
+    }
+
+    private fun updateGeminiToolStatus() {
+        val gemini = geminiUseCaseFactory.create { null } // We just need the status logic
+        _geminiToolStatus.value = gemini.getToolStatus(driveAuthManager.userEmail.value != null)
+    }
+
     fun activateGemini(context: android.content.Context) {
         val gemini = geminiUseCaseFactory.create {
             driveAuthManager.getDriveCredential()?.getToken()
@@ -461,6 +477,7 @@ class SettingsViewModel @Inject constructor(
                 
                 settingsRepository.isGeminiEnabled = true
                 _isGeminiEnabled.value = true
+                updateGeminiToolStatus()
                 android.widget.Toast.makeText(context, getApplication<Application>().getString(com.andreas_kratzer.ghosttalk.R.string.settings_gemini_activation_success), android.widget.Toast.LENGTH_SHORT).show()
             } catch (e: UserRecoverableAuthIOException) {
                 android.util.Log.e("SettingsViewModel", "Caught UserRecoverableAuthIOException, emitting intent", e)

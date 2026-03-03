@@ -682,46 +682,90 @@ fun ActionLogSettings(
 @Composable
 fun GeminiSettings(settingsViewModel: SettingsViewModel) {
     val isGeminiEnabled by settingsViewModel.isGeminiEnabled.collectAsState()
+    val toolStatus by settingsViewModel.geminiToolStatus.collectAsState()
     val context = androidx.compose.ui.platform.LocalContext.current
     
     PreferenceCategory(stringResource(R.string.settings_category_gemini)) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { settingsViewModel.setGeminiEnabled(!isGeminiEnabled) },
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = stringResource(R.string.settings_gemini_enable),
+                modifier = Modifier.weight(1f)
+            )
+            Switch(
+                checked = isGeminiEnabled,
+                onCheckedChange = { settingsViewModel.setGeminiEnabled(it) }
+            )
+        }
+
         Text(
             text = stringResource(R.string.settings_gemini_activation_desc),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+        Button(
+            onClick = { settingsViewModel.activateGemini(context) },
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(R.string.settings_google_account_status_label),
-                    style = MaterialTheme.typography.labelLarge
-                )
-                Text(
-                    text = if (isGeminiEnabled) {
-                        stringResource(R.string.settings_gemini_status_enabled)
-                    } else {
-                        stringResource(R.string.settings_gemini_status_disabled)
-                    },
-                    color = if (isGeminiEnabled) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.error
-                    },
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
+            Text(stringResource(R.string.settings_gemini_activate_button))
+        }
+
+        if (isGeminiEnabled && toolStatus.isNotEmpty()) {
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            Text(
+                text = stringResource(R.string.settings_gemini_tools_title),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary
+            )
             
-            Button(
-                onClick = { settingsViewModel.activateGemini(context) }
-            ) {
-                Text(stringResource(R.string.settings_gemini_activate_button))
+            toolStatus.forEach { (toolName, status) ->
+                GeminiToolStatusItem(toolName, status)
             }
         }
+    }
+}
+
+@Composable
+fun GeminiToolStatusItem(toolName: String, status: com.andreas_kratzer.ghosttalk.domain.GeminiUseCase.ToolStatus) {
+    val label = when (toolName) {
+        "google_search" -> stringResource(R.string.settings_gemini_tool_google_search)
+        "search_drive" -> stringResource(R.string.settings_gemini_tool_drive)
+        "list_calendar_events" -> stringResource(R.string.settings_gemini_tool_calendar)
+        "list_tasks" -> stringResource(R.string.settings_gemini_tool_tasks)
+        "wikipedia_search" -> stringResource(R.string.settings_gemini_tool_wikipedia)
+        "get_weather" -> stringResource(R.string.settings_gemini_tool_weather)
+        "play_on_spotify" -> stringResource(R.string.settings_gemini_tool_spotify)
+        else -> toolName
+    }
+
+    val statusText = when (status) {
+        com.andreas_kratzer.ghosttalk.domain.GeminiUseCase.ToolStatus.AVAILABLE -> stringResource(R.string.settings_gemini_tool_status_active)
+        com.andreas_kratzer.ghosttalk.domain.GeminiUseCase.ToolStatus.REQUIRES_AUTH -> stringResource(R.R.string.settings_gemini_tool_status_requires_auth)
+        com.andreas_kratzer.ghosttalk.domain.GeminiUseCase.ToolStatus.FAILED -> stringResource(R.R.string.settings_gemini_tool_status_failed)
+        com.andreas_kratzer.ghosttalk.domain.GeminiUseCase.ToolStatus.PENDING -> stringResource(R.string.settings_gemini_tool_status_pending)
+    }
+
+    val color = when (status) {
+        com.andreas_kratzer.ghosttalk.domain.GeminiUseCase.ToolStatus.AVAILABLE -> MaterialTheme.colorScheme.primary
+        com.andreas_kratzer.ghosttalk.domain.GeminiUseCase.ToolStatus.REQUIRES_AUTH -> MaterialTheme.colorScheme.error
+        com.andreas_kratzer.ghosttalk.domain.GeminiUseCase.ToolStatus.FAILED -> MaterialTheme.colorScheme.error
+        com.andreas_kratzer.ghosttalk.domain.GeminiUseCase.ToolStatus.PENDING -> MaterialTheme.colorScheme.secondary
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(text = label, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+        Text(text = statusText, style = MaterialTheme.typography.bodySmall, color = color)
     }
 }
 
