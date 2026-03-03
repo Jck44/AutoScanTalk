@@ -23,6 +23,9 @@ import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.DragHandle
+import com.andreas_kratzer.ghosttalk.ui.components.reorderableItem
+import com.andreas_kratzer.ghosttalk.ui.components.rememberReorderableState
 import com.andreas_kratzer.ghosttalk.model.SortOrder
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,6 +38,10 @@ fun TemplateScreen(
     val templates by templateViewModel.templates.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
     var templateToDelete by remember { mutableStateOf<PageTemplate?>(null) }
+    val reorderState = rememberReorderableState { from, to ->
+        templateViewModel.reorderTemplates(from, to)
+    }
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
 
     Scaffold(
         topBar = {
@@ -85,6 +92,7 @@ fun TemplateScreen(
         }
     ) { paddingValues ->
         LazyColumn(
+            state = listState,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
@@ -92,31 +100,31 @@ fun TemplateScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             contentPadding = PaddingValues(vertical = 8.dp)
         ) {
-            items(templates) { template ->
+            items(templates.size, key = { index -> templates[index].id }) { index ->
+                val template = templates[index]
                 GhostTalkCard(
                     title = template.name,
                     subtitle = "Raster: ${template.rows}x${template.columns} " + if (template.isBuiltIn) "(${stringResource(R.string.template_built_in_label)})" else "(${stringResource(R.string.template_custom_label)})",
                     icon = Icons.Default.GridView,
                     onClick = { onTemplateClick(template.id) },
+                    modifier = Modifier.reorderableItem(
+                        state = reorderState,
+                        index = index,
+                        onDrag = {
+                            reorderState.findTargetIndexForList(listState)?.let { targetIndex ->
+                                templateViewModel.reorderTemplates(index, targetIndex)
+                            }
+                        }
+                    ),
                     trailingAction = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            val templateSortOrder by templateViewModel.settingsRepository.templateSortOrderFlow.collectAsState("MANUAL")
-                            if (templateSortOrder == "MANUAL") {
-                                Column {
-                                    IconButton(onClick = {
-                                        val index = templates.indexOf(template)
-                                        if (index > 0) templateViewModel.reorderTemplates(index, index - 1)
-                                    }) {
-                                        Icon(Icons.Default.ArrowUpward, contentDescription = "Hoch")
-                                    }
-                                    IconButton(onClick = {
-                                        val index = templates.indexOf(template)
-                                        if (index < templates.size - 1) templateViewModel.reorderTemplates(index, index + 1)
-                                    }) {
-                                        Icon(Icons.Default.ArrowDownward, contentDescription = "Runter")
-                                    }
-                                }
-                            }
+                            Icon(
+                                imageVector = Icons.Default.DragHandle,
+                                contentDescription = "Verschieben",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                modifier = Modifier.padding(end = 8.dp)
+                            )
+                            
                             IconButton(
                                 onClick = { templateToDelete = template }
                             ) {

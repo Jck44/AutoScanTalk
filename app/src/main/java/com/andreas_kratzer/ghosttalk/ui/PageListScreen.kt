@@ -32,6 +32,9 @@ import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.DragHandle
+import com.andreas_kratzer.ghosttalk.ui.components.reorderableItem
+import com.andreas_kratzer.ghosttalk.ui.components.rememberReorderableState
 import com.andreas_kratzer.ghosttalk.model.Page
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -110,6 +113,11 @@ fun PageListScreen(
             }
         }
     }
+
+    val reorderState = rememberReorderableState { from, to ->
+        pageViewModel.reorderPages(from, to)
+    }
+    val gridState = androidx.compose.foundation.lazy.grid.rememberLazyGridState()
 
     Scaffold(
         topBar = {
@@ -191,6 +199,7 @@ fun PageListScreen(
         }
     ) { paddingValues ->
         LazyVerticalGrid(
+            state = gridState,
             columns = GridCells.Adaptive(minSize = 300.dp),
             modifier = Modifier
                 .fillMaxSize()
@@ -200,31 +209,30 @@ fun PageListScreen(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             contentPadding = PaddingValues(vertical = 8.dp)
         ) {
-            items(allPages) { page ->
+            items(allPages.size, key = { index -> allPages[index].id }) { index ->
+                val page = allPages[index]
                 GhostTalkCard(
                     title = page.name,
                     subtitle = stringResource(R.string.page_grid_info, page.rows, page.columns),
                     icon = Icons.Default.Description,
                     onClick = { onEditPage(page.id) },
+                    modifier = Modifier.reorderableItem(
+                        state = reorderState,
+                        index = index,
+                        onDrag = {
+                            reorderState.findTargetIndexForGrid(gridState)?.let { targetIndex ->
+                                pageViewModel.reorderPages(index, targetIndex)
+                            }
+                        }
+                    ),
                     trailingAction = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            val pageSortOrder by pageViewModel.settingsRepository.pageSortOrderFlow.collectAsState("MANUAL")
-                            if (pageSortOrder == "MANUAL") {
-                                Column {
-                                    IconButton(onClick = { 
-                                        val index = allPages.indexOf(page)
-                                        if (index > 0) pageViewModel.reorderPages(index, index - 1)
-                                    }) {
-                                        Icon(Icons.Default.ArrowUpward, contentDescription = "Hoch")
-                                    }
-                                    IconButton(onClick = { 
-                                        val index = allPages.indexOf(page)
-                                        if (index < allPages.size - 1) pageViewModel.reorderPages(index, index + 1)
-                                    }) {
-                                        Icon(Icons.Default.ArrowDownward, contentDescription = "Runter")
-                                    }
-                                }
-                            }
+                            Icon(
+                                imageVector = Icons.Default.DragHandle,
+                                contentDescription = "Verschieben",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                modifier = Modifier.padding(end = 8.dp)
+                            )
                             
                             IconButton(onClick = { pageToEdit = page }) {
                                 Icon(

@@ -81,8 +81,9 @@ fun ButtonConfigDialog(
     var expandedPageSelect by remember { mutableStateOf(false) }
     var pageSearchQuery by remember { mutableStateOf("") }
     val filteredPages = remember(pageSearchQuery, availablePages) {
-        if (pageSearchQuery.isBlank()) availablePages
-        else availablePages.filter { it.name.contains(pageSearchQuery, ignoreCase = true) }
+        val trimmedQuery = pageSearchQuery.trim()
+        if (trimmedQuery.isBlank()) availablePages
+        else availablePages.filter { it.name.contains(trimmedQuery, ignoreCase = true) }
     }
 
     // Gemini Details
