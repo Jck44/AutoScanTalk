@@ -186,8 +186,7 @@ class PageViewModelTest {
         // Trigger action via simulating setting a focused index
         // or directly calling it
         viewModel.activateButtonAtIndex(0)
-        testDispatcher.scheduler.advanceTimeBy(1)
-        viewModel.stopScanning()
+        testDispatcher.scheduler.advanceUntilIdle()
         
         assertEquals("p2", viewModel.currentPage.value?.id)
     }

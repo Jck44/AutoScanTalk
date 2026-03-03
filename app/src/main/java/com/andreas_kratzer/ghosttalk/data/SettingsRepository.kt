@@ -218,6 +218,28 @@ class SettingsRepository(context: Context) {
             putStringScoped(KEY_SYNC_MODE, value)
         }
 
+    fun getDeviceName(persistentId: String): String? {
+        return prefs.getString("device_name_$persistentId", null)
+    }
+
+    fun saveDeviceName(persistentId: String, name: String) {
+        prefs.edit().putString("device_name_$persistentId", name).apply()
+    }
+
+    fun cleanupDeviceCache(keepPersistentIds: Set<String>) {
+        val allPrefs = prefs.all
+        val editor = prefs.edit()
+        allPrefs.keys.forEach { key ->
+            if (key.startsWith("device_name_")) {
+                val persistentId = key.removePrefix("device_name_")
+                if (!keepPersistentIds.contains(persistentId)) {
+                    editor.remove(key)
+                }
+            }
+        }
+        editor.apply()
+    }
+
     companion object {
         private const val PREFS_NAME = "ghosttalk_settings"
         private const val KEY_TTS_LANGUAGE = "tts_language"

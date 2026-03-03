@@ -150,6 +150,19 @@ class TextToSpeechHelper @Inject constructor(
         tts?.synthesizeToFile(text, params, cacheFile, utteranceId)
     }
 
+    interface OnVoiceFallbackListener {
+        fun onVoiceFallback(originalVoice: String, fallbackVoice: String?, reason: String)
+    }
+    
+    var fallbackListener: OnVoiceFallbackListener? = null
+
+    private fun isNetworkAvailable(): Boolean {
+        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? android.net.ConnectivityManager
+        val activeNetwork = cm?.activeNetwork ?: return false
+        val capabilities = cm.getNetworkCapabilities(activeNetwork) ?: return false
+        return capabilities.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET)
+    }
+
     /**
      * Setzt die aktive TTS-Sprache und optional eine spezifische Stimme (Voice).
      * @param languageTag z.B. "de-DE", "en-US". Wird null oder "default" übergeben, wird die Systemsprache genutzt.
@@ -171,23 +184,48 @@ class TextToSpeechHelper @Inject constructor(
 
         val langResult = tts?.setLanguage(locale)
         if (langResult == TextToSpeech.LANG_MISSING_DATA || langResult == TextToSpeech.LANG_NOT_SUPPORTED) {
-            showToast("Language $languageTag not supported.")
-            // Weiter ausführen, auch wenn Sprache fehlt, falls eine Custom-Voice das überschreibt
+            Log.e("TextToSpeechHelper", "Language $languageTag not supported by system.")
+            // Even if language fails, we try to proceed with voices if possible
         }
         
         // Wenn eine spezifische Stimme gewünscht ist, versuche sie zu setzen
         if (!voiceName.isNullOrEmpty()) {
-            if (tts?.voices.isNullOrEmpty()) {
+            val allVoices = tts?.voices
+            if (allVoices.isNullOrEmpty()) {
                 Log.d("TextToSpeechHelper", "Voices not yet loaded. Retrying voice application in 500ms...")
                 handler.postDelayed({ applyPendingLanguageAndVoice() }, 500)
                 return
             }
 
-            val voice = tts?.voices?.find { it.name == voiceName }
-            if (voice != null) {
-                tts?.voice = voice
+            val targetVoice = allVoices.find { it.name == voiceName }
+            if (targetVoice != null) {
+                if (targetVoice.isNetworkConnectionRequired && !isNetworkAvailable()) {
+                    Log.w("TextToSpeechHelper", "Voice $voiceName requires network but system is offline. Finding local fallback...")
+                    
+                    // Fallback level 1: Find a local voice with same locale
+                    val localFallback = allVoices.filter { 
+                        it.locale.language == targetVoice.locale.language && 
+                        it.locale.country == targetVoice.locale.country &&
+                        !it.isNetworkConnectionRequired
+                    }.firstOrNull()
+                    
+                    if (localFallback != null) {
+                        tts?.voice = localFallback
+                        fallbackListener?.onVoiceFallback(voiceName, localFallback.name, "No Network")
+                        Log.i("TextToSpeechHelper", "Falling back from $voiceName to local voice ${localFallback.name}")
+                    } else {
+                        // Fallback level 2: Use system default for that language
+                        tts?.setLanguage(locale)
+                        fallbackListener?.onVoiceFallback(voiceName, null, "No Network, No Local Voice")
+                        Log.i("TextToSpeechHelper", "Falling back from $voiceName to system default for ${locale.displayName}")
+                    }
+                } else {
+                    tts?.voice = targetVoice
+                }
             } else {
-                Log.w("TextToSpeechHelper", "Requested voice $voiceName not found in ${tts?.voices?.size} voices, falling back to default.")
+                Log.w("TextToSpeechHelper", "Requested voice $voiceName not found. Falling back to default voice for ${locale.displayName}.")
+                tts?.setLanguage(locale)
+                fallbackListener?.onVoiceFallback(voiceName, null, "Voice Not Found")
             }
         }
     }

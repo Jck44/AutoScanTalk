@@ -109,7 +109,7 @@ class PageViewModel @Inject constructor(
             actionExecutor.events.collect { event ->
                 when (event) {
                     is ActionExecutor.ExecutionEvent.NavigateToPage -> {
-                        viewModelScope.launch(Dispatchers.IO) {
+                        viewModelScope.launch {
                             val page = pageRepository.getPageById(event.pageId)
                             if (page != null) {
                                 loadPage(page)
@@ -176,6 +176,19 @@ class PageViewModel @Inject constructor(
                             Log.e("PageViewModel", "Failed to launch Spotify", e)
                         }
                     }
+                }
+            }
+        }
+
+        ttsHelper.fallbackListener = object : com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper.OnVoiceFallbackListener {
+            override fun onVoiceFallback(originalVoice: String, fallbackVoice: String?, reason: String) {
+                viewModelScope.launch {
+                    val message = if (fallbackVoice != null) {
+                        "Stimme $originalVoice nicht verfügbar (Offline). Fallback auf $fallbackVoice."
+                    } else {
+                        "Stimme $originalVoice nicht verfügbar (Offline). Fallback auf System-Standard."
+                    }
+                    android.widget.Toast.makeText(getApplication<android.app.Application>(), message, android.widget.Toast.LENGTH_LONG).show()
                 }
             }
         }
@@ -263,7 +276,7 @@ class PageViewModel @Inject constructor(
     }
 
     fun updateButtonConfig(pageId: String, index: Int, newConfig: ButtonConfig?) {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             val page = pageRepository.getPageById(pageId)
             if (page != null && index in page.buttonConfigs.indices) {
                 val updatedConfigs = page.buttonConfigs.toMutableList()
@@ -279,7 +292,7 @@ class PageViewModel @Inject constructor(
     }
 
     fun updatePageSettings(pageId: String, newName: String, newScanPattern: String?, newRowNames: List<String>) {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             val page = pageRepository.getPageById(pageId)
             if (page != null) {
                 val updatedPage = page.copy(
@@ -297,7 +310,7 @@ class PageViewModel @Inject constructor(
     }
 
     fun updateRowName(pageId: String, rowIndex: Int, newName: String) {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             val page = pageRepository.getPageById(pageId)
             if (page != null) {
                 val updatedNames = page.rowNames.toMutableList()
@@ -317,7 +330,7 @@ class PageViewModel @Inject constructor(
     }
 
     fun deletePage(page: Page) {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             pageRepository.deletePage(page)
         }
     }

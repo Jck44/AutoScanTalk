@@ -144,6 +144,19 @@ class SettingsViewModel @Inject constructor(
         loadAvailableLanguages()
         loadAvailableVoices()
         loadAvailableAudioDevices()
+
+        tempTtsHelper.fallbackListener = object : com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper.OnVoiceFallbackListener {
+            override fun onVoiceFallback(originalVoice: String, fallbackVoice: String?, reason: String) {
+                viewModelScope.launch {
+                    val message = if (fallbackVoice != null) {
+                        "Stimme $originalVoice nicht verfügbar (Offline). Fallback auf $fallbackVoice."
+                    } else {
+                        "Stimme $originalVoice nicht verfügbar (Offline). Fallback auf System-Standard."
+                    }
+                    android.widget.Toast.makeText(getApplication<android.app.Application>(), message, android.widget.Toast.LENGTH_LONG).show()
+                }
+            }
+        }
     }
 
     fun loadAvailableLanguages() {
@@ -159,7 +172,45 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun loadAvailableAudioDevices() {
-        _availableAudioDevices.value = audioDeviceManager.getAvailableOutputDevices()
+        val available = audioDeviceManager.getAvailableOutputDevices()
+        
+        // Cache names of currently available devices
+        available.forEach { device ->
+            val persistentId = device.address.split("|").lastOrNull() ?: device.address
+            settingsRepository.saveDeviceName(persistentId, device.name)
+        }
+
+        val ttsAddress = _selectedTtsAudioDeviceAddress.value
+        val cuesAddress = _selectedCuesAudioDeviceAddress.value
+        
+        val mergedList = available.toMutableList()
+        
+        // Add "ghost" entries for selected but currently unavailable devices
+        listOfNotNull(ttsAddress, cuesAddress).distinct().forEach { selectedAddress ->
+            if (mergedList.none { it.address == selectedAddress }) {
+                val persistentId = selectedAddress.split("|").lastOrNull() ?: selectedAddress
+                val cachedName = settingsRepository.getDeviceName(persistentId)
+                if (cachedName != null) {
+                    val fallbackMatch = available.find { 
+                        val devPersistentId = it.address.split("|").lastOrNull() ?: it.address
+                        devPersistentId == persistentId 
+                    }
+                    
+                    if (fallbackMatch == null) {
+                        mergedList.add(
+                            com.andreas_kratzer.ghosttalk.model.AudioOutputDevice(
+                                address = selectedAddress,
+                                name = "$cachedName (Inaktiv)",
+                                type = 0,
+                                isBuiltIn = false
+                            )
+                        )
+                    }
+                }
+            }
+        }
+
+        _availableAudioDevices.value = mergedList
     }
 
     fun setTtsLanguage(languageTag: String) {
@@ -461,25 +512,31 @@ class SettingsViewModel @Inject constructor(
 
     fun getResolvedDeviceName(savedAddress: String?): String {
         if (savedAddress.isNullOrBlank()) return "System-Standard (Automatisch)"
-        val devices = _availableAudioDevices.value
         
+        // 1. Try currently available list
+        val devices = _availableAudioDevices.value
         val exactMatch = devices.find { it.address == savedAddress }
         if (exactMatch != null) return exactMatch.name
         
-        val parts = savedAddress.split("|", limit = 2)
-        val fallbackPart = if (parts.size > 1) parts[1] else parts[0]
-        
-        val fuzzyMatch = devices.find { device ->
-            val deviceParts = device.address.split("|", limit = 2)
-            val deviceFallback = if (deviceParts.size > 1) deviceParts[1] else deviceParts[0]
-            deviceFallback == fallbackPart
+        // 2. Try persistent cache
+        val persistentId = savedAddress.split("|").lastOrNull() ?: savedAddress
+        val cachedName = settingsRepository.getDeviceName(persistentId)
+        if (cachedName != null) {
+            return "$cachedName (Laden...)"
         }
         
-        return fuzzyMatch?.name ?: "System-Standard (Automatisch)"
+        // 3. Fallback
+        return "System-Standard (Automatisch)"
     }
 
     override fun onCleared() {
         super.onCleared()
         tempTtsHelper.shutdown()
+        
+        // Cleanup device cache: Keep only currently selected devices
+        val keepIds = mutableSetOf<String>()
+        _selectedTtsAudioDeviceAddress.value?.split("|")?.lastOrNull()?.let { keepIds.add(it) }
+        _selectedCuesAudioDeviceAddress.value?.split("|")?.lastOrNull()?.let { keepIds.add(it) }
+        settingsRepository.cleanupDeviceCache(keepIds)
     }
 }

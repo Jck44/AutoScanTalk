@@ -182,14 +182,32 @@ fun SettingsScreen(
 
 @Composable
 fun PreferenceCategory(title: String, content: @Composable ColumnScope.() -> Unit) {
-    Column(modifier = Modifier.fillMaxWidth()) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 12.dp)
+    ) {
         Text(
             text = title,
-            style = MaterialTheme.typography.titleLarge,
+            style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(bottom = 12.dp)
+            modifier = Modifier.padding(start = 8.dp, bottom = 12.dp)
         )
-        content()
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.extraLarge,
+            color = MaterialTheme.colorScheme.surfaceContainerLow,
+            tonalElevation = 1.dp
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                content()
+            }
+        }
     }
 }
 
@@ -230,8 +248,6 @@ fun GeneralSettings(
             }
         }
         
-        Spacer(modifier = Modifier.height(16.dp))
-
         // Scanmuster
         Box(modifier = Modifier.fillMaxWidth()) {
             val currentPatternLabel = when (defaultScanPattern) {
@@ -307,8 +323,6 @@ fun VoiceSettings(
                 }
             }
         }
-
-        Spacer(modifier = Modifier.height(16.dp))
 
         // Stimme
         Box(modifier = Modifier.fillMaxWidth()) {
@@ -386,8 +400,6 @@ fun AudioOutputSettings(
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
         // Cues Device
         Box(modifier = Modifier.fillMaxWidth()) {
             val defaultLabel = stringResource(R.string.settings_audio_default)
@@ -432,7 +444,6 @@ fun ScanningSettings(
             Text(stringResource(R.string.settings_auto_scan), modifier = Modifier.weight(1f))
             Switch(checked = autoStartScanning, onCheckedChange = { settingsViewModel.setAutoStartScanning(it) })
         }
-        Spacer(modifier = Modifier.height(8.dp))
         Row(
             verticalAlignment = Alignment.CenterVertically, 
             modifier = Modifier.clickable { settingsViewModel.setResumeScanningFromStart(!resumeScanningFromStart) }
@@ -447,7 +458,6 @@ fun ScanningSettings(
             }
             Switch(checked = resumeScanningFromStart, onCheckedChange = { settingsViewModel.setResumeScanningFromStart(it) })
         }
-        Spacer(modifier = Modifier.height(16.dp))
         OutlinedTextField(
             value = scanDelayInput,
             onValueChange = { settingsViewModel.setScanDelayInput(it) },
@@ -455,7 +465,6 @@ fun ScanningSettings(
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth()
         )
-        Spacer(modifier = Modifier.height(16.dp))
         OutlinedTextField(
             value = holdingTimeInput,
             onValueChange = { settingsViewModel.setHoldingTimeInput(it) },
@@ -479,7 +488,6 @@ fun HardwareSettings(
             label = { Text(stringResource(R.string.settings_switch_key)) },
             modifier = Modifier.fillMaxWidth()
         )
-        Spacer(modifier = Modifier.height(16.dp))
         Row(
             verticalAlignment = Alignment.CenterVertically, 
             modifier = Modifier.clickable { settingsViewModel.setVolumeKeysActivate(!volumeKeysActivate) }
@@ -567,15 +575,11 @@ fun CloudSettings(settingsViewModel: SettingsViewModel) {
             )
         }
         
-        Spacer(modifier = Modifier.height(8.dp))
-        
         Text(
             text = stringResource(R.string.settings_cloud_sync_desc),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        
-        Spacer(modifier = Modifier.height(16.dp))
         
         OutlinedTextField(
             value = syncIntervalMinutesInput,
@@ -616,8 +620,6 @@ fun CloudSettings(settingsViewModel: SettingsViewModel) {
                 })
             }
         }
-        
-        Spacer(modifier = Modifier.height(16.dp))
         
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -683,8 +685,6 @@ fun GeminiSettings(settingsViewModel: SettingsViewModel) {
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        
-        Spacer(modifier = Modifier.height(12.dp))
         
         Row(
             modifier = Modifier.fillMaxWidth(),
