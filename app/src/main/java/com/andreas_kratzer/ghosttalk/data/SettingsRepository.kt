@@ -66,6 +66,7 @@ class SettingsRepository(context: Context) {
         _switchActivationKeyFlow.value = switchActivationKey
         _volumeKeysActivateFlow.value = volumeKeysActivate
         _defaultScanPatternFlow.value = defaultScanPattern
+        _themeModeFlow.value = themeMode
     }
 
     private val _ttsLanguageFlow = MutableStateFlow(getStringScoped(KEY_TTS_LANGUAGE))
@@ -112,6 +113,16 @@ class SettingsRepository(context: Context) {
 
     private val _defaultScanPatternFlow = MutableStateFlow(getStringScoped(KEY_DEFAULT_SCAN_PATTERN, "linear") ?: "linear")
     val defaultScanPatternFlow: StateFlow<String> = _defaultScanPatternFlow.asStateFlow()
+
+    private val _themeModeFlow = MutableStateFlow(getStringScoped(KEY_THEME_MODE, "SYSTEM") ?: "SYSTEM")
+    val themeModeFlow: StateFlow<String> = _themeModeFlow.asStateFlow()
+
+    var themeMode: String
+        get() = getStringScoped(KEY_THEME_MODE, "SYSTEM") ?: "SYSTEM"
+        set(value) {
+            putStringScoped(KEY_THEME_MODE, value)
+            _themeModeFlow.value = value
+        }
 
     var defaultScanPattern: String
         get() = getStringScoped(KEY_DEFAULT_SCAN_PATTERN, "linear") ?: "linear"
@@ -261,5 +272,6 @@ class SettingsRepository(context: Context) {
         private const val KEY_APP_LANGUAGE = "app_language"
         private const val KEY_SYNC_INTERVAL_MINUTES = "sync_interval_minutes"
         private const val KEY_SYNC_MODE = "sync_mode"
+        private const val KEY_THEME_MODE = "theme_mode"
     }
 }

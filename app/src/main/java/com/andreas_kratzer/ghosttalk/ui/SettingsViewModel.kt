@@ -104,6 +104,9 @@ class SettingsViewModel @Inject constructor(
     private val _selectedAppLanguage = MutableStateFlow<String?>("default")
     val selectedAppLanguage: StateFlow<String?> = _selectedAppLanguage.asStateFlow()
 
+    private val _themeMode = MutableStateFlow("SYSTEM")
+    val themeMode: StateFlow<String> = _themeMode.asStateFlow()
+
     val userEmail: StateFlow<String?> = driveAuthManager.userEmail
 
     private val _isSyncing = MutableStateFlow(false)
@@ -136,6 +139,7 @@ class SettingsViewModel @Inject constructor(
         _isCloudSyncEnabled.value = settingsRepository.isCloudSyncEnabled
         _isGeminiEnabled.value = settingsRepository.isGeminiEnabled
         _selectedAppLanguage.value = settingsRepository.appLanguage ?: "default"
+        _themeMode.value = settingsRepository.themeMode
         
         // Den lokalen TTS-Helper mit den gespeicherten Werten füttern,
         // sonst spricht er in den Einstellungen initial in Systemsprache
@@ -356,6 +360,11 @@ class SettingsViewModel @Inject constructor(
             LocaleListCompat.forLanguageTags(languageCode)
         }
         AppCompatDelegate.setApplicationLocales(appLocale)
+    }
+
+    fun setThemeMode(mode: String) {
+        settingsRepository.themeMode = mode
+        _themeMode.value = mode
     }
 
     fun signIn(context: android.content.Context) {

@@ -26,6 +26,8 @@ import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.ui.*
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import com.andreas_kratzer.ghosttalk.ui.theme.GhosTTalkTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
@@ -162,7 +164,9 @@ class MainActivity : AppCompatActivity() {
         }
 
         setContent {
-            GhosTTalkTheme {
+            val themeMode by settingsViewModel.themeMode.collectAsState()
+            
+            GhosTTalkTheme(themeMode = themeMode) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
