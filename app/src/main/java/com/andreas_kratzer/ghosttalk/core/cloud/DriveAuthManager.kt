@@ -71,21 +71,21 @@ class DriveAuthManager @javax.inject.Inject constructor(
 
     private fun handleSignInResult(result: GetCredentialResponse): Boolean {
         val credential = result.credential
-        Log.e(TAG, "handleSignInResult: Received credential type: ${credential::class.java.simpleName}")
+        Log.d(TAG, "handleSignInResult: Received credential type: ${credential::class.java.simpleName}")
         
         var email: String? = null
         
         if (credential is GoogleIdTokenCredential) {
-            Log.e(TAG, "Credential is GoogleIdTokenCredential")
+            Log.d(TAG, "Credential is GoogleIdTokenCredential")
             email = credential.id
-            Log.e(TAG, "Email from ID: $email")
+            Log.d(TAG, "Email from ID: $email")
         } else if (credential is androidx.credentials.CustomCredential && 
                    credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
-            Log.e(TAG, "Credential is CustomCredential of type TYPE_GOOGLE_ID_TOKEN_CREDENTIAL")
+            Log.d(TAG, "Credential is CustomCredential of type TYPE_GOOGLE_ID_TOKEN_CREDENTIAL")
             try {
                 val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
                 email = googleIdTokenCredential.id
-                Log.e(TAG, "Email from Custom ID: $email")
+                Log.d(TAG, "Email from Custom ID: $email")
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to create GoogleIdTokenCredential from data", e)
             }
@@ -101,7 +101,7 @@ class DriveAuthManager @javax.inject.Inject constructor(
             val am = android.accounts.AccountManager.get(appContext)
             val accounts = am.getAccountsByType("com.google")
             val exists = accounts.any { it.name.equals(email, ignoreCase = true) }
-            Log.e(TAG, "System account check for '$email': Found = $exists")
+            Log.d(TAG, "System account check for '$email': Found = $exists")
             if (!exists) {
                 Log.e(TAG, "Other system accounts found: ${accounts.map { it.name }}")
             }
@@ -111,13 +111,13 @@ class DriveAuthManager @javax.inject.Inject constructor(
 
         _userEmail.value = email
         prefs.edit { putString(KEY_USER_EMAIL, email) }
-        Log.e(TAG, "Sign-in verified. User email stored: $email")
+        Log.i(TAG, "Sign-in verified. User email stored: $email")
         
         return true
     }
 
     suspend fun signOut() {
-        Log.e(TAG, "Signing out...")
+        Log.d(TAG, "Signing out...")
         credentialManager.clearCredentialState(ClearCredentialStateRequest())
         _userEmail.value = null
         prefs.edit { remove(KEY_USER_EMAIL) }
@@ -125,7 +125,7 @@ class DriveAuthManager @javax.inject.Inject constructor(
 
     fun getDriveCredential(): GoogleAccountCredential? {
         val email = _userEmail.value
-        Log.e(TAG, "getDriveCredential: stored email is '$email'")
+        Log.d(TAG, "getDriveCredential: stored email is '$email'")
         
         if (email.isNullOrEmpty()) {
             Log.e(TAG, "getDriveCredential: email is null or empty, returning null")
@@ -146,7 +146,7 @@ class DriveAuthManager @javax.inject.Inject constructor(
         try {
             val account = android.accounts.Account(email, "com.google")
             credential.selectedAccount = account
-            Log.e(TAG, "Created fresh GoogleAccountCredential with Account object for ${account.name}")
+            Log.i(TAG, "Created fresh GoogleAccountCredential with Account object for ${account.name}")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to create Account object for $email", e)
             credential.selectedAccountName = email

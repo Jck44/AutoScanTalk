@@ -745,8 +745,8 @@ fun GeminiToolStatusItem(toolName: String, status: com.andreas_kratzer.ghosttalk
 
     val statusText = when (status) {
         com.andreas_kratzer.ghosttalk.domain.GeminiUseCase.ToolStatus.AVAILABLE -> stringResource(R.string.settings_gemini_tool_status_active)
-        com.andreas_kratzer.ghosttalk.domain.GeminiUseCase.ToolStatus.REQUIRES_AUTH -> stringResource(R.R.string.settings_gemini_tool_status_requires_auth)
-        com.andreas_kratzer.ghosttalk.domain.GeminiUseCase.ToolStatus.FAILED -> stringResource(R.R.string.settings_gemini_tool_status_failed)
+        com.andreas_kratzer.ghosttalk.domain.GeminiUseCase.ToolStatus.REQUIRES_AUTH -> stringResource(R.string.settings_gemini_tool_status_requires_auth)
+        com.andreas_kratzer.ghosttalk.domain.GeminiUseCase.ToolStatus.FAILED -> stringResource(R.string.settings_gemini_tool_status_failed)
         com.andreas_kratzer.ghosttalk.domain.GeminiUseCase.ToolStatus.PENDING -> stringResource(R.string.settings_gemini_tool_status_pending)
     }
 
