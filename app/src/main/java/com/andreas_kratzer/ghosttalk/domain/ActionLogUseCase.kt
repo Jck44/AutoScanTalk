@@ -1,8 +1,7 @@
 package com.andreas_kratzer.ghosttalk.domain
 
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.util.Logger
-import com.andreas_kratzer.ghosttalk.core.util.AppLogger
+import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.google.gson.Gson
 import java.text.SimpleDateFormat
 import java.util.Date

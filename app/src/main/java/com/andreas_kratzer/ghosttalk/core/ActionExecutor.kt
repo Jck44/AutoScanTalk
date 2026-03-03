@@ -1,12 +1,15 @@
 package com.andreas_kratzer.ghosttalk.core
 
 import com.andreas_kratzer.ghosttalk.data.PageRepository
+import com.andreas_kratzer.ghosttalk.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.domain.GeminiUseCase
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.model.GeminiButtonAction
 import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
-import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
+import com.google.android.gms.auth.UserRecoverableAuthException
+import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,11 +18,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-
-import com.andreas_kratzer.ghosttalk.model.GeminiButtonAction
-import com.andreas_kratzer.ghosttalk.domain.GeminiUseCase
-import com.google.android.gms.auth.UserRecoverableAuthException
-import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
 
 class ActionExecutor(
     private val scope: CoroutineScope,

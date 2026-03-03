@@ -5,7 +5,6 @@ import com.andreas_kratzer.ghosttalk.core.AudioDeviceManager
 import com.andreas_kratzer.ghosttalk.core.cloud.DriveAuthManager
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.domain.CloudSyncUseCase
-import com.andreas_kratzer.ghosttalk.domain.GeminiUseCase
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
 import io.mockk.every
 import io.mockk.mockk

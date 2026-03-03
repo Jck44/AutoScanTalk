@@ -5,14 +5,11 @@ import android.content.Intent
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.andreas_kratzer.ghosttalk.core.AudioDeviceManager
 import com.andreas_kratzer.ghosttalk.core.cloud.DriveAuthManager
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.domain.CloudSyncUseCase
-import com.andreas_kratzer.ghosttalk.domain.GeminiUseCase
 import com.andreas_kratzer.ghosttalk.model.AudioOutputDevice
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
 import com.google.android.gms.auth.UserRecoverableAuthException
@@ -27,8 +24,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 import java.util.Locale
+import javax.inject.Inject
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(

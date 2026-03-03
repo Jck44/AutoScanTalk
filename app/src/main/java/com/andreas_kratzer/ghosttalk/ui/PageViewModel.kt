@@ -1,38 +1,36 @@
 package com.andreas_kratzer.ghosttalk.ui
 
 import android.app.Application
+import android.content.Intent
+import android.provider.MediaStore
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.andreas_kratzer.ghosttalk.model.Page
-import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
-import com.andreas_kratzer.ghosttalk.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.core.ScannerEngine
 import com.andreas_kratzer.ghosttalk.core.ActionExecutor
 import com.andreas_kratzer.ghosttalk.core.PageImportExportManager
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.ScannerEngine
+import com.andreas_kratzer.ghosttalk.core.cloud.DriveAuthManager
 import com.andreas_kratzer.ghosttalk.data.PageRepository
-import com.andreas_kratzer.ghosttalk.domain.GetPagesUseCase
+import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.domain.ActionLogUseCase
 import com.andreas_kratzer.ghosttalk.domain.CreatePageUseCase
 import com.andreas_kratzer.ghosttalk.domain.GeminiUseCase
-import com.andreas_kratzer.ghosttalk.core.cloud.DriveAuthManager
-import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.asStateFlow
+import com.andreas_kratzer.ghosttalk.domain.GetPagesUseCase
+import com.andreas_kratzer.ghosttalk.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.model.Page
+import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import android.util.Log
-import android.content.Intent
-import android.provider.MediaStore
-import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
