@@ -104,7 +104,6 @@ class SettingsRepository(context: Context) {
         _bluetoothDelayFlow.value = bluetoothDelay
         _ttsVolumeMultiplierFlow.value = ttsVolumeMultiplier
         _cuesVolumeMultiplierFlow.value = cuesVolumeMultiplier
-        _ttsModeFlow.value = ttsMode
     }
 
     private val _pageSortOrderFlow = MutableStateFlow(getStringScoped(KEY_PAGE_SORT_ORDER, "MANUAL") ?: "MANUAL")
@@ -241,16 +240,6 @@ class SettingsRepository(context: Context) {
         set(value) {
             putFloatScoped(KEY_CUES_VOLUME_MULTIPLIER, value)
             _cuesVolumeMultiplierFlow.value = value
-        }
-
-    private val _ttsModeFlow = MutableStateFlow(getStringScoped(KEY_TTS_MODE, "NORMAL") ?: "NORMAL")
-    val ttsModeFlow: StateFlow<String> = _ttsModeFlow.asStateFlow()
-
-    var ttsMode: String
-        get() = getStringScoped(KEY_TTS_MODE, "NORMAL") ?: "NORMAL"
-        set(value) {
-            putStringScoped(KEY_TTS_MODE, value)
-            _ttsModeFlow.value = value
         }
 
     var autoStartScanning: Boolean
@@ -474,6 +463,5 @@ class SettingsRepository(context: Context) {
         private const val KEY_BLUETOOTH_DELAY = "bluetooth_delay_ms"
         private const val KEY_TTS_VOLUME_MULTIPLIER = "tts_volume_multiplier"
         private const val KEY_CUES_VOLUME_MULTIPLIER = "cues_volume_multiplier"
-        private const val KEY_TTS_MODE = "tts_mode"
     }
 }

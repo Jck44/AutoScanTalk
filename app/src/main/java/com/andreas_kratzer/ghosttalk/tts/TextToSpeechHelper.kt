@@ -6,7 +6,8 @@ import android.os.Looper
 import android.speech.tts.TextToSpeech
 import android.util.Log
 import android.widget.Toast
-import com.andreas_kratzer.ghosttalk.core.AudioDeviceManager
+import com.andreas_kratzer.ghosttalk.core.audio.AudioDeviceManager
+import com.andreas_kratzer.ghosttalk.core.audio.RoutedAudioPlayer
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import java.io.File
 import java.util.Locale
@@ -17,7 +18,9 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 
 class TextToSpeechHelper @Inject constructor(
     @ApplicationContext val context: Context,
-    private val settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository,
+    private val routedAudioPlayer: RoutedAudioPlayer,
+    private val voiceManager: TtsVoiceManager
 ) : TextToSpeech.OnInitListener {
 
     private var tts: TextToSpeech? = null
@@ -30,9 +33,6 @@ class TextToSpeechHelper @Inject constructor(
     // Support for interrupting ONLY notifications
     var isReadingNotification: Boolean = false
 
-    private val audioDeviceManager = AudioDeviceManager(context)
-    private val routedAudioPlayer = RoutedAudioPlayer(context, audioDeviceManager, settingsRepository)
-    
     private data class PlaybackRequest(val file: File, val deviceAddress: String?, val onDoneCallback: (() -> Unit)?)
     private val playRequests = ConcurrentHashMap<String, PlaybackRequest>()
 
@@ -114,12 +114,13 @@ class TextToSpeechHelper @Inject constructor(
     private val directCallbacks = ConcurrentHashMap<String, () -> Unit>()
 
     fun speak(text: String, queueMode: Int = TextToSpeech.QUEUE_FLUSH, onDone: (() -> Unit)? = null) {
-        speakRouted(text, null, queueMode, false, onDone)
+        speakRouted(text, null, "NORMAL", queueMode, false, onDone)
     }
 
     fun speakRouted(
         text: String, 
         deviceAddress: String?, 
+        ttsMode: String = "NORMAL",
         queueMode: Int = TextToSpeech.QUEUE_FLUSH,
         isForCues: Boolean = false,
         onDone: (() -> Unit)? = null
@@ -143,12 +144,19 @@ class TextToSpeechHelper @Inject constructor(
         }
         
         // Get dynamic settings
-        val volumeMultiplier = if (isForCues) {
+        val baseVolume = if (isForCues) {
             settingsRepository.cuesVolumeMultiplier
         } else {
             settingsRepository.ttsVolumeMultiplier
         }
-        val ttsMode = settingsRepository.ttsMode
+        
+        // Dynamically adjust volume multiplier array based on mode
+        val modeVolumeModifier = when (ttsMode) {
+            "WHISPER" -> 0.3f
+            "SHOUT" -> 1.3f
+            else -> 1.0f
+        }
+        val volumeMultiplier = baseVolume * modeVolumeModifier
         
         // Generate SSML if needed
         val finalSpeakText = if (ttsMode != "NORMAL") {
@@ -222,24 +230,15 @@ class TextToSpeechHelper @Inject constructor(
         val langResult = tts?.setLanguage(locale)
         if (langResult == TextToSpeech.LANG_MISSING_DATA || langResult == TextToSpeech.LANG_NOT_SUPPORTED) {
             Log.e("TextToSpeechHelper", "Language $languageTag not supported by system.")
-            // Even if language fails, we try to proceed with voices if possible
         }
         
-        // Wenn eine spezifische Stimme gewünscht ist, versuche sie zu setzen
         if (!voiceName.isNullOrEmpty()) {
-            val allVoices = tts?.voices
-            if (allVoices.isNullOrEmpty()) {
-                Log.d("TextToSpeechHelper", "Voices not yet loaded. Retrying voice application in 500ms...")
-                handler.postDelayed({ applyPendingLanguageAndVoice() }, 500)
-                return
-            }
-
-            val targetVoice = allVoices.find { it.name == voiceName }
+            val targetVoice = voiceManager.findVoice(tts, voiceName)
             if (targetVoice != null) {
                 if (targetVoice.isNetworkConnectionRequired && !isNetworkAvailable()) {
                     Log.w("TextToSpeechHelper", "Voice $voiceName requires network but system is offline. Finding local fallback...")
                     
-                    // Fallback level 1: Find a local voice with same locale
+                    val allVoices = tts?.voices ?: emptySet()
                     val localFallback = allVoices.filter { 
                         it.locale.language == targetVoice.locale.language && 
                         it.locale.country == targetVoice.locale.country &&
@@ -249,12 +248,9 @@ class TextToSpeechHelper @Inject constructor(
                     if (localFallback != null) {
                         tts?.voice = localFallback
                         fallbackListener?.onVoiceFallback(voiceName, localFallback.name, "No Network")
-                        Log.i("TextToSpeechHelper", "Falling back from $voiceName to local voice ${localFallback.name}")
                     } else {
-                        // Fallback level 2: Use system default for that language
                         tts?.language = locale
                         fallbackListener?.onVoiceFallback(voiceName, null, "No Network, No Local Voice")
-                        Log.i("TextToSpeechHelper", "Falling back from $voiceName to system default for ${locale.displayName}")
                     }
                 } else {
                     tts?.voice = targetVoice
@@ -271,45 +267,21 @@ class TextToSpeechHelper @Inject constructor(
      * Erlaubt das direkte Setzen einer Stimme unabhängig von der Sprache (interner Helper)
      */
     fun setVoice(voiceName: String?) {
-        if (!initialized || tts == null || voiceName.isNullOrEmpty()) return
-        val voice = tts?.voices?.find { it.name == voiceName }
-        if (voice != null) {
-            tts?.voice = voice
-        }
+        voiceManager.findVoice(tts, voiceName)?.let { tts?.voice = it }
     }
 
     /**
      * Gibt eine Liste aller verfügbaren Sprachen zurück, die das installierte TTS-System spricht.
      */
     fun getAvailableLanguages(): List<Locale> {
-        return try {
-            tts?.availableLanguages?.toList()?.sortedBy { it.displayName } ?: emptyList()
-        } catch (e: Exception) {
-            Log.e("TextToSpeechHelper", "Error getting languages", e)
-            emptyList()
-        }
+        return voiceManager.getAvailableLanguages(tts)
     }
 
     /**
      * Gibt eine Liste aller verfügbaren Stimmen für eine spezifizierte Sprache zurück.
      */
     fun getAvailableVoices(languageTag: String?): List<android.speech.tts.Voice> {
-        if (!initialized || tts == null) return emptyList()
-        
-        val targetLocale = if (languageTag.isNullOrEmpty() || languageTag == "default") {
-            Locale.getDefault()
-        } else {
-            Locale.forLanguageTag(languageTag)
-        }
-        
-        return try {
-            tts?.voices?.filter { voice ->
-                voice.locale.language == targetLocale.language && voice.locale.country == targetLocale.country
-            }?.sortedBy { it.name } ?: emptyList()
-        } catch (e: Exception) {
-            Log.e("TextToSpeechHelper", "Error getting voices", e)
-            emptyList()
-        }
+        return voiceManager.getAvailableVoices(tts, languageTag)
     }
 
     fun shutdown() {

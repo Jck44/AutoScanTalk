@@ -17,8 +17,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.andreas_kratzer.ghosttalk.ui.TemplateScreen
-import com.andreas_kratzer.ghosttalk.ui.TemplateViewModel
+import com.andreas_kratzer.ghosttalk.ui.books.*
+import com.andreas_kratzer.ghosttalk.ui.pages.*
+import com.andreas_kratzer.ghosttalk.ui.settings.*
+import com.andreas_kratzer.ghosttalk.ui.templates.*
+import com.andreas_kratzer.ghosttalk.ui.main.*
 import com.andreas_kratzer.ghosttalk.core.UpdateManager
 import com.andreas_kratzer.ghosttalk.data.PageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
@@ -28,7 +31,6 @@ import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
-import com.andreas_kratzer.ghosttalk.ui.*
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import com.andreas_kratzer.ghosttalk.ui.theme.GhosTTalkTheme

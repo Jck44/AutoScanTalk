@@ -4,7 +4,7 @@ import android.content.Context
 import com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper
 import com.andreas_kratzer.ghosttalk.data.PageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.core.PageImportExportManager
+import com.andreas_kratzer.ghosttalk.core.pages.PageImportExportManager
 import com.google.api.services.drive.Drive
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

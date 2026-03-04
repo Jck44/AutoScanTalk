@@ -78,8 +78,8 @@ class PageViewModelTest {
         geminiUseCaseFactory = mockk(relaxed = true)
         ttsHelper = mockk(relaxed = true) {
             every { isReady } returns true
-            every { speakRouted(any(), any(), any(), any(), any()) } answers {
-                val callback = arg<(() -> Unit)?>(4)
+            every { speakRouted(any(), any(), any(), any(), any(), any()) } answers {
+                val callback = arg<(() -> Unit)?>(5)
                 callback?.invoke()
             }
             every { speak(any(), any(), any()) } answers {
@@ -109,7 +109,6 @@ class PageViewModelTest {
         every { settingsRepository.actionLogsStorageFlow } returns MutableStateFlow(null)
         every { settingsRepository.ttsVolumeMultiplierFlow } returns MutableStateFlow<Float>(1.0f)
         every { settingsRepository.cuesVolumeMultiplierFlow } returns MutableStateFlow<Float>(1.0f)
-        every { settingsRepository.ttsModeFlow } returns MutableStateFlow<String>("NORMAL")
         
         every { getPagesUseCase.execute(any()) } returns MutableStateFlow(emptyList())
         every { actionLogUseCase.loadSavedLogs() } returns emptyList()
