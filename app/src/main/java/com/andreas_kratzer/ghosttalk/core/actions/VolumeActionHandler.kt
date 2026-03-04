@@ -27,9 +27,9 @@ class VolumeActionHandler(
         }
         
         val newVolume = if (action.isAbsolute) {
-            action.amount
+            action.amount.coerceIn(0.0f, 1.0f)
         } else {
-            (currentVolume + action.amount).coerceIn(0.0f, 3.0f)
+            (currentVolume + action.amount).coerceIn(0.0f, 1.0f)
         }
         
         if (action.isForCues) {

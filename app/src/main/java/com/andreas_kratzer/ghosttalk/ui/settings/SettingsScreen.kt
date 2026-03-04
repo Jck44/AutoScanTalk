@@ -491,8 +491,8 @@ fun VoiceSettings(
             androidx.compose.material3.Slider(
                 value = ttsVolumeMultiplier,
                 onValueChange = { settingsViewModel.setTtsVolumeMultiplier(it) },
-                valueRange = 0.0f..3.0f,
-                steps = 29 // Every 0.1 intervals
+                valueRange = 0.0f..1.0f,
+                steps = 9 // Every 0.1 intervals
             )
         }
         
@@ -510,8 +510,8 @@ fun VoiceSettings(
             androidx.compose.material3.Slider(
                 value = cuesVolumeMultiplier,
                 onValueChange = { settingsViewModel.setCuesVolumeMultiplier(it) },
-                valueRange = 0.0f..3.0f,
-                steps = 29 // Every 0.1 intervals
+                valueRange = 0.0f..1.0f,
+                steps = 9 // Every 0.1 intervals
             )
         }
     }

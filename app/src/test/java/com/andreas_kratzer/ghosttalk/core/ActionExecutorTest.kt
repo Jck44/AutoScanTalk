@@ -224,8 +224,8 @@ class ActionExecutorTest {
         actionExecutor.executeButtonAction(buttonConfig)
         runCurrent()
 
-        // 1.0 + 0.2 = 1.2
-        verify { settingsRepository.ttsVolumeMultiplier = 1.2f }
+        // 1.0 + 0.2 = 1.2 => capped at 1.0
+        verify { settingsRepository.ttsVolumeMultiplier = 1.0f }
         verify(exactly = 0) { settingsRepository.cuesVolumeMultiplier = any() }
     }
 
@@ -244,7 +244,7 @@ class ActionExecutorTest {
         actionExecutor.executeButtonAction(buttonConfig)
         runCurrent()
 
-        verify { settingsRepository.cuesVolumeMultiplier = 3.0f }
+        verify { settingsRepository.cuesVolumeMultiplier = 1.0f }
         verify(exactly = 0) { settingsRepository.ttsVolumeMultiplier = any() }
     }
 

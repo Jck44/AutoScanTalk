@@ -173,9 +173,9 @@ class TextToSpeechHelper @Inject constructor(
         
         // Dynamically adjust volume multiplier array based on mode
         val modeVolumeModifier = when (safeTtsMode) {
-            "WHISPER" -> 0.3f
-            "SHOUT" -> 1.3f
-            else -> 1.0f
+            "WHISPER" -> 0.4f
+            "SHOUT" -> 1.0f
+            else -> 0.7f // Normal is 70%
         }
         val volumeMultiplier = baseVolume * modeVolumeModifier
         

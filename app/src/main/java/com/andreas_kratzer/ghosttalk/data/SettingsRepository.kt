@@ -228,8 +228,9 @@ class SettingsRepository(context: Context) {
     var ttsVolumeMultiplier: Float
         get() = getFloatScoped(KEY_TTS_VOLUME_MULTIPLIER, 1.0f)
         set(value) {
-            putFloatScoped(KEY_TTS_VOLUME_MULTIPLIER, value)
-            _ttsVolumeMultiplierFlow.value = value
+            val coerced = value.coerceIn(0.0f, 1.0f)
+            putFloatScoped(KEY_TTS_VOLUME_MULTIPLIER, coerced)
+            _ttsVolumeMultiplierFlow.value = coerced
         }
         
     private val _cuesVolumeMultiplierFlow = MutableStateFlow(getFloatScoped(KEY_CUES_VOLUME_MULTIPLIER, 1.0f))
@@ -238,8 +239,9 @@ class SettingsRepository(context: Context) {
     var cuesVolumeMultiplier: Float
         get() = getFloatScoped(KEY_CUES_VOLUME_MULTIPLIER, 1.0f)
         set(value) {
-            putFloatScoped(KEY_CUES_VOLUME_MULTIPLIER, value)
-            _cuesVolumeMultiplierFlow.value = value
+            val coerced = value.coerceIn(0.0f, 1.0f)
+            putFloatScoped(KEY_CUES_VOLUME_MULTIPLIER, coerced)
+            _cuesVolumeMultiplierFlow.value = coerced
         }
 
     var autoStartScanning: Boolean
