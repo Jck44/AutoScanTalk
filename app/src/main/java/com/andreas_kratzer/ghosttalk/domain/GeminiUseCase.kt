@@ -33,10 +33,12 @@ class GeminiUseCase(
 
         internal var modelInitialized = false
         internal var lastSuccess: Boolean? = null // null: unknown, true: success, false: failed
+        internal var lockoutUntilTime: Long = 0
 
         internal fun resetHealthStateForTesting() {
             modelInitialized = false
             lastSuccess = null
+            lockoutUntilTime = 0
         }
     }
     private var appCommandHandler: ((String, Map<String, String>) -> Unit)? = null
@@ -47,6 +49,12 @@ class GeminiUseCase(
 
     suspend fun generateResponse(prompt: String): String = withContext(Dispatchers.IO) {
         val token = oauthTokenProvider() ?: return@withContext "Fehler: Nicht angemeldet (OAuth Token fehlt)."
+        
+        val now = System.currentTimeMillis()
+        if (now < lockoutUntilTime) {
+            val remainingSeconds = ((lockoutUntilTime - now) / 1000).coerceAtLeast(1)
+            throw Exception("HTTP 429: Lockout active. Please wait $remainingSeconds seconds.")
+        }
         
         Log.d(TAG, "Generating response for prompt: $prompt")
         
@@ -195,7 +203,20 @@ class GeminiUseCase(
         return if (connection.responseCode == 200) {
             connection.inputStream.bufferedReader().use { it.readText() }
         } else {
-            val error = connection.errorStream?.bufferedReader()?.use { it.readText() }
+            val error = connection.errorStream?.bufferedReader()?.use { it.readText() } ?: ""
+            if (connection.responseCode == 429) {
+                var waitSeconds = connection.getHeaderField("Retry-After")?.toLongOrNull()
+                if (waitSeconds == null) {
+                    // Try parsing from message: "Please retry in 30.34s" or similar
+                    val regex = Regex("retry in (\\d+\\.?\\d*)s", RegexOption.IGNORE_CASE)
+                    val match = regex.find(error)
+                    waitSeconds = match?.groupValues?.get(1)?.toDoubleOrNull()?.toLong()
+                }
+                
+                val finalWait = (waitSeconds ?: 60).coerceIn(1, 3600)
+                lockoutUntilTime = System.currentTimeMillis() + (finalWait * 1000)
+                Log.w(TAG, "Gemini Quota Exceeded. Locking for ${finalWait}s. Error: $error")
+            }
             throw Exception("HTTP ${connection.responseCode}: $error")
         }
     }

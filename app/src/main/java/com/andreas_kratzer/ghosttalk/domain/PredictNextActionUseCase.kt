@@ -69,6 +69,9 @@ class PredictNextActionUseCase @Inject constructor(
             val response = gemini.generateResponse(prompt)
             parseResponse(response)
         } catch (e: Exception) {
+            if (e.message?.contains("429") == true) {
+                android.util.Log.w("PredictNextAction", "Gemini Quota reached (429)")
+            }
             emptyList()
         }
     }

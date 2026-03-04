@@ -149,8 +149,28 @@ class ActionExecutor(
                         e.intent?.let { emitEvent(ExecutionEvent.RecoverableAuthError(it)) }
                         finishExecution(currentExecutionId)
                     } catch (e: Exception) {
-                        log("Gemini Fehler: ${e.message}")
-                        finishExecution(currentExecutionId)
+                        val message = e.message ?: ""
+                        if (message.contains("429")) {
+                            // Extract remaining seconds if present (e.g. from GeminiUseCase lockout exception)
+                            val remainingMatch = Regex("wait (\\d+) seconds", RegexOption.IGNORE_CASE).find(message)
+                            val seconds = remainingMatch?.groupValues?.get(1)?.toIntOrNull() ?: 60
+
+                            val quotaMsg = ttsHelper?.context?.getString(
+                                R.string.error_gemini_quota_reached, seconds
+                            ) ?: "Gemini-Limit erreicht. Bitte $seconds Sekunden warten."
+                            
+                            log(quotaMsg)
+                            if (ttsHelper?.isReady == true) {
+                                ttsHelper?.speakRouted(quotaMsg, settingsRepository.ttsAudioDeviceAddress) {
+                                    finishExecution(currentExecutionId)
+                                }
+                            } else {
+                                finishExecution(currentExecutionId)
+                            }
+                        } else {
+                            log("Gemini Fehler: $message")
+                            finishExecution(currentExecutionId)
+                        }
                     }
                 }
             }
