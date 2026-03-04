@@ -44,7 +44,9 @@
     <string name="settings_volume_keys_trigger">Volume Keys as Trigger</string>
     <string name="settings_volume_keys_hint">Uses Volume +/- to confirm</string>
     
-    <string name="settings_category_system">Logs &amp; System</string>
+    <string name="settings_category_system">System</string>
+    <string name="settings_category_test">Test Settings</string>
+    <string name="settings_show_test_buttons">Show Test Buttons on Page</string>
     <string name="settings_persist_logs">Persist Action Logs</string>
     <string name="settings_persist_logs_hint">Keeps history after restart</string>
     <string name="settings_show_page_id_in_log">Show Page ID in History</string>
@@ -145,7 +147,6 @@
     <string name="settings_google_account_status_not_signed_in">Not signed in</string>
     <string name="settings_google_account_sign_in">Sign In</string>
     <string name="settings_google_account_sign_out">Sign Out</string>
-    <string name="settings_google_account_status_label">Status:</string>
 
     <!-- Cloud Sync -->
     <string name="settings_category_cloud">Google Drive Sync</string>
@@ -162,8 +163,6 @@
     <!-- Gemini Integration -->
     <string name="settings_category_gemini">Gemini AI Assistant</string>
     <string name="settings_gemini_activate_button">Initialize / Test Gemini</string>
-    <string name="settings_gemini_status_enabled">Enabled</string>
-    <string name="settings_gemini_status_disabled">Not enabled</string>
     <string name="settings_gemini_activation_desc">Tap the button to initialize Gemini and request necessary permissions.</string>
     <string name="settings_gemini_activation_success">Gemini successfully activated!</string>
     <string name="settings_gemini_activation_error">Activation error: %s</string>
@@ -183,7 +182,7 @@
     <string name="settings_gemini_tool_weather">Weather Information</string>
     <string name="settings_gemini_tool_spotify">Spotify Control</string>
     <string name="error_gemini_disabled">Check Gemini in Settings</string>
-    <string name="error_gemini_quota_reached">Gemini limit reached. Please wait %d seconds.</string>
+    <string name="error_gemini_quota_reached" tools:ignore="PluralsCandidate">Gemini limit reached. Please wait %d seconds.</string>
 
     <!-- Shared -->
     <string name="error_page_not_found">Page not found</string>

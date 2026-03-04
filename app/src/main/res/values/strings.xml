@@ -182,7 +182,7 @@
     <string name="settings_gemini_tool_weather">Wetter Informationen</string>
     <string name="settings_gemini_tool_spotify">Spotify Steuerung</string>
     <string name="error_gemini_disabled">Gemini in Einstellungen prüfen</string>
-    <string name="error_gemini_quota_reached">Gemini-Limit erreicht. Bitte %d Sekunden warten.</string>
+    <string name="error_gemini_quota_reached" tools:ignore="PluralsCandidate">Gemini-Limit erreicht. Bitte %d Sekunden warten.</string>
 
     <!-- Shared -->
     <string name="error_page_not_found">Seite nicht gefunden</string>
