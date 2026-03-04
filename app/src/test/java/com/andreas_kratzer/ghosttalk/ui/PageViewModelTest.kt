@@ -11,6 +11,7 @@ import com.andreas_kratzer.ghosttalk.data.TemplateRepository
 import com.andreas_kratzer.ghosttalk.domain.ActionLogUseCase
 import com.andreas_kratzer.ghosttalk.domain.CreatePageUseCase
 import com.andreas_kratzer.ghosttalk.domain.GetPagesUseCase
+import com.andreas_kratzer.ghosttalk.domain.PredictNextActionUseCase
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.model.Page
@@ -50,6 +51,7 @@ class PageViewModelTest {
     private lateinit var driveAuthManager: com.andreas_kratzer.ghosttalk.core.cloud.DriveAuthManager
     private lateinit var geminiUseCaseFactory: com.andreas_kratzer.ghosttalk.domain.GeminiUseCaseFactory
     private lateinit var ttsHelper: com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
+    private val predictNextActionUseCase = mockk<PredictNextActionUseCase>(relaxed = true)
     private lateinit var viewModel: PageViewModel
 
     @Before
@@ -105,7 +107,8 @@ class PageViewModelTest {
             driveAuthManager = driveAuthManager,
             templateRepository = templateRepository,
             geminiUseCaseFactory = geminiUseCaseFactory,
-            ttsHelper = ttsHelper
+            ttsHelper = ttsHelper,
+            predictNextActionUseCase = predictNextActionUseCase
         )
     }
 
@@ -203,6 +206,49 @@ class PageViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
         
         assertEquals("p2", viewModel.currentPage.value?.id)
+    }
+
+    @Test
+    fun `loadPage with same page ID pauses scanning`() = runTest {
+        viewModel = createViewModel()
+        val page = Page(id = "p1", bookId = "b1", name = "P1", rows = 1, columns = 1, buttonConfigs = emptyList())
+        
+        // Initial load
+        viewModel.loadPage(page)
+        testDispatcher.scheduler.runCurrent()
+        
+        // Mock scanning active by setting a focus
+        viewModel.scannerEngine.setFocusedIndex(0)
+        assertEquals(0, viewModel.focusedButtonIndex.value)
+        
+        // Load same page again
+        viewModel.loadPage(page)
+        testDispatcher.scheduler.runCurrent()
+        
+        // Verify index is PRESERVED (paused, not stopped)
+        assertEquals(0, viewModel.focusedButtonIndex.value)
+    }
+
+    @Test
+    fun `loadPage with different page ID stops scanning`() = runTest {
+        viewModel = createViewModel()
+        val p1 = Page(id = "p1", bookId = "b1", name = "P1", rows = 1, columns = 1, buttonConfigs = emptyList())
+        val p2 = Page(id = "p2", bookId = "b1", name = "P2", rows = 1, columns = 1, buttonConfigs = emptyList())
+        
+        // Initial load
+        viewModel.loadPage(p1)
+        testDispatcher.scheduler.runCurrent()
+        
+        // Mock scanning active
+        viewModel.scannerEngine.setFocusedIndex(0)
+        assertEquals(0, viewModel.focusedButtonIndex.value)
+        
+        // Load different page
+        viewModel.loadPage(p2)
+        testDispatcher.scheduler.runCurrent()
+        
+        // Verify index is RESET to null (stopped)
+        assertEquals(null, viewModel.focusedButtonIndex.value)
     }
 }
 

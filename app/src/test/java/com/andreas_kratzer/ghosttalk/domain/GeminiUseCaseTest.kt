@@ -56,4 +56,28 @@ class GeminiUseCaseTest {
         val status = useCase.getToolStatus(isUserSignedIn = true)
         assertFalse(status.containsKey("google_search"))
     }
+
+    @Test
+    fun `parseWaitTime uses Retry-After header if present`() {
+        val wait = useCase.parseWaitTime("42", "some error")
+        assertEquals(42L, wait)
+    }
+
+    @Test
+    fun `parseWaitTime parses from error body if header is missing`() {
+        val wait = useCase.parseWaitTime(null, "Quota exceeded. Please retry in 15.5s")
+        assertEquals(15L, wait)
+    }
+
+    @Test
+    fun `parseWaitTime falls back to 60s if everything fails`() {
+        val wait = useCase.parseWaitTime(null, "generic error")
+        assertEquals(60L, wait)
+    }
+
+    @Test(expected = Exception::class)
+    fun `generateResponse throws exception when lockout is active`() = kotlinx.coroutines.test.runTest {
+        GeminiUseCase.lockoutUntilTime = System.currentTimeMillis() + 10000
+        useCase.generateResponse("hello")
+    }
 }

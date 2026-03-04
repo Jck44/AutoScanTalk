@@ -14,7 +14,8 @@ import org.junit.Test
 class TemplateRepositoryTest {
 
     private val templateDao = mockk<TemplateDao>(relaxed = true)
-    private val repository = TemplateRepository(templateDao)
+    private val settingsRepository = mockk<SettingsRepository>(relaxed = true)
+    private val repository = TemplateRepository(templateDao, settingsRepository)
 
     @Test
     fun `ensureBuiltInTemplates creates both templates if missing`() = runTest {
@@ -28,13 +29,13 @@ class TemplateRepositoryTest {
         val frequentTemplate = templates.find { it.id == "builtin_frequent" }!!
         val yesNoTemplate = templates.find { it.id == "builtin_yesno" }!!
 
-        assertEquals("Häufigste Aktionen", frequentTemplate.name)
+        assertEquals("Vorlage: Häufigste Aktionen", frequentTemplate.name)
         assertTrue(frequentTemplate.isBuiltIn)
         assertEquals(16, frequentTemplate.buttonConfigs.size)
         // Ensure slots are populated
         assertTrue(frequentTemplate.buttonConfigs.all { it != null })
 
-        assertEquals("Ja / Nein", yesNoTemplate.name)
+        assertEquals("Vorlage: Ja / Nein", yesNoTemplate.name)
         assertTrue(yesNoTemplate.isBuiltIn)
         assertEquals(16, yesNoTemplate.buttonConfigs.size)
         // Ensure only specific slots are populated (0, 1, 15)

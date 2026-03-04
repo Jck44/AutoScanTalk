@@ -5,11 +5,7 @@ import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
-import io.mockk.coVerify
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.slot
-import io.mockk.verify
+import io.mockk.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runCurrent
@@ -171,5 +167,33 @@ class ActionExecutorTest {
 
         // Verify usage was NOT recorded (no bookId)
         coVerify(exactly = 0) { buttonUsageRepository.recordUsage(any(), any()) }
+    }
+
+    @Test
+    fun testGeminiQuotaReached_ProvidesLocalizedFeedback() = runTest {
+        val actionExecutor = createExecutor(this)
+        val buttonConfig = ButtonConfig(
+            id = "g1",
+            label = "Gemini",
+            auditoryCue = null,
+            buttonAction = com.andreas_kratzer.ghosttalk.model.GeminiButtonAction("Help")
+        )
+
+        val context = mockk<android.content.Context>(relaxed = true)
+        every { ttsHelper.context } returns context
+        every { ttsHelper.isReady } returns true
+        every { settingsRepository.isGeminiEnabled } returns true
+        
+        // Return a localized string with a placeholder
+        every { context.getString(com.andreas_kratzer.ghosttalk.R.string.error_gemini_quota_reached, 45) } returns "Wait 45s"
+
+        // Mock GeminiUseCase to throw 429 with custom message
+        coEvery { geminiUseCase.generateResponse(any()) } throws Exception("HTTP 429: wait 45 seconds")
+
+        actionExecutor.executeButtonAction(buttonConfig)
+        runCurrent()
+
+        // Verify TTS spoke the "Wait 45s" message with 4 parameters to match signature
+        verify { ttsHelper.speakRouted("Wait 45s", any(), any(), any()) }
     }
 }

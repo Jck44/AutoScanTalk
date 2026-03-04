@@ -205,20 +205,27 @@ class GeminiUseCase(
         } else {
             val error = connection.errorStream?.bufferedReader()?.use { it.readText() } ?: ""
             if (connection.responseCode == 429) {
-                var waitSeconds = connection.getHeaderField("Retry-After")?.toLongOrNull()
-                if (waitSeconds == null) {
-                    // Try parsing from message: "Please retry in 30.34s" or similar
-                    val regex = Regex("retry in (\\d+\\.?\\d*)s", RegexOption.IGNORE_CASE)
-                    val match = regex.find(error)
-                    waitSeconds = match?.groupValues?.get(1)?.toDoubleOrNull()?.toLong()
-                }
-                
-                val finalWait = (waitSeconds ?: 60).coerceIn(1, 3600)
+                val waitSeconds = parseWaitTime(connection.getHeaderField("Retry-After"), error)
+                val finalWait = waitSeconds.coerceIn(1, 3600)
                 lockoutUntilTime = System.currentTimeMillis() + (finalWait * 1000)
                 Log.w(TAG, "Gemini Quota Exceeded. Locking for ${finalWait}s. Error: $error")
             }
             throw Exception("HTTP ${connection.responseCode}: $error")
         }
+    }
+
+    internal fun parseWaitTime(retryAfterHeader: String?, errorBody: String?): Long {
+        // 1. Try Retry-After header
+        retryAfterHeader?.toLongOrNull()?.let { return it }
+
+        // 2. Try parsing from error message body: "Please retry in 30.34s"
+        if (errorBody != null) {
+            val regex = Regex("retry in (\\d+\\.?\\d*)s", RegexOption.IGNORE_CASE)
+            val match = regex.find(errorBody)
+            match?.groupValues?.get(1)?.toDoubleOrNull()?.let { return it.toLong() }
+        }
+
+        return 60 // Default fallback
     }
 
     private fun createInitialRequest(prompt: String): JSONObject {

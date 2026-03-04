@@ -27,6 +27,7 @@ class TemplateRepository @Inject constructor(
     }
 
     suspend fun delete(template: PageTemplate) {
+        if (template.isBuiltIn) return
         templateDao.deleteTemplate(template)
     }
 
