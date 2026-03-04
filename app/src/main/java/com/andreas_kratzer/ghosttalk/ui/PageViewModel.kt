@@ -285,9 +285,6 @@ class PageViewModel @Inject constructor(
             val bookId = _activeBookId.value ?: page.bookId
             val resolvedPage = frequentActionResolver.resolve(page, bookId)
             _currentPage.value = resolvedPage
-            
-            // Ensure scanning restarts after page is fully loaded and frequent actions resolved
-            resumeScanningIfEnabled()
         }
     }
 
@@ -331,6 +328,12 @@ class PageViewModel @Inject constructor(
     }
 
     fun activateButtonAtIndex(index: Int) {
+        // Prevent interaction during execution (non-interruptible audio policy)
+        if (actionExecutor.isExecuting.value) {
+            Log.d("PageViewModel", "Ignoring button click at index $index as ActionExecutor is currently executing.")
+            return
+        }
+
         // Jeder gültige Tasterdruck unterbricht ein eventuell laufendes Vorlesen von Benachrichtigungen
         ttsHelper.stopNotificationTTS()
         

@@ -89,6 +89,7 @@ fun SettingsScreen(
     val defaultScanPattern by settingsViewModel.defaultScanPattern.collectAsState()
     val holdingTimeInput by settingsViewModel.holdingTimeInput.collectAsState()
     val selectedAppLanguage by settingsViewModel.selectedAppLanguage.collectAsState()
+    val bluetoothDelayInput by settingsViewModel.bluetoothDelayInput.collectAsState()
 
     val authLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -174,7 +175,7 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.height(24.dp))
                         GeminiSettings(settingsViewModel)
                         Spacer(modifier = Modifier.height(24.dp))
-                        AudioOutputSettings(availableAudioDevices, selectedTtsAudioDeviceAddress, selectedCuesAudioDeviceAddress, settingsViewModel)
+                        AudioOutputSettings(availableAudioDevices, selectedTtsAudioDeviceAddress, selectedCuesAudioDeviceAddress, bluetoothDelayInput, settingsViewModel)
                     }
                     Column(modifier = Modifier.weight(1f)) {
                         ScanningSettings(autoStartScanning, resumeScanningFromStart, scanDelayInput, holdingTimeInput, settingsViewModel)
@@ -206,7 +207,7 @@ fun SettingsScreen(
                 Spacer(modifier = Modifier.height(24.dp))
                 GeminiSettings(settingsViewModel)
                 Spacer(modifier = Modifier.height(24.dp))
-                AudioOutputSettings(availableAudioDevices, selectedTtsAudioDeviceAddress, selectedCuesAudioDeviceAddress, settingsViewModel)
+                AudioOutputSettings(availableAudioDevices, selectedTtsAudioDeviceAddress, selectedCuesAudioDeviceAddress, bluetoothDelayInput, settingsViewModel)
                 Spacer(modifier = Modifier.height(24.dp))
                 ScanningSettings(autoStartScanning, resumeScanningFromStart, scanDelayInput, holdingTimeInput, settingsViewModel)
                 Spacer(modifier = Modifier.height(24.dp))
@@ -478,6 +479,7 @@ fun AudioOutputSettings(
     availableAudioDevices: List<AudioOutputDevice>,
     selectedTtsAudioDeviceAddress: String?,
     selectedCuesAudioDeviceAddress: String?,
+    bluetoothDelayInput: String,
     settingsViewModel: SettingsViewModel
 ) {
     var expandedTtsDevice by remember { mutableStateOf(false) }
@@ -522,17 +524,25 @@ fun AudioOutputSettings(
             )
             DropdownMenu(expanded = expandedCuesDevice, onDismissRequest = { expandedCuesDevice = false }) {
                 DropdownMenuItem(text = { Text(stringResource(R.string.settings_audio_default)) }, onClick = {
-                    settingsViewModel.setCuesAudioDevice(null)
+                    settingsViewModel.setSelectedCuesAudioDeviceAddress(null)
                     expandedCuesDevice = false
                 })
                 availableAudioDevices.forEach { device ->
                     DropdownMenuItem(text = { Text(device.name) }, onClick = {
-                        settingsViewModel.setCuesAudioDevice(device.address)
+                        settingsViewModel.setSelectedCuesAudioDeviceAddress(device.address)
                         expandedCuesDevice = false
                     })
                 }
             }
         }
+
+        // Bluetooth Delay
+        SettingsTextField(
+            label = "Bluetooth Verzögerung (ms)",
+            value = bluetoothDelayInput,
+            onValueChange = { settingsViewModel.setBluetoothDelay(it) },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+        )
     }
 }
 

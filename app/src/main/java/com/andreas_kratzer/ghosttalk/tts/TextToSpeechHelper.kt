@@ -7,6 +7,7 @@ import android.speech.tts.TextToSpeech
 import android.util.Log
 import android.widget.Toast
 import com.andreas_kratzer.ghosttalk.core.AudioDeviceManager
+import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import java.io.File
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
@@ -15,7 +16,8 @@ import javax.inject.Inject
 import dagger.hilt.android.qualifiers.ApplicationContext
 
 class TextToSpeechHelper @Inject constructor(
-    @param:ApplicationContext val context: Context
+    @param:ApplicationContext val context: Context,
+    private val settingsRepository: SettingsRepository
 ) : TextToSpeech.OnInitListener {
 
     private var tts: TextToSpeech? = null
@@ -29,7 +31,7 @@ class TextToSpeechHelper @Inject constructor(
     var isReadingNotification: Boolean = false
 
     private val audioDeviceManager = AudioDeviceManager(context)
-    private val routedAudioPlayer = RoutedAudioPlayer(context, audioDeviceManager)
+    private val routedAudioPlayer = RoutedAudioPlayer(context, audioDeviceManager, settingsRepository)
     
     private data class PlaybackRequest(val file: File, val deviceAddress: String?, val onDoneCallback: (() -> Unit)?)
     private val playRequests = ConcurrentHashMap<String, PlaybackRequest>()

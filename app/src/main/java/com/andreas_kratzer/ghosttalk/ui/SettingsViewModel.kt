@@ -132,6 +132,9 @@ class SettingsViewModel @Inject constructor(
     private val _themeMode = MutableStateFlow("SYSTEM")
     val themeMode: StateFlow<String> = _themeMode.asStateFlow()
 
+    private val _bluetoothDelayInput = MutableStateFlow("1500")
+    val bluetoothDelayInput: StateFlow<String> = _bluetoothDelayInput.asStateFlow()
+
     val userEmail: StateFlow<String?> = googleAuthManager.userEmail
 
     private val _isSyncing = MutableStateFlow(false)
@@ -185,6 +188,7 @@ class SettingsViewModel @Inject constructor(
         _isSmartPredictionEnabled.value = settingsRepository.isSmartPredictionEnabled
         _isNotificationReadingEnabled.value = settingsRepository.isNotificationReadingEnabled
         _monitoredNotificationApps.value = settingsRepository.monitoredNotificationApps
+        _bluetoothDelayInput.value = settingsRepository.bluetoothDelay.toString()
         
         updateGeminiToolStatus()
         
@@ -597,10 +601,17 @@ class SettingsViewModel @Inject constructor(
         tempTtsHelper.speakRouted("Ausgabegerät für Sprechen ausgewählt", address)
     }
 
-    fun setCuesAudioDevice(address: String?) {
+    fun setSelectedCuesAudioDeviceAddress(address: String?) {
         settingsRepository.cuesAudioDeviceAddress = address
         _selectedCuesAudioDeviceAddress.value = address
         tempTtsHelper.speakRouted("Ausgabegerät für Feedback ausgewählt", address)
+    }
+
+    fun setBluetoothDelay(delayMs: String) {
+        _bluetoothDelayInput.value = delayMs
+        delayMs.toLongOrNull()?.let {
+            settingsRepository.bluetoothDelay = it
+        }
     }
 
     fun getResolvedDeviceName(savedAddress: String?): String {

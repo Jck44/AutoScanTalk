@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import android.annotation.SuppressLint
+import android.util.Log
 
 @SuppressLint("CommitPrefEdits", "ApplySharedPref", "UseKtx")
 class SettingsRepository(context: Context) {
@@ -89,7 +90,21 @@ class SettingsRepository(context: Context) {
         _isSmartPredictionEnabledFlow.value = isSmartPredictionEnabled
         _isNotificationReadingEnabledFlow.value = isNotificationReadingEnabled
         _monitoredNotificationAppsFlow.value = monitoredNotificationApps
+        _bluetoothDelayFlow.value = bluetoothDelay
     }
+
+    private val _bluetoothDelayFlow = MutableStateFlow(prefs.getLong(KEY_BLUETOOTH_DELAY, 1500L))
+    val bluetoothDelayFlow: StateFlow<Long> = _bluetoothDelayFlow.asStateFlow()
+
+    var bluetoothDelay: Long
+        get() = prefs.getLong(KEY_BLUETOOTH_DELAY, 1500L).also { 
+            Log.d("SettingsRepository", "get bluetoothDelay: ${it}ms") 
+        }
+        set(value) {
+            Log.d("SettingsRepository", "set bluetoothDelay: ${value}ms")
+            prefs.edit().putLong(KEY_BLUETOOTH_DELAY, value).apply()
+            _bluetoothDelayFlow.value = value
+        }
 
     private val _pageSortOrderFlow = MutableStateFlow(getStringScoped(KEY_PAGE_SORT_ORDER, "MANUAL") ?: "MANUAL")
     val pageSortOrderFlow: StateFlow<String> = _pageSortOrderFlow.asStateFlow()
@@ -411,5 +426,6 @@ class SettingsRepository(context: Context) {
         private const val KEY_SMART_PREDICTION_ENABLED = "smart_prediction_enabled"
         private const val KEY_NOTIFICATION_READING_ENABLED = "notification_reading_enabled"
         private const val KEY_MONITORED_NOTIFICATION_APPS = "monitored_notification_apps"
+        private const val KEY_BLUETOOTH_DELAY = "bluetooth_delay_ms"
     }
 }
