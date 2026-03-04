@@ -71,10 +71,13 @@ fun PageScreen(
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
 
     DisposableEffect(lifecycleOwner) {
+        pageViewModel.setUserModeActive(true)
+
         val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
             if (event == androidx.lifecycle.Lifecycle.Event.ON_PAUSE || event == androidx.lifecycle.Lifecycle.Event.ON_STOP) {
-                pageViewModel.stopScanningTemporarily()
+                pageViewModel.setUserModeActive(false)
             } else if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                pageViewModel.setUserModeActive(true)
                 pageViewModel.resumeScanningIfEnabled()
             }
         }
@@ -84,6 +87,7 @@ fun PageScreen(
         pageViewModel.resumeScanningIfEnabled()
 
         onDispose {
+            pageViewModel.setUserModeActive(false)
             lifecycleOwner.lifecycle.removeObserver(observer)
             pageViewModel.stopScanning()
         }

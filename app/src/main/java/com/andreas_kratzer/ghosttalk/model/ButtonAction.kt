@@ -58,3 +58,19 @@ data class SmartPredictionButtonAction(
 data class NotificationButtonAction(
     val targetApp: String = "ALL" // "ALL", "com.whatsapp", "org.thoughtcrime.securesms", etc.
 ) : ButtonAction()
+
+/**
+ * An action to change the volume multiplier directly via a button click.
+ */
+data class ChangeVolumeButtonAction(
+    val isAbsolute: Boolean,
+    val amount: Float,
+    val isForCues: Boolean = false
+) : ButtonAction()
+
+/**
+ * An action to change the current TTS speaking mode (e.g., NORMAL, WHISPER, SHOUT).
+ */
+data class TtsModeButtonAction(
+    val mode: String
+) : ButtonAction()

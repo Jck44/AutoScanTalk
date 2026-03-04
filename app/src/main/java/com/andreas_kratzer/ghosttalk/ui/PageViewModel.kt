@@ -133,6 +133,17 @@ class PageViewModel @Inject constructor(
         buttonUsageRepository = buttonUsageRepository
     )
 
+    private val _isUserModeActive = MutableStateFlow(false)
+    val isUserModeActive: StateFlow<Boolean> = _isUserModeActive.asStateFlow()
+
+    fun setUserModeActive(isActive: Boolean) {
+        _isUserModeActive.value = isActive
+        if (!isActive) {
+            stopScanningTemporarily()
+            ttsHelper.stopNotificationTTS()
+        }
+    }
+
     fun setActiveBookId(bookId: String?) {
         _activeBookId.value = bookId
     }
@@ -150,9 +161,14 @@ class PageViewModel @Inject constructor(
         viewModelScope.launch {
             kotlinx.coroutines.flow.combine(
                 actionExecutor.isExecuting,
-                _currentPage
-            ) { isExecuting, page -> isExecuting to page }
-                .collect { (isExecuting, page) ->
+                _currentPage,
+                _isUserModeActive
+            ) { isExecuting, page, isActive -> Triple(isExecuting, page, isActive) }
+                .collect { (isExecuting, page, isActive) ->
+                    if (!isActive) {
+                        Log.d("PageViewModel", "Scanner Trigger: User mode inactive, ignoring state change.")
+                        return@collect
+                    }
                     if (isExecuting) {
                         Log.d("PageViewModel", "Scanner Trigger: ActionExecutor is executing. Pausing scan.")
                         stopScanningTemporarily()

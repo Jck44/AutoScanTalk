@@ -57,6 +57,15 @@ class SettingsViewModel @Inject constructor(
     private val _selectedVoiceName = MutableStateFlow<String?>(null)
     val selectedVoiceName: StateFlow<String?> = _selectedVoiceName.asStateFlow()
 
+    private val _ttsVolumeMultiplier = MutableStateFlow(1.0f)
+    val ttsVolumeMultiplier: StateFlow<Float> = _ttsVolumeMultiplier.asStateFlow()
+    
+    private val _cuesVolumeMultiplier = MutableStateFlow(1.0f)
+    val cuesVolumeMultiplier: StateFlow<Float> = _cuesVolumeMultiplier.asStateFlow()
+
+    private val _ttsMode = MutableStateFlow("NORMAL")
+    val ttsMode: StateFlow<String> = _ttsMode.asStateFlow()
+
     private val _autoStartScanning = MutableStateFlow(true)
     val autoStartScanning: StateFlow<Boolean> = _autoStartScanning.asStateFlow()
 
@@ -165,6 +174,9 @@ class SettingsViewModel @Inject constructor(
         // Initiale Einstellungen laden oder aktualisieren
         _selectedLanguageTag.value = settingsRepository.ttsLanguage ?: "default"
         _selectedVoiceName.value = settingsRepository.ttsVoiceName
+        _ttsVolumeMultiplier.value = settingsRepository.ttsVolumeMultiplier
+        _cuesVolumeMultiplier.value = settingsRepository.cuesVolumeMultiplier
+        _ttsMode.value = settingsRepository.ttsMode
         _autoStartScanning.value = settingsRepository.autoStartScanning
         _scanDelayInput.value = settingsRepository.scanDelayMillis.toString()
         _resumeScanningFromStart.value = settingsRepository.resumeScanningFromStart
@@ -291,6 +303,24 @@ class SettingsViewModel @Inject constructor(
         
         tempTtsHelper.setVoice(voiceName)
         tempTtsHelper.speakRouted("Stimme ausgewählt", settingsRepository.ttsAudioDeviceAddress)
+    }
+
+    fun setTtsVolumeMultiplier(multiplier: Float) {
+        settingsRepository.ttsVolumeMultiplier = multiplier
+        _ttsVolumeMultiplier.value = multiplier
+        tempTtsHelper.speakRouted("Lautstärke geändert", settingsRepository.ttsAudioDeviceAddress)
+    }
+    
+    fun setCuesVolumeMultiplier(multiplier: Float) {
+        settingsRepository.cuesVolumeMultiplier = multiplier
+        _cuesVolumeMultiplier.value = multiplier
+        tempTtsHelper.speakRouted("Hinweis Lautstärke geändert", settingsRepository.cuesAudioDeviceAddress)
+    }
+
+    fun setTtsMode(mode: String) {
+        settingsRepository.ttsMode = mode
+        _ttsMode.value = mode
+        tempTtsHelper.speakRouted("Sprechmodus geändert", settingsRepository.ttsAudioDeviceAddress)
     }
 
     fun setAutoStartScanning(enabled: Boolean) {

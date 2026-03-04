@@ -52,6 +52,14 @@ class ButtonActionAdapter : JsonSerializer<ButtonAction>, JsonDeserializer<Butto
                 jsonObject.addProperty("type", "GeminiSearchButtonAction")
                 jsonObject.add("data", context.serialize(src))
             }
+            is com.andreas_kratzer.ghosttalk.model.ChangeVolumeButtonAction -> {
+                jsonObject.addProperty("type", "ChangeVolumeButtonAction")
+                jsonObject.add("data", context.serialize(src))
+            }
+            is com.andreas_kratzer.ghosttalk.model.TtsModeButtonAction -> {
+                jsonObject.addProperty("type", "TtsModeButtonAction")
+                jsonObject.add("data", context.serialize(src))
+            }
         }
         return jsonObject
     }
@@ -68,6 +76,8 @@ class ButtonActionAdapter : JsonSerializer<ButtonAction>, JsonDeserializer<Butto
             "SmartPredictionButtonAction" -> context.deserialize(data, com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction::class.java)
             "NotificationButtonAction" -> context.deserialize(data, com.andreas_kratzer.ghosttalk.model.NotificationButtonAction::class.java)
             "GeminiSearchButtonAction" -> context.deserialize(data, com.andreas_kratzer.ghosttalk.model.GeminiSearchButtonAction::class.java)
+            "ChangeVolumeButtonAction" -> context.deserialize(data, com.andreas_kratzer.ghosttalk.model.ChangeVolumeButtonAction::class.java)
+            "TtsModeButtonAction" -> context.deserialize(data, com.andreas_kratzer.ghosttalk.model.TtsModeButtonAction::class.java)
             else -> throw JsonParseException("Unknown ButtonAction type: $type")
         }
     }

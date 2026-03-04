@@ -76,6 +76,9 @@ class SettingsViewModelTest {
         every { settingsRepository.smartPredictionDelayMillisFlow } returns MutableStateFlow(2000L)
         every { settingsRepository.bluetoothDelayFlow } returns MutableStateFlow(1500L)
         every { settingsRepository.lastSuccessfulSyncTimeFlow } returns MutableStateFlow(0L)
+        every { settingsRepository.ttsVolumeMultiplierFlow } returns MutableStateFlow<Float>(1.0f)
+        every { settingsRepository.cuesVolumeMultiplierFlow } returns MutableStateFlow<Float>(1.0f)
+        every { settingsRepository.ttsModeFlow } returns MutableStateFlow<String>("NORMAL")
 
         // Mock GoogleAuthManager flow
         every { googleAuthManager.userEmail } returns MutableStateFlow(null)
@@ -108,6 +111,7 @@ class SettingsViewModelTest {
     fun tearDown() {
         Dispatchers.resetMain()
         io.mockk.unmockkAll()
+        io.mockk.clearAllMocks()
     }
 
     @Test
@@ -262,5 +266,29 @@ class SettingsViewModelTest {
 
         // Should not enable if test call fails
         verify(exactly = 0) { settingsRepository.isGeminiEnabled = true }
+    }
+
+    @Test
+    fun testSetTtsVolumeMultiplier() = runTest {
+        viewModel.setTtsVolumeMultiplier(1.5f)
+        assertEquals(1.5f, viewModel.ttsVolumeMultiplier.value)
+        verify { settingsRepository.ttsVolumeMultiplier = 1.5f }
+        verify(exactly = 1) { tempTtsHelper.speak(any(), any(), null) }
+    }
+
+    @Test
+    fun testSetCuesVolumeMultiplier() = runTest {
+        viewModel.setCuesVolumeMultiplier(0.8f)
+        assertEquals(0.8f, viewModel.cuesVolumeMultiplier.value)
+        verify { settingsRepository.cuesVolumeMultiplier = 0.8f }
+        verify(exactly = 1) { tempTtsHelper.speakRouted(any(), any(), any(), eq(true), null) }
+    }
+
+    @Test
+    fun testSetTtsMode() = runTest {
+        viewModel.setTtsMode("WHISPER")
+        assertEquals("WHISPER", viewModel.ttsMode.value)
+        verify { settingsRepository.ttsMode = "WHISPER" }
+        verify(exactly = 1) { tempTtsHelper.speak(any(), any(), null) }
     }
 }

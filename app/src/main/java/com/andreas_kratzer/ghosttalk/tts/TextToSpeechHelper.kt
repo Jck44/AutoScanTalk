@@ -114,10 +114,16 @@ class TextToSpeechHelper @Inject constructor(
     private val directCallbacks = ConcurrentHashMap<String, () -> Unit>()
 
     fun speak(text: String, queueMode: Int = TextToSpeech.QUEUE_FLUSH, onDone: (() -> Unit)? = null) {
-        speakRouted(text, null, queueMode, onDone)
+        speakRouted(text, null, queueMode, false, onDone)
     }
 
-    fun speakRouted(text: String, deviceAddress: String?, queueMode: Int = TextToSpeech.QUEUE_FLUSH, onDone: (() -> Unit)? = null) {
+    fun speakRouted(
+        text: String, 
+        deviceAddress: String?, 
+        queueMode: Int = TextToSpeech.QUEUE_FLUSH,
+        isForCues: Boolean = false,
+        onDone: (() -> Unit)? = null
+    ) {
         if (!initialized || tts == null) {
             showToast("TTS not initialized, cannot speak.")
             onDone?.invoke()
@@ -135,24 +141,50 @@ class TextToSpeechHelper @Inject constructor(
             playRequests.clear()
             directCallbacks.clear()
         }
+        
+        // Get dynamic settings
+        val volumeMultiplier = if (isForCues) {
+            settingsRepository.cuesVolumeMultiplier
+        } else {
+            settingsRepository.ttsVolumeMultiplier
+        }
+        val ttsMode = settingsRepository.ttsMode
+        
+        // Generate SSML if needed
+        val finalSpeakText = if (ttsMode != "NORMAL") {
+            val volumeAttr = when (ttsMode) {
+                "WHISPER" -> "soft"
+                "SHOUT" -> "loud"
+                else -> "default"
+            }
+            // A basic SSML wrapper. Some engines require exact formatting.
+            "<speak><prosody volume=\"$volumeAttr\">$text</prosody></speak>"
+        } else {
+            text
+        }
 
         if (deviceAddress == null) {
             val utteranceId = "direct_${System.currentTimeMillis()}_${text.hashCode()}"
             if (onDone != null) {
                 directCallbacks[utteranceId] = onDone
             }
-            tts?.speak(text, queueMode, null, utteranceId)
+            val bundle = android.os.Bundle().apply {
+                putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, volumeMultiplier)
+            }
+            tts?.speak(finalSpeakText, queueMode, bundle, utteranceId)
             return
         }
 
         val utteranceId = "routed_${System.currentTimeMillis()}_${text.hashCode()}"
         val cacheFile = File(context.cacheDir, "$utteranceId.wav")
+        // Pass volumeMultiplier to the player
         playRequests[utteranceId] = PlaybackRequest(cacheFile, deviceAddress, onDone)
 
         val params = android.os.Bundle().apply {
             putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, utteranceId)
+            putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, volumeMultiplier)
         }
-        tts?.synthesizeToFile(text, params, cacheFile, utteranceId)
+        tts?.synthesizeToFile(finalSpeakText, params, cacheFile, utteranceId)
     }
 
     interface OnVoiceFallbackListener {

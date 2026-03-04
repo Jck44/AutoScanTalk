@@ -34,7 +34,7 @@ class RoutedAudioPlayer(
         return isBT
     }
 
-    fun playAudioFile(file: File, deviceAddress: String?, onCompletion: (() -> Unit)? = null) {
+    fun playAudioFile(file: File, deviceAddress: String?, volumeMultiplier: Float = 1.0f, onCompletion: (() -> Unit)? = null) {
         if (!file.exists()) {
             Log.e("RoutedAudioPlayer", "Audio file does not exist: ${file.absolutePath}")
             onCompletion?.invoke()
@@ -141,6 +141,7 @@ class RoutedAudioPlayer(
                     Log.d("RoutedAudioPlayer", "No Bluetooth delay needed, starting playback immediately.")
                 }
 
+                mediaPlayer.setVolume(volumeMultiplier, volumeMultiplier)
                 mediaPlayer.start()
 
             } catch (e: Exception) {

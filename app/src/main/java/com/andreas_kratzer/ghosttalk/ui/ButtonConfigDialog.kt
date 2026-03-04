@@ -34,6 +34,8 @@ import com.andreas_kratzer.ghosttalk.model.GeminiButtonAction
 import com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction
 import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.model.GeminiSearchButtonAction
+import com.andreas_kratzer.ghosttalk.model.ChangeVolumeButtonAction
+import com.andreas_kratzer.ghosttalk.model.TtsModeButtonAction
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 
@@ -70,8 +72,15 @@ fun ButtonConfigDialog(
     val actionTypeFrequent = stringResource(R.string.button_action_frequent_action)
     val actionTypeSmart = stringResource(R.string.button_action_smart_prediction)
     val actionTypeNotification = stringResource(R.string.button_action_notification)
+    val actionTypeVolumeTts = stringResource(R.string.button_action_volume_tts)
+    val actionTypeVolumeCues = stringResource(R.string.button_action_volume_cues)
+    val actionTypeTtsMode = stringResource(R.string.button_action_tts_mode)
+
     val actionTypes = remember(featureGuard, actionTypeNotification) {
-        val base = mutableListOf(actionTypeSpeak, actionTypeNavigate, actionTypeFrequent)
+        val base = mutableListOf(
+            actionTypeSpeak, actionTypeNavigate, actionTypeFrequent,
+            actionTypeVolumeTts, actionTypeVolumeCues, actionTypeTtsMode
+        )
         if (featureGuard.isActionEnabled(GeminiButtonAction(""))) {
             base.add(actionTypeGemini)
             base.add(actionTypeGeminiSearch)
@@ -86,13 +95,15 @@ fun ButtonConfigDialog(
     
     var selectedActionType by remember {
         mutableStateOf(
-            when (initialConfig?.buttonAction) {
+            when (val action = initialConfig?.buttonAction) {
                 is NavigateToPageButtonAction -> actionTypeNavigate
                 is GeminiButtonAction -> actionTypeGemini
                 is GeminiSearchButtonAction -> actionTypeGeminiSearch
                 is FrequentActionButtonAction -> actionTypeFrequent
                 is SmartPredictionButtonAction -> actionTypeSmart
                 is com.andreas_kratzer.ghosttalk.model.NotificationButtonAction -> actionTypeNotification
+                is ChangeVolumeButtonAction -> if (action.isForCues) actionTypeVolumeCues else actionTypeVolumeTts
+                is TtsModeButtonAction -> actionTypeTtsMode
                 else -> actionTypeSpeak
             }
         )
@@ -135,6 +146,42 @@ fun ButtonConfigDialog(
         "com.google.android.apps.messaging" to "SMS (Messages)"
     )
     var expandedNotificationApp by remember { mutableStateOf(false) }
+
+    // Volume Details
+    val volumeActionDef = initialConfig?.buttonAction as? ChangeVolumeButtonAction
+    val volumeUpLabel = stringResource(R.string.button_action_vol_up)
+    val volumeDownLabel = stringResource(R.string.button_action_vol_down)
+    val volumeMaxLabel = stringResource(R.string.button_action_vol_max)
+
+    var selectedVolumeAmount by remember { 
+        mutableStateOf(
+            if (volumeActionDef != null) {
+                if (volumeActionDef.isAbsolute && volumeActionDef.amount > 1.0f) volumeMaxLabel
+                else if (volumeActionDef.amount >= 0f) volumeUpLabel
+                else volumeDownLabel
+            } else volumeUpLabel
+        ) 
+    }
+    var expandedVolumeAmount by remember { mutableStateOf(false) }
+    val volumeAmounts = listOf(volumeUpLabel, volumeDownLabel, volumeMaxLabel)
+
+    // TTS Mode Details
+    val ttsModeActionDef = initialConfig?.buttonAction as? TtsModeButtonAction
+    val ttsModeNormalLabel = stringResource(R.string.settings_tts_mode_normal)
+    val ttsModeWhisperLabel = stringResource(R.string.settings_tts_mode_whisper)
+    val ttsModeShoutLabel = stringResource(R.string.settings_tts_mode_shout)
+
+    var selectedTtsModeAmount by remember { 
+        mutableStateOf(
+            when (ttsModeActionDef?.mode) {
+                "WHISPER" -> ttsModeWhisperLabel
+                "SHOUT" -> ttsModeShoutLabel
+                else -> ttsModeNormalLabel
+            }
+        ) 
+    }
+    var expandedTtsMode by remember { mutableStateOf(false) }
+    val ttsModes = listOf(ttsModeNormalLabel, ttsModeWhisperLabel, ttsModeShoutLabel)
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -352,6 +399,68 @@ fun ButtonConfigDialog(
                         }
                     }
                 }
+
+                // Conditional fields for Volume (TTS & Cues)
+                if (selectedActionType == actionTypeVolumeTts || selectedActionType == actionTypeVolumeCues) {
+                    ExposedDropdownMenuBox(
+                        expanded = expandedVolumeAmount,
+                        onExpandedChange = { expandedVolumeAmount = !expandedVolumeAmount }
+                    ) {
+                        OutlinedTextField(
+                            readOnly = true,
+                            value = selectedVolumeAmount,
+                            onValueChange = { },
+                            label = { Text("Aktion") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedVolumeAmount) },
+                            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
+                        )
+                        ExposedDropdownMenu(
+                            expanded = expandedVolumeAmount,
+                            onDismissRequest = { expandedVolumeAmount = false }
+                        ) {
+                            volumeAmounts.forEach { amountLabel ->
+                                DropdownMenuItem(
+                                    text = { Text(amountLabel) },
+                                    onClick = {
+                                        selectedVolumeAmount = amountLabel
+                                        expandedVolumeAmount = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Conditional fields for TTS Mode
+                if (selectedActionType == actionTypeTtsMode) {
+                    ExposedDropdownMenuBox(
+                        expanded = expandedTtsMode,
+                        onExpandedChange = { expandedTtsMode = !expandedTtsMode }
+                    ) {
+                        OutlinedTextField(
+                            readOnly = true,
+                            value = selectedTtsModeAmount,
+                            onValueChange = { },
+                            label = { Text("Aktion") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedTtsMode) },
+                            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
+                        )
+                        ExposedDropdownMenu(
+                            expanded = expandedTtsMode,
+                            onDismissRequest = { expandedTtsMode = false }
+                        ) {
+                            ttsModes.forEach { modeLabel ->
+                                DropdownMenuItem(
+                                    text = { Text(modeLabel) },
+                                    onClick = {
+                                        selectedTtsModeAmount = modeLabel
+                                        expandedTtsMode = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
                 
                 // Auditory Cue Routing Toggle (Visible for actions with audio output)
                 if (selectedActionType == actionTypeSpeak || 
@@ -386,6 +495,20 @@ fun ButtonConfigDialog(
                                     actionTypeFrequent -> FrequentActionButtonAction(rank = frequentRank.toIntOrNull()?.coerceAtLeast(1) ?: 1)
                                     actionTypeSmart -> SmartPredictionButtonAction(rank = smartRank.toIntOrNull()?.coerceAtLeast(1) ?: 1)
                                     actionTypeNotification -> com.andreas_kratzer.ghosttalk.model.NotificationButtonAction(targetApp = notificationTargetApp)
+                                    actionTypeVolumeTts, actionTypeVolumeCues -> {
+                                        val isAbsoluteAmount = selectedVolumeAmount == volumeMaxLabel
+                                        val volAmount = if (selectedVolumeAmount == volumeMaxLabel) 3.0f else if (selectedVolumeAmount == volumeDownLabel) -0.2f else 0.2f
+                                        val isForCuesAmount = selectedActionType == actionTypeVolumeCues
+                                        ChangeVolumeButtonAction(isAbsolute = isAbsoluteAmount, amount = volAmount, isForCues = isForCuesAmount)
+                                    }
+                                    actionTypeTtsMode -> {
+                                        val mappedMode = when (selectedTtsModeAmount) {
+                                            ttsModeWhisperLabel -> "WHISPER"
+                                            ttsModeShoutLabel -> "SHOUT"
+                                            else -> "NORMAL"
+                                        }
+                                        TtsModeButtonAction(mode = mappedMode)
+                                    }
                                     else -> SpeakTextButtonAction(textToSpeech = spokenText.takeIf { it.isNotBlank() } ?: label)
                                 }
 
@@ -424,6 +547,20 @@ fun ButtonConfigDialog(
                                 actionTypeFrequent -> FrequentActionButtonAction(rank = frequentRank.toIntOrNull()?.coerceAtLeast(1) ?: 1)
                                 actionTypeSmart -> SmartPredictionButtonAction(rank = smartRank.toIntOrNull()?.coerceAtLeast(1) ?: 1)
                                 actionTypeNotification -> com.andreas_kratzer.ghosttalk.model.NotificationButtonAction(targetApp = notificationTargetApp)
+                                actionTypeVolumeTts, actionTypeVolumeCues -> {
+                                    val isAbsoluteAmount = selectedVolumeAmount == volumeMaxLabel
+                                    val volAmount = if (selectedVolumeAmount == volumeMaxLabel) 3.0f else if (selectedVolumeAmount == volumeDownLabel) -0.2f else 0.2f
+                                    val isForCuesAmount = selectedActionType == actionTypeVolumeCues
+                                    ChangeVolumeButtonAction(isAbsolute = isAbsoluteAmount, amount = volAmount, isForCues = isForCuesAmount)
+                                }
+                                actionTypeTtsMode -> {
+                                    val mappedMode = when (selectedTtsModeAmount) {
+                                        ttsModeWhisperLabel -> "WHISPER"
+                                        ttsModeShoutLabel -> "SHOUT"
+                                        else -> "NORMAL"
+                                    }
+                                    TtsModeButtonAction(mode = mappedMode)
+                                }
                                 else -> SpeakTextButtonAction(textToSpeech = spokenText.takeIf { it.isNotBlank() } ?: label)
                             }
 

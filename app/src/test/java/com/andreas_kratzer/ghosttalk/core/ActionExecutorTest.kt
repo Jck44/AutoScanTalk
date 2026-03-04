@@ -27,8 +27,11 @@ class ActionExecutorTest {
 
     @Before
     fun setup() {
-        // Haltezeit = 1000ms
+        // Mock SettingsRepository values
         every { settingsRepository.holdingTimeMillis } returns 1000L
+        every { settingsRepository.ttsVolumeMultiplier } returns 1.0f
+        every { settingsRepository.cuesVolumeMultiplier } returns 1.0f
+        every { settingsRepository.ttsMode } returns "NORMAL"
         every { ttsHelper.isReady } returns true
     }
 
@@ -52,7 +55,7 @@ class ActionExecutorTest {
         )
 
         val ttsCallback = slot<() -> Unit>()
-        every { ttsHelper.speakRouted(any(), any(), any(), capture(ttsCallback)) } returns Unit
+        every { ttsHelper.speakRouted(any(), any(), any(), any(), capture(ttsCallback)) } returns Unit
 
         val events = mutableListOf<ActionExecutor.ExecutionEvent>()
         val eventsJob = launch {
@@ -66,7 +69,7 @@ class ActionExecutorTest {
 
         // Verifiziere: isExecuting ist true
         assertTrue("Sollte ausführen", actionExecutor.isExecuting.value)
-        verify(exactly = 1) { ttsHelper.speakRouted("Hello", any(), any(), any()) }
+        verify(exactly = 1) { ttsHelper.speakRouted("Hello", any(), any(), any(), any()) }
 
         // 310ms: Nutzer drückt nochmal -> Haltezeit (1000ms) ist noch aktiv
         currentTimeMillis = 310L
@@ -94,7 +97,7 @@ class ActionExecutorTest {
         val button2 = ButtonConfig(id = "2", label = "B2", auditoryCue = null, buttonAction = SpeakTextButtonAction("A2"))
 
         val ttsCallback1 = slot<() -> Unit>()
-        every { ttsHelper.speakRouted("A1", any(), any(), capture(ttsCallback1)) } returns Unit
+        every { ttsHelper.speakRouted("A1", any(), any(), any(), capture(ttsCallback1)) } returns Unit
 
         val events = mutableListOf<ActionExecutor.ExecutionEvent>()
         val eventsJob = launch {
@@ -139,7 +142,7 @@ class ActionExecutorTest {
         )
 
         val ttsCallback = slot<() -> Unit>()
-        every { ttsHelper.speakRouted(any(), any(), any(), capture(ttsCallback)) } returns Unit
+        every { ttsHelper.speakRouted(any(), any(), any(), any(), capture(ttsCallback)) } returns Unit
 
         currentTimeMillis = 0L
         actionExecutor.executeButtonAction(buttonConfig, bookId = "book1")
@@ -159,7 +162,7 @@ class ActionExecutorTest {
             buttonAction = SpeakTextButtonAction("Test")
         )
 
-        every { ttsHelper.speakRouted(any(), any(), any(), any()) } returns Unit
+        every { ttsHelper.speakRouted(any(), any(), any(), any(), any()) } returns Unit
 
         currentTimeMillis = 0L
         actionExecutor.executeButtonAction(buttonConfig) // No bookId
@@ -193,7 +196,60 @@ class ActionExecutorTest {
         actionExecutor.executeButtonAction(buttonConfig)
         runCurrent()
 
-        // Verify TTS spoke the "Wait 45s" message with 4 parameters to match signature
-        verify { ttsHelper.speakRouted("Wait 45s", any(), any(), any()) }
+        verify { ttsHelper.speakRouted("Wait 45s", any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun testChangeVolumeButtonActionRelative() = runTest {
+        val actionExecutor = createExecutor(this)
+        val buttonConfig = ButtonConfig(
+            id = "v1",
+            label = "VolUp",
+            auditoryCue = null,
+            buttonAction = com.andreas_kratzer.ghosttalk.model.ChangeVolumeButtonAction(isAbsolute = false, amount = 0.2f, isForCues = false)
+        )
+
+        currentTimeMillis = 0L
+        actionExecutor.executeButtonAction(buttonConfig)
+        runCurrent()
+
+        // 1.0 + 0.2 = 1.2
+        verify { settingsRepository.ttsVolumeMultiplier = 1.2f }
+        verify(exactly = 0) { settingsRepository.cuesVolumeMultiplier = any() }
+    }
+
+    @Test
+    fun testChangeVolumeButtonActionAbsolute() = runTest {
+        val actionExecutor = createExecutor(this)
+        val buttonConfig = ButtonConfig(
+            id = "v1",
+            label = "VolMax",
+            auditoryCue = null,
+            buttonAction = com.andreas_kratzer.ghosttalk.model.ChangeVolumeButtonAction(isAbsolute = true, amount = 3.0f, isForCues = true)
+        )
+
+        currentTimeMillis = 0L
+        actionExecutor.executeButtonAction(buttonConfig)
+        runCurrent()
+
+        verify { settingsRepository.cuesVolumeMultiplier = 3.0f }
+        verify(exactly = 0) { settingsRepository.ttsVolumeMultiplier = any() }
+    }
+
+    @Test
+    fun testTtsModeButtonAction() = runTest {
+        val actionExecutor = createExecutor(this)
+        val buttonConfig = ButtonConfig(
+            id = "t1",
+            label = "Whisper",
+            auditoryCue = null,
+            buttonAction = com.andreas_kratzer.ghosttalk.model.TtsModeButtonAction(mode = "WHISPER")
+        )
+
+        currentTimeMillis = 0L
+        actionExecutor.executeButtonAction(buttonConfig)
+        runCurrent()
+
+        verify { settingsRepository.ttsMode = "WHISPER" }
     }
 }

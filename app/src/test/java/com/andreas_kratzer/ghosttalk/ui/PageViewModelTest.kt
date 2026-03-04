@@ -78,8 +78,8 @@ class PageViewModelTest {
         geminiUseCaseFactory = mockk(relaxed = true)
         ttsHelper = mockk(relaxed = true) {
             every { isReady } returns true
-            every { speakRouted(any(), any(), any(), any()) } answers {
-                val callback = arg<(() -> Unit)?>(3)
+            every { speakRouted(any(), any(), any(), any(), any()) } answers {
+                val callback = arg<(() -> Unit)?>(4)
                 callback?.invoke()
             }
             every { speak(any(), any(), any()) } answers {
@@ -107,6 +107,9 @@ class PageViewModelTest {
         every { settingsRepository.persistActionLogsFlow } returns MutableStateFlow(false)
         every { settingsRepository.actionLogsStorage } returns null
         every { settingsRepository.actionLogsStorageFlow } returns MutableStateFlow(null)
+        every { settingsRepository.ttsVolumeMultiplierFlow } returns MutableStateFlow<Float>(1.0f)
+        every { settingsRepository.cuesVolumeMultiplierFlow } returns MutableStateFlow<Float>(1.0f)
+        every { settingsRepository.ttsModeFlow } returns MutableStateFlow<String>("NORMAL")
         
         every { getPagesUseCase.execute(any()) } returns MutableStateFlow(emptyList())
         every { actionLogUseCase.loadSavedLogs() } returns emptyList()
@@ -116,6 +119,7 @@ class PageViewModelTest {
     @After
     fun tearDown() {
         Dispatchers.resetMain()
+        io.mockk.clearAllMocks()
     }
 
     private fun createViewModel(): PageViewModel {
@@ -290,5 +294,49 @@ class PageViewModelTest {
         advanceTimeBy(1100)
         
         assertEquals(0, viewModel.focusedButtonIndex.value)
+    }
+
+    @Test
+    fun `isUserModeActive prevents scanning from resuming automatically`() = runTest {
+        every { settingsRepository.autoStartScanning } returns true
+        every { featureGuard.isButtonVisible(any()) } returns true
+        viewModel = createViewModel()
+        val button = ButtonConfig(label = "Test", auditoryCue = null, buttonAction = SpeakTextButtonAction("Hey"), isActive = true)
+        val page = Page(id = "p1", bookId = "b1", name = "P1", rows = 1, columns = 1, buttonConfigs = listOf(button))
+        
+        // 1. Load page but DO NOT set user mode active
+        viewModel.loadPage(page)
+        advanceUntilIdle()
+        
+        // Ensure scanning hasn't started
+        viewModel.stopScanning()
+        assertEquals(null, viewModel.focusedButtonIndex.value)
+        
+        // 2. Simulate ActionExecutor finishing its execution
+        // Because isUserModeActive is false (default), it should NOT resume scanning
+        viewModel.actionExecutor.setExecutingStateForTest(true)
+        advanceUntilIdle()
+        viewModel.actionExecutor.setExecutingStateForTest(false)
+        advanceTimeBy(1100)
+        
+        // Verification: Scan should still not have started
+        assertEquals(null, viewModel.focusedButtonIndex.value)
+        
+        // 3. Now set user mode active and simulate execution block again
+        viewModel.setUserModeActive(true)
+        advanceUntilIdle()
+        
+        viewModel.actionExecutor.setExecutingStateForTest(true)
+        viewModel.stopScanning() // Stop any scan started by setUserModeActive/loadPage combo
+        advanceUntilIdle()
+        
+        viewModel.actionExecutor.setExecutingStateForTest(false)
+        advanceTimeBy(1100)
+        
+        // Verification: Now the scan should have resumed
+        assertEquals(0, viewModel.focusedButtonIndex.value)
+        
+        // Clean up to prevent UncompletedCoroutinesError
+        viewModel.stopScanning()
     }
 }

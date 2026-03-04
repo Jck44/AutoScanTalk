@@ -11,6 +11,8 @@ import com.andreas_kratzer.ghosttalk.model.GeminiSearchButtonAction
 import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
+import com.andreas_kratzer.ghosttalk.model.ChangeVolumeButtonAction
+import com.andreas_kratzer.ghosttalk.model.TtsModeButtonAction
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
 import com.google.android.gms.auth.UserRecoverableAuthException
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
@@ -46,6 +48,11 @@ class ActionExecutor(
 
     private var lastExecutionTime = -1L
     private var activeExecutionId = 0
+
+    // Only for unit tests
+    fun setExecutingStateForTest(isExecuting: Boolean) {
+        _isExecuting.value = isExecuting
+    }
 
     fun executeButtonAction(buttonConfig: ButtonConfig, bookId: String? = null) {
         val currentTime = timeProvider()
@@ -346,6 +353,56 @@ class ActionExecutor(
                     tts?.isReadingNotification = false
                     finishExecution(currentExecutionId)
                 }
+            }
+            is ChangeVolumeButtonAction -> {
+                val currentVolume = if (action.isForCues) {
+                    settingsRepository.cuesVolumeMultiplier
+                } else {
+                    settingsRepository.ttsVolumeMultiplier
+                }
+                
+                val newVolume = if (action.isAbsolute) {
+                    action.amount
+                } else {
+                    (currentVolume + action.amount).coerceIn(0.0f, 3.0f)
+                }
+                
+                if (action.isForCues) {
+                    settingsRepository.cuesVolumeMultiplier = newVolume
+                    log("Hinweis-Lautstärke auf ${(newVolume * 100).toInt()}% gesetzt")
+                } else {
+                    settingsRepository.ttsVolumeMultiplier = newVolume
+                    log("TTS-Lautstärke auf ${(newVolume * 100).toInt()}% gesetzt")
+                }
+                
+                val targetDeviceAddress = if (buttonConfig.playActionAsAuditoryCue) {
+                    settingsRepository.cuesAudioDeviceAddress
+                } else {
+                    settingsRepository.ttsAudioDeviceAddress
+                }
+                
+                ttsHelper?.speakRouted("Lautstärke ${(newVolume * 100).toInt()}%", targetDeviceAddress) {
+                    finishExecution(currentExecutionId)
+                } ?: finishExecution(currentExecutionId)
+            }
+            is TtsModeButtonAction -> {
+                settingsRepository.ttsMode = action.mode
+                val displayMode = when (action.mode) {
+                    "WHISPER" -> "Flüstern"
+                    "SHOUT" -> "Schreien"
+                    else -> "Normal"
+                }
+                log("Sprachmodus auf $displayMode gesetzt")
+                
+                val targetDeviceAddress = if (buttonConfig.playActionAsAuditoryCue) {
+                    settingsRepository.cuesAudioDeviceAddress
+                } else {
+                    settingsRepository.ttsAudioDeviceAddress
+                }
+                
+                ttsHelper?.speakRouted("Modus $displayMode", targetDeviceAddress) {
+                    finishExecution(currentExecutionId)
+                } ?: finishExecution(currentExecutionId)
             }
         }
     }

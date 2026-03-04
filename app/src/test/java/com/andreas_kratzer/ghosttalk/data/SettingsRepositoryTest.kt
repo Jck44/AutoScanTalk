@@ -55,6 +55,11 @@ class SettingsRepositoryTest {
             val default = args[1] as Set<String>?
             mockedPrefsStore[key]?.split(",")?.toSet() ?: default
         }
+        every { mockPrefs.getFloat(any(), any()) } answers {
+            val key = args[0] as String
+            val default = args[1] as Float
+            mockedPrefsStore.getOrDefault(key, default.toString())?.toFloatOrNull() ?: default
+        }
         
         // Mock putString
         every { mockEditor.putString(any(), any()) } answers {
@@ -76,6 +81,14 @@ class SettingsRepositoryTest {
         every { mockEditor.putLong(any(), any()) } answers {
             val key = args[0] as String
             val value = args[1] as Long
+            mockedPrefsStore[key] = value.toString()
+            mockEditor
+        }
+        
+        // Mock putFloat
+        every { mockEditor.putFloat(any(), any()) } answers {
+            val key = args[0] as String
+            val value = args[1] as Float
             mockedPrefsStore[key] = value.toString()
             mockEditor
         }

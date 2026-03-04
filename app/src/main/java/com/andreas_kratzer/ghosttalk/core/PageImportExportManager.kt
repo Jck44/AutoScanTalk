@@ -191,7 +191,7 @@ class PageImportExportManager @javax.inject.Inject constructor(
                             targetPageImportId = action.pageId,
                             ttsFeedback = null
                         )
-                        is GeminiButtonAction, is com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction, is com.andreas_kratzer.ghosttalk.model.NotificationButtonAction, is com.andreas_kratzer.ghosttalk.model.GeminiSearchButtonAction -> null // Skip exporting app-specific actions for standard format
+                        is GeminiButtonAction, is com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction, is com.andreas_kratzer.ghosttalk.model.NotificationButtonAction, is com.andreas_kratzer.ghosttalk.model.GeminiSearchButtonAction, is com.andreas_kratzer.ghosttalk.model.ChangeVolumeButtonAction, is com.andreas_kratzer.ghosttalk.model.TtsModeButtonAction -> null // Skip exporting app-specific actions for standard format
                     }
                     com.andreas_kratzer.ghosttalk.model.importexport.ImportButton(
                         index = index.toLong(),
@@ -236,7 +236,7 @@ class PageImportExportManager @javax.inject.Inject constructor(
                             targetPageImportId = action.pageId,
                             ttsFeedback = null
                         )
-                        is GeminiButtonAction, is com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction, is com.andreas_kratzer.ghosttalk.model.NotificationButtonAction, is com.andreas_kratzer.ghosttalk.model.GeminiSearchButtonAction -> null // Skip exporting app-specific actions for standard format
+                        is GeminiButtonAction, is com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction, is com.andreas_kratzer.ghosttalk.model.NotificationButtonAction, is com.andreas_kratzer.ghosttalk.model.GeminiSearchButtonAction, is com.andreas_kratzer.ghosttalk.model.ChangeVolumeButtonAction, is com.andreas_kratzer.ghosttalk.model.TtsModeButtonAction -> null // Skip exporting app-specific actions for standard format
                     }
                     com.andreas_kratzer.ghosttalk.model.importexport.ImportButton(
                         index = index.toLong(),

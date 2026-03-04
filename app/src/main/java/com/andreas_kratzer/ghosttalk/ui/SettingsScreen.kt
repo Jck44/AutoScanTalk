@@ -408,6 +408,11 @@ fun VoiceSettings(
 ) {
     var expandedLanguage by remember { mutableStateOf(false) }
     var expandedVoice by remember { mutableStateOf(false) }
+    var expandedMode by remember { mutableStateOf(false) }
+    
+    val ttsVolumeMultiplier by settingsViewModel.ttsVolumeMultiplier.collectAsState()
+    val cuesVolumeMultiplier by settingsViewModel.cuesVolumeMultiplier.collectAsState()
+    val ttsMode by settingsViewModel.ttsMode.collectAsState()
 
     LaunchedEffect(expandedLanguage) {
         if (expandedLanguage && availableLanguages.isEmpty()) settingsViewModel.loadAvailableLanguages()
@@ -470,6 +475,72 @@ fun VoiceSettings(
                     })
                 }
             }
+        }
+
+        // Tts Mode
+        Box(modifier = Modifier.fillMaxWidth()) {
+            val currentModeLabel = when (ttsMode) {
+                "WHISPER" -> stringResource(R.string.settings_tts_mode_whisper)
+                "SHOUT" -> stringResource(R.string.settings_tts_mode_shout)
+                else -> stringResource(R.string.settings_tts_mode_normal)
+            }
+            SettingsClickableItem(
+                label = stringResource(R.string.settings_tts_mode),
+                value = currentModeLabel,
+                onClick = { expandedMode = true }
+            )
+            DropdownMenu(expanded = expandedMode, onDismissRequest = { expandedMode = false }) {
+                DropdownMenuItem(text = { Text(stringResource(R.string.settings_tts_mode_normal)) }, onClick = {
+                    settingsViewModel.setTtsMode("NORMAL")
+                    expandedMode = false
+                })
+                DropdownMenuItem(text = { Text(stringResource(R.string.settings_tts_mode_whisper)) }, onClick = {
+                    settingsViewModel.setTtsMode("WHISPER")
+                    expandedMode = false
+                })
+                DropdownMenuItem(text = { Text(stringResource(R.string.settings_tts_mode_shout)) }, onClick = {
+                    settingsViewModel.setTtsMode("SHOUT")
+                    expandedMode = false
+                })
+            }
+        }
+
+        // TTS Volume Slider
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp, horizontal = 16.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.settings_tts_volume, (ttsVolumeMultiplier * 100).toInt()),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+            androidx.compose.material3.Slider(
+                value = ttsVolumeMultiplier,
+                onValueChange = { settingsViewModel.setTtsVolumeMultiplier(it) },
+                valueRange = 0.0f..3.0f,
+                steps = 29 // Every 0.1 intervals
+            )
+        }
+        
+        // Cues Volume Slider
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp, horizontal = 16.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.settings_cues_volume, (cuesVolumeMultiplier * 100).toInt()),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+            androidx.compose.material3.Slider(
+                value = cuesVolumeMultiplier,
+                onValueChange = { settingsViewModel.setCuesVolumeMultiplier(it) },
+                valueRange = 0.0f..3.0f,
+                steps = 29 // Every 0.1 intervals
+            )
         }
     }
 }
