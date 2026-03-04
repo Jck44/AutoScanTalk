@@ -167,6 +167,9 @@
     <string name="settings_gemini_activation_success">Gemini erfolgreich aktiviert!</string>
     <string name="settings_gemini_activation_error">Aktivierungsfehler: %s</string>
     <string name="settings_gemini_enable">Gemini KI aktivieren</string>
+    <string name="settings_smart_prediction_enable">Gemini Vorhersage (Experimentell)</string>
+    <string name="settings_smart_prediction_hint">Ermöglicht Buttons, die dynamisch die nächste wahrscheinliche Aktion vorhersagen.</string>
+    <string name="settings_smart_prediction_disabled_warning">Das Feature \"Gemini Vorhersage\" ist aktuell in den Einstellungen deaktiviert. Dieser Button wird beim Scannen übersprungen, bis das Feature aktiviert wird.</string>
     <string name="settings_gemini_prediction_delay">Vorhersage-Verzögerung (ms)</string>
     <string name="settings_gemini_prediction_delay_hint">Zeit nach Navigation/Aktion, bevor Gemini gefragt wird. Höhere Werte schonen API-Limits.</string>
     <string name="settings_gemini_tools_title">Verfügbare Funktionen (Tools):</string>

@@ -52,6 +52,7 @@ class PageViewModelTest {
     private lateinit var geminiUseCaseFactory: com.andreas_kratzer.ghosttalk.domain.GeminiUseCaseFactory
     private lateinit var ttsHelper: com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
     private val predictNextActionUseCase = mockk<PredictNextActionUseCase>(relaxed = true)
+    private lateinit var featureGuard: com.andreas_kratzer.ghosttalk.domain.FeatureGuard
     private lateinit var viewModel: PageViewModel
 
     @Before
@@ -65,9 +66,15 @@ class PageViewModelTest {
         getPagesUseCase = mockk<GetPagesUseCase>(relaxed = true)
         driveAuthManager = mockk(relaxed = true)
         geminiUseCaseFactory = mockk(relaxed = true)
-        ttsHelper = mockk(relaxed = true)
+        ttsHelper = mockk(relaxed = true) {
+            every { isReady } returns true
+        }
         templateRepository = mockk(relaxed = true) {
             every { getAllTemplates() } returns kotlinx.coroutines.flow.flowOf(emptyList())
+        }
+        featureGuard = mockk(relaxed = true) {
+            every { isButtonVisible(any()) } returns true
+            every { isActionEnabled(any()) } returns true
         }
         
         // Mock default flows
@@ -75,6 +82,8 @@ class PageViewModelTest {
         every { settingsRepository.ttsVoiceNameFlow } returns MutableStateFlow(null)
         every { settingsRepository.scanDelayFlow } returns MutableStateFlow(1000L)
         every { settingsRepository.scanDelayMillis } returns 1000L
+        every { settingsRepository.defaultScanPattern } returns "linear"
+        every { settingsRepository.defaultScanPatternFlow } returns MutableStateFlow("linear")
         every { settingsRepository.autoStartScanning } returns false
         every { settingsRepository.persistActionLogs } returns false
         every { settingsRepository.persistActionLogsFlow } returns MutableStateFlow(false)
@@ -108,7 +117,8 @@ class PageViewModelTest {
             templateRepository = templateRepository,
             geminiUseCaseFactory = geminiUseCaseFactory,
             ttsHelper = ttsHelper,
-            predictNextActionUseCase = predictNextActionUseCase
+            predictNextActionUseCase = predictNextActionUseCase,
+            featureGuard = featureGuard
         )
     }
 
@@ -170,6 +180,7 @@ class PageViewModelTest {
 
     @Test
     fun `startScanning delegates to ScannerEngine`() = runTest {
+        every { featureGuard.isButtonVisible(any()) } returns true
         viewModel = createViewModel()
         
         val button = ButtonConfig(label = "Test", auditoryCue = null, buttonAction = SpeakTextButtonAction("Hey"), isActive = true)
@@ -178,7 +189,8 @@ class PageViewModelTest {
         testDispatcher.scheduler.runCurrent()
         
         viewModel.startScanning(0)
-        testDispatcher.scheduler.advanceTimeBy(1)
+        testDispatcher.scheduler.runCurrent()
+        
         val focused = viewModel.focusedButtonIndex.value
         viewModel.stopScanning()
         

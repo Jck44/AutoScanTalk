@@ -8,14 +8,26 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
+import com.andreas_kratzer.ghosttalk.domain.FeatureGuard
+import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
+import io.mockk.*
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Before
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class RowByRowScanStrategyTest {
 
     private val strategy = RowByRowScanStrategy()
+    private val featureGuard = mockk<FeatureGuard>()
+
+    @Before
+    fun setup() {
+        // Default: everything visible
+        every { featureGuard.isButtonVisible(any()) } returns true
+        every { featureGuard.isActionEnabled(any()) } returns true
+    }
 
     private fun btn(id: String, label: String, active: Boolean = true, cueText: String? = null): ButtonConfig {
         return ButtonConfig(
@@ -47,7 +59,8 @@ class RowByRowScanStrategyTest {
                 focusedButtonIndex = focusedButton,
                 focusedRowIndex = focusedRow,
                 onSpeakCue = { spokenCues.add(it) },
-                delayMillis = 100
+                delayMillis = 100,
+                featureGuard = featureGuard
             )
         }
 
@@ -92,7 +105,8 @@ class RowByRowScanStrategyTest {
                 focusedButtonIndex = focusedButton,
                 focusedRowIndex = focusedRow,
                 onSpeakCue = { spokenCues.add(it) },
-                delayMillis = 100
+                delayMillis = 100,
+                featureGuard = featureGuard
             )
         }
 
@@ -124,7 +138,8 @@ class RowByRowScanStrategyTest {
                 focusedButtonIndex = focusedButton,
                 focusedRowIndex = focusedRow,
                 onSpeakCue = { spokenCues.add(it) },
-                delayMillis = 100
+                delayMillis = 100,
+                featureGuard = featureGuard
             )
         }
 
@@ -149,7 +164,8 @@ class RowByRowScanStrategyTest {
             focusedButtonIndex = focusedButton,
             focusedRowIndex = focusedRow,
             onSpeakCue = { },
-            delayMillis = 100
+            delayMillis = 100,
+            featureGuard = featureGuard
         )
 
         assertNull(focusedRow.value)
@@ -172,9 +188,9 @@ class RowByRowScanStrategyTest {
                 columns = 2,
                 rowIndex = 0, // Scan row 0
                 focusedButtonIndex = focusedButton,
-                focusedRowIndex = focusedRow,
                 onSpeakCue = { spokenCues.add(it) },
-                delayMillis = 100
+                delayMillis = 100,
+                featureGuard = featureGuard
             )
         }
 
@@ -214,9 +230,9 @@ class RowByRowScanStrategyTest {
                 columns = 3,
                 rowIndex = 1,
                 focusedButtonIndex = focusedButton,
-                focusedRowIndex = focusedRow,
                 onSpeakCue = { spokenCues.add(it) },
-                delayMillis = 100
+                delayMillis = 100,
+                featureGuard = featureGuard
             )
         }
 
@@ -245,9 +261,9 @@ class RowByRowScanStrategyTest {
                 columns = 1,
                 rowIndex = 0,
                 focusedButtonIndex = focusedButton,
-                focusedRowIndex = focusedRow,
                 onSpeakCue = { spokenCues.add(it) },
-                delayMillis = 100
+                delayMillis = 100,
+                featureGuard = featureGuard
             )
         }
 
@@ -269,11 +285,85 @@ class RowByRowScanStrategyTest {
             columns = 2,
             rowIndex = 0,
             focusedButtonIndex = focusedButton,
-            focusedRowIndex = focusedRow,
             onSpeakCue = { },
-            delayMillis = 100
+            delayMillis = 100,
+            featureGuard = featureGuard
         )
 
         assertNull(focusedButton.value)
+    }
+
+    @Test
+    fun `executeScan skips rows that only contain disabled smart buttons`() = runTest {
+        val focusedRow = MutableStateFlow<Int?>(null)
+        val spokenCues = mutableListOf<String>()
+
+        // Row 0: Regular
+        // Row 1: Only Smart
+        val configs = listOf(
+            btn("b1", "A"), btn("b2", "B"),
+            ButtonConfig(id="s1", label="S1", auditoryCue=null, buttonAction= SmartPredictionButtonAction(1), isActive=true),
+            ButtonConfig(id="s2", label="S2", auditoryCue=null, buttonAction= SmartPredictionButtonAction(2), isActive=true)
+        )
+
+        val job = launch {
+            every { featureGuard.isButtonVisible(match { it.buttonAction is SmartPredictionButtonAction }) } returns false
+            strategy.executeScan(
+                buttonConfigs = configs,
+                columns = 2,
+                rowNames = listOf("R1", "R2"),
+                startIndex = 0,
+                focusedButtonIndex = MutableStateFlow(null),
+                focusedRowIndex = focusedRow,
+                onSpeakCue = { spokenCues.add(it) },
+                delayMillis = 100,
+                featureGuard = featureGuard
+            )
+        }
+
+        advanceTimeBy(1)
+        assertEquals(0, focusedRow.value) // R1
+
+        advanceTimeBy(100)
+        assertEquals(0, focusedRow.value) // Still R1 because R2 is empty (only disabled smart buttons)
+
+        assertEquals(listOf("R1", "R1"), spokenCues)
+
+        job.cancel()
+    }
+
+    @Test
+    fun `executeButtonScanInRow skips disabled smart buttons`() = runTest {
+        val focusedButton = MutableStateFlow<Int?>(null)
+        val spokenCues = mutableListOf<String>()
+
+        val configs = listOf(
+            btn("b1", "A"),
+            ButtonConfig(id="s1", label="S1", auditoryCue=null, buttonAction= SmartPredictionButtonAction(1), isActive=true),
+            btn("b3", "C")
+        )
+
+        val job = launch {
+            every { featureGuard.isButtonVisible(match { it.buttonAction is SmartPredictionButtonAction }) } returns false
+            strategy.executeButtonScanInRow(
+                buttonConfigs = configs,
+                columns = 3,
+                rowIndex = 0,
+                focusedButtonIndex = focusedButton,
+                onSpeakCue = { spokenCues.add(it) },
+                delayMillis = 100,
+                featureGuard = featureGuard
+            )
+        }
+
+        advanceTimeBy(1)
+        assertEquals(0, focusedButton.value) // A
+
+        advanceTimeBy(100)
+        assertEquals(2, focusedButton.value) // C (skipped S1 at index 1)
+
+        assertEquals(listOf("A", "C"), spokenCues)
+
+        job.cancel()
     }
 }

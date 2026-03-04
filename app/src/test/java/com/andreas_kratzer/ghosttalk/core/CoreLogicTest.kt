@@ -56,11 +56,15 @@ class CoreLogicTest {
         every { settingsRepo.scanDelayMillis } returns 10L
         every { ttsHelper.isReady } returns true
         
+        val featureGuard = mockk<com.andreas_kratzer.ghosttalk.domain.FeatureGuard>(relaxed = true) {
+            every { isButtonVisible(any()) } returns true
+            every { isActionEnabled(any()) } returns true
+        }
         val engine = ScannerEngine(
             scope = this,
             settingsRepository = settingsRepo,
-            ttsHelper = ttsHelper,
-            logger = TestLogger
+            featureGuard = featureGuard,
+            ttsHelper = ttsHelper
         )
         
         // Mock buttons: 2 rows, 2 columns. 4 active configs

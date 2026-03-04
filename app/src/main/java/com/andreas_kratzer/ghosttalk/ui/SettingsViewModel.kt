@@ -108,6 +108,9 @@ class SettingsViewModel @Inject constructor(
     private val _isGeminiEnabled = MutableStateFlow(false)
     val isGeminiEnabled: StateFlow<Boolean> = _isGeminiEnabled.asStateFlow()
 
+    private val _isSmartPredictionEnabled = MutableStateFlow(false)
+    val isSmartPredictionEnabled: StateFlow<Boolean> = _isSmartPredictionEnabled.asStateFlow()
+
     private val _geminiToolStatus = MutableStateFlow<Map<String, com.andreas_kratzer.ghosttalk.domain.GeminiUseCase.ToolStatus>>(emptyMap())
     val geminiToolStatus: StateFlow<Map<String, com.andreas_kratzer.ghosttalk.domain.GeminiUseCase.ToolStatus>> = _geminiToolStatus.asStateFlow()
 
@@ -170,6 +173,7 @@ class SettingsViewModel @Inject constructor(
         _themeMode.value = settingsRepository.themeMode
         _showPageIdInLog.value = settingsRepository.showPageIdInLog
         _experimentalManualSorting.value = settingsRepository.experimentalManualSorting
+        _isSmartPredictionEnabled.value = settingsRepository.isSmartPredictionEnabled
         
         updateGeminiToolStatus()
         
@@ -613,6 +617,11 @@ class SettingsViewModel @Inject constructor(
         if (parsed != null && parsed >= 0L) {
             settingsRepository.smartPredictionDelayMillis = parsed
         }
+    }
+
+    fun setSmartPredictionEnabled(enabled: Boolean) {
+        settingsRepository.isSmartPredictionEnabled = enabled
+        _isSmartPredictionEnabled.value = enabled
     }
 
     override fun onCleared() {

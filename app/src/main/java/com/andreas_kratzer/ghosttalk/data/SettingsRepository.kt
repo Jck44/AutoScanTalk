@@ -74,6 +74,7 @@ class SettingsRepository(context: Context) {
         _showPageIdInLogFlow.value = showPageIdInLog
         _experimentalManualSortingFlow.value = experimentalManualSorting
         _smartPredictionDelayMillisFlow.value = smartPredictionDelayMillis
+        _isSmartPredictionEnabledFlow.value = isSmartPredictionEnabled
     }
 
     private val _pageSortOrderFlow = MutableStateFlow(getStringScoped(KEY_PAGE_SORT_ORDER, "MANUAL") ?: "MANUAL")
@@ -133,6 +134,16 @@ class SettingsRepository(context: Context) {
         set(value) {
             putLongScoped(KEY_SMART_PREDICTION_DELAY, value)
             _smartPredictionDelayMillisFlow.value = value
+        }
+
+    private val _isSmartPredictionEnabledFlow = MutableStateFlow(getBooleanScoped(KEY_SMART_PREDICTION_ENABLED, false))
+    val isSmartPredictionEnabledFlow: StateFlow<Boolean> = _isSmartPredictionEnabledFlow.asStateFlow()
+
+    var isSmartPredictionEnabled: Boolean
+        get() = getBooleanScoped(KEY_SMART_PREDICTION_ENABLED, false)
+        set(value) {
+            putBooleanScoped(KEY_SMART_PREDICTION_ENABLED, value)
+            _isSmartPredictionEnabledFlow.value = value
         }
 
     private val _ttsLanguageFlow = MutableStateFlow(getStringScoped(KEY_TTS_LANGUAGE))
@@ -363,5 +374,6 @@ class SettingsRepository(context: Context) {
         private const val KEY_SHOW_PAGE_ID_IN_LOG = "show_page_id_in_log"
         private const val KEY_EXPERIMENTAL_MANUAL_SORTING = "experimental_manual_sorting"
         private const val KEY_SMART_PREDICTION_DELAY = "smart_prediction_delay"
+        private const val KEY_SMART_PREDICTION_ENABLED = "smart_prediction_enabled"
     }
 }

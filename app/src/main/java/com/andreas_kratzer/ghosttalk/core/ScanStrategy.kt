@@ -1,6 +1,7 @@
 package com.andreas_kratzer.ghosttalk.core
 
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.domain.FeatureGuard
 import kotlinx.coroutines.flow.MutableStateFlow
 
 interface ScanStrategy {
@@ -12,6 +13,7 @@ interface ScanStrategy {
         focusedButtonIndex: MutableStateFlow<Int?>,
         focusedRowIndex: MutableStateFlow<Int?>,
         onSpeakCue: suspend (String) -> Unit,
-        delayMillis: Long
+        delayMillis: Long,
+        featureGuard: FeatureGuard
     )
 }

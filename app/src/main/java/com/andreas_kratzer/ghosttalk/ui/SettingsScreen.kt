@@ -890,6 +890,30 @@ fun GeminiSettings(settingsViewModel: SettingsViewModel) {
 
         if (isGeminiEnabled && toolStatus.isNotEmpty()) {
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            
+            val isSmartPredictionEnabled by settingsViewModel.isSmartPredictionEnabled.collectAsState()
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.settings_smart_prediction_enable),
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Text(
+                        text = stringResource(R.string.settings_smart_prediction_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Switch(
+                    checked = isSmartPredictionEnabled,
+                    onCheckedChange = { settingsViewModel.setSmartPredictionEnabled(it) }
+                )
+            }
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             Text(
                 text = stringResource(R.string.settings_gemini_tools_title),
                 style = MaterialTheme.typography.labelLarge,

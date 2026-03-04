@@ -3,6 +3,7 @@ package com.andreas_kratzer.ghosttalk.core
 import com.andreas_kratzer.ghosttalk.model.AuditoryCue
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import kotlinx.coroutines.delay
+import com.andreas_kratzer.ghosttalk.domain.FeatureGuard
 import kotlinx.coroutines.flow.MutableStateFlow
 
 class LinearScanStrategy : ScanStrategy {
@@ -14,13 +15,14 @@ class LinearScanStrategy : ScanStrategy {
         focusedButtonIndex: MutableStateFlow<Int?>,
         focusedRowIndex: MutableStateFlow<Int?>,
         onSpeakCue: suspend (String) -> Unit,
-        delayMillis: Long
+        delayMillis: Long,
+        featureGuard: FeatureGuard
     ) {
         focusedRowIndex.value = null
         
         val activeButtonsWithGlobalIndices = buttonConfigs
             .mapIndexedNotNull { index, buttonConfig ->
-                if (buttonConfig != null && buttonConfig.isActive) {
+                if (buttonConfig != null && buttonConfig.isActive && featureGuard.isButtonVisible(buttonConfig)) {
                     Pair(index, buttonConfig)
                 } else null
             }
@@ -33,8 +35,9 @@ class LinearScanStrategy : ScanStrategy {
         val startingPosition = activeButtonsWithGlobalIndices.indexOfFirst { it.first >= startIndex }
             .coerceAtLeast(0)
 
+        var currentPos = startingPosition
         while (true) {
-            for (i in startingPosition until activeButtonsWithGlobalIndices.size) {
+            for (i in currentPos until activeButtonsWithGlobalIndices.size) {
                 val (globalIndex, buttonConfig) = activeButtonsWithGlobalIndices[i]
                 focusedButtonIndex.value = globalIndex
                 
@@ -44,8 +47,7 @@ class LinearScanStrategy : ScanStrategy {
                 
                 delay(delayMillis)
             }
-            // After one full pass, we loop from the beginning in the next while(true) iteration
-            // The startingPosition is only for the very first pass.
+            currentPos = 0
         }
     }
 }

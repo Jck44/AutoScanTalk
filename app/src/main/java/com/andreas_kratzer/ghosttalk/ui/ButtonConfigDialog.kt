@@ -3,6 +3,7 @@ package com.andreas_kratzer.ghosttalk.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -44,6 +45,7 @@ fun ButtonConfigDialog(
     initialConfig: ButtonConfig?,
     availablePages: List<Page>,
     buttonId: String,
+    featureGuard: com.andreas_kratzer.ghosttalk.domain.FeatureGuard,
     onDismiss: () -> Unit,
     onSave: (ButtonConfig?) -> Unit
 ) {
@@ -63,7 +65,17 @@ fun ButtonConfigDialog(
     val actionTypeGemini = stringResource(R.string.button_action_gemini)
     val actionTypeFrequent = stringResource(R.string.button_action_frequent_action)
     val actionTypeSmart = stringResource(R.string.button_action_smart_prediction)
-    val actionTypes = listOf(actionTypeSpeak, actionTypeNavigate, actionTypeGemini, actionTypeFrequent, actionTypeSmart)
+    val actionTypes = remember(featureGuard) {
+        val base = mutableListOf(actionTypeSpeak, actionTypeNavigate, actionTypeFrequent)
+        if (featureGuard.isActionEnabled(GeminiButtonAction(""))) {
+            base.add(actionTypeGemini)
+        }
+        if (featureGuard.isActionEnabled(SmartPredictionButtonAction())) {
+            base.add(actionTypeSmart)
+        }
+        base.sortedBy { it } // Optional: sort or keep order
+        base.toList()
+    }
     
     var selectedActionType by remember {
         mutableStateOf(
@@ -116,6 +128,17 @@ fun ButtonConfigDialog(
                     Switch(
                         checked = isActive,
                         onCheckedChange = { isActive = it }
+                    )
+                }
+
+                if (!featureGuard.isActionEnabled(SmartPredictionButtonAction()) && initialConfig?.buttonAction is SmartPredictionButtonAction) {
+                    Text(
+                        text = stringResource(R.string.settings_smart_prediction_disabled_warning),
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp)
                     )
                 }
 

@@ -8,14 +8,26 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
+import com.andreas_kratzer.ghosttalk.domain.FeatureGuard
+import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
+import io.mockk.*
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Before
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class LinearScanStrategyTest {
 
     private val strategy = LinearScanStrategy()
+    private val featureGuard = mockk<FeatureGuard>()
+
+    @Before
+    fun setup() {
+        // Default: everything visible
+        every { featureGuard.isButtonVisible(any()) } returns true
+        every { featureGuard.isActionEnabled(any()) } returns true
+    }
 
     private fun btn(id: String, label: String, active: Boolean = true, cueText: String? = null): ButtonConfig {
         return ButtonConfig(
@@ -44,7 +56,8 @@ class LinearScanStrategyTest {
                 focusedButtonIndex = focusedButton,
                 focusedRowIndex = focusedRow,
                 onSpeakCue = { spokenCues.add(it) },
-                delayMillis = 100
+                delayMillis = 100,
+                featureGuard = featureGuard
             )
         }
 
@@ -94,7 +107,8 @@ class LinearScanStrategyTest {
                 focusedButtonIndex = focusedButton,
                 focusedRowIndex = focusedRow,
                 onSpeakCue = { spokenCues.add(it) },
-                delayMillis = 100
+                delayMillis = 100,
+                featureGuard = featureGuard
             )
         }
 
@@ -129,7 +143,8 @@ class LinearScanStrategyTest {
                 focusedButtonIndex = focusedButton,
                 focusedRowIndex = focusedRow,
                 onSpeakCue = { spokenCues.add(it) },
-                delayMillis = 100
+                delayMillis = 100,
+                featureGuard = featureGuard
             )
         }
 
@@ -159,7 +174,8 @@ class LinearScanStrategyTest {
                 focusedButtonIndex = focusedButton,
                 focusedRowIndex = focusedRow,
                 onSpeakCue = { spokenCues.add(it) },
-                delayMillis = 100
+                delayMillis = 100,
+                featureGuard = featureGuard
             )
         }
 
@@ -187,9 +203,56 @@ class LinearScanStrategyTest {
             focusedButtonIndex = focusedButton,
             focusedRowIndex = focusedRow,
             onSpeakCue = { },
-            delayMillis = 100
+            delayMillis = 100,
+            featureGuard = featureGuard
         )
 
         assertNull(focusedButton.value)
+    }
+
+    @Test
+    fun `skips smart buttons when feature is disabled`() = runTest {
+        val focusedButton = MutableStateFlow<Int?>(null)
+        val focusedRow = MutableStateFlow<Int?>(null)
+        val spokenCues = mutableListOf<String>()
+
+        val configs = listOf(
+            btn("b1", "Regular"),
+            ButtonConfig(
+                id = "s1",
+                label = "Smart",
+                auditoryCue = null,
+                buttonAction = SmartPredictionButtonAction(1),
+                isActive = true
+            ),
+            btn("b2", "Other")
+        )
+
+        val job = launch {
+            // Mock specifically for this call
+            every { featureGuard.isButtonVisible(match { it.buttonAction is SmartPredictionButtonAction }) } returns false
+
+            strategy.executeScan(
+                buttonConfigs = configs,
+                columns = 3,
+                rowNames = emptyList(),
+                startIndex = 0,
+                focusedButtonIndex = focusedButton,
+                focusedRowIndex = focusedRow,
+                onSpeakCue = { spokenCues.add(it) },
+                delayMillis = 100,
+                featureGuard = featureGuard
+            )
+        }
+
+        advanceTimeBy(1)
+        assertEquals(0, focusedButton.value) // Regular
+
+        advanceTimeBy(100)
+        assertEquals(2, focusedButton.value) // Other (skipped Smart at index 1)
+
+        assertEquals(listOf("Regular", "Other"), spokenCues)
+
+        job.cancel()
     }
 }

@@ -46,7 +46,6 @@ fun TemplateEditorScreen(
     val template = templates.find { it.id == templateId }
 
     var selectedButtonIndex by remember { mutableStateOf<Int?>(null) }
-    var showDialog by remember { mutableStateOf(false) }
 
     if (template == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -101,7 +100,6 @@ fun TemplateEditorScreen(
                             isEditorMode = true,
                             onClick = {
                                 selectedButtonIndex = i
-                                showDialog = true
                             }
                         )
                     }
@@ -110,7 +108,7 @@ fun TemplateEditorScreen(
         }
     }
 
-    if (showDialog && selectedButtonIndex != null) {
+    if (selectedButtonIndex != null) {
         val editingIndex = selectedButtonIndex!!
         val currentConfig = template.buttonConfigs.getOrNull(editingIndex)
         val buttonId = currentConfig?.id ?: UUID.randomUUID().toString()
@@ -119,13 +117,12 @@ fun TemplateEditorScreen(
             initialConfig = currentConfig,
             buttonId = buttonId,
             availablePages = allPages, // Allow templates to navigate to specific pages if needed
+            featureGuard = pageViewModel.featureGuard,
             onDismiss = {
-                showDialog = false
                 selectedButtonIndex = null
             },
             onSave = { newConfig ->
                 templateViewModel.updateButtonConfig(template.id, editingIndex, newConfig)
-                showDialog = false
                 selectedButtonIndex = null
             }
         )

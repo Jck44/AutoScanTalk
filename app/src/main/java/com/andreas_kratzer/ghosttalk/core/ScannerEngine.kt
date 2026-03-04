@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
+import com.andreas_kratzer.ghosttalk.domain.FeatureGuard
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.andreas_kratzer.ghosttalk.core.util.AppLogger
@@ -17,8 +18,8 @@ import com.andreas_kratzer.ghosttalk.core.util.AppLogger
 class ScannerEngine(
     private val scope: CoroutineScope,
     private val settingsRepository: SettingsRepository,
-    var ttsHelper: TextToSpeechHelper? = null,
-    private val logger: Logger = AppLogger
+    private val featureGuard: FeatureGuard,
+    var ttsHelper: TextToSpeechHelper? = null
 ) {
     private val _focusedButtonIndex = MutableStateFlow<Int?>(null)
     val focusedButtonIndex: StateFlow<Int?> = _focusedButtonIndex.asStateFlow()
@@ -32,7 +33,6 @@ class ScannerEngine(
 
     private var scanJob: Job? = null
     var scanDelayMillis: Long = 1000L
-    var isAutoScanningEnabled: Boolean = false
 
     private val linearStrategy = LinearScanStrategy()
     private val rowByRowStrategy = RowByRowScanStrategy()
@@ -48,7 +48,7 @@ class ScannerEngine(
         currentButtonConfigs = buttonConfigs
         currentColumns = columns
         currentRowNames = rowNames
-        
+
         scanJob = scope.launch {
             if (pattern == "row_by_row") {
                 rowByRowStrategy.executeScan(
@@ -59,9 +59,10 @@ class ScannerEngine(
                     focusedButtonIndex = _focusedButtonIndex,
                     focusedRowIndex = _focusedRowIndex,
                     onSpeakCue = { handleSpeakCue(it) },
-                    delayMillis = scanDelayMillis
+                    delayMillis = scanDelayMillis,
+                    featureGuard = featureGuard
                 )
-            } else {
+            } else if (pattern == "linear") {
                 linearStrategy.executeScan(
                     buttonConfigs = buttonConfigs,
                     columns = columns,
@@ -70,7 +71,8 @@ class ScannerEngine(
                     focusedButtonIndex = _focusedButtonIndex,
                     focusedRowIndex = _focusedRowIndex,
                     onSpeakCue = { handleSpeakCue(it) },
-                    delayMillis = scanDelayMillis
+                    delayMillis = scanDelayMillis,
+                    featureGuard = featureGuard
                 )
             }
         }
@@ -102,9 +104,9 @@ class ScannerEngine(
                 columns = currentColumns,
                 rowIndex = currentRow,
                 focusedButtonIndex = _focusedButtonIndex,
-                focusedRowIndex = _focusedRowIndex,
                 onSpeakCue = { handleSpeakCue(it) },
-                delayMillis = scanDelayMillis
+                delayMillis = scanDelayMillis,
+                featureGuard = featureGuard
             )
         }
     }

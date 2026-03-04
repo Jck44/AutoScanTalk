@@ -17,3 +17,5 @@ local.properties
 /.kotlin/errors/errors-1772375493178.log
 /gotalknow_extracted/
 /app/release/app-release.aab
+/app/build_output.txt
+/build_output.txt

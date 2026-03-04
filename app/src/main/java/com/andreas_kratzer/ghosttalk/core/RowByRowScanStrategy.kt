@@ -1,6 +1,7 @@
 package com.andreas_kratzer.ghosttalk.core
 
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.domain.FeatureGuard
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -13,7 +14,8 @@ class RowByRowScanStrategy : ScanStrategy {
         focusedButtonIndex: MutableStateFlow<Int?>,
         focusedRowIndex: MutableStateFlow<Int?>,
         onSpeakCue: suspend (String) -> Unit,
-        delayMillis: Long
+        delayMillis: Long,
+        featureGuard: FeatureGuard
     ) {
         focusedButtonIndex.value = null
         
@@ -26,7 +28,7 @@ class RowByRowScanStrategy : ScanStrategy {
             var hasActive = false
             for (i in startIdx until endIdx) {
                 val btn = buttonConfigs[i]
-                if (btn != null && btn.isActive) {
+                if (btn != null && btn.isActive && featureGuard.isButtonVisible(btn)) {
                     hasActive = true
                     break
                 }
@@ -43,8 +45,9 @@ class RowByRowScanStrategy : ScanStrategy {
 
         val startingPosition = activeRows.indexOfFirst { it >= startIndex }.coerceAtLeast(0)
 
+        var currentPos = startingPosition
         while (true) {
-            for (i in startingPosition until activeRows.size) {
+            for (i in currentPos until activeRows.size) {
                 val rowIndex = activeRows[i]
                 focusedRowIndex.value = rowIndex
 
@@ -54,7 +57,7 @@ class RowByRowScanStrategy : ScanStrategy {
                 
                 delay(delayMillis)
             }
-            // Loop from start for subsequent passes
+            currentPos = 0
         }
     }
 
@@ -67,14 +70,14 @@ class RowByRowScanStrategy : ScanStrategy {
         columns: Int,
         rowIndex: Int,
         focusedButtonIndex: MutableStateFlow<Int?>,
-        focusedRowIndex: MutableStateFlow<Int?>,
         onSpeakCue: suspend (String) -> Unit,
-        delayMillis: Long
+        delayMillis: Long,
+        featureGuard: FeatureGuard
     ) {
         // Keep focusedRowIndex as is (to highlight the row)
         val activeButtonsInRow = buttonConfigs
             .mapIndexedNotNull { index, config ->
-                if (config != null && config.isActive && index / columns == rowIndex) {
+                if (config != null && config.isActive && index / columns == rowIndex && featureGuard.isButtonVisible(config)) {
                     Pair(index, config)
                 } else null
             }

@@ -20,6 +20,7 @@ import com.andreas_kratzer.ghosttalk.domain.ActionLogUseCase
 import com.andreas_kratzer.ghosttalk.domain.CreatePageUseCase
 import com.andreas_kratzer.ghosttalk.domain.GeminiUseCase
 import com.andreas_kratzer.ghosttalk.domain.GeminiUseCaseFactory
+import com.andreas_kratzer.ghosttalk.domain.FeatureGuard
 import com.andreas_kratzer.ghosttalk.domain.GetPagesUseCase
 import com.andreas_kratzer.ghosttalk.domain.PredictNextActionUseCase
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
@@ -61,7 +62,8 @@ class PageViewModel @Inject constructor(
     logger: Logger,
     geminiUseCaseFactory: GeminiUseCaseFactory,
     private val ttsHelper: TextToSpeechHelper,
-    private val predictNextActionUseCase: PredictNextActionUseCase
+    private val predictNextActionUseCase: PredictNextActionUseCase,
+    val featureGuard: FeatureGuard
 ) : AndroidViewModel(application) {
 
     private var geminiUseCase: GeminiUseCase? = null
@@ -103,7 +105,7 @@ class PageViewModel @Inject constructor(
     private val _authRecoverIntent = MutableSharedFlow<Intent>()
     val authRecoverIntent: SharedFlow<Intent> = _authRecoverIntent.asSharedFlow()
 
-    val scannerEngine = ScannerEngine(viewModelScope, settingsRepository, ttsHelper, logger)
+    val scannerEngine = ScannerEngine(viewModelScope, settingsRepository, featureGuard, ttsHelper)
     val focusedButtonIndex: StateFlow<Int?> = scannerEngine.focusedButtonIndex
     val focusedRowIndex: StateFlow<Int?> = scannerEngine.focusedRowIndex
     val defaultScanPattern: StateFlow<String> = settingsRepository.defaultScanPatternFlow
@@ -194,13 +196,14 @@ class PageViewModel @Inject constructor(
             kotlinx.coroutines.flow.combine(
                 _currentPage,
                 _lastActions,
-                settingsRepository.smartPredictionDelayMillisFlow
-            ) { page, _, delay -> page to delay }
-                .collect { (page, delay) ->
-                    if (page != null) {
+                settingsRepository.smartPredictionDelayMillisFlow,
+                settingsRepository.isSmartPredictionEnabledFlow
+            ) { page, _, delay, enabled -> Triple(page, delay, enabled) }
+                .collect { (page, delay, enabled) ->
+                    if (page != null && enabled) {
                         // Check if at least one SMART_PREDICTION button exists
                         val hasPredictor = page.buttonConfigs.any { 
-                        (it?.buttonAction as? SmartPredictionButtonAction) != null 
+                            it != null && featureGuard.isActionEnabled(it.buttonAction) && it.buttonAction is SmartPredictionButtonAction
                         }
                         
                         if (hasPredictor) {
@@ -308,11 +311,11 @@ class PageViewModel @Inject constructor(
     fun startScanning(startIndex: Int = 0) {
         val page = _currentPage.value ?: return
         val defaultPattern = settingsRepository.defaultScanPattern
-        val patternToUse = page.scanPattern ?: defaultPattern
+        page.scanPattern ?: defaultPattern
         scannerEngine.startScanning(
             buttonConfigs = page.buttonConfigs,
             startIndex = startIndex,
-            pattern = patternToUse,
+            pattern = page.scanPattern ?: settingsRepository.defaultScanPattern,
             columns = page.columns,
             rowNames = page.rowNames
         )

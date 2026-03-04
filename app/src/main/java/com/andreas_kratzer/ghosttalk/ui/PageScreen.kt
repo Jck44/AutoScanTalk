@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -154,6 +153,7 @@ fun ButtonGrid(
     smartPredictions: List<String>,
     pageViewModel: PageViewModel
 ) {
+
     LazyVerticalGrid(
         columns = GridCells.Fixed(page.columns),
         modifier = Modifier.fillMaxSize(),
@@ -165,7 +165,9 @@ fun ButtonGrid(
             val isFocused = globalIndex == focusedButtonIndex
             val isRowFocused = focusedRowIndex != null && (globalIndex / page.columns) == focusedRowIndex
 
-            if (buttonConfig != null && buttonConfig.isActive) {
+            val isVisible = buttonConfig != null && pageViewModel.featureGuard.isButtonVisible(buttonConfig)
+
+            if (buttonConfig != null && buttonConfig.isActive && isVisible) {
                 val overrideLabel = (buttonConfig.buttonAction as? SmartPredictionButtonAction)?.let { smartAction ->
                     smartPredictions.getOrNull(smartAction.rank - 1)
                 }
@@ -179,7 +181,8 @@ fun ButtonGrid(
                     onClick = { pageViewModel.activateButtonAtIndex(globalIndex) }
                 )
             } else {
-                Spacer(modifier = Modifier.aspectRatio(1f).fillMaxSize())
+                // If inactive or a disabled experimental button, show an empty placeholder to maintain grid alignment
+                Spacer(modifier = Modifier.fillMaxSize())
             }
         }
     }
