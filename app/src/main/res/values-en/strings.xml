@@ -124,11 +124,15 @@
     <string name="button_action_gemini">Call Gemini</string>
     <string name="button_action_frequent_action">Frequent Action</string>
     <string name="button_action_smart_prediction">Gemini Prediction</string>
+    <string name="button_action_notification">Notification (Auditory Cue)</string>
     <string name="button_no_page_selected">No page selected</string>
     <string name="button_target_page_label">Target Page</string>
     <string name="button_smart_prediction_rank_label">Prediction Rank (1 = Most Likely)</string>
     <string name="button_gemini_prompt_field">Gemini Prompt (Command)</string>
     <string name="button_gemini_prompt_hint">What should Gemini do?</string>
+    <string name="button_notification_target_app">Select App</string>
+    <string name="button_notification_target_all">All allowed apps</string>
+    <string name="button_play_as_cue">Play as quiet auditory cue</string>
     <string name="action_clear_delete">Clear / Delete</string>
 
     <!-- Page Screen -->
@@ -170,6 +174,7 @@
     <string name="settings_smart_prediction_enable">Gemini Prediction (Experimental)</string>
     <string name="settings_smart_prediction_hint">Enables buttons that dynamically predict the next likely action.</string>
     <string name="settings_smart_prediction_disabled_warning">The \"Gemini Prediction\" feature is currently disabled in settings. This button will be skipped during scanning until the feature is enabled.</string>
+    <string name="settings_notification_disabled_warning">The \"Read Notifications\" feature is currently disabled in settings. This button will be skipped during scanning until the feature is enabled.</string>
     <string name="settings_gemini_prediction_delay">Prediction Delay (ms)</string>
     <string name="settings_gemini_prediction_delay_hint">Time after navigation/action before Gemini is asked. Higher values save API limits.</string>
     <string name="settings_gemini_tools_title">Available Features (Tools):</string>
@@ -186,6 +191,17 @@
     <string name="settings_gemini_tool_spotify">Spotify Control</string>
     <string name="error_gemini_disabled">Check Gemini in Settings</string>
     <string name="error_gemini_quota_reached" tools:ignore="PluralsCandidate">Gemini limit reached. Please wait %d seconds.</string>
+
+    <!-- Notifications -->
+    <string name="settings_category_notifications">Notifications (Auditory Cue)</string>
+    <string name="settings_notifications_enable">Read notifications aloud</string>
+    <string name="settings_notifications_enable_desc">Allows automatic reading of notifications from selected apps as an auditory signal.</string>
+    <string name="settings_notifications_permission_button">Grant Permission</string>
+    <string name="settings_notifications_apps">Monitored Apps</string>
+    <string name="settings_notifications_app_whatsapp">WhatsApp</string>
+    <string name="settings_notifications_app_signal">Signal</string>
+    <string name="settings_notifications_app_telegram">Telegram</string>
+    <string name="settings_notifications_app_sms">System SMS</string>
 
     <!-- Shared -->
     <string name="error_page_not_found">Page not found</string>

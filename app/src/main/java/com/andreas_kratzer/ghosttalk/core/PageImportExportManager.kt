@@ -192,7 +192,6 @@ class PageImportExportManager @javax.inject.Inject constructor(
                             ttsFeedback = null
                         )
                         is GeminiButtonAction, is com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction, is com.andreas_kratzer.ghosttalk.model.NotificationButtonAction -> null // Skip exporting app-specific actions for standard format
-                        else -> null
                     }
                     com.andreas_kratzer.ghosttalk.model.importexport.ImportButton(
                         index = index.toLong(),
@@ -238,7 +237,6 @@ class PageImportExportManager @javax.inject.Inject constructor(
                             ttsFeedback = null
                         )
                         is GeminiButtonAction, is com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction, is com.andreas_kratzer.ghosttalk.model.NotificationButtonAction -> null // Skip exporting app-specific actions for standard format
-                        else -> null
                     }
                     com.andreas_kratzer.ghosttalk.model.importexport.ImportButton(
                         index = index.toLong(),

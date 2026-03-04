@@ -215,6 +215,7 @@ class ActionExecutor(
                 val activeNotifs = try {
                     service.activeNotifications
                 } catch (e: Exception) {
+                    log("Fehler beim Abrufen der Benachrichtigungen: ${e.message}")
                     null
                 }
                 
