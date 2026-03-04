@@ -44,3 +44,10 @@ data class SmartPredictionButtonAction(
 
 // Zukünftige Aktionen könnten hier als weitere data classes hinzugefügt werden,
 // die von `Action` erben.
+
+/**
+ * An action that reads out notifications from a specified app (or all allowed apps).
+ */
+data class NotificationButtonAction(
+    val targetApp: String = "ALL" // "ALL", "com.whatsapp", "org.thoughtcrime.securesms", etc.
+) : ButtonAction()

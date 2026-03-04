@@ -25,6 +25,9 @@ class TextToSpeechHelper @Inject constructor(
     private var pendingLanguageTag: String? = null
     private var pendingVoiceName: String? = null
 
+    // Support for interrupting ONLY notifications
+    var isReadingNotification: Boolean = false
+
     private val audioDeviceManager = AudioDeviceManager(context)
     private val routedAudioPlayer = RoutedAudioPlayer(context, audioDeviceManager)
     
@@ -279,5 +282,29 @@ class TextToSpeechHelper @Inject constructor(
         tts?.stop()
         tts?.shutdown()
         initialized = false
+    }
+
+    /**
+     * Stoppt die aktuelle Sprachausgabe NUR, wenn gerade eine Benachrichtigung vorgelesen wird.
+     * Dies verhindert, dass normale Button-Klicks ("Sprich Text") durch versehentliches 
+     * doppeltes Drücken abgebrochen werden.
+     */
+    fun stopNotificationTTS() {
+        if (isReadingNotification) {
+            Log.d("TextToSpeechHelper", "Unterbreche Benachrichtigungs-Vorlesen.")
+            tts?.stop()
+            routedAudioPlayer.stopAll()
+            
+            // Pending callbacks for the notification also need to be invoked to free up scanners
+            playRequests.values.forEach { it.onDoneCallback?.let { cb -> handler.post { cb() } } }
+            directCallbacks.values.forEach { handler.post { it() } }
+            
+            playRequests.clear()
+            directCallbacks.clear()
+            
+            isReadingNotification = false
+        } else {
+            Log.d("TextToSpeechHelper", "stopNotificationTTS aufgerufen, aber isReadingNotification ist false. Ignoriere.")
+        }
     }
 }

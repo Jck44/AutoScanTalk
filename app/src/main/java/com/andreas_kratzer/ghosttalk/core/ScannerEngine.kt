@@ -12,8 +12,6 @@ import kotlinx.coroutines.launch
 
 import com.andreas_kratzer.ghosttalk.domain.FeatureGuard
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.core.util.Logger
-import com.andreas_kratzer.ghosttalk.core.util.AppLogger
 
 class ScannerEngine(
     private val scope: CoroutineScope,

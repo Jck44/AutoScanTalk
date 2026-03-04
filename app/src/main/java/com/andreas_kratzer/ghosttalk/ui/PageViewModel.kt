@@ -330,6 +330,9 @@ class PageViewModel @Inject constructor(
     }
 
     fun activateButtonAtIndex(index: Int) {
+        // Jeder gültige Tasterdruck unterbricht ein eventuell laufendes Vorlesen von Benachrichtigungen
+        ttsHelper.stopNotificationTTS()
+        
         val page = _currentPage.value ?: return
         val buttonConfig = page.buttonConfigs.getOrNull(index) ?: return
         

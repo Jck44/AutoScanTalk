@@ -111,6 +111,12 @@ class SettingsViewModel @Inject constructor(
     private val _isSmartPredictionEnabled = MutableStateFlow(false)
     val isSmartPredictionEnabled: StateFlow<Boolean> = _isSmartPredictionEnabled.asStateFlow()
 
+    private val _isNotificationReadingEnabled = MutableStateFlow(false)
+    val isNotificationReadingEnabled: StateFlow<Boolean> = _isNotificationReadingEnabled.asStateFlow()
+
+    private val _monitoredNotificationApps = MutableStateFlow<Set<String>>(emptySet())
+    val monitoredNotificationApps: StateFlow<Set<String>> = _monitoredNotificationApps.asStateFlow()
+
     private val _geminiToolStatus = MutableStateFlow<Map<String, com.andreas_kratzer.ghosttalk.domain.GeminiUseCase.ToolStatus>>(emptyMap())
     val geminiToolStatus: StateFlow<Map<String, com.andreas_kratzer.ghosttalk.domain.GeminiUseCase.ToolStatus>> = _geminiToolStatus.asStateFlow()
 
@@ -174,6 +180,8 @@ class SettingsViewModel @Inject constructor(
         _showPageIdInLog.value = settingsRepository.showPageIdInLog
         _experimentalManualSorting.value = settingsRepository.experimentalManualSorting
         _isSmartPredictionEnabled.value = settingsRepository.isSmartPredictionEnabled
+        _isNotificationReadingEnabled.value = settingsRepository.isNotificationReadingEnabled
+        _monitoredNotificationApps.value = settingsRepository.monitoredNotificationApps
         
         updateGeminiToolStatus()
         
@@ -622,6 +630,22 @@ class SettingsViewModel @Inject constructor(
     fun setSmartPredictionEnabled(enabled: Boolean) {
         settingsRepository.isSmartPredictionEnabled = enabled
         _isSmartPredictionEnabled.value = enabled
+    }
+
+    fun setNotificationReadingEnabled(enabled: Boolean) {
+        settingsRepository.isNotificationReadingEnabled = enabled
+        _isNotificationReadingEnabled.value = enabled
+    }
+
+    fun toggleMonitoredNotificationApp(appPackage: String, enabled: Boolean) {
+        val currentApps = _monitoredNotificationApps.value.toMutableSet()
+        if (enabled) {
+            currentApps.add(appPackage)
+        } else {
+            currentApps.remove(appPackage)
+        }
+        settingsRepository.monitoredNotificationApps = currentApps
+        _monitoredNotificationApps.value = currentApps
     }
 
     override fun onCleared() {

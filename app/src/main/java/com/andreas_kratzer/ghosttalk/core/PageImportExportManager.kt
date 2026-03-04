@@ -77,12 +77,12 @@ class PageImportExportManager @javax.inject.Inject constructor(
                                 }
                             }
                             if (importButton.label.isBlank() || action == null) null
-                            else ButtonConfig(
                                 id = UUID.randomUUID().toString(),
                                 label = importButton.label,
                                 buttonAction = action,
                                 auditoryCue = importButton.auditoryCueText?.let { AuditoryCue.TextToSpeechCue(it) },
-                                isActive = importButton.active ?: true
+                                isActive = importButton.active ?: true,
+                                playActionAsAuditoryCue = importButton.playActionAsAuditoryCue ?: false
                             )
                         }
                     }
@@ -131,7 +131,8 @@ class PageImportExportManager @javax.inject.Inject constructor(
                                 label = importButton.label,
                                 buttonAction = action,
                                 auditoryCue = importButton.auditoryCueText?.let { AuditoryCue.TextToSpeechCue(it) },
-                                isActive = importButton.active ?: true
+                                isActive = importButton.active ?: true,
+                                playActionAsAuditoryCue = importButton.playActionAsAuditoryCue ?: false
                             )
                         }
                     }
@@ -186,6 +187,7 @@ class PageImportExportManager @javax.inject.Inject constructor(
                             targetPageImportId = action.pageId,
                             ttsFeedback = null
                         )
+                        is GeminiButtonAction, is com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction, is com.andreas_kratzer.ghosttalk.model.NotificationButtonAction -> null // Skip exporting app-specific actions for standard format
                         else -> null
                     }
                     com.andreas_kratzer.ghosttalk.model.importexport.ImportButton(
@@ -193,7 +195,8 @@ class PageImportExportManager @javax.inject.Inject constructor(
                         label = it.label,
                         auditoryCueText = (it.auditoryCue as? AuditoryCue.TextToSpeechCue)?.text,
                         action = importAction,
-                        active = it.isActive
+                        active = it.isActive,
+                        playActionAsAuditoryCue = it.playActionAsAuditoryCue
                     )
                 }
             }
@@ -230,6 +233,7 @@ class PageImportExportManager @javax.inject.Inject constructor(
                             targetPageImportId = action.pageId,
                             ttsFeedback = null
                         )
+                        is GeminiButtonAction, is com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction, is com.andreas_kratzer.ghosttalk.model.NotificationButtonAction -> null // Skip exporting app-specific actions for standard format
                         else -> null
                     }
                     com.andreas_kratzer.ghosttalk.model.importexport.ImportButton(
@@ -237,7 +241,8 @@ class PageImportExportManager @javax.inject.Inject constructor(
                         label = it.label,
                         auditoryCueText = (it.auditoryCue as? AuditoryCue.TextToSpeechCue)?.text,
                         action = importAction,
-                        active = it.isActive
+                        active = it.isActive,
+                        playActionAsAuditoryCue = it.playActionAsAuditoryCue
                     )
                 }
             }

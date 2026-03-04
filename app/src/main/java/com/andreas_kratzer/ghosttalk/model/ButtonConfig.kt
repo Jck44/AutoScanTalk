@@ -16,5 +16,6 @@ data class ButtonConfig(
     val spokenText: String? = null,
     val auditoryCue: AuditoryCue?,
     val isActive: Boolean = true,
+    val playActionAsAuditoryCue: Boolean = false,
     val buttonAction: ButtonAction
 )

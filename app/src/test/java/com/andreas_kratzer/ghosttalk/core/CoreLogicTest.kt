@@ -1,6 +1,5 @@
 package com.andreas_kratzer.ghosttalk.core
 
-import com.andreas_kratzer.ghosttalk.core.util.TestLogger
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction

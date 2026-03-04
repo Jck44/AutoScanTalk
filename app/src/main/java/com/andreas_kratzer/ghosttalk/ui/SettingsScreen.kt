@@ -1,6 +1,9 @@
 package com.andreas_kratzer.ghosttalk.ui
 
 import android.content.res.Configuration
+import android.content.Intent
+import android.provider.Settings
+import androidx.core.app.NotificationManagerCompat
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -25,6 +28,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -175,6 +179,8 @@ fun SettingsScreen(
                     Column(modifier = Modifier.weight(1f)) {
                         ScanningSettings(autoStartScanning, resumeScanningFromStart, scanDelayInput, holdingTimeInput, settingsViewModel)
                         Spacer(modifier = Modifier.height(24.dp))
+                        NotificationSettings(settingsViewModel)
+                        Spacer(modifier = Modifier.height(24.dp))
                         HardwareSettings(switchActivationKey, settingsViewModel)
                         Spacer(modifier = Modifier.height(24.dp))
                         TestSettings(showTestButtons, volumeKeysActivate, settingsViewModel)
@@ -203,6 +209,8 @@ fun SettingsScreen(
                 AudioOutputSettings(availableAudioDevices, selectedTtsAudioDeviceAddress, selectedCuesAudioDeviceAddress, settingsViewModel)
                 Spacer(modifier = Modifier.height(24.dp))
                 ScanningSettings(autoStartScanning, resumeScanningFromStart, scanDelayInput, holdingTimeInput, settingsViewModel)
+                Spacer(modifier = Modifier.height(24.dp))
+                NotificationSettings(settingsViewModel)
                 Spacer(modifier = Modifier.height(24.dp))
                 HardwareSettings(switchActivationKey, settingsViewModel)
                 Spacer(modifier = Modifier.height(24.dp))
@@ -1066,6 +1074,91 @@ fun ThemeSettings(settingsViewModel: SettingsViewModel) {
                     expanded = false
                 }
             )
+        }
+        }
+    }
+}
+
+@Composable
+fun NotificationSettings(settingsViewModel: SettingsViewModel) {
+    val isNotificationReadingEnabled by settingsViewModel.isNotificationReadingEnabled.collectAsState()
+    val monitoredNotificationApps by settingsViewModel.monitoredNotificationApps.collectAsState()
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val packageName = context.packageName
+
+    // Berechtigungsstatus ermitteln
+    val enabledListeners = NotificationManagerCompat.getEnabledListenerPackages(context)
+    val hasPermission = enabledListeners.contains(packageName)
+
+    PreferenceCategory(stringResource(R.string.settings_category_notifications)) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.clickable { 
+                if (hasPermission) {
+                    settingsViewModel.setNotificationReadingEnabled(!isNotificationReadingEnabled)
+                } else {
+                    val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+                    context.startActivity(intent)
+                }
+            }
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(stringResource(R.string.settings_notifications_enable))
+                Text(
+                    text = stringResource(R.string.settings_notifications_enable_desc),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            if (hasPermission) {
+                Switch(
+                    checked = isNotificationReadingEnabled,
+                    onCheckedChange = { settingsViewModel.setNotificationReadingEnabled(it) }
+                )
+            } else {
+                TextButton(onClick = {
+                    val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+                    context.startActivity(intent)
+                }) {
+                    Text(stringResource(R.string.settings_notifications_permission_button))
+                }
+            }
+        }
+
+        if (isNotificationReadingEnabled && hasPermission) {
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            Text(
+                text = stringResource(R.string.settings_notifications_apps),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            val apps = listOf(
+                "com.whatsapp" to stringResource(R.string.settings_notifications_app_whatsapp),
+                "org.thoughtcrime.securesms" to stringResource(R.string.settings_notifications_app_signal),
+                "org.telegram.messenger" to stringResource(R.string.settings_notifications_app_telegram),
+                "com.google.android.apps.messaging" to stringResource(R.string.settings_notifications_app_sms)
+            )
+
+            apps.forEach { (pkg, name) ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            settingsViewModel.toggleMonitoredNotificationApp(pkg, !monitoredNotificationApps.contains(pkg))
+                        }
+                        .padding(vertical = 4.dp)
+                ) {
+                    Text(text = name, modifier = Modifier.weight(1f))
+                    Checkbox(
+                        checked = monitoredNotificationApps.contains(pkg),
+                        onCheckedChange = { checked ->
+                            settingsViewModel.toggleMonitoredNotificationApp(pkg, checked)
+                        }
+                    )
+                }
+            }
         }
     }
 }

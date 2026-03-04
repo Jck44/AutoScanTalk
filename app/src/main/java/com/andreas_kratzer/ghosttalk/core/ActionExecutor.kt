@@ -78,8 +78,13 @@ class ActionExecutor(
                 val textToSpeak = buttonConfig.spokenText?.takeIf { it.isNotBlank() } 
                     ?: action.textToSpeech.takeIf { it.isNotBlank() }
                     ?: buttonConfig.label
+                val targetDeviceAddress = if (buttonConfig.playActionAsAuditoryCue) {
+                    settingsRepository.cuesAudioDeviceAddress
+                } else {
+                    settingsRepository.ttsAudioDeviceAddress
+                }
                 if (ttsHelper?.isReady == true) {
-                    ttsHelper?.speakRouted(textToSpeak, settingsRepository.ttsAudioDeviceAddress) {
+                    ttsHelper.speakRouted(textToSpeak, targetDeviceAddress) {
                         finishExecution(currentExecutionId)
                     }
                     log("Gesprochen: \"$textToSpeak\"")
@@ -118,12 +123,17 @@ class ActionExecutor(
             }
             is GeminiButtonAction -> {
                 log("Gemini aufgerufen mit: \"${action.prompt}\"")
+                val targetDeviceAddress = if (buttonConfig.playActionAsAuditoryCue) {
+                    settingsRepository.cuesAudioDeviceAddress
+                } else {
+                    settingsRepository.ttsAudioDeviceAddress
+                }
                 scope.launch {
                     try {
                         if (!settingsRepository.isGeminiEnabled) {
                             val errorMsg = ttsHelper?.context?.getString(R.string.error_gemini_disabled) 
                                 ?: "Gemini in Einstellungen prüfen"
-                            ttsHelper?.speakRouted(errorMsg, settingsRepository.ttsAudioDeviceAddress) {
+                            ttsHelper?.speakRouted(errorMsg, targetDeviceAddress) {
                                 finishExecution(currentExecutionId)
                             }
                             return@launch
@@ -133,7 +143,7 @@ class ActionExecutor(
                             ?: "Fehler: Gemini Integration nicht verfügbar."
                         
                         if (ttsHelper?.isReady == true) {
-                            ttsHelper?.speakRouted(response, settingsRepository.ttsAudioDeviceAddress) {
+                            ttsHelper.speakRouted(response, targetDeviceAddress) {
                                 finishExecution(currentExecutionId)
                             }
                         } else {
@@ -177,6 +187,93 @@ class ActionExecutor(
             is SmartPredictionButtonAction -> {
                 log("Smart Prediction button clicked (Rank: ${action.rank}). Actual execution handled in ViewModel.")
                 finishExecution(currentExecutionId)
+            }
+            is com.andreas_kratzer.ghosttalk.model.NotificationButtonAction -> {
+                val service = com.andreas_kratzer.ghosttalk.core.services.NotificationReaderService.instance
+                val targetDeviceAddress = if (buttonConfig.playActionAsAuditoryCue) {
+                    settingsRepository.cuesAudioDeviceAddress
+                } else {
+                    settingsRepository.ttsAudioDeviceAddress
+                }
+
+                if (service == null || !settingsRepository.isNotificationReadingEnabled) {
+                    val msg = "Vorlesen von Benachrichtigungen nicht aktiv oder Berechtigung fehlt."
+                    log(msg)
+                    if (ttsHelper?.isReady == true) {
+                        ttsHelper.speakRouted(msg, targetDeviceAddress) {
+                            finishExecution(currentExecutionId)
+                        }
+                    } else finishExecution(currentExecutionId)
+                    return
+                }
+
+                val activeNotifs = try {
+                    service.activeNotifications
+                } catch (e: Exception) {
+                    null
+                }
+                
+                if (activeNotifs == null || activeNotifs.isEmpty()) {
+                    val msg = "Keine Benachrichtigungen vorhanden."
+                    log(msg)
+                    if (ttsHelper?.isReady == true) {
+                        ttsHelper.speakRouted(msg, targetDeviceAddress) {
+                            finishExecution(currentExecutionId)
+                        }
+                    } else finishExecution(currentExecutionId)
+                    return
+                }
+
+                val allowedApps = settingsRepository.monitoredNotificationApps
+                val filtered = activeNotifs.filter { sbn ->
+                    val pkg = sbn.packageName
+                    val isAllowed = allowedApps.contains(pkg)
+                    val matchesTarget = action.targetApp == "ALL" || pkg == action.targetApp
+                    isAllowed && matchesTarget
+                }
+
+                if (filtered.isEmpty()) {
+                    val msg = "Keine passenden Benachrichtigungen gefunden."
+                    log(msg)
+                    if (ttsHelper?.isReady == true) {
+                        ttsHelper.speakRouted(msg, targetDeviceAddress) {
+                            finishExecution(currentExecutionId)
+                        }
+                    } else finishExecution(currentExecutionId)
+                    return
+                }
+
+                val messagesToRead = filtered.mapNotNull { sbn ->
+                    val extras = sbn.notification.extras
+                    val title = extras.getString(android.app.Notification.EXTRA_TITLE) ?: "Unbekannt"
+                    val text = extras.getCharSequence(android.app.Notification.EXTRA_TEXT)?.toString()
+                    if (text.isNullOrBlank()) null else "Von $title: $text"
+                }
+
+                if (messagesToRead.isEmpty()) {
+                    val msg = "Benachrichtigungen enthalten keinen Text."
+                    log(msg)
+                    if (ttsHelper?.isReady == true) {
+                        ttsHelper.speakRouted(msg, targetDeviceAddress) {
+                            finishExecution(currentExecutionId)
+                        }
+                    } else finishExecution(currentExecutionId)
+                    return
+                }
+
+                val combinedMessage = messagesToRead.joinToString(". ")
+                log("Lese Benachrichtigungen: $combinedMessage")
+                
+                ttsHelper?.isReadingNotification = true
+                if (ttsHelper?.isReady == true) {
+                    ttsHelper.speakRouted(combinedMessage, targetDeviceAddress) {
+                        ttsHelper.isReadingNotification = false
+                        finishExecution(currentExecutionId)
+                    }
+                } else {
+                    ttsHelper?.isReadingNotification = false
+                    finishExecution(currentExecutionId)
+                }
             }
         }
     }

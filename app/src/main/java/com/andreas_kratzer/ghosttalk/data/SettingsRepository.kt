@@ -44,6 +44,14 @@ class SettingsRepository(context: Context) {
         return prefs.getLong(key, defaultValue)
     }
 
+    private fun getStringSetScoped(key: String, defaultValue: Set<String>? = null): Set<String>? {
+        val scopedKey = getScopedKey(key)
+        if (prefs.contains(scopedKey)) {
+            return prefs.getStringSet(scopedKey, defaultValue)
+        }
+        return prefs.getStringSet(key, defaultValue)
+    }
+
     private fun putStringScoped(key: String, value: String?) {
         prefs.edit().putString(getScopedKey(key), value).apply()
     }
@@ -54,6 +62,10 @@ class SettingsRepository(context: Context) {
 
     private fun putLongScoped(key: String, value: Long) {
         prefs.edit().putLong(getScopedKey(key), value).apply()
+    }
+
+    private fun putStringSetScoped(key: String, value: Set<String>?) {
+        prefs.edit().putStringSet(getScopedKey(key), value).apply()
     }
 
     private fun refreshFlows() {
@@ -75,6 +87,8 @@ class SettingsRepository(context: Context) {
         _experimentalManualSortingFlow.value = experimentalManualSorting
         _smartPredictionDelayMillisFlow.value = smartPredictionDelayMillis
         _isSmartPredictionEnabledFlow.value = isSmartPredictionEnabled
+        _isNotificationReadingEnabledFlow.value = isNotificationReadingEnabled
+        _monitoredNotificationAppsFlow.value = monitoredNotificationApps
     }
 
     private val _pageSortOrderFlow = MutableStateFlow(getStringScoped(KEY_PAGE_SORT_ORDER, "MANUAL") ?: "MANUAL")
@@ -144,6 +158,26 @@ class SettingsRepository(context: Context) {
         set(value) {
             putBooleanScoped(KEY_SMART_PREDICTION_ENABLED, value)
             _isSmartPredictionEnabledFlow.value = value
+        }
+
+    private val _isNotificationReadingEnabledFlow = MutableStateFlow(getBooleanScoped(KEY_NOTIFICATION_READING_ENABLED, false))
+    val isNotificationReadingEnabledFlow: StateFlow<Boolean> = _isNotificationReadingEnabledFlow.asStateFlow()
+
+    var isNotificationReadingEnabled: Boolean
+        get() = getBooleanScoped(KEY_NOTIFICATION_READING_ENABLED, false)
+        set(value) {
+            putBooleanScoped(KEY_NOTIFICATION_READING_ENABLED, value)
+            _isNotificationReadingEnabledFlow.value = value
+        }
+
+    private val _monitoredNotificationAppsFlow = MutableStateFlow(getStringSetScoped(KEY_MONITORED_NOTIFICATION_APPS) ?: emptySet())
+    val monitoredNotificationAppsFlow: StateFlow<Set<String>> = _monitoredNotificationAppsFlow.asStateFlow()
+
+    var monitoredNotificationApps: Set<String>
+        get() = getStringSetScoped(KEY_MONITORED_NOTIFICATION_APPS) ?: emptySet()
+        set(value) {
+            putStringSetScoped(KEY_MONITORED_NOTIFICATION_APPS, value)
+            _monitoredNotificationAppsFlow.value = value
         }
 
     private val _ttsLanguageFlow = MutableStateFlow(getStringScoped(KEY_TTS_LANGUAGE))
@@ -375,5 +409,7 @@ class SettingsRepository(context: Context) {
         private const val KEY_EXPERIMENTAL_MANUAL_SORTING = "experimental_manual_sorting"
         private const val KEY_SMART_PREDICTION_DELAY = "smart_prediction_delay"
         private const val KEY_SMART_PREDICTION_ENABLED = "smart_prediction_enabled"
+        private const val KEY_NOTIFICATION_READING_ENABLED = "notification_reading_enabled"
+        private const val KEY_MONITORED_NOTIFICATION_APPS = "monitored_notification_apps"
     }
 }

@@ -58,6 +58,7 @@ fun ButtonConfigDialog(
         ) 
     }
     var isActive by remember { mutableStateOf(initialConfig?.isActive ?: true) }
+    var playActionAsAuditoryCue by remember { mutableStateOf(initialConfig?.playActionAsAuditoryCue ?: false) }
     
     // Action Type selection
     val actionTypeSpeak = stringResource(R.string.button_action_speak_text)
@@ -73,7 +74,9 @@ fun ButtonConfigDialog(
         if (featureGuard.isActionEnabled(SmartPredictionButtonAction())) {
             base.add(actionTypeSmart)
         }
-        base.sortedBy { it } // Optional: sort or keep order
+        val actionTypeNotification = stringResource(R.string.button_action_notification)
+        base.add(actionTypeNotification)
+        // base.sortedBy { it } // Optional: sort or keep order
         base.toList()
     }
     
@@ -84,6 +87,7 @@ fun ButtonConfigDialog(
                 is GeminiButtonAction -> actionTypeGemini
                 is FrequentActionButtonAction -> actionTypeFrequent
                 is SmartPredictionButtonAction -> actionTypeSmart
+                is com.andreas_kratzer.ghosttalk.model.NotificationButtonAction -> stringResource(R.string.button_action_notification)
                 else -> actionTypeSpeak
             }
         )
@@ -112,6 +116,18 @@ fun ButtonConfigDialog(
     // Smart Prediction Details
     val smartActionDef = initialConfig?.buttonAction as? SmartPredictionButtonAction
     var smartRank by remember { mutableStateOf((smartActionDef?.rank ?: 1).toString()) }
+
+    // Notification Details
+    val notificationActionDef = initialConfig?.buttonAction as? com.andreas_kratzer.ghosttalk.model.NotificationButtonAction
+    var notificationTargetApp by remember { mutableStateOf(notificationActionDef?.targetApp ?: "ALL") }
+    val notificationApps = mapOf(
+        "ALL" to stringResource(R.string.button_notification_target_all),
+        "com.whatsapp" to "WhatsApp",
+        "org.thoughtcrime.securesms" to "Signal",
+        "org.telegram.messenger" to "Telegram",
+        "com.google.android.apps.messaging" to "SMS (Messages)"
+    )
+    var expandedNotificationApp by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -287,6 +303,55 @@ fun ButtonConfigDialog(
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
+
+                // Conditional fields for Notification
+                if (selectedActionType == stringResource(R.string.button_action_notification)) {
+                    ExposedDropdownMenuBox(
+                        expanded = expandedNotificationApp,
+                        onExpandedChange = { expandedNotificationApp = !expandedNotificationApp }
+                    ) {
+                        OutlinedTextField(
+                            readOnly = true,
+                            value = notificationApps[notificationTargetApp] ?: "Unbekannt",
+                            onValueChange = { },
+                            label = { Text(stringResource(R.string.button_notification_target_app)) },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedNotificationApp) },
+                            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
+                        )
+                        ExposedDropdownMenu(
+                            expanded = expandedNotificationApp,
+                            onDismissRequest = { expandedNotificationApp = false }
+                        ) {
+                            notificationApps.forEach { (appId, appName) ->
+                                DropdownMenuItem(
+                                    text = { Text(appName) },
+                                    onClick = {
+                                        notificationTargetApp = appId
+                                        expandedNotificationApp = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+                
+                // Auditory Cue Routing Toggle (Visible for actions with audio output)
+                if (selectedActionType == actionTypeSpeak || 
+                    selectedActionType == actionTypeGemini || 
+                    selectedActionType == actionTypeSmart || 
+                    selectedActionType == stringResource(R.string.button_action_notification)) {
+                    androidx.compose.foundation.layout.Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(stringResource(R.string.button_play_as_cue), style = MaterialTheme.typography.bodyMedium)
+                        Switch(
+                            checked = playActionAsAuditoryCue,
+                            onCheckedChange = { playActionAsAuditoryCue = it }
+                        )
+                    }
+                }
             }
         },
         confirmButton = {
@@ -298,6 +363,7 @@ fun ButtonConfigDialog(
                             actionTypeGemini -> GeminiButtonAction(prompt = geminiPrompt)
                             actionTypeFrequent -> FrequentActionButtonAction(rank = frequentRank.toIntOrNull()?.coerceAtLeast(1) ?: 1)
                             actionTypeSmart -> SmartPredictionButtonAction(rank = smartRank.toIntOrNull()?.coerceAtLeast(1) ?: 1)
+                            stringResource(R.string.button_action_notification) -> com.andreas_kratzer.ghosttalk.model.NotificationButtonAction(targetApp = notificationTargetApp)
                             else -> SpeakTextButtonAction(textToSpeech = spokenText.takeIf { it.isNotBlank() } ?: label)
                         }
 
@@ -314,6 +380,7 @@ fun ButtonConfigDialog(
                                 spokenText = spokenText.takeIf { it.isNotBlank() },
                                 buttonAction = action,
                                 isActive = isActive,
+                                playActionAsAuditoryCue = playActionAsAuditoryCue,
                                 auditoryCue = cue
                             )
                         )
