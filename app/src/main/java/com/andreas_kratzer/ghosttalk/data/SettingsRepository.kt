@@ -95,12 +95,9 @@ class SettingsRepository(context: Context) {
         _pageSortOrderFlow.value = pageSortOrder
         _templateSortOrderFlow.value = templateSortOrder
         _lastSuccessfulSyncTimeFlow.value = lastSuccessfulSyncTime
-        _showPageIdInLogFlow.value = showPageIdInLog
         _experimentalManualSortingFlow.value = experimentalManualSorting
         _smartPredictionDelayMillisFlow.value = smartPredictionDelayMillis
         _isSmartPredictionEnabledFlow.value = isSmartPredictionEnabled
-        _isNotificationReadingEnabledFlow.value = isNotificationReadingEnabled
-        _monitoredNotificationAppsFlow.value = monitoredNotificationApps
         _bluetoothDelayFlow.value = bluetoothDelay
         _ttsVolumeMultiplierFlow.value = ttsVolumeMultiplier
         _cuesVolumeMultiplierFlow.value = cuesVolumeMultiplier
@@ -136,14 +133,12 @@ class SettingsRepository(context: Context) {
             _lastSuccessfulSyncTimeFlow.value = value
         }
 
-    private val _showPageIdInLogFlow = MutableStateFlow(getBooleanScoped(KEY_SHOW_PAGE_ID_IN_LOG, false))
-    val showPageIdInLogFlow: StateFlow<Boolean> = _showPageIdInLogFlow.asStateFlow()
+
 
     var showPageIdInLog: Boolean
         get() = getBooleanScoped(KEY_SHOW_PAGE_ID_IN_LOG, false)
         set(value) {
             putBooleanScoped(KEY_SHOW_PAGE_ID_IN_LOG, value)
-            _showPageIdInLogFlow.value = value
         }
 
     
@@ -188,25 +183,21 @@ class SettingsRepository(context: Context) {
         }
 
 
-    private val _isNotificationReadingEnabledFlow = MutableStateFlow(getBooleanScoped(KEY_NOTIFICATION_READING_ENABLED, false))
-    val isNotificationReadingEnabledFlow: StateFlow<Boolean> = _isNotificationReadingEnabledFlow.asStateFlow()
+
 
     var isNotificationReadingEnabled: Boolean
         get() = getBooleanScoped(KEY_NOTIFICATION_READING_ENABLED, false)
         set(value) {
             putBooleanScoped(KEY_NOTIFICATION_READING_ENABLED, value)
-            _isNotificationReadingEnabledFlow.value = value
         }
 
 
-    private val _monitoredNotificationAppsFlow = MutableStateFlow(getStringSetScoped(KEY_MONITORED_NOTIFICATION_APPS) ?: emptySet())
-    val monitoredNotificationAppsFlow: StateFlow<Set<String>> = _monitoredNotificationAppsFlow.asStateFlow()
+
 
     var monitoredNotificationApps: Set<String>
         get() = getStringSetScoped(KEY_MONITORED_NOTIFICATION_APPS) ?: emptySet()
         set(value) {
             putStringSetScoped(KEY_MONITORED_NOTIFICATION_APPS, value)
-            _monitoredNotificationAppsFlow.value = value
         }
 
     private val _ttsLanguageFlow = MutableStateFlow(getStringScoped(KEY_TTS_LANGUAGE))

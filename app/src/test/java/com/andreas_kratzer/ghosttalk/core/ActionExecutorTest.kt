@@ -82,7 +82,7 @@ class ActionExecutorTest {
         runCurrent()
 
         // Verifiziere: Aktion ignoriert (Log-Event)
-        assertTrue("Sollte Log-Event für Ignorieren haben", events.any { it is ActionExecutor.ExecutionEvent.Log && (it as ActionExecutor.ExecutionEvent.Log).message.contains("ignoriert") })
+        assertTrue("Sollte Log-Event für Ignorieren haben", events.any { it is ActionExecutor.ExecutionEvent.Log && it.message.contains("ignoriert") })
 
         // 1250ms: Text ist fertig gesprochen
         currentTimeMillis = 1250L
@@ -123,7 +123,7 @@ class ActionExecutorTest {
         runCurrent()
         
         // Verifiziere: Aktion 2 wird ignoriert, da A1 noch spricht
-        assertTrue(events.any { it is ActionExecutor.ExecutionEvent.Log && (it as ActionExecutor.ExecutionEvent.Log).message.contains("Sprachausgabe aktiv") })
+        assertTrue(events.any { it is ActionExecutor.ExecutionEvent.Log && it.message.contains("Sprachausgabe aktiv") })
         assertTrue(actionExecutor.isExecuting.value)
 
         // Simulate A1 finishing

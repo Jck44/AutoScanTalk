@@ -158,7 +158,6 @@ class PageViewModel @Inject constructor(
     )
 
     private val _isUserModeActive = MutableStateFlow(false)
-    val isUserModeActive: StateFlow<Boolean> = _isUserModeActive.asStateFlow()
 
     fun setUserModeActive(isActive: Boolean) {
         _isUserModeActive.value = isActive

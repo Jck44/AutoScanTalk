@@ -119,30 +119,10 @@ abstract class AppDatabase : RoomDatabase() {
                 for (table in tables) {
                     val cursor = db.query("SELECT id, buttonConfigs FROM $table")
                     while (cursor.moveToNext()) {
-                        val id = cursor.getString(0)
-                        val json = cursor.getString(1)
-                        if (json != null && json.contains("textToSpeech")) {
-                            // Manual JSON manipulation to keep it simple and avoid adding heavy dependencies to migration
-                            // We replace textToSpeech and ensure spokenText is set.
-                            // However, since we are moving the property, a better way is to use a simple regex or string replace 
-                            // IF it's predictable. 
-                            
-                            // A safer way in a real app would be using a JSON library, 
-                            // but for this specific migration where we know the structure:
-                            // We want to find: "type":"SpeakTextButtonAction","data":{...,"textToSpeech":"some text",...}
-                            // and move "some text" to the parent ButtonConfig.spokenText IF it's null.
-                            
-                            // Since this is complex in SQL/regex, we will do a more robust approach:
-                            // The Converters will now fail to find 'textToSpeech' in the new model.
-                            // So we MUST do it at the database level now.
-                            
-                            // Let's use a simpler heuristic for the migration:
-                            // Replace '"textToSpeech":"' with '"spokenText":"' globally in the JSON,
-                            // but THAT is also wrong because spokenText is a sibling of buttonAction.
-                            
-                            // Actually, if we just leave it as is, GSON will ignore the unknown 'textToSpeech' property
-                            // and 'spokenText' will be null. This is what we want to avoid.
-                        }
+                        // val id = cursor.getString(0) 
+                        // val json = cursor.getString(1)
+                        // Note: Complex JSON migration via SQL is avoided here.
+                        // Converters handle model changes where possible.
                     }
                     cursor.close()
                 }

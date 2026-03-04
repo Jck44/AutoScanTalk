@@ -68,7 +68,6 @@ class CoreLogicTest {
         val feedbackProvider = mockk<ScannerFeedbackProvider>(relaxed = true)
         val engine = ScannerEngine(
             scope = this,
-            settingsRepository = settingsRepo,
             featureGuard = featureGuard,
             feedbackProvider = feedbackProvider
         )

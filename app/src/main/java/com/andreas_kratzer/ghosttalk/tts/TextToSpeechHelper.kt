@@ -23,8 +23,8 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 
 @Singleton
 class TextToSpeechHelper @Inject constructor(
-    @ApplicationContext val context: Context,
-    @ApplicationScope private val scope: CoroutineScope,
+    @param:ApplicationContext val context: Context,
+    @param:ApplicationScope private val scope: CoroutineScope,
     private val settingsRepository: SettingsRepository,
     private val routedAudioPlayer: RoutedAudioPlayer,
     private val voiceManager: TtsVoiceManager

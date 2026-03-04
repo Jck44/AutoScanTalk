@@ -1,27 +1,21 @@
 package com.andreas_kratzer.ghosttalk.core.scanning
 
 import android.util.Log
+import com.andreas_kratzer.ghosttalk.di.ApplicationScope
+import com.andreas_kratzer.ghosttalk.domain.FeatureGuard
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-
-import com.andreas_kratzer.ghosttalk.domain.FeatureGuard
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
-
-import com.andreas_kratzer.ghosttalk.di.ApplicationScope
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class ScannerEngine @Inject constructor(
-    @ApplicationScope private val scope: CoroutineScope,
-    private val settingsRepository: SettingsRepository,
+    @param:ApplicationScope private val scope: CoroutineScope,
     private val featureGuard: FeatureGuard,
     private val feedbackProvider: ScannerFeedbackProvider
 ) {
