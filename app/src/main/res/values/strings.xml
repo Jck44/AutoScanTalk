@@ -133,7 +133,7 @@
     <string name="button_gemini_prompt_hint">Was soll Gemini tun?</string>
     <string name="button_notification_target_app">App auswählen</string>
     <string name="button_notification_target_all">Alle erlaubten Apps</string>
-    <string name="button_play_as_cue">Audio-Hinweis abspielen</string>
+    <string name="button_play_as_cue">Als Audio-Hinweis abspielen</string>
 
     <!-- Page Screen -->
     <string name="page_loading">Seite wird geladen…</string>

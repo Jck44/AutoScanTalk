@@ -1,6 +1,6 @@
 package com.andreas_kratzer.ghosttalk.domain
 
-import com.andreas_kratzer.ghosttalk.core.cloud.DriveAuthManager
+import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
 import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.gson.GsonFactory
 import com.google.api.services.drive.Drive
@@ -9,13 +9,13 @@ import javax.inject.Singleton
 
 @Singleton
 class GeminiUseCaseFactory @Inject constructor(
-    private val driveAuthManager: DriveAuthManager
+    private val googleAuthManager: GoogleAuthManager
 ) {
     fun create(oauthTokenProvider: suspend () -> String?): GeminiUseCase {
         return GeminiUseCase(
             oauthTokenProvider = oauthTokenProvider,
             driveProvider = {
-                val credential = driveAuthManager.getDriveCredential()
+                val credential = googleAuthManager.getGoogleCredential()
                 if (credential == null) {
                     null
                 } else {

@@ -10,7 +10,7 @@ import com.andreas_kratzer.ghosttalk.core.ActionExecutor
 import com.andreas_kratzer.ghosttalk.core.FrequentActionResolver
 import com.andreas_kratzer.ghosttalk.core.PageImportExportManager
 import com.andreas_kratzer.ghosttalk.core.ScannerEngine
-import com.andreas_kratzer.ghosttalk.core.cloud.DriveAuthManager
+import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
 import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.data.PageRepository
@@ -58,7 +58,7 @@ class PageViewModel @Inject constructor(
     private val frequentActionResolver: FrequentActionResolver,
     private val buttonUsageRepository: ButtonUsageRepository,
     templateRepository: TemplateRepository,
-    private val driveAuthManager: DriveAuthManager,
+    private val googleAuthManager: GoogleAuthManager,
     logger: Logger,
     geminiUseCaseFactory: GeminiUseCaseFactory,
     private val ttsHelper: TextToSpeechHelper,
@@ -127,7 +127,7 @@ class PageViewModel @Inject constructor(
 
     init {
         geminiUseCase = geminiUseCaseFactory.create {
-            driveAuthManager.getDriveCredential()?.getToken()
+            googleAuthManager.getGoogleCredential()?.getToken()
         }
         actionExecutor.geminiUseCase = geminiUseCase
         

@@ -21,7 +21,7 @@ import kotlinx.coroutines.withContext
 class CloudSyncWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted workerParams: WorkerParameters,
-    private val driveAuthManager: DriveAuthManager,
+    private val googleAuthManager: GoogleAuthManager,
     private val settingsRepository: SettingsRepository,
     private val cloudSyncUseCase: CloudSyncUseCase
 ) : CoroutineWorker(context, workerParams) {
@@ -31,7 +31,7 @@ class CloudSyncWorker @AssistedInject constructor(
             return@withContext Result.success() // Sync was disabled while scheduled
         }
 
-        val credential = driveAuthManager.getDriveCredential()
+        val credential = googleAuthManager.getGoogleCredential()
         if (credential == null) {
             Log.w("CloudSyncWorker", "No credential available. Failing sync.")
             return@withContext Result.failure()

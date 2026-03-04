@@ -19,7 +19,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 @javax.inject.Singleton
-class DriveAuthManager @javax.inject.Inject constructor(
+class GoogleAuthManager @javax.inject.Inject constructor(
     @dagger.hilt.android.qualifiers.ApplicationContext context: Context
 ) {
     private val appContext = context.applicationContext
@@ -30,8 +30,8 @@ class DriveAuthManager @javax.inject.Inject constructor(
     val userEmail: StateFlow<String?> = _userEmail.asStateFlow()
 
     companion object {
-        private const val TAG = "DriveAuthManager"
-        private const val PREFS_NAME = "drive_auth_prefs"
+        private const val TAG = "GoogleAuthManager"
+        private const val PREFS_NAME = "google_auth_prefs"
         private const val KEY_USER_EMAIL = "user_email"
     }
 
@@ -123,12 +123,12 @@ class DriveAuthManager @javax.inject.Inject constructor(
         prefs.edit { remove(KEY_USER_EMAIL) }
     }
 
-    fun getDriveCredential(): GoogleAccountCredential? {
+    fun getGoogleCredential(): GoogleAccountCredential? {
         val email = _userEmail.value
-        Log.d(TAG, "getDriveCredential: stored email is '$email'")
+        Log.d(TAG, "getGoogleCredential: stored email is '$email'")
         
         if (email.isNullOrEmpty()) {
-            Log.e(TAG, "getDriveCredential: email is null or empty, returning null")
+            Log.e(TAG, "getGoogleCredential: email is null or empty, returning null")
             return null
         }
 
@@ -157,10 +157,25 @@ class DriveAuthManager @javax.inject.Inject constructor(
 
     private fun getAppSignature(context: Context): String {
         return try {
-            val packageInfo = context.packageManager.getPackageInfo(
-                context.packageName,
-                android.content.pm.PackageManager.GET_SIGNATURES or android.content.pm.PackageManager.GET_SIGNING_CERTIFICATES
-            )
+            val packageInfo = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                context.packageManager.getPackageInfo(
+                    context.packageName,
+                    android.content.pm.PackageManager.PackageInfoFlags.of(android.content.pm.PackageManager.GET_SIGNING_CERTIFICATES.toLong())
+                )
+            } else if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                @Suppress("DEPRECATION")
+                context.packageManager.getPackageInfo(
+                    context.packageName,
+                    android.content.pm.PackageManager.GET_SIGNING_CERTIFICATES
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                context.packageManager.getPackageInfo(
+                    context.packageName,
+                    android.content.pm.PackageManager.GET_SIGNATURES
+                )
+            }
+
             val signatures = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
                 packageInfo.signingInfo?.apkContentsSigners
             } else {

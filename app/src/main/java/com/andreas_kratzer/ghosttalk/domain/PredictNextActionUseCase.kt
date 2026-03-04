@@ -1,7 +1,7 @@
 package com.andreas_kratzer.ghosttalk.domain
 
 import com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository
-import com.andreas_kratzer.ghosttalk.core.cloud.DriveAuthManager
+import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.model.Page
 import java.time.LocalTime
@@ -14,14 +14,14 @@ class PredictNextActionUseCase @Inject constructor(
     private val actionLogUseCase: ActionLogUseCase,
     private val buttonUsageRepository: ButtonUsageRepository,
     private val settingsRepository: SettingsRepository,
-    private val driveAuthManager: DriveAuthManager,
+    private val googleAuthManager: GoogleAuthManager,
     private val geminiUseCaseFactory: GeminiUseCaseFactory
 ) {
 
     suspend fun predict(currentPage: Page, bookId: String): List<String> {
         val gemini = geminiUseCaseFactory.create { 
             kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                driveAuthManager.getDriveCredential()?.token
+                googleAuthManager.getGoogleCredential()?.token
             }
         }
         

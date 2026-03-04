@@ -8,7 +8,7 @@ import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.andreas_kratzer.ghosttalk.core.AudioDeviceManager
-import com.andreas_kratzer.ghosttalk.core.cloud.DriveAuthManager
+import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
 import com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.domain.CloudSyncUseCase
@@ -34,7 +34,7 @@ import javax.inject.Inject
 class SettingsViewModel @Inject constructor(
     application: Application,
     private val settingsRepository: SettingsRepository,
-    private val driveAuthManager: DriveAuthManager,
+    private val googleAuthManager: GoogleAuthManager,
     private val cloudSyncUseCase: CloudSyncUseCase,
     private val geminiUseCaseFactory: GeminiUseCaseFactory,
     private val tempTtsHelper: TextToSpeechHelper,
@@ -132,7 +132,7 @@ class SettingsViewModel @Inject constructor(
     private val _themeMode = MutableStateFlow("SYSTEM")
     val themeMode: StateFlow<String> = _themeMode.asStateFlow()
 
-    val userEmail: StateFlow<String?> = driveAuthManager.userEmail
+    val userEmail: StateFlow<String?> = googleAuthManager.userEmail
 
     private val _isSyncing = MutableStateFlow(false)
     val isSyncing: StateFlow<Boolean> = _isSyncing.asStateFlow()
@@ -447,11 +447,11 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             _signInErrorMessage.value = null
             android.widget.Toast.makeText(context, "Anmeldung wird gestartet...", android.widget.Toast.LENGTH_SHORT).show()
-            val result = driveAuthManager.signIn(activity)
+            val result = googleAuthManager.signIn(activity)
             if (result) {
                 android.widget.Toast.makeText(context, "Anmeldung erfolgreich!", android.widget.Toast.LENGTH_SHORT).show()
             } else {
-                _signInErrorMessage.value = "Anmeldung fehlgeschlagen. Bitte prüfe die Internetverbindung und ob die App-Signatur (SHA-1) in der Google Cloud Console korrekt hinterlegt ist. Siehe Logcat (DriveAuthManager) für Details."
+                _signInErrorMessage.value = "Anmeldung fehlgeschlagen. Bitte prüfe die Internetverbindung und ob die App-Signatur (SHA-1) in der Google Cloud Console korrekt hinterlegt ist. Siehe Logcat (GoogleAuthManager) für Details."
                 android.widget.Toast.makeText(context, "Anmeldung fehlgeschlagen.", android.widget.Toast.LENGTH_LONG).show()
             }
         }
@@ -468,7 +468,7 @@ class SettingsViewModel @Inject constructor(
 
     fun signOut() {
         viewModelScope.launch {
-            driveAuthManager.signOut()
+            googleAuthManager.signOut()
         }
     }
 
@@ -486,7 +486,7 @@ class SettingsViewModel @Inject constructor(
 
     private fun performManualSync(mode: com.andreas_kratzer.ghosttalk.domain.SyncMode, driveOverride: Drive? = null) {
         val context = getApplication<Application>().applicationContext
-        val credential = driveAuthManager.getDriveCredential()
+        val credential = googleAuthManager.getGoogleCredential()
         if (credential == null && driveOverride == null) {
             android.util.Log.w("SettingsViewModel", "syncNow: No credential available. User might not be signed in.")
             android.widget.Toast.makeText(context, "Nicht angemeldet!", android.widget.Toast.LENGTH_SHORT).show()
@@ -528,12 +528,12 @@ class SettingsViewModel @Inject constructor(
 
     private fun updateGeminiToolStatus() {
         val gemini = geminiUseCaseFactory.create { null } // We just need the status logic
-        _geminiToolStatus.value = gemini.getToolStatus(driveAuthManager.userEmail.value != null)
+        _geminiToolStatus.value = gemini.getToolStatus(googleAuthManager.userEmail.value != null)
     }
 
     fun activateGemini(context: android.content.Context) {
         val gemini = geminiUseCaseFactory.create {
-            driveAuthManager.getDriveCredential()?.getToken()
+            googleAuthManager.getGoogleCredential()?.getToken()
         }
         
         viewModelScope.launch {

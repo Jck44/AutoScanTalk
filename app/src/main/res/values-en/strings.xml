@@ -132,7 +132,7 @@
     <string name="button_gemini_prompt_hint">What should Gemini do?</string>
     <string name="button_notification_target_app">Select App</string>
     <string name="button_notification_target_all">All allowed apps</string>
-    <string name="button_play_as_cue">Play as quiet auditory cue</string>
+    <string name="button_play_as_cue">Play as auditory cue</string>
     <string name="action_clear_delete">Clear / Delete</string>
 
     <!-- Page Screen -->
