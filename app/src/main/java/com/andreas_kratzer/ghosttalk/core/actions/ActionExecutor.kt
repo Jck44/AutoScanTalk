@@ -14,6 +14,7 @@ import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.model.ChangeVolumeButtonAction
 import com.andreas_kratzer.ghosttalk.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.core.actions.*
+import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
 import com.google.android.gms.auth.UserRecoverableAuthException
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
@@ -29,6 +30,7 @@ import kotlinx.coroutines.launch
 class ActionExecutor(
     private val scope: CoroutineScope,
     private val settingsRepository: SettingsRepository,
+    private val logger: Logger,
     var geminiUseCase: GeminiUseCase?,
     var ttsHelper: TextToSpeechHelper?,
     private val buttonUsageRepository: ButtonUsageRepository? = null,
@@ -107,6 +109,7 @@ class ActionExecutor(
             )
         } else {
             log("Kein Handler für Aktionstyp gefunden: ${action::class.simpleName}")
+            logger.d("ActionExecutor", "No handler for ${action::class.simpleName}")
             finishExecution(currentExecutionId)
         }
     }

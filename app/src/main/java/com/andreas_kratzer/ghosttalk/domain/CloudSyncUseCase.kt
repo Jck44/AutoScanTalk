@@ -10,7 +10,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 
-import android.util.Log
+import com.andreas_kratzer.ghosttalk.core.util.Logger
 
 import javax.inject.Inject
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -24,90 +24,91 @@ enum class SyncMode {
 class CloudSyncUseCase @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val settingsRepository: SettingsRepository,
-    private val importExportManager: PageImportExportManager
+    private val importExportManager: PageImportExportManager,
+    private val logger: Logger
 ) {
     private val TAG = "CloudSyncUseCase"
     private val FOLDER_NAME = "GhosTTalk_Sync"
 
     suspend fun syncBook(drive: Drive, bookId: String, syncMode: SyncMode = SyncMode.TWO_WAY) = withContext(Dispatchers.IO) {
-        Log.d(TAG, "Starting sync for book: $bookId with mode: $syncMode")
+        logger.d(TAG, "Starting sync for book: $bookId with mode: $syncMode")
         if (!settingsRepository.isCloudSyncEnabled) {
-            Log.w(TAG, "Cloud sync is disabled in settings. Skipping.")
+            logger.w(TAG, "Cloud sync is disabled in settings. Skipping.")
             return@withContext
         }
 
         val helper = DriveServiceHelper(drive)
         var folderId = helper.findFolder(FOLDER_NAME)
-        Log.d(TAG, "findFolder result: $folderId")
+        logger.d(TAG, "findFolder result: $folderId")
         if (folderId == null) {
-            Log.d(TAG, "Folder not found, creating folder: $FOLDER_NAME")
+            logger.d(TAG, "Folder not found, creating folder: $FOLDER_NAME")
             folderId = helper.createFolder(FOLDER_NAME)
-            Log.d(TAG, "createFolder result: $folderId")
+            logger.d(TAG, "createFolder result: $folderId")
         }
 
         if (folderId == null) {
-            Log.e(TAG, "Failed to find or create folder. Sync aborted.")
+            logger.e(TAG, "Failed to find or create folder. Sync aborted.")
             return@withContext
         }
 
         val fileName = "book_$bookId.json"
-        Log.d(TAG, "Listing files for folderId: $folderId")
+        logger.d(TAG, "Listing files for folderId: $folderId")
         val driveFiles = helper.listFiles(folderId)
         val remoteFile = driveFiles.find { it.name == fileName }
-        Log.d(TAG, "Remote file found: ${remoteFile != null} (id: ${remoteFile?.id})")
+        logger.d(TAG, "Remote file found: ${remoteFile != null} (id: ${remoteFile?.id})")
 
         // Local Export
-        Log.d(TAG, "Exporting local book data to JSON")
+        logger.d(TAG, "Exporting local book data to JSON")
         val localJson = importExportManager.exportBookToJson(bookId)
         val tempFile = File(context.cacheDir, fileName).apply {
             writeText(localJson)
         }
         val localLastModified = tempFile.lastModified()
-        Log.d(TAG, "Local file size: ${tempFile.length()} bytes, lastModified: $localLastModified")
+        logger.d(TAG, "Local file size: ${tempFile.length()} bytes, lastModified: $localLastModified")
 
         if (remoteFile == null) {
             // Upload for the first time
             if (syncMode == SyncMode.RESTORE_ONLY) {
-                Log.w(TAG, "RESTORE_ONLY mode but no remote file found. Cannot restore.")
+                logger.w(TAG, "RESTORE_ONLY mode but no remote file found. Cannot restore.")
             } else {
-                Log.d(TAG, "No remote file found. Uploading for the first time...")
+                logger.d(TAG, "No remote file found. Uploading for the first time...")
                 val newFileId = helper.uploadFile(folderId, tempFile, "application/json")
-                Log.d(TAG, "Upload result id: $newFileId")
+                logger.d(TAG, "Upload result id: $newFileId")
             }
         } else {
             // Compare and act based on SyncMode
             val remoteLastModified = remoteFile.modifiedTime.value // Long from RFC 3339
-            Log.d(TAG, "Remote modifiedTime: $remoteLastModified")
+            logger.d(TAG, "Remote modifiedTime: $remoteLastModified")
 
             when (syncMode) {
                 SyncMode.BACKUP_ONLY -> {
-                    Log.d(TAG, "BACKUP_ONLY mode. Overwriting remote file...")
+                    logger.d(TAG, "BACKUP_ONLY mode. Overwriting remote file...")
                     val success = helper.updateFile(remoteFile.id, tempFile, "application/json")
-                    Log.d(TAG, "Update result: $success")
+                    logger.d(TAG, "Update result: $success")
                 }
                 SyncMode.RESTORE_ONLY -> {
-                    Log.d(TAG, "RESTORE_ONLY mode. Downloading and importing...")
+                    logger.d(TAG, "RESTORE_ONLY mode. Downloading and importing...")
                     downloadAndImport(helper, remoteFile.id, fileName, bookId, remoteLastModified, tempFile)
                 }
                 SyncMode.TWO_WAY -> {
                     if (localLastModified > remoteLastModified + 2000) { // 2s Grace period
                         // Local is newer
-                        Log.d(TAG, "Local version is newer. Updating remote file...")
+                        logger.d(TAG, "Local version is newer. Updating remote file...")
                         val success = helper.updateFile(remoteFile.id, tempFile, "application/json")
-                        Log.d(TAG, "Update result: $success")
+                        logger.d(TAG, "Update result: $success")
                     } else if (remoteLastModified > localLastModified + 2000) {
                         // Remote is newer
-                        Log.d(TAG, "Remote version is newer. Downloading and importing...")
+                        logger.d(TAG, "Remote version is newer. Downloading and importing...")
                         downloadAndImport(helper, remoteFile.id, fileName, bookId, remoteLastModified, tempFile)
                     } else {
-                        Log.d(TAG, "Local and remote versions are synchronized (within grace period).")
+                        logger.d(TAG, "Local and remote versions are synchronized (within grace period).")
                     }
                 }
             }
         }
         
         tempFile.delete()
-        Log.d(TAG, "Sync process finished.")
+        logger.d(TAG, "Sync process finished.")
     }
 
     private suspend fun downloadAndImport(
@@ -120,14 +121,14 @@ class CloudSyncUseCase @Inject constructor(
     ) {
         val downloadFile = File(context.cacheDir, "download_$fileName")
         if (helper.downloadFile(remoteFileId, downloadFile)) {
-            Log.d(TAG, "Download successful. Importing JSON...")
+            logger.d(TAG, "Download successful. Importing JSON...")
             val remoteJson = downloadFile.readText()
             importExportManager.importBookFromJson(remoteJson, bookId)
             // Update local timestamp to match remote to avoid loop
             tempFile.setLastModified(remoteLastModified)
-            Log.d(TAG, "Import completed.")
+            logger.d(TAG, "Import completed.")
         } else {
-            Log.e(TAG, "Failed to download remote file.")
+            logger.e(TAG, "Failed to download remote file.")
         }
     }
 }

@@ -1,6 +1,6 @@
 package com.andreas_kratzer.ghosttalk.domain
 
-import android.util.Log
+
 import com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper
 import com.google.api.services.drive.Drive
 import kotlinx.coroutines.Dispatchers
@@ -16,7 +16,8 @@ import javax.net.ssl.HttpsURLConnection
  */
 class GeminiUseCase(
     private val oauthTokenProvider: suspend () -> String?,
-    private val driveProvider: suspend () -> Drive?
+    private val driveProvider: suspend () -> Drive?,
+    private val logger: com.andreas_kratzer.ghosttalk.core.util.Logger
 ) {
     enum class ToolStatus {
         AVAILABLE,
@@ -56,7 +57,7 @@ class GeminiUseCase(
             throw Exception("HTTP 429: Lockout active. Please wait $remainingSeconds seconds.")
         }
         
-        Log.d(TAG, "Generating response for prompt: $prompt, useGoogleSearch: $useGoogleSearch")
+        logger.d(TAG, "Generating response for prompt: $prompt, useGoogleSearch: $useGoogleSearch")
         
         if (!modelInitialized) {
             tryToSelectBestModel()
@@ -71,7 +72,7 @@ class GeminiUseCase(
             lastSuccess = false
             val errorMsg = e.message ?: ""
             if (errorMsg.contains("404") || errorMsg.contains("429")) {
-                Log.w(TAG, "Model $activeModelName failed (Error: $errorMsg), attempting to find alternative...")
+                logger.w(TAG, "Model $activeModelName failed (Error: $errorMsg), attempting to find alternative...")
                 val failedModel = activeModelName
                 if (tryToSelectBestModel(excludeName = failedModel)) {
                     try {
@@ -80,11 +81,11 @@ class GeminiUseCase(
                         return@withContext result
                     } catch (retryEx: Exception) {
                         lastSuccess = false
-                        Log.e(TAG, "Retry with fallback model $activeModelName failed: ${retryEx.message}")
+                        logger.e(TAG, "Retry with fallback model $activeModelName failed: ${retryEx.message}")
                     }
                 }
             }
-            Log.e(TAG, "Gemini call failed: ${e.message}", e)
+            logger.e(TAG, "Gemini call failed: ${e.message}", e)
             throw e
         }
     }
@@ -119,12 +120,12 @@ class GeminiUseCase(
                 ?: candidates.sortedDescending().firstOrNull()
 
             if (bestModel != null && bestModel != activeModelName) {
-                Log.i(TAG, "Selected model: $bestModel (failed/prev was $activeModelName)")
+                logger.d(TAG, "Selected model: $bestModel (failed/prev was $activeModelName)")
                 activeModelName = bestModel
                 return true
             }
         } catch (ex: Exception) {
-            Log.e(TAG, "Failed to find best model", ex)
+            logger.e(TAG, "Failed to find best model", ex)
         }
         return false
     }
@@ -208,7 +209,7 @@ class GeminiUseCase(
                 val waitSeconds = parseWaitTime(connection.getHeaderField("Retry-After"), error)
                 val finalWait = waitSeconds.coerceIn(1, 3600)
                 lockoutUntilTime = System.currentTimeMillis() + (finalWait * 1000)
-                Log.w(TAG, "Gemini Quota Exceeded. Locking for ${finalWait}s. Error: $error")
+                logger.w(TAG, "Gemini Quota Exceeded. Locking for ${finalWait}s. Error: $error")
             }
             throw Exception("HTTP ${connection.responseCode}: $error")
         }
@@ -341,7 +342,7 @@ class GeminiUseCase(
     private suspend fun handleFunctionCall(token: String, call: JSONObject): String {
         val name = call.getString("name")
         val args = call.optJSONObject("args")
-        Log.d(TAG, "Executing tool: $name with args: $args")
+        logger.d(TAG, "Executing tool: $name with args: $args")
         
         return try {
             when (name) {
@@ -359,7 +360,7 @@ class GeminiUseCase(
                 else -> "Funktion nicht gefunden."
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Tool $name execution failed", e)
+            logger.e(TAG, "Tool $name execution failed", e)
             "[Fehler im Tool $name: ${e.message}. Fahre fort, falls möglich.]"
         }
     }
@@ -381,7 +382,7 @@ class GeminiUseCase(
     }
 
     private fun executeHomeControl(device: String, action: String): String {
-        Log.d(TAG, "Home Control: $device -> $action")
+        logger.d(TAG, "Home Control: $device -> $action")
         return "Erfolg: $device wurde auf '$action' gesetzt."
     }
 
@@ -399,7 +400,7 @@ class GeminiUseCase(
                 "Fehler beim Wetter-Abruf für $location."
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Weather fetch failed", e)
+            logger.e(TAG, "Weather fetch failed", e)
             "Wetter-Dienst aktuell nicht erreichbar."
         }
     }

@@ -71,6 +71,7 @@ class PageViewModel @Inject constructor(
     private val updateRowNameUseCase: com.andreas_kratzer.ghosttalk.domain.UpdateRowNameUseCase,
     private val importPageUseCase: com.andreas_kratzer.ghosttalk.domain.ImportPageUseCase,
     private val exportPageUseCase: com.andreas_kratzer.ghosttalk.domain.ExportPageUseCase,
+    private val logger: Logger,
     val featureGuard: FeatureGuard
 ) : AndroidViewModel(application) {
 
@@ -135,6 +136,7 @@ class PageViewModel @Inject constructor(
     val actionExecutor = ActionExecutor(
         scope = viewModelScope,
         settingsRepository = settingsRepository,
+        logger = logger,
         ttsHelper = ttsHelper,
         geminiUseCase = null, // Will be set in init
         buttonUsageRepository = buttonUsageRepository

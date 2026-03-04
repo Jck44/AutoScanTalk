@@ -7,10 +7,12 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+import javax.inject.Inject
+
 /**
  * Use case for managing action logs (timestamping, limiting size, and persistence).
  */
-class ActionLogUseCase @javax.inject.Inject constructor(
+class ActionLogUseCase @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val logger: Logger
 ) {

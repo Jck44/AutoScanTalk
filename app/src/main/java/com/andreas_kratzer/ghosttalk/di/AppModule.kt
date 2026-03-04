@@ -69,11 +69,7 @@ object AppModule {
         return SettingsRepository(context)
     }
 
-    @Provides
-    @Singleton
-    fun provideLogger(): Logger {
-        return AppLogger
-    }
+
 
     @Provides
     fun provideIoDispatcher(): kotlinx.coroutines.CoroutineDispatcher {
