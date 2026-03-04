@@ -248,5 +248,83 @@ class ActionExecutorTest {
         verify(exactly = 0) { settingsRepository.ttsVolumeMultiplier = any() }
     }
 
+    @Test
+    fun testFinishExecution_staleId_doesNotUnlockExecuting() = runTest {
+        val actionExecutor = createExecutor(this)
+        val button1 = ButtonConfig(id = "1", label = "B1", spokenText = "A1", auditoryCue = null, isActive = true, buttonAction = SpeakTextButtonAction())
+        val button2 = ButtonConfig(id = "2", label = "B2", spokenText = "A2", auditoryCue = null, isActive = true, buttonAction = SpeakTextButtonAction())
 
+        val ttsCallback1 = slot<() -> Unit>()
+        val ttsCallback2 = slot<() -> Unit>()
+        every { ttsHelper.speakRouted("A1", any(), any(), any(), any(), capture(ttsCallback1)) } returns Unit
+        every { ttsHelper.speakRouted("A2", any(), any(), any(), any(), capture(ttsCallback2)) } returns Unit
+
+        // Execute button 1
+        currentTimeMillis = 0L
+        actionExecutor.executeButtonAction(button1, bookId = "book1")
+        runCurrent()
+        assertTrue("Should be executing after B1", actionExecutor.isExecuting.value)
+
+        // Simulate TTS callback for B1 finishes execution
+        ttsCallback1.captured.invoke()
+        runCurrent()
+        assertEquals(false, actionExecutor.isExecuting.value)
+
+        // Execute button 2
+        currentTimeMillis = 2000L
+        actionExecutor.executeButtonAction(button2, bookId = "book1")
+        runCurrent()
+        assertTrue("Should be executing after B2", actionExecutor.isExecuting.value)
+
+        // Now B1's callback fires AGAIN (stale!) — this should NOT unlock the executor
+        ttsCallback1.captured.invoke()
+        runCurrent()
+        assertTrue("Should still be executing — stale callback must not unlock", actionExecutor.isExecuting.value)
+
+        // Only B2's callback should unlock
+        ttsCallback2.captured.invoke()
+        runCurrent()
+        assertEquals(false, actionExecutor.isExecuting.value)
+    }
+
+    @Test
+    fun testExecuteButtonAction_afterHoldingTimeExpires_succeeds() = runTest {
+        val actionExecutor = createExecutor(this)
+        val buttonConfig = ButtonConfig(
+            id = "b1",
+            label = "Test",
+            spokenText = "Hello",
+            auditoryCue = null,
+            isActive = true,
+            buttonAction = SpeakTextButtonAction()
+        )
+
+        val ttsCallback = slot<() -> Unit>()
+        every { ttsHelper.speakRouted(any(), any(), any(), any(), any(), capture(ttsCallback)) } returns Unit
+
+        // First press at T=0
+        currentTimeMillis = 0L
+        actionExecutor.executeButtonAction(buttonConfig, bookId = "book1")
+        runCurrent()
+        assertTrue(actionExecutor.isExecuting.value)
+
+        // TTS finishes at T=500ms
+        currentTimeMillis = 500L
+        ttsCallback.captured.invoke()
+        runCurrent()
+        assertEquals(false, actionExecutor.isExecuting.value)
+
+        // Second press at T=1500ms — past holding time (1000ms), should succeed
+        currentTimeMillis = 1500L
+        actionExecutor.executeButtonAction(buttonConfig, bookId = "book1")
+        runCurrent()
+
+        // Verify: action was executed again (2 total calls)
+        verify(exactly = 2) { ttsHelper.speakRouted("Hello", any(), any(), any(), any(), any()) }
+        assertTrue(actionExecutor.isExecuting.value)
+
+        // Cleanup
+        ttsCallback.captured.invoke()
+        runCurrent()
+    }
 }

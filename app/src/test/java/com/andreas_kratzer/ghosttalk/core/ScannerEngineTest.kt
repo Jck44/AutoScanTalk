@@ -1,0 +1,207 @@
+import com.andreas_kratzer.ghosttalk.core.scanning.ScannerEngine
+import com.andreas_kratzer.ghosttalk.core.scanning.ScannerFeedbackProvider
+import com.andreas_kratzer.ghosttalk.domain.FeatureGuard
+import com.andreas_kratzer.ghosttalk.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
+import io.mockk.every
+import io.mockk.mockk
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Before
+import org.junit.Test
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class ScannerEngineTest {
+
+    private lateinit var featureGuard: FeatureGuard
+    private lateinit var feedbackProvider: ScannerFeedbackProvider
+
+    @Before
+    fun setup() {
+        io.mockk.mockkStatic(android.util.Log::class)
+        every { android.util.Log.d(any(), any()) } returns 0
+        every { android.util.Log.e(any(), any(), any()) } returns 0
+        every { android.util.Log.w(any(), any<String>()) } returns 0
+
+        featureGuard = mockk(relaxed = true) {
+            every { isButtonVisible(any()) } returns true
+            every { isActionEnabled(any()) } returns true
+        }
+        feedbackProvider = mockk(relaxed = true)
+    }
+
+    private fun createConfigs(count: Int = 4): List<ButtonConfig> {
+        return (1..count).map { i ->
+            ButtonConfig(
+                id = "b$i",
+                label = "B$i",
+                auditoryCue = null,
+                buttonAction = SpeakTextButtonAction(),
+                isActive = true
+            )
+        }
+    }
+
+    private fun createEngine(scope: kotlinx.coroutines.CoroutineScope, delayMs: Long = 100L): ScannerEngine {
+        val engine = ScannerEngine(
+            scope = scope,
+            featureGuard = featureGuard,
+            feedbackProvider = feedbackProvider
+        )
+        engine.scanDelayMillis = delayMs
+        return engine
+    }
+
+    // --- Idempotency ---
+
+    @Test
+    fun `startScanning with same params does not restart scan`() = runTest {
+        val engine = createEngine(this)
+        val configs = createConfigs()
+
+        engine.startScanning(
+            buttonConfigs = configs,
+            startIndex = 0,
+            pattern = "linear",
+            columns = 2,
+            rowNames = emptyList(),
+            pageId = "page1"
+        )
+        advanceTimeBy(110)
+
+        // Record the current focused index (should be 0 after first step)
+        assertEquals(0, engine.focusedButtonIndex.value)
+
+        // Advance one more step so focus is at 1
+        advanceTimeBy(100)
+        assertEquals(1, engine.focusedButtonIndex.value)
+
+        // Call startScanning again with identical parameters — should be idempotent
+        engine.startScanning(
+            buttonConfigs = configs,
+            startIndex = 0,
+            pattern = "linear",
+            columns = 2,
+            rowNames = emptyList(),
+            pageId = "page1"
+        )
+
+        // Advance time — if the scan restarted, focus would reset to 0 instead of advancing to 2
+        advanceTimeBy(100)
+        val focus = engine.focusedButtonIndex.value
+
+        // Focus should have advanced naturally (not reset), proving no restart
+        assertEquals("Focus should advance to 2, not reset to 0", 2, focus)
+
+        engine.stopScanning()
+    }
+
+    // --- stopScanning ---
+
+    @Test
+    fun `stopScanning clears focus indices`() = runTest {
+        val engine = createEngine(this)
+        val configs = createConfigs()
+
+        engine.startScanning(
+            buttonConfigs = configs,
+            startIndex = 0,
+            pattern = "linear",
+            columns = 2,
+            pageId = "page1"
+        )
+        advanceTimeBy(110)
+
+        // Verify scanning is active
+        assertEquals(0, engine.focusedButtonIndex.value)
+
+        // Stop scanning
+        engine.stopScanning()
+        runCurrent()
+
+        // Both focus indices must be null
+        assertNull("focusedButtonIndex should be null after stop", engine.focusedButtonIndex.value)
+        assertNull("focusedRowIndex should be null after stop", engine.focusedRowIndex.value)
+    }
+
+    // --- pauseScanning ---
+
+    @Test
+    fun `pauseScanning cancels job but keeps focus indices`() = runTest {
+        val engine = createEngine(this)
+        val configs = createConfigs()
+
+        engine.startScanning(
+            buttonConfigs = configs,
+            startIndex = 0,
+            pattern = "linear",
+            columns = 2,
+            pageId = "page1"
+        )
+        advanceTimeBy(110)
+
+        val focusBefore = engine.focusedButtonIndex.value
+        assertEquals(0, focusBefore)
+
+        // Pause scanning
+        engine.pauseScanning()
+        runCurrent()
+
+        // Focus should still be at the last known position (not cleared)
+        assertEquals(
+            "focusedButtonIndex should remain after pause",
+            focusBefore,
+            engine.focusedButtonIndex.value
+        )
+
+        // Scanning should not advance anymore
+        advanceTimeBy(500)
+        assertEquals(
+            "focusedButtonIndex should not advance after pause",
+            focusBefore,
+            engine.focusedButtonIndex.value
+        )
+    }
+
+    // --- Restart with different params ---
+
+    @Test
+    fun `startScanning with different pageId cancels old scan and starts new one`() = runTest {
+        val engine = createEngine(this)
+        val configs = createConfigs(4)
+
+        // Start first scan
+        engine.startScanning(
+            buttonConfigs = configs,
+            startIndex = 0,
+            pattern = "linear",
+            columns = 2,
+            pageId = "page1"
+        )
+        advanceTimeBy(110)
+        assertEquals(0, engine.focusedButtonIndex.value)
+
+        // Advance to button 1
+        advanceTimeBy(100)
+        assertEquals(1, engine.focusedButtonIndex.value)
+
+        // Start a different scan (different pageId)
+        engine.startScanning(
+            buttonConfigs = configs,
+            startIndex = 0,
+            pattern = "linear",
+            columns = 2,
+            pageId = "page2"
+        )
+        advanceTimeBy(110)
+
+        // The new scan should restart from index 0
+        assertEquals("New scan should start from index 0", 0, engine.focusedButtonIndex.value)
+
+        engine.stopScanning()
+    }
+}
