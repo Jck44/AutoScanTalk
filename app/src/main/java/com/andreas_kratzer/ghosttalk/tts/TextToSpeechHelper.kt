@@ -113,14 +113,14 @@ class TextToSpeechHelper @Inject constructor(
     // Support for direct callbacks
     private val directCallbacks = ConcurrentHashMap<String, () -> Unit>()
 
-    fun speak(text: String, queueMode: Int = TextToSpeech.QUEUE_FLUSH, onDone: (() -> Unit)? = null) {
-        speakRouted(text, null, "NORMAL", queueMode, false, onDone)
+    fun speak(text: String, queueMode: Int = TextToSpeech.QUEUE_FLUSH, ttsMode: String? = "NORMAL", onDone: (() -> Unit)? = null) {
+        speakRouted(text, null, ttsMode, queueMode, false, onDone)
     }
 
     fun speakRouted(
         text: String, 
         deviceAddress: String?, 
-        ttsMode: String = "NORMAL",
+        ttsMode: String? = "NORMAL",
         queueMode: Int = TextToSpeech.QUEUE_FLUSH,
         isForCues: Boolean = false,
         onDone: (() -> Unit)? = null
@@ -150,8 +150,10 @@ class TextToSpeechHelper @Inject constructor(
             settingsRepository.ttsVolumeMultiplier
         }
         
+        val safeTtsMode = ttsMode ?: "NORMAL"
+        
         // Dynamically adjust volume multiplier array based on mode
-        val modeVolumeModifier = when (ttsMode) {
+        val modeVolumeModifier = when (safeTtsMode) {
             "WHISPER" -> 0.3f
             "SHOUT" -> 1.3f
             else -> 1.0f
@@ -159,8 +161,8 @@ class TextToSpeechHelper @Inject constructor(
         val volumeMultiplier = baseVolume * modeVolumeModifier
         
         // Generate SSML if needed
-        val finalSpeakText = if (ttsMode != "NORMAL") {
-            val volumeAttr = when (ttsMode) {
+        val finalSpeakText = if (safeTtsMode != "NORMAL") {
+            val volumeAttr = when (safeTtsMode) {
                 "WHISPER" -> "soft"
                 "SHOUT" -> "loud"
                 else -> "default"

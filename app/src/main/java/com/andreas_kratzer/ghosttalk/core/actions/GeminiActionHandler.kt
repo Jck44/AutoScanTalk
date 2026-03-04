@@ -38,8 +38,8 @@ class GeminiActionHandler(
         }
         val useGoogleSearch = action is GeminiSearchButtonAction
         val ttsMode = when (action) {
-            is GeminiButtonAction -> action.ttsMode
-            is GeminiSearchButtonAction -> action.ttsMode
+            is GeminiButtonAction -> action.ttsMode ?: "NORMAL"
+            is GeminiSearchButtonAction -> action.ttsMode ?: "NORMAL"
             else -> "NORMAL"
         }
 
