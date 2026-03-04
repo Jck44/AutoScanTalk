@@ -66,7 +66,8 @@ fun ButtonConfigDialog(
     val actionTypeGemini = stringResource(R.string.button_action_gemini)
     val actionTypeFrequent = stringResource(R.string.button_action_frequent_action)
     val actionTypeSmart = stringResource(R.string.button_action_smart_prediction)
-    val actionTypes = remember(featureGuard) {
+    val actionTypeNotification = stringResource(R.string.button_action_notification)
+    val actionTypes = remember(featureGuard, actionTypeNotification) {
         val base = mutableListOf(actionTypeSpeak, actionTypeNavigate, actionTypeFrequent)
         if (featureGuard.isActionEnabled(GeminiButtonAction(""))) {
             base.add(actionTypeGemini)
@@ -74,7 +75,6 @@ fun ButtonConfigDialog(
         if (featureGuard.isActionEnabled(SmartPredictionButtonAction())) {
             base.add(actionTypeSmart)
         }
-        val actionTypeNotification = stringResource(R.string.button_action_notification)
         base.add(actionTypeNotification)
         // base.sortedBy { it } // Optional: sort or keep order
         base.toList()
@@ -87,7 +87,7 @@ fun ButtonConfigDialog(
                 is GeminiButtonAction -> actionTypeGemini
                 is FrequentActionButtonAction -> actionTypeFrequent
                 is SmartPredictionButtonAction -> actionTypeSmart
-                is com.andreas_kratzer.ghosttalk.model.NotificationButtonAction -> stringResource(R.string.button_action_notification)
+                is com.andreas_kratzer.ghosttalk.model.NotificationButtonAction -> actionTypeNotification
                 else -> actionTypeSpeak
             }
         )
@@ -120,8 +120,9 @@ fun ButtonConfigDialog(
     // Notification Details
     val notificationActionDef = initialConfig?.buttonAction as? com.andreas_kratzer.ghosttalk.model.NotificationButtonAction
     var notificationTargetApp by remember { mutableStateOf(notificationActionDef?.targetApp ?: "ALL") }
+    val appAllLabel = stringResource(R.string.button_notification_target_all)
     val notificationApps = mapOf(
-        "ALL" to stringResource(R.string.button_notification_target_all),
+        "ALL" to appAllLabel,
         "com.whatsapp" to "WhatsApp",
         "org.thoughtcrime.securesms" to "Signal",
         "org.telegram.messenger" to "Telegram",
@@ -150,6 +151,17 @@ fun ButtonConfigDialog(
                 if (!featureGuard.isActionEnabled(SmartPredictionButtonAction()) && initialConfig?.buttonAction is SmartPredictionButtonAction) {
                     Text(
                         text = stringResource(R.string.settings_smart_prediction_disabled_warning),
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp)
+                    )
+                }
+                
+                if (!featureGuard.isActionEnabled(com.andreas_kratzer.ghosttalk.model.NotificationButtonAction()) && initialConfig?.buttonAction is com.andreas_kratzer.ghosttalk.model.NotificationButtonAction) {
+                    Text(
+                        text = stringResource(R.string.settings_notification_disabled_warning),
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier
@@ -339,7 +351,7 @@ fun ButtonConfigDialog(
                 if (selectedActionType == actionTypeSpeak || 
                     selectedActionType == actionTypeGemini || 
                     selectedActionType == actionTypeSmart || 
-                    selectedActionType == stringResource(R.string.button_action_notification)) {
+                    selectedActionType == actionTypeNotification) {
                     androidx.compose.foundation.layout.Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
@@ -363,7 +375,7 @@ fun ButtonConfigDialog(
                             actionTypeGemini -> GeminiButtonAction(prompt = geminiPrompt)
                             actionTypeFrequent -> FrequentActionButtonAction(rank = frequentRank.toIntOrNull()?.coerceAtLeast(1) ?: 1)
                             actionTypeSmart -> SmartPredictionButtonAction(rank = smartRank.toIntOrNull()?.coerceAtLeast(1) ?: 1)
-                            stringResource(R.string.button_action_notification) -> com.andreas_kratzer.ghosttalk.model.NotificationButtonAction(targetApp = notificationTargetApp)
+                            actionTypeNotification -> com.andreas_kratzer.ghosttalk.model.NotificationButtonAction(targetApp = notificationTargetApp)
                             else -> SpeakTextButtonAction(textToSpeech = spokenText.takeIf { it.isNotBlank() } ?: label)
                         }
 

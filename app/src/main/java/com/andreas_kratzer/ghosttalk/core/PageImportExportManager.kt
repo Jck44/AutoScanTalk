@@ -76,14 +76,18 @@ class PageImportExportManager @javax.inject.Inject constructor(
                                     else -> null
                                 }
                             }
-                            if (importButton.label.isBlank() || action == null) null
-                                id = UUID.randomUUID().toString(),
-                                label = importButton.label,
-                                buttonAction = action,
-                                auditoryCue = importButton.auditoryCueText?.let { AuditoryCue.TextToSpeechCue(it) },
-                                isActive = importButton.active ?: true,
-                                playActionAsAuditoryCue = importButton.playActionAsAuditoryCue ?: false
-                            )
+                            if (importButton.label.isBlank() || action == null) {
+                                null
+                            } else {
+                                ButtonConfig(
+                                    id = UUID.randomUUID().toString(),
+                                    label = importButton.label,
+                                    buttonAction = action,
+                                    auditoryCue = importButton.auditoryCueText?.let { AuditoryCue.TextToSpeechCue(it) },
+                                    isActive = importButton.active ?: true,
+                                    playActionAsAuditoryCue = importButton.playActionAsAuditoryCue ?: false
+                                )
+                            }
                         }
                     }
                     val pageTemplate = PageTemplate(

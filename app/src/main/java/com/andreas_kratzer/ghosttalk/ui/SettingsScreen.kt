@@ -1075,7 +1075,6 @@ fun ThemeSettings(settingsViewModel: SettingsViewModel) {
                 }
             )
         }
-        }
     }
 }
 
