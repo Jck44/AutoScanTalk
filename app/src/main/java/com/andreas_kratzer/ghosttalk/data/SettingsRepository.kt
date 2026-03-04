@@ -107,7 +107,6 @@ class SettingsRepository(context: Context) {
         }
 
     private val _showPageIdInLogFlow = MutableStateFlow(getBooleanScoped(KEY_SHOW_PAGE_ID_IN_LOG, false))
-    val showPageIdInLogFlow: StateFlow<Boolean> = _showPageIdInLogFlow.asStateFlow()
 
     var showPageIdInLog: Boolean
         get() = getBooleanScoped(KEY_SHOW_PAGE_ID_IN_LOG, false)

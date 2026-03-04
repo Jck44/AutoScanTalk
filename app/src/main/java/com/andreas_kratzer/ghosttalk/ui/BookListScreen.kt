@@ -65,7 +65,7 @@ fun BookListScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { showAddDialog = true }) {
+            FloatingActionButton(onClick = { if (!showAddDialog) showAddDialog = true }) {
                 Icon(Icons.Default.Add, contentDescription = stringResource(R.string.book_add_description))
             }
         }

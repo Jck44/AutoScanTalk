@@ -171,7 +171,7 @@ fun PageListScreen(
                         )
                     }
                     DropdownMenu(expanded = showSortMenu, onDismissRequest = { showSortMenu = false }) {
-                        val orders = com.andreas_kratzer.ghosttalk.model.SortOrder.values()
+                        val orders = com.andreas_kratzer.ghosttalk.model.SortOrder.entries
                         orders.filter { it != com.andreas_kratzer.ghosttalk.model.SortOrder.MANUAL || experimentalSorting }.forEach { order ->
                             val label = when(order) {
                                 com.andreas_kratzer.ghosttalk.model.SortOrder.MANUAL -> "Manuell"
@@ -219,7 +219,7 @@ fun PageListScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { showAddDialog = true }) {
+            FloatingActionButton(onClick = { if (!showAddDialog) showAddDialog = true }) {
                 Icon(Icons.Default.Add, contentDescription = stringResource(R.string.page_add_description))
             }
         }

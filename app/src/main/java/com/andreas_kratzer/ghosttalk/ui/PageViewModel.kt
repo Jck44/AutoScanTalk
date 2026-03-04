@@ -53,10 +53,10 @@ class PageViewModel @Inject constructor(
     private val createPageUseCase: CreatePageUseCase,
     private val frequentActionResolver: FrequentActionResolver,
     private val buttonUsageRepository: ButtonUsageRepository,
-    private val templateRepository: TemplateRepository,
+    templateRepository: TemplateRepository,
     private val driveAuthManager: DriveAuthManager,
-    private val logger: Logger,
-    private val geminiUseCaseFactory: GeminiUseCaseFactory,
+    logger: Logger,
+    geminiUseCaseFactory: GeminiUseCaseFactory,
     private val ttsHelper: TextToSpeechHelper,
     private val predictNextActionUseCase: PredictNextActionUseCase
 ) : AndroidViewModel(application) {
@@ -71,7 +71,7 @@ class PageViewModel @Inject constructor(
         _allPages,
         settingsRepository.pageSortOrderFlow
     ) { pages, sortOrderStr ->
-        val sortOrder = try { SortOrder.valueOf(sortOrderStr) } catch (e: Exception) { SortOrder.MANUAL }
+        val sortOrder = try { SortOrder.valueOf(sortOrderStr) } catch (_: Exception) { SortOrder.MANUAL }
         when (sortOrder) {
             SortOrder.MANUAL -> pages.sortedBy { it.orderIndex }
             SortOrder.NEWEST -> pages.sortedByDescending { it.createdAt }
@@ -349,7 +349,7 @@ class PageViewModel @Inject constructor(
             
             if (targetPage != null) {
                 actionExecutor.executeButtonAction(
-                    com.andreas_kratzer.ghosttalk.model.ButtonConfig(
+                    ButtonConfig(
                         label = targetPage.name,
                         auditoryCue = null,
                         buttonAction = com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction(targetPage.id)
@@ -359,7 +359,7 @@ class PageViewModel @Inject constructor(
             } else {
                 // Otherwise treat as SpeakText
                 actionExecutor.executeButtonAction(
-                    com.andreas_kratzer.ghosttalk.model.ButtonConfig(
+                    ButtonConfig(
                         label = prediction,
                         auditoryCue = null,
                         buttonAction = com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction(prediction)

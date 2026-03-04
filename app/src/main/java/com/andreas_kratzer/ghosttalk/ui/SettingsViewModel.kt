@@ -132,8 +132,6 @@ class SettingsViewModel @Inject constructor(
     val smartPredictionDelayMillisInput: StateFlow<String> = _smartPredictionDelayMillisInput.asStateFlow()
 
     val lastSuccessfulSyncTime: StateFlow<Long> = settingsRepository.lastSuccessfulSyncTimeFlow
-    val pageSortOrder: StateFlow<String> = settingsRepository.pageSortOrderFlow
-    val templateSortOrder: StateFlow<String> = settingsRepository.templateSortOrderFlow
 
     private val _authIntentFlow = MutableSharedFlow<Intent>()
     val authIntentFlow = _authIntentFlow.asSharedFlow()
@@ -605,14 +603,6 @@ class SettingsViewModel @Inject constructor(
         
         // 3. Fallback
         return "System-Standard (Automatisch)"
-    }
-
-    fun setPageSortOrder(order: com.andreas_kratzer.ghosttalk.model.SortOrder) {
-        settingsRepository.pageSortOrder = order.name
-    }
-
-    fun setTemplateSortOrder(order: com.andreas_kratzer.ghosttalk.model.SortOrder) {
-        settingsRepository.templateSortOrder = order.name
     }
 
     fun setSmartPredictionDelayInput(input: String) {

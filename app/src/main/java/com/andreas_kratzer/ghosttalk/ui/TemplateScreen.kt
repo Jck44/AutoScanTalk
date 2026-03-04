@@ -80,7 +80,7 @@ fun TemplateScreen(
                         Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = "Sortieren")
                     }
                     DropdownMenu(expanded = showSortMenu, onDismissRequest = { showSortMenu = false }) {
-                        SortOrder.values().filter { it != SortOrder.MANUAL || experimentalSorting }.forEach { order ->
+                        SortOrder.entries.filter { it != SortOrder.MANUAL || experimentalSorting }.forEach { order ->
                             val label = when(order) {
                                 SortOrder.MANUAL -> "Manuell"
                                 SortOrder.NEWEST -> "Neueste zuerst"
@@ -106,7 +106,7 @@ fun TemplateScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { showAddDialog = true }) {
+            FloatingActionButton(onClick = { if (!showAddDialog) showAddDialog = true }) {
                 Icon(Icons.Default.Add, contentDescription = stringResource(R.string.template_create_new))
             }
         }

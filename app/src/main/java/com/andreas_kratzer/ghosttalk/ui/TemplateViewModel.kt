@@ -28,7 +28,7 @@ class TemplateViewModel @Inject constructor(
         templateRepository.getAllTemplates(),
         settingsRepository.templateSortOrderFlow
     ) { templates, sortOrderStr ->
-        val sortOrder = try { SortOrder.valueOf(sortOrderStr) } catch (e: Exception) { SortOrder.MANUAL }
+        val sortOrder = try { SortOrder.valueOf(sortOrderStr) } catch (_: Exception) { SortOrder.MANUAL }
         when (sortOrder) {
             SortOrder.MANUAL -> templates.sortedBy { it.orderIndex }
             SortOrder.NEWEST -> templates.sortedByDescending { it.createdAt }

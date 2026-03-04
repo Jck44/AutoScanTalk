@@ -41,7 +41,7 @@ class CloudSyncWorker @AssistedInject constructor(
         val syncModeStr = settingsRepository.syncMode
         val mode = try {
             SyncMode.valueOf(syncModeStr)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             SyncMode.TWO_WAY
         }
 
@@ -57,7 +57,7 @@ class CloudSyncWorker @AssistedInject constructor(
             Log.d("CloudSyncWorker", "Background sync completed successfully")
             settingsRepository.lastSuccessfulSyncTime = System.currentTimeMillis()
             Result.success()
-        } catch (e: UserRecoverableAuthIOException) {
+        } catch (_: UserRecoverableAuthIOException) {
             Log.w("CloudSyncWorker", "UserRecoverableAuthIOException in background sync. Setup required.")
             Result.failure()
         } catch (e: Exception) {
