@@ -94,10 +94,11 @@ class PageViewModel @Inject constructor(
         _searchQuery
     ) { pages, sortOrderStr, query ->
         val sortOrder = try { SortOrder.valueOf(sortOrderStr) } catch (_: Exception) { SortOrder.MANUAL }
-        val filtered = if (query.isBlank()) {
+        val trimmedQuery = query.trim()
+        val filtered = if (trimmedQuery.isBlank()) {
             pages
         } else {
-            pages.filter { it.name.contains(query, ignoreCase = true) }
+            pages.filter { it.name.contains(trimmedQuery, ignoreCase = true) }
         }
         when (sortOrder) {
             SortOrder.MANUAL -> filtered.sortedBy { it.orderIndex }
@@ -105,6 +106,20 @@ class PageViewModel @Inject constructor(
             SortOrder.OLDEST -> filtered.sortedBy { it.createdAt }
             SortOrder.A_Z -> filtered.sortedBy { it.name.lowercase() }
             SortOrder.Z_A -> filtered.sortedByDescending { it.name.lowercase() }
+        }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    val unfilteredPages: StateFlow<List<Page>> = kotlinx.coroutines.flow.combine(
+        _allPages,
+        settingsRepository.pageSortOrderFlow
+    ) { pages, sortOrderStr ->
+        val sortOrder = try { SortOrder.valueOf(sortOrderStr) } catch (_: Exception) { SortOrder.MANUAL }
+        when (sortOrder) {
+            SortOrder.MANUAL -> pages.sortedBy { it.orderIndex }
+            SortOrder.NEWEST -> pages.sortedByDescending { it.createdAt }
+            SortOrder.OLDEST -> pages.sortedBy { it.createdAt }
+            SortOrder.A_Z -> pages.sortedBy { it.name.lowercase() }
+            SortOrder.Z_A -> pages.sortedByDescending { it.name.lowercase() }
         }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 

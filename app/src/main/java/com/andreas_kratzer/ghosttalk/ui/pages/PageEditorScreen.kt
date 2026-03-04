@@ -47,6 +47,7 @@ fun PageEditorScreen(
     onNavigateBack: () -> Unit
 ) {
     val allPages by pageViewModel.allPages.collectAsState()
+    val unfilteredPages by pageViewModel.unfilteredPages.collectAsState()
     val bookDefaultScanPattern by pageViewModel.defaultScanPattern.collectAsState()
     val page = allPages.find { it.id == pageId }
 
@@ -142,7 +143,7 @@ fun PageEditorScreen(
         ButtonConfigDialog(
             initialConfig = currentConfig,
             buttonId = buttonId,
-            availablePages = allPages,
+            availablePages = unfilteredPages,
             featureGuard = pageViewModel.featureGuard,
             onDismiss = {
                 showDialog = false
