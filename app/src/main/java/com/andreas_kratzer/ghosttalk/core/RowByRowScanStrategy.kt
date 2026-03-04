@@ -46,6 +46,10 @@ class RowByRowScanStrategy : ScanStrategy {
         val startingPosition = activeRows.indexOfFirst { it >= startIndex }.coerceAtLeast(0)
 
         var currentPos = startingPosition
+        
+        // Initial delay to settle race conditions (e.g. page transition triggers)
+        delay(100)
+        
         while (true) {
             for (i in currentPos until activeRows.size) {
                 val rowIndex = activeRows[i]
@@ -87,6 +91,9 @@ class RowByRowScanStrategy : ScanStrategy {
             return
         }
 
+        // Initial delay to settle race conditions
+        delay(100)
+        
         while (true) {
             for (i in activeButtonsInRow.indices) {
                 val (globalIndex, buttonConfig) = activeButtonsInRow[i]

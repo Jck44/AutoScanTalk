@@ -68,9 +68,7 @@ fun PageScreen(
         return
     }
 
-    DisposableEffect(page) {
-        pageViewModel.resumeScanningIfEnabled()
-        
+    DisposableEffect(Unit) {
         onDispose {
             pageViewModel.stopScanning()
         }

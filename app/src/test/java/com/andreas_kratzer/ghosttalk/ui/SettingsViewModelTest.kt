@@ -2,7 +2,7 @@ package com.andreas_kratzer.ghosttalk.ui
 
 import android.app.Application
 import com.andreas_kratzer.ghosttalk.core.AudioDeviceManager
-import com.andreas_kratzer.ghosttalk.core.cloud.DriveAuthManager
+import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
 import com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.domain.CloudSyncUseCase
@@ -31,7 +31,7 @@ class SettingsViewModelTest {
     
     private lateinit var application: Application
     private lateinit var settingsRepository: SettingsRepository
-    private lateinit var driveAuthManager: DriveAuthManager
+    private lateinit var googleAuthManager: GoogleAuthManager
     private lateinit var cloudSyncUseCase: CloudSyncUseCase
     private lateinit var audioDeviceManager: AudioDeviceManager
     private lateinit var tempTtsHelper: TextToSpeechHelper
@@ -46,7 +46,7 @@ class SettingsViewModelTest {
 
         application = mockk(relaxed = true)
         settingsRepository = mockk(relaxed = true)
-        driveAuthManager = mockk(relaxed = true)
+        googleAuthManager = mockk(relaxed = true)
         cloudSyncUseCase = mockk(relaxed = true)
         geminiUseCaseFactory = mockk(relaxed = true)
         tempTtsHelper = mockk(relaxed = true)
@@ -73,9 +73,12 @@ class SettingsViewModelTest {
         every { settingsRepository.appLanguage } returns "en"
         every { settingsRepository.syncIntervalMinutes } returns 15L
         every { settingsRepository.syncMode } returns "TWO_WAY"
+        every { settingsRepository.smartPredictionDelayMillisFlow } returns MutableStateFlow(2000L)
+        every { settingsRepository.bluetoothDelayFlow } returns MutableStateFlow(1500L)
+        every { settingsRepository.lastSuccessfulSyncTimeFlow } returns MutableStateFlow(0L)
 
-        // Mock DriveAuthManager flow
-        every { driveAuthManager.userEmail } returns MutableStateFlow(null)
+        // Mock GoogleAuthManager flow
+        every { googleAuthManager.userEmail } returns MutableStateFlow(null)
 
         // Mock static Android methods that throw in local JVM tests
         io.mockk.mockkStatic(android.util.Log::class)
@@ -91,7 +94,7 @@ class SettingsViewModelTest {
         viewModel = SettingsViewModel(
             application = application,
             settingsRepository = settingsRepository,
-            driveAuthManager = driveAuthManager,
+            googleAuthManager = googleAuthManager,
             cloudSyncUseCase = cloudSyncUseCase,
             geminiUseCaseFactory = geminiUseCaseFactory,
             tempTtsHelper = tempTtsHelper,
@@ -180,7 +183,7 @@ class SettingsViewModelTest {
         val driveMock = mockk<Drive>()
         val bookId = "test-book"
         every { settingsRepository.activeBookId } returns bookId
-        every { driveAuthManager.getDriveCredential() } returns mockk(relaxed = true)
+        every { googleAuthManager.getGoogleCredential() } returns mockk(relaxed = true)
 
         viewModel.backupNow(driveMock)
         advanceUntilIdle()
@@ -192,7 +195,7 @@ class SettingsViewModelTest {
         val driveMock = mockk<Drive>()
         val bookId = "test-book"
         every { settingsRepository.activeBookId } returns bookId
-        every { driveAuthManager.getDriveCredential() } returns mockk(relaxed = true)
+        every { googleAuthManager.getGoogleCredential() } returns mockk(relaxed = true)
 
         viewModel.restoreNow(driveMock)
         advanceUntilIdle()

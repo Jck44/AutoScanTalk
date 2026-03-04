@@ -62,7 +62,7 @@ class LinearScanStrategyTest {
         }
 
         // First button
-        advanceTimeBy(1)
+        advanceTimeBy(101)
         assertEquals(0, focusedButton.value)
         assertEquals("A", spokenCues.last())
         assertNull(focusedRow.value) // Linear clears row focus
@@ -112,7 +112,7 @@ class LinearScanStrategyTest {
             )
         }
 
-        advanceTimeBy(1)
+        advanceTimeBy(101)
         assertEquals(0, focusedButton.value) // index 0 = Active1
 
         advanceTimeBy(100)
@@ -148,7 +148,7 @@ class LinearScanStrategyTest {
             )
         }
 
-        advanceTimeBy(1)
+        advanceTimeBy(101)
         assertEquals("Cue A", spokenCues[0]) // Uses cue text
 
         advanceTimeBy(100)
@@ -179,7 +179,7 @@ class LinearScanStrategyTest {
             )
         }
 
-        advanceTimeBy(1)
+        advanceTimeBy(101)
         assertEquals(1, focusedButton.value) // Starts at B, not A
 
         advanceTimeBy(100)
@@ -245,7 +245,7 @@ class LinearScanStrategyTest {
             )
         }
 
-        advanceTimeBy(1)
+        advanceTimeBy(101)
         assertEquals(0, focusedButton.value) // Regular
 
         advanceTimeBy(100)

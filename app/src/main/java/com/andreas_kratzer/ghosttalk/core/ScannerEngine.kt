@@ -1,5 +1,6 @@
 package com.andreas_kratzer.ghosttalk.core
 
+import android.util.Log
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
 import kotlinx.coroutines.CoroutineScope
@@ -29,6 +30,10 @@ class ScannerEngine(
     private var currentColumns: Int = 4
     private var currentRowNames: List<String> = emptyList()
 
+    private var currentPattern: String = "linear"
+    private var currentStartIndex: Int = 0
+    private var currentPageId: String? = null
+
     private var scanJob: Job? = null
     var scanDelayMillis: Long = 1000L
 
@@ -40,12 +45,36 @@ class ScannerEngine(
         startIndex: Int = 0, 
         pattern: String = "linear", 
         columns: Int = 4, 
-        rowNames: List<String> = emptyList()
+        rowNames: List<String> = emptyList(),
+        pageId: String? = null
     ) {
+        // Check if we are already scanning with the same parameters
+        if (scanJob?.isActive == true &&
+            currentPageId == pageId &&
+            currentButtonConfigs == buttonConfigs &&
+            currentStartIndex == startIndex &&
+            currentPattern == pattern &&
+            currentColumns == columns &&
+            currentRowNames == rowNames
+        ) {
+            Log.d("ScannerEngine", "startScanning: Idempotency triggered. Already scanning Page $pageId with same config. Skipping restart.")
+            return
+        }
+
+        if (scanJob?.isActive == true) {
+            Log.d("ScannerEngine", "startScanning: Cancelling existing scan job for Page $currentPageId to start $pageId.")
+        } else {
+            Log.d("ScannerEngine", "startScanning: Starting new scan job für $pageId.")
+        }
+
         scanJob?.cancel()
+        scanJob = null
         currentButtonConfigs = buttonConfigs
         currentColumns = columns
         currentRowNames = rowNames
+        currentPattern = pattern
+        currentStartIndex = startIndex
+        currentPageId = pageId
 
         scanJob = scope.launch {
             if (pattern == "row_by_row") {
@@ -110,11 +139,17 @@ class ScannerEngine(
     }
 
     fun pauseScanning() {
+        Log.d("ScannerEngine", "pauseScanning: Pausing scan job.")
         scanJob?.cancel()
+        scanJob = null
     }
 
     fun stopScanning() {
+        Log.d("ScannerEngine", "stopScanning: Stopping scan job.")
         scanJob?.cancel()
+        scanJob = null
+        // We do NOT clear currentButtonConfigs here, so that resumeScanning (idempotency)
+        // works correctly if called with the same parameters.
         _focusedButtonIndex.value = null
         _focusedRowIndex.value = null
     }

@@ -65,7 +65,7 @@ class RowByRowScanStrategyTest {
         }
 
         // First row
-        advanceTimeBy(1)
+        advanceTimeBy(101)
         assertEquals(0, focusedRow.value)
         assertNull(focusedButton.value) // No button focused in row scanning
         assertEquals("Row 1", spokenCues.last())
@@ -110,7 +110,7 @@ class RowByRowScanStrategyTest {
             )
         }
 
-        advanceTimeBy(1)
+        advanceTimeBy(101)
         assertEquals(0, focusedRow.value) // Row 0
 
         advanceTimeBy(100)
@@ -143,7 +143,7 @@ class RowByRowScanStrategyTest {
             )
         }
 
-        advanceTimeBy(1)
+        advanceTimeBy(101)
         assertEquals("Zeile 1", spokenCues[0]) // Falls back to "Zeile 1"
 
         job.cancel()
@@ -195,7 +195,7 @@ class RowByRowScanStrategyTest {
         }
 
         // First button in row 0 (global index 0)
-        advanceTimeBy(1)
+        advanceTimeBy(101)
         assertEquals(0, focusedButton.value)
         assertEquals("A", spokenCues.last())
 
@@ -236,7 +236,7 @@ class RowByRowScanStrategyTest {
             )
         }
 
-        advanceTimeBy(1)
+        advanceTimeBy(101)
         assertEquals(4, focusedButton.value) // Only button E (global index 4) is active
         assertEquals("E", spokenCues.last())
 
@@ -267,7 +267,7 @@ class RowByRowScanStrategyTest {
             )
         }
 
-        advanceTimeBy(1)
+        advanceTimeBy(101)
         assertEquals("Custom Cue", spokenCues[0])
 
         job.cancel()
@@ -321,7 +321,7 @@ class RowByRowScanStrategyTest {
             )
         }
 
-        advanceTimeBy(1)
+        advanceTimeBy(101)
         assertEquals(0, focusedRow.value) // R1
 
         advanceTimeBy(100)
@@ -356,7 +356,7 @@ class RowByRowScanStrategyTest {
             )
         }
 
-        advanceTimeBy(1)
+        advanceTimeBy(101)
         assertEquals(0, focusedButton.value) // A
 
         advanceTimeBy(100)

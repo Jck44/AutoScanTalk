@@ -20,6 +20,10 @@ class CoreLogicTest {
     @Before
     fun setup() {
         ttsHelper = mockk(relaxed = true)
+        io.mockk.mockkStatic(android.util.Log::class)
+        every { android.util.Log.d(any(), any()) } returns 0
+        every { android.util.Log.e(any(), any(), any()) } returns 0
+        every { android.util.Log.w(any(), any<String>()) } returns 0
     }
 
     @Test
@@ -84,8 +88,8 @@ class CoreLogicTest {
         )
 
         // Give coroutines time to focus the first row
-        // advanceTimeBy(1) is enough to trigger the first step of the launch block
-        testScheduler.advanceTimeBy(1)
+        // advanceTimeBy(110) is enough to trigger the first step of the launch block (including 100ms delay)
+        testScheduler.advanceTimeBy(110)
         
         // Assert: First row is focused, NO button is focused yet
         assertEquals("Row focus should be 0", 0, engine.focusedRowIndex.value)
@@ -95,7 +99,7 @@ class CoreLogicTest {
         engine.selectCurrentRow()
         
         // Give coroutines time to start scanning buttons inside row 0
-        testScheduler.advanceTimeBy(1)
+        testScheduler.advanceTimeBy(110)
         
         // Assert: Row focus is STILL 0 (visually highlighted) while button scanning
         assertEquals("Row focus should remain 0", 0, engine.focusedRowIndex.value)

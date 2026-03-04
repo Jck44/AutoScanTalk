@@ -134,15 +134,21 @@ class PageViewModel @Inject constructor(
         scannerEngine.ttsHelper = ttsHelper
         actionExecutor.ttsHelper = ttsHelper
 
-        // Observe ActionExecutor status
+        // Consolidated scanner trigger: observe both ActionExecutor and current Page
         viewModelScope.launch {
-            actionExecutor.isExecuting.collect { isExecuting ->
-                if (isExecuting) {
-                    stopScanningTemporarily()
-                } else {
-                    resumeScanningIfEnabled()
+            kotlinx.coroutines.flow.combine(
+                actionExecutor.isExecuting,
+                _currentPage
+            ) { isExecuting, page -> isExecuting to page }
+                .collect { (isExecuting, page) ->
+                    if (isExecuting) {
+                        Log.d("PageViewModel", "Scanner Trigger: ActionExecutor is executing. Pausing scan.")
+                        stopScanningTemporarily()
+                    } else if (page != null) {
+                        Log.d("PageViewModel", "Scanner Trigger: Ready to resume on page ${page.id}")
+                        resumeScanningIfEnabled()
+                    }
                 }
-            }
         }
 
         // Observe ActionExecutor events
@@ -289,6 +295,10 @@ class PageViewModel @Inject constructor(
     }
 
     fun resumeScanningIfEnabled() {
+        if (actionExecutor.isExecuting.value) {
+            Log.d("PageViewModel", "resumeScanningIfEnabled: ActionExecutor is busy, skipping scan resume.")
+            return
+        }
         if (settingsRepository.autoStartScanning) {
             val startIndex = if (settingsRepository.resumeScanningFromStart) {
                 0
@@ -315,7 +325,8 @@ class PageViewModel @Inject constructor(
             startIndex = startIndex,
             pattern = page.scanPattern ?: settingsRepository.defaultScanPattern,
             columns = page.columns,
-            rowNames = page.rowNames
+            rowNames = page.rowNames,
+            pageId = page.id
         )
     }
 

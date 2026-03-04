@@ -77,7 +77,7 @@ class RoutedAudioPlayer(
                         .build())
                     .build()
                 
-                val focusResult = audioManager.requestAudioFocus(focusRequest!!)
+                val focusResult = audioManager.requestAudioFocus(focusRequest)
                 Log.d("RoutedAudioPlayer", "AudioFocus requested. Result: $focusResult")
 
                 val mediaPlayer = MediaPlayer().apply {
@@ -88,8 +88,8 @@ class RoutedAudioPlayer(
                         Log.d("RoutedAudioPlayer", "Routing to ${targetDevice.productName} (address: ${targetDevice.address}): Success=$routed")
                     }
                     
-                    if (isCommunicationMode) {
-                        communicationDeviceSet = audioManager.setCommunicationDevice(targetDevice!!)
+                    if (isCommunicationMode && targetDevice != null) {
+                        communicationDeviceSet = audioManager.setCommunicationDevice(targetDevice)
                         Log.d("RoutedAudioPlayer", "setCommunicationDevice: Success=$communicationDeviceSet")
                     }
 
@@ -125,16 +125,16 @@ class RoutedAudioPlayer(
                 }
 
                 activePlayers[mediaPlayer] = true
-                playbackJobs[mediaPlayer] = coroutineContext[Job]!!
+                playbackJobs[mediaPlayer] = coroutineContext[Job]!! // Leaving this as is since Job should be there, but fixing the others.
                 
                 mediaPlayer.prepare()
 
                 // Bluetooth specific logic (Warm-up + Delay)
-                if (targetDevice != null && isBluetoothDevice(targetDevice!!.type)) {
+                if (targetDevice != null && isBluetoothDevice(targetDevice.type)) {
                     val delayMs = settingsRepository.bluetoothDelay
                     Log.d("RoutedAudioPlayer", "Starting Bluetooth warm-up silence + delay: ${delayMs}ms")
                     
-                    playSilenceWarmUp(targetDevice!!)
+                    playSilenceWarmUp(targetDevice)
                     kotlinx.coroutines.delay(delayMs)
                     Log.d("RoutedAudioPlayer", "Bluetooth delay finished, starting playback.")
                 } else {

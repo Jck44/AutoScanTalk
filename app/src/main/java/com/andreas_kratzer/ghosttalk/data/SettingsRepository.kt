@@ -1,12 +1,12 @@
 package com.andreas_kratzer.ghosttalk.data
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import android.annotation.SuppressLint
-import android.util.Log
 
 @SuppressLint("CommitPrefEdits", "ApplySharedPref", "UseKtx")
 class SettingsRepository(context: Context) {
@@ -93,19 +93,6 @@ class SettingsRepository(context: Context) {
         _bluetoothDelayFlow.value = bluetoothDelay
     }
 
-    private val _bluetoothDelayFlow = MutableStateFlow(prefs.getLong(KEY_BLUETOOTH_DELAY, 1500L))
-    val bluetoothDelayFlow: StateFlow<Long> = _bluetoothDelayFlow.asStateFlow()
-
-    var bluetoothDelay: Long
-        get() = prefs.getLong(KEY_BLUETOOTH_DELAY, 1500L).also { 
-            Log.d("SettingsRepository", "get bluetoothDelay: ${it}ms") 
-        }
-        set(value) {
-            Log.d("SettingsRepository", "set bluetoothDelay: ${value}ms")
-            prefs.edit().putLong(KEY_BLUETOOTH_DELAY, value).apply()
-            _bluetoothDelayFlow.value = value
-        }
-
     private val _pageSortOrderFlow = MutableStateFlow(getStringScoped(KEY_PAGE_SORT_ORDER, "MANUAL") ?: "MANUAL")
     val pageSortOrderFlow: StateFlow<String> = _pageSortOrderFlow.asStateFlow()
 
@@ -137,6 +124,7 @@ class SettingsRepository(context: Context) {
         }
 
     private val _showPageIdInLogFlow = MutableStateFlow(getBooleanScoped(KEY_SHOW_PAGE_ID_IN_LOG, false))
+    val showPageIdInLogFlow: StateFlow<Boolean> = _showPageIdInLogFlow.asStateFlow()
 
     var showPageIdInLog: Boolean
         get() = getBooleanScoped(KEY_SHOW_PAGE_ID_IN_LOG, false)
@@ -163,6 +151,16 @@ class SettingsRepository(context: Context) {
         set(value) {
             putLongScoped(KEY_SMART_PREDICTION_DELAY, value)
             _smartPredictionDelayMillisFlow.value = value
+        }
+
+    private val _bluetoothDelayFlow = MutableStateFlow(getLongScoped(KEY_BLUETOOTH_DELAY, 1500L))
+    val bluetoothDelayFlow: StateFlow<Long> = _bluetoothDelayFlow.asStateFlow()
+
+    var bluetoothDelay: Long
+        get() = getLongScoped(KEY_BLUETOOTH_DELAY, 1500L)
+        set(value) {
+            putLongScoped(KEY_BLUETOOTH_DELAY, value)
+            _bluetoothDelayFlow.value = value
         }
 
     private val _isSmartPredictionEnabledFlow = MutableStateFlow(getBooleanScoped(KEY_SMART_PREDICTION_ENABLED, false))
@@ -198,7 +196,7 @@ class SettingsRepository(context: Context) {
     private val _ttsLanguageFlow = MutableStateFlow(getStringScoped(KEY_TTS_LANGUAGE))
     val ttsLanguageFlow: StateFlow<String?> = _ttsLanguageFlow.asStateFlow()
 
-    private val _scanDelayFlow = MutableStateFlow(getLongScoped(KEY_SCAN_DELAY_MILLIS, 1000L))
+    private val _scanDelayFlow = MutableStateFlow(getLongScoped(KEY_SCAN_DELAY_MILLIS, 100L))
     val scanDelayFlow: StateFlow<Long> = _scanDelayFlow.asStateFlow()
 
     var ttsLanguage: String?

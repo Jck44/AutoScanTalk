@@ -36,6 +36,10 @@ class LinearScanStrategy : ScanStrategy {
             .coerceAtLeast(0)
 
         var currentPos = startingPosition
+        
+        // Initial delay to settle race conditions (e.g. page transition triggers)
+        delay(100)
+        
         while (true) {
             for (i in currentPos until activeButtonsWithGlobalIndices.size) {
                 val (globalIndex, buttonConfig) = activeButtonsWithGlobalIndices[i]

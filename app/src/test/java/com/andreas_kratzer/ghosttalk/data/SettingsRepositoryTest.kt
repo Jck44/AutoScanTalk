@@ -26,6 +26,11 @@ class SettingsRepositoryTest {
         mockPrefs = mockk()
         mockEditor = mockk()
 
+        io.mockk.mockkStatic(android.util.Log::class)
+        every { android.util.Log.d(any(), any()) } returns 0
+        every { android.util.Log.w(any(), any<String>()) } returns 0
+        every { android.util.Log.e(any(), any(), any()) } returns 0
+
         every { mockContext.getSharedPreferences("ghosttalk_settings", Context.MODE_PRIVATE) } returns mockPrefs
         every { mockPrefs.edit() } returns mockEditor
         
@@ -43,6 +48,11 @@ class SettingsRepositoryTest {
             val key = args[0] as String
             val default = args[1] as Boolean
             mockedPrefsStore.getOrDefault(key, default.toString())?.toBooleanStrictOrNull() ?: default
+        }
+        every { mockPrefs.getStringSet(any(), any()) } answers {
+            val key = args[0] as String
+            val default = args[1] as Set<String>?
+            mockedPrefsStore[key]?.split(",")?.toSet() ?: default
         }
         
         // Mock putString
@@ -66,6 +76,14 @@ class SettingsRepositoryTest {
             val key = args[0] as String
             val value = args[1] as Long
             mockedPrefsStore[key] = value.toString()
+            mockEditor
+        }
+        
+        // Mock putStringSet
+        every { mockEditor.putStringSet(any(), any()) } answers {
+            val key = args[0] as String
+            val value = args[1] as Set<String>?
+            mockedPrefsStore[key] = value?.joinToString(",")
             mockEditor
         }
         

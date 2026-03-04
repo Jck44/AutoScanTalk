@@ -12,6 +12,8 @@ import com.andreas_kratzer.ghosttalk.domain.ActionLogUseCase
 import com.andreas_kratzer.ghosttalk.domain.CreatePageUseCase
 import com.andreas_kratzer.ghosttalk.domain.GetPagesUseCase
 import com.andreas_kratzer.ghosttalk.domain.PredictNextActionUseCase
+import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
+import com.andreas_kratzer.ghosttalk.data.BookRepository
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.model.Page
@@ -21,18 +23,25 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.setMain
-import org.junit.After
-import org.junit.Assert.assertEquals
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertEquals
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import com.andreas_kratzer.ghosttalk.model.ButtonAction
+import com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction
+import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
+import android.content.Intent
+import android.provider.MediaStore
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class PageViewModelTest {
@@ -48,9 +57,10 @@ class PageViewModelTest {
     private val createPageUseCase = mockk<CreatePageUseCase>(relaxed = true)
     private val frequentActionResolver = mockk<FrequentActionResolver>(relaxed = true)
     private val buttonUsageRepository = mockk<ButtonUsageRepository>(relaxed = true)
-    private lateinit var driveAuthManager: com.andreas_kratzer.ghosttalk.core.cloud.DriveAuthManager
+    private lateinit var googleAuthManager: GoogleAuthManager
     private lateinit var geminiUseCaseFactory: com.andreas_kratzer.ghosttalk.domain.GeminiUseCaseFactory
     private lateinit var ttsHelper: com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
+    private lateinit var bookRepository: BookRepository
     private val predictNextActionUseCase = mockk<PredictNextActionUseCase>(relaxed = true)
     private lateinit var featureGuard: com.andreas_kratzer.ghosttalk.domain.FeatureGuard
     private lateinit var viewModel: PageViewModel
@@ -58,17 +68,32 @@ class PageViewModelTest {
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
+        io.mockk.mockkStatic(android.util.Log::class)
+        every { android.util.Log.d(any(), any()) } returns 0
+        every { android.util.Log.e(any(), any(), any()) } returns 0
+        every { android.util.Log.w(any(), any<String>()) } returns 0
 
         application = mockk(relaxed = true)
         pageRepository = mockk(relaxed = true)
         settingsRepository = mockk(relaxed = true)
         importExportManager = mockk<PageImportExportManager>(relaxed = true)
         getPagesUseCase = mockk<GetPagesUseCase>(relaxed = true)
-        driveAuthManager = mockk(relaxed = true)
+        googleAuthManager = mockk(relaxed = true)
         geminiUseCaseFactory = mockk(relaxed = true)
         ttsHelper = mockk(relaxed = true) {
             every { isReady } returns true
+            every { speakRouted(any(), any(), any(), any()) } answers {
+                // Invoking the onDone callback (the 4th argument)
+                val callback = arg<(() -> Unit)?>(3)
+                callback?.invoke()
+            }
+            every { speak(any(), any(), any()) } answers {
+                // Invoking the onDone callback (the 3rd argument)
+                val callback = arg<(() -> Unit)?>(2)
+                callback?.invoke()
+            }
         }
+        bookRepository = mockk(relaxed = true)
         templateRepository = mockk(relaxed = true) {
             every { getAllTemplates() } returns kotlinx.coroutines.flow.flowOf(emptyList())
         }
@@ -113,11 +138,12 @@ class PageViewModelTest {
             createPageUseCase = createPageUseCase,
             frequentActionResolver = frequentActionResolver,
             buttonUsageRepository = buttonUsageRepository,
-            driveAuthManager = driveAuthManager,
+            googleAuthManager = googleAuthManager,
             templateRepository = templateRepository,
             geminiUseCaseFactory = geminiUseCaseFactory,
             ttsHelper = ttsHelper,
             predictNextActionUseCase = predictNextActionUseCase,
+            bookRepository = bookRepository,
             featureGuard = featureGuard
         )
     }
@@ -148,10 +174,10 @@ class PageViewModelTest {
         
         val button = ButtonConfig(label = "Test", auditoryCue = null, buttonAction = SpeakTextButtonAction("Hey"))
         viewModel.loadPage(Page(id = "p1", bookId = "b1", name = "T", rows = 1, columns = 1, buttonConfigs = listOf(button)))
-        testDispatcher.scheduler.runCurrent()
+        advanceUntilIdle()
         
         viewModel.activateButtonAtIndex(0)
-        testDispatcher.scheduler.runCurrent()
+        advanceUntilIdle()
         verify { actionLogUseCase.formatAndAddEntry(match { it.contains("Hey") }, any()) }
     }
 
@@ -186,10 +212,10 @@ class PageViewModelTest {
         val button = ButtonConfig(label = "Test", auditoryCue = null, buttonAction = SpeakTextButtonAction("Hey"), isActive = true)
         val page = Page(id = "p1", bookId = "b1", name = "T", rows = 1, columns = 1, buttonConfigs = listOf(button))
         viewModel.loadPage(page)
-        testDispatcher.scheduler.runCurrent()
+        advanceUntilIdle()
         
         viewModel.startScanning(0)
-        testDispatcher.scheduler.runCurrent()
+        advanceTimeBy(110)
         
         val focused = viewModel.focusedButtonIndex.value
         viewModel.stopScanning()
@@ -209,7 +235,7 @@ class PageViewModelTest {
         viewModel = createViewModel()
         
         viewModel.loadPage(p1)
-        testDispatcher.scheduler.runCurrent()
+        advanceUntilIdle()
         assertEquals("p1", viewModel.currentPage.value?.id)
         
         // Trigger action via simulating setting a focused index
@@ -227,7 +253,7 @@ class PageViewModelTest {
         
         // Initial load
         viewModel.loadPage(page)
-        testDispatcher.scheduler.runCurrent()
+        advanceUntilIdle()
         
         // Mock scanning active by setting a focus
         viewModel.scannerEngine.setFocusedIndex(0)
@@ -235,7 +261,7 @@ class PageViewModelTest {
         
         // Load same page again
         viewModel.loadPage(page)
-        testDispatcher.scheduler.runCurrent()
+        advanceUntilIdle()
         
         // Verify index is PRESERVED (paused, not stopped)
         assertEquals(0, viewModel.focusedButtonIndex.value)
@@ -249,7 +275,7 @@ class PageViewModelTest {
         
         // Initial load
         viewModel.loadPage(p1)
-        testDispatcher.scheduler.runCurrent()
+        advanceUntilIdle()
         
         // Mock scanning active
         viewModel.scannerEngine.setFocusedIndex(0)
