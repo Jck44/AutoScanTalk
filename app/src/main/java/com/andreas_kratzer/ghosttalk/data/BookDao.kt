@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface BookDao {
-    @Query("SELECT * FROM books ORDER BY createdAt ASC")
+    @Query("SELECT * FROM books ORDER BY updatedAt DESC")
     fun getAllBooks(): Flow<List<Book>>
 
     @Query("SELECT * FROM books WHERE id = :id")
@@ -25,4 +25,7 @@ interface BookDao {
 
     @Delete
     suspend fun deleteBook(book: Book)
+
+    @Query("UPDATE books SET updatedAt = :timestamp WHERE id = :bookId")
+    suspend fun updateLastModified(bookId: String, timestamp: Long = System.currentTimeMillis())
 }

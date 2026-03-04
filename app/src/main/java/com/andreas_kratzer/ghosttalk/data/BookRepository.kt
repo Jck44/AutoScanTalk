@@ -9,4 +9,5 @@ class BookRepository(private val bookDao: BookDao) {
     suspend fun insertBook(book: Book) = bookDao.insertBook(book)
     suspend fun updateBook(book: Book) = bookDao.updateBook(book)
     suspend fun deleteBook(book: Book) = bookDao.deleteBook(book)
+    suspend fun updateLastModified(bookId: String) = bookDao.updateLastModified(bookId)
 }

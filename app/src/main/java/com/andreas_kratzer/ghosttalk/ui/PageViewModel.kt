@@ -63,6 +63,7 @@ class PageViewModel @Inject constructor(
     geminiUseCaseFactory: GeminiUseCaseFactory,
     private val ttsHelper: TextToSpeechHelper,
     private val predictNextActionUseCase: PredictNextActionUseCase,
+    private val bookRepository: com.andreas_kratzer.ghosttalk.data.BookRepository,
     val featureGuard: FeatureGuard
 ) : AndroidViewModel(application) {
 
@@ -403,6 +404,7 @@ class PageViewModel @Inject constructor(
     fun createNewPage(name: String, rows: Int, columns: Int, bookId: String, templateId: String? = null, onCreated: (String) -> Unit) {
         viewModelScope.launch {
             val generatedId = createPageUseCase.execute(name, rows, columns, bookId, _allPages.value, templateId)
+            bookRepository.updateLastModified(bookId)
             onCreated(generatedId)
         }
     }
@@ -415,6 +417,7 @@ class PageViewModel @Inject constructor(
                 updatedConfigs[index] = newConfig
                 val updatedPage = page.copy(buttonConfigs = updatedConfigs)
                 pageRepository.updatePage(updatedPage)
+                bookRepository.updateLastModified(page.bookId)
                 
                 if (_currentPage.value?.id == pageId) {
                     _currentPage.value = updatedPage
@@ -433,6 +436,7 @@ class PageViewModel @Inject constructor(
                     rowNames = newRowNames
                 )
                 pageRepository.updatePage(updatedPage)
+                bookRepository.updateLastModified(page.bookId)
                 
                 if (_currentPage.value?.id == pageId) {
                     _currentPage.value = updatedPage
@@ -453,6 +457,7 @@ class PageViewModel @Inject constructor(
                 
                 val updatedPage = page.copy(rowNames = updatedNames)
                 pageRepository.updatePage(updatedPage)
+                bookRepository.updateLastModified(page.bookId)
                 
                 if (_currentPage.value?.id == pageId) {
                     _currentPage.value = updatedPage
@@ -464,6 +469,7 @@ class PageViewModel @Inject constructor(
     fun deletePage(page: Page) {
         viewModelScope.launch {
             pageRepository.deletePage(page)
+            bookRepository.updateLastModified(page.bookId)
         }
     }
 
@@ -481,6 +487,7 @@ class PageViewModel @Inject constructor(
                     pageRepository.updatePage(page.copy(orderIndex = index))
                 }
             }
+            _activeBookId.value?.let { bookRepository.updateLastModified(it) }
             // Ensure we are in MANUAL mode if user reorders
             settingsRepository.pageSortOrder = SortOrder.MANUAL.name
         }

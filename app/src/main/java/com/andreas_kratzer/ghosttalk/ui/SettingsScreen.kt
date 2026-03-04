@@ -630,6 +630,7 @@ fun TestSettings(
 @Composable
 fun GoogleAccountSettings(settingsViewModel: SettingsViewModel) {
     val userEmail by settingsViewModel.userEmail.collectAsState()
+    val signInErrorMessage by settingsViewModel.signInErrorMessage.collectAsState()
     val context = androidx.compose.ui.platform.LocalContext.current
 
     PreferenceCategory(stringResource(R.string.settings_category_google_account)) {
@@ -659,6 +660,15 @@ fun GoogleAccountSettings(settingsViewModel: SettingsViewModel) {
             if (userEmail == null) {
                 Button(onClick = { settingsViewModel.signIn(context) }) {
                     Text(stringResource(R.string.settings_google_account_sign_in))
+                }
+                
+                signInErrorMessage?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
                 }
             } else {
                 OutlinedButton(onClick = { settingsViewModel.signOut() }) {

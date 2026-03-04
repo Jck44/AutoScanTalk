@@ -49,14 +49,15 @@ class BookViewModel @Inject constructor(
 
 
     fun createNewBook(name: String) {
-        val newBook = Book(id = UUID.randomUUID().toString(), name = name)
+        val now = System.currentTimeMillis()
+        val newBook = Book(id = UUID.randomUUID().toString(), name = name, createdAt = now, updatedAt = now)
         viewModelScope.launch(Dispatchers.IO) {
             bookRepository.insertBook(newBook)
         }
     }
 
     fun updateBookName(book: Book, newName: String) {
-        val updatedBook = book.copy(name = newName)
+        val updatedBook = book.copy(name = newName, updatedAt = System.currentTimeMillis())
         viewModelScope.launch(Dispatchers.IO) {
             bookRepository.updateBook(updatedBook)
         }

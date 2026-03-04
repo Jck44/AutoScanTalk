@@ -145,6 +145,9 @@ class SettingsViewModel @Inject constructor(
     private val _authIntentFlow = MutableSharedFlow<Intent>()
     val authIntentFlow = _authIntentFlow.asSharedFlow()
 
+    private val _signInErrorMessage = MutableStateFlow<String?>(null)
+    val signInErrorMessage: StateFlow<String?> = _signInErrorMessage.asStateFlow()
+
     init {
         refresh()
         
@@ -442,12 +445,14 @@ class SettingsViewModel @Inject constructor(
         }
         
         viewModelScope.launch {
+            _signInErrorMessage.value = null
             android.widget.Toast.makeText(context, "Anmeldung wird gestartet...", android.widget.Toast.LENGTH_SHORT).show()
             val result = driveAuthManager.signIn(activity)
             if (result) {
                 android.widget.Toast.makeText(context, "Anmeldung erfolgreich!", android.widget.Toast.LENGTH_SHORT).show()
             } else {
-                android.widget.Toast.makeText(context, "Anmeldung fehlgeschlagen. Bitte prüfe, ob ein Google-Konto auf dem Gerät angemeldet ist und die Client ID korrekt konfiguriert wurde.", android.widget.Toast.LENGTH_LONG).show()
+                _signInErrorMessage.value = "Anmeldung fehlgeschlagen. Bitte prüfe die Internetverbindung und ob die App-Signatur (SHA-1) in der Google Cloud Console korrekt hinterlegt ist. Siehe Logcat (DriveAuthManager) für Details."
+                android.widget.Toast.makeText(context, "Anmeldung fehlgeschlagen.", android.widget.Toast.LENGTH_LONG).show()
             }
         }
     }

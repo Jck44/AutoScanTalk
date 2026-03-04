@@ -84,7 +84,7 @@ fun BookListScreen(
                 val dateFormat = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
                 GhostTalkCard(
                     title = book.name,
-                    subtitle = stringResource(R.string.book_created_label, dateFormat.format(Date(book.createdAt))),
+                    subtitle = stringResource(R.string.book_last_modified_label, dateFormat.format(Date(book.updatedAt))),
                     icon = Icons.Default.Edit, // Books usually don't have a specific icon, but we can use Edit or a custom one
                     onClick = { onBookSelected(book.id) },
                     trailingAction = {

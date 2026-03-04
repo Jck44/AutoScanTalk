@@ -10,6 +10,7 @@ import androidx.credentials.GetCredentialResponse
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.credentials.exceptions.NoCredentialException
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
 import com.google.api.services.drive.DriveScopes
@@ -43,14 +44,13 @@ class DriveAuthManager @javax.inject.Inject constructor(
                 Log.w(TAG, "Using placeholder Server Client ID! This will likely fail.")
             }
 
-            val googleIdOption: GetGoogleIdOption = GetGoogleIdOption.Builder()
-                .setFilterByAuthorizedAccounts(false)
-                .setServerClientId(serverClientId)
-                .setAutoSelectEnabled(false)
+            Log.d(TAG, "App Signature (SHA-1): ${getAppSignature(appContext)}")
+
+            val signInWithGoogleOption = GetSignInWithGoogleOption.Builder(serverClientId)
                 .build()
 
             val request = GetCredentialRequest.Builder()
-                .addCredentialOption(googleIdOption)
+                .addCredentialOption(signInWithGoogleOption)
                 .build()
 
             Log.d(TAG, "Calling getCredential...")
@@ -153,5 +153,29 @@ class DriveAuthManager @javax.inject.Inject constructor(
         }
         
         return credential
+    }
+
+    private fun getAppSignature(context: Context): String {
+        return try {
+            val packageInfo = context.packageManager.getPackageInfo(
+                context.packageName,
+                android.content.pm.PackageManager.GET_SIGNATURES or android.content.pm.PackageManager.GET_SIGNING_CERTIFICATES
+            )
+            val signatures = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                packageInfo.signingInfo?.apkContentsSigners
+            } else {
+                @Suppress("DEPRECATION")
+                packageInfo.signatures
+            }
+            
+            val md = java.security.MessageDigest.getInstance("SHA-1")
+            val signature = signatures?.firstOrNull()?.toByteArray()
+            if (signature != null) {
+                val digest = md.digest(signature)
+                digest.joinToString(":") { "%02X".format(it) }
+            } else "No signature found"
+        } catch (e: Exception) {
+            "Error getting signature: ${e.message}"
+        }
     }
 }
