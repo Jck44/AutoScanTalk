@@ -133,7 +133,7 @@ class GeminiUseCase(
         var currentJson = createInitialRequest(prompt)
         var responseJson: String
         
-        for (_ in 1..5) { // Increased turns for more tool interaction
+        for (turn in 1..5) { // Increased turns for more tool interaction
             responseJson = callGeminiRest(token, currentJson)
             val root = JSONObject(responseJson)
             val candidate = root.getJSONArray("candidates").getJSONObject(0)

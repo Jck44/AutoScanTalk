@@ -58,9 +58,7 @@ fun TemplateScreen(
     val experimentalSorting by templateViewModel.experimentalManualSorting.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
     var templateToDelete by remember { mutableStateOf<PageTemplate?>(null) }
-    val reorderState = rememberReorderableState { from, to ->
-        templateViewModel.reorderTemplates(from, to)
-    }
+    val reorderState = rememberReorderableState()
     val listState = androidx.compose.foundation.lazy.rememberLazyListState()
 
     Scaffold(

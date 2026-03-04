@@ -58,6 +58,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.model.Page
+import com.andreas_kratzer.ghosttalk.model.SortOrder
+import com.andreas_kratzer.ghosttalk.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.ui.components.GhostTalkCard
 import com.andreas_kratzer.ghosttalk.ui.components.rememberReorderableState
 import com.andreas_kratzer.ghosttalk.ui.components.reorderableItem
@@ -140,9 +142,7 @@ fun PageListScreen(
         }
     }
 
-    val reorderState = rememberReorderableState { from, to ->
-        pageViewModel.reorderPages(from, to)
-    }
+    val reorderState = rememberReorderableState()
     val gridState = androidx.compose.foundation.lazy.grid.rememberLazyGridState()
 
     Scaffold(
@@ -171,14 +171,14 @@ fun PageListScreen(
                         )
                     }
                     DropdownMenu(expanded = showSortMenu, onDismissRequest = { showSortMenu = false }) {
-                        val orders = com.andreas_kratzer.ghosttalk.model.SortOrder.entries
-                        orders.filter { it != com.andreas_kratzer.ghosttalk.model.SortOrder.MANUAL || experimentalSorting }.forEach { order ->
+                        val orders = SortOrder.entries
+                        orders.filter { it != SortOrder.MANUAL || experimentalSorting }.forEach { order ->
                             val label = when(order) {
-                                com.andreas_kratzer.ghosttalk.model.SortOrder.MANUAL -> "Manuell"
-                                com.andreas_kratzer.ghosttalk.model.SortOrder.NEWEST -> "Neueste zuerst"
-                                com.andreas_kratzer.ghosttalk.model.SortOrder.OLDEST -> "Älteste zuerst"
-                                com.andreas_kratzer.ghosttalk.model.SortOrder.A_Z -> "A -> Z"
-                                com.andreas_kratzer.ghosttalk.model.SortOrder.Z_A -> "Z -> A"
+                                SortOrder.MANUAL -> "Manuell"
+                                SortOrder.NEWEST -> "Neueste zuerst"
+                                SortOrder.OLDEST -> "Älteste zuerst"
+                                SortOrder.A_Z -> "A -> Z"
+                                SortOrder.Z_A -> "Z -> A"
                             }
                             DropdownMenuItem(
                                 text = { Text(label) },
@@ -439,12 +439,12 @@ fun PageListScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddPageDialog(
-    templates: List<com.andreas_kratzer.ghosttalk.model.PageTemplate>,
+    templates: List<PageTemplate>,
     onDismiss: () -> Unit,
     onConfirm: (name: String, rows: Int, columns: Int, templateId: String?) -> Unit
 ) {
     var name by remember { mutableStateOf("") }
-    var selectedTemplate by remember { mutableStateOf<com.andreas_kratzer.ghosttalk.model.PageTemplate?>(null) }
+    var selectedTemplate by remember { mutableStateOf<PageTemplate?>(null) }
     var rowsStr by remember { mutableStateOf("4") }
     var columnsStr by remember { mutableStateOf("4") }
     var expanded by remember { mutableStateOf(false) }

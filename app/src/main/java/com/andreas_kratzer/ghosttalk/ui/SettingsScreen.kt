@@ -19,6 +19,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import com.andreas_kratzer.ghosttalk.model.Page
+import com.andreas_kratzer.ghosttalk.model.AudioOutputDevice
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -327,7 +329,7 @@ fun SettingsToggleItem(
 
 @Composable
 fun GeneralSettings(
-    allPages: List<com.andreas_kratzer.ghosttalk.model.Page>,
+    allPages: List<Page>,
     defaultStartPageId: String?,
     defaultScanPattern: String,
     settingsViewModel: SettingsViewModel
@@ -465,7 +467,7 @@ fun VoiceSettings(
 
 @Composable
 fun AudioOutputSettings(
-    availableAudioDevices: List<com.andreas_kratzer.ghosttalk.model.AudioOutputDevice>,
+    availableAudioDevices: List<AudioOutputDevice>,
     selectedTtsAudioDeviceAddress: String?,
     selectedCuesAudioDeviceAddress: String?,
     settingsViewModel: SettingsViewModel

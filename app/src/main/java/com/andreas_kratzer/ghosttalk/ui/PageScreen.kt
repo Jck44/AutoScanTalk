@@ -21,6 +21,8 @@ import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import com.andreas_kratzer.ghosttalk.model.Page
+import com.andreas_kratzer.ghosttalk.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -159,12 +161,12 @@ fun ButtonGrid(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        itemsIndexed(page.buttonConfigs) { globalIndex: Int, buttonConfig: com.andreas_kratzer.ghosttalk.model.ButtonConfig? ->
+        itemsIndexed(page.buttonConfigs) { globalIndex: Int, buttonConfig: ButtonConfig? ->
             val isFocused = globalIndex == focusedButtonIndex
             val isRowFocused = focusedRowIndex != null && (globalIndex / page.columns) == focusedRowIndex
 
             if (buttonConfig != null && buttonConfig.isActive) {
-                val overrideLabel = (buttonConfig.buttonAction as? com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction)?.let { smartAction ->
+                val overrideLabel = (buttonConfig.buttonAction as? SmartPredictionButtonAction)?.let { smartAction ->
                     smartPredictions.getOrNull(smartAction.rank - 1)
                 }
 

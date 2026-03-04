@@ -26,6 +26,9 @@ import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.model.SortOrder
+import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
+import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
+import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -197,7 +200,7 @@ class PageViewModel @Inject constructor(
                     if (page != null) {
                         // Check if at least one SMART_PREDICTION button exists
                         val hasPredictor = page.buttonConfigs.any { 
-                            (it?.buttonAction as? com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction) != null 
+                        (it?.buttonAction as? SmartPredictionButtonAction) != null 
                         }
                         
                         if (hasPredictor) {
@@ -329,7 +332,7 @@ class PageViewModel @Inject constructor(
         
         scannerEngine.setFocusedIndex(index)
         
-        val smartAction = buttonConfig.buttonAction as? com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
+        val smartAction = buttonConfig.buttonAction as? SmartPredictionButtonAction
         if (smartAction != null) {
             val prediction = _smartPredictions.value.getOrNull(smartAction.rank - 1)
             if (prediction != null) {
@@ -352,7 +355,7 @@ class PageViewModel @Inject constructor(
                     ButtonConfig(
                         label = targetPage.name,
                         auditoryCue = null,
-                        buttonAction = com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction(targetPage.id)
+                        buttonAction = NavigateToPageButtonAction(targetPage.id)
                     ),
                     bookId = _activeBookId.value
                 )
@@ -362,7 +365,7 @@ class PageViewModel @Inject constructor(
                     ButtonConfig(
                         label = prediction,
                         auditoryCue = null,
-                        buttonAction = com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction(prediction)
+                        buttonAction = SpeakTextButtonAction(prediction)
                     ),
                     bookId = _activeBookId.value
                 )

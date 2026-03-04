@@ -17,9 +17,7 @@ import androidx.compose.ui.zIndex
 /**
  * A simplified reorderable state manager for LazyLists and LazyGrids.
  */
-class ReorderableState(
-    onMove: (Int, Int) -> Unit
-) {
+class ReorderableState {
     var draggedIndex by mutableStateOf<Int?>(null)
     var dragOffset by mutableStateOf(Offset.Zero)
 
@@ -83,8 +81,8 @@ class ReorderableState(
 }
 
 @Composable
-fun rememberReorderableState(onMove: (Int, Int) -> Unit): ReorderableState {
-    return remember { ReorderableState(onMove) }
+fun rememberReorderableState(): ReorderableState {
+    return remember { ReorderableState() }
 }
 
 /**
