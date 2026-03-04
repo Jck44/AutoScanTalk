@@ -1,23 +1,12 @@
 package com.andreas_kratzer.ghosttalk.core.actions
 
-import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.domain.GeminiUseCase
-import com.andreas_kratzer.ghosttalk.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction
-import com.andreas_kratzer.ghosttalk.model.GeminiButtonAction
-import com.andreas_kratzer.ghosttalk.model.GeminiSearchButtonAction
-import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
-import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
-import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
-import com.andreas_kratzer.ghosttalk.model.ChangeVolumeButtonAction
 import com.andreas_kratzer.ghosttalk.model.ButtonAction
-import com.andreas_kratzer.ghosttalk.core.actions.*
-import com.andreas_kratzer.ghosttalk.core.util.Logger
+import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
-import com.google.android.gms.auth.UserRecoverableAuthException
-import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,7 +16,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class ActionExecutor(
+class ActionExecutor internal constructor(
     private val scope: CoroutineScope,
     private val settingsRepository: SettingsRepository,
     private val logger: Logger,
@@ -64,10 +53,6 @@ class ActionExecutor(
         )
     }
 
-    // Only for unit tests
-    fun setExecutingStateForTest(isExecuting: Boolean) {
-        _isExecuting.value = isExecuting
-    }
 
     fun executeButtonAction(buttonConfig: ButtonConfig, bookId: String? = null) {
         val currentTime = timeProvider()
@@ -126,6 +111,9 @@ class ActionExecutor(
 
     private suspend fun emitEvent(event: ExecutionEvent) {
         _events.emit(event)
+    }
+    internal fun setExecutingStateForTest(executing: Boolean) {
+        _isExecuting.value = executing
     }
 }
 

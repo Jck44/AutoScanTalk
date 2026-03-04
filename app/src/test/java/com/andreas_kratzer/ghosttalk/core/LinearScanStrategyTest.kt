@@ -1,4 +1,4 @@
-package com.andreas_kratzer.ghosttalk.core
+import com.andreas_kratzer.ghosttalk.core.scanning.LinearScanStrategy
 
 import com.andreas_kratzer.ghosttalk.model.AuditoryCue
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
@@ -55,7 +55,7 @@ class LinearScanStrategyTest {
                 startIndex = 0,
                 focusedButtonIndex = focusedButton,
                 focusedRowIndex = focusedRow,
-                onSpeakCue = { spokenCues.add(it) },
+                onSpeakCue = { cue: String -> spokenCues.add(cue) },
                 delayMillis = 100,
                 featureGuard = featureGuard
             )
@@ -106,7 +106,7 @@ class LinearScanStrategyTest {
                 startIndex = 0,
                 focusedButtonIndex = focusedButton,
                 focusedRowIndex = focusedRow,
-                onSpeakCue = { spokenCues.add(it) },
+                onSpeakCue = { cue: String -> spokenCues.add(cue) },
                 delayMillis = 100,
                 featureGuard = featureGuard
             )
@@ -142,7 +142,7 @@ class LinearScanStrategyTest {
                 startIndex = 0,
                 focusedButtonIndex = focusedButton,
                 focusedRowIndex = focusedRow,
-                onSpeakCue = { spokenCues.add(it) },
+                onSpeakCue = { cue: String -> spokenCues.add(cue) },
                 delayMillis = 100,
                 featureGuard = featureGuard
             )
@@ -170,10 +170,10 @@ class LinearScanStrategyTest {
                 buttonConfigs = configs,
                 columns = 3,
                 rowNames = emptyList(),
-                startIndex = 1, // Start from button B
+                startIndex = 1,
                 focusedButtonIndex = focusedButton,
                 focusedRowIndex = focusedRow,
-                onSpeakCue = { spokenCues.add(it) },
+                onSpeakCue = { cue: String -> spokenCues.add(cue) },
                 delayMillis = 100,
                 featureGuard = featureGuard
             )
@@ -200,7 +200,7 @@ class LinearScanStrategyTest {
             columns = 2,
             rowNames = emptyList(),
             startIndex = 0,
-            focusedButtonIndex = focusedButton,
+            focusedButtonIndex = MutableStateFlow<Int?>(null),
             focusedRowIndex = focusedRow,
             onSpeakCue = { },
             delayMillis = 100,
@@ -239,7 +239,7 @@ class LinearScanStrategyTest {
                 startIndex = 0,
                 focusedButtonIndex = focusedButton,
                 focusedRowIndex = focusedRow,
-                onSpeakCue = { spokenCues.add(it) },
+                onSpeakCue = { cue: String -> spokenCues.add(cue) },
                 delayMillis = 100,
                 featureGuard = featureGuard
             )

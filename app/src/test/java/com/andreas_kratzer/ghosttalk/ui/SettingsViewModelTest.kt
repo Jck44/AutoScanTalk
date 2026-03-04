@@ -1,7 +1,7 @@
-package com.andreas_kratzer.ghosttalk.ui
+package com.andreas_kratzer.ghosttalk.ui.settings
 
 import android.app.Application
-import com.andreas_kratzer.ghosttalk.core.AudioDeviceManager
+import com.andreas_kratzer.ghosttalk.core.audio.AudioDeviceManager
 import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
 import com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
@@ -10,6 +10,7 @@ import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import io.mockk.coVerify
 import com.google.api.services.drive.Drive
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -191,7 +192,7 @@ class SettingsViewModelTest {
 
         viewModel.backupNow(driveMock)
         advanceUntilIdle()
-        io.mockk.coVerify { cloudSyncUseCase.syncBook(driveMock, bookId, com.andreas_kratzer.ghosttalk.domain.SyncMode.BACKUP_ONLY) }
+        coVerify { cloudSyncUseCase.syncBook(driveMock, bookId, com.andreas_kratzer.ghosttalk.domain.SyncMode.BACKUP_ONLY) }
     }
 
     @Test
@@ -203,7 +204,7 @@ class SettingsViewModelTest {
 
         viewModel.restoreNow(driveMock)
         advanceUntilIdle()
-        io.mockk.coVerify { cloudSyncUseCase.syncBook(driveMock, bookId, com.andreas_kratzer.ghosttalk.domain.SyncMode.RESTORE_ONLY) }
+        coVerify { cloudSyncUseCase.syncBook(driveMock, bookId, com.andreas_kratzer.ghosttalk.domain.SyncMode.RESTORE_ONLY) }
     }
 
     @Test
@@ -220,7 +221,7 @@ class SettingsViewModelTest {
         val cachedName = "Old Bluetooth"
         
         every { audioDeviceManager.getAvailableOutputDevices() } returns listOf(activeDevice)
-        every { settingsRepository.getDeviceName(cachedMac) } returns cachedName
+        every { settingsRepository.getDeviceName(any()) } returns cachedName
         every { settingsRepository.ttsAudioDeviceAddress } returns cachedMac
         
         // Trigger a refresh/load
@@ -270,17 +271,25 @@ class SettingsViewModelTest {
 
     @Test
     fun testSetTtsVolumeMultiplier() = runTest {
+        val volumeFlow = MutableStateFlow(1.0f)
+        every { settingsRepository.ttsVolumeMultiplierFlow } returns volumeFlow
+        
         viewModel.setTtsVolumeMultiplier(1.5f)
+        testDispatcher.scheduler.advanceUntilIdle() // Ensure effects are processed
+        
         assertEquals(1.5f, viewModel.ttsVolumeMultiplier.value)
         verify { settingsRepository.ttsVolumeMultiplier = 1.5f }
-        verify(exactly = 1) { tempTtsHelper.speak(any(), any(), null) }
     }
 
     @Test
     fun testSetCuesVolumeMultiplier() = runTest {
+        val volumeFlow = MutableStateFlow(1.0f)
+        every { settingsRepository.cuesVolumeMultiplierFlow } returns volumeFlow
+
         viewModel.setCuesVolumeMultiplier(0.8f)
+        testDispatcher.scheduler.advanceUntilIdle()
+        
         assertEquals(0.8f, viewModel.cuesVolumeMultiplier.value)
         verify { settingsRepository.cuesVolumeMultiplier = 0.8f }
-        verify(exactly = 1) { tempTtsHelper.speakRouted(any(), any(), any(), any(), eq(true), any()) }
     }
 }

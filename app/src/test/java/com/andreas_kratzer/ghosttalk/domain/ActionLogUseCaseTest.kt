@@ -13,7 +13,7 @@ import org.junit.Test
 class ActionLogUseCaseTest {
 
     private val settingsRepository: SettingsRepository = mockk(relaxed = true)
-    private val logger: Logger = TestLogger
+    private val logger: Logger = TestLogger()
     private val useCase = ActionLogUseCase(settingsRepository, logger)
 
     @Test

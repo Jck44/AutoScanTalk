@@ -1,4 +1,4 @@
-package com.andreas_kratzer.ghosttalk.core
+package com.andreas_kratzer.ghosttalk.core.actions
 
 import com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
@@ -13,7 +13,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Test
-import java.util.UUID
 
 class FrequentActionResolverTest {
 
@@ -23,9 +22,9 @@ class FrequentActionResolverTest {
     @Test
     fun `resolve returns original page if no FrequentActionButtons`() = runTest {
         val originalPage = Page(
-            id = "p1", bookId = "b1", name = "Test",
+            id = "p1", bookId = "b1", name = "Test", rows = 1, columns = 1,
             buttonConfigs = listOf(
-                ButtonConfig(label = "Static", buttonAction = SpeakTextButtonAction("Static"), auditoryCue = null)
+                ButtonConfig(label = "Static", buttonAction = SpeakTextButtonAction("Static"), auditoryCue = null, isActive = true)
             )
         )
 

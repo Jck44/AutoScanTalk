@@ -1,16 +1,18 @@
-package com.andreas_kratzer.ghosttalk.core
 
+
+import com.andreas_kratzer.ghosttalk.core.scanning.RowByRowScanStrategy
+import com.andreas_kratzer.ghosttalk.domain.FeatureGuard
 import com.andreas_kratzer.ghosttalk.model.AuditoryCue
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
+import io.mockk.every
+import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
-import com.andreas_kratzer.ghosttalk.domain.FeatureGuard
-import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
-import io.mockk.*
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Before
@@ -58,7 +60,7 @@ class RowByRowScanStrategyTest {
                 startIndex = 0,
                 focusedButtonIndex = focusedButton,
                 focusedRowIndex = focusedRow,
-                onSpeakCue = { spokenCues.add(it) },
+                onSpeakCue = { cue: String -> spokenCues.add(cue) },
                 delayMillis = 100,
                 featureGuard = featureGuard
             )
@@ -104,7 +106,7 @@ class RowByRowScanStrategyTest {
                 startIndex = 0,
                 focusedButtonIndex = focusedButton,
                 focusedRowIndex = focusedRow,
-                onSpeakCue = { spokenCues.add(it) },
+                onSpeakCue = { cue: String -> spokenCues.add(cue) },
                 delayMillis = 100,
                 featureGuard = featureGuard
             )
@@ -137,7 +139,7 @@ class RowByRowScanStrategyTest {
                 startIndex = 0,
                 focusedButtonIndex = focusedButton,
                 focusedRowIndex = focusedRow,
-                onSpeakCue = { spokenCues.add(it) },
+                onSpeakCue = { cue: String -> spokenCues.add(cue) },
                 delayMillis = 100,
                 featureGuard = featureGuard
             )
@@ -176,7 +178,7 @@ class RowByRowScanStrategyTest {
     @Test
     fun `executeButtonScanInRow scans active buttons within row`() = runTest {
         val focusedButton = MutableStateFlow<Int?>(null)
-        val focusedRow = MutableStateFlow<Int?>(0)
+        MutableStateFlow<Int?>(0)
         val spokenCues = mutableListOf<String>()
 
         // 2 rows x 2 columns
@@ -188,7 +190,7 @@ class RowByRowScanStrategyTest {
                 columns = 2,
                 rowIndex = 0, // Scan row 0
                 focusedButtonIndex = focusedButton,
-                onSpeakCue = { spokenCues.add(it) },
+                onSpeakCue = { cue: String -> spokenCues.add(cue) },
                 delayMillis = 100,
                 featureGuard = featureGuard
             )
@@ -229,7 +231,7 @@ class RowByRowScanStrategyTest {
                 columns = 3,
                 rowIndex = 1,
                 focusedButtonIndex = focusedButton,
-                onSpeakCue = { spokenCues.add(it) },
+                onSpeakCue = { cue: String -> spokenCues.add(cue) },
                 delayMillis = 100,
                 featureGuard = featureGuard
             )
@@ -249,7 +251,7 @@ class RowByRowScanStrategyTest {
     @Test
     fun `executeButtonScanInRow uses auditory cue when available`() = runTest {
         val focusedButton = MutableStateFlow<Int?>(null)
-        val focusedRow = MutableStateFlow<Int?>(0)
+        MutableStateFlow<Int?>(0)
         val spokenCues = mutableListOf<String>()
 
         val configs = listOf(btn("b1", "Label", cueText = "Custom Cue"))
@@ -260,7 +262,7 @@ class RowByRowScanStrategyTest {
                 columns = 1,
                 rowIndex = 0,
                 focusedButtonIndex = focusedButton,
-                onSpeakCue = { spokenCues.add(it) },
+                onSpeakCue = { cue: String -> spokenCues.add(cue) },
                 delayMillis = 100,
                 featureGuard = featureGuard
             )
@@ -275,7 +277,7 @@ class RowByRowScanStrategyTest {
     @Test
     fun `executeButtonScanInRow returns immediately when no active buttons in row`() = runTest {
         val focusedButton = MutableStateFlow<Int?>(null)
-        val focusedRow = MutableStateFlow<Int?>(0)
+        MutableStateFlow<Int?>(0)
 
         val configs: List<ButtonConfig?> = listOf(null, null)
 
@@ -312,9 +314,9 @@ class RowByRowScanStrategyTest {
                 columns = 2,
                 rowNames = listOf("R1", "R2"),
                 startIndex = 0,
-                focusedButtonIndex = MutableStateFlow(null),
+                focusedButtonIndex = MutableStateFlow<Int?>(null),
                 focusedRowIndex = focusedRow,
-                onSpeakCue = { spokenCues.add(it) },
+                onSpeakCue = { cue: String -> spokenCues.add(cue) },
                 delayMillis = 100,
                 featureGuard = featureGuard
             )
@@ -349,7 +351,7 @@ class RowByRowScanStrategyTest {
                 columns = 3,
                 rowIndex = 0,
                 focusedButtonIndex = focusedButton,
-                onSpeakCue = { spokenCues.add(it) },
+                onSpeakCue = { cue: String -> spokenCues.add(cue) },
                 delayMillis = 100,
                 featureGuard = featureGuard
             )

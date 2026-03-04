@@ -1,9 +1,11 @@
-package com.andreas_kratzer.ghosttalk.ui
+package com.andreas_kratzer.ghosttalk.ui.pages
 
 import android.app.Application
-import com.andreas_kratzer.ghosttalk.core.FrequentActionResolver
-import com.andreas_kratzer.ghosttalk.core.PageImportExportManager
-import com.andreas_kratzer.ghosttalk.core.util.TestLogger
+import com.andreas_kratzer.ghosttalk.core.scanning.ScannerEngine
+import com.andreas_kratzer.ghosttalk.core.actions.FrequentActionResolver
+import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
+import com.andreas_kratzer.ghosttalk.core.pages.PageImportExportManager
+import com.andreas_kratzer.ghosttalk.data.BookRepository
 import com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.data.PageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
@@ -12,8 +14,6 @@ import com.andreas_kratzer.ghosttalk.domain.ActionLogUseCase
 import com.andreas_kratzer.ghosttalk.domain.CreatePageUseCase
 import com.andreas_kratzer.ghosttalk.domain.GetPagesUseCase
 import com.andreas_kratzer.ghosttalk.domain.PredictNextActionUseCase
-import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
-import com.andreas_kratzer.ghosttalk.data.BookRepository
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.model.Page
@@ -23,21 +23,20 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.setMain
 import kotlinx.coroutines.test.resetMain
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
-import org.junit.Assert.assertTrue
-import org.junit.Assert.assertEquals
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
 import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import kotlinx.coroutines.flow.combine
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class PageViewModelTest {
@@ -58,6 +57,15 @@ class PageViewModelTest {
     private lateinit var ttsHelper: com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
     private lateinit var bookRepository: BookRepository
     private val predictNextActionUseCase = mockk<PredictNextActionUseCase>(relaxed = true)
+    private val scannerEngine = mockk<ScannerEngine>(relaxed = true)
+    private val importPageUseCase = mockk<com.andreas_kratzer.ghosttalk.domain.ImportPageUseCase>(relaxed = true)
+    private val exportPageUseCase = mockk<com.andreas_kratzer.ghosttalk.domain.ExportPageUseCase>(relaxed = true)
+    private val deletePageUseCase = mockk<com.andreas_kratzer.ghosttalk.domain.DeletePageUseCase>(relaxed = true)
+    private val reorderPagesUseCase = mockk<com.andreas_kratzer.ghosttalk.domain.ReorderPagesUseCase>(relaxed = true)
+    private val updateButtonConfigUseCase = mockk<com.andreas_kratzer.ghosttalk.domain.UpdateButtonConfigUseCase>(relaxed = true)
+    private val updatePageSettingsUseCase = mockk<com.andreas_kratzer.ghosttalk.domain.UpdatePageSettingsUseCase>(relaxed = true)
+    private val updateRowNameUseCase = mockk<com.andreas_kratzer.ghosttalk.domain.UpdateRowNameUseCase>(relaxed = true)
+    private val logger = com.andreas_kratzer.ghosttalk.core.util.TestLogger()
     private lateinit var featureGuard: com.andreas_kratzer.ghosttalk.domain.FeatureGuard
     private lateinit var viewModel: PageViewModel
 
@@ -110,9 +118,23 @@ class PageViewModelTest {
         every { settingsRepository.ttsVolumeMultiplierFlow } returns MutableStateFlow<Float>(1.0f)
         every { settingsRepository.cuesVolumeMultiplierFlow } returns MutableStateFlow<Float>(1.0f)
         
-        every { getPagesUseCase.execute(any()) } returns MutableStateFlow(emptyList())
-        every { actionLogUseCase.loadSavedLogs() } returns emptyList()
-        coEvery { frequentActionResolver.resolve(any(), any()) } answers { firstArg() }
+        every { getPagesUseCase.execute(any()) } returns MutableStateFlow<List<Page>>(emptyList())
+        every { actionLogUseCase.loadSavedLogs() } returns emptyList<String>()
+        val engineFocusFlow = MutableStateFlow<Int?>(null)
+        val engineRowFlow = MutableStateFlow<Int?>(null)
+        every { scannerEngine.focusedButtonIndex } returns engineFocusFlow
+        every { scannerEngine.focusedRowIndex } returns engineRowFlow
+        every { scannerEngine.setFocusedIndex(any()) } answers { engineFocusFlow.value = it.invocation.args[0] as Int? }
+        every { scannerEngine.stopScanning() } answers { 
+            engineFocusFlow.value = null
+            engineRowFlow.value = null
+        }
+        every { scannerEngine.startScanning(any(), any(), any(), any(), any(), any()) } answers {
+            engineFocusFlow.value = it.invocation.args[1] as Int?
+        }
+        every { scannerEngine.scanDelayMillis = any() } returns Unit
+        every { scannerEngine.scanDelayMillis } returns 1000L
+        coEvery { frequentActionResolver.resolve(any<Page>(), any<String>()) } answers { it.invocation.args[0] as Page }
     }
 
     @After
@@ -132,12 +154,21 @@ class PageViewModelTest {
             createPageUseCase = createPageUseCase,
             frequentActionResolver = frequentActionResolver,
             buttonUsageRepository = buttonUsageRepository,
-            googleAuthManager = googleAuthManager,
+            scannerEngine = scannerEngine,
             templateRepository = templateRepository,
+            googleAuthManager = googleAuthManager,
             geminiUseCaseFactory = geminiUseCaseFactory,
             ttsHelper = ttsHelper,
             predictNextActionUseCase = predictNextActionUseCase,
             bookRepository = bookRepository,
+            deletePageUseCase = deletePageUseCase,
+            reorderPagesUseCase = reorderPagesUseCase,
+            updateButtonConfigUseCase = updateButtonConfigUseCase,
+            updatePageSettingsUseCase = updatePageSettingsUseCase,
+            updateRowNameUseCase = updateRowNameUseCase,
+            importPageUseCase = importPageUseCase,
+            exportPageUseCase = exportPageUseCase,
+            logger = logger,
             featureGuard = featureGuard
         )
     }
@@ -184,9 +215,9 @@ class PageViewModelTest {
     }
 
     @Test
-    fun `importFromJson delegates to importExportManager`() = runTest {
+    fun `importFromJson delegates to importPageUseCase`() = runTest {
         val jsonString = "{}"
-        coEvery { importExportManager.importFromJson(any(), any()) } returns Result.success(1)
+        coEvery { importPageUseCase.execute(any<String>(), any<String>()) } returns Result.success(1)
 
         var successCalled = false
         viewModel = createViewModel()
@@ -195,12 +226,18 @@ class PageViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertTrue("Success callback should be called", successCalled)
-        coVerify { importExportManager.importFromJson(jsonString, "test_book") }
+        coVerify { importPageUseCase.execute(jsonString, "test_book") }
     }
 
     @Test
     fun `startScanning delegates to ScannerEngine`() = runTest {
         every { featureGuard.isButtonVisible(any()) } returns true
+        val engineFocusFlow = MutableStateFlow<Int?>(null)
+        every { scannerEngine.focusedButtonIndex } returns engineFocusFlow
+        every { scannerEngine.startScanning(any(), any(), any(), any(), any(), any()) } answers {
+            engineFocusFlow.value = args[1] as Int
+        }
+        
         viewModel = createViewModel()
         
         val button = ButtonConfig(label = "Test", auditoryCue = null, buttonAction = SpeakTextButtonAction("Hey"), isActive = true)

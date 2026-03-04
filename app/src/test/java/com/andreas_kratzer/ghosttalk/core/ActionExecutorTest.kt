@@ -1,4 +1,4 @@
-package com.andreas_kratzer.ghosttalk.core
+import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
 
 import com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
@@ -10,6 +10,8 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import com.andreas_kratzer.ghosttalk.core.util.TestLogger
+import com.andreas_kratzer.ghosttalk.core.util.Logger
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -21,6 +23,7 @@ class ActionExecutorTest {
     private val ttsHelper = mockk<TextToSpeechHelper>(relaxed = true)
     private val geminiUseCase = mockk<com.andreas_kratzer.ghosttalk.domain.GeminiUseCase>(relaxed = true)
     private val buttonUsageRepository = mockk<ButtonUsageRepository>(relaxed = true)
+    private val logger: Logger = TestLogger()
 
     private var currentTimeMillis = 0L
     private val timeProvider: () -> Long = { currentTimeMillis }
@@ -40,6 +43,7 @@ class ActionExecutorTest {
         ttsHelper = ttsHelper,
         geminiUseCase = geminiUseCase,
         buttonUsageRepository = buttonUsageRepository,
+        logger = logger,
         timeProvider = timeProvider
     )
 
@@ -50,6 +54,7 @@ class ActionExecutorTest {
             id = "b1",
             label = "Test",
             auditoryCue = null,
+            isActive = true,
             buttonAction = SpeakTextButtonAction("Hello")
         )
 
@@ -76,7 +81,7 @@ class ActionExecutorTest {
         runCurrent()
 
         // Verifiziere: Aktion ignoriert (Log-Event)
-        assertTrue("Sollte Log-Event für Ignorieren haben", events.any { it is ActionExecutor.ExecutionEvent.Log && it.message.contains("ignoriert") })
+        assertTrue("Sollte Log-Event für Ignorieren haben", events.any { it is ActionExecutor.ExecutionEvent.Log && (it as ActionExecutor.ExecutionEvent.Log).message.contains("ignoriert") })
 
         // 1250ms: Text ist fertig gesprochen
         currentTimeMillis = 1250L
@@ -92,8 +97,8 @@ class ActionExecutorTest {
     @Test
     fun testInterleavedActions_PreventsPrematureResume() = runTest {
         val actionExecutor = createExecutor(this)
-        val button1 = ButtonConfig(id = "1", label = "B1", auditoryCue = null, buttonAction = SpeakTextButtonAction("A1"))
-        val button2 = ButtonConfig(id = "2", label = "B2", auditoryCue = null, buttonAction = SpeakTextButtonAction("A2"))
+        val button1 = ButtonConfig(id = "1", label = "B1", auditoryCue = null, isActive = true, buttonAction = SpeakTextButtonAction("A1"))
+        val button2 = ButtonConfig(id = "2", label = "B2", auditoryCue = null, isActive = true, buttonAction = SpeakTextButtonAction("A2"))
 
         val ttsCallback1 = slot<() -> Unit>()
         every { ttsHelper.speakRouted("A1", any(), any(), any(), any(), capture(ttsCallback1)) } returns Unit
@@ -117,7 +122,7 @@ class ActionExecutorTest {
         runCurrent()
         
         // Verifiziere: Aktion 2 wird ignoriert, da A1 noch spricht
-        assertTrue(events.any { it is ActionExecutor.ExecutionEvent.Log && it.message.contains("Sprachausgabe aktiv") })
+        assertTrue(events.any { it is ActionExecutor.ExecutionEvent.Log && (it as ActionExecutor.ExecutionEvent.Log).message.contains("Sprachausgabe aktiv") })
         assertTrue(actionExecutor.isExecuting.value)
 
         // Simulate A1 finishing
@@ -137,6 +142,7 @@ class ActionExecutorTest {
             id = "btn-track",
             label = "Track Me",
             auditoryCue = null,
+            isActive = true,
             buttonAction = SpeakTextButtonAction("Track")
         )
 
@@ -158,6 +164,7 @@ class ActionExecutorTest {
             id = "btn-no-book",
             label = "No Book",
             auditoryCue = null,
+            isActive = true,
             buttonAction = SpeakTextButtonAction("Test")
         )
 
@@ -178,6 +185,7 @@ class ActionExecutorTest {
             id = "g1",
             label = "Gemini",
             auditoryCue = null,
+            isActive = true,
             buttonAction = com.andreas_kratzer.ghosttalk.model.GeminiButtonAction("Help")
         )
 
@@ -205,6 +213,7 @@ class ActionExecutorTest {
             id = "v1",
             label = "VolUp",
             auditoryCue = null,
+            isActive = true,
             buttonAction = com.andreas_kratzer.ghosttalk.model.ChangeVolumeButtonAction(isAbsolute = false, amount = 0.2f, isForCues = false)
         )
 
@@ -224,6 +233,7 @@ class ActionExecutorTest {
             id = "v1",
             label = "VolMax",
             auditoryCue = null,
+            isActive = true,
             buttonAction = com.andreas_kratzer.ghosttalk.model.ChangeVolumeButtonAction(isAbsolute = true, amount = 3.0f, isForCues = true)
         )
 

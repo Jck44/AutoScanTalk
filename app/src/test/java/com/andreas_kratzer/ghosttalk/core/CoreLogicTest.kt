@@ -1,5 +1,6 @@
-package com.andreas_kratzer.ghosttalk.core
+import com.andreas_kratzer.ghosttalk.core.scanning.ScannerEngine
 
+import com.andreas_kratzer.ghosttalk.core.scanning.ScannerFeedbackProvider
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
@@ -40,6 +41,7 @@ class CoreLogicTest {
             label = "Short Label",
             spokenText = "Speak me instead",
             auditoryCue = null,
+            isActive = true,
             buttonAction = action
         )
 
@@ -63,11 +65,12 @@ class CoreLogicTest {
             every { isButtonVisible(any()) } returns true
             every { isActionEnabled(any()) } returns true
         }
+        val feedbackProvider = mockk<ScannerFeedbackProvider>(relaxed = true)
         val engine = ScannerEngine(
             scope = this,
             settingsRepository = settingsRepo,
             featureGuard = featureGuard,
-            ttsHelper = ttsHelper
+            feedbackProvider = feedbackProvider
         )
         
         // Mock buttons: 2 rows, 2 columns. 4 active configs

@@ -1,4 +1,4 @@
-package com.andreas_kratzer.ghosttalk.core
+import com.andreas_kratzer.ghosttalk.core.pages.PageImportExportManager
 
 import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.andreas_kratzer.ghosttalk.core.util.TestLogger
@@ -31,7 +31,7 @@ class PageImportExportManagerTest {
     private val templateRepository: TemplateRepository = mockk(relaxed = true) {
         coEvery { getAllTemplates() } returns flowOf(emptyList())
     }
-    private val logger: Logger = TestLogger
+    private val logger: Logger = TestLogger()
     private val manager = PageImportExportManager(pageRepository, settingsRepository, templateRepository, logger, testDispatcher)
 
     @Test

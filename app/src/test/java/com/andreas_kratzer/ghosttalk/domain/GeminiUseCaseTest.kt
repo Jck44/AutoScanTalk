@@ -10,7 +10,8 @@ class GeminiUseCaseTest {
 
     private val oauthTokenProvider: suspend () -> String? = mockk()
     private val driveProvider: suspend () -> com.google.api.services.drive.Drive? = mockk()
-    private val useCase = GeminiUseCase(oauthTokenProvider, driveProvider)
+    private val logger: com.andreas_kratzer.ghosttalk.core.util.Logger = mockk(relaxed = true)
+    private val useCase = GeminiUseCase(oauthTokenProvider, driveProvider, logger)
 
     @Before
     fun setup() {

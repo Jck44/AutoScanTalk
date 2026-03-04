@@ -1,7 +1,8 @@
 package com.andreas_kratzer.ghosttalk.domain
 
 import android.content.Context
-import com.andreas_kratzer.ghosttalk.core.PageImportExportManager
+import com.andreas_kratzer.ghosttalk.core.pages.PageImportExportManager
+import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.google.api.services.drive.Drive
 import io.mockk.coEvery
@@ -28,6 +29,7 @@ class CloudSyncUseCaseTest {
     private val mockSettingsRepository: SettingsRepository = mockk(relaxed = true)
     private val mockImportExportManager: PageImportExportManager = mockk(relaxed = true)
     private val mockDrive: Drive = mockk(relaxed = true)
+    private val mockLogger: Logger = mockk(relaxed = true)
 
     @Before
     fun setup() {
@@ -39,7 +41,7 @@ class CloudSyncUseCaseTest {
         mockkConstructor(com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper::class)
         every { mockContext.cacheDir } returns File(System.getProperty("java.io.tmpdir") ?: "/tmp")
         every { mockSettingsRepository.isCloudSyncEnabled } returns true
-        useCase = CloudSyncUseCase(mockContext, mockSettingsRepository, mockImportExportManager)
+        useCase = CloudSyncUseCase(mockContext, mockSettingsRepository, mockImportExportManager, mockLogger)
     }
 
     @After

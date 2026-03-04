@@ -26,6 +26,12 @@
     <string name="settings_voice_default">Default</string>
     <string name="settings_voice_network_hint"> (HQ/Online)</string>
     <string name="settings_voice_local_hint"> (Local)</string>
+    <string name="settings_tts_mode">Speech Mode</string>
+    <string name="settings_tts_mode_normal">Normal</string>
+    <string name="settings_tts_mode_whisper">Whisper</string>
+    <string name="settings_tts_mode_shout">Shout</string>
+    <string name="settings_tts_volume">Speech Volume (TTS): %1$d%%</string>
+    <string name="settings_cues_volume">Feedback Volume (Audio): %1$d%%</string>
     
     <string name="settings_category_audio">Audio Output</string>
     <string name="settings_audio_tts">Output: Speak Out Loud</string>
@@ -128,6 +134,8 @@
     <string name="button_action_frequent_action">Frequent Action</string>
     <string name="button_action_smart_prediction">Gemini Prediction</string>
     <string name="button_action_notification">Notification (Auditory Cue)</string>
+    <string name="button_action_volume_tts">Adjust Volume (TTS)</string>
+    <string name="button_action_volume_cues">Adjust Volume (Feedback)</string>
     <string name="button_no_page_selected">No page selected</string>
     <string name="button_target_page_label">Target Page</string>
     <string name="button_smart_prediction_rank_label">Prediction Rank (1 = Most Likely)</string>
