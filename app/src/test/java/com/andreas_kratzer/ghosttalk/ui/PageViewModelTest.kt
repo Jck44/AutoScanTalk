@@ -37,11 +37,7 @@ import org.junit.Assert.assertEquals
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
-import com.andreas_kratzer.ghosttalk.model.ButtonAction
-import com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction
-import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
-import android.content.Intent
-import android.provider.MediaStore
+import kotlinx.coroutines.flow.combine
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class PageViewModelTest {
@@ -83,12 +79,10 @@ class PageViewModelTest {
         ttsHelper = mockk(relaxed = true) {
             every { isReady } returns true
             every { speakRouted(any(), any(), any(), any()) } answers {
-                // Invoking the onDone callback (the 4th argument)
                 val callback = arg<(() -> Unit)?>(3)
                 callback?.invoke()
             }
             every { speak(any(), any(), any()) } answers {
-                // Invoking the onDone callback (the 3rd argument)
                 val callback = arg<(() -> Unit)?>(2)
                 callback?.invoke()
             }
@@ -102,7 +96,6 @@ class PageViewModelTest {
             every { isActionEnabled(any()) } returns true
         }
         
-        // Mock default flows
         every { settingsRepository.ttsLanguageFlow } returns MutableStateFlow("default")
         every { settingsRepository.ttsVoiceNameFlow } returns MutableStateFlow(null)
         every { settingsRepository.scanDelayFlow } returns MutableStateFlow(1000L)
@@ -115,7 +108,6 @@ class PageViewModelTest {
         every { settingsRepository.actionLogsStorage } returns null
         every { settingsRepository.actionLogsStorageFlow } returns MutableStateFlow(null)
         
-        // Mock UseCase behavior
         every { getPagesUseCase.execute(any()) } returns MutableStateFlow(emptyList())
         every { actionLogUseCase.loadSavedLogs() } returns emptyList()
         coEvery { frequentActionResolver.resolve(any(), any()) } answers { firstArg() }
@@ -131,7 +123,6 @@ class PageViewModelTest {
             application = application,
             pageRepository = pageRepository,
             settingsRepository = settingsRepository,
-            logger = TestLogger,
             importExportManager = importExportManager,
             getPagesUseCase = getPagesUseCase,
             actionLogUseCase = actionLogUseCase,
@@ -238,8 +229,6 @@ class PageViewModelTest {
         advanceUntilIdle()
         assertEquals("p1", viewModel.currentPage.value?.id)
         
-        // Trigger action via simulating setting a focused index
-        // or directly calling it
         viewModel.activateButtonAtIndex(0)
         testDispatcher.scheduler.advanceUntilIdle()
         
@@ -251,19 +240,15 @@ class PageViewModelTest {
         viewModel = createViewModel()
         val page = Page(id = "p1", bookId = "b1", name = "P1", rows = 1, columns = 1, buttonConfigs = emptyList())
         
-        // Initial load
         viewModel.loadPage(page)
         advanceUntilIdle()
         
-        // Mock scanning active by setting a focus
         viewModel.scannerEngine.setFocusedIndex(0)
         assertEquals(0, viewModel.focusedButtonIndex.value)
         
-        // Load same page again
         viewModel.loadPage(page)
         advanceUntilIdle()
         
-        // Verify index is PRESERVED (paused, not stopped)
         assertEquals(0, viewModel.focusedButtonIndex.value)
     }
 
@@ -273,20 +258,37 @@ class PageViewModelTest {
         val p1 = Page(id = "p1", bookId = "b1", name = "P1", rows = 1, columns = 1, buttonConfigs = emptyList())
         val p2 = Page(id = "p2", bookId = "b1", name = "P2", rows = 1, columns = 1, buttonConfigs = emptyList())
         
-        // Initial load
         viewModel.loadPage(p1)
         advanceUntilIdle()
         
-        // Mock scanning active
         viewModel.scannerEngine.setFocusedIndex(0)
         assertEquals(0, viewModel.focusedButtonIndex.value)
         
-        // Load different page
         viewModel.loadPage(p2)
         testDispatcher.scheduler.runCurrent()
         
-        // Verify index is RESET to null (stopped)
         assertEquals(null, viewModel.focusedButtonIndex.value)
     }
-}
 
+    @Test
+    fun `resumeScanningIfEnabled starts scan if autoStartScanning is true on re-entry`() = runTest {
+        every { settingsRepository.autoStartScanning } returns true
+        every { featureGuard.isButtonVisible(any()) } returns true
+        viewModel = createViewModel()
+        val button = ButtonConfig(label = "Test", auditoryCue = null, buttonAction = SpeakTextButtonAction("Hey"), isActive = true)
+        val page = Page(id = "p1", bookId = "b1", name = "P1", rows = 1, columns = 1, buttonConfigs = listOf(button))
+        
+        viewModel.loadPage(page)
+        advanceUntilIdle()
+        
+        // Ensure scanning is fully stopped
+        viewModel.stopScanning()
+        assertEquals(null, viewModel.focusedButtonIndex.value)
+        
+        // Simulate UI re-entry calling resumeScanningIfEnabled
+        viewModel.resumeScanningIfEnabled()
+        advanceTimeBy(1100)
+        
+        assertEquals(0, viewModel.focusedButtonIndex.value)
+    }
+}

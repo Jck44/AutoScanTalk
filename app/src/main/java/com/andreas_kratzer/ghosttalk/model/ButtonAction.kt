@@ -22,9 +22,16 @@ data class NavigateToPageButtonAction(
 ) : ButtonAction()
 
 /**
- * An action that triggers a Gemini AI request.
+ * An action that triggers a Gemini AI request with arbitrary skills/tools.
  */
 data class GeminiButtonAction(
+    val prompt: String
+) : ButtonAction()
+
+/**
+ * An action that triggers a Gemini AI request specifically using the Google Search Grounding tool.
+ */
+data class GeminiSearchButtonAction(
     val prompt: String
 ) : ButtonAction()
 

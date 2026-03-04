@@ -7,6 +7,7 @@ import com.andreas_kratzer.ghosttalk.domain.GeminiUseCase
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction
 import com.andreas_kratzer.ghosttalk.model.GeminiButtonAction
+import com.andreas_kratzer.ghosttalk.model.GeminiSearchButtonAction
 import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
@@ -166,6 +167,71 @@ class ActionExecutor(
                         val message = e.message ?: ""
                         if (message.contains("429")) {
                             // Extract remaining seconds if present (e.g. from GeminiUseCase lockout exception)
+                            val remainingMatch = Regex("wait (\\d+) seconds", RegexOption.IGNORE_CASE).find(message)
+                            val seconds = remainingMatch?.groupValues?.get(1)?.toIntOrNull() ?: 60
+
+                            val quotaMsg = tts?.context?.getString(
+                                R.string.error_gemini_quota_reached, seconds
+                            ) ?: "Gemini-Limit erreicht. Bitte $seconds Sekunden warten."
+                            
+                            log(quotaMsg)
+                            if (tts?.isReady == true) {
+                                tts.speakRouted(quotaMsg, settingsRepository.ttsAudioDeviceAddress) {
+                                    finishExecution(currentExecutionId)
+                                }
+                            } else {
+                                finishExecution(currentExecutionId)
+                            }
+                        } else {
+                            log("Gemini Fehler: $message")
+                            finishExecution(currentExecutionId)
+                        }
+                    }
+                }
+            }
+            is GeminiSearchButtonAction -> {
+                log("Gemini Suche aufgerufen mit: \"${action.prompt}\"")
+                val targetDeviceAddress = if (buttonConfig.playActionAsAuditoryCue) {
+                    settingsRepository.cuesAudioDeviceAddress
+                } else {
+                    settingsRepository.ttsAudioDeviceAddress
+                }
+                scope.launch {
+                    val tts = ttsHelper
+                    try {
+                        if (!settingsRepository.isGeminiEnabled) {
+                            val errorMsg = tts?.context?.getString(R.string.error_gemini_disabled) 
+                                ?: "Gemini in Einstellungen prüfen"
+                            if (tts != null) {
+                                tts.speakRouted(errorMsg, targetDeviceAddress) {
+                                    finishExecution(currentExecutionId)
+                                }
+                            } else { finishExecution(currentExecutionId) }
+                            return@launch
+                        }
+
+                        val response = geminiUseCase?.generateResponse(action.prompt, useGoogleSearch = true) 
+                            ?: "Fehler: Gemini Integration nicht verfügbar."
+                        
+                        if (tts?.isReady == true) {
+                            tts.speakRouted(response, targetDeviceAddress) {
+                                finishExecution(currentExecutionId)
+                            }
+                        } else {
+                            log("Gemini Suche Ergebnis: \"$response\"")
+                            finishExecution(currentExecutionId)
+                        }
+                    } catch (e: UserRecoverableAuthIOException) {
+                        log("Gemini: Berechtigung erforderlich.")
+                        e.intent?.let { emitEvent(ExecutionEvent.RecoverableAuthError(it)) }
+                        finishExecution(currentExecutionId)
+                    } catch (e: UserRecoverableAuthException) {
+                        log("Gemini: Berechtigung erforderlich.")
+                        e.intent?.let { emitEvent(ExecutionEvent.RecoverableAuthError(it)) }
+                        finishExecution(currentExecutionId)
+                    } catch (e: Exception) {
+                        val message = e.message ?: ""
+                        if (message.contains("429")) {
                             val remainingMatch = Regex("wait (\\d+) seconds", RegexOption.IGNORE_CASE).find(message)
                             val seconds = remainingMatch?.groupValues?.get(1)?.toIntOrNull() ?: 60
 

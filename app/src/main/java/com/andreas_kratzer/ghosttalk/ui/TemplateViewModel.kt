@@ -9,8 +9,10 @@ import com.andreas_kratzer.ghosttalk.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.model.SortOrder
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -24,17 +26,30 @@ class TemplateViewModel @Inject constructor(
 
     val experimentalManualSorting: StateFlow<Boolean> = settingsRepository.experimentalManualSortingFlow
 
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
+    fun updateSearchQuery(query: String) {
+        _searchQuery.value = query
+    }
+
     val templates: StateFlow<List<PageTemplate>> = combine(
         templateRepository.getAllTemplates(),
-        settingsRepository.templateSortOrderFlow
-    ) { templates, sortOrderStr ->
+        settingsRepository.templateSortOrderFlow,
+        _searchQuery
+    ) { templates, sortOrderStr, query ->
         val sortOrder = try { SortOrder.valueOf(sortOrderStr) } catch (_: Exception) { SortOrder.MANUAL }
+        val filtered = if (query.isBlank()) {
+            templates
+        } else {
+            templates.filter { it.name.contains(query, ignoreCase = true) }
+        }
         when (sortOrder) {
-            SortOrder.MANUAL -> templates.sortedBy { it.orderIndex }
-            SortOrder.NEWEST -> templates.sortedByDescending { it.createdAt }
-            SortOrder.OLDEST -> templates.sortedBy { it.createdAt }
-            SortOrder.A_Z -> templates.sortedBy { it.name.lowercase() }
-            SortOrder.Z_A -> templates.sortedByDescending { it.name.lowercase() }
+            SortOrder.MANUAL -> filtered.sortedBy { it.orderIndex }
+            SortOrder.NEWEST -> filtered.sortedByDescending { it.createdAt }
+            SortOrder.OLDEST -> filtered.sortedBy { it.createdAt }
+            SortOrder.A_Z -> filtered.sortedBy { it.name.lowercase() }
+            SortOrder.Z_A -> filtered.sortedByDescending { it.name.lowercase() }
         }
     }.stateIn(
         scope = viewModelScope,

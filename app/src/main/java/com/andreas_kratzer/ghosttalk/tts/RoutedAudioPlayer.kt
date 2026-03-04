@@ -88,7 +88,7 @@ class RoutedAudioPlayer(
                         Log.d("RoutedAudioPlayer", "Routing to ${targetDevice.productName} (address: ${targetDevice.address}): Success=$routed")
                     }
                     
-                    if (isCommunicationMode && targetDevice != null) {
+                    if (isCommunicationMode) {
                         communicationDeviceSet = audioManager.setCommunicationDevice(targetDevice)
                         Log.d("RoutedAudioPlayer", "setCommunicationDevice: Success=$communicationDeviceSet")
                     }
@@ -193,7 +193,7 @@ class RoutedAudioPlayer(
                 try {
                     audioTrack.stop()
                     audioTrack.release()
-                } catch (e: Exception) { /* ignore */ }
+                } catch (_: Exception) { /* ignore */ }
             }
             Log.d("RoutedAudioPlayer", "Silence warm-up started for $silenceDuration seconds")
         } catch (e: Exception) {

@@ -59,7 +59,6 @@ class PageViewModel @Inject constructor(
     private val buttonUsageRepository: ButtonUsageRepository,
     templateRepository: TemplateRepository,
     private val googleAuthManager: GoogleAuthManager,
-    logger: Logger,
     geminiUseCaseFactory: GeminiUseCaseFactory,
     private val ttsHelper: TextToSpeechHelper,
     private val predictNextActionUseCase: PredictNextActionUseCase,
@@ -72,18 +71,31 @@ class PageViewModel @Inject constructor(
     private val _activeBookId = MutableStateFlow<String?>(null)
     val activeBookId: StateFlow<String?> = _activeBookId.asStateFlow()
 
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
+    fun updateSearchQuery(query: String) {
+        _searchQuery.value = query
+    }
+
     private val _allPages = MutableStateFlow<List<Page>>(emptyList())
     val allPages: StateFlow<List<Page>> = kotlinx.coroutines.flow.combine(
         _allPages,
-        settingsRepository.pageSortOrderFlow
-    ) { pages, sortOrderStr ->
+        settingsRepository.pageSortOrderFlow,
+        _searchQuery
+    ) { pages, sortOrderStr, query ->
         val sortOrder = try { SortOrder.valueOf(sortOrderStr) } catch (_: Exception) { SortOrder.MANUAL }
+        val filtered = if (query.isBlank()) {
+            pages
+        } else {
+            pages.filter { it.name.contains(query, ignoreCase = true) }
+        }
         when (sortOrder) {
-            SortOrder.MANUAL -> pages.sortedBy { it.orderIndex }
-            SortOrder.NEWEST -> pages.sortedByDescending { it.createdAt }
-            SortOrder.OLDEST -> pages.sortedBy { it.createdAt }
-            SortOrder.A_Z -> pages.sortedBy { it.name.lowercase() }
-            SortOrder.Z_A -> pages.sortedByDescending { it.name.lowercase() }
+            SortOrder.MANUAL -> filtered.sortedBy { it.orderIndex }
+            SortOrder.NEWEST -> filtered.sortedByDescending { it.createdAt }
+            SortOrder.OLDEST -> filtered.sortedBy { it.createdAt }
+            SortOrder.A_Z -> filtered.sortedBy { it.name.lowercase() }
+            SortOrder.Z_A -> filtered.sortedByDescending { it.name.lowercase() }
         }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 

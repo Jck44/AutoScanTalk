@@ -21,10 +21,12 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -224,17 +226,41 @@ fun PageListScreen(
             }
         }
     ) { paddingValues ->
-        LazyVerticalGrid(
-            state = gridState,
-            columns = GridCells.Adaptive(minSize = 300.dp),
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(vertical = 8.dp)
         ) {
+            val searchQuery by pageViewModel.searchQuery.collectAsState()
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { pageViewModel.updateSearchQuery(it) },
+                placeholder = { Text(stringResource(R.string.action_search)) },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { pageViewModel.updateSearchQuery("") }) {
+                            Icon(Icons.Default.Clear, contentDescription = "Löschen")
+                        }
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                singleLine = true
+            )
+
+            LazyVerticalGrid(
+                state = gridState,
+                columns = GridCells.Adaptive(minSize = 300.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(vertical = 8.dp)
+            ) {
             items(allPages.size, key = { index -> allPages[index].id }) { index ->
                 val page = allPages[index]
                 GhostTalkCard(
@@ -286,6 +312,7 @@ fun PageListScreen(
                     }
                 )
             }
+        }
         }
 
         pageToDelete?.let { page ->

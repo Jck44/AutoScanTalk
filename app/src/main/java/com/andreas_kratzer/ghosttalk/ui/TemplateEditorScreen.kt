@@ -124,6 +124,9 @@ fun TemplateEditorScreen(
             onSave = { newConfig ->
                 templateViewModel.updateButtonConfig(template.id, editingIndex, newConfig)
                 selectedButtonIndex = null
+            },
+            onTest = { testConfig ->
+                pageViewModel.actionExecutor.executeButtonAction(testConfig)
             }
         )
     }

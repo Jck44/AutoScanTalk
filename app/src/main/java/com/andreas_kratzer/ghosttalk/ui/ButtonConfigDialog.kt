@@ -33,6 +33,7 @@ import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.model.GeminiButtonAction
 import com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction
 import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
+import com.andreas_kratzer.ghosttalk.model.GeminiSearchButtonAction
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 
@@ -47,7 +48,8 @@ fun ButtonConfigDialog(
     buttonId: String,
     featureGuard: com.andreas_kratzer.ghosttalk.domain.FeatureGuard,
     onDismiss: () -> Unit,
-    onSave: (ButtonConfig?) -> Unit
+    onSave: (ButtonConfig?) -> Unit,
+    onTest: ((ButtonConfig) -> Unit)? = null
 ) {
     // Current State
     var label by remember { mutableStateOf(initialConfig?.label ?: "") }
@@ -64,6 +66,7 @@ fun ButtonConfigDialog(
     val actionTypeSpeak = stringResource(R.string.button_action_speak_text)
     val actionTypeNavigate = stringResource(R.string.button_action_navigate_page)
     val actionTypeGemini = stringResource(R.string.button_action_gemini)
+    val actionTypeGeminiSearch = stringResource(R.string.button_action_gemini_search)
     val actionTypeFrequent = stringResource(R.string.button_action_frequent_action)
     val actionTypeSmart = stringResource(R.string.button_action_smart_prediction)
     val actionTypeNotification = stringResource(R.string.button_action_notification)
@@ -71,6 +74,7 @@ fun ButtonConfigDialog(
         val base = mutableListOf(actionTypeSpeak, actionTypeNavigate, actionTypeFrequent)
         if (featureGuard.isActionEnabled(GeminiButtonAction(""))) {
             base.add(actionTypeGemini)
+            base.add(actionTypeGeminiSearch)
         }
         if (featureGuard.isActionEnabled(SmartPredictionButtonAction())) {
             base.add(actionTypeSmart)
@@ -85,6 +89,7 @@ fun ButtonConfigDialog(
             when (initialConfig?.buttonAction) {
                 is NavigateToPageButtonAction -> actionTypeNavigate
                 is GeminiButtonAction -> actionTypeGemini
+                is GeminiSearchButtonAction -> actionTypeGeminiSearch
                 is FrequentActionButtonAction -> actionTypeFrequent
                 is SmartPredictionButtonAction -> actionTypeSmart
                 is com.andreas_kratzer.ghosttalk.model.NotificationButtonAction -> actionTypeNotification
@@ -107,7 +112,8 @@ fun ButtonConfigDialog(
 
     // Gemini Details
     val geminiAction = initialConfig?.buttonAction as? GeminiButtonAction
-    var geminiPrompt by remember { mutableStateOf(geminiAction?.prompt ?: "") }
+    val geminiSearchAction = initialConfig?.buttonAction as? GeminiSearchButtonAction
+    var geminiPrompt by remember { mutableStateOf(geminiAction?.prompt ?: geminiSearchAction?.prompt ?: "") }
 
     // Frequent Action Details
     val frequentActionDef = initialConfig?.buttonAction as? FrequentActionButtonAction
@@ -273,7 +279,7 @@ fun ButtonConfigDialog(
                 }
 
                 // Conditional fields for Gemini
-                if (selectedActionType == actionTypeGemini) {
+                if (selectedActionType == actionTypeGemini || selectedActionType == actionTypeGeminiSearch) {
                     OutlinedTextField(
                         value = geminiPrompt,
                         onValueChange = { geminiPrompt = it },
@@ -350,6 +356,7 @@ fun ButtonConfigDialog(
                 // Auditory Cue Routing Toggle (Visible for actions with audio output)
                 if (selectedActionType == actionTypeSpeak || 
                     selectedActionType == actionTypeGemini || 
+                    selectedActionType == actionTypeGeminiSearch ||
                     selectedActionType == actionTypeSmart || 
                     selectedActionType == actionTypeNotification) {
                     androidx.compose.foundation.layout.Row(
@@ -367,39 +374,81 @@ fun ButtonConfigDialog(
             }
         },
         confirmButton = {
-            Button(
-                onClick = {
-                    if (label.isNotBlank()) {
-                        val action: ButtonAction = when (selectedActionType) {
-                            actionTypeNavigate -> NavigateToPageButtonAction(pageId = navigateToPageId)
-                            actionTypeGemini -> GeminiButtonAction(prompt = geminiPrompt)
-                            actionTypeFrequent -> FrequentActionButtonAction(rank = frequentRank.toIntOrNull()?.coerceAtLeast(1) ?: 1)
-                            actionTypeSmart -> SmartPredictionButtonAction(rank = smartRank.toIntOrNull()?.coerceAtLeast(1) ?: 1)
-                            actionTypeNotification -> com.andreas_kratzer.ghosttalk.model.NotificationButtonAction(targetApp = notificationTargetApp)
-                            else -> SpeakTextButtonAction(textToSpeech = spokenText.takeIf { it.isNotBlank() } ?: label)
-                        }
+            androidx.compose.foundation.layout.Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (onTest != null) {
+                    Button(
+                        onClick = {
+                            if (label.isNotBlank()) {
+                                val action: ButtonAction = when (selectedActionType) {
+                                    actionTypeNavigate -> NavigateToPageButtonAction(pageId = navigateToPageId)
+                                    actionTypeGemini -> GeminiButtonAction(prompt = geminiPrompt)
+                                    actionTypeGeminiSearch -> GeminiSearchButtonAction(prompt = geminiPrompt)
+                                    actionTypeFrequent -> FrequentActionButtonAction(rank = frequentRank.toIntOrNull()?.coerceAtLeast(1) ?: 1)
+                                    actionTypeSmart -> SmartPredictionButtonAction(rank = smartRank.toIntOrNull()?.coerceAtLeast(1) ?: 1)
+                                    actionTypeNotification -> com.andreas_kratzer.ghosttalk.model.NotificationButtonAction(targetApp = notificationTargetApp)
+                                    else -> SpeakTextButtonAction(textToSpeech = spokenText.takeIf { it.isNotBlank() } ?: label)
+                                }
 
-                        val cue = if (ttsFeedback.isNotBlank()) {
-                            AuditoryCue.TextToSpeechCue(text = ttsFeedback)
-                        } else {
-                            null
-                        }
+                                val cue = if (ttsFeedback.isNotBlank()) {
+                                    AuditoryCue.TextToSpeechCue(text = ttsFeedback)
+                                } else {
+                                    null
+                                }
 
-                        onSave(
-                            ButtonConfig(
-                                id = buttonId, 
-                                label = label, 
-                                spokenText = spokenText.takeIf { it.isNotBlank() },
-                                buttonAction = action,
-                                isActive = isActive,
-                                playActionAsAuditoryCue = playActionAsAuditoryCue,
-                                auditoryCue = cue
-                            )
-                        )
+                                onTest(
+                                    ButtonConfig(
+                                        id = buttonId, 
+                                        label = label, 
+                                        spokenText = spokenText.takeIf { it.isNotBlank() },
+                                        buttonAction = action,
+                                        isActive = isActive,
+                                        playActionAsAuditoryCue = playActionAsAuditoryCue,
+                                        auditoryCue = cue
+                                    )
+                                )
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                    ) {
+                        Text(stringResource(R.string.button_action_test))
                     }
                 }
-            ) {
-                Text(stringResource(R.string.action_save))
+                
+                Button(
+                    onClick = {
+                        if (label.isNotBlank()) {
+                            val action: ButtonAction = when (selectedActionType) {
+                                actionTypeNavigate -> NavigateToPageButtonAction(pageId = navigateToPageId)
+                                actionTypeGemini -> GeminiButtonAction(prompt = geminiPrompt)
+                                actionTypeGeminiSearch -> GeminiSearchButtonAction(prompt = geminiPrompt)
+                                actionTypeFrequent -> FrequentActionButtonAction(rank = frequentRank.toIntOrNull()?.coerceAtLeast(1) ?: 1)
+                                actionTypeSmart -> SmartPredictionButtonAction(rank = smartRank.toIntOrNull()?.coerceAtLeast(1) ?: 1)
+                                actionTypeNotification -> com.andreas_kratzer.ghosttalk.model.NotificationButtonAction(targetApp = notificationTargetApp)
+                                else -> SpeakTextButtonAction(textToSpeech = spokenText.takeIf { it.isNotBlank() } ?: label)
+                            }
+
+                            val cue = if (ttsFeedback.isNotBlank()) {
+                                AuditoryCue.TextToSpeechCue(text = ttsFeedback)
+                            } else {
+                                null
+                            }
+
+                            onSave(
+                                ButtonConfig(
+                                    id = buttonId, 
+                                    label = label, 
+                                    spokenText = spokenText.takeIf { it.isNotBlank() },
+                                    buttonAction = action,
+                                    isActive = isActive,
+                                    playActionAsAuditoryCue = playActionAsAuditoryCue,
+                                    auditoryCue = cue
+                                )
+                            )
+                        }
+                    }
+                ) {
+                    Text(stringResource(R.string.action_save))
+                }
             }
         },
         dismissButton = {

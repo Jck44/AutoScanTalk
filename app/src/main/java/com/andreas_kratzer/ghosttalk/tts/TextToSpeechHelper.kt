@@ -16,7 +16,7 @@ import javax.inject.Inject
 import dagger.hilt.android.qualifiers.ApplicationContext
 
 class TextToSpeechHelper @Inject constructor(
-    @param:ApplicationContext val context: Context,
+    @ApplicationContext val context: Context,
     private val settingsRepository: SettingsRepository
 ) : TextToSpeech.OnInitListener {
 

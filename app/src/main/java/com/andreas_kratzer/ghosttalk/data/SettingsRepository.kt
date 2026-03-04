@@ -3,7 +3,6 @@ package com.andreas_kratzer.ghosttalk.data
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
-import android.util.Log
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -132,6 +131,7 @@ class SettingsRepository(context: Context) {
             putBooleanScoped(KEY_SHOW_PAGE_ID_IN_LOG, value)
             _showPageIdInLogFlow.value = value
         }
+
     
     private val _experimentalManualSortingFlow = MutableStateFlow(getBooleanScoped(KEY_EXPERIMENTAL_MANUAL_SORTING, false))
     val experimentalManualSortingFlow: StateFlow<Boolean> = _experimentalManualSortingFlow.asStateFlow()
@@ -173,6 +173,7 @@ class SettingsRepository(context: Context) {
             _isSmartPredictionEnabledFlow.value = value
         }
 
+
     private val _isNotificationReadingEnabledFlow = MutableStateFlow(getBooleanScoped(KEY_NOTIFICATION_READING_ENABLED, false))
     val isNotificationReadingEnabledFlow: StateFlow<Boolean> = _isNotificationReadingEnabledFlow.asStateFlow()
 
@@ -182,6 +183,7 @@ class SettingsRepository(context: Context) {
             putBooleanScoped(KEY_NOTIFICATION_READING_ENABLED, value)
             _isNotificationReadingEnabledFlow.value = value
         }
+
 
     private val _monitoredNotificationAppsFlow = MutableStateFlow(getStringSetScoped(KEY_MONITORED_NOTIFICATION_APPS) ?: emptySet())
     val monitoredNotificationAppsFlow: StateFlow<Set<String>> = _monitoredNotificationAppsFlow.asStateFlow()

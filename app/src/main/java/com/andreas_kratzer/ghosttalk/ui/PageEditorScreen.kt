@@ -152,6 +152,9 @@ fun PageEditorScreen(
                 pageViewModel.updateButtonConfig(page.id, editingIndex, newConfig)
                 showDialog = false
                 selectedButtonIndex = null
+            },
+            onTest = { testConfig ->
+                pageViewModel.actionExecutor.executeButtonAction(testConfig)
             }
         )
     }

@@ -13,9 +13,11 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -109,15 +111,39 @@ fun TemplateScreen(
             }
         }
     ) { paddingValues ->
-        LazyColumn(
-            state = listState,
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(vertical = 8.dp)
         ) {
+            val searchQuery by templateViewModel.searchQuery.collectAsState()
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { templateViewModel.updateSearchQuery(it) },
+                placeholder = { Text(stringResource(R.string.action_search)) },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { templateViewModel.updateSearchQuery("") }) {
+                            Icon(Icons.Default.Clear, contentDescription = "Löschen")
+                        }
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                singleLine = true
+            )
+
+            LazyColumn(
+                state = listState,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(vertical = 8.dp)
+            ) {
             items(templates.size, key = { index -> templates[index].id }) { index ->
                 val template = templates[index]
                 GhostTalkCard(
@@ -196,6 +222,7 @@ fun TemplateScreen(
                     showAddDialog = false
                 }
             )
+        }
         }
     }
 }

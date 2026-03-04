@@ -215,7 +215,6 @@ class RowByRowScanStrategyTest {
     @Test
     fun `executeButtonScanInRow skips inactive buttons in row`() = runTest {
         val focusedButton = MutableStateFlow<Int?>(null)
-        val focusedRow = MutableStateFlow<Int?>(1)
         val spokenCues = mutableListOf<String>()
 
         // 2 rows x 3 columns

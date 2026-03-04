@@ -68,8 +68,23 @@ fun PageScreen(
         return
     }
 
-    DisposableEffect(Unit) {
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_PAUSE || event == androidx.lifecycle.Lifecycle.Event.ON_STOP) {
+                pageViewModel.stopScanningTemporarily()
+            } else if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                pageViewModel.resumeScanningIfEnabled()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+
+        // Ensure scanning starts upon re-entry from backstack or main menu
+        pageViewModel.resumeScanningIfEnabled()
+
         onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
             pageViewModel.stopScanning()
         }
     }

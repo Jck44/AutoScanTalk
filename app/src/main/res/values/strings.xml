@@ -77,6 +77,7 @@
     <string name="action_cancel">Abbrechen</string>
     <string name="action_delete">Löschen</string>
     <string name="action_clear_delete">Leeren / Löschen</string>
+    <string name="action_search">Suchen...</string>
 
     <!-- Page List Screen -->
     <string name="page_list_title">Seiten verwalten</string>
@@ -122,7 +123,9 @@
     <string name="button_action_label">Aktion</string>
     <string name="button_action_speak_text">Text Sprechen</string>
     <string name="button_action_navigate_page">Zu Seite navigieren</string>
-    <string name="button_action_gemini">Gemini aufrufen</string>
+    <string name="button_action_gemini">Gemini aufrufen (Skills)</string>
+    <string name="button_action_gemini_search">Gemini aufrufen (Suche)</string>
+    <string name="button_action_test">Testen</string>
     <string name="button_action_frequent_action">Häufigste Aktion</string>
     <string name="button_action_smart_prediction">Gemini Vorhersage</string>
     <string name="button_action_notification">Benachrichtigung (Audio-Hinweis)</string>

@@ -47,7 +47,7 @@ class GeminiUseCase(
         this.appCommandHandler = handler
     }
 
-    suspend fun generateResponse(prompt: String): String = withContext(Dispatchers.IO) {
+    suspend fun generateResponse(prompt: String, useGoogleSearch: Boolean = false): String = withContext(Dispatchers.IO) {
         val token = oauthTokenProvider() ?: return@withContext "Fehler: Nicht angemeldet (OAuth Token fehlt)."
         
         val now = System.currentTimeMillis()
@@ -56,7 +56,7 @@ class GeminiUseCase(
             throw Exception("HTTP 429: Lockout active. Please wait $remainingSeconds seconds.")
         }
         
-        Log.d(TAG, "Generating response for prompt: $prompt")
+        Log.d(TAG, "Generating response for prompt: $prompt, useGoogleSearch: $useGoogleSearch")
         
         if (!modelInitialized) {
             tryToSelectBestModel()
@@ -64,7 +64,7 @@ class GeminiUseCase(
         }
         
         try {
-            val result = performGeneration(token, prompt)
+            val result = performGeneration(token, prompt, useGoogleSearch)
             lastSuccess = true
             return@withContext result
         } catch (e: Exception) {
@@ -75,7 +75,7 @@ class GeminiUseCase(
                 val failedModel = activeModelName
                 if (tryToSelectBestModel(excludeName = failedModel)) {
                     try {
-                        val result = performGeneration(token, prompt)
+                        val result = performGeneration(token, prompt, useGoogleSearch)
                         lastSuccess = true
                         return@withContext result
                     } catch (retryEx: Exception) {
@@ -129,8 +129,8 @@ class GeminiUseCase(
         return false
     }
 
-    private suspend fun performGeneration(token: String, prompt: String): String {
-        var currentJson = createInitialRequest(prompt)
+    private suspend fun performGeneration(token: String, prompt: String, useGoogleSearch: Boolean): String {
+        var currentJson = createInitialRequest(prompt, useGoogleSearch)
         var responseJson: String
         
         for (turn in 1..5) { // Increased turns for more tool interaction
@@ -228,7 +228,7 @@ class GeminiUseCase(
         return 60 // Default fallback
     }
 
-    private fun createInitialRequest(prompt: String): JSONObject {
+    private fun createInitialRequest(prompt: String, useGoogleSearch: Boolean): JSONObject {
         return JSONObject().apply {
             put("contents", JSONArray().put(JSONObject().apply {
                 put("role", "user")
@@ -237,14 +237,19 @@ class GeminiUseCase(
                 }))
             }))
             val toolsArray = JSONArray()
-            // NOTE: Built-in tools (google_search) and custom functions cannot be combined as of now.
-            // Prioritizing custom functions for GhostTalk.
-            // 2. Custom Functions
-            toolsArray.put(JSONObject().apply {
-                put("function_declarations", JSONArray().apply {
-                    put(JSONObject().apply {
-                        put("name", "search_drive")
-                        put("description", "Sucht Dateien in Google Drive.")
+            
+            if (useGoogleSearch) {
+                toolsArray.put(JSONObject().apply {
+                    put("googleSearch", JSONObject())
+                })
+            } else {
+                // NOTE: Built-in tools and custom functions cannot be combined as of now in v1beta.
+                // Prioritizing custom functions for Skills action.
+                toolsArray.put(JSONObject().apply {
+                    put("function_declarations", JSONArray().apply {
+                        put(JSONObject().apply {
+                            put("name", "search_drive")
+                            put("description", "Sucht Dateien in Google Drive.")
                         put("parameters", JSONObject().apply {
                             put("type", "OBJECT")
                             put("properties", JSONObject().apply {
@@ -312,7 +317,8 @@ class GeminiUseCase(
                         })
                     })
                 })
-            })
+                })
+            }
             put("tools", toolsArray)
         }
     }

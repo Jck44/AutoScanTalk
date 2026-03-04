@@ -51,6 +51,7 @@ class SettingsRepositoryTest {
         }
         every { mockPrefs.getStringSet(any(), any()) } answers {
             val key = args[0] as String
+            @Suppress("UNCHECKED_CAST")
             val default = args[1] as Set<String>?
             mockedPrefsStore[key]?.split(",")?.toSet() ?: default
         }
@@ -82,6 +83,7 @@ class SettingsRepositoryTest {
         // Mock putStringSet
         every { mockEditor.putStringSet(any(), any()) } answers {
             val key = args[0] as String
+            @Suppress("UNCHECKED_CAST")
             val value = args[1] as Set<String>?
             mockedPrefsStore[key] = value?.joinToString(",")
             mockEditor

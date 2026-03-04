@@ -9,7 +9,6 @@ import androidx.credentials.GetCredentialRequest
 import androidx.credentials.GetCredentialResponse
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.credentials.exceptions.NoCredentialException
-import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
@@ -176,12 +175,7 @@ class GoogleAuthManager @javax.inject.Inject constructor(
                 )
             }
 
-            val signatures = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
-                packageInfo.signingInfo?.apkContentsSigners
-            } else {
-                @Suppress("DEPRECATION")
-                packageInfo.signatures
-            }
+            val signatures = packageInfo.signingInfo?.apkContentsSigners
             
             val md = java.security.MessageDigest.getInstance("SHA-1")
             val signature = signatures?.firstOrNull()?.toByteArray()
