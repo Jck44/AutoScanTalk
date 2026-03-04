@@ -21,7 +21,6 @@ class SpeechActionHandler(
         onFinish: (Int) -> Unit
     ) {
         val textToSpeak = buttonConfig.spokenText?.takeIf { it.isNotBlank() }
-            ?: action.textToSpeech.takeIf { it.isNotBlank() }
             ?: buttonConfig.label
             
         val targetDeviceAddress = if (buttonConfig.playActionAsAuditoryCue) {

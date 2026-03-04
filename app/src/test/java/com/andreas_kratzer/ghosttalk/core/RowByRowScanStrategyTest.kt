@@ -36,7 +36,7 @@ class RowByRowScanStrategyTest {
             id = id,
             label = label,
             auditoryCue = cueText?.let { AuditoryCue.TextToSpeechCue(it) },
-            buttonAction = SpeakTextButtonAction(label),
+            buttonAction = SpeakTextButtonAction(),
             isActive = active
         )
     }

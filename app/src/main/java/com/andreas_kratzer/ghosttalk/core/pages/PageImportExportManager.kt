@@ -62,15 +62,16 @@ class PageImportExportManager @javax.inject.Inject constructor(
                         if (importButton == null || (importButton.label.isBlank() && importButton.action == null)) {
                             null
                         } else {
-                            val action = importButton.action?.let { importAction ->
-                                when (importAction.type) {
-                                    "SpeakText", "SPEAK" -> SpeakTextButtonAction(importAction.textToSpeech ?: "")
+                            val importAction = importButton.action
+                            val action = importAction?.let { ia ->
+                                when (ia.type) {
+                                    "SpeakText", "SPEAK" -> SpeakTextButtonAction()
                                     "FrequentAction" -> {
-                                        val rank = importAction.targetPageImportId?.toIntOrNull() ?: 1
+                                        val rank = ia.targetPageImportId?.toIntOrNull() ?: 1
                                         FrequentActionButtonAction(rank)
                                     }
                                     "NavigateToPage", "NAVIGATE" -> {
-                                        val targetId = pageIdMap[importAction.targetPageImportId] ?: importAction.targetPageImportId ?: ""
+                                        val targetId = pageIdMap[ia.targetPageImportId] ?: ia.targetPageImportId ?: ""
                                         NavigateToPageButtonAction(targetId)
                                     }
                                     else -> null
@@ -82,6 +83,9 @@ class PageImportExportManager @javax.inject.Inject constructor(
                                 ButtonConfig(
                                     id = UUID.randomUUID().toString(),
                                     label = importButton.label,
+                                    spokenText = importButton.spokenText 
+                                        ?: importAction.textToSpeech 
+                                        ?: importAction.ttsFeedback,
                                     buttonAction = action,
                                     auditoryCue = importButton.auditoryCueText?.let { AuditoryCue.TextToSpeechCue(it) },
                                     isActive = importButton.active ?: true,
@@ -112,15 +116,16 @@ class PageImportExportManager @javax.inject.Inject constructor(
                     if (importButton == null || (importButton.label.isBlank() && importButton.action == null)) {
                         null
                     } else {
-                        val action = importButton.action?.let { importAction ->
-                            when (importAction.type) {
-                                "SpeakText", "SPEAK" -> SpeakTextButtonAction(importAction.textToSpeech ?: "")
+                        val importAction = importButton.action
+                        val action = importAction?.let { ia ->
+                            when (ia.type) {
+                                "SpeakText", "SPEAK" -> SpeakTextButtonAction()
                                 "FrequentAction" -> {
-                                    val rank = importAction.targetPageImportId?.toIntOrNull() ?: 1
+                                    val rank = ia.targetPageImportId?.toIntOrNull() ?: 1
                                     FrequentActionButtonAction(rank)
                                 }
                                 "NavigateToPage", "NAVIGATE" -> {
-                                    val targetId = pageIdMap[importAction.targetPageImportId] ?: importAction.targetPageImportId ?: ""
+                                    val targetId = pageIdMap[ia.targetPageImportId] ?: ia.targetPageImportId ?: ""
                                     NavigateToPageButtonAction(targetId)
                                 }
                                 else -> null
@@ -133,6 +138,9 @@ class PageImportExportManager @javax.inject.Inject constructor(
                             ButtonConfig(
                                 id = UUID.randomUUID().toString(),
                                 label = importButton.label,
+                            spokenText = importButton.spokenText 
+                                ?: importAction.textToSpeech 
+                                ?: importAction.ttsFeedback,
                                 buttonAction = action,
                                 auditoryCue = importButton.auditoryCueText?.let { AuditoryCue.TextToSpeechCue(it) },
                                 isActive = importButton.active ?: true,
@@ -175,7 +183,7 @@ class PageImportExportManager @javax.inject.Inject constructor(
                     val importAction = when (val action = it.buttonAction) {
                         is SpeakTextButtonAction -> com.andreas_kratzer.ghosttalk.model.importexport.ImportAction(
                             type = "SPEAK",
-                            textToSpeech = action.textToSpeech,
+                            textToSpeech = it.spokenText,
                             targetPageImportId = null,
                             ttsFeedback = null
                         )
@@ -196,6 +204,7 @@ class PageImportExportManager @javax.inject.Inject constructor(
                     com.andreas_kratzer.ghosttalk.model.importexport.ImportButton(
                         index = index.toLong(),
                         label = it.label,
+                        spokenText = it.spokenText,
                         auditoryCueText = (it.auditoryCue as? AuditoryCue.TextToSpeechCue)?.text,
                         action = importAction,
                         active = it.isActive,
@@ -220,7 +229,7 @@ class PageImportExportManager @javax.inject.Inject constructor(
                     val importAction = when (val action = it.buttonAction) {
                         is SpeakTextButtonAction -> com.andreas_kratzer.ghosttalk.model.importexport.ImportAction(
                             type = "SPEAK",
-                            textToSpeech = action.textToSpeech,
+                            textToSpeech = it.spokenText,
                             targetPageImportId = null,
                             ttsFeedback = null
                         )
@@ -241,6 +250,7 @@ class PageImportExportManager @javax.inject.Inject constructor(
                     com.andreas_kratzer.ghosttalk.model.importexport.ImportButton(
                         index = index.toLong(),
                         label = it.label,
+                        spokenText = it.spokenText,
                         auditoryCueText = (it.auditoryCue as? AuditoryCue.TextToSpeechCue)?.text,
                         action = importAction,
                         active = it.isActive,

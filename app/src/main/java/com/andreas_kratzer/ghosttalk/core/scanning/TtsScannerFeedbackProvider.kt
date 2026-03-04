@@ -21,7 +21,8 @@ class TtsScannerFeedbackProvider @Inject constructor(
             ttsHelper.speakRouted(
                 text = text, 
                 deviceAddress = settingsRepository.cuesAudioDeviceAddress,
-                queueMode = android.speech.tts.TextToSpeech.QUEUE_FLUSH
+                queueMode = android.speech.tts.TextToSpeech.QUEUE_FLUSH,
+                isForCues = true
             )
         }
     }

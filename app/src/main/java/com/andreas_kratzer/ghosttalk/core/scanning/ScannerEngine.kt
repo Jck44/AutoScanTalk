@@ -16,7 +16,9 @@ import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 
 import com.andreas_kratzer.ghosttalk.di.ApplicationScope
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class ScannerEngine @Inject constructor(
     @ApplicationScope private val scope: CoroutineScope,
     private val settingsRepository: SettingsRepository,

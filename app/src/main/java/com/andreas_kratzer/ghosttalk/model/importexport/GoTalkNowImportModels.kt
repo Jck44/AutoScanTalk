@@ -29,6 +29,7 @@ data class ImportButton(
     val index: Long,
     val label: String,
     val auditoryCueText: String?,
+    val spokenText: String? = null,
     val active: Boolean? = true,
     val playActionAsAuditoryCue: Boolean? = false,
     val action: ImportAction?

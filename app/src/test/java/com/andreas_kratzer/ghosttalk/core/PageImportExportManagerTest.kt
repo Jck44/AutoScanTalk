@@ -121,7 +121,14 @@ class PageImportExportManagerTest {
         val page = Page(
             id = "p1", bookId = "b1", name = "Test", rows = 1, columns = 1,
             buttonConfigs = listOf(
-                ButtonConfig("b1", "Label", auditoryCue = AuditoryCue.TextToSpeechCue("Cue"), buttonAction = SpeakTextButtonAction("1"), isActive = true)
+                ButtonConfig(
+                    id = "b1", 
+                    label = "Label", 
+                    spokenText = "Speak",
+                    auditoryCue = AuditoryCue.TextToSpeechCue("Cue"), 
+                    buttonAction = SpeakTextButtonAction(), 
+                    isActive = true
+                )
             )
         )
 
@@ -129,5 +136,7 @@ class PageImportExportManagerTest {
         
         assertTrue(json.contains("\"holdingTimeSeconds\":0.75"))
         assertTrue(json.contains("\"auditoryCueText\":\"Cue\""))
+        assertTrue(json.contains("\"spokenText\":\"Speak\""))
+        assertTrue(json.contains("\"textToSpeech\":\"Speak\""))
     }
 }

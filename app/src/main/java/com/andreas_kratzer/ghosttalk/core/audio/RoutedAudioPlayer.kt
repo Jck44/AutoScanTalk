@@ -17,7 +17,9 @@ import java.util.concurrent.ConcurrentHashMap
 
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class RoutedAudioPlayer @Inject constructor(
     @ApplicationContext private val context: Context,
     private val audioDeviceManager: AudioDeviceManager,

@@ -28,14 +28,14 @@ class CoreLogicTest {
     }
 
     @Test
-    fun testSpeakAction_HasData() = runTest {
-        val action = SpeakTextButtonAction(textToSpeech = "Hello")
-        assertEquals("Hello", action.textToSpeech)
+    fun testSpeakAction_Initialization() = runTest {
+        val action = SpeakTextButtonAction()
+        assertEquals("NORMAL", action.ttsMode)
     }
 
     @Test
     fun testSpeakAction_PrefersSpokenTextOverLabel() = runTest {
-        val action = SpeakTextButtonAction(textToSpeech = "Speak me instead")
+        val action = SpeakTextButtonAction()
         val config = ButtonConfig(
             id = "b1",
             label = "Short Label",
@@ -45,8 +45,8 @@ class CoreLogicTest {
             buttonAction = action
         )
 
-        val expectedSpeech = config.spokenText ?: config.label
-        assertEquals("Speak me instead", expectedSpeech)
+        val textToSpeak = config.spokenText ?: config.label
+        assertEquals("Speak me instead", textToSpeak)
     }
 
     @Test
@@ -75,10 +75,10 @@ class CoreLogicTest {
         
         // Mock buttons: 2 rows, 2 columns. 4 active configs
         val configs = listOf(
-            ButtonConfig(id = "b1", label = "B1", auditoryCue = null, buttonAction = SpeakTextButtonAction("1"), isActive = true),
-            ButtonConfig(id = "b2", label = "B2", auditoryCue = null, buttonAction = SpeakTextButtonAction("2"), isActive = true),
-            ButtonConfig(id = "b3", label = "B3", auditoryCue = null, buttonAction = SpeakTextButtonAction("3"), isActive = true),
-            ButtonConfig(id = "b4", label = "B4", auditoryCue = null, buttonAction = SpeakTextButtonAction("4"), isActive = true)
+            ButtonConfig(id = "b1", label = "B1", auditoryCue = null, buttonAction = SpeakTextButtonAction(), isActive = true),
+            ButtonConfig(id = "b2", label = "B2", auditoryCue = null, buttonAction = SpeakTextButtonAction(), isActive = true),
+            ButtonConfig(id = "b3", label = "B3", auditoryCue = null, buttonAction = SpeakTextButtonAction(), isActive = true),
+            ButtonConfig(id = "b4", label = "B4", auditoryCue = null, buttonAction = SpeakTextButtonAction(), isActive = true)
         )
         
         // Start scanning row by row

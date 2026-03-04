@@ -12,7 +12,6 @@ abstract class ButtonAction {
  * An action that speaks a given text using Text-to-Speech.
  */
 data class SpeakTextButtonAction(
-    val textToSpeech: String,
     override val ttsMode: String = "NORMAL"
 ) : ButtonAction()
 

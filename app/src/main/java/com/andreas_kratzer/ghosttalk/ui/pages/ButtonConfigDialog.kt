@@ -525,7 +525,7 @@ fun ButtonConfigDialog(
                                         val isForCuesAmount = selectedActionType == actionTypeVolumeCues
                                         ChangeVolumeButtonAction(isAbsolute = isAbsoluteAmount, amount = volAmount, isForCues = isForCuesAmount, ttsMode = resolvedTtsMode)
                                     }
-                                    else -> SpeakTextButtonAction(textToSpeech = spokenText.takeIf { it.isNotBlank() } ?: label, ttsMode = resolvedTtsMode)
+                                    else -> SpeakTextButtonAction(ttsMode = resolvedTtsMode)
                                 }
 
                                 val cue = if (ttsFeedback.isNotBlank()) {
@@ -575,7 +575,7 @@ fun ButtonConfigDialog(
                                     val isForCuesAmount = selectedActionType == actionTypeVolumeCues
                                     ChangeVolumeButtonAction(isAbsolute = isAbsoluteAmount, amount = volAmount, isForCues = isForCuesAmount, ttsMode = resolvedTtsMode)
                                 }
-                                else -> SpeakTextButtonAction(textToSpeech = spokenText.takeIf { it.isNotBlank() } ?: label, ttsMode = resolvedTtsMode)
+                                else -> SpeakTextButtonAction(ttsMode = resolvedTtsMode)
                             }
 
                             val cue = if (ttsFeedback.isNotBlank()) {

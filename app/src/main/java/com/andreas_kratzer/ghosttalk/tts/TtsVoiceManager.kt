@@ -4,7 +4,9 @@ import android.speech.tts.TextToSpeech
 import android.util.Log
 import java.util.Locale
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class TtsVoiceManager @Inject constructor() {
 
     fun getAvailableLanguages(tts: TextToSpeech?): List<Locale> {

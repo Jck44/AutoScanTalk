@@ -55,11 +55,9 @@ class FrequentActionResolverTest {
         val btn2 = resolvedPage.buttonConfigs[1]!!
 
         assertEquals("Yes", btn1.label)
-        assertEquals("Yes", (btn1.buttonAction as SpeakTextButtonAction).textToSpeech)
         assertEquals("slot1", btn1.id) // ID should remain the same
 
         assertEquals("No", btn2.label)
-        assertEquals("No", (btn2.buttonAction as SpeakTextButtonAction).textToSpeech)
         assertEquals("slot2", btn2.id)
     }
 

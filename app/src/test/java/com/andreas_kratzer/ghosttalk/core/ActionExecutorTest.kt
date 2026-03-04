@@ -53,9 +53,10 @@ class ActionExecutorTest {
         val buttonConfig = ButtonConfig(
             id = "b1",
             label = "Test",
+            spokenText = "Hello",
             auditoryCue = null,
             isActive = true,
-            buttonAction = SpeakTextButtonAction("Hello")
+            buttonAction = SpeakTextButtonAction()
         )
 
         val ttsCallback = slot<() -> Unit>()
@@ -97,8 +98,8 @@ class ActionExecutorTest {
     @Test
     fun testInterleavedActions_PreventsPrematureResume() = runTest {
         val actionExecutor = createExecutor(this)
-        val button1 = ButtonConfig(id = "1", label = "B1", auditoryCue = null, isActive = true, buttonAction = SpeakTextButtonAction("A1"))
-        val button2 = ButtonConfig(id = "2", label = "B2", auditoryCue = null, isActive = true, buttonAction = SpeakTextButtonAction("A2"))
+        val button1 = ButtonConfig(id = "1", label = "B1", spokenText = "A1", auditoryCue = null, isActive = true, buttonAction = SpeakTextButtonAction())
+        val button2 = ButtonConfig(id = "2", label = "B2", spokenText = "A2", auditoryCue = null, isActive = true, buttonAction = SpeakTextButtonAction())
 
         val ttsCallback1 = slot<() -> Unit>()
         every { ttsHelper.speakRouted("A1", any(), any(), any(), any(), capture(ttsCallback1)) } returns Unit
@@ -141,9 +142,10 @@ class ActionExecutorTest {
         val buttonConfig = ButtonConfig(
             id = "btn-track",
             label = "Track Me",
+            spokenText = "Track",
             auditoryCue = null,
             isActive = true,
-            buttonAction = SpeakTextButtonAction("Track")
+            buttonAction = SpeakTextButtonAction()
         )
 
         val ttsCallback = slot<() -> Unit>()
@@ -163,9 +165,10 @@ class ActionExecutorTest {
         val buttonConfig = ButtonConfig(
             id = "btn-no-book",
             label = "No Book",
+            spokenText = "Test",
             auditoryCue = null,
             isActive = true,
-            buttonAction = SpeakTextButtonAction("Test")
+            buttonAction = SpeakTextButtonAction()
         )
 
         every { ttsHelper.speakRouted(any(), any(), any(), any(), any(), any()) } returns Unit

@@ -233,17 +233,6 @@ class PageViewModel @Inject constructor(
             }
         }
 
-        // Monitor settings
-        viewModelScope.launch {
-            kotlinx.coroutines.flow.combine(
-                settingsRepository.ttsLanguageFlow,
-                settingsRepository.ttsVoiceNameFlow
-            ) { lang, voice -> lang to voice }
-                .collect { (newLanguage, newVoice) ->
-                    ttsHelper.setLanguageAndVoice(newLanguage, newVoice)
-                }
-        }
-
         viewModelScope.launch {
             settingsRepository.scanDelayFlow.collect { delay -> setScanDelay(delay) }
         }

@@ -197,12 +197,12 @@ class PageViewModelTest {
     fun `logAction calls formatAndAddEntry on ActionLogUseCase`() = runTest {
         viewModel = createViewModel()
         
-        val button = ButtonConfig(label = "Test", auditoryCue = null, buttonAction = SpeakTextButtonAction("Hey"))
+        val button = ButtonConfig(label = "Hey", auditoryCue = null, buttonAction = SpeakTextButtonAction())
         viewModel.loadPage(Page(id = "p1", bookId = "b1", name = "T", rows = 1, columns = 1, buttonConfigs = listOf(button)))
-        advanceUntilIdle()
+        testDispatcher.scheduler.advanceUntilIdle()
         
         viewModel.activateButtonAtIndex(0)
-        advanceUntilIdle()
+        testDispatcher.scheduler.advanceUntilIdle()
         verify { actionLogUseCase.formatAndAddEntry(match { it.contains("Hey") }, any()) }
     }
 

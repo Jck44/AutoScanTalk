@@ -6,8 +6,10 @@ import android.media.AudioManager
 import com.andreas_kratzer.ghosttalk.model.AudioOutputDevice
 
 import javax.inject.Inject
+import javax.inject.Singleton
 import dagger.hilt.android.qualifiers.ApplicationContext
 
+@Singleton
 class AudioDeviceManager @Inject constructor(
     @param:ApplicationContext private val context: Context
 ) {

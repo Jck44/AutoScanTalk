@@ -12,12 +12,19 @@ import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import java.io.File
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.launch
+import com.andreas_kratzer.ghosttalk.di.ApplicationScope
 
 import javax.inject.Inject
+import javax.inject.Singleton
 import dagger.hilt.android.qualifiers.ApplicationContext
 
+@Singleton
 class TextToSpeechHelper @Inject constructor(
     @ApplicationContext val context: Context,
+    @ApplicationScope private val scope: CoroutineScope,
     private val settingsRepository: SettingsRepository,
     private val routedAudioPlayer: RoutedAudioPlayer,
     private val voiceManager: TtsVoiceManager
@@ -41,6 +48,18 @@ class TextToSpeechHelper @Inject constructor(
             tts = TextToSpeech(context, this)
         } catch (e: Exception) {
             showToast("Error initializing TTS: ${e.message}")
+        }
+
+        // Centralized configuration observer
+        scope.launch {
+            combine(
+                settingsRepository.ttsLanguageFlow,
+                settingsRepository.ttsVoiceNameFlow
+            ) { lang, voice -> lang to voice }
+                .collect { (newLanguage, newVoice) ->
+                    Log.d("TextToSpeechHelper", "Settings updated: lang=$newLanguage, voice=$newVoice")
+                    setLanguageAndVoice(newLanguage, newVoice)
+                }
         }
     }
 

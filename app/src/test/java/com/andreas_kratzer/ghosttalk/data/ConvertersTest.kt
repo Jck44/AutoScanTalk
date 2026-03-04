@@ -18,7 +18,7 @@ class ConvertersTest {
     @Test
     fun `ButtonConfig roundtrip with SpeakTextAction`() {
         val configs = listOf(
-            ButtonConfig("b1", "Hello", auditoryCue = null, buttonAction = SpeakTextButtonAction("Hi"), isActive = true)
+            ButtonConfig("b1", "Hello", spokenText = "Hi", auditoryCue = null, buttonAction = SpeakTextButtonAction(), isActive = true)
         )
 
         val json = converters.fromButtonConfigList(configs)
@@ -29,7 +29,7 @@ class ConvertersTest {
         assertEquals(1, restored!!.size)
         assertEquals("Hello", restored[0]!!.label)
         assertTrue(restored[0]!!.buttonAction is SpeakTextButtonAction)
-        assertEquals("Hi", (restored[0]!!.buttonAction as SpeakTextButtonAction).textToSpeech)
+        assertEquals("Hi", restored[0]!!.spokenText)
     }
 
     @Test
@@ -74,7 +74,7 @@ class ConvertersTest {
     @Test
     fun `ButtonConfig roundtrip with AuditoryCue`() {
         val configs = listOf(
-            ButtonConfig("b1", "Label", auditoryCue = AuditoryCue.TextToSpeechCue("Cue text"), buttonAction = SpeakTextButtonAction("Speak"), isActive = true)
+            ButtonConfig("b1", "Label", spokenText = "Speak", auditoryCue = AuditoryCue.TextToSpeechCue("Cue text"), buttonAction = SpeakTextButtonAction(), isActive = true)
         )
 
         val json = converters.fromButtonConfigList(configs)
@@ -89,9 +89,9 @@ class ConvertersTest {
     @Test
     fun `ButtonConfig list with nulls roundtrips correctly`() {
         val configs: List<ButtonConfig?> = listOf(
-            ButtonConfig("b1", "A", auditoryCue = null, buttonAction = SpeakTextButtonAction("1")),
+            ButtonConfig("b1", "A", spokenText = "1", auditoryCue = null, buttonAction = SpeakTextButtonAction()),
             null,
-            ButtonConfig("b3", "C", auditoryCue = null, buttonAction = SpeakTextButtonAction("3"))
+            ButtonConfig("b3", "C", spokenText = "3", auditoryCue = null, buttonAction = SpeakTextButtonAction())
         )
 
         val json = converters.fromButtonConfigList(configs)
@@ -123,8 +123,8 @@ class ConvertersTest {
     @Test
     fun `isActive property roundtrips correctly`() {
         val configs = listOf(
-            ButtonConfig("b1", "Active", auditoryCue = null, buttonAction = SpeakTextButtonAction("1"), isActive = true),
-            ButtonConfig("b2", "Inactive", auditoryCue = null, buttonAction = SpeakTextButtonAction("2"), isActive = false)
+            ButtonConfig("b1", "Active", spokenText = "1", auditoryCue = null, buttonAction = SpeakTextButtonAction(), isActive = true),
+            ButtonConfig("b2", "Inactive", spokenText = "2", auditoryCue = null, buttonAction = SpeakTextButtonAction(), isActive = false)
         )
 
         val json = converters.fromButtonConfigList(configs)
