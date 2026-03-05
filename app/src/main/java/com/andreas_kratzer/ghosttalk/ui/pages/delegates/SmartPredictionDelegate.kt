@@ -7,7 +7,6 @@ import com.andreas_kratzer.ghosttalk.domain.PredictNextActionUseCase
 import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
@@ -21,6 +20,7 @@ class SmartPredictionDelegate @Inject constructor(
 ) {
     fun init(
         currentPage: StateFlow<Page?>,
+        allPages: StateFlow<List<Page>>,
         lastActions: StateFlow<List<String>>,
         activeBookId: StateFlow<String?>,
         onPredictionsUpdated: (List<String>) -> Unit
@@ -28,11 +28,11 @@ class SmartPredictionDelegate @Inject constructor(
         scope.launch {
             combine(
                 currentPage,
+                allPages,
                 lastActions,
-                settingsRepository.smartPredictionDelayMillisFlow,
                 settingsRepository.isSmartPredictionEnabledFlow
-            ) { page, _, delayMillis, enabled -> Triple(page, delayMillis, enabled) }
-                .collect { (page, delayMillis, enabled) ->
+            ) { page, pages, _, enabled -> Triple(page, pages, enabled) }
+                .collect { (page, pages, enabled) ->
                     if (page != null && enabled) {
                         val hasPredictor = page.buttonConfigs.any { 
                             it != null && featureGuard.isActionEnabled(it.buttonAction) && it.buttonAction is SmartPredictionButtonAction
@@ -41,9 +41,9 @@ class SmartPredictionDelegate @Inject constructor(
                         if (hasPredictor) {
                             val bookId = activeBookId.value
                             if (bookId != null) {
-                                delay(delayMillis)
                                 try {
-                                    val predictions = predictNextActionUseCase.predict(page, bookId)
+                                    // Artificial delay removed as Nano is local and fast
+                                    val predictions = predictNextActionUseCase.predict(page, pages, bookId)
                                     onPredictionsUpdated(predictions)
                                 } catch (e: Exception) {
                                     Log.e("SmartPredictionDelegate", "Smart Prediction failed", e)
