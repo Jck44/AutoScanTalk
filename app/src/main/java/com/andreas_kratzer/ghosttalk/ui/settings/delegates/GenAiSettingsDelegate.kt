@@ -3,7 +3,6 @@ package com.andreas_kratzer.ghosttalk.ui.settings.delegates
 import android.app.Application
 import android.content.Context
 import android.widget.Toast
-import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.domain.GeminiUseCase
 import com.andreas_kratzer.ghosttalk.domain.GeminiUseCaseFactory
@@ -25,7 +24,7 @@ import javax.inject.Singleton
 class GenAiSettingsDelegate @Inject constructor(
     private val application: Application,
     private val settingsRepository: SettingsRepository,
-    private val googleAuthManager: GoogleAuthManager,
+    private val googleAuthManager: com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager,
     private val geminiUseCaseFactory: GeminiUseCaseFactory,
     private val localIntentRouter: LocalIntentRouter
 ) {

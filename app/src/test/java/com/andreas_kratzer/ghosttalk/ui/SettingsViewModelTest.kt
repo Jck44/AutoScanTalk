@@ -3,7 +3,9 @@ package com.andreas_kratzer.ghosttalk.ui.settings
 import android.app.Application
 import com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.domain.GetPagesUseCase
 import com.andreas_kratzer.ghosttalk.ui.settings.delegates.CloudSyncSettingsDelegate
+import com.andreas_kratzer.ghosttalk.ui.settings.delegates.ExperimentalSettingsDelegate
 import com.andreas_kratzer.ghosttalk.ui.settings.delegates.GenAiSettingsDelegate
 import com.andreas_kratzer.ghosttalk.ui.settings.delegates.ScanningSettingsDelegate
 import com.andreas_kratzer.ghosttalk.ui.settings.delegates.TtsSettingsDelegate
@@ -13,6 +15,7 @@ import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -30,11 +33,13 @@ class SettingsViewModelTest {
     private lateinit var application: Application
     private lateinit var settingsRepository: SettingsRepository
     private lateinit var buttonUsageRepository: ButtonUsageRepository
+    private lateinit var getPagesUseCase: GetPagesUseCase
     
     private lateinit var ttsDelegate: TtsSettingsDelegate
     private lateinit var scanningDelegate: ScanningSettingsDelegate
     private lateinit var cloudSyncDelegate: CloudSyncSettingsDelegate
     private lateinit var genAiDelegate: GenAiSettingsDelegate
+    private lateinit var experimentalDelegate: ExperimentalSettingsDelegate
     
     private lateinit var viewModel: SettingsViewModel
 
@@ -45,13 +50,17 @@ class SettingsViewModelTest {
         application = mockk(relaxed = true)
         settingsRepository = mockk(relaxed = true)
         buttonUsageRepository = mockk(relaxed = true)
+        getPagesUseCase = mockk(relaxed = true)
         
         ttsDelegate = mockk(relaxed = true)
         scanningDelegate = mockk(relaxed = true)
         cloudSyncDelegate = mockk(relaxed = true)
         genAiDelegate = mockk(relaxed = true)
+        experimentalDelegate = mockk(relaxed = true)
 
         // Mock common flows
+        every { settingsRepository.activeBookId } returns "test-book"
+        every { getPagesUseCase.execute(any()) } returns flowOf(emptyList())
         every { settingsRepository.ttsLanguageFlow } returns MutableStateFlow("de")
         every { settingsRepository.ttsVoiceNameFlow } returns MutableStateFlow(null)
         every { settingsRepository.autoStartScanningFlow } returns MutableStateFlow(true)
@@ -64,10 +73,12 @@ class SettingsViewModelTest {
             application = application,
             settingsRepository = settingsRepository,
             buttonUsageRepository = buttonUsageRepository,
+            getPagesUseCase = getPagesUseCase,
             ttsDelegate = ttsDelegate,
             scanningDelegate = scanningDelegate,
             cloudSyncDelegate = cloudSyncDelegate,
-            genAiDelegate = genAiDelegate
+            genAiDelegate = genAiDelegate,
+            experimentalDelegate = experimentalDelegate
         )
     }
 
