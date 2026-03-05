@@ -39,6 +39,12 @@ class TtsSettingsDelegate @Inject constructor(
         loadAvailableVoices()
         loadAvailableAudioDevices()
 
+        scope.launch {
+            audioDeviceManager.availableDevicesFlow.collect {
+                loadAvailableAudioDevices()
+            }
+        }
+
         ttsHelper.fallbackListener = object : TextToSpeechHelper.OnVoiceFallbackListener {
             override fun onVoiceFallback(originalVoice: String, fallbackVoice: String?, reason: String) {
                 scope.launch {
@@ -150,7 +156,4 @@ class TtsSettingsDelegate @Inject constructor(
         return "System-Standard (Automatisch)"
     }
 
-    fun shutdown() {
-        ttsHelper.shutdown()
-    }
 }

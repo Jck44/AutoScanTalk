@@ -44,11 +44,7 @@ class TextToSpeechHelper @Inject constructor(
     private val playRequests = ConcurrentHashMap<String, PlaybackRequest>()
 
     init {
-        try {
-            tts = TextToSpeech(context, this)
-        } catch (e: Exception) {
-            showToast("Error initializing TTS: ${e.message}")
-        }
+        initializeInternal()
 
         // Centralized configuration observer
         scope.launch {
@@ -60,6 +56,22 @@ class TextToSpeechHelper @Inject constructor(
                     Log.d("TextToSpeechHelper", "Settings updated: lang=$newLanguage, voice=$newVoice")
                     setLanguageAndVoice(newLanguage, newVoice)
                 }
+        }
+    }
+
+    private fun initializeInternal() {
+        if (tts != null) return
+        try {
+            tts = TextToSpeech(context, this)
+        } catch (e: Exception) {
+            showToast("Error initializing TTS: ${e.message}")
+        }
+    }
+
+    private fun ensureReady() {
+        if (tts == null) {
+            Log.d("TextToSpeechHelper", "TTS instance was null, re-initializing...")
+            initializeInternal()
         }
     }
 
@@ -114,6 +126,7 @@ class TextToSpeechHelper @Inject constructor(
         } else {
             showToast("TTS init failed! Status code: $status")
             initialized = false
+            tts = null // Reset so ensurReady can retry
         }
     }
 
@@ -144,6 +157,7 @@ class TextToSpeechHelper @Inject constructor(
         isForCues: Boolean = false,
         onDone: (() -> Unit)? = null
     ) {
+        ensureReady()
         if (!initialized || tts == null) {
             showToast("TTS not initialized, cannot speak.")
             onDone?.invoke()

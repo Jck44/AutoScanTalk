@@ -186,6 +186,32 @@ fun ButtonConfigDialog(
         )
     }
 
+    // Helper to build the action object from current UI state
+    fun buildButtonAction(): ButtonAction {
+        val resolvedTtsMode = when (selectedButtonTtsMode) {
+            ttsModeWhisperLabel -> "WHISPER"
+            ttsModeShoutLabel -> "SHOUT"
+            else -> "NORMAL"
+        }
+        return when (selectedActionType) {
+            actionTypeNavigate -> NavigateToPageButtonAction(pageId = navigateToPageId, ttsMode = resolvedTtsMode)
+            actionTypeGemini -> GeminiButtonAction(prompt = geminiPrompt, ttsMode = resolvedTtsMode)
+            actionTypeGeminiSearch -> GeminiSearchButtonAction(prompt = geminiPrompt, ttsMode = resolvedTtsMode)
+            actionTypeGeminiNano -> GeminiNanoButtonAction(prompt = geminiPrompt, ttsMode = resolvedTtsMode)
+            actionTypeFrequent -> FrequentActionButtonAction(rank = frequentRank.toIntOrNull()?.coerceAtLeast(1) ?: 1, ttsMode = resolvedTtsMode)
+            actionTypeSmart -> SmartPredictionButtonAction(rank = smartRank.toIntOrNull()?.coerceAtLeast(1) ?: 1, ttsMode = resolvedTtsMode)
+            actionTypeNotification -> NotificationButtonAction(targetApp = notificationTargetApp, ttsMode = resolvedTtsMode)
+            actionTypeVolumeTts, actionTypeVolumeCues -> {
+                val isAbsoluteAmount = selectedVolumeType == volumeAbsolutLabel
+                val parseAmount = volumePercentInput.toFloatOrNull() ?: 10f
+                val volAmount = parseAmount / 100.0f
+                val isForCuesAmount = selectedActionType == actionTypeVolumeCues
+                ChangeVolumeButtonAction(isAbsolute = isAbsoluteAmount, amount = volAmount, isForCues = isForCuesAmount, ttsMode = resolvedTtsMode)
+            }
+            else -> SpeakTextButtonAction(ttsMode = resolvedTtsMode)
+        }
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(if (initialConfig == null) stringResource(R.string.button_dialog_new_title) else stringResource(R.string.button_dialog_edit_title)) },
@@ -396,32 +422,7 @@ fun ButtonConfigDialog(
                     Button(
                         onClick = {
                             if (label.isNotBlank()) {
-                                val resolvedTtsMode = when (selectedButtonTtsMode) {
-                                    ttsModeWhisperLabel -> "WHISPER"
-                                    ttsModeShoutLabel -> "SHOUT"
-                                    else -> "NORMAL"
-                                }
-                                val action: ButtonAction = when (selectedActionType) {
-                                    actionTypeNavigate -> NavigateToPageButtonAction(pageId = navigateToPageId, ttsMode = resolvedTtsMode)
-                                    actionTypeGemini -> GeminiButtonAction(prompt = geminiPrompt, ttsMode = resolvedTtsMode)
-                                    actionTypeGeminiSearch -> GeminiSearchButtonAction(prompt = geminiPrompt, ttsMode = resolvedTtsMode)
-                                    actionTypeGeminiNano -> GeminiNanoButtonAction(
-                            prompt = geminiPrompt,
-                            ttsMode = resolvedTtsMode
-                        )
-                        actionTypeFrequent -> FrequentActionButtonAction(rank = frequentRank.toIntOrNull()?.coerceAtLeast(1) ?: 1, ttsMode = resolvedTtsMode)
-                                    actionTypeSmart -> SmartPredictionButtonAction(rank = smartRank.toIntOrNull()?.coerceAtLeast(1) ?: 1, ttsMode = resolvedTtsMode)
-                                    actionTypeNotification -> NotificationButtonAction(targetApp = notificationTargetApp, ttsMode = resolvedTtsMode)
-                                    actionTypeVolumeTts, actionTypeVolumeCues -> {
-                                        val isAbsoluteAmount = selectedVolumeType == volumeAbsolutLabel
-                                        val parseAmount = volumePercentInput.toFloatOrNull() ?: 10f
-                                        val volAmount = parseAmount / 100.0f
-                                        val isForCuesAmount = selectedActionType == actionTypeVolumeCues
-                                        ChangeVolumeButtonAction(isAbsolute = isAbsoluteAmount, amount = volAmount, isForCues = isForCuesAmount, ttsMode = resolvedTtsMode)
-                                    }
-                                    else -> SpeakTextButtonAction(ttsMode = resolvedTtsMode)
-                                }
-
+                                val action = buildButtonAction()
                                 val cue = if (ttsFeedback.isNotBlank()) {
                                     AuditoryCue.TextToSpeechCue(text = ttsFeedback)
                                 } else {
@@ -450,29 +451,7 @@ fun ButtonConfigDialog(
                 Button(
                     onClick = {
                         if (label.isNotBlank()) {
-                            val resolvedTtsMode = when (selectedButtonTtsMode) {
-                                ttsModeWhisperLabel -> "WHISPER"
-                                ttsModeShoutLabel -> "SHOUT"
-                                else -> "NORMAL"
-                            }
-                            val action: ButtonAction = when (selectedActionType) {
-                                actionTypeNavigate -> NavigateToPageButtonAction(pageId = navigateToPageId, ttsMode = resolvedTtsMode)
-                                actionTypeGemini -> GeminiButtonAction(prompt = geminiPrompt, ttsMode = resolvedTtsMode)
-                                actionTypeGeminiSearch -> GeminiSearchButtonAction(prompt = geminiPrompt, ttsMode = resolvedTtsMode)
-                                actionTypeGeminiNano -> GeminiNanoButtonAction(prompt = geminiPrompt, ttsMode = resolvedTtsMode)
-                                actionTypeFrequent -> FrequentActionButtonAction(rank = frequentRank.toIntOrNull()?.coerceAtLeast(1) ?: 1, ttsMode = resolvedTtsMode)
-                                actionTypeSmart -> SmartPredictionButtonAction(rank = smartRank.toIntOrNull()?.coerceAtLeast(1) ?: 1, ttsMode = resolvedTtsMode)
-                                actionTypeNotification -> NotificationButtonAction(targetApp = notificationTargetApp, ttsMode = resolvedTtsMode)
-                                actionTypeVolumeTts, actionTypeVolumeCues -> {
-                                    val isAbsoluteAmount = selectedVolumeType == volumeAbsolutLabel
-                                    val parseAmount = volumePercentInput.toFloatOrNull() ?: 10f
-                                    val volAmount = parseAmount / 100.0f
-                                    val isForCuesAmount = selectedActionType == actionTypeVolumeCues
-                                    ChangeVolumeButtonAction(isAbsolute = isAbsoluteAmount, amount = volAmount, isForCues = isForCuesAmount, ttsMode = resolvedTtsMode)
-                                }
-                                else -> SpeakTextButtonAction(ttsMode = resolvedTtsMode)
-                            }
-
+                            val action = buildButtonAction()
                             val cue = if (ttsFeedback.isNotBlank()) {
                                 AuditoryCue.TextToSpeechCue(text = ttsFeedback)
                             } else {

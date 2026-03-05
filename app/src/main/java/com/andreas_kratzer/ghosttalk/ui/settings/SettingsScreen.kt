@@ -70,6 +70,10 @@ fun SettingsScreen(
         authIntent?.let { authLauncher.launch(it) }
     }
 
+    LaunchedEffect(Unit) {
+        viewModel.refresh()
+    }
+
     LaunchedEffect(signInError) {
         signInError?.let { Toast.makeText(context, it, Toast.LENGTH_LONG).show() }
     }

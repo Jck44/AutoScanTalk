@@ -24,6 +24,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,6 +35,7 @@ import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.ui.pages.ButtonConfigDialog
 import com.andreas_kratzer.ghosttalk.ui.pages.GridButton
 import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
+import kotlinx.coroutines.launch
 import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -44,6 +46,7 @@ fun TemplateEditorScreen(
     pageViewModel: PageViewModel, // Needed for available pages in ButtonConfigDialog
     onNavigateBack: () -> Unit
 ) {
+    val scope = rememberCoroutineScope()
     val templates by templateViewModel.templates.collectAsState()
     val allPages by pageViewModel.filteredPages.collectAsState()
     val template = templates.find { it.id == templateId }
@@ -130,7 +133,20 @@ fun TemplateEditorScreen(
                 selectedButtonIndex = null
             },
             onTest = { testConfig ->
-                pageViewModel.actionExecutor.executeButtonAction(testConfig)
+                pageViewModel.activateButtonAtIndex(editingIndex) // Use VM's method which uses InteractionDelegate
+            },
+            onNavigateToPage = { pageId ->
+                scope.launch {
+                    val target = pageViewModel.pageManagementDelegate.getPageById(pageId)
+                    if (target != null) {
+                        onNavigateBack() // Close Template Editor
+                        pageViewModel.loadPage(target)
+                    }
+                }
+            },
+            onCreatePage = { name, rows, cols, tId, onCreated ->
+                val bookId = pageViewModel.activeBookId.value ?: "book-default"
+                pageViewModel.createNewPage(name, rows, cols, bookId, tId, onCreated)
             }
         )
     }

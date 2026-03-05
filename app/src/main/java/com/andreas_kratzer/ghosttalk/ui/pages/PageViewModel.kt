@@ -189,7 +189,6 @@ class PageViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
-        ttsHelper.shutdown()
         scanCoordinator.clear()
     }
 }

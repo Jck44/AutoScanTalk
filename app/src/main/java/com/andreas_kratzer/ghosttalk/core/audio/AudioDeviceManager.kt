@@ -1,9 +1,15 @@
 package com.andreas_kratzer.ghosttalk.core.audio
 
 import android.content.Context
+import android.media.AudioDeviceCallback
 import android.media.AudioDeviceInfo
 import android.media.AudioManager
+import android.os.Handler
+import android.os.Looper
 import com.andreas_kratzer.ghosttalk.model.AudioOutputDevice
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -15,6 +21,24 @@ class AudioDeviceManager @Inject constructor(
 ) {
 
     private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+
+    private val _availableDevicesFlow = MutableStateFlow<List<AudioOutputDevice>>(emptyList())
+    val availableDevicesFlow: StateFlow<List<AudioOutputDevice>> = _availableDevicesFlow.asStateFlow()
+
+    private val audioDeviceCallback = object : AudioDeviceCallback() {
+        override fun onAudioDevicesAdded(addedDevices: Array<out AudioDeviceInfo>?) {
+            _availableDevicesFlow.value = getAvailableOutputDevices()
+        }
+
+        override fun onAudioDevicesRemoved(removedDevices: Array<out AudioDeviceInfo>?) {
+            _availableDevicesFlow.value = getAvailableOutputDevices()
+        }
+    }
+
+    init {
+        _availableDevicesFlow.value = getAvailableOutputDevices()
+        audioManager.registerAudioDeviceCallback(audioDeviceCallback, Handler(Looper.getMainLooper()))
+    }
 
     fun getAvailableOutputDevices(): List<AudioOutputDevice> {
         val devices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)

@@ -117,14 +117,21 @@ class InteractionDelegate @Inject constructor(
             }
         }
         
-        actionExecutor.executeButtonAction(buttonConfig, bookId = activeBookId)
+        // Stats: Provide bookId only if in User Mode
+        actionExecutor.executeButtonAction(
+            buttonConfig, 
+            bookId = activeBookId.takeIf { _isUserModeActive.value }
+        )
     }
 
     private fun resolveSmartPrediction(predictionId: String, currentPage: Page?, activeBookId: String?) {
         scope.launch {
             val matchingButton = currentPage?.buttonConfigs?.find { it?.id == predictionId }
             if (matchingButton != null) {
-                actionExecutor.executeButtonAction(matchingButton, bookId = activeBookId)
+                actionExecutor.executeButtonAction(
+                    matchingButton, 
+                    bookId = activeBookId.takeIf { _isUserModeActive.value }
+                )
                 return@launch
             }
 
@@ -136,7 +143,7 @@ class InteractionDelegate @Inject constructor(
                         auditoryCue = null,
                         buttonAction = NavigateToPageButtonAction(targetPage.id)
                     ),
-                    bookId = activeBookId
+                    bookId = activeBookId.takeIf { _isUserModeActive.value }
                 )
             }
         }

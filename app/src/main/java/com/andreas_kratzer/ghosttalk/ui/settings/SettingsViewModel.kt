@@ -181,7 +181,6 @@ class SettingsViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
-        ttsDelegate.shutdown()
         val keep = mutableSetOf<String>()
         settingsRepository.ttsAudioDeviceAddress?.split("|")?.lastOrNull()?.let { keep.add(it) }
         settingsRepository.cuesAudioDeviceAddress?.split("|")?.lastOrNull()?.let { keep.add(it) }
