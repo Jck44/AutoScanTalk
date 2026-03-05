@@ -1,0 +1,51 @@
+package com.andreas_kratzer.ghosttalk.ui.settings.sections
+
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.domain.GeminiUseCase
+import com.andreas_kratzer.ghosttalk.ui.settings.PreferenceCategory
+import com.andreas_kratzer.ghosttalk.ui.settings.SettingsToggleItem
+import com.andreas_kratzer.ghosttalk.ui.settings.SettingsViewModel
+
+@Composable
+fun GenAiSettingsSection(viewModel: SettingsViewModel) {
+    val isEnabled by viewModel.isGeminiEnabled.collectAsState(false)
+    val useLocal by viewModel.useLocalGenerativeAi.collectAsState(false)
+    val toolStatus by viewModel.geminiToolStatus.collectAsState(emptyMap())
+    val context = LocalContext.current
+
+    PreferenceCategory(stringResource(R.string.settings_category_gemini)) {
+        SettingsToggleItem(stringResource(R.string.settings_gemini_enabled), isEnabled) { viewModel.setGeminiEnabled(it) }
+        
+        if (isEnabled) {
+            SettingsToggleItem(stringResource(R.string.settings_use_local_generative_ai), useLocal) { viewModel.setUseLocalGenerativeAi(it, context) }
+            
+            Column(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+                Text(text = "Features Status:", style = MaterialTheme.typography.labelLarge)
+                toolStatus.forEach { (name, status) ->
+                    val color = if (status.isAvailable) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                    Text(text = "• $name: ${if (status.isAvailable) "Ready" else "Missing: ${status.reason}"}", color = color, style = MaterialTheme.typography.bodySmall)
+                }
+                
+                Button(
+                    onClick = { viewModel.activateGemini(context) },
+                    modifier = Modifier.padding(top = 8.dp)
+                ) {
+                    Text(stringResource(R.string.settings_gemini_test_connection))
+                }
+            }
+        }
+    }
+}

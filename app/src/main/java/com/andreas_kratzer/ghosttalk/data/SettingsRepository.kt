@@ -180,17 +180,39 @@ class SettingsRepository(context: Context) {
         fun refresh() { _flow.value = value }
     }
 
+    private inner class StringSetSetting(
+        private val key: String,
+        private val default: Set<String> = emptySet()
+    ) {
+        private val _flow = MutableStateFlow(getStringSetScoped(key, default) ?: default)
+        val flow: StateFlow<Set<String>> = _flow.asStateFlow()
+
+        var value: Set<String>
+            get() = getStringSetScoped(key, default) ?: default
+            set(v) {
+                putStringSetScoped(key, v)
+                _flow.value = v
+            }
+
+        fun refresh() { _flow.value = value }
+    }
+
     // ── Observable settings (have a StateFlow for UI observation) ─────────
 
     private val _ttsLanguage = StringSetting(KEY_TTS_LANGUAGE)
     private val _ttsVoiceName = StringSetting(KEY_TTS_VOICE_NAME)
+    private val _autoStartScanning = BooleanSetting(KEY_AUTO_START_SCANNING, true)
     private val _scanDelay = LongSetting(KEY_SCAN_DELAY_MILLIS, 3000L)
+    private val _resumeScanningFromStart = BooleanSetting(KEY_RESUME_SCANNING_FROM_START, true)
     private val _defaultStartPageId = StringSetting(KEY_DEFAULT_START_PAGE_ID)
+    private val _ttsAudioDeviceAddress = StringSetting(KEY_TTS_AUDIO_DEVICE)
+    private val _cuesAudioDeviceAddress = StringSetting(KEY_CUES_AUDIO_DEVICE)
+    private val _holdingTimeMillis = LongSetting(KEY_HOLDING_TIME_MILLIS, 0L)
     private val _persistActionLogs = BooleanSetting(KEY_PERSIST_ACTION_LOGS, false)
     private val _actionLogsStorage = StringSetting(KEY_ACTION_LOGS_STORAGE)
     private val _switchActivationKey = NonNullStringSetting(KEY_SWITCH_ACTIVATION_KEY, "Space")
     private val _volumeKeysActivate = BooleanSetting(KEY_VOLUME_KEYS_ACTIVATE, false)
-    private val _showTestButtons = BooleanSetting(KEY_SHOW_TEST_BUTTONS, false)
+    private val _showTestButtons = BooleanSetting(KEY_SHOW_TEST_BUTTON_S, false)
     private val _defaultScanPattern = NonNullStringSetting(KEY_DEFAULT_SCAN_PATTERN, "linear")
     private val _themeMode = NonNullStringSetting(KEY_THEME_MODE, "SYSTEM")
     private val _pageSortOrder = NonNullStringSetting(KEY_PAGE_SORT_ORDER, "MANUAL")
@@ -202,12 +224,26 @@ class SettingsRepository(context: Context) {
     private val _bluetoothDelay = LongSetting(KEY_BLUETOOTH_DELAY, 1500L)
     private val _ttsVolume = FloatSetting(KEY_TTS_VOLUME_MULTIPLIER, 1.0f) { it.coerceIn(0.0f, 1.0f) }
     private val _cuesVolume = FloatSetting(KEY_CUES_VOLUME_MULTIPLIER, 1.0f) { it.coerceIn(0.0f, 1.0f) }
+    private val _isCloudSyncEnabled = BooleanSetting(KEY_CLOUD_SYNC_ENABLED, false)
+    private val _syncIntervalMinutes = LongSetting(KEY_SYNC_INTERVAL_MINUTES, 15L)
+    private val _syncMode = NonNullStringSetting(KEY_SYNC_MODE, "TWO_WAY")
+    private val _isGeminiEnabled = BooleanSetting(KEY_GEMINI_ENABLED, false)
+    private val _useLocalGenerativeAi = BooleanSetting(KEY_USE_LOCAL_GENERATIVE_AI, false)
+    private val _showPageIdInLog = BooleanSetting(KEY_SHOW_PAGE_ID_IN_LOG, false)
+    private val _isNotificationReadingEnabled = BooleanSetting(KEY_NOTIFICATION_READING_ENABLED, false)
+    private val _monitoredNotificationApps = StringSetSetting(KEY_MONITORED_NOTIFICATION_APPS)
+    private val _appLanguage = StringSetting(KEY_APP_LANGUAGE)
 
     private fun refreshFlows() {
         _ttsLanguage.refresh()
-        _scanDelay.refresh()
-        _defaultStartPageId.refresh()
         _ttsVoiceName.refresh()
+        _autoStartScanning.refresh()
+        _scanDelay.refresh()
+        _resumeScanningFromStart.refresh()
+        _defaultStartPageId.refresh()
+        _ttsAudioDeviceAddress.refresh()
+        _cuesAudioDeviceAddress.refresh()
+        _holdingTimeMillis.refresh()
         _persistActionLogs.refresh()
         _actionLogsStorage.refresh()
         _switchActivationKey.refresh()
@@ -224,14 +260,28 @@ class SettingsRepository(context: Context) {
         _bluetoothDelay.refresh()
         _ttsVolume.refresh()
         _cuesVolume.refresh()
+        _isCloudSyncEnabled.refresh()
+        _syncIntervalMinutes.refresh()
+        _syncMode.refresh()
+        _isGeminiEnabled.refresh()
+        _useLocalGenerativeAi.refresh()
+        _showPageIdInLog.refresh()
+        _isNotificationReadingEnabled.refresh()
+        _monitoredNotificationApps.refresh()
+        _appLanguage.refresh()
     }
 
     // ── Public API: Flows ────────────────────────────────────────────────
 
     val ttsLanguageFlow: StateFlow<String?> get() = _ttsLanguage.flow
     val ttsVoiceNameFlow: StateFlow<String?> get() = _ttsVoiceName.flow
+    val autoStartScanningFlow: StateFlow<Boolean> get() = _autoStartScanning.flow
     val scanDelayFlow: StateFlow<Long> get() = _scanDelay.flow
+    val resumeScanningFromStartFlow: StateFlow<Boolean> get() = _resumeScanningFromStart.flow
     val defaultStartPageIdFlow: StateFlow<String?> get() = _defaultStartPageId.flow
+    val ttsAudioDeviceAddressFlow: StateFlow<String?> get() = _ttsAudioDeviceAddress.flow
+    val cuesAudioDeviceAddressFlow: StateFlow<String?> get() = _cuesAudioDeviceAddress.flow
+    val holdingTimeMillisFlow: StateFlow<Long> get() = _holdingTimeMillis.flow
     val persistActionLogsFlow: StateFlow<Boolean> get() = _persistActionLogs.flow
     val actionLogsStorageFlow: StateFlow<String?> get() = _actionLogsStorage.flow
     val switchActivationKeyFlow: StateFlow<String> get() = _switchActivationKey.flow
@@ -248,6 +298,15 @@ class SettingsRepository(context: Context) {
     val bluetoothDelayFlow: StateFlow<Long> get() = _bluetoothDelay.flow
     val ttsVolumeMultiplierFlow: StateFlow<Float> get() = _ttsVolume.flow
     val cuesVolumeMultiplierFlow: StateFlow<Float> get() = _cuesVolume.flow
+    val isCloudSyncEnabledFlow: StateFlow<Boolean> get() = _isCloudSyncEnabled.flow
+    val syncIntervalMinutesFlow: StateFlow<Long> get() = _syncIntervalMinutes.flow
+    val syncModeFlow: StateFlow<String> get() = _syncMode.flow
+    val isGeminiEnabledFlow: StateFlow<Boolean> get() = _isGeminiEnabled.flow
+    val useLocalGenerativeAiFlow: StateFlow<Boolean> get() = _useLocalGenerativeAi.flow
+    val showPageIdInLogFlow: StateFlow<Boolean> get() = _showPageIdInLog.flow
+    val isNotificationReadingEnabledFlow: StateFlow<Boolean> get() = _isNotificationReadingEnabled.flow
+    val monitoredNotificationAppsFlow: StateFlow<Set<String>> get() = _monitoredNotificationApps.flow
+    val appLanguageFlow: StateFlow<String?> get() = _appLanguage.flow
 
     // ── Public API: Properties ───────────────────────────────────────────
 
@@ -259,13 +318,33 @@ class SettingsRepository(context: Context) {
         get() = _ttsVoiceName.value
         set(value) { _ttsVoiceName.value = value }
 
+    var autoStartScanning: Boolean
+        get() = _autoStartScanning.value
+        set(value) { _autoStartScanning.value = value }
+
     var scanDelayMillis: Long
         get() = _scanDelay.value
         set(value) { _scanDelay.value = value }
 
+    var resumeScanningFromStart: Boolean
+        get() = _resumeScanningFromStart.value
+        set(value) { _resumeScanningFromStart.value = value }
+
     var defaultStartPageId: String?
         get() = _defaultStartPageId.value
         set(value) { _defaultStartPageId.value = value }
+
+    var ttsAudioDeviceAddress: String?
+        get() = _ttsAudioDeviceAddress.value
+        set(value) { _ttsAudioDeviceAddress.value = value }
+
+    var cuesAudioDeviceAddress: String?
+        get() = _cuesAudioDeviceAddress.value
+        set(value) { _cuesAudioDeviceAddress.value = value }
+
+    var holdingTimeMillis: Long
+        get() = _holdingTimeMillis.value
+        set(value) { _holdingTimeMillis.value = value }
 
     var persistActionLogs: Boolean
         get() = _persistActionLogs.value
@@ -331,67 +410,45 @@ class SettingsRepository(context: Context) {
         get() = _cuesVolume.value
         set(value) { _cuesVolume.value = value }
 
-    // ── Simple settings (no Flow) ────────────────────────────────────────
-
-    var autoStartScanning: Boolean
-        get() = getBooleanScoped(KEY_AUTO_START_SCANNING, true)
-        set(value) { putBooleanScoped(KEY_AUTO_START_SCANNING, value) }
-
-    var resumeScanningFromStart: Boolean
-        get() = getBooleanScoped(KEY_RESUME_SCANNING_FROM_START, true)
-        set(value) { putBooleanScoped(KEY_RESUME_SCANNING_FROM_START, value) }
-
-    var ttsAudioDeviceAddress: String?
-        get() = getStringScoped(KEY_TTS_AUDIO_DEVICE)
-        set(value) { putStringScoped(KEY_TTS_AUDIO_DEVICE, value) }
-
-    var cuesAudioDeviceAddress: String?
-        get() = getStringScoped(KEY_CUES_AUDIO_DEVICE)
-        set(value) { putStringScoped(KEY_CUES_AUDIO_DEVICE, value) }
-
-    var holdingTimeMillis: Long
-        get() = getLongScoped(KEY_HOLDING_TIME_MILLIS, 0L)
-        set(value) { putLongScoped(KEY_HOLDING_TIME_MILLIS, value) }
-
     var isCloudSyncEnabled: Boolean
-        get() = getBooleanScoped(KEY_CLOUD_SYNC_ENABLED, false)
-        set(value) { putBooleanScoped(KEY_CLOUD_SYNC_ENABLED, value) }
+        get() = _isCloudSyncEnabled.value
+        set(value) { _isCloudSyncEnabled.value = value }
+
+    var syncIntervalMinutes: Long
+        get() = _syncIntervalMinutes.value
+        set(value) { _syncIntervalMinutes.value = value }
+
+    var syncMode: String
+        get() = _syncMode.value
+        set(value) { _syncMode.value = value }
 
     var isGeminiEnabled: Boolean
-        get() = getBooleanScoped(KEY_GEMINI_ENABLED, false)
-        set(value) { putBooleanScoped(KEY_GEMINI_ENABLED, value) }
-        
+        get() = _isGeminiEnabled.value
+        set(value) { _isGeminiEnabled.value = value }
+
     var useLocalGenerativeAi: Boolean
-        get() = getBooleanScoped(KEY_USE_LOCAL_GENERATIVE_AI, false)
-        set(value) { putBooleanScoped(KEY_USE_LOCAL_GENERATIVE_AI, value) }
+        get() = _useLocalGenerativeAi.value
+        set(value) { _useLocalGenerativeAi.value = value }
 
     var showPageIdInLog: Boolean
-        get() = getBooleanScoped(KEY_SHOW_PAGE_ID_IN_LOG, false)
-        set(value) { putBooleanScoped(KEY_SHOW_PAGE_ID_IN_LOG, value) }
+        get() = _showPageIdInLog.value
+        set(value) { _showPageIdInLog.value = value }
 
     var isNotificationReadingEnabled: Boolean
-        get() = getBooleanScoped(KEY_NOTIFICATION_READING_ENABLED, false)
-        set(value) { putBooleanScoped(KEY_NOTIFICATION_READING_ENABLED, value) }
+        get() = _isNotificationReadingEnabled.value
+        set(value) { _isNotificationReadingEnabled.value = value }
 
     var monitoredNotificationApps: Set<String>
-        get() = getStringSetScoped(KEY_MONITORED_NOTIFICATION_APPS) ?: emptySet()
-        set(value) { putStringSetScoped(KEY_MONITORED_NOTIFICATION_APPS, value) }
+        get() = _monitoredNotificationApps.value
+        set(value) { _monitoredNotificationApps.value = value }
 
+    var appLanguage: String?
+        get() = _appLanguage.value
+        set(value) { _appLanguage.value = value }
+    
     var initialTemplatesCreated: Boolean
         get() = prefs.getBoolean(KEY_INITIAL_TEMPLATES_CREATED, false)
         set(value) { prefs.edit().putBoolean(KEY_INITIAL_TEMPLATES_CREATED, value).apply() }
-
-    var appLanguage: String?
-        get() = getStringScoped(KEY_APP_LANGUAGE)
-        set(value) { putStringScoped(KEY_APP_LANGUAGE, value) }
-
-    var syncIntervalMinutes: Long
-        get() = getLongScoped(KEY_SYNC_INTERVAL_MINUTES, 15L)
-        set(value) { putLongScoped(KEY_SYNC_INTERVAL_MINUTES, value) }
-
-    var syncMode: String
-        get() = getStringScoped(KEY_SYNC_MODE, "TWO_WAY") ?: "TWO_WAY"
-        set(value) { putStringScoped(KEY_SYNC_MODE, value) }
 
     // ── Device name cache ────────────────────────────────────────────────
 
