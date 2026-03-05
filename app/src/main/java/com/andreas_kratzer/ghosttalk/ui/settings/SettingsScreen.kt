@@ -140,7 +140,7 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(32.dp))
             val versionName = try {
                 context.packageManager.getPackageInfo(context.packageName, 0).versionName
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 "Unknown"
             }
             Text(

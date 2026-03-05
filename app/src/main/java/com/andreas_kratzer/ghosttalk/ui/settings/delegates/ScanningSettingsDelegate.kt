@@ -41,16 +41,4 @@ class ScanningSettingsDelegate @Inject constructor(
             settingsRepository.bluetoothDelay = it
         }
     }
-
-    fun setSmartPredictionDelayInput(input: String) {
-        val digitsOnly = input.filter { it.isDigit() }
-        val parsed = digitsOnly.toLongOrNull()
-        if (parsed != null && parsed >= 0L) {
-            settingsRepository.smartPredictionDelayMillis = parsed
-        }
-    }
-
-    fun setSmartPredictionEnabled(enabled: Boolean) {
-        settingsRepository.isSmartPredictionEnabled = enabled
-    }
 }

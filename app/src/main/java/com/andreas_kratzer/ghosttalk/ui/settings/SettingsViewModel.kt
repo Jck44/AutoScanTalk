@@ -27,7 +27,7 @@ class SettingsViewModel @Inject constructor(
     application: Application,
     private val settingsRepository: SettingsRepository,
     private val buttonUsageRepository: ButtonUsageRepository,
-    private val getPagesUseCase: GetPagesUseCase,
+    getPagesUseCase: GetPagesUseCase,
     val ttsDelegate: TtsSettingsDelegate,
     val scanningDelegate: ScanningSettingsDelegate,
     val cloudSyncDelegate: CloudSyncSettingsDelegate,
@@ -67,9 +67,7 @@ class SettingsViewModel @Inject constructor(
     val showPageIdInLog = settingsRepository.showPageIdInLogFlow
     
     val isCloudSyncEnabled = settingsRepository.isCloudSyncEnabledFlow
-    val syncIntervalMinutes = settingsRepository.syncIntervalMinutesFlow
     val syncMode = settingsRepository.syncModeFlow
-    val lastSuccessfulSyncTime = settingsRepository.lastSuccessfulSyncTimeFlow
     val isSyncing = cloudSyncDelegate.isSyncing
     val userEmail = cloudSyncDelegate.userEmail
     
@@ -134,13 +132,7 @@ class SettingsViewModel @Inject constructor(
     fun setCloudSyncEnabled(e: Boolean) = cloudSyncDelegate.setCloudSyncEnabled(e)
     fun syncNow() = cloudSyncDelegate.performManualSync(com.andreas_kratzer.ghosttalk.domain.SyncMode.TWO_WAY, viewModelScope)
     fun backupNow() = cloudSyncDelegate.performManualSync(com.andreas_kratzer.ghosttalk.domain.SyncMode.BACKUP_ONLY, viewModelScope)
-    fun restoreNow() = cloudSyncDelegate.performManualSync(com.andreas_kratzer.ghosttalk.domain.SyncMode.RESTORE_ONLY, viewModelScope)
     fun setSyncMode(m: String) { settingsRepository.syncMode = m }
-    fun setSyncIntervalMinutesInput(i: String) {
-        val parsed = i.toLongOrNull()?.coerceAtLeast(15L) ?: 15L
-        settingsRepository.syncIntervalMinutes = parsed
-        if (settingsRepository.isCloudSyncEnabled) cloudSyncDelegate.scheduleCloudSync()
-    }
 
     fun setGeminiEnabled(e: Boolean) {
         settingsRepository.isGeminiEnabled = e

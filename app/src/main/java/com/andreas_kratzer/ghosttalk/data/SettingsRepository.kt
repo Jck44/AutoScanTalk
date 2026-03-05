@@ -293,7 +293,6 @@ class SettingsRepository(context: Context) {
     val templateSortOrderFlow: StateFlow<String> get() = _templateSortOrder.flow
     val lastSuccessfulSyncTimeFlow: StateFlow<Long> get() = _lastSuccessfulSyncTime.flow
     val experimentalManualSortingFlow: StateFlow<Boolean> get() = _experimentalManualSorting.flow
-    val smartPredictionDelayMillisFlow: StateFlow<Long> get() = _smartPredictionDelay.flow
     val isSmartPredictionEnabledFlow: StateFlow<Boolean> get() = _isSmartPredictionEnabled.flow
     val bluetoothDelayFlow: StateFlow<Long> get() = _bluetoothDelay.flow
     val ttsVolumeMultiplierFlow: StateFlow<Float> get() = _ttsVolume.flow

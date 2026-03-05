@@ -132,24 +132,6 @@ class PageViewModel @Inject constructor(
     private val _smartPredictions = MutableStateFlow<List<String>>(emptyList())
     val smartPredictions: StateFlow<List<String>> = _smartPredictions.asStateFlow()
 
-    /**
-     * Predicted labels for display on buttons, derived from IDs in _smartPredictions.
-     */
-    val predictedLabels: StateFlow<List<String>> = kotlinx.coroutines.flow.combine(
-        _smartPredictions,
-        _currentPage,
-        _allPages
-    ) { ids, currentPage, allPages ->
-        ids.map { id ->
-            val buttonLabel = currentPage?.buttonConfigs?.find { it?.id == id }?.label
-            if (buttonLabel != null) return@map buttonLabel
-            
-            val pageName = allPages.find { it.id == id }?.name
-            if (pageName != null) return@map pageName
-            
-            "?"
-        }
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     val templates: StateFlow<List<PageTemplate>> = templateRepository.getAllTemplates()
         .stateIn(
@@ -333,7 +315,6 @@ class PageViewModel @Inject constructor(
 
     fun resumeScanningIfEnabled() = scanCoordinator.resumeScanningIfEnabled()
     fun startScanning(startIndex: Int = 0) = scanCoordinator.startScanning(startIndex)
-    fun stopScanningTemporarily() = scanCoordinator.stopScanningTemporarily()
     fun stopScanning() = scanCoordinator.stopScanning()
 
     fun activateButtonAtIndex(index: Int) {

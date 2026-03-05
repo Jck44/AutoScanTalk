@@ -51,9 +51,7 @@ class GeminiActionHandler(
             is GeminiButtonAction -> action.ttsMode
             is GeminiSearchButtonAction -> action.ttsMode
             is GeminiNanoButtonAction -> action.ttsMode
-            is SpeakTextButtonAction, is NavigateToPageButtonAction,
-            is FrequentActionButtonAction, is SmartPredictionButtonAction,
-            is NotificationButtonAction, is ChangeVolumeButtonAction -> "NORMAL"
+            else -> "NORMAL"
         }
 
         log("Gemini ${if (useGoogleSearch) "Suche " else if (isNanoAction) "Nano " else ""}aufgerufen mit: \"$prompt\"")

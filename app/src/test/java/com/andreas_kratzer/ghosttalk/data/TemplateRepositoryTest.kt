@@ -4,6 +4,7 @@ import com.andreas_kratzer.ghosttalk.model.PageTemplate
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -67,7 +68,9 @@ class TemplateRepositoryTest {
 
     @Test
     fun `get functions delegate to dao`() = runTest {
-        repository.getAllTemplates()
+        io.mockk.every { templateDao.getAllTemplatesFlow() } returns kotlinx.coroutines.flow.flowOf(emptyList())
+        
+        repository.getAllTemplates().first()
         io.mockk.verify(exactly = 1) { templateDao.getAllTemplatesFlow() }
 
         repository.getById("test")
