@@ -12,9 +12,13 @@ class SettingsRepository(context: Context) {
 
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-    var activeBookId: String = prefs.getString(KEY_ACTIVE_BOOK_ID, "book-default") ?: "book-default"
+    private val _activeBookIdFlow = MutableStateFlow(prefs.getString(KEY_ACTIVE_BOOK_ID, "book-default") ?: "book-default")
+    val activeBookIdFlow: StateFlow<String> = _activeBookIdFlow.asStateFlow()
+
+    var activeBookId: String
+        get() = _activeBookIdFlow.value
         set(value) {
-            field = value
+            _activeBookIdFlow.value = value
             prefs.edit().putString(KEY_ACTIVE_BOOK_ID, value).apply()
             refreshFlows()
         }

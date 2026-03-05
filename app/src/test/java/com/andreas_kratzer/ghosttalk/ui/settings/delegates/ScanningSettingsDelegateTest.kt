@@ -3,6 +3,7 @@ package com.andreas_kratzer.ghosttalk.ui.settings.delegates
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.domain.settings.UpdateHoldingTimeUseCase
 import com.andreas_kratzer.ghosttalk.domain.settings.UpdateScanDelayUseCase
+import com.andreas_kratzer.ghosttalk.domain.settings.UpdateBluetoothDelayUseCase
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.Before
@@ -13,6 +14,7 @@ class ScanningSettingsDelegateTest {
     private lateinit var settingsRepository: SettingsRepository
     private lateinit var updateScanDelayUseCase: UpdateScanDelayUseCase
     private lateinit var updateHoldingTimeUseCase: UpdateHoldingTimeUseCase
+    private lateinit var updateBluetoothDelayUseCase: UpdateBluetoothDelayUseCase
     private lateinit var delegate: ScanningSettingsDelegate
 
     @Before
@@ -20,7 +22,13 @@ class ScanningSettingsDelegateTest {
         settingsRepository = mockk(relaxed = true)
         updateScanDelayUseCase = mockk(relaxed = true)
         updateHoldingTimeUseCase = mockk(relaxed = true)
-        delegate = ScanningSettingsDelegate(settingsRepository, updateScanDelayUseCase, updateHoldingTimeUseCase)
+        updateBluetoothDelayUseCase = mockk(relaxed = true)
+        delegate = ScanningSettingsDelegate(
+            settingsRepository, 
+            updateScanDelayUseCase, 
+            updateHoldingTimeUseCase,
+            updateBluetoothDelayUseCase
+        )
     }
 
     @Test
@@ -33,6 +41,12 @@ class ScanningSettingsDelegateTest {
     fun `setHoldingTimeInput calls use case`() {
         delegate.setHoldingTimeInput("500")
         verify { updateHoldingTimeUseCase("500") }
+    }
+
+    @Test
+    fun `setBluetoothDelay calls use case`() {
+        delegate.setBluetoothDelay("150")
+        verify { updateBluetoothDelayUseCase("150") }
     }
 
     @Test

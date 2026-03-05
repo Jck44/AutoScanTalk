@@ -6,10 +6,9 @@ import android.widget.Toast
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.domain.genai.ActivateGeminiUseCase
 import com.andreas_kratzer.ghosttalk.domain.genai.GetGeminiToolStatusUseCase
+import com.andreas_kratzer.ghosttalk.domain.genai.HandleGenAiExceptionUseCase
+import com.andreas_kratzer.ghosttalk.domain.genai.TestGeminiNanoUseCase
 import com.andreas_kratzer.ghosttalk.domain.genai.GeminiUseCase
-import com.andreas_kratzer.ghosttalk.domain.executors.LocalIntentRouter
-import com.google.android.gms.auth.UserRecoverableAuthException
-import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -18,7 +17,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 

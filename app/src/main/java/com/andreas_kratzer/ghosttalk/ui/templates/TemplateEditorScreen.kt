@@ -129,7 +129,7 @@ fun TemplateEditorScreen(
                 selectedButtonIndex = null
             },
             onSave = { newConfig ->
-                templateViewModel.updateButtonConfig(template.id, editingIndex, newConfig)
+                templateViewModel.updateButtonConfig(template, editingIndex, newConfig)
                 selectedButtonIndex = null
             },
             onTest = { testConfig ->
