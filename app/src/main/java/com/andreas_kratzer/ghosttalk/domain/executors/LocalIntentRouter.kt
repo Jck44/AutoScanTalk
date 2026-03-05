@@ -1,19 +1,14 @@
 package com.andreas_kratzer.ghosttalk.domain.executors
 
-import android.content.Context
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.google.gson.JsonParser
 import com.google.mlkit.genai.prompt.GenerateContentRequest
 import com.google.mlkit.genai.prompt.Generation
 import com.google.mlkit.genai.prompt.TextPart
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 class LocalIntentRouter @Inject constructor(
-    @param:ApplicationContext private val context: Context,
-    private val settingsRepository: SettingsRepository,
     private val systemTimeExecutor: SystemTimeExecutor,
     private val androidClockExecutor: AndroidClockExecutor
 ) {
