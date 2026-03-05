@@ -2,7 +2,6 @@ package com.andreas_kratzer.ghosttalk.ui.settings.delegates
 
 import android.app.Application
 import android.content.Context
-import android.util.Log
 import android.widget.Toast
 import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository

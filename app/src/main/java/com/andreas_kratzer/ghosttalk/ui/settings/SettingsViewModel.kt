@@ -2,7 +2,6 @@ package com.andreas_kratzer.ghosttalk.ui.settings
 
 import android.app.Application
 import android.content.Context
-import android.content.Intent
 import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
