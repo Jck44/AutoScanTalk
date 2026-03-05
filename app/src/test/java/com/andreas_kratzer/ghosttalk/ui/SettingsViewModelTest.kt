@@ -39,6 +39,7 @@ class SettingsViewModelTest {
     private lateinit var geminiUseCaseFactory: com.andreas_kratzer.ghosttalk.domain.GeminiUseCaseFactory
     private lateinit var workManager: androidx.work.WorkManager
     private lateinit var buttonUsageRepository: ButtonUsageRepository
+    private lateinit var localIntentRouter: com.andreas_kratzer.ghosttalk.domain.executors.LocalIntentRouter
     private lateinit var viewModel: SettingsViewModel
 
     @Before
@@ -54,6 +55,7 @@ class SettingsViewModelTest {
         audioDeviceManager = mockk(relaxed = true)
         workManager = mockk(relaxed = true)
         buttonUsageRepository = mockk(relaxed = true)
+        localIntentRouter = mockk(relaxed = true)
 
         // Mock default flows and properties from SettingsRepository
         every { settingsRepository.ttsLanguage } returns "de"
@@ -104,7 +106,8 @@ class SettingsViewModelTest {
             tempTtsHelper = tempTtsHelper,
             audioDeviceManager = audioDeviceManager,
             workManager = workManager,
-            buttonUsageRepository = buttonUsageRepository
+            buttonUsageRepository = buttonUsageRepository,
+            localIntentRouter = localIntentRouter
         )
     }
 
@@ -291,5 +294,15 @@ class SettingsViewModelTest {
         
         assertEquals(0.8f, viewModel.cuesVolumeMultiplier.value)
         verify { settingsRepository.cuesVolumeMultiplier = 0.8f }
+    }
+
+    @Test
+    fun testSetUseLocalGenerativeAi_triggersTest() = runTest {
+        viewModel.setUseLocalGenerativeAi(true, application)
+        advanceUntilIdle()
+        
+        verify { settingsRepository.useLocalGenerativeAi = true }
+        // LocalIntentRouter.routeIntent is suspend, so coVerify
+        io.mockk.coVerify { localIntentRouter.routeIntent("Ping", any()) }
     }
 }

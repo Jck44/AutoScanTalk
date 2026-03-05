@@ -6,6 +6,8 @@ import com.andreas_kratzer.ghosttalk.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction
 import com.andreas_kratzer.ghosttalk.model.GeminiButtonAction
+import com.andreas_kratzer.ghosttalk.model.GeminiSearchButtonAction
+import com.andreas_kratzer.ghosttalk.model.GeminiNanoButtonAction
 import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
 import com.google.gson.Gson
@@ -56,6 +58,10 @@ class ButtonActionAdapter : JsonSerializer<ButtonAction>, JsonDeserializer<Butto
                 jsonObject.addProperty("type", "ChangeVolumeButtonAction")
                 jsonObject.add("data", context.serialize(src))
             }
+            is GeminiNanoButtonAction -> {
+                jsonObject.addProperty("type", "GeminiNanoButtonAction")
+                jsonObject.add("data", context.serialize(src))
+            }
         }
         return jsonObject
     }
@@ -73,6 +79,7 @@ class ButtonActionAdapter : JsonSerializer<ButtonAction>, JsonDeserializer<Butto
             "NotificationButtonAction" -> context.deserialize(data, com.andreas_kratzer.ghosttalk.model.NotificationButtonAction::class.java)
             "GeminiSearchButtonAction" -> context.deserialize(data, com.andreas_kratzer.ghosttalk.model.GeminiSearchButtonAction::class.java)
             "ChangeVolumeButtonAction" -> context.deserialize(data, com.andreas_kratzer.ghosttalk.model.ChangeVolumeButtonAction::class.java)
+            "GeminiNanoButtonAction" -> context.deserialize(data, GeminiNanoButtonAction::class.java)
             else -> throw JsonParseException("Unknown ButtonAction type: $type")
         }
     }

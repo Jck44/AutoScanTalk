@@ -71,6 +71,7 @@ class PageViewModel @Inject constructor(
     private val updateRowNameUseCase: com.andreas_kratzer.ghosttalk.domain.UpdateRowNameUseCase,
     private val importPageUseCase: com.andreas_kratzer.ghosttalk.domain.ImportPageUseCase,
     private val exportPageUseCase: com.andreas_kratzer.ghosttalk.domain.ExportPageUseCase,
+    private val localIntentRouter: com.andreas_kratzer.ghosttalk.domain.executors.LocalIntentRouter,
     private val logger: Logger,
     val featureGuard: FeatureGuard
 ) : AndroidViewModel(application) {
@@ -152,6 +153,7 @@ class PageViewModel @Inject constructor(
         logger = logger,
         ttsHelper = ttsHelper,
         geminiUseCase = null, // Will be set in init
+        localIntentRouter = localIntentRouter,
         buttonUsageRepository = buttonUsageRepository
     )
 

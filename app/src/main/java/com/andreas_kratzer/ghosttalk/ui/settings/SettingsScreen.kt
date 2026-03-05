@@ -959,6 +959,30 @@ fun GeminiSettings(settingsViewModel: SettingsViewModel) {
             Text(stringResource(R.string.settings_gemini_activate_button))
         }
 
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        
+        val useLocalGenerativeAi by settingsViewModel.useLocalGenerativeAi.collectAsState()
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.settings_gemini_local_enable),
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Text(
+                    text = stringResource(R.string.settings_gemini_local_desc),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Switch(
+                checked = useLocalGenerativeAi,
+                onCheckedChange = { settingsViewModel.setUseLocalGenerativeAi(it) }
+            )
+        }
+
         if (isGeminiEnabled && toolStatus.isNotEmpty()) {
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             

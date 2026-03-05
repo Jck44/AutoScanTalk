@@ -14,6 +14,7 @@ import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.domain.CloudSyncUseCase
 import com.andreas_kratzer.ghosttalk.domain.GeminiUseCaseFactory
 import com.andreas_kratzer.ghosttalk.model.AudioOutputDevice
+import com.andreas_kratzer.ghosttalk.domain.executors.LocalIntentRouter
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
 import com.google.android.gms.auth.UserRecoverableAuthException
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
@@ -40,7 +41,8 @@ class SettingsViewModel @Inject constructor(
     private val tempTtsHelper: TextToSpeechHelper,
     private val audioDeviceManager: AudioDeviceManager,
     private val workManager: androidx.work.WorkManager,
-    private val buttonUsageRepository: ButtonUsageRepository
+    private val buttonUsageRepository: ButtonUsageRepository,
+    private val localIntentRouter: LocalIntentRouter
 ) : AndroidViewModel(application) {
 
     private val _availableLanguages = MutableStateFlow<List<Locale>>(emptyList())
@@ -116,6 +118,9 @@ class SettingsViewModel @Inject constructor(
 
     private val _isSmartPredictionEnabled = MutableStateFlow(false)
     val isSmartPredictionEnabled: StateFlow<Boolean> = _isSmartPredictionEnabled.asStateFlow()
+
+    private val _useLocalGenerativeAi = MutableStateFlow(false)
+    val useLocalGenerativeAi: StateFlow<Boolean> = _useLocalGenerativeAi.asStateFlow()
 
     private val _isNotificationReadingEnabled = MutableStateFlow(false)
     val isNotificationReadingEnabled: StateFlow<Boolean> = _isNotificationReadingEnabled.asStateFlow()
@@ -607,9 +612,24 @@ class SettingsViewModel @Inject constructor(
                 }
                 
                 if (!handled) {
-                    val errorMsg = getApplication<Application>().getString(com.andreas_kratzer.ghosttalk.R.string.settings_gemini_activation_error, e.message ?: "Unknown error")
-                    android.widget.Toast.makeText(context, errorMsg, android.widget.Toast.LENGTH_LONG).show()
+                    val errorTemplate = getApplication<Application>().getString(com.andreas_kratzer.ghosttalk.R.string.settings_gemini_activation_error)
+                    android.widget.Toast.makeText(context, java.lang.String.format(errorTemplate, e.message ?: "Unknown"), android.widget.Toast.LENGTH_LONG).show()
                 }
+            }
+        }
+    }
+
+    fun testGeminiNano(context: android.content.Context) {
+        viewModelScope.launch {
+            try {
+                android.util.Log.d("SettingsViewModel", "Triggering Gemini Nano test call...")
+                localIntentRouter.routeIntent("Ping") { response ->
+                    android.util.Log.d("SettingsViewModel", "Gemini Nano test call response: $response")
+                    android.widget.Toast.makeText(context, "Gemini Nano bereit: $response", android.widget.Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("SettingsViewModel", "Gemini Nano test failed", e)
+                android.widget.Toast.makeText(context, "Gemini Nano Fehler: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -670,6 +690,14 @@ class SettingsViewModel @Inject constructor(
     fun setSmartPredictionEnabled(enabled: Boolean) {
         settingsRepository.isSmartPredictionEnabled = enabled
         _isSmartPredictionEnabled.value = enabled
+    }
+
+    fun setUseLocalGenerativeAi(enabled: Boolean, context: android.content.Context? = null) {
+        settingsRepository.useLocalGenerativeAi = enabled
+        _useLocalGenerativeAi.value = enabled
+        if (enabled && context != null) {
+            testGeminiNano(context)
+        }
     }
 
     fun setNotificationReadingEnabled(enabled: Boolean) {

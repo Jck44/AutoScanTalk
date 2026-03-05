@@ -21,6 +21,7 @@ googleId = "1.2.0"
 googleHttpClient = "2.1.0"
 playAppUpdate = "2.1.0"
 generativeAi = "0.9.0"
+generativeAiMlKit = "1.0.0-beta1"
 playServicesAuth = "18.3.2"
 mockk = "1.14.9"
 coroutines = "1.10.2"
@@ -70,6 +71,7 @@ androidx-credentials-play-services-auth = { group = "androidx.credentials", name
 googleid = { group = "com.google.android.libraries.identity.googleid", name = "googleid", version.ref = "googleId" }
 play-app-update-ktx = { group = "com.google.android.play", name = "app-update-ktx", version.ref = "playAppUpdate" }
 google-generativeai = { group = "com.google.ai.client.generativeai", name = "generativeai", version.ref = "generativeAi" }
+google-generativeai-mlkit = { group = "com.google.mlkit", name = "genai-prompt", version.ref = "generativeAiMlKit" }
 gms-play-services-auth = { group = "com.google.android.gms", name = "play-services-auth-base", version.ref = "playServicesAuth" }
 
 # Utilities & Tools

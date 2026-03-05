@@ -168,6 +168,7 @@ class PageViewModelTest {
             updateRowNameUseCase = updateRowNameUseCase,
             importPageUseCase = importPageUseCase,
             exportPageUseCase = exportPageUseCase,
+            localIntentRouter = mockk(relaxed = true),
             logger = logger,
             featureGuard = featureGuard
         )

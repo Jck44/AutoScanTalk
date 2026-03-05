@@ -41,6 +41,14 @@ data class GeminiSearchButtonAction(
 ) : ButtonAction()
 
 /**
+ * An action that triggers a Gemini AI request on-device using Gemini Nano.
+ */
+data class GeminiNanoButtonAction(
+    val prompt: String,
+    override val ttsMode: String = "NORMAL"
+) : ButtonAction()
+
+/**
  * An action that resolves dynamically to the N-th most frequent action.
  */
 data class FrequentActionButtonAction(

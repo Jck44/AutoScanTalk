@@ -9,6 +9,7 @@ import com.andreas_kratzer.ghosttalk.model.ChangeVolumeButtonAction
 import com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction
 import com.andreas_kratzer.ghosttalk.model.GeminiButtonAction
 import com.andreas_kratzer.ghosttalk.model.GeminiSearchButtonAction
+import com.andreas_kratzer.ghosttalk.model.GeminiNanoButtonAction
 import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.model.NotificationButtonAction
 import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
@@ -23,13 +24,14 @@ class GeminiActionHandler(
     private val scope: CoroutineScope,
     private val settingsRepository: SettingsRepository,
     private val geminiUseCase: GeminiUseCase?,
+    private val localIntentRouter: com.andreas_kratzer.ghosttalk.domain.executors.LocalIntentRouter,
     private val ttsHelper: TextToSpeechHelper?,
     private val emitEvent: suspend (ActionExecutor.ExecutionEvent) -> Unit,
     private val log: (String) -> Unit
 ) : ActionHandler<ButtonAction> { // Handles both GeminiButtonAction and GeminiSearchButtonAction
 
     override fun canHandle(action: ButtonAction): Boolean = 
-        action is GeminiButtonAction || action is GeminiSearchButtonAction
+        action is GeminiButtonAction || action is GeminiSearchButtonAction || action is GeminiNanoButtonAction
 
     override fun handle(
         buttonConfig: ButtonConfig,
@@ -40,18 +42,21 @@ class GeminiActionHandler(
         val prompt = when (action) {
             is GeminiButtonAction -> action.prompt
             is GeminiSearchButtonAction -> action.prompt
+            is GeminiNanoButtonAction -> action.prompt
             else -> return
         }
         val useGoogleSearch = action is GeminiSearchButtonAction
+        val isNanoAction = action is GeminiNanoButtonAction
         val ttsMode = when (action) {
             is GeminiButtonAction -> action.ttsMode
             is GeminiSearchButtonAction -> action.ttsMode
+            is GeminiNanoButtonAction -> action.ttsMode
             is SpeakTextButtonAction, is NavigateToPageButtonAction,
             is FrequentActionButtonAction, is SmartPredictionButtonAction,
             is NotificationButtonAction, is ChangeVolumeButtonAction -> "NORMAL"
         }
 
-        log("Gemini ${if (useGoogleSearch) "Suche " else ""}aufgerufen mit: \"$prompt\"")
+        log("Gemini ${if (useGoogleSearch) "Suche " else if (isNanoAction) "Nano " else ""}aufgerufen mit: \"$prompt\"")
         
         val targetDeviceAddress = if (buttonConfig.playActionAsAuditoryCue) {
             settingsRepository.cuesAudioDeviceAddress
@@ -62,6 +67,32 @@ class GeminiActionHandler(
         scope.launch {
             val tts = ttsHelper
             try {
+                if (isNanoAction) {
+                    if (!settingsRepository.useLocalGenerativeAi) {
+                        val errorMsg = tts?.context?.getString(R.string.error_gemini_disabled) 
+                            ?: "Gemini Nano in Einstellungen aktivieren"
+                        if (tts != null) {
+                            tts.speakRouted(errorMsg, targetDeviceAddress, ttsMode) {
+                                onFinish(executionId)
+                            }
+                        } else { onFinish(executionId) }
+                        return@launch
+                    }
+
+                    localIntentRouter.routeIntent(prompt) { response ->
+                        if (tts?.isReady == true) {
+                            tts.speakRouted(response, targetDeviceAddress, ttsMode) {
+                                onFinish(executionId)
+                            }
+                        } else {
+                            log("Lokales Gemini Ergebnis: \"$response\"")
+                            onFinish(executionId)
+                        }
+                    }
+                    return@launch
+                }
+
+                // Cloud actions path
                 if (!settingsRepository.isGeminiEnabled) {
                     val errorMsg = tts?.context?.getString(R.string.error_gemini_disabled) 
                         ?: "Gemini in Einstellungen prüfen"

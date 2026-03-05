@@ -27,13 +27,14 @@ import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.model.AuditoryCue
 import com.andreas_kratzer.ghosttalk.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.model.GeminiButtonAction
+import com.andreas_kratzer.ghosttalk.model.GeminiSearchButtonAction
+import com.andreas_kratzer.ghosttalk.model.GeminiNanoButtonAction
 import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
-import com.andreas_kratzer.ghosttalk.model.GeminiButtonAction
 import com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction
 import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
-import com.andreas_kratzer.ghosttalk.model.GeminiSearchButtonAction
 import com.andreas_kratzer.ghosttalk.model.ChangeVolumeButtonAction
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
@@ -69,6 +70,7 @@ fun ButtonConfigDialog(
     val actionTypeNavigate = stringResource(R.string.button_action_navigate_page)
     val actionTypeGemini = stringResource(R.string.button_action_gemini)
     val actionTypeGeminiSearch = stringResource(R.string.button_action_gemini_search)
+    val actionTypeGeminiNano = stringResource(R.string.button_action_gemini_nano)
     val actionTypeFrequent = stringResource(R.string.button_action_frequent_action)
     val actionTypeSmart = stringResource(R.string.button_action_smart_prediction)
     val actionTypeNotification = stringResource(R.string.button_action_notification)
@@ -84,11 +86,13 @@ fun ButtonConfigDialog(
             base.add(actionTypeGemini)
             base.add(actionTypeGeminiSearch)
         }
+        if (featureGuard.isActionEnabled(com.andreas_kratzer.ghosttalk.model.GeminiNanoButtonAction(""))) {
+            base.add(actionTypeGeminiNano)
+        }
         if (featureGuard.isActionEnabled(SmartPredictionButtonAction())) {
             base.add(actionTypeSmart)
         }
         base.add(actionTypeNotification)
-        // base.sortedBy { it } // Optional: sort or keep order
         base.toList()
     }
     
@@ -98,6 +102,7 @@ fun ButtonConfigDialog(
                 is NavigateToPageButtonAction -> actionTypeNavigate
                 is GeminiButtonAction -> actionTypeGemini
                 is GeminiSearchButtonAction -> actionTypeGeminiSearch
+                is com.andreas_kratzer.ghosttalk.model.GeminiNanoButtonAction -> actionTypeGeminiNano
                 is FrequentActionButtonAction -> actionTypeFrequent
                 is SmartPredictionButtonAction -> actionTypeSmart
                 is com.andreas_kratzer.ghosttalk.model.NotificationButtonAction -> actionTypeNotification
@@ -139,7 +144,8 @@ fun ButtonConfigDialog(
     // Gemini Details
     val geminiAction = initialConfig?.buttonAction as? GeminiButtonAction
     val geminiSearchAction = initialConfig?.buttonAction as? GeminiSearchButtonAction
-    var geminiPrompt by remember { mutableStateOf(geminiAction?.prompt ?: geminiSearchAction?.prompt ?: "") }
+    val geminiNanoAction = initialConfig?.buttonAction as? com.andreas_kratzer.ghosttalk.model.GeminiNanoButtonAction
+    var geminiPrompt by remember { mutableStateOf(geminiAction?.prompt ?: geminiSearchAction?.prompt ?: geminiNanoAction?.prompt ?: "") }
 
     // Frequent Action Details
     val frequentActionDef = initialConfig?.buttonAction as? FrequentActionButtonAction
@@ -341,13 +347,15 @@ fun ButtonConfigDialog(
                 }
 
                 // Conditional fields for Gemini
-                if (selectedActionType == actionTypeGemini || selectedActionType == actionTypeGeminiSearch) {
+                if (selectedActionType == actionTypeGemini || 
+                    selectedActionType == actionTypeGeminiSearch ||
+                    selectedActionType == actionTypeGeminiNano
+                ) {
                     OutlinedTextField(
                         value = geminiPrompt,
                         onValueChange = { geminiPrompt = it },
                         label = { Text(stringResource(R.string.button_gemini_prompt_field)) },
                         placeholder = { Text(stringResource(R.string.button_gemini_prompt_hint)) },
-                        singleLine = false,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -529,7 +537,11 @@ fun ButtonConfigDialog(
                                     actionTypeNavigate -> NavigateToPageButtonAction(pageId = navigateToPageId, ttsMode = resolvedTtsMode)
                                     actionTypeGemini -> GeminiButtonAction(prompt = geminiPrompt, ttsMode = resolvedTtsMode)
                                     actionTypeGeminiSearch -> GeminiSearchButtonAction(prompt = geminiPrompt, ttsMode = resolvedTtsMode)
-                                    actionTypeFrequent -> FrequentActionButtonAction(rank = frequentRank.toIntOrNull()?.coerceAtLeast(1) ?: 1, ttsMode = resolvedTtsMode)
+                                    actionTypeGeminiNano -> com.andreas_kratzer.ghosttalk.model.GeminiNanoButtonAction(
+                            prompt = geminiPrompt,
+                            ttsMode = resolvedTtsMode
+                        )
+                        actionTypeFrequent -> FrequentActionButtonAction(rank = frequentRank.toIntOrNull()?.coerceAtLeast(1) ?: 1, ttsMode = resolvedTtsMode)
                                     actionTypeSmart -> SmartPredictionButtonAction(rank = smartRank.toIntOrNull()?.coerceAtLeast(1) ?: 1, ttsMode = resolvedTtsMode)
                                     actionTypeNotification -> com.andreas_kratzer.ghosttalk.model.NotificationButtonAction(targetApp = notificationTargetApp, ttsMode = resolvedTtsMode)
                                     actionTypeVolumeTts, actionTypeVolumeCues -> {

@@ -4,6 +4,8 @@ import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.GeminiButtonAction
+import com.andreas_kratzer.ghosttalk.model.GeminiSearchButtonAction
+import com.andreas_kratzer.ghosttalk.model.GeminiNanoButtonAction
 import com.andreas_kratzer.ghosttalk.model.NotificationButtonAction
 import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
 import javax.inject.Inject
@@ -24,6 +26,8 @@ class FeatureGuard @Inject constructor(
         return when (action) {
             is SmartPredictionButtonAction -> settingsRepository.isSmartPredictionEnabled
             is GeminiButtonAction -> settingsRepository.isGeminiEnabled
+            is GeminiSearchButtonAction -> settingsRepository.isGeminiEnabled
+            is GeminiNanoButtonAction -> settingsRepository.useLocalGenerativeAi
             is NotificationButtonAction -> settingsRepository.isNotificationReadingEnabled
             else -> true
         }

@@ -44,7 +44,8 @@ class ActionExecutorTest {
         geminiUseCase = geminiUseCase,
         buttonUsageRepository = buttonUsageRepository,
         logger = logger,
-        timeProvider = timeProvider
+        timeProvider = timeProvider,
+        localIntentRouter = mockk(relaxed = true)
     )
 
     @Test

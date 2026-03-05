@@ -129,8 +129,9 @@
     <string name="button_action_label">Aktion</string>
     <string name="button_action_speak_text">Text Sprechen</string>
     <string name="button_action_navigate_page">Zu Seite navigieren</string>
-    <string name="button_action_gemini">Gemini aufrufen (Skills)</string>
-    <string name="button_action_gemini_search">Gemini aufrufen (Suche)</string>
+    <string name="button_action_gemini">Gemini (API) nutzen</string>
+    <string name="button_action_gemini_search">Gemini-Suche (API) nutzen</string>
+    <string name="button_action_gemini_nano">Gemini Nano (Offline) nutzen</string>
     <string name="button_action_test">Testen</string>
     <string name="button_action_frequent_action">Häufigste Aktion</string>
     <string name="button_action_smart_prediction">Gemini Vorhersage</string>
@@ -181,7 +182,9 @@
     <string name="settings_gemini_activation_desc">Tippe auf den Button, um Gemini zu initialisieren und die notwendigen Berechtigungen abzufragen.</string>
     <string name="settings_gemini_activation_success">Gemini erfolgreich aktiviert!</string>
     <string name="settings_gemini_activation_error">Aktivierungsfehler: %s</string>
-    <string name="settings_gemini_enable">Gemini KI aktivieren</string>
+    <string name="settings_gemini_enable">In der Cloud verketten (Gemini API)</string>
+    <string name="settings_gemini_local_enable">Lokal verarbeiten (Gemini Nano)</string>
+    <string name="settings_gemini_local_desc">Schneller, komplett offline und kostenlos. Nutzt ein kleines KI-Modell auf deinem Gerät für Smart Home und Uhrzeit. Keine Internetverbindung nötig.</string>
     <string name="settings_smart_prediction_enable">Gemini Vorhersage (Experimentell)</string>
     <string name="settings_smart_prediction_hint">Ermöglicht Buttons, die dynamisch die nächste wahrscheinliche Aktion vorhersagen.</string>
     <string name="settings_smart_prediction_disabled_warning">Das Feature \"Gemini Vorhersage\" ist aktuell in den Einstellungen deaktiviert. Dieser Button wird beim Scannen übersprungen, bis das Feature aktiviert wird.</string>

@@ -128,8 +128,9 @@
     <string name="button_action_label">Action</string>
     <string name="button_action_speak_text">Speak Text</string>
     <string name="button_action_navigate_page">Navigate to Page</string>
-    <string name="button_action_gemini">Call Gemini (Skills)</string>
-    <string name="button_action_gemini_search">Call Gemini (Search)</string>
+    <string name="button_action_gemini">Call Gemini (API)</string>
+    <string name="button_action_gemini_search">Call Gemini (Search API)</string>
+    <string name="button_action_gemini_nano">Call Gemini Nano (Offline)</string>
     <string name="button_action_test">Test</string>
     <string name="button_action_frequent_action">Frequent Action</string>
     <string name="button_action_smart_prediction">Gemini Prediction</string>

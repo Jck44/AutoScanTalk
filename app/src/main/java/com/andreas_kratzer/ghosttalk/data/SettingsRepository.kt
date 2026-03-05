@@ -359,6 +359,10 @@ class SettingsRepository(context: Context) {
     var isGeminiEnabled: Boolean
         get() = getBooleanScoped(KEY_GEMINI_ENABLED, false)
         set(value) { putBooleanScoped(KEY_GEMINI_ENABLED, value) }
+        
+    var useLocalGenerativeAi: Boolean
+        get() = getBooleanScoped(KEY_USE_LOCAL_GENERATIVE_AI, false)
+        set(value) { putBooleanScoped(KEY_USE_LOCAL_GENERATIVE_AI, value) }
 
     var showPageIdInLog: Boolean
         get() = getBooleanScoped(KEY_SHOW_PAGE_ID_IN_LOG, false)
@@ -431,6 +435,7 @@ class SettingsRepository(context: Context) {
         private const val KEY_HOLDING_TIME_MILLIS = "holding_time_millis"
         private const val KEY_CLOUD_SYNC_ENABLED = "cloud_sync_enabled"
         private const val KEY_GEMINI_ENABLED = "gemini_enabled"
+        private const val KEY_USE_LOCAL_GENERATIVE_AI = "use_local_generative_ai"
         private const val KEY_APP_LANGUAGE = "app_language"
         private const val KEY_SYNC_INTERVAL_MINUTES = "sync_interval_minutes"
         private const val KEY_SYNC_MODE = "sync_mode"
