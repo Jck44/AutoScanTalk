@@ -1,5 +1,6 @@
 package com.andreas_kratzer.ghosttalk.ui.templates
 
+import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,13 +28,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
-import android.content.res.Configuration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
-import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
-import com.andreas_kratzer.ghosttalk.ui.pages.GridButton
 import com.andreas_kratzer.ghosttalk.ui.pages.ButtonConfigDialog
+import com.andreas_kratzer.ghosttalk.ui.pages.GridButton
+import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
 import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -111,8 +111,7 @@ fun TemplateEditorScreen(
         }
     }
 
-    if (selectedButtonIndex != null) {
-        val editingIndex = selectedButtonIndex!!
+    selectedButtonIndex?.let { editingIndex ->
         val currentConfig = template.buttonConfigs.getOrNull(editingIndex)
         val buttonId = currentConfig?.id ?: UUID.randomUUID().toString()
 
