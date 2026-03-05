@@ -4,11 +4,13 @@ import com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.domain.executors.LocalIntentRouter
 import com.andreas_kratzer.ghosttalk.model.Page
+import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
 import java.time.LocalTime
 import javax.inject.Inject
 
 /**
  * UseCase to predict the next likely actions using Gemini Nano (on-device).
+ * Uses Button IDs for robust action resolution.
  */
 class PredictNextActionUseCase @Inject constructor(
     private val actionLogUseCase: ActionLogUseCase,
@@ -17,7 +19,7 @@ class PredictNextActionUseCase @Inject constructor(
     private val localIntentRouter: LocalIntentRouter
 ) {
 
-    suspend fun predict(currentPage: Page, bookId: String): List<String> {
+    suspend fun predict(currentPage: Page, allPages: List<Page>, bookId: String): List<String> {
         if (!settingsRepository.useLocalGenerativeAi) {
             return emptyList()
         }
@@ -33,33 +35,40 @@ class PredictNextActionUseCase @Inject constructor(
         val frequentActions = buttonUsageRepository.getTopActions(bookId, 5)
         val timeNow = LocalTime.now().toString()
         
-        val buttonLabels = currentPage.buttonConfigs
-            .filter { it?.isActive == true }
-            .map { it?.label }
+        // Map buttons and pages to IDs for the model. 
+        // Filter out SmartPrediction buttons to prevent recursive predictions.
+        val buttonContext = currentPage.buttonConfigs
             .filterNotNull()
-            .distinct()
+            .filter { it.isActive && it.label.isNotBlank() && it.buttonAction !is SmartPredictionButtonAction }
+            .joinToString("\n") { "- ${it.id}: ${it.label}" }
+
+        val pageContext = allPages
+            .filter { it.id != currentPage.id }
+            .joinToString("\n") { "- ${it.id}: Navigation zu Seite ${it.name}" }
 
         val prompt = """
             Du bist ein Assistent für eine UK-App (Unterstützte Kommunikation). 
-            Deine Aufgabe ist es, vorherzusagen, was der Nutzer als nächstes sagen oder tun möchte.
+            Deine Aufgabe ist es, vorherzusagen, was der Nutzer als nächstes tun möchte.
             
             KONTEXT:
             - Aktuelle Seite: "${currentPage.name}"
-            - Verfügbare Buttons auf dieser Seite: ${buttonLabels.joinToString(", ")}
-            - Letzte Aktionen des Nutzers: ${history.joinToString(" -> ")}
-            - Häufigste Aktionen generell: ${frequentActions.joinToString(", ") { it.label }}
-            - Aktuelle Uhrzeit: $timeNow
+            - Verfügbare Buttons (ID: Label):
+            $buttonContext
+            
+            - Mögliche Navigationsziele (ID: Name):
+            $pageContext
+            
+            - Letzte Aktionen: ${history.joinToString(" -> ")}
+            - Häufigste Aktionen: ${frequentActions.joinToString(", ") { it.label }}
+            - Uhrzeit: $timeNow
             
             AUFGABE:
-            Nenne mir die 3 wahrscheinlichsten nächsten Aussagen oder Navigationsziele von DIESER Seite.
-            Wenn eine Navigation zu einer anderen Seite (z.B. "Essen", "Gefühle") wahrscheinlich ist, nenne den Namen der Seite.
-            Wenn ein konkreter Satz wahrscheinlich ist, nenne das Label des Buttons.
+            Nenne mir die IDs der 3 wahrscheinlichsten nächsten Aktionen oder Navigationsziele.
             
             WICHTIG:
-            - Antworte NUR mit einer Liste der Top 3 Labels, getrennt durch Komma.
-            - Keine Erklärungen. 
-            - Wenn du weniger als 3 findest, nenne nur so viele wie möglich.
-            - Die Antwort muss EXAKT Labels aus der Liste der verfügbaren Buttons oder Navigationsziele enthalten.
+            - Antworte NUR mit einer Liste der Top 3 IDs, getrennt durch Komma.
+            - Keine Erklärungen, kein Text, NUR die IDs.
+            - Die IDs müssen EXAKT aus der obigen Liste stammen.
         """.trimIndent()
 
         return try {
@@ -72,7 +81,6 @@ class PredictNextActionUseCase @Inject constructor(
     }
 
     private fun parseResponse(response: String): List<String> {
-        // Simple comma separated list parsing
         return response.split(",")
             .map { it.trim().removeSurrounding("\"").removeSurrounding("'") }
             .filter { it.isNotBlank() }

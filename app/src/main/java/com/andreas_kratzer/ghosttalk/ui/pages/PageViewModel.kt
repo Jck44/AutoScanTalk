@@ -133,6 +133,25 @@ class PageViewModel @Inject constructor(
     private val _smartPredictions = MutableStateFlow<List<String>>(emptyList())
     val smartPredictions: StateFlow<List<String>> = _smartPredictions.asStateFlow()
 
+    /**
+     * Predicted labels for display on buttons, derived from IDs in _smartPredictions.
+     */
+    val predictedLabels: StateFlow<List<String>> = kotlinx.coroutines.flow.combine(
+        _smartPredictions,
+        _currentPage,
+        _allPages
+    ) { ids, currentPage, allPages ->
+        ids.map { id ->
+            val buttonLabel = currentPage?.buttonConfigs?.find { it?.id == id }?.label
+            if (buttonLabel != null) return@map buttonLabel
+            
+            val pageName = allPages.find { it.id == id }?.name
+            if (pageName != null) return@map pageName
+            
+            "?"
+        }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
     val templates: StateFlow<List<PageTemplate>> = templateRepository.getAllTemplates()
         .stateIn(
             scope = viewModelScope,
@@ -227,16 +246,14 @@ class PageViewModel @Inject constructor(
 
         // Gemini Prediction Triggers
         viewModelScope.launch {
-            // Trigger prediction when page changes OR when action log changes
             kotlinx.coroutines.flow.combine(
                 _currentPage,
                 _lastActions,
-                settingsRepository.smartPredictionDelayMillisFlow,
+                _allPages,
                 settingsRepository.isSmartPredictionEnabledFlow
-            ) { page, _, delay, enabled -> Triple(page, delay, enabled) }
-                .collect { (page, delay, enabled) ->
+            ) { page, _, allPages, enabled -> Triple(page, allPages, enabled) }
+                .collect { (page, allPages, enabled) ->
                     if (page != null && enabled) {
-                        // Check if at least one SMART_PREDICTION button exists
                         val hasPredictor = page.buttonConfigs.any { 
                             it != null && featureGuard.isActionEnabled(it.buttonAction) && it.buttonAction is SmartPredictionButtonAction
                         }
@@ -244,10 +261,9 @@ class PageViewModel @Inject constructor(
                         if (hasPredictor) {
                             val bookId = _activeBookId.value
                             if (bookId != null) {
-                                // Clear current while waiting? User didn't specify, but let's keep old for less Flicker
-                                kotlinx.coroutines.delay(delay) // Debounce using the configurable delay
+                                // Delay removed for offline Nano usage as requested
                                 try {
-                                    _smartPredictions.value = predictNextActionUseCase.predict(page, bookId)
+                                    _smartPredictions.value = predictNextActionUseCase.predict(page, allPages, bookId)
                                 } catch (e: Exception) {
                                     Log.e("PageViewModel", "Smart Prediction failed", e)
                                 }
@@ -338,9 +354,9 @@ class PageViewModel @Inject constructor(
         
         val smartAction = buttonConfig.buttonAction as? SmartPredictionButtonAction
         if (smartAction != null) {
-            val prediction = _smartPredictions.value.getOrNull(smartAction.rank - 1)
-            if (prediction != null) {
-                resolveSmartPrediction(prediction)
+            val predictionId = _smartPredictions.value.getOrNull(smartAction.rank - 1)
+            if (predictionId != null) {
+                resolveSmartPrediction(predictionId)
                 return
             }
         }
@@ -348,11 +364,19 @@ class PageViewModel @Inject constructor(
         actionExecutor.executeButtonAction(buttonConfig, bookId = _activeBookId.value)
     }
 
-    private fun resolveSmartPrediction(prediction: String) {
+    private fun resolveSmartPrediction(predictionId: String) {
         viewModelScope.launch {
-            // Check if it's a page name (Navigation)
+            // 1. Check if it's a button on the current page (executes full action including special types)
+            val currentPage = _currentPage.value
+            val matchingButton = currentPage?.buttonConfigs?.find { it?.id == predictionId }
+            if (matchingButton != null) {
+                actionExecutor.executeButtonAction(matchingButton, bookId = _activeBookId.value)
+                return@launch
+            }
+
+            // 2. Check if it's a page (Navigation)
             val allPages = _allPages.value
-            val targetPage = allPages.find { it.name.equals(prediction, ignoreCase = true) }
+            val targetPage = allPages.find { it.id == predictionId }
             
             if (targetPage != null) {
                 actionExecutor.executeButtonAction(
@@ -360,16 +384,6 @@ class PageViewModel @Inject constructor(
                         label = targetPage.name,
                         auditoryCue = null,
                         buttonAction = NavigateToPageButtonAction(targetPage.id)
-                    ),
-                    bookId = _activeBookId.value
-                )
-            } else {
-                // Otherwise treat as SpeakText
-                actionExecutor.executeButtonAction(
-                    ButtonConfig(
-                        label = prediction,
-                        auditoryCue = null,
-                        buttonAction = SpeakTextButtonAction(prediction)
                     ),
                     bookId = _activeBookId.value
                 )
