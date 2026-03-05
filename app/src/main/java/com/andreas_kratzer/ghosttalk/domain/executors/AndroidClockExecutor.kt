@@ -25,7 +25,7 @@ class AndroidClockExecutor @Inject constructor(
             }
             context.startActivity(intent)
             true
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             false
         }
     }

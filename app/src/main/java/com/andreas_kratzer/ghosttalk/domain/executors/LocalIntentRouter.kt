@@ -112,7 +112,7 @@ class LocalIntentRouter @Inject constructor(
                     onSpeak("Unbekannter Intent empfangen.")
                 }
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             logger.e("LocalIntentRouter", "JSON handling failed: $jsonString")
             onSpeak("Konnte das JSON nicht verarbeiten.")
         }
