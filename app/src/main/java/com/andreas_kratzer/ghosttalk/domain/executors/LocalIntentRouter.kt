@@ -1,47 +1,65 @@
 package com.andreas_kratzer.ghosttalk.domain.executors
 
 import android.content.Context
-import com.google.mlkit.genai.prompt.Generation
-import com.google.mlkit.genai.prompt.GenerationConfig
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
+import com.google.gson.JsonParser
+import com.google.mlkit.genai.prompt.GenerateContentRequest
+import com.google.mlkit.genai.prompt.Generation
+import com.google.mlkit.genai.prompt.TextPart
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import com.google.gson.JsonParser
 import javax.inject.Inject
 
 class LocalIntentRouter @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val settingsRepository: SettingsRepository,
     private val systemTimeExecutor: SystemTimeExecutor,
     private val androidClockExecutor: AndroidClockExecutor
 ) {
     // Note: JSON Schema constraint parsing in ML Kit Prompt API is still highly experimental.
     // For this Phase 1 integration, we instruct the model to return plain JSON via system prompt.
-    private val systemInstruction = """
-        Du bist ein intelligenter Assistent für eine unterstützende Kommunikations-App (AAC). 
-        Deine Aufgabe ist es, den Text des Nutzers in einen strukturierten Intent im JSON Format zu übersetzen.
-        Antworte NUR mit validem JSON, ohne Markdown, ohne Erklärung.
-        
-        Der aktuelle Zeitstempel ist: ${systemTimeExecutor.getRawTimestampContext()}
-        
-        Mögliche Intents:
-        1. Zeitabfrage: {"intent": "time", "query": "time", "response": "<natürliche Antwort zur Uhrzeit, z.B. 'Es ist jetzt kurz nach elf Uhr'>"}
-        2. Datumsabfrage: {"intent": "time", "query": "date", "response": "<natürliche Antwort zum Datum, z.B. 'Heute ist Donnerstag, der fünfte März'>"}
-        3. Wecker stellen: {"intent": "alarm", "action": "set", "hour": <0-23>, "minute": <0-59>}
-        4. Unbekannt: {"intent": "unknown"}
-    """.trimIndent()
+    private fun getSystemInstruction(): String {
+        return """
+            Du bist ein intelligenter Assistent für eine unterstützende Kommunikations-App (AAC). 
+            Deine Aufgabe ist es, den Text des Nutzers in einen strukturierten Intent im JSON Format zu übersetzen.
+            Antworte NUR mit validem JSON, ohne Markdown, ohne Erklärung.
+            
+            Der aktuelle Zeitstempel ist: ${systemTimeExecutor.getRawTimestampContext()}
+            
+            Mögliche Intents:
+            1. Zeitabfrage: {"intent": "time", "query": "time", "response": "<natürliche Antwort zur Uhrzeit>"}
+            2. Datumsabfrage: {"intent": "time", "query": "date", "response": "<natürliche Antwort zum Datum, wobei der Tag als z.B.: vierter statt vier zu formatieren sind>"}
+            3. Wecker stellen: {"intent": "alarm", "action": "set", "hour": <0-23>, "minute": <0-59>}
+            4. Unbekannt: {"intent": "unknown"}
+        """.trimIndent()
+    }
 
     suspend fun routeIntent(prompt: String, onSpeak: (String) -> Unit) = withContext(Dispatchers.IO) {
         try {
             val model = Generation.getClient()
             
-            // Note: downloading the model can take time if not already on device.
-            // model.download().collect { } // Optional explicit download
-
-            val response = model.generateContent("$systemInstruction\n\nNutzer: $prompt")
-            val text = response.candidates.firstOrNull()?.text ?: ""
+            val promptText = "${getSystemInstruction()}\n\nNutzer: $prompt"
+            val textPart = TextPart(promptText)
             
+            // In 1.0.0-beta1, temperature and maxOutputTokens are part of GenerateContentRequest, not GenerationConfig.
+            // The builder methods return void, so they cannot be chained.
+            val builder = GenerateContentRequest.builder(textPart)
+            builder.maxOutputTokens = 100
+            builder.temperature = 0.0f
+            val request = builder.build()
+            
+            // Using the suspended generateContent that returns GenerateContentResponse directly.
+            // This bypasses the need for a StreamingCallback if we only want the final result.
+            val response = model.generateContent(request)
+            
+            // Extract text using explicit getter methods to be safe in this beta version.
+            val candidates = response.candidates
+            val text = candidates.firstOrNull()?.text ?: ""
+            
+            // Log raw response for debugging (visible in logcat)
+            android.util.Log.d("LocalIntentRouter", "Raw Gemini Nano response: $text")
+
             // Clean up backticks if model generated markdown
             val cleanJson = text.replace("```json", "").replace("```", "").trim()
             handleJsonIntent(cleanJson, onSpeak)
@@ -55,15 +73,16 @@ class LocalIntentRouter @Inject constructor(
     private fun handleJsonIntent(jsonString: String, onSpeak: (String) -> Unit) {
         try {
             val json = JsonParser.parseString(jsonString).asJsonObject
-            val intentStr = if (json.has("intent")) json.get("intent").asString else ""
+            val intentStr = if (json.has("intent")) json.get("intent").asString.lowercase() else ""
             when (intentStr) {
-                "time" -> {
+                "time", "date" -> {
                     val responseText = if (json.has("response")) json.get("response").asString else ""
                     if (responseText.isNotBlank()) {
                         onSpeak(responseText)
                     } else {
                         val query = if (json.has("query")) json.get("query").asString else ""
-                        if (query == "date") {
+                        // Support both "date" intent and query="date"
+                        if (query == "date" || intentStr == "date") {
                             onSpeak(systemTimeExecutor.getCurrentDateOutput())
                         } else {
                             onSpeak(systemTimeExecutor.getCurrentTimeOutput())
