@@ -1,7 +1,5 @@
 package com.andreas_kratzer.ghosttalk.domain.executors
 
-import android.content.Context
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -10,20 +8,16 @@ import org.junit.Test
 
 class LocalIntentRouterTest {
 
-    private lateinit var context: Context
-    private lateinit var settingsRepository: SettingsRepository
     private lateinit var systemTimeExecutor: SystemTimeExecutor
     private lateinit var androidClockExecutor: AndroidClockExecutor
     private lateinit var router: LocalIntentRouter
 
     @Before
     fun setup() {
-        context = mockk(relaxed = true)
-        settingsRepository = mockk(relaxed = true)
         systemTimeExecutor = mockk(relaxed = true)
         androidClockExecutor = mockk(relaxed = true)
         
-        router = LocalIntentRouter(context, settingsRepository, systemTimeExecutor, androidClockExecutor)
+        router = LocalIntentRouter(systemTimeExecutor, androidClockExecutor)
     }
 
     @Test
