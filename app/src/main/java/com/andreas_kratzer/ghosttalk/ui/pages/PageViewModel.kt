@@ -41,6 +41,7 @@ class PageViewModel @Inject constructor(
     private val ttsHelper: TextToSpeechHelper,
     private val localIntentRouter: com.andreas_kratzer.ghosttalk.domain.executors.LocalIntentRouter,
     private val logger: Logger,
+    val buttonUsageRepository: com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository,
     val featureGuard: FeatureGuard,
     val pageManagementDelegate: PageManagementDelegate,
     val interactionDelegate: InteractionDelegate,
@@ -74,7 +75,7 @@ class PageViewModel @Inject constructor(
         ttsHelper = ttsHelper,
         geminiUseCase = null,
         localIntentRouter = localIntentRouter,
-        buttonUsageRepository = null // Will be handled inside ActionExecutor if needed, or pass it if you have it
+        buttonUsageRepository = buttonUsageRepository
     )
 
     private val scanCoordinator = ScanCoordinator(

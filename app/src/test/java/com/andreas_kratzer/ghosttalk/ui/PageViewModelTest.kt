@@ -185,11 +185,29 @@ class PageViewModelTest {
             ttsHelper = ttsHelper,
             localIntentRouter = mockk(relaxed = true),
             logger = logger,
+            buttonUsageRepository = buttonUsageRepository,
             featureGuard = featureGuard,
             pageManagementDelegate = pageManagementDelegate,
             interactionDelegate = interactionDelegate,
             smartPredictionDelegate = smartPredictionDelegate
         )
+    }
+
+    @Test
+    fun `activateButtonAtIndex records usage via buttonUsageRepository`() = runTest {
+        viewModel = createViewModel()
+        
+        val button = ButtonConfig(id = "btn123", label = "Hey", auditoryCue = null, buttonAction = SpeakTextButtonAction())
+        val page = Page(id = "p1", bookId = "b1", name = "T", rows = 1, columns = 1, buttonConfigs = listOf(button))
+        
+        viewModel.loadPage(page)
+        viewModel.setActiveBookId("b1")
+        testDispatcher.scheduler.advanceUntilIdle()
+        
+        viewModel.activateButtonAtIndex(0)
+        testDispatcher.scheduler.advanceUntilIdle()
+        
+        coVerify { buttonUsageRepository.recordUsage("b1", any()) }
     }
 
     @Test
