@@ -1,10 +1,10 @@
 package com.andreas_kratzer.ghosttalk.ui.pages
 
 import android.app.Application
-import com.andreas_kratzer.ghosttalk.core.scanning.ScannerEngine
 import com.andreas_kratzer.ghosttalk.core.actions.FrequentActionResolver
 import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
 import com.andreas_kratzer.ghosttalk.core.pages.PageImportExportManager
+import com.andreas_kratzer.ghosttalk.core.scanning.ScannerEngine
 import com.andreas_kratzer.ghosttalk.data.BookRepository
 import com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.data.PageRepository
@@ -18,6 +18,9 @@ import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
+import com.andreas_kratzer.ghosttalk.ui.pages.delegates.InteractionDelegate
+import com.andreas_kratzer.ghosttalk.ui.pages.delegates.PageManagementDelegate
+import com.andreas_kratzer.ghosttalk.ui.pages.delegates.SmartPredictionDelegate
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -144,33 +147,48 @@ class PageViewModelTest {
     }
 
     private fun createViewModel(): PageViewModel {
-        return PageViewModel(
-            application = application,
+        val pageManagementDelegate = PageManagementDelegate(
             pageRepository = pageRepository,
-            settingsRepository = settingsRepository,
-            importExportManager = importExportManager,
-            getPagesUseCase = getPagesUseCase,
-            actionLogUseCase = actionLogUseCase,
-            createPageUseCase = createPageUseCase,
-            frequentActionResolver = frequentActionResolver,
-            buttonUsageRepository = buttonUsageRepository,
-            scannerEngine = scannerEngine,
-            templateRepository = templateRepository,
-            googleAuthManager = googleAuthManager,
-            geminiUseCaseFactory = geminiUseCaseFactory,
-            ttsHelper = ttsHelper,
-            predictNextActionUseCase = predictNextActionUseCase,
             bookRepository = bookRepository,
+            settingsRepository = settingsRepository,
+            templateRepository = templateRepository,
+            getPagesUseCase = getPagesUseCase,
+            createPageUseCase = createPageUseCase,
             deletePageUseCase = deletePageUseCase,
             reorderPagesUseCase = reorderPagesUseCase,
             updateButtonConfigUseCase = updateButtonConfigUseCase,
             updatePageSettingsUseCase = updatePageSettingsUseCase,
             updateRowNameUseCase = updateRowNameUseCase,
             importPageUseCase = importPageUseCase,
-            exportPageUseCase = exportPageUseCase,
+            exportPageUseCase = exportPageUseCase
+        )
+        val interactionDelegate = InteractionDelegate(
+            application = application,
+            pageRepository = pageRepository,
+            settingsRepository = settingsRepository,
+            actionLogUseCase = actionLogUseCase,
+            ttsHelper = ttsHelper
+        )
+        val smartPredictionDelegate = SmartPredictionDelegate(
+            settingsRepository = settingsRepository,
+            featureGuard = featureGuard,
+            predictNextActionUseCase = predictNextActionUseCase
+        )
+
+        return PageViewModel(
+            application = application,
+            settingsRepository = settingsRepository,
+            importExportManager = importExportManager,
+            scannerEngine = scannerEngine,
+            googleAuthManager = googleAuthManager,
+            geminiUseCaseFactory = geminiUseCaseFactory,
+            ttsHelper = ttsHelper,
             localIntentRouter = mockk(relaxed = true),
             logger = logger,
-            featureGuard = featureGuard
+            featureGuard = featureGuard,
+            pageManagementDelegate = pageManagementDelegate,
+            interactionDelegate = interactionDelegate,
+            smartPredictionDelegate = smartPredictionDelegate
         )
     }
 
