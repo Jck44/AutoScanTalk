@@ -50,6 +50,8 @@ android {
             isIncludeAndroidResources = true
             all { test ->
                 test.maxHeapSize = "2G"
+                // Unterdrückt die Byte Buddy / JDK 21 Agent Warnung
+                test.jvmArgs("-XX:+EnableDynamicAgentLoading")
             }
         }
     }
