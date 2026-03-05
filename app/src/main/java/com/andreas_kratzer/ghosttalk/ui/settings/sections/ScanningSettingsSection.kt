@@ -28,7 +28,6 @@ fun ScanningSettingsSection(viewModel: SettingsViewModel) {
     val scanPattern by viewModel.defaultScanPattern.collectAsState("linear")
     val holdingTime by viewModel.holdingTimeMillis.collectAsState(0L)
     val bluetoothDelay by viewModel.bluetoothDelay.collectAsState(1500L)
-    val smartEnabled by viewModel.isSmartPredictionEnabled.collectAsState(false)
 
     var expandedPattern by remember { mutableStateOf(false) }
 
@@ -65,10 +64,5 @@ fun ScanningSettingsSection(viewModel: SettingsViewModel) {
     PreferenceCategory(stringResource(R.string.settings_category_advanced)) {
         SettingsEditTextItem(stringResource(R.string.settings_holding_time), holdingTime.toString()) { viewModel.setHoldingTimeInput(it) }
         SettingsEditTextItem(stringResource(R.string.settings_bluetooth_delay), bluetoothDelay.toString()) { viewModel.setBluetoothDelay(it) }
-    }
-
-    PreferenceCategory(stringResource(R.string.button_action_smart_prediction)) {
-        SettingsToggleItem(stringResource(R.string.settings_smart_prediction_enable), smartEnabled) { viewModel.setSmartPredictionEnabled(it) }
-        // Delay field removed as it's no longer relevant for local Gemini Nano
     }
 }

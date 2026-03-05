@@ -136,9 +136,9 @@
     <string name="button_action_label">Action</string>
     <string name="button_action_speak_text">Speak Text</string>
     <string name="button_action_navigate_page">Navigate to Page</string>
-    <string name="button_action_gemini">Call Gemini (API)</string>
-    <string name="button_action_gemini_search">Call Gemini (Search API)</string>
-    <string name="button_action_gemini_nano">Call Gemini Nano (Offline)</string>
+    <string name="button_action_gemini">Gemini (Cloud)</string>
+    <string name="button_action_gemini_search">Gemini Search (Cloud)</string>
+    <string name="button_action_gemini_nano">Gemini Nano (Local)</string>
     <string name="button_action_test">Test</string>
     <string name="button_action_frequent_action">Frequent Action</string>
     <string name="button_action_smart_prediction">Gemini Prediction</string>
@@ -191,7 +191,7 @@
     <string name="settings_gemini_activation_desc">Tap the button to initialize Gemini and request necessary permissions.</string>
     <string name="settings_gemini_activation_success">Gemini successfully activated!</string>
     <string name="settings_gemini_activation_error">Activation error: %s</string>
-    <string name="settings_gemini_enable">Enable Gemini AI</string>
+    <string name="settings_gemini_enable">Gemini (Cloud)</string>
     <string name="settings_gemini_local_enable">Process locally (Gemini Nano)</string>
     <string name="settings_gemini_local_desc">Faster, completely offline and free. Uses a small AI model on your device for Smart Home and time. No internet connection required.</string>
     <string name="settings_smart_prediction_enable">Gemini Prediction (Experimental)</string>

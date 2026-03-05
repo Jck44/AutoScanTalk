@@ -191,7 +191,7 @@
     <string name="settings_gemini_activation_desc">Tippe auf den Button, um Gemini zu initialisieren und die notwendigen Berechtigungen abzufragen.</string>
     <string name="settings_gemini_activation_success">Gemini erfolgreich aktiviert!</string>
     <string name="settings_gemini_activation_error">Aktivierungsfehler: %s</string>
-    <string name="settings_gemini_enable">In der Cloud verketten (Gemini API)</string>
+    <string name="settings_gemini_enable">Gemini (Cloud)</string>
     <string name="settings_gemini_local_enable">Lokal verarbeiten (Gemini Nano)</string>
     <string name="settings_gemini_local_desc">Schneller, komplett offline und kostenlos. Nutzt ein kleines KI-Modell auf deinem Gerät für Smart Home und Uhrzeit. Keine Internetverbindung nötig.</string>
     <string name="settings_smart_prediction_enable">Gemini Vorhersage (Experimentell)</string>
