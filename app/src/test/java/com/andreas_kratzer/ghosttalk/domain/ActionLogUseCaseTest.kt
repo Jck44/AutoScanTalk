@@ -1,5 +1,7 @@
 package com.andreas_kratzer.ghosttalk.domain
 
+import com.andreas_kratzer.ghosttalk.domain.actions.ActionLogUseCase
+
 import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.andreas_kratzer.ghosttalk.core.util.TestLogger
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository

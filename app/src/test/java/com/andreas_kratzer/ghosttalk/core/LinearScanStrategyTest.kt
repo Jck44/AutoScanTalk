@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
-import com.andreas_kratzer.ghosttalk.domain.FeatureGuard
+import com.andreas_kratzer.ghosttalk.domain.settings.FeatureGuard
 import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
 import io.mockk.*
 import org.junit.Assert.assertEquals

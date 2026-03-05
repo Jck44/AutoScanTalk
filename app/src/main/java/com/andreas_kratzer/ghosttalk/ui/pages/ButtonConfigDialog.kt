@@ -49,7 +49,7 @@ fun ButtonConfigDialog(
     initialConfig: ButtonConfig?,
     availablePages: List<Page>,
     buttonId: String,
-    featureGuard: com.andreas_kratzer.ghosttalk.domain.FeatureGuard,
+    featureGuard: com.andreas_kratzer.ghosttalk.domain.settings.FeatureGuard,
     templates: List<com.andreas_kratzer.ghosttalk.model.PageTemplate>,
     onDismiss: () -> Unit,
     onSave: (ButtonConfig?) -> Unit,

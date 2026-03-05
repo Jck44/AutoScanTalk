@@ -2,10 +2,10 @@ package com.andreas_kratzer.ghosttalk.ui.templates
 
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.data.TemplateRepository
-import com.andreas_kratzer.ghosttalk.domain.CreateTemplateUseCase
-import com.andreas_kratzer.ghosttalk.domain.DeleteTemplateUseCase
-import com.andreas_kratzer.ghosttalk.domain.ReorderTemplatesUseCase
-import com.andreas_kratzer.ghosttalk.domain.UpdateButtonConfigInTemplateUseCase
+import com.andreas_kratzer.ghosttalk.domain.templates.CreateTemplateUseCase
+import com.andreas_kratzer.ghosttalk.domain.templates.DeleteTemplateUseCase
+import com.andreas_kratzer.ghosttalk.domain.templates.ReorderTemplatesUseCase
+import com.andreas_kratzer.ghosttalk.domain.templates.UpdateButtonConfigInTemplateUseCase
 import com.andreas_kratzer.ghosttalk.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.model.SortOrder
 import io.mockk.coVerify

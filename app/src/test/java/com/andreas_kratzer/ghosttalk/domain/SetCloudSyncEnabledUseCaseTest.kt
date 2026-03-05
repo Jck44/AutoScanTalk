@@ -1,5 +1,7 @@
 package com.andreas_kratzer.ghosttalk.domain
 
+import com.andreas_kratzer.ghosttalk.domain.auth.SetCloudSyncEnabledUseCase
+
 import androidx.work.WorkManager
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import io.mockk.every

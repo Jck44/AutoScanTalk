@@ -4,9 +4,9 @@ import android.app.Application
 import android.content.Context
 import android.widget.Toast
 import com.andreas_kratzer.ghosttalk.R
-import com.andreas_kratzer.ghosttalk.domain.ActivateGeminiUseCase
-import com.andreas_kratzer.ghosttalk.domain.GetGeminiToolStatusUseCase
-import com.andreas_kratzer.ghosttalk.domain.GeminiUseCase
+import com.andreas_kratzer.ghosttalk.domain.genai.ActivateGeminiUseCase
+import com.andreas_kratzer.ghosttalk.domain.genai.GetGeminiToolStatusUseCase
+import com.andreas_kratzer.ghosttalk.domain.genai.GeminiUseCase
 import com.andreas_kratzer.ghosttalk.domain.executors.LocalIntentRouter
 import com.google.android.gms.auth.UserRecoverableAuthException
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException

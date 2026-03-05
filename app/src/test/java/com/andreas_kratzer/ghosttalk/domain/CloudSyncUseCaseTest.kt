@@ -1,5 +1,8 @@
 package com.andreas_kratzer.ghosttalk.domain
 
+import com.andreas_kratzer.ghosttalk.domain.auth.CloudSyncUseCase
+import com.andreas_kratzer.ghosttalk.domain.auth.SyncMode
+
 import android.content.Context
 import com.andreas_kratzer.ghosttalk.core.pages.PageImportExportManager
 import com.andreas_kratzer.ghosttalk.core.util.Logger

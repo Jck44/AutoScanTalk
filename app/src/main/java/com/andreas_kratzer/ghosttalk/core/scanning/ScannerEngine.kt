@@ -2,7 +2,7 @@ package com.andreas_kratzer.ghosttalk.core.scanning
 
 import android.util.Log
 import com.andreas_kratzer.ghosttalk.di.ApplicationScope
-import com.andreas_kratzer.ghosttalk.domain.FeatureGuard
+import com.andreas_kratzer.ghosttalk.domain.settings.FeatureGuard
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job

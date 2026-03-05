@@ -10,7 +10,13 @@ import com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.data.PageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.data.TemplateRepository
-import com.andreas_kratzer.ghosttalk.domain.*
+import com.andreas_kratzer.ghosttalk.domain.actions.*
+import com.andreas_kratzer.ghosttalk.domain.auth.*
+import com.andreas_kratzer.ghosttalk.domain.pages.*
+import com.andreas_kratzer.ghosttalk.domain.templates.*
+import com.andreas_kratzer.ghosttalk.domain.tts.*
+import com.andreas_kratzer.ghosttalk.domain.genai.*
+import com.andreas_kratzer.ghosttalk.domain.settings.*
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.model.Page
@@ -53,20 +59,20 @@ class PageViewModelTest {
     private val frequentActionResolver = mockk<FrequentActionResolver>(relaxed = true)
     private val buttonUsageRepository = mockk<ButtonUsageRepository>(relaxed = true)
     private lateinit var googleAuthManager: GoogleAuthManager
-    private lateinit var geminiUseCaseFactory: com.andreas_kratzer.ghosttalk.domain.GeminiUseCaseFactory
+    private lateinit var geminiUseCaseFactory: com.andreas_kratzer.ghosttalk.domain.genai.GeminiUseCaseFactory
     private lateinit var ttsHelper: com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
     private lateinit var bookRepository: BookRepository
     private val predictNextActionUseCase = mockk<PredictNextActionUseCase>(relaxed = true)
     private val scannerEngine = mockk<ScannerEngine>(relaxed = true)
-    private val importPageUseCase = mockk<com.andreas_kratzer.ghosttalk.domain.ImportPageUseCase>(relaxed = true)
-    private val exportPageUseCase = mockk<com.andreas_kratzer.ghosttalk.domain.ExportPageUseCase>(relaxed = true)
-    private val deletePageUseCase = mockk<com.andreas_kratzer.ghosttalk.domain.DeletePageUseCase>(relaxed = true)
-    private val reorderPagesUseCase = mockk<com.andreas_kratzer.ghosttalk.domain.ReorderPagesUseCase>(relaxed = true)
-    private val updateButtonConfigUseCase = mockk<com.andreas_kratzer.ghosttalk.domain.UpdateButtonConfigUseCase>(relaxed = true)
-    private val updatePageSettingsUseCase = mockk<com.andreas_kratzer.ghosttalk.domain.UpdatePageSettingsUseCase>(relaxed = true)
-    private val updateRowNameUseCase = mockk<com.andreas_kratzer.ghosttalk.domain.UpdateRowNameUseCase>(relaxed = true)
+    private val importPageUseCase = mockk<com.andreas_kratzer.ghosttalk.domain.pages.ImportPageUseCase>(relaxed = true)
+    private val exportPageUseCase = mockk<com.andreas_kratzer.ghosttalk.domain.pages.ExportPageUseCase>(relaxed = true)
+    private val deletePageUseCase = mockk<com.andreas_kratzer.ghosttalk.domain.pages.DeletePageUseCase>(relaxed = true)
+    private val reorderPagesUseCase = mockk<com.andreas_kratzer.ghosttalk.domain.pages.ReorderPagesUseCase>(relaxed = true)
+    private val updateButtonConfigUseCase = mockk<com.andreas_kratzer.ghosttalk.domain.pages.UpdateButtonConfigUseCase>(relaxed = true)
+    private val updatePageSettingsUseCase = mockk<com.andreas_kratzer.ghosttalk.domain.pages.UpdatePageSettingsUseCase>(relaxed = true)
+    private val updateRowNameUseCase = mockk<com.andreas_kratzer.ghosttalk.domain.pages.UpdateRowNameUseCase>(relaxed = true)
     private val logger = com.andreas_kratzer.ghosttalk.core.util.TestLogger()
-    private lateinit var featureGuard: com.andreas_kratzer.ghosttalk.domain.FeatureGuard
+    private lateinit var featureGuard: com.andreas_kratzer.ghosttalk.domain.settings.FeatureGuard
     
     private lateinit var activateButtonUseCase: ActivateButtonUseCase
     private lateinit var checkForPredictorUseCase: CheckForPredictorUseCase
@@ -171,7 +177,8 @@ class PageViewModelTest {
             settingsRepository = settingsRepository,
             actionLogUseCase = actionLogUseCase,
             ttsHelper = ttsHelper,
-            activateButtonUseCase = activateButtonUseCase
+            activateButtonUseCase = activateButtonUseCase,
+            handleActionExecutionEventUseCase = mockk(relaxed = true)
         )
         val smartPredictionDelegate = SmartPredictionDelegate(
             settingsRepository = settingsRepository,
@@ -300,8 +307,9 @@ class PageViewModelTest {
         val resolveSmartPredictionUseCase = ResolveSmartPredictionUseCase(pageRepository)
         val realActivateButtonUseCase = ActivateButtonUseCase(ttsHelper, resolveSmartPredictionUseCase)
         
+        val handleActionExecutionEventUseCase = HandleActionExecutionEventUseCase(pageRepository, settingsRepository)
         val interactionDelegate = InteractionDelegate(
-            application, pageRepository, settingsRepository, actionLogUseCase, ttsHelper, realActivateButtonUseCase
+            application, pageRepository, settingsRepository, actionLogUseCase, ttsHelper, realActivateButtonUseCase, handleActionExecutionEventUseCase
         )
         
         val pageManagementDelegate = PageManagementDelegate(

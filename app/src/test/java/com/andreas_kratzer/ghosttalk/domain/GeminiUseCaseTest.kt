@@ -1,5 +1,7 @@
 package com.andreas_kratzer.ghosttalk.domain
 
+import com.andreas_kratzer.ghosttalk.domain.genai.GeminiUseCase
+
 import io.mockk.mockk
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

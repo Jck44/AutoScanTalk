@@ -2,11 +2,11 @@ package com.andreas_kratzer.ghosttalk.ui.settings.delegates
 
 import android.app.Application
 import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
-import com.andreas_kratzer.ghosttalk.domain.PerformManualSyncUseCase
-import com.andreas_kratzer.ghosttalk.domain.SetCloudSyncEnabledUseCase
-import com.andreas_kratzer.ghosttalk.domain.SignInUseCase
-import com.andreas_kratzer.ghosttalk.domain.SignOutUseCase
-import com.andreas_kratzer.ghosttalk.domain.SyncMode
+import com.andreas_kratzer.ghosttalk.domain.auth.PerformManualSyncUseCase
+import com.andreas_kratzer.ghosttalk.domain.auth.SetCloudSyncEnabledUseCase
+import com.andreas_kratzer.ghosttalk.domain.auth.SignInUseCase
+import com.andreas_kratzer.ghosttalk.domain.auth.SignOutUseCase
+import com.andreas_kratzer.ghosttalk.domain.auth.SyncMode
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk

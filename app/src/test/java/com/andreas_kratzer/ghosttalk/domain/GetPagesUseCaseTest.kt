@@ -1,5 +1,7 @@
 package com.andreas_kratzer.ghosttalk.domain
 
+import com.andreas_kratzer.ghosttalk.domain.pages.GetPagesUseCase
+
 import com.andreas_kratzer.ghosttalk.data.PageRepository
 import com.andreas_kratzer.ghosttalk.model.Page
 import io.mockk.coEvery

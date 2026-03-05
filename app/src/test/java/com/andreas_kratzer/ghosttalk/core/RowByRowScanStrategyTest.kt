@@ -1,7 +1,7 @@
 
 
 import com.andreas_kratzer.ghosttalk.core.scanning.RowByRowScanStrategy
-import com.andreas_kratzer.ghosttalk.domain.FeatureGuard
+import com.andreas_kratzer.ghosttalk.domain.settings.FeatureGuard
 import com.andreas_kratzer.ghosttalk.model.AuditoryCue
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction

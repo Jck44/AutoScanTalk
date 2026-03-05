@@ -7,7 +7,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.domain.GetPagesUseCase
+import com.andreas_kratzer.ghosttalk.domain.pages.GetPagesUseCase
 import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.ui.settings.delegates.CloudSyncSettingsDelegate
 import com.andreas_kratzer.ghosttalk.ui.settings.delegates.ExperimentalSettingsDelegate
@@ -132,8 +132,8 @@ class SettingsViewModel @Inject constructor(
     fun signIn(ctx: Context) = cloudSyncDelegate.signIn(ctx, viewModelScope)
     fun signOut() = cloudSyncDelegate.signOut(viewModelScope)
     fun setCloudSyncEnabled(e: Boolean) = cloudSyncDelegate.setCloudSyncEnabled(e)
-    fun syncNow() = cloudSyncDelegate.performManualSync(com.andreas_kratzer.ghosttalk.domain.SyncMode.TWO_WAY, viewModelScope)
-    fun backupNow() = cloudSyncDelegate.performManualSync(com.andreas_kratzer.ghosttalk.domain.SyncMode.BACKUP_ONLY, viewModelScope)
+    fun syncNow() = cloudSyncDelegate.performManualSync(com.andreas_kratzer.ghosttalk.domain.auth.SyncMode.TWO_WAY, viewModelScope)
+    fun backupNow() = cloudSyncDelegate.performManualSync(com.andreas_kratzer.ghosttalk.domain.auth.SyncMode.BACKUP_ONLY, viewModelScope)
     fun setSyncMode(m: String) { settingsRepository.syncMode = m }
     fun setSyncIntervalMinutes(minutes: Long) { settingsRepository.syncIntervalMinutes = minutes }
 

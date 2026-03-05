@@ -6,8 +6,8 @@ import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.domain.CloudSyncUseCase
-import com.andreas_kratzer.ghosttalk.domain.SyncMode
+import com.andreas_kratzer.ghosttalk.domain.auth.CloudSyncUseCase
+import com.andreas_kratzer.ghosttalk.domain.auth.SyncMode
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
 import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.gson.GsonFactory

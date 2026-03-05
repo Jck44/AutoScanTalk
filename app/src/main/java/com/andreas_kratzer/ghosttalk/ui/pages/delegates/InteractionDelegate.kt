@@ -6,8 +6,9 @@ import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
 import com.andreas_kratzer.ghosttalk.data.PageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.domain.ActionLogUseCase
-import com.andreas_kratzer.ghosttalk.domain.ActivateButtonUseCase
+import com.andreas_kratzer.ghosttalk.domain.actions.ActionLogUseCase
+import com.andreas_kratzer.ghosttalk.domain.actions.ActivateButtonUseCase
+import com.andreas_kratzer.ghosttalk.domain.actions.HandleActionExecutionEventUseCase
 import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
 import com.andreas_kratzer.ghosttalk.ui.pages.ScanCoordinator
@@ -27,7 +28,8 @@ class InteractionDelegate @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val actionLogUseCase: ActionLogUseCase,
     private val ttsHelper: TextToSpeechHelper,
-    private val activateButtonUseCase: ActivateButtonUseCase
+    private val activateButtonUseCase: ActivateButtonUseCase,
+    private val handleActionExecutionEventUseCase: HandleActionExecutionEventUseCase
 ) {
     private lateinit var scope: CoroutineScope
     private lateinit var actionExecutor: ActionExecutor
@@ -61,24 +63,22 @@ class InteractionDelegate @Inject constructor(
 
         scope.launch {
             actionExecutor.events.collect { event ->
-                when (event) {
-                    is ActionExecutor.ExecutionEvent.NavigateToPage -> {
-                        scope.launch {
-                            val page = pageRepository.getPageById(event.pageId)
-                            if (page != null) {
-                                val idSuffix = if (settingsRepository.showPageIdInLog) " (ID: ${event.pageId})" else ""
-                                logAction("Navigiert zu Seite: ${page.name}$idSuffix")
-                                onPageLoadRequested(page)
-                            } else {
-                                val idSuffix = if (settingsRepository.showPageIdInLog) " mit ID '${event.pageId}'" else ""
-                                logAction("Fehler: Seite$idSuffix nicht gefunden.")
-                                ttsHelper.speak(application.getString(R.string.error_page_not_found)) {}
-                            }
-                        }
+                val effect = handleActionExecutionEventUseCase.execute(event) ?: return@collect
+                when (effect) {
+                    is HandleActionExecutionEventUseCase.Effect.LoadPage -> {
+                        logAction(effect.logMessage)
+                        onPageLoadRequested(effect.page)
                     }
-                    is ActionExecutor.ExecutionEvent.Log -> logAction(event.message)
-                    is ActionExecutor.ExecutionEvent.Error -> logAction("Fehler: ${event.message}")
-                    is ActionExecutor.ExecutionEvent.RecoverableAuthError -> _authRecoverIntent.emit(event.intent)
+                    is HandleActionExecutionEventUseCase.Effect.LogAction -> {
+                        logAction(effect.message)
+                    }
+                    is HandleActionExecutionEventUseCase.Effect.SpeakError -> {
+                        logAction(effect.logMessage)
+                        ttsHelper.speak(application.getString(effect.messageResId)) {}
+                    }
+                    is HandleActionExecutionEventUseCase.Effect.EmitAuthIntent -> {
+                        _authRecoverIntent.emit(effect.intent)
+                    }
                 }
             }
         }

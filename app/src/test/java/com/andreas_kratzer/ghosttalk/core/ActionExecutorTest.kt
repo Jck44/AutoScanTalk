@@ -21,7 +21,7 @@ import org.junit.Test
 class ActionExecutorTest {
     private val settingsRepository = mockk<SettingsRepository>(relaxed = true)
     private val ttsHelper = mockk<TextToSpeechHelper>(relaxed = true)
-    private val geminiUseCase = mockk<com.andreas_kratzer.ghosttalk.domain.GeminiUseCase>(relaxed = true)
+    private val geminiUseCase = mockk<com.andreas_kratzer.ghosttalk.domain.genai.GeminiUseCase>(relaxed = true)
     private val buttonUsageRepository = mockk<ButtonUsageRepository>(relaxed = true)
     private val logger: Logger = TestLogger()
 

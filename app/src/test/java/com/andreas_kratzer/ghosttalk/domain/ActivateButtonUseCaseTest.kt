@@ -1,5 +1,8 @@
 package com.andreas_kratzer.ghosttalk.domain
 
+import com.andreas_kratzer.ghosttalk.domain.actions.ResolveSmartPredictionUseCase
+import com.andreas_kratzer.ghosttalk.domain.actions.ActivateButtonUseCase
+
 import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.Page
@@ -35,6 +38,8 @@ class ActivateButtonUseCaseTest {
         useCase = ActivateButtonUseCase(ttsHelper, resolveSmartPredictionUseCase)
         
         every { actionExecutor.isExecuting } returns MutableStateFlow(false)
+        io.mockk.mockkStatic(android.util.Log::class)
+        every { android.util.Log.d(any(), any()) } returns 0
     }
 
     @Test

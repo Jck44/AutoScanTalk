@@ -1,7 +1,7 @@
 package com.andreas_kratzer.ghosttalk.ui.settings.delegates
 
-import com.andreas_kratzer.ghosttalk.domain.ExperimentalFeature
-import com.andreas_kratzer.ghosttalk.domain.ToggleExperimentalFeatureUseCase
+import com.andreas_kratzer.ghosttalk.domain.settings.ExperimentalFeature
+import com.andreas_kratzer.ghosttalk.domain.settings.ToggleExperimentalFeatureUseCase
 import javax.inject.Inject
 import javax.inject.Singleton
 

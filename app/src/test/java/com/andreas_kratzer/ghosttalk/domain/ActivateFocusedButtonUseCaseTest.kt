@@ -1,5 +1,8 @@
 package com.andreas_kratzer.ghosttalk.domain
 
+import com.andreas_kratzer.ghosttalk.domain.actions.ActivateFocusedButtonUseCase
+import com.andreas_kratzer.ghosttalk.domain.actions.ActivateButtonUseCase
+
 import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
 import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.ui.pages.ScanCoordinator
