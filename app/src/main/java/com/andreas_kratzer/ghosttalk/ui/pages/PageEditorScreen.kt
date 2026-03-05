@@ -44,9 +44,10 @@ import java.util.UUID
 fun PageEditorScreen(
     pageId: String,
     pageViewModel: PageViewModel,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onEditPage: ((String) -> Unit)? = null
 ) {
-    val allPages by pageViewModel.allPages.collectAsState()
+    val allPages by pageViewModel.filteredPages.collectAsState()
     val unfilteredPages by pageViewModel.unfilteredPages.collectAsState()
     val bookDefaultScanPattern by pageViewModel.defaultScanPattern.collectAsState()
     val page = allPages.find { it.id == pageId }
@@ -156,7 +157,8 @@ fun PageEditorScreen(
             },
             onTest = { testConfig ->
                 pageViewModel.actionExecutor.executeButtonAction(testConfig)
-            }
+            },
+            onNavigateToPage = onEditPage
         )
     }
 }

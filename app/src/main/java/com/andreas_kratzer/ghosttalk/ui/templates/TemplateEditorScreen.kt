@@ -45,7 +45,7 @@ fun TemplateEditorScreen(
     onNavigateBack: () -> Unit
 ) {
     val templates by templateViewModel.templates.collectAsState()
-    val allPages by pageViewModel.allPages.collectAsState()
+    val allPages by pageViewModel.filteredPages.collectAsState()
     val template = templates.find { it.id == templateId }
 
     var selectedButtonIndex by remember { mutableStateOf<Int?>(null) }

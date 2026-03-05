@@ -79,7 +79,7 @@ fun PageListScreen(
     onNavigateBack: () -> Unit,
     onEditPage: (String) -> Unit
 ) {
-    val allPages by pageViewModel.allPages.collectAsState()
+    val allPages by pageViewModel.filteredPages.collectAsState()
     val templates by pageViewModel.templates.collectAsState()
     val experimentalSorting by pageViewModel.experimentalManualSorting.collectAsState()
     val activeBookId by pageViewModel.activeBookId.collectAsState()

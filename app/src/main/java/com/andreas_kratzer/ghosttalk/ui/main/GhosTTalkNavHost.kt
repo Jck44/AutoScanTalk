@@ -143,7 +143,10 @@ fun GhosTTalkNavHost(
                 PageEditorScreen(
                     pageId = pageId,
                     pageViewModel = pageViewModel,
-                    onNavigateBack = { navController.popBackStack() }
+                    onNavigateBack = { navController.popBackStack() },
+                    onEditPage = { targetPageId ->
+                        navController.navigate("page_editor/$targetPageId")
+                    }
                 )
             }
         }

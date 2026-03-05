@@ -50,7 +50,8 @@ fun ButtonConfigDialog(
     featureGuard: com.andreas_kratzer.ghosttalk.domain.FeatureGuard,
     onDismiss: () -> Unit,
     onSave: (ButtonConfig?) -> Unit,
-    onTest: ((ButtonConfig) -> Unit)? = null
+    onTest: ((ButtonConfig) -> Unit)? = null,
+    onNavigateToPage: ((String) -> Unit)? = null
 ) {
     // Current State
     var label by remember { mutableStateOf(initialConfig?.label ?: "") }
@@ -322,6 +323,19 @@ fun ButtonConfigDialog(
                                     enabled = false
                                 )
                             }
+                        }
+                    }
+
+                    // "Ziel-Seite verwalten" button
+                    if (navigateToPageId.isNotEmpty() && onNavigateToPage != null) {
+                        androidx.compose.material3.OutlinedButton(
+                            onClick = {
+                                onDismiss()
+                                onNavigateToPage(navigateToPageId)
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Ziel-Seite verwalten")
                         }
                     }
                 }

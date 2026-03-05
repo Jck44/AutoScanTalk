@@ -88,7 +88,7 @@ class PageViewModel @Inject constructor(
     }
 
     private val _allPages = MutableStateFlow<List<Page>>(emptyList())
-    val allPages: StateFlow<List<Page>> = kotlinx.coroutines.flow.combine(
+    val filteredPages: StateFlow<List<Page>> = kotlinx.coroutines.flow.combine(
         _allPages,
         settingsRepository.pageSortOrderFlow,
         _searchQuery
