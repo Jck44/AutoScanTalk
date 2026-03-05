@@ -67,7 +67,7 @@ class TemplateRepositoryTest {
 
     @Test
     fun `get functions delegate to dao`() = runTest {
-        val flow = repository.getAllTemplates()
+        repository.getAllTemplates()
         io.mockk.verify(exactly = 1) { templateDao.getAllTemplatesFlow() }
 
         repository.getById("test")

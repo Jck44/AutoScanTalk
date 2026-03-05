@@ -106,7 +106,7 @@ fun ButtonConfigDialog(
                 is GeminiNanoButtonAction -> actionTypeGeminiNano
                 is FrequentActionButtonAction -> actionTypeFrequent
                 is SmartPredictionButtonAction -> actionTypeSmart
-                is com.andreas_kratzer.ghosttalk.model.NotificationButtonAction -> actionTypeNotification
+                is NotificationButtonAction -> actionTypeNotification
                 is ChangeVolumeButtonAction -> if (action.isForCues) actionTypeVolumeCues else actionTypeVolumeTts
                 else -> actionTypeSpeak
             }
@@ -145,7 +145,7 @@ fun ButtonConfigDialog(
     // Gemini Details
     val geminiAction = initialConfig?.buttonAction as? GeminiButtonAction
     val geminiSearchAction = initialConfig?.buttonAction as? GeminiSearchButtonAction
-    val geminiNanoAction = initialConfig?.buttonAction as? com.andreas_kratzer.ghosttalk.model.GeminiNanoButtonAction
+    val geminiNanoAction = initialConfig?.buttonAction as? GeminiNanoButtonAction
     var geminiPrompt by remember { mutableStateOf(geminiAction?.prompt ?: geminiSearchAction?.prompt ?: geminiNanoAction?.prompt ?: "") }
 
     // Frequent Action Details
@@ -157,7 +157,7 @@ fun ButtonConfigDialog(
     var smartRank by remember { mutableStateOf((smartActionDef?.rank ?: 1).toString()) }
 
     // Notification Details
-    val notificationActionDef = initialConfig?.buttonAction as? com.andreas_kratzer.ghosttalk.model.NotificationButtonAction
+    val notificationActionDef = initialConfig?.buttonAction as? NotificationButtonAction
     var notificationTargetApp by remember { mutableStateOf(notificationActionDef?.targetApp ?: "ALL") }
     val appAllLabel = stringResource(R.string.button_notification_target_all)
     val notificationApps = mapOf(
@@ -550,13 +550,13 @@ fun ButtonConfigDialog(
                                     actionTypeNavigate -> NavigateToPageButtonAction(pageId = navigateToPageId, ttsMode = resolvedTtsMode)
                                     actionTypeGemini -> GeminiButtonAction(prompt = geminiPrompt, ttsMode = resolvedTtsMode)
                                     actionTypeGeminiSearch -> GeminiSearchButtonAction(prompt = geminiPrompt, ttsMode = resolvedTtsMode)
-                                    actionTypeGeminiNano -> com.andreas_kratzer.ghosttalk.model.GeminiNanoButtonAction(
+                                    actionTypeGeminiNano -> GeminiNanoButtonAction(
                             prompt = geminiPrompt,
                             ttsMode = resolvedTtsMode
                         )
                         actionTypeFrequent -> FrequentActionButtonAction(rank = frequentRank.toIntOrNull()?.coerceAtLeast(1) ?: 1, ttsMode = resolvedTtsMode)
                                     actionTypeSmart -> SmartPredictionButtonAction(rank = smartRank.toIntOrNull()?.coerceAtLeast(1) ?: 1, ttsMode = resolvedTtsMode)
-                                    actionTypeNotification -> com.andreas_kratzer.ghosttalk.model.NotificationButtonAction(targetApp = notificationTargetApp, ttsMode = resolvedTtsMode)
+                                    actionTypeNotification -> NotificationButtonAction(targetApp = notificationTargetApp, ttsMode = resolvedTtsMode)
                                     actionTypeVolumeTts, actionTypeVolumeCues -> {
                                         val isAbsoluteAmount = selectedVolumeType == volumeAbsolutLabel
                                         val parseAmount = volumePercentInput.toFloatOrNull() ?: 10f
@@ -607,7 +607,7 @@ fun ButtonConfigDialog(
                                 actionTypeGeminiNano -> GeminiNanoButtonAction(prompt = geminiPrompt, ttsMode = resolvedTtsMode)
                                 actionTypeFrequent -> FrequentActionButtonAction(rank = frequentRank.toIntOrNull()?.coerceAtLeast(1) ?: 1, ttsMode = resolvedTtsMode)
                                 actionTypeSmart -> SmartPredictionButtonAction(rank = smartRank.toIntOrNull()?.coerceAtLeast(1) ?: 1, ttsMode = resolvedTtsMode)
-                                actionTypeNotification -> com.andreas_kratzer.ghosttalk.model.NotificationButtonAction(targetApp = notificationTargetApp, ttsMode = resolvedTtsMode)
+                                actionTypeNotification -> NotificationButtonAction(targetApp = notificationTargetApp, ttsMode = resolvedTtsMode)
                                 actionTypeVolumeTts, actionTypeVolumeCues -> {
                                     val isAbsoluteAmount = selectedVolumeType == volumeAbsolutLabel
                                     val parseAmount = volumePercentInput.toFloatOrNull() ?: 10f

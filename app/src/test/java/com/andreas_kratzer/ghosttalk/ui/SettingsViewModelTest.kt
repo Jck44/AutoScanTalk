@@ -1,14 +1,8 @@
 package com.andreas_kratzer.ghosttalk.ui.settings
 
 import android.app.Application
-import com.andreas_kratzer.ghosttalk.core.audio.AudioDeviceManager
-import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
 import com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.domain.CloudSyncUseCase
-import com.andreas_kratzer.ghosttalk.domain.GeminiUseCaseFactory
-import com.andreas_kratzer.ghosttalk.domain.executors.LocalIntentRouter
-import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
 import com.andreas_kratzer.ghosttalk.ui.settings.delegates.CloudSyncSettingsDelegate
 import com.andreas_kratzer.ghosttalk.ui.settings.delegates.GenAiSettingsDelegate
 import com.andreas_kratzer.ghosttalk.ui.settings.delegates.ScanningSettingsDelegate

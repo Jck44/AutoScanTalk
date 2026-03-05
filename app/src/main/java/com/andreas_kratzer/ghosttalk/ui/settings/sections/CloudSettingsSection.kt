@@ -33,7 +33,6 @@ fun CloudSettingsSection(viewModel: SettingsViewModel) {
     val syncMode by viewModel.syncMode.collectAsState("TWO_WAY")
     val userEmail by viewModel.userEmail.collectAsState(null)
     val isSyncing by viewModel.isSyncing.collectAsState(false)
-    val lastSync by viewModel.lastSuccessfulSyncTime.collectAsState(0L)
     val context = LocalContext.current
 
     var expandedMode by remember { mutableStateOf(false) }

@@ -1,6 +1,5 @@
 package com.andreas_kratzer.ghosttalk.ui.settings.sections
 
-import android.speech.tts.Voice
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
