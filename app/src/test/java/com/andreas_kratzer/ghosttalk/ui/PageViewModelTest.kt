@@ -118,11 +118,11 @@ class PageViewModelTest {
         every { settingsRepository.persistActionLogsFlow } returns MutableStateFlow(false)
         every { settingsRepository.actionLogsStorage } returns null
         every { settingsRepository.actionLogsStorageFlow } returns MutableStateFlow(null)
-        every { settingsRepository.ttsVolumeMultiplierFlow } returns MutableStateFlow<Float>(1.0f)
-        every { settingsRepository.cuesVolumeMultiplierFlow } returns MutableStateFlow<Float>(1.0f)
+        every { settingsRepository.ttsVolumeMultiplierFlow } returns MutableStateFlow(1.0f)
+        every { settingsRepository.cuesVolumeMultiplierFlow } returns MutableStateFlow(1.0f)
         
-        every { getPagesUseCase.execute(any()) } returns MutableStateFlow<List<Page>>(emptyList())
-        every { actionLogUseCase.loadSavedLogs() } returns emptyList<String>()
+        every { getPagesUseCase.execute(any()) } returns MutableStateFlow(emptyList())
+        every { actionLogUseCase.loadSavedLogs() } returns emptyList()
         val engineFocusFlow = MutableStateFlow<Int?>(null)
         val engineRowFlow = MutableStateFlow<Int?>(null)
         every { scannerEngine.focusedButtonIndex } returns engineFocusFlow
