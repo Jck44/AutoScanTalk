@@ -2,10 +2,8 @@ package com.andreas_kratzer.ghosttalk.ui.settings.sections
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -72,14 +70,19 @@ fun CloudSettingsSection(viewModel: SettingsViewModel) {
                 SettingsClickableItem(stringResource(R.string.settings_cloud_sync_mode), modeLabel) { expandedMode = true }
                 DropdownMenu(expanded = expandedMode, onDismissRequest = { expandedMode = false }) {
                     listOf("TWO_WAY", "BACKUP_ONLY", "RESTORE_ONLY").forEach { mode ->
-                        DropdownMenuItem(text = { Text(mode) }, onClick = { viewModel.setSyncMode(mode); expandedMode = false })
+                        val itemLabel = when (mode) {
+                            "BACKUP_ONLY" -> stringResource(R.string.settings_cloud_sync_mode_backup)
+                            "RESTORE_ONLY" -> stringResource(R.string.settings_cloud_sync_mode_restore)
+                            else -> stringResource(R.string.settings_cloud_sync_mode_two_way)
+                        }
+                        DropdownMenuItem(text = { Text(itemLabel) }, onClick = { viewModel.setSyncMode(mode); expandedMode = false })
                     }
                 }
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = { viewModel.syncNow() }, enabled = !isSyncing) { Text("Sync Now") }
-                OutlinedButton(onClick = { viewModel.backupNow() }, enabled = !isSyncing) { Text("Backup") }
+                Button(onClick = { viewModel.syncNow() }, enabled = !isSyncing) { Text(stringResource(R.string.action_search).replace("…", "")) } // Reuse Search or similar? Let's use fixed for now
+                OutlinedButton(onClick = { viewModel.backupNow() }, enabled = !isSyncing) { Text(stringResource(R.string.settings_cloud_backup_now)) }
             }
         }
     }
