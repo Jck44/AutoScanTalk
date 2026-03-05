@@ -57,11 +57,14 @@
     <string name="settings_persist_logs_hint">Behält Verlauf auch nach Neustart</string>
     <string name="settings_show_page_id_in_log">Page ID im Verlauf anzeigen</string>
     <string name="settings_show_page_id_in_log_hint">Zeigt die technische ID der Seite in den Protokollen an</string>
+    <string name="settings_experimental_manual_sorting">Manuelle Sortierung (Exper.)</string>
     <string name="settings_experimental_manual_sorting_hint">Ermöglicht das Sortieren von Seiten und Vorlagen via Drag &amp; Drop. (In Entwicklung)</string>
-    
+
+    <string name="settings_category_experimental">Experimentelle Features</string>
+
     <string name="settings_category_ui">Benutzeroberfläche</string>
     <string name="settings_category_maintenance">Wartung</string>
-    <string name="settings_clear_usage_stats">Nutzungsstatistiken löschen</string>
+    <string name="settings_clear_usage_stats">Nutzungsstatistiken leeren</string>
     <string name="settings_category_advanced">Erweiterte Einstellungen</string>
     <string name="settings_bluetooth_delay">Bluetooth-Verzögerung (ms)</string>
     
@@ -194,9 +197,8 @@
     <string name="settings_smart_prediction_enable">Gemini Vorhersage (Experimentell)</string>
     <string name="settings_smart_prediction_hint">Ermöglicht Buttons, die dynamisch die nächste wahrscheinliche Aktion vorhersagen.</string>
     <string name="settings_smart_prediction_disabled_warning">Das Feature \"Gemini Vorhersage\" ist aktuell in den Einstellungen deaktiviert. Dieser Button wird beim Scannen übersprungen, bis das Feature aktiviert wird.</string>
+    <string name="settings_smart_prediction_delay">Vorhersage-Verzögerung (ms)</string>
     <string name="settings_notification_disabled_warning">Das Feature \"Benachrichtigungen lesen\" ist aktuell in den Einstellungen deaktiviert. Dieser Button wird beim Scannen ignoriert, bis das Feature aktiviert wird.</string>
-    <string name="settings_gemini_prediction_delay">Vorhersage-Verzögerung (ms)</string>
-    <string name="settings_gemini_prediction_delay_hint">Zeit nach Navigation/Aktion, bevor Gemini gefragt wird. Höhere Werte schonen API-Limits.</string>
     <string name="settings_gemini_tools_title">Verfügbare Funktionen (Tools):</string>
     <string name="settings_gemini_tool_status_active">Aktiv</string>
     <string name="settings_gemini_tool_status_requires_auth">Anmeldung erforderlich</string>

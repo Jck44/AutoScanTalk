@@ -22,6 +22,8 @@ import com.andreas_kratzer.ghosttalk.ui.settings.delegates.GenAiSettingsDelegate
 import com.andreas_kratzer.ghosttalk.ui.settings.delegates.ScanningSettingsDelegate
 import com.andreas_kratzer.ghosttalk.ui.settings.delegates.TtsSettingsDelegate
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
+import com.andreas_kratzer.ghosttalk.domain.GetPagesUseCase
+import com.andreas_kratzer.ghosttalk.model.Page
 import com.google.android.gms.auth.UserRecoverableAuthException
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
 import com.google.api.client.http.javanet.NetHttpTransport
@@ -30,9 +32,11 @@ import com.google.api.services.drive.Drive
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Locale
 import javax.inject.Inject
@@ -42,11 +46,16 @@ class SettingsViewModel @Inject constructor(
     application: Application,
     private val settingsRepository: SettingsRepository,
     private val buttonUsageRepository: ButtonUsageRepository,
+    private val getPagesUseCase: GetPagesUseCase,
     val ttsDelegate: TtsSettingsDelegate,
     val scanningDelegate: ScanningSettingsDelegate,
     val cloudSyncDelegate: CloudSyncSettingsDelegate,
     val genAiDelegate: GenAiSettingsDelegate
 ) : AndroidViewModel(application) {
+
+    private val _activeBookId = MutableStateFlow(settingsRepository.activeBookId)
+    val allPages: StateFlow<List<Page>> = getPagesUseCase.execute(_activeBookId)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     // --- Observable State from Repository ---
     val availableLanguages = ttsDelegate.availableLanguages
@@ -87,7 +96,6 @@ class SettingsViewModel @Inject constructor(
     val geminiToolStatus = genAiDelegate.geminiToolStatus
     
     val isSmartPredictionEnabled = settingsRepository.isSmartPredictionEnabledFlow
-    val smartPredictionDelayMillis = settingsRepository.smartPredictionDelayMillisFlow
     
     val isNotificationReadingEnabled = settingsRepository.isNotificationReadingEnabledFlow
     val monitoredNotificationApps = settingsRepository.monitoredNotificationAppsFlow
@@ -117,6 +125,7 @@ class SettingsViewModel @Inject constructor(
 
     // --- Delegation Methods (UI Actions) ---
     fun refresh() {
+        _activeBookId.value = settingsRepository.activeBookId
         ttsDelegate.loadAvailableLanguages()
         ttsDelegate.loadAvailableVoices()
         ttsDelegate.loadAvailableAudioDevices()
@@ -137,7 +146,6 @@ class SettingsViewModel @Inject constructor(
     fun setDefaultScanPattern(p: String) = scanningDelegate.setDefaultScanPattern(p)
     fun setHoldingTimeInput(i: String) = scanningDelegate.setHoldingTimeInput(i)
     fun setBluetoothDelay(d: String) = scanningDelegate.setBluetoothDelay(d)
-    fun setSmartPredictionDelayInput(i: String) = scanningDelegate.setSmartPredictionDelayInput(i)
     fun setSmartPredictionEnabled(e: Boolean) = scanningDelegate.setSmartPredictionEnabled(e)
 
     fun signIn(ctx: Context) = cloudSyncDelegate.signIn(ctx, viewModelScope)

@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.CloudSettingsSection
+import com.andreas_kratzer.ghosttalk.ui.settings.sections.ExperimentalSettingsSection
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.GenAiSettingsSection
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.GeneralSettingsSection
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.LanguageSettingsSection
@@ -131,12 +132,17 @@ fun SettingsScreen(
             
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 7. Test Settings
+            // 7. Experimental Features
+            ExperimentalSettingsSection(viewModel)
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // 8. Test Settings
             TestSettingsSection(viewModel)
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 8. Maintenance
+            // 9. Maintenance
             MaintenanceSection(viewModel)
             
             Spacer(modifier = Modifier.height(32.dp))

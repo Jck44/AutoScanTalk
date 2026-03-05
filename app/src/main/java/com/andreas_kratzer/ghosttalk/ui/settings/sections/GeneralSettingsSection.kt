@@ -23,7 +23,11 @@ import com.andreas_kratzer.ghosttalk.ui.settings.SettingsViewModel
 fun GeneralSettingsSection(viewModel: SettingsViewModel) {
     val theme by viewModel.themeMode.collectAsState("SYSTEM")
     val persistLogs by viewModel.persistActionLogs.collectAsState(false)
+    val defaultStartPageId by viewModel.defaultStartPageId.collectAsState(null)
+    val allPages by viewModel.allPages.collectAsState()
+    
     var expandedTheme by remember { mutableStateOf(false) }
+    var expandedStartPage by remember { mutableStateOf(false) }
 
     PreferenceCategory(stringResource(R.string.settings_category_ui)) {
         Box(modifier = Modifier.fillMaxWidth()) {
@@ -52,8 +56,32 @@ fun GeneralSettingsSection(viewModel: SettingsViewModel) {
     }
 
     PreferenceCategory(stringResource(R.string.settings_category_general)) {
+        // Default Start Page Selector
+        Box(modifier = Modifier.fillMaxWidth()) {
+            val startPageLabel = allPages.find { it.id == defaultStartPageId }?.name 
+                ?: stringResource(R.string.settings_start_page_auto)
+            
+            SettingsClickableItem(
+                label = stringResource(R.string.settings_start_page),
+                value = startPageLabel,
+                onClick = { expandedStartPage = true }
+            )
+            DropdownMenu(expanded = expandedStartPage, onDismissRequest = { expandedStartPage = false }) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.settings_start_page_auto)) },
+                    onClick = { viewModel.setDefaultStartPageId(null); expandedStartPage = false }
+                )
+                allPages.forEach { page ->
+                    DropdownMenuItem(
+                        text = { Text(page.name) },
+                        onClick = { viewModel.setDefaultStartPageId(page.id); expandedStartPage = false }
+                    )
+                }
+            }
+        }
+
         SettingsToggleItem(
-            label = "Aktionen persistent protokollieren",
+            label = stringResource(R.string.settings_persist_logs),
             checked = persistLogs,
             onCheckedChange = { viewModel.setPersistActionLogs(it) }
         )
