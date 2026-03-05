@@ -12,9 +12,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 class SmartPredictionDelegate @Inject constructor(
-    private val settingsRepository: SettingsRepository,
-    private val predictNextActionUseCase: PredictNextActionUseCase,
-    private val checkForPredictorUseCase: CheckForPredictorUseCase
+    private val updateSmartPredictionsUseCase: UpdateSmartPredictionsUseCase
 ) {
     fun init(
         scope: CoroutineScope,
@@ -25,31 +23,13 @@ class SmartPredictionDelegate @Inject constructor(
         onPredictionsUpdated: (List<String>) -> Unit
     ) {
         scope.launch {
-            combine(
-                currentPage,
-                allPages,
-                lastActions,
-                settingsRepository.isSmartPredictionEnabledFlow
-            ) { page, pages, _, enabled -> Triple(page, pages, enabled) }
-                .collect { (page, pages, enabled) ->
-                    if (page != null && enabled) {
-                        val hasPredictor = checkForPredictorUseCase(page)
-                        
-                        if (hasPredictor) {
-                            val bookId = activeBookId.value
-                            if (bookId != null) {
-                                try {
-                                    val predictions = predictNextActionUseCase.predict(page, pages, bookId)
-                                    onPredictionsUpdated(predictions)
-                                } catch (e: Exception) {
-                                    Log.e("SmartPredictionDelegate", "Smart Prediction failed", e)
-                                }
-                            }
-                        } else {
-                            onPredictionsUpdated(emptyList())
-                        }
-                    }
-                }
+            updateSmartPredictionsUseCase.execute(
+                currentPage = currentPage,
+                allPages = allPages,
+                activeBookId = activeBookId
+            ).collect { predictions ->
+                onPredictionsUpdated(predictions)
+            }
         }
     }
 }

@@ -4,25 +4,14 @@ import com.andreas_kratzer.ghosttalk.data.BookRepository
 import com.andreas_kratzer.ghosttalk.data.PageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.data.TemplateRepository
-import com.andreas_kratzer.ghosttalk.domain.pages.CreatePageUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.DeletePageUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.ExportPageUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.GetPagesUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.ImportPageUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.ReorderPagesUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.UpdateButtonConfigUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.UpdatePageSettingsUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.UpdateRowNameUseCase
+import com.andreas_kratzer.ghosttalk.domain.pages.*
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.model.PageTemplate
-import com.andreas_kratzer.ghosttalk.model.SortOrder
-import com.andreas_kratzer.ghosttalk.ui.util.filterAndSort
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -39,7 +28,8 @@ class PageManagementDelegate @Inject constructor(
     private val updatePageSettingsUseCase: UpdatePageSettingsUseCase,
     private val updateRowNameUseCase: UpdateRowNameUseCase,
     private val importPageUseCase: ImportPageUseCase,
-    private val exportPageUseCase: ExportPageUseCase
+    private val exportPageUseCase: ExportPageUseCase,
+    private val getFilteredPagesUseCase: GetFilteredPagesUseCase
 ) {
     private lateinit var scope: CoroutineScope
 
@@ -68,24 +58,13 @@ class PageManagementDelegate @Inject constructor(
         this.scope = scope
 
         scope.launch {
-            combine(
-                _allPages,
-                settingsRepository.pageSortOrderFlow,
-                _searchQuery
-            ) { pages, sortOrderStr, query ->
-                val sortOrder = try { SortOrder.valueOf(sortOrderStr) } catch (_: Exception) { SortOrder.MANUAL }
-                pages.filterAndSort(query, sortOrder)
-            }.collect { _filteredPages.value = it }
+            getFilteredPagesUseCase.execute(_allPages, _searchQuery)
+                .collect { _filteredPages.value = it }
         }
 
         scope.launch {
-            combine(
-                _allPages,
-                settingsRepository.pageSortOrderFlow
-            ) { pages, sortOrderStr ->
-                val sortOrder = try { SortOrder.valueOf(sortOrderStr) } catch (_: Exception) { SortOrder.MANUAL }
-                pages.filterAndSort("", sortOrder)
-            }.collect { _unfilteredPages.value = it }
+            getFilteredPagesUseCase.execute(_allPages, MutableStateFlow(""))
+                .collect { _unfilteredPages.value = it }
         }
 
         scope.launch {

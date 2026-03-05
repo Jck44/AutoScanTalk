@@ -25,9 +25,10 @@ import javax.inject.Singleton
 @Singleton
 class GenAiSettingsDelegate @Inject constructor(
     private val application: Application,
-    private val localIntentRouter: LocalIntentRouter,
     private val getGeminiToolStatusUseCase: GetGeminiToolStatusUseCase,
-    private val activateGeminiUseCase: ActivateGeminiUseCase
+    private val activateGeminiUseCase: ActivateGeminiUseCase,
+    private val handleGenAiExceptionUseCase: HandleGenAiExceptionUseCase,
+    private val testGeminiNanoUseCase: TestGeminiNanoUseCase
 ) {
     private val _geminiToolStatus = MutableStateFlow<Map<String, GeminiUseCase.ToolStatus>>(emptyMap())
     val geminiToolStatus: StateFlow<Map<String, GeminiUseCase.ToolStatus>> = _geminiToolStatus.asStateFlow()
@@ -49,8 +50,11 @@ class GenAiSettingsDelegate @Inject constructor(
                     }
                 },
                 onError = { e ->
-                    scope.launch {
-                        handleGenAiException(e)
+                    val effect = handleGenAiExceptionUseCase.execute(e)
+                    if (effect is HandleGenAiExceptionUseCase.Effect.EmitAuthIntent) {
+                        scope.launch {
+                            _authIntentFlow.emit(effect.intent)
+                        }
                     }
                 }
             )
@@ -59,28 +63,18 @@ class GenAiSettingsDelegate @Inject constructor(
 
     fun testGeminiNano(context: Context, scope: CoroutineScope) {
         scope.launch {
-            try {
-                localIntentRouter.routeIntent("Ping") { response ->
+            testGeminiNanoUseCase.execute(
+                onResponse = { response ->
                     scope.launch(Dispatchers.Main) {
                         Toast.makeText(context, "Gemini Nano bereit: $response", Toast.LENGTH_SHORT).show()
                     }
+                },
+                onError = { e ->
+                    scope.launch(Dispatchers.Main) {
+                        Toast.makeText(context, "Gemini Nano Fehler: ${e.message}", Toast.LENGTH_LONG).show()
+                    }
                 }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "Gemini Nano Fehler: ${e.message}", Toast.LENGTH_LONG).show()
-                }
-            }
-        }
-    }
-
-    private suspend fun handleGenAiException(e: Exception) {
-        var cause: Throwable? = e
-        while (cause != null) {
-            when (cause) {
-                is UserRecoverableAuthIOException -> cause.intent?.let { _authIntentFlow.emit(it) }
-                is UserRecoverableAuthException -> cause.intent?.let { _authIntentFlow.emit(it) }
-            }
-            cause = cause.cause
+            )
         }
     }
 }

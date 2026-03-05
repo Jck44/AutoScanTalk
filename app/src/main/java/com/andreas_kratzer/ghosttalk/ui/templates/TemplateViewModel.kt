@@ -66,10 +66,9 @@ class TemplateViewModel @Inject constructor(
         }
     }
 
-    fun updateButtonConfig(templateId: String, index: Int, config: ButtonConfig?) {
-        val currentTemplate = templates.value.find { it.id == templateId } ?: return
+    fun updateButtonConfig(template: PageTemplate, index: Int, config: ButtonConfig?) {
         viewModelScope.launch {
-            updateButtonConfigInTemplateUseCase.execute(currentTemplate, index, config)
+            updateButtonConfigInTemplateUseCase.execute(template, index, config)
         }
     }
 

@@ -10,7 +10,8 @@ import javax.inject.Singleton
 class ScanningSettingsDelegate @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val updateScanDelayUseCase: UpdateScanDelayUseCase,
-    private val updateHoldingTimeUseCase: UpdateHoldingTimeUseCase
+    private val updateHoldingTimeUseCase: UpdateHoldingTimeUseCase,
+    private val updateBluetoothDelayUseCase: UpdateBluetoothDelayUseCase
 ) {
     fun setAutoStartScanning(enabled: Boolean) {
         settingsRepository.autoStartScanning = enabled
@@ -33,8 +34,6 @@ class ScanningSettingsDelegate @Inject constructor(
     }
 
     fun setBluetoothDelay(delayMs: String) {
-        delayMs.toLongOrNull()?.let {
-            settingsRepository.bluetoothDelay = it
-        }
+        updateBluetoothDelayUseCase(delayMs)
     }
 }
