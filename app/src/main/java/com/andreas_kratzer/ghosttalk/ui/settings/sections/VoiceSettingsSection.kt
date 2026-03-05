@@ -86,8 +86,13 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel) {
                     expandedVoice = false
                 })
                 availableVoices.forEach { voice ->
+                    val hint = if (voice.isNetworkConnectionRequired) {
+                        stringResource(R.string.settings_voice_network_hint)
+                    } else {
+                        stringResource(R.string.settings_voice_local_hint)
+                    }
                     DropdownMenuItem(
-                        text = { Text(VoiceUtils.formatVoiceName(voice.name)) },
+                        text = { Text(VoiceUtils.formatVoiceName(voice.name) + hint) },
                         onClick = {
                             viewModel.setTtsVoice(voice.name)
                             expandedVoice = false

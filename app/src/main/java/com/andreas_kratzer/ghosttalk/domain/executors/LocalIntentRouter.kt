@@ -35,27 +35,27 @@ class LocalIntentRouter @Inject constructor(
         """.trimIndent()
     }
 
-    suspend fun routeIntent(prompt: String, onSpeak: (String) -> Unit) = withContext(Dispatchers.IO) {
+    suspend fun generateRawResponse(prompt: String, maxTokens: Int = 100): String = withContext(Dispatchers.IO) {
         try {
             val model = Generation.getClient()
-            
-            val promptText = "${getSystemInstruction()}\n\nNutzer: $prompt"
-            val textPart = TextPart(promptText)
-            
-            // In 1.0.0-beta1, temperature and maxOutputTokens are part of GenerateContentRequest, not GenerationConfig.
-            // The builder methods return void, so they cannot be chained.
+            val textPart = TextPart(prompt)
             val builder = GenerateContentRequest.builder(textPart)
-            builder.maxOutputTokens = 100
+            builder.maxOutputTokens = maxTokens
             builder.temperature = 0.0f
             val request = builder.build()
             
-            // Using the suspended generateContent that returns GenerateContentResponse directly.
-            // This bypasses the need for a StreamingCallback if we only want the final result.
             val response = model.generateContent(request)
-            
-            // Extract text using explicit getter methods to be safe in this beta version.
-            val candidates = response.candidates
-            val text = candidates.firstOrNull()?.text ?: ""
+            return@withContext response.candidates.firstOrNull()?.text ?: ""
+        } catch (e: Exception) {
+            android.util.Log.e("LocalIntentRouter", "Raw generation failed", e)
+            ""
+        }
+    }
+
+    suspend fun routeIntent(prompt: String, onSpeak: (String) -> Unit) = withContext(Dispatchers.IO) {
+        try {
+            val promptText = "${getSystemInstruction()}\n\nNutzer: $prompt"
+            val text = generateRawResponse(promptText)
             
             // Log raw response for debugging (visible in logcat)
             android.util.Log.d("LocalIntentRouter", "Raw Gemini Nano response: $text")

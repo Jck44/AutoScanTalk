@@ -1,0 +1,159 @@
+package com.andreas_kratzer.ghosttalk.ui.pages.delegates
+
+import com.andreas_kratzer.ghosttalk.data.BookRepository
+import com.andreas_kratzer.ghosttalk.data.PageRepository
+import com.andreas_kratzer.ghosttalk.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.domain.CreatePageUseCase
+import com.andreas_kratzer.ghosttalk.domain.DeletePageUseCase
+import com.andreas_kratzer.ghosttalk.domain.ExportPageUseCase
+import com.andreas_kratzer.ghosttalk.domain.GetPagesUseCase
+import com.andreas_kratzer.ghosttalk.domain.ImportPageUseCase
+import com.andreas_kratzer.ghosttalk.domain.ReorderPagesUseCase
+import com.andreas_kratzer.ghosttalk.domain.UpdateButtonConfigUseCase
+import com.andreas_kratzer.ghosttalk.domain.UpdatePageSettingsUseCase
+import com.andreas_kratzer.ghosttalk.domain.UpdateRowNameUseCase
+import com.andreas_kratzer.ghosttalk.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.model.Page
+import com.andreas_kratzer.ghosttalk.model.SortOrder
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+class PageManagementDelegate @Inject constructor(
+    private val scope: CoroutineScope,
+    private val pageRepository: PageRepository,
+    private val bookRepository: BookRepository,
+    private val settingsRepository: SettingsRepository,
+    private val getPagesUseCase: GetPagesUseCase,
+    private val createPageUseCase: CreatePageUseCase,
+    private val deletePageUseCase: DeletePageUseCase,
+    private val reorderPagesUseCase: ReorderPagesUseCase,
+    private val updateButtonConfigUseCase: UpdateButtonConfigUseCase,
+    private val updatePageSettingsUseCase: UpdatePageSettingsUseCase,
+    private val updateRowNameUseCase: UpdateRowNameUseCase,
+    private val importPageUseCase: ImportPageUseCase,
+    private val exportPageUseCase: ExportPageUseCase
+) {
+    private val _activeBookId = MutableStateFlow<String?>(null)
+    val activeBookId: StateFlow<String?> = _activeBookId.asStateFlow()
+
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
+    private val _allPages = MutableStateFlow<List<Page>>(emptyList())
+    
+    val filteredPages: StateFlow<List<Page>> = combine(
+        _allPages,
+        settingsRepository.pageSortOrderFlow,
+        _searchQuery
+    ) { pages, sortOrderStr, query ->
+        val sortOrder = try { SortOrder.valueOf(sortOrderStr) } catch (_: Exception) { SortOrder.MANUAL }
+        val trimmedQuery = query.trim()
+        val filtered = if (trimmedQuery.isBlank()) {
+            pages
+        } else {
+            pages.filter { it.name.contains(trimmedQuery, ignoreCase = true) }
+        }
+        when (sortOrder) {
+            SortOrder.MANUAL -> filtered.sortedBy { it.orderIndex }
+            SortOrder.NEWEST -> filtered.sortedByDescending { it.createdAt }
+            SortOrder.OLDEST -> filtered.sortedBy { it.createdAt }
+            SortOrder.A_Z -> filtered.sortedBy { it.name.lowercase() }
+            SortOrder.Z_A -> filtered.sortedByDescending { it.name.lowercase() }
+        }
+    }.stateIn(scope, SharingStarted.Eagerly, emptyList())
+
+    val unfilteredPages: StateFlow<List<Page>> = combine(
+        _allPages,
+        settingsRepository.pageSortOrderFlow
+    ) { pages, sortOrderStr ->
+        val sortOrder = try { SortOrder.valueOf(sortOrderStr) } catch (_: Exception) { SortOrder.MANUAL }
+        when (sortOrder) {
+            SortOrder.MANUAL -> pages.sortedBy { it.orderIndex }
+            SortOrder.NEWEST -> pages.sortedByDescending { it.createdAt }
+            SortOrder.OLDEST -> pages.sortedBy { it.createdAt }
+            SortOrder.A_Z -> pages.sortedBy { it.name.lowercase() }
+            SortOrder.Z_A -> pages.sortedByDescending { it.name.lowercase() }
+        }
+    }.stateIn(scope, SharingStarted.Eagerly, emptyList())
+
+    fun init() {
+        scope.launch {
+            getPagesUseCase.execute(_activeBookId).collect { pages ->
+                _allPages.value = pages
+            }
+        }
+    }
+
+    fun setActiveBookId(bookId: String?) {
+        _activeBookId.value = bookId
+    }
+
+    fun updateSearchQuery(query: String) {
+        _searchQuery.value = query
+    }
+
+    fun createNewPage(name: String, rows: Int, columns: Int, bookId: String, templateId: String? = null, onCreated: (String) -> Unit) {
+        scope.launch {
+            val generatedId = createPageUseCase.execute(name, rows, columns, bookId, _allPages.value, templateId)
+            bookRepository.updateLastModified(bookId)
+            onCreated(generatedId)
+        }
+    }
+
+    fun updateButtonConfig(pageId: String, index: Int, newConfig: ButtonConfig?, onUpdated: (Page) -> Unit) {
+        scope.launch {
+            val updatedPage = updateButtonConfigUseCase.execute(pageId, index, newConfig)
+            if (updatedPage != null) {
+                onUpdated(updatedPage)
+            }
+        }
+    }
+
+    fun updatePageSettings(pageId: String, newName: String, newScanPattern: String?, newRowNames: List<String>, onUpdated: (Page) -> Unit) {
+        scope.launch {
+            val updatedPage = updatePageSettingsUseCase.execute(pageId, newName, newScanPattern, newRowNames)
+            if (updatedPage != null) {
+                onUpdated(updatedPage)
+            }
+        }
+    }
+
+    fun updateRowName(pageId: String, rowIndex: Int, newName: String, onUpdated: (Page) -> Unit) {
+        scope.launch {
+            val updatedPage = updateRowNameUseCase.execute(pageId, rowIndex, newName)
+            if (updatedPage != null) {
+                onUpdated(updatedPage)
+            }
+        }
+    }
+
+    fun deletePage(page: Page) {
+        scope.launch {
+            deletePageUseCase.execute(page)
+        }
+    }
+
+    fun reorderPages(fromIndex: Int, toIndex: Int) {
+        scope.launch {
+            reorderPagesUseCase.execute(_allPages.value, fromIndex, toIndex, _activeBookId.value)
+        }
+    }
+
+    fun importFromJson(jsonString: String, bookId: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        scope.launch {
+            val result = importPageUseCase.execute(jsonString, bookId)
+            result.onSuccess { onSuccess() }.onFailure { e -> onError("Fehler beim Import: ${e.message}") }
+        }
+    }
+
+    suspend fun exportToJson(): String {
+        return exportPageUseCase.execute(_allPages.value)
+    }
+}

@@ -1,30 +1,27 @@
 package com.andreas_kratzer.ghosttalk.domain
 
 import com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository
-import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.domain.executors.LocalIntentRouter
 import com.andreas_kratzer.ghosttalk.model.Page
 import java.time.LocalTime
 import javax.inject.Inject
 
 /**
- * UseCase to predict the next likely actions using Gemini AI.
+ * UseCase to predict the next likely actions using Gemini Nano (on-device).
  */
 class PredictNextActionUseCase @Inject constructor(
     private val actionLogUseCase: ActionLogUseCase,
     private val buttonUsageRepository: ButtonUsageRepository,
     private val settingsRepository: SettingsRepository,
-    private val googleAuthManager: GoogleAuthManager,
-    private val geminiUseCaseFactory: GeminiUseCaseFactory
+    private val localIntentRouter: LocalIntentRouter
 ) {
 
     suspend fun predict(currentPage: Page, bookId: String): List<String> {
-        val gemini = geminiUseCaseFactory.create { 
-            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                googleAuthManager.getGoogleCredential()?.token
-            }
+        if (!settingsRepository.useLocalGenerativeAi) {
+            return emptyList()
         }
-        
+
         val rawHistory = actionLogUseCase.loadSavedLogs().take(15)
         val showId = settingsRepository.showPageIdInLog
         
@@ -66,12 +63,10 @@ class PredictNextActionUseCase @Inject constructor(
         """.trimIndent()
 
         return try {
-            val response = gemini.generateResponse(prompt)
+            val response = localIntentRouter.generateRawResponse(prompt)
             parseResponse(response)
         } catch (e: Exception) {
-            if (e.message?.contains("429") == true) {
-                android.util.Log.w("PredictNextAction", "Gemini Quota reached (429)")
-            }
+            android.util.Log.e("PredictNextAction", "Gemini Nano prediction failed", e)
             emptyList()
         }
     }

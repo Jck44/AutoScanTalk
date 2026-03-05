@@ -80,12 +80,14 @@ class GeminiActionHandler(
                     }
 
                     localIntentRouter.routeIntent(prompt) { response ->
+                        val displayResponse = if (response.length > 50) response.take(50) + "..." else response
+                        log("Gemini Nano aufgerufen mit: '$prompt' -> '$displayResponse'")
+
                         if (tts?.isReady == true) {
                             tts.speakRouted(response, targetDeviceAddress, ttsMode) {
                                 onFinish(executionId)
                             }
                         } else {
-                            log("Lokales Gemini Ergebnis: \"$response\"")
                             onFinish(executionId)
                         }
                     }

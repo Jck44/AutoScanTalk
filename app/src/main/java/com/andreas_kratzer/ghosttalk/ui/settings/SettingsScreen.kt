@@ -45,12 +45,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.CloudSettingsSection
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.GenAiSettingsSection
+import com.andreas_kratzer.ghosttalk.ui.settings.sections.GeneralSettingsSection
+import com.andreas_kratzer.ghosttalk.ui.settings.sections.LanguageSettingsSection
+import com.andreas_kratzer.ghosttalk.ui.settings.sections.MaintenanceSection
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.NotificationSettingsSection
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.ScanningSettingsSection
+import com.andreas_kratzer.ghosttalk.ui.settings.sections.TestSettingsSection
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.VoiceSettingsSection
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -96,14 +100,43 @@ fun SettingsScreen(
                 .verticalScroll(scrollState)
                 .padding(16.dp)
         ) {
+            // 1. General & UI
+            LanguageSettingsSection(viewModel)
+            GeneralSettingsSection(viewModel)
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // 2. Voice Settings
             VoiceSettingsSection(viewModel)
+            
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // 3. Scanning & Input
             ScanningSettingsSection(viewModel)
+            
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // 4. Cloud Sync
             CloudSettingsSection(viewModel)
+            
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // 5. Generative AI
             GenAiSettingsSection(viewModel)
+            
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // 6. Notifications
             NotificationSettingsSection(viewModel)
             
-            AppLanguageSection(viewModel)
-            GeneralSettingsSection(viewModel)
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // 7. Test Settings
+            TestSettingsSection(viewModel)
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // 8. Maintenance
             MaintenanceSection(viewModel)
             
             Spacer(modifier = Modifier.height(32.dp))
@@ -117,59 +150,6 @@ fun SettingsScreen(
                 style = MaterialTheme.typography.labelSmall,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
-        }
-    }
-}
-
-@Composable
-fun AppLanguageSection(viewModel: SettingsViewModel) {
-    val selectedAppLanguage by viewModel.selectedAppLanguage.collectAsState("default")
-    var expanded by remember { mutableStateOf(false) }
-    
-    PreferenceCategory(stringResource(R.string.settings_app_language)) {
-        Box(modifier = Modifier.fillMaxWidth()) {
-            val label = if (selectedAppLanguage == "default" || selectedAppLanguage == null) {
-                stringResource(R.string.settings_system_default)
-            } else java.util.Locale.forLanguageTag(selectedAppLanguage!!).displayName
-            
-            SettingsClickableItem(stringResource(R.string.settings_app_language), label) { expanded = true }
-            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                DropdownMenuItem(text = { Text(stringResource(R.string.settings_system_default)) }, onClick = { viewModel.setAppLanguage("default"); expanded = false })
-                listOf("de", "en").forEach { code ->
-                    DropdownMenuItem(text = { Text(java.util.Locale.forLanguageTag(code).displayName) }, onClick = { viewModel.setAppLanguage(code); expanded = false })
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun GeneralSettingsSection(viewModel: SettingsViewModel) {
-    val theme by viewModel.themeMode.collectAsState("SYSTEM")
-    val showPageId by viewModel.showPageIdInLog.collectAsState(true)
-    var expandedTheme by remember { mutableStateOf(false) }
-
-    PreferenceCategory(stringResource(R.string.settings_category_ui)) {
-        Box(modifier = Modifier.fillMaxWidth()) {
-            SettingsClickableItem(stringResource(R.string.settings_theme_mode), theme) { expandedTheme = true }
-            DropdownMenu(expanded = expandedTheme, onDismissRequest = { expandedTheme = false }) {
-                listOf("SYSTEM", "LIGHT", "DARK").forEach { t ->
-                    DropdownMenuItem(text = { Text(t) }, onClick = { viewModel.setThemeMode(t); expandedTheme = false })
-                }
-            }
-        }
-        SettingsToggleItem(stringResource(R.string.settings_show_page_id_in_log), showPageId) { viewModel.setShowPageIdInLog(it) }
-    }
-}
-
-@Composable
-fun MaintenanceSection(viewModel: SettingsViewModel) {
-    PreferenceCategory(stringResource(R.string.settings_category_maintenance)) {
-        Button(
-            onClick = { viewModel.clearButtonUsageStats(viewModel.activeBookId) },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(stringResource(R.string.settings_clear_usage_stats))
         }
     }
 }

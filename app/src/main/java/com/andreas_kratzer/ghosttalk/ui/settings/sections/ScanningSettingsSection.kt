@@ -39,13 +39,28 @@ fun ScanningSettingsSection(viewModel: SettingsViewModel) {
         SettingsToggleItem(stringResource(R.string.settings_restart_scan), resumeFromStart) { viewModel.setResumeScanningFromStart(it) }
         
         Box(modifier = Modifier.fillMaxWidth()) {
-            SettingsClickableItem(stringResource(R.string.settings_scan_pattern), scanPattern) { expandedPattern = true }
+            val patternLabel = when (scanPattern) {
+                "linear" -> stringResource(R.string.settings_pattern_linear)
+                "row_column" -> stringResource(R.string.settings_pattern_row_by_row)
+                else -> scanPattern
+            }
+            SettingsClickableItem(stringResource(R.string.settings_scan_pattern), patternLabel) { expandedPattern = true }
             DropdownMenu(expanded = expandedPattern, onDismissRequest = { expandedPattern = false }) {
-                listOf("linear", "row_column").forEach { pattern ->
-                    DropdownMenuItem(text = { Text(pattern) }, onClick = { viewModel.setDefaultScanPattern(pattern); expandedPattern = false })
-                }
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.settings_pattern_linear)) },
+                    onClick = { viewModel.setDefaultScanPattern("linear"); expandedPattern = false }
+                )
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.settings_pattern_row_by_row)) },
+                    onClick = { viewModel.setDefaultScanPattern("row_column"); expandedPattern = false }
+                )
             }
         }
+    }
+
+    PreferenceCategory(stringResource(R.string.settings_category_hardware)) {
+        val switchKey by viewModel.switchActivationKey.collectAsState("Space")
+        SettingsEditTextItem(stringResource(R.string.settings_switch_key), switchKey) { viewModel.setSwitchActivationKey(it) }
     }
 
     PreferenceCategory(stringResource(R.string.settings_category_advanced)) {
@@ -53,8 +68,8 @@ fun ScanningSettingsSection(viewModel: SettingsViewModel) {
         SettingsEditTextItem(stringResource(R.string.settings_bluetooth_delay), bluetoothDelay.toString()) { viewModel.setBluetoothDelay(it) }
     }
 
-    PreferenceCategory("Smart Prediction") {
-        SettingsToggleItem("Enable Smart Prediction", smartEnabled) { viewModel.setSmartPredictionEnabled(it) }
-        SettingsEditTextItem("Smart Prediction Delay (ms)", smartDelay.toString()) { viewModel.setSmartPredictionDelayInput(it) }
+    PreferenceCategory(stringResource(R.string.button_action_smart_prediction)) {
+        SettingsToggleItem(stringResource(R.string.settings_smart_prediction_enable), smartEnabled) { viewModel.setSmartPredictionEnabled(it) }
+        SettingsEditTextItem("Vorhersehungs-Verzögerung (ms)", smartDelay.toString()) { viewModel.setSmartPredictionDelayInput(it) }
     }
 }
