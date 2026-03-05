@@ -18,6 +18,7 @@ import com.andreas_kratzer.ghosttalk.domain.GeminiUseCaseFactory
 import com.andreas_kratzer.ghosttalk.model.AudioOutputDevice
 import com.andreas_kratzer.ghosttalk.domain.executors.LocalIntentRouter
 import com.andreas_kratzer.ghosttalk.ui.settings.delegates.CloudSyncSettingsDelegate
+import com.andreas_kratzer.ghosttalk.ui.settings.delegates.ExperimentalSettingsDelegate
 import com.andreas_kratzer.ghosttalk.ui.settings.delegates.GenAiSettingsDelegate
 import com.andreas_kratzer.ghosttalk.ui.settings.delegates.ScanningSettingsDelegate
 import com.andreas_kratzer.ghosttalk.ui.settings.delegates.TtsSettingsDelegate
@@ -50,7 +51,8 @@ class SettingsViewModel @Inject constructor(
     val ttsDelegate: TtsSettingsDelegate,
     val scanningDelegate: ScanningSettingsDelegate,
     val cloudSyncDelegate: CloudSyncSettingsDelegate,
-    val genAiDelegate: GenAiSettingsDelegate
+    val genAiDelegate: GenAiSettingsDelegate,
+    val experimentalDelegate: ExperimentalSettingsDelegate
 ) : AndroidViewModel(application) {
 
     private val _activeBookId = MutableStateFlow(settingsRepository.activeBookId)
@@ -146,7 +148,6 @@ class SettingsViewModel @Inject constructor(
     fun setDefaultScanPattern(p: String) = scanningDelegate.setDefaultScanPattern(p)
     fun setHoldingTimeInput(i: String) = scanningDelegate.setHoldingTimeInput(i)
     fun setBluetoothDelay(d: String) = scanningDelegate.setBluetoothDelay(d)
-    fun setSmartPredictionEnabled(e: Boolean) = scanningDelegate.setSmartPredictionEnabled(e)
 
     fun signIn(ctx: Context) = cloudSyncDelegate.signIn(ctx, viewModelScope)
     fun signOut() = cloudSyncDelegate.signOut(viewModelScope)
@@ -177,7 +178,8 @@ class SettingsViewModel @Inject constructor(
     fun setVolumeKeysActivate(e: Boolean) { settingsRepository.volumeKeysActivate = e }
     fun setShowTestButtons(e: Boolean) { settingsRepository.showTestButtons = e }
     fun setShowPageIdInLog(e: Boolean) { settingsRepository.showPageIdInLog = e }
-    fun setExperimentalManualSorting(e: Boolean) { settingsRepository.experimentalManualSorting = e }
+    fun setExperimentalManualSorting(e: Boolean) = experimentalDelegate.setExperimentalManualSorting(e)
+    fun setSmartPredictionEnabled(e: Boolean) = experimentalDelegate.setSmartPredictionEnabled(e)
     fun setDefaultStartPageId(id: String?) { settingsRepository.defaultStartPageId = id }
 
     fun setAppLanguage(code: String?) {
