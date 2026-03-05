@@ -3,11 +3,11 @@ package com.andreas_kratzer.ghosttalk.ui.settings.delegates
 import android.app.Application
 import android.content.Context
 import android.widget.Toast
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.domain.GeminiUseCase
-import com.andreas_kratzer.ghosttalk.domain.GeminiUseCaseFactory
-import com.andreas_kratzer.ghosttalk.domain.executors.LocalIntentRouter
 import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.domain.ActivateGeminiUseCase
+import com.andreas_kratzer.ghosttalk.domain.GetGeminiToolStatusUseCase
+import com.andreas_kratzer.ghosttalk.domain.GeminiUseCase
+import com.andreas_kratzer.ghosttalk.domain.executors.LocalIntentRouter
 import com.google.android.gms.auth.UserRecoverableAuthException
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
 import kotlinx.coroutines.CoroutineScope
@@ -25,10 +25,9 @@ import javax.inject.Singleton
 @Singleton
 class GenAiSettingsDelegate @Inject constructor(
     private val application: Application,
-    private val settingsRepository: SettingsRepository,
-    private val googleAuthManager: com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager,
-    private val geminiUseCaseFactory: GeminiUseCaseFactory,
-    private val localIntentRouter: LocalIntentRouter
+    private val localIntentRouter: LocalIntentRouter,
+    private val getGeminiToolStatusUseCase: GetGeminiToolStatusUseCase,
+    private val activateGeminiUseCase: ActivateGeminiUseCase
 ) {
     private val _geminiToolStatus = MutableStateFlow<Map<String, GeminiUseCase.ToolStatus>>(emptyMap())
     val geminiToolStatus: StateFlow<Map<String, GeminiUseCase.ToolStatus>> = _geminiToolStatus.asStateFlow()
@@ -37,23 +36,24 @@ class GenAiSettingsDelegate @Inject constructor(
     val authIntentFlow = _authIntentFlow.asSharedFlow()
 
     fun updateGeminiToolStatus() {
-        val gemini = geminiUseCaseFactory.create { null }
-        _geminiToolStatus.value = gemini.getToolStatus(googleAuthManager.userEmail.value != null)
+        _geminiToolStatus.value = getGeminiToolStatusUseCase()
     }
 
     fun activateGemini(context: Context, scope: CoroutineScope) {
-        val gemini = geminiUseCaseFactory.create { googleAuthManager.getGoogleCredential()?.getToken() }
         scope.launch {
-            try {
-                gemini.generateResponse("Ping")
-                settingsRepository.isGeminiEnabled = true
-                updateGeminiToolStatus()
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(context, application.getString(R.string.settings_gemini_activation_success), Toast.LENGTH_SHORT).show()
+            activateGeminiUseCase.execute(
+                onSuccess = {
+                    updateGeminiToolStatus()
+                    scope.launch(Dispatchers.Main) {
+                        Toast.makeText(context, application.getString(R.string.settings_gemini_activation_success), Toast.LENGTH_SHORT).show()
+                    }
+                },
+                onError = { e ->
+                    scope.launch {
+                        handleGenAiException(e)
+                    }
                 }
-            } catch (e: Exception) {
-                handleGenAiException(e)
-            }
+            )
         }
     }
 
@@ -61,7 +61,6 @@ class GenAiSettingsDelegate @Inject constructor(
         scope.launch {
             try {
                 localIntentRouter.routeIntent("Ping") { response ->
-                    // Ensure UI updates happen on the Main thread
                     scope.launch(Dispatchers.Main) {
                         Toast.makeText(context, "Gemini Nano bereit: $response", Toast.LENGTH_SHORT).show()
                     }

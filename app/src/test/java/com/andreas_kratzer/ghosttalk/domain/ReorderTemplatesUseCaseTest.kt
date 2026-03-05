@@ -1,0 +1,47 @@
+package com.andreas_kratzer.ghosttalk.domain
+
+import com.andreas_kratzer.ghosttalk.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.data.TemplateRepository
+import com.andreas_kratzer.ghosttalk.model.PageTemplate
+import com.andreas_kratzer.ghosttalk.model.SortOrder
+import io.mockk.coVerify
+import io.mockk.mockk
+import io.mockk.verify
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runTest
+import org.junit.Before
+import org.junit.Test
+
+@ExperimentalCoroutinesApi
+class ReorderTemplatesUseCaseTest {
+
+    private lateinit var templateRepository: TemplateRepository
+    private lateinit var settingsRepository: SettingsRepository
+    private lateinit var reorderTemplatesUseCase: ReorderTemplatesUseCase
+
+    @Before
+    fun setup() {
+        templateRepository = mockk(relaxed = true)
+        settingsRepository = mockk(relaxed = true)
+        reorderTemplatesUseCase = ReorderTemplatesUseCase(templateRepository, settingsRepository)
+    }
+
+    @Test
+    fun `execute reorders templates and sets sort order`() = runTest {
+        // Given
+        val templates = listOf(
+            PageTemplate("1", "T1", 1, 1, emptyList(), orderIndex = 0),
+            PageTemplate("2", "T2", 1, 1, emptyList(), orderIndex = 1),
+            PageTemplate("3", "T3", 1, 1, emptyList(), orderIndex = 2)
+        )
+
+        // When
+        reorderTemplatesUseCase.execute(templates, 0, 2)
+
+        // Then
+        coVerify { templateRepository.insert(match { it.id == "2" && it.orderIndex == 0 }) }
+        coVerify { templateRepository.insert(match { it.id == "3" && it.orderIndex == 1 }) }
+        coVerify { templateRepository.insert(match { it.id == "1" && it.orderIndex == 2 }) }
+        verify { settingsRepository.templateSortOrder = SortOrder.MANUAL.name }
+    }
+}

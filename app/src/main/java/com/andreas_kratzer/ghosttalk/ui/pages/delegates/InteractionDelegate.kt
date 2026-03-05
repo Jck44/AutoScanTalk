@@ -2,22 +2,18 @@ package com.andreas_kratzer.ghosttalk.ui.pages.delegates
 
 import android.app.Application
 import android.content.Intent
-import android.util.Log
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
 import com.andreas_kratzer.ghosttalk.data.PageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.domain.ActionLogUseCase
-import com.andreas_kratzer.ghosttalk.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
+import com.andreas_kratzer.ghosttalk.domain.ActivateButtonUseCase
 import com.andreas_kratzer.ghosttalk.model.Page
-import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
 import com.andreas_kratzer.ghosttalk.ui.pages.ScanCoordinator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -30,7 +26,8 @@ class InteractionDelegate @Inject constructor(
     private val pageRepository: PageRepository,
     private val settingsRepository: SettingsRepository,
     private val actionLogUseCase: ActionLogUseCase,
-    private val ttsHelper: TextToSpeechHelper
+    private val ttsHelper: TextToSpeechHelper,
+    private val activateButtonUseCase: ActivateButtonUseCase
 ) {
     private lateinit var scope: CoroutineScope
     private lateinit var actionExecutor: ActionExecutor
@@ -40,7 +37,7 @@ class InteractionDelegate @Inject constructor(
     val lastActions: StateFlow<List<String>> = _lastActions.asStateFlow()
 
     private val _authRecoverIntent = MutableSharedFlow<Intent>()
-    val authRecoverIntent: SharedFlow<Intent> = _authRecoverIntent.asSharedFlow()
+    val authRecoverIntent = _authRecoverIntent.asSharedFlow()
 
     private val _isUserModeActive = MutableStateFlow(false)
     val isUserModeActive: StateFlow<Boolean> = _isUserModeActive.asStateFlow()
@@ -96,56 +93,16 @@ class InteractionDelegate @Inject constructor(
     }
 
     fun activateButtonAtIndex(index: Int, currentPage: Page?, activeBookId: String?) {
-        if (actionExecutor.isExecuting.value) {
-            Log.d("InteractionDelegate", "Ignoring button click at index $index as ActionExecutor is currently executing.")
-            return
-        }
-
-        ttsHelper.stopNotificationTTS()
-        
-        val page = currentPage ?: return
-        val buttonConfig = page.buttonConfigs.getOrNull(index) ?: return
-        
-        scanCoordinator.setFocusedIndex(index)
-        
-        val smartAction = buttonConfig.buttonAction as? SmartPredictionButtonAction
-        if (smartAction != null) {
-            val predictionId = _smartPredictions.value.getOrNull(smartAction.rank - 1)
-            if (predictionId != null) {
-                resolveSmartPrediction(predictionId, currentPage, activeBookId)
-                return
-            }
-        }
-        
-        // Stats: Provide bookId only if in User Mode
-        actionExecutor.executeButtonAction(
-            buttonConfig, 
-            bookId = activeBookId.takeIf { _isUserModeActive.value }
-        )
-    }
-
-    private fun resolveSmartPrediction(predictionId: String, currentPage: Page?, activeBookId: String?) {
         scope.launch {
-            val matchingButton = currentPage?.buttonConfigs?.find { it?.id == predictionId }
-            if (matchingButton != null) {
-                actionExecutor.executeButtonAction(
-                    matchingButton, 
-                    bookId = activeBookId.takeIf { _isUserModeActive.value }
-                )
-                return@launch
-            }
-
-            val targetPage = pageRepository.getPageById(predictionId)
-            if (targetPage != null) {
-                actionExecutor.executeButtonAction(
-                    ButtonConfig(
-                        label = targetPage.name,
-                        auditoryCue = null,
-                        buttonAction = NavigateToPageButtonAction(targetPage.id)
-                    ),
-                    bookId = activeBookId.takeIf { _isUserModeActive.value }
-                )
-            }
+            activateButtonUseCase.execute(
+                index = index,
+                currentPage = currentPage,
+                activeBookId = activeBookId,
+                isUserModeActive = _isUserModeActive.value,
+                smartPredictions = _smartPredictions.value,
+                actionExecutor = actionExecutor,
+                scanCoordinator = scanCoordinator
+            )
         }
     }
 

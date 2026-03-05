@@ -10,10 +10,7 @@ import com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.data.PageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.data.TemplateRepository
-import com.andreas_kratzer.ghosttalk.domain.ActionLogUseCase
-import com.andreas_kratzer.ghosttalk.domain.CreatePageUseCase
-import com.andreas_kratzer.ghosttalk.domain.GetPagesUseCase
-import com.andreas_kratzer.ghosttalk.domain.PredictNextActionUseCase
+import com.andreas_kratzer.ghosttalk.domain.*
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.model.Page
@@ -70,6 +67,9 @@ class PageViewModelTest {
     private val updateRowNameUseCase = mockk<com.andreas_kratzer.ghosttalk.domain.UpdateRowNameUseCase>(relaxed = true)
     private val logger = com.andreas_kratzer.ghosttalk.core.util.TestLogger()
     private lateinit var featureGuard: com.andreas_kratzer.ghosttalk.domain.FeatureGuard
+    
+    private lateinit var activateButtonUseCase: ActivateButtonUseCase
+    private lateinit var checkForPredictorUseCase: CheckForPredictorUseCase
     private lateinit var viewModel: PageViewModel
 
     @Before
@@ -106,6 +106,9 @@ class PageViewModelTest {
             every { isButtonVisible(any()) } returns true
             every { isActionEnabled(any()) } returns true
         }
+        
+        activateButtonUseCase = mockk(relaxed = true)
+        checkForPredictorUseCase = mockk(relaxed = true)
         
         every { settingsRepository.ttsLanguageFlow } returns MutableStateFlow("default")
         every { settingsRepository.ttsVoiceNameFlow } returns MutableStateFlow(null)
@@ -167,12 +170,13 @@ class PageViewModelTest {
             pageRepository = pageRepository,
             settingsRepository = settingsRepository,
             actionLogUseCase = actionLogUseCase,
-            ttsHelper = ttsHelper
+            ttsHelper = ttsHelper,
+            activateButtonUseCase = activateButtonUseCase
         )
         val smartPredictionDelegate = SmartPredictionDelegate(
             settingsRepository = settingsRepository,
-            featureGuard = featureGuard,
-            predictNextActionUseCase = predictNextActionUseCase
+            predictNextActionUseCase = predictNextActionUseCase,
+            checkForPredictorUseCase = checkForPredictorUseCase
         )
 
         return PageViewModel(
@@ -194,20 +198,18 @@ class PageViewModelTest {
     }
 
     @Test
-    fun `activateButtonAtIndex records usage via buttonUsageRepository`() = runTest {
+    fun `activateButtonAtIndex calls activateButtonUseCase`() = runTest {
         viewModel = createViewModel()
-        
-        val button = ButtonConfig(id = "btn123", label = "Hey", auditoryCue = null, buttonAction = SpeakTextButtonAction())
-        val page = Page(id = "p1", bookId = "b1", name = "T", rows = 1, columns = 1, buttonConfigs = listOf(button))
-        
+        val page = Page(id = "p1", bookId = "b1", name = "T", buttonConfigs = listOf(null))
         viewModel.loadPage(page)
-        viewModel.setActiveBookId("b1")
-        testDispatcher.scheduler.advanceUntilIdle()
-        
+        advanceUntilIdle()
+
         viewModel.activateButtonAtIndex(0)
-        testDispatcher.scheduler.advanceUntilIdle()
-        
-        coVerify { buttonUsageRepository.recordUsage("b1", any()) }
+        advanceUntilIdle()
+
+        coVerify { 
+            activateButtonUseCase.execute(0, any(), any(), any(), any(), any(), any()) 
+        }
     }
 
     @Test
@@ -215,7 +217,7 @@ class PageViewModelTest {
         viewModel = createViewModel()
         
         viewModel.createNewPage("Test Page", rows = 2, columns = 2, bookId = "test-book-id", templateId = null, onCreated = {})
-        testDispatcher.scheduler.advanceUntilIdle()
+        advanceUntilIdle()
 
         coVerify { createPageUseCase.execute("Test Page", 2, 2, "test-book-id", any(), null) }
     }
@@ -234,13 +236,11 @@ class PageViewModelTest {
     fun `logAction calls formatAndAddEntry on ActionLogUseCase`() = runTest {
         viewModel = createViewModel()
         
-        val button = ButtonConfig(label = "Hey", auditoryCue = null, buttonAction = SpeakTextButtonAction())
-        viewModel.loadPage(Page(id = "p1", bookId = "b1", name = "T", rows = 1, columns = 1, buttonConfigs = listOf(button)))
-        testDispatcher.scheduler.advanceUntilIdle()
+        viewModel.setUserModeActive(true)
+        viewModel.interactionDelegate.logAction("Hey")
+        advanceUntilIdle()
         
-        viewModel.activateButtonAtIndex(0)
-        testDispatcher.scheduler.advanceUntilIdle()
-        verify { actionLogUseCase.formatAndAddEntry(match { it.contains("Hey") }, any()) }
+        verify { actionLogUseCase.formatAndAddEntry("Hey", any()) }
     }
 
     @Test
@@ -260,7 +260,7 @@ class PageViewModelTest {
         viewModel = createViewModel()
         viewModel.importFromJson(jsonString, "test_book", onSuccess = { successCalled = true }, onError = {})
         
-        testDispatcher.scheduler.advanceUntilIdle()
+        advanceUntilIdle()
 
         assertTrue("Success callback should be called", successCalled)
         coVerify { importPageUseCase.execute(jsonString, "test_book") }
@@ -293,6 +293,33 @@ class PageViewModelTest {
 
     @Test
     fun `activateButtonAtIndex navigation loads new page`() = runTest {
+        // Since InteractionDelegate.activateButtonAtIndex is now using ActivateButtonUseCase, 
+        // we either mock that use case to call onPageLoadRequested or test the real use case separately.
+        // For this test, I will provide a real ActivateButtonUseCase instance to test the full flow.
+        
+        val resolveSmartPredictionUseCase = ResolveSmartPredictionUseCase(pageRepository)
+        val realActivateButtonUseCase = ActivateButtonUseCase(ttsHelper, resolveSmartPredictionUseCase)
+        
+        val interactionDelegate = InteractionDelegate(
+            application, pageRepository, settingsRepository, actionLogUseCase, ttsHelper, realActivateButtonUseCase
+        )
+        
+        val pageManagementDelegate = PageManagementDelegate(
+            pageRepository, bookRepository, settingsRepository, templateRepository, getPagesUseCase, 
+            createPageUseCase, deletePageUseCase, reorderPagesUseCase, updateButtonConfigUseCase, 
+            updatePageSettingsUseCase, updateRowNameUseCase, importPageUseCase, exportPageUseCase
+        )
+        
+        val smartPredictionDelegate = SmartPredictionDelegate(
+            settingsRepository, predictNextActionUseCase, checkForPredictorUseCase
+        )
+
+        viewModel = PageViewModel(
+            application, settingsRepository, importExportManager, scannerEngine, googleAuthManager,
+            geminiUseCaseFactory, ttsHelper, mockk(relaxed = true), logger, buttonUsageRepository, 
+            featureGuard, pageManagementDelegate, interactionDelegate, smartPredictionDelegate
+        )
+
         val action = NavigateToPageButtonAction(pageId = "p2")
         val config = ButtonConfig(label = "Nav", auditoryCue = null, buttonAction = action)
         val p1 = Page(id = "p1", bookId = "b1", name = "P1", rows = 1, columns = 1, buttonConfigs = listOf(config))
@@ -300,14 +327,12 @@ class PageViewModelTest {
         
         coEvery { pageRepository.getPageById("p2") } returns p2
 
-        viewModel = createViewModel()
-        
         viewModel.loadPage(p1)
         advanceUntilIdle()
         assertEquals("p1", viewModel.currentPage.value?.id)
         
         viewModel.activateButtonAtIndex(0)
-        testDispatcher.scheduler.advanceUntilIdle()
+        advanceUntilIdle()
         
         assertEquals("p2", viewModel.currentPage.value?.id)
     }

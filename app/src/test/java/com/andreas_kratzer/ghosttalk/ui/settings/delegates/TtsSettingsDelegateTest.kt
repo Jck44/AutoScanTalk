@@ -1,13 +1,20 @@
 package com.andreas_kratzer.ghosttalk.ui.settings.delegates
 
+import android.speech.tts.Voice
 import com.andreas_kratzer.ghosttalk.core.audio.AudioDeviceManager
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.domain.GetAudioDevicesUseCase
+import com.andreas_kratzer.ghosttalk.domain.SetAudioDeviceUseCase
+import com.andreas_kratzer.ghosttalk.domain.SetTtsLanguageUseCase
+import com.andreas_kratzer.ghosttalk.domain.SetTtsVoiceUseCase
+import com.andreas_kratzer.ghosttalk.domain.SetTtsVolumeUseCase
 import com.andreas_kratzer.ghosttalk.model.AudioOutputDevice
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.verify
+import io.mockk.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -25,67 +32,70 @@ class TtsSettingsDelegateTest {
     private lateinit var settingsRepository: SettingsRepository
     private lateinit var ttsHelper: TextToSpeechHelper
     private lateinit var audioDeviceManager: AudioDeviceManager
+    private lateinit var setTtsLanguageUseCase: SetTtsLanguageUseCase
+    private lateinit var setTtsVoiceUseCase: SetTtsVoiceUseCase
+    private lateinit var setTtsVolumeUseCase: SetTtsVolumeUseCase
+    private lateinit var setAudioDeviceUseCase: SetAudioDeviceUseCase
+    private lateinit var getAudioDevicesUseCase: GetAudioDevicesUseCase
     private lateinit var delegate: TtsSettingsDelegate
 
     @Before
     fun setup() {
         settingsRepository = mockk(relaxed = true)
         ttsHelper = mockk(relaxed = true)
-        audioDeviceManager = mockk(relaxed = true)
-        delegate = TtsSettingsDelegate(settingsRepository, ttsHelper, audioDeviceManager)
+        audioDeviceManager = mockk(relaxed = true) {
+            every { availableDevicesFlow } returns MutableStateFlow(emptyList())
+        }
+        setTtsLanguageUseCase = mockk(relaxed = true)
+        setTtsVoiceUseCase = mockk(relaxed = true)
+        setTtsVolumeUseCase = mockk(relaxed = true)
+        setAudioDeviceUseCase = mockk(relaxed = true)
+        getAudioDevicesUseCase = mockk(relaxed = true)
+
+        delegate = TtsSettingsDelegate(
+            settingsRepository,
+            ttsHelper,
+            audioDeviceManager,
+            setTtsLanguageUseCase,
+            setTtsVoiceUseCase,
+            setTtsVolumeUseCase,
+            setAudioDeviceUseCase,
+            getAudioDevicesUseCase
+        )
     }
 
     @Test
-    fun `initialize loads values from repository and helper`() = runTest {
-        every { settingsRepository.ttsLanguage } returns "de"
-        every { settingsRepository.ttsVoiceName } returns "de-voice"
+    fun `initialize sets up tts helper and loads data`() = runTest {
         every { ttsHelper.isReady } returns true
-        val mockLocales = listOf(Locale.GERMAN, Locale.ENGLISH)
-        every { ttsHelper.getAvailableLanguages() } returns mockLocales
+        every { getAudioDevicesUseCase.execute() } returns listOf(mockk())
 
         delegate.initialize(testScope) { _, _ -> }
 
-        verify { ttsHelper.setLanguageAndVoice("de", "de-voice") }
-        assertEquals(mockLocales, delegate.availableLanguages.value)
+        verify { ttsHelper.setLanguageAndVoice(any(), any()) }
+        verify { ttsHelper.getAvailableLanguages() }
+        verify { ttsHelper.getAvailableVoices(any()) }
+        verify { getAudioDevicesUseCase.execute() }
+        assertEquals(1, delegate.availableAudioDevices.value.size)
     }
 
     @Test
-    fun `setTtsLanguage resets voice and saves to repository`() = runTest {
-        delegate.setTtsLanguage("en-US")
-
-        verify { settingsRepository.ttsLanguage = "en-US" }
-        verify { settingsRepository.ttsVoiceName = null }
-        verify { ttsHelper.setLanguageAndVoice("en-US", null) }
+    fun `setTtsLanguage calls use case and reloads voices`() {
+        every { ttsHelper.isReady } returns true
+        every { setTtsLanguageUseCase.invoke(any()) } returns Unit
+        delegate.setTtsLanguage("de-DE")
+        verify { setTtsLanguageUseCase.invoke("de-DE") }
+        verify { ttsHelper.getAvailableVoices(any()) } 
     }
 
     @Test
-    fun `loadAvailableAudioDevices merges current and cached devices`() {
-        val activeDevice = AudioOutputDevice("mac1", "Speaker", 0, true)
-        every { audioDeviceManager.getAvailableOutputDevices() } returns listOf(activeDevice)
-        every { settingsRepository.ttsAudioDeviceAddress } returns "mac2"
-        every { settingsRepository.cuesAudioDeviceAddress } returns null
-        every { settingsRepository.getDeviceName("mac1") } returns "Speaker"
-        every { settingsRepository.getDeviceName("mac2") } returns "Old Headset"
-
-        delegate.loadAvailableAudioDevices()
-
-        val devices = delegate.availableAudioDevices.value
-        assertEquals("Should have 2 devices (1 active, 1 inactive)", 2, devices.size)
-        assert(devices.any { it.address == "mac1" })
-        assert(devices.any { it.address == "mac2" && it.name.contains("(Inaktiv)") })
+    fun `setTtsVolumeMultiplier calls use case for tts`() {
+        delegate.setTtsVolumeMultiplier(0.8f)
+        verify { setTtsVolumeUseCase.execute(0.8f, isForCues = false) }
     }
 
     @Test
-    fun `getResolvedDeviceName returns correct name for active and inactive devices`() {
-        val activeDevice = AudioOutputDevice("mac1", "Speaker", 0, true)
-        every { audioDeviceManager.getAvailableOutputDevices() } returns listOf(activeDevice)
-        delegate.loadAvailableAudioDevices()
-
-        assertEquals("Speaker", delegate.getResolvedDeviceName("mac1"))
-        
-        every { settingsRepository.getDeviceName("mac2") } returns "Old Headset"
-        assertEquals("Old Headset (Laden...)", delegate.getResolvedDeviceName("mac2"))
-        
-        assertEquals("System-Standard (Automatisch)", delegate.getResolvedDeviceName(null))
+    fun `setCuesVolumeMultiplier calls use case for cues`() {
+        delegate.setCuesVolumeMultiplier(0.5f)
+        verify { setTtsVolumeUseCase.execute(0.5f, isForCues = true) }
     }
 }

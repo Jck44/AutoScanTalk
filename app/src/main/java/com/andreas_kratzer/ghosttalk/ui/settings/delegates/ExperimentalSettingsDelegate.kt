@@ -1,18 +1,19 @@
 package com.andreas_kratzer.ghosttalk.ui.settings.delegates
 
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.domain.ExperimentalFeature
+import com.andreas_kratzer.ghosttalk.domain.ToggleExperimentalFeatureUseCase
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class ExperimentalSettingsDelegate @Inject constructor(
-    private val settingsRepository: SettingsRepository
+    private val toggleExperimentalFeatureUseCase: ToggleExperimentalFeatureUseCase
 ) {
     fun setExperimentalManualSorting(enabled: Boolean) {
-        settingsRepository.experimentalManualSorting = enabled
+        toggleExperimentalFeatureUseCase(ExperimentalFeature.MANUAL_SORTING, enabled)
     }
 
     fun setSmartPredictionEnabled(enabled: Boolean) {
-        settingsRepository.isSmartPredictionEnabled = enabled
+        toggleExperimentalFeatureUseCase(ExperimentalFeature.SMART_PREDICTION, enabled)
     }
 }

@@ -4,24 +4,31 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.data.TemplateRepository
+import com.andreas_kratzer.ghosttalk.domain.CreateTemplateUseCase
+import com.andreas_kratzer.ghosttalk.domain.DeleteTemplateUseCase
+import com.andreas_kratzer.ghosttalk.domain.ReorderTemplatesUseCase
+import com.andreas_kratzer.ghosttalk.domain.UpdateButtonConfigInTemplateUseCase
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.PageTemplate
-import com.andreas_kratzer.ghosttalk.model.SortOrder
+import com.andreas_kratzer.ghosttalk.ui.util.filterAndSort
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
 class TemplateViewModel @Inject constructor(
     private val templateRepository: TemplateRepository,
-    val settingsRepository: SettingsRepository
+    val settingsRepository: SettingsRepository,
+    private val createTemplateUseCase: CreateTemplateUseCase,
+    private val deleteTemplateUseCase: DeleteTemplateUseCase,
+    private val reorderTemplatesUseCase: ReorderTemplatesUseCase,
+    private val updateButtonConfigInTemplateUseCase: UpdateButtonConfigInTemplateUseCase
 ) : ViewModel() {
 
     val experimentalManualSorting: StateFlow<Boolean> = settingsRepository.experimentalManualSortingFlow
@@ -38,22 +45,11 @@ class TemplateViewModel @Inject constructor(
         settingsRepository.templateSortOrderFlow,
         _searchQuery
     ) { templates, sortOrderStr, query ->
-        val sortOrder = try { SortOrder.valueOf(sortOrderStr) } catch (_: Exception) { SortOrder.MANUAL }
-        val filtered = if (query.isBlank()) {
-            templates
-        } else {
-            templates.filter { it.name.contains(query, ignoreCase = true) }
-        }
-        when (sortOrder) {
-            SortOrder.MANUAL -> filtered.sortedBy { it.orderIndex }
-            SortOrder.NEWEST -> filtered.sortedByDescending { it.createdAt }
-            SortOrder.OLDEST -> filtered.sortedBy { it.createdAt }
-            SortOrder.A_Z -> filtered.sortedBy { it.name.lowercase() }
-            SortOrder.Z_A -> filtered.sortedByDescending { it.name.lowercase() }
-        }
+        val sortOrder = try { com.andreas_kratzer.ghosttalk.model.SortOrder.valueOf(sortOrderStr) } catch (_: Exception) { com.andreas_kratzer.ghosttalk.model.SortOrder.MANUAL }
+        templates.filterAndSort(query, sortOrder)
     }.stateIn(
         scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
+        started = SharingStarted.Eagerly,
         initialValue = emptyList()
     )
 
@@ -66,40 +62,14 @@ class TemplateViewModel @Inject constructor(
 
     fun createTemplate(name: String, rows: Int, columns: Int, initialConfigs: List<ButtonConfig?>? = null) {
         viewModelScope.launch {
-            val totalSlots = rows * columns
-            val buttonConfigs = initialConfigs?.toMutableList() ?: MutableList<ButtonConfig?>(totalSlots) { null }
-            
-            // Pad or truncate to match grid size exactly
-            while (buttonConfigs.size < totalSlots) {
-                buttonConfigs.add(null)
-            }
-            if (buttonConfigs.size > totalSlots) {
-                buttonConfigs.subList(totalSlots, buttonConfigs.size).clear()
-            }
-            
-            val maxOrderIndex = templates.value.maxOfOrNull { it.orderIndex } ?: -1
-            
-            val newTemplate = PageTemplate(
-                id = UUID.randomUUID().toString(),
-                name = name,
-                rows = rows,
-                columns = columns,
-                buttonConfigs = buttonConfigs,
-                isBuiltIn = false,
-                orderIndex = maxOrderIndex + 1,
-                createdAt = System.currentTimeMillis()
-            )
-            templateRepository.insert(newTemplate)
+            createTemplateUseCase.execute(name, rows, columns, initialConfigs)
         }
     }
 
     fun updateButtonConfig(templateId: String, index: Int, config: ButtonConfig?) {
         val currentTemplate = templates.value.find { it.id == templateId } ?: return
-        
-        val newConfigs = currentTemplate.buttonConfigs.toMutableList()
-        if (index in newConfigs.indices) {
-            newConfigs[index] = config
-            updateTemplate(currentTemplate.copy(buttonConfigs = newConfigs))
+        viewModelScope.launch {
+            updateButtonConfigInTemplateUseCase.execute(currentTemplate, index, config)
         }
     }
 
@@ -111,24 +81,13 @@ class TemplateViewModel @Inject constructor(
 
     fun deleteTemplate(template: PageTemplate) {
         viewModelScope.launch {
-            templateRepository.delete(template)
+            deleteTemplateUseCase.execute(template)
         }
     }
 
     fun reorderTemplates(fromIndex: Int, toIndex: Int) {
-        val currentList = templates.value.toMutableList()
-        if (fromIndex !in currentList.indices || toIndex !in currentList.indices) return
-        
-        val item = currentList.removeAt(fromIndex)
-        currentList.add(toIndex, item)
-        
         viewModelScope.launch {
-            currentList.forEachIndexed { index, template ->
-                if (template.orderIndex != index) {
-                    templateRepository.insert(template.copy(orderIndex = index))
-                }
-            }
-            settingsRepository.templateSortOrder = SortOrder.MANUAL.name
+            reorderTemplatesUseCase.execute(templates.value, fromIndex, toIndex)
         }
     }
 }

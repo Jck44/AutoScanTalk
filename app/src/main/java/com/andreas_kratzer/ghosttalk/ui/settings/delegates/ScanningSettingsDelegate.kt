@@ -1,23 +1,23 @@
 package com.andreas_kratzer.ghosttalk.ui.settings.delegates
 
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.domain.UpdateHoldingTimeUseCase
+import com.andreas_kratzer.ghosttalk.domain.UpdateScanDelayUseCase
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class ScanningSettingsDelegate @Inject constructor(
-    private val settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository,
+    private val updateScanDelayUseCase: UpdateScanDelayUseCase,
+    private val updateHoldingTimeUseCase: UpdateHoldingTimeUseCase
 ) {
     fun setAutoStartScanning(enabled: Boolean) {
         settingsRepository.autoStartScanning = enabled
     }
 
     fun setScanDelayInput(input: String) {
-        val digitsOnly = input.filter { it.isDigit() }
-        val parsed = digitsOnly.toLongOrNull()
-        if (parsed != null && parsed >= 100L) {
-            settingsRepository.scanDelayMillis = parsed
-        }
+        updateScanDelayUseCase(input)
     }
 
     fun setResumeScanningFromStart(fromStart: Boolean) {
@@ -29,11 +29,7 @@ class ScanningSettingsDelegate @Inject constructor(
     }
 
     fun setHoldingTimeInput(input: String) {
-        val digitsOnly = input.filter { it.isDigit() }
-        val parsed = digitsOnly.toLongOrNull()
-        if (parsed != null && parsed >= 0L) {
-            settingsRepository.holdingTimeMillis = parsed
-        }
+        updateHoldingTimeUseCase(input)
     }
 
     fun setBluetoothDelay(delayMs: String) {

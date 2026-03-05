@@ -3,6 +3,11 @@ package com.andreas_kratzer.ghosttalk.ui.settings.delegates
 import android.speech.tts.Voice
 import com.andreas_kratzer.ghosttalk.core.audio.AudioDeviceManager
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.domain.GetAudioDevicesUseCase
+import com.andreas_kratzer.ghosttalk.domain.SetAudioDeviceUseCase
+import com.andreas_kratzer.ghosttalk.domain.SetTtsLanguageUseCase
+import com.andreas_kratzer.ghosttalk.domain.SetTtsVoiceUseCase
+import com.andreas_kratzer.ghosttalk.domain.SetTtsVolumeUseCase
 import com.andreas_kratzer.ghosttalk.model.AudioOutputDevice
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
 import kotlinx.coroutines.CoroutineScope
@@ -18,7 +23,12 @@ import javax.inject.Singleton
 class TtsSettingsDelegate @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val ttsHelper: TextToSpeechHelper,
-    private val audioDeviceManager: AudioDeviceManager
+    private val audioDeviceManager: AudioDeviceManager,
+    private val setTtsLanguageUseCase: SetTtsLanguageUseCase,
+    private val setTtsVoiceUseCase: SetTtsVoiceUseCase,
+    private val setTtsVolumeUseCase: SetTtsVolumeUseCase,
+    private val setAudioDeviceUseCase: SetAudioDeviceUseCase,
+    private val getAudioDevicesUseCase: GetAudioDevicesUseCase
 ) {
     private val _availableLanguages = MutableStateFlow<List<Locale>>(emptyList())
     val availableLanguages: StateFlow<List<Locale>> = _availableLanguages.asStateFlow()
@@ -67,79 +77,32 @@ class TtsSettingsDelegate @Inject constructor(
     }
 
     fun loadAvailableAudioDevices() {
-        val available = audioDeviceManager.getAvailableOutputDevices()
-        
-        available.forEach { device ->
-            val persistentId = device.address.split("|").lastOrNull() ?: device.address
-            settingsRepository.saveDeviceName(persistentId, device.name)
-        }
-
-        val ttsAddress = settingsRepository.ttsAudioDeviceAddress
-        val cuesAddress = settingsRepository.cuesAudioDeviceAddress
-        
-        val mergedList = available.toMutableList()
-        
-        listOfNotNull(ttsAddress, cuesAddress).distinct().forEach { selectedAddress ->
-            if (mergedList.none { it.address == selectedAddress }) {
-                val persistentId = selectedAddress.split("|").lastOrNull() ?: selectedAddress
-                val cachedName = settingsRepository.getDeviceName(persistentId)
-                if (cachedName != null) {
-                    val fallbackMatch = available.find { 
-                        val devPersistentId = it.address.split("|").lastOrNull() ?: it.address
-                        devPersistentId == persistentId 
-                    }
-                    
-                    if (fallbackMatch == null) {
-                        mergedList.add(
-                            AudioOutputDevice(
-                                address = selectedAddress,
-                                name = "$cachedName (Inaktiv)",
-                                type = 0,
-                                isBuiltIn = false
-                            )
-                        )
-                    }
-                }
-            }
-        }
-        _availableAudioDevices.value = mergedList
+        _availableAudioDevices.value = getAudioDevicesUseCase.execute()
     }
 
     fun setTtsLanguage(languageTag: String) {
-        val tagToSave = if (languageTag == "default") null else languageTag
-        settingsRepository.ttsLanguage = tagToSave
-        
-        settingsRepository.ttsVoiceName = null
+        setTtsLanguageUseCase(languageTag)
         loadAvailableVoices()
-        
-        ttsHelper.setLanguageAndVoice(languageTag, null)
-        ttsHelper.speakRouted("Sprache geändert", settingsRepository.ttsAudioDeviceAddress)
     }
 
     fun setTtsVoice(voiceName: String?) {
-        settingsRepository.ttsVoiceName = voiceName
-        ttsHelper.setVoice(voiceName)
-        ttsHelper.speakRouted("Stimme ausgewählt", settingsRepository.ttsAudioDeviceAddress)
+        setTtsVoiceUseCase(voiceName)
     }
 
     fun setTtsVolumeMultiplier(multiplier: Float) {
-        settingsRepository.ttsVolumeMultiplier = multiplier
-        ttsHelper.speakRouted("Lautstärke geändert", settingsRepository.ttsAudioDeviceAddress)
+        setTtsVolumeUseCase.execute(multiplier, isForCues = false)
     }
     
     fun setCuesVolumeMultiplier(multiplier: Float) {
-        settingsRepository.cuesVolumeMultiplier = multiplier
-        ttsHelper.speakRouted("Hinweis Lautstärke geändert", settingsRepository.cuesAudioDeviceAddress)
+        setTtsVolumeUseCase.execute(multiplier, isForCues = true)
     }
 
     fun setTtsAudioDevice(address: String?) {
-        settingsRepository.ttsAudioDeviceAddress = address
-        ttsHelper.speakRouted("Ausgabegerät für Sprechen ausgewählt", address)
+        setAudioDeviceUseCase.execute(address, isForCues = false)
     }
 
     fun setCuesAudioDevice(address: String?) {
-        settingsRepository.cuesAudioDeviceAddress = address
-        ttsHelper.speakRouted("Ausgabegerät für Feedback ausgewählt", address)
+        setAudioDeviceUseCase.execute(address, isForCues = true)
     }
 
     fun getResolvedDeviceName(savedAddress: String?): String {
@@ -156,4 +119,7 @@ class TtsSettingsDelegate @Inject constructor(
         return "System-Standard (Automatisch)"
     }
 
+    fun shutdown() {
+        ttsHelper.shutdown()
+    }
 }

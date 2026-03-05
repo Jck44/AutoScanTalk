@@ -17,13 +17,12 @@ import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.model.SortOrder
+import com.andreas_kratzer.ghosttalk.ui.util.filterAndSort
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -75,19 +74,7 @@ class PageManagementDelegate @Inject constructor(
                 _searchQuery
             ) { pages, sortOrderStr, query ->
                 val sortOrder = try { SortOrder.valueOf(sortOrderStr) } catch (_: Exception) { SortOrder.MANUAL }
-                val trimmedQuery = query.trim()
-                val filtered = if (trimmedQuery.isBlank()) {
-                    pages
-                } else {
-                    pages.filter { it.name.contains(trimmedQuery, ignoreCase = true) }
-                }
-                when (sortOrder) {
-                    SortOrder.MANUAL -> filtered.sortedBy { it.orderIndex }
-                    SortOrder.NEWEST -> filtered.sortedByDescending { it.createdAt }
-                    SortOrder.OLDEST -> filtered.sortedBy { it.createdAt }
-                    SortOrder.A_Z -> filtered.sortedBy { it.name.lowercase() }
-                    SortOrder.Z_A -> filtered.sortedByDescending { it.name.lowercase() }
-                }
+                pages.filterAndSort(query, sortOrder)
             }.collect { _filteredPages.value = it }
         }
 
@@ -97,13 +84,7 @@ class PageManagementDelegate @Inject constructor(
                 settingsRepository.pageSortOrderFlow
             ) { pages, sortOrderStr ->
                 val sortOrder = try { SortOrder.valueOf(sortOrderStr) } catch (_: Exception) { SortOrder.MANUAL }
-                when (sortOrder) {
-                    SortOrder.MANUAL -> pages.sortedBy { it.orderIndex }
-                    SortOrder.NEWEST -> pages.sortedByDescending { it.createdAt }
-                    SortOrder.OLDEST -> pages.sortedBy { it.createdAt }
-                    SortOrder.A_Z -> pages.sortedBy { it.name.lowercase() }
-                    SortOrder.Z_A -> pages.sortedByDescending { it.name.lowercase() }
-                }
+                pages.filterAndSort("", sortOrder)
             }.collect { _unfilteredPages.value = it }
         }
 
