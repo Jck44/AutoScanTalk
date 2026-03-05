@@ -12,9 +12,10 @@ class SettingsRepository(context: Context) {
 
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-    var activeBookId: String = "book-default"
+    var activeBookId: String = prefs.getString(KEY_ACTIVE_BOOK_ID, "book-default") ?: "book-default"
         set(value) {
             field = value
+            prefs.edit().putString(KEY_ACTIVE_BOOK_ID, value).apply()
             refreshFlows()
         }
 
@@ -453,5 +454,6 @@ class SettingsRepository(context: Context) {
         private const val KEY_BLUETOOTH_DELAY = "bluetooth_delay_ms"
         private const val KEY_TTS_VOLUME_MULTIPLIER = "tts_volume_multiplier"
         private const val KEY_CUES_VOLUME_MULTIPLIER = "cues_volume_multiplier"
+        private const val KEY_ACTIVE_BOOK_ID = "active_book_id"
     }
 }

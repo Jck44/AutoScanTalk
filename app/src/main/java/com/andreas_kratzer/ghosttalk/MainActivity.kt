@@ -79,15 +79,29 @@ class MainActivity : AppCompatActivity() {
         updateManager.checkForUpdates(updateLauncher)
 
 
+        globalPageViewModel = pageViewModel
+
         val defaultBookId = "book-default"
 
         lifecycleScope.launch {
-            sampleDataInitializer.initializeIfNeeded(defaultBookId)
-        }
+            // 1. Ensure at least one book exists. returns either default or first existing.
+            val initializedBookId = sampleDataInitializer.initializeIfNeeded(defaultBookId)
+            
+            // 2. Load the user's last active book preference
+            val persistedActiveBookId = settingsRepository.activeBookId
+            
+            // 3. Verify it still exists in the DB
+            val finalActiveBookId = if (bookRepository.getBookById(persistedActiveBookId) != null) {
+                persistedActiveBookId
+            } else {
+                // Fallback to the one guaranteed to exist by SampleDataInitializer
+                initializedBookId
+            }
 
-        globalPageViewModel = pageViewModel
-        pageViewModel.setActiveBookId(defaultBookId)
-        settingsRepository.activeBookId = defaultBookId
+            // 4. Set the final active book
+            settingsRepository.activeBookId = finalActiveBookId
+            pageViewModel.setActiveBookId(finalActiveBookId)
+        }
 
         // Observe Auth Consent Intent
         lifecycleScope.launch {

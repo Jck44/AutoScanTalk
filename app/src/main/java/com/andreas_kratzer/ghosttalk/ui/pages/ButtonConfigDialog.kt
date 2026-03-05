@@ -30,6 +30,7 @@ import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.GeminiButtonAction
 import com.andreas_kratzer.ghosttalk.model.GeminiSearchButtonAction
 import com.andreas_kratzer.ghosttalk.model.GeminiNanoButtonAction
+import com.andreas_kratzer.ghosttalk.model.NotificationButtonAction
 import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
@@ -86,7 +87,7 @@ fun ButtonConfigDialog(
             base.add(actionTypeGemini)
             base.add(actionTypeGeminiSearch)
         }
-        if (featureGuard.isActionEnabled(com.andreas_kratzer.ghosttalk.model.GeminiNanoButtonAction(""))) {
+        if (featureGuard.isActionEnabled(GeminiNanoButtonAction("")) || initialConfig?.buttonAction is GeminiNanoButtonAction) {
             base.add(actionTypeGeminiNano)
         }
         if (featureGuard.isActionEnabled(SmartPredictionButtonAction())) {
@@ -102,7 +103,7 @@ fun ButtonConfigDialog(
                 is NavigateToPageButtonAction -> actionTypeNavigate
                 is GeminiButtonAction -> actionTypeGemini
                 is GeminiSearchButtonAction -> actionTypeGeminiSearch
-                is com.andreas_kratzer.ghosttalk.model.GeminiNanoButtonAction -> actionTypeGeminiNano
+                is GeminiNanoButtonAction -> actionTypeGeminiNano
                 is FrequentActionButtonAction -> actionTypeFrequent
                 is SmartPredictionButtonAction -> actionTypeSmart
                 is com.andreas_kratzer.ghosttalk.model.NotificationButtonAction -> actionTypeNotification
@@ -220,9 +221,20 @@ fun ButtonConfigDialog(
                     )
                 }
                 
-                if (!featureGuard.isActionEnabled(com.andreas_kratzer.ghosttalk.model.NotificationButtonAction()) && initialConfig?.buttonAction is com.andreas_kratzer.ghosttalk.model.NotificationButtonAction) {
+                if (!featureGuard.isActionEnabled(NotificationButtonAction()) && initialConfig?.buttonAction is NotificationButtonAction) {
                     Text(
                         text = stringResource(R.string.settings_notification_disabled_warning),
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp)
+                    )
+                }
+
+                if (!featureGuard.isActionEnabled(GeminiNanoButtonAction("")) && initialConfig?.buttonAction is GeminiNanoButtonAction) {
+                    Text(
+                        text = stringResource(R.string.settings_gemini_nano_disabled_warning),
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier
@@ -477,6 +489,7 @@ fun ButtonConfigDialog(
                 if (selectedActionType == actionTypeSpeak || 
                     selectedActionType == actionTypeGemini || 
                     selectedActionType == actionTypeGeminiSearch ||
+                    selectedActionType == actionTypeGeminiNano ||
                     selectedActionType == actionTypeSmart || 
                     selectedActionType == actionTypeNotification) {
                     androidx.compose.foundation.layout.Row(
@@ -591,6 +604,7 @@ fun ButtonConfigDialog(
                                 actionTypeNavigate -> NavigateToPageButtonAction(pageId = navigateToPageId, ttsMode = resolvedTtsMode)
                                 actionTypeGemini -> GeminiButtonAction(prompt = geminiPrompt, ttsMode = resolvedTtsMode)
                                 actionTypeGeminiSearch -> GeminiSearchButtonAction(prompt = geminiPrompt, ttsMode = resolvedTtsMode)
+                                actionTypeGeminiNano -> GeminiNanoButtonAction(prompt = geminiPrompt, ttsMode = resolvedTtsMode)
                                 actionTypeFrequent -> FrequentActionButtonAction(rank = frequentRank.toIntOrNull()?.coerceAtLeast(1) ?: 1, ttsMode = resolvedTtsMode)
                                 actionTypeSmart -> SmartPredictionButtonAction(rank = smartRank.toIntOrNull()?.coerceAtLeast(1) ?: 1, ttsMode = resolvedTtsMode)
                                 actionTypeNotification -> com.andreas_kratzer.ghosttalk.model.NotificationButtonAction(targetApp = notificationTargetApp, ttsMode = resolvedTtsMode)

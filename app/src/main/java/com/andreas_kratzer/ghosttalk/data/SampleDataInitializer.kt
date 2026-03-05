@@ -16,15 +16,21 @@ class SampleDataInitializer @Inject constructor(
     private val bookRepository: BookRepository,
     private val pageDao: PageDao
 ) {
-    suspend fun initializeIfNeeded(defaultBookId: String) = withContext(Dispatchers.IO) {
-        if (bookRepository.getBookById(defaultBookId) == null) {
+    suspend fun initializeIfNeeded(defaultBookId: String): String = withContext(Dispatchers.IO) {
+        val allBooks = bookRepository.getAllBooksList()
+        if (allBooks.isEmpty()) {
+            android.util.Log.d("SampleDataInitializer", "No books found, creating default book and sample data.")
             bookRepository.insertBook(Book(id = defaultBookId, name = "Standardbuch"))
-        }
-
-        if (pageDao.getAllPages().isEmpty()) {
-            val (samplePage, secondPage) = createSampleData(defaultBookId)
-            pageDao.insertPage(samplePage)
-            pageDao.insertPage(secondPage)
+            
+            if (pageDao.getAllPages().isEmpty()) {
+                val (samplePage, secondPage) = createSampleData(defaultBookId)
+                pageDao.insertPage(samplePage)
+                pageDao.insertPage(secondPage)
+            }
+            return@withContext defaultBookId
+        } else {
+            android.util.Log.d("SampleDataInitializer", "Books already exist, skipping initialization.")
+            return@withContext allBooks.first().id
         }
     }
 

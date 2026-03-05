@@ -23,9 +23,11 @@ class LocalIntentRouter @Inject constructor(
         Deine Aufgabe ist es, den Text des Nutzers in einen strukturierten Intent im JSON Format zu übersetzen.
         Antworte NUR mit validem JSON, ohne Markdown, ohne Erklärung.
         
+        Der aktuelle Zeitstempel ist: ${systemTimeExecutor.getRawTimestampContext()}
+        
         Mögliche Intents:
-        1. Zeitabfrage: {"intent": "time", "query": "time"}
-        2. Datumsabfrage: {"intent": "time", "query": "date"}
+        1. Zeitabfrage: {"intent": "time", "query": "time", "response": "<natürliche Antwort zur Uhrzeit, z.B. 'Es ist jetzt kurz nach elf Uhr'>"}
+        2. Datumsabfrage: {"intent": "time", "query": "date", "response": "<natürliche Antwort zum Datum, z.B. 'Heute ist Donnerstag, der fünfte März'>"}
         3. Wecker stellen: {"intent": "alarm", "action": "set", "hour": <0-23>, "minute": <0-59>}
         4. Unbekannt: {"intent": "unknown"}
     """.trimIndent()
@@ -56,11 +58,16 @@ class LocalIntentRouter @Inject constructor(
             val intentStr = if (json.has("intent")) json.get("intent").asString else ""
             when (intentStr) {
                 "time" -> {
-                    val query = if (json.has("query")) json.get("query").asString else ""
-                    if (query == "date") {
-                        onSpeak(systemTimeExecutor.getCurrentDateOutput())
+                    val responseText = if (json.has("response")) json.get("response").asString else ""
+                    if (responseText.isNotBlank()) {
+                        onSpeak(responseText)
                     } else {
-                        onSpeak(systemTimeExecutor.getCurrentTimeOutput())
+                        val query = if (json.has("query")) json.get("query").asString else ""
+                        if (query == "date") {
+                            onSpeak(systemTimeExecutor.getCurrentDateOutput())
+                        } else {
+                            onSpeak(systemTimeExecutor.getCurrentTimeOutput())
+                        }
                     }
                 }
                 "alarm" -> {
