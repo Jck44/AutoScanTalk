@@ -114,12 +114,14 @@ fun TemplateEditorScreen(
     selectedButtonIndex?.let { editingIndex ->
         val currentConfig = template.buttonConfigs.getOrNull(editingIndex)
         val buttonId = currentConfig?.id ?: UUID.randomUUID().toString()
+        val allTemplates by pageViewModel.templates.collectAsState()
 
         ButtonConfigDialog(
             initialConfig = currentConfig,
             buttonId = buttonId,
             availablePages = allPages, // Allow templates to navigate to specific pages if needed
             featureGuard = pageViewModel.featureGuard,
+            templates = allTemplates,
             onDismiss = {
                 selectedButtonIndex = null
             },

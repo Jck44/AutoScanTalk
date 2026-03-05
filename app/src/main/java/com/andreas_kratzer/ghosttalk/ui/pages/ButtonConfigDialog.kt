@@ -50,10 +50,12 @@ fun ButtonConfigDialog(
     availablePages: List<Page>,
     buttonId: String,
     featureGuard: com.andreas_kratzer.ghosttalk.domain.FeatureGuard,
+    templates: List<com.andreas_kratzer.ghosttalk.model.PageTemplate>,
     onDismiss: () -> Unit,
     onSave: (ButtonConfig?) -> Unit,
     onTest: ((ButtonConfig) -> Unit)? = null,
-    onNavigateToPage: ((String) -> Unit)? = null
+    onNavigateToPage: ((String) -> Unit)? = null,
+    onCreatePage: ((String, Int, Int, String?, (String) -> Unit) -> Unit)? = null
 ) {
     // Current State
     var label by remember { mutableStateOf(initialConfig?.label ?: "") }
@@ -130,6 +132,8 @@ fun ButtonConfigDialog(
     }
     var expandedButtonTtsMode by remember { mutableStateOf(false) }
     val buttonTtsModes = listOf(ttsModeNormalLabel, ttsModeWhisperLabel, ttsModeShoutLabel)
+
+    var showAddPageDialog by remember { mutableStateOf(false) }
 
     // Navigation Details
     val navAction = initialConfig?.buttonAction as? NavigateToPageButtonAction
@@ -354,6 +358,16 @@ fun ButtonConfigDialog(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text("Ziel-Seite verwalten")
+                        }
+                    }
+
+                    // "Neue Ziel-Seite erstellen" button
+                    if (onCreatePage != null) {
+                        androidx.compose.material3.OutlinedButton(
+                            onClick = { showAddPageDialog = true },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Neue Ziel-Seite erstellen")
                         }
                     }
                 }
@@ -651,4 +665,17 @@ fun ButtonConfigDialog(
             }
         }
     )
+
+    if (showAddPageDialog) {
+        AddPageDialog(
+            templates = templates,
+            onDismiss = { showAddPageDialog = false },
+            onConfirm = { name, rows, cols, templateId ->
+                onCreatePage?.invoke(name, rows, cols, templateId) { newId ->
+                    navigateToPageId = newId
+                    showAddPageDialog = false
+                }
+            }
+        )
+    }
 }

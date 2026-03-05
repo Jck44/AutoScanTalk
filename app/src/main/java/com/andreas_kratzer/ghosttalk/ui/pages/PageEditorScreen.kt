@@ -140,12 +140,14 @@ fun PageEditorScreen(
         val editingIndex = selectedButtonIndex!!
         val currentConfig = page.buttonConfigs.getOrNull(editingIndex)
         val buttonId = currentConfig?.id ?: UUID.randomUUID().toString()
+        val templates by pageViewModel.templates.collectAsState()
 
         ButtonConfigDialog(
             initialConfig = currentConfig,
             buttonId = buttonId,
             availablePages = unfilteredPages,
             featureGuard = pageViewModel.featureGuard,
+            templates = templates,
             onDismiss = {
                 showDialog = false
                 selectedButtonIndex = null
@@ -158,7 +160,17 @@ fun PageEditorScreen(
             onTest = { testConfig ->
                 pageViewModel.actionExecutor.executeButtonAction(testConfig)
             },
-            onNavigateToPage = onEditPage
+            onNavigateToPage = onEditPage,
+            onCreatePage = { name, rows, cols, templateId, onCreated ->
+                pageViewModel.createNewPage(
+                    name = name,
+                    rows = rows,
+                    columns = cols,
+                    bookId = page.bookId,
+                    templateId = templateId,
+                    onCreated = onCreated
+                )
+            }
         )
     }
 }
