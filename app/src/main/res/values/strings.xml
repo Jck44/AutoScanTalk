@@ -197,7 +197,6 @@
     <string name="settings_smart_prediction_enable">Gemini Vorhersage (Experimentell)</string>
     <string name="settings_smart_prediction_hint">Ermöglicht Buttons, die dynamisch die nächste wahrscheinliche Aktion vorhersagen.</string>
     <string name="settings_smart_prediction_disabled_warning">Das Feature \"Gemini Vorhersage\" ist aktuell in den Einstellungen deaktiviert. Dieser Button wird beim Scannen übersprungen, bis das Feature aktiviert wird.</string>
-    <string name="settings_smart_prediction_delay">Vorhersage-Verzögerung (ms)</string>
     <string name="settings_notification_disabled_warning">Das Feature \"Benachrichtigungen lesen\" ist aktuell in den Einstellungen deaktiviert. Dieser Button wird beim Scannen ignoriert, bis das Feature aktiviert wird.</string>
     <string name="settings_gemini_tools_title">Verfügbare Funktionen (Tools):</string>
     <string name="settings_gemini_tool_status_active">Aktiv</string>
