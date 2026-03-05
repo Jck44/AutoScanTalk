@@ -68,6 +68,8 @@ class SettingsViewModel @Inject constructor(
     
     val isCloudSyncEnabled = settingsRepository.isCloudSyncEnabledFlow
     val syncMode = settingsRepository.syncModeFlow
+    val lastSuccessfulSyncTime = settingsRepository.lastSuccessfulSyncTimeFlow
+    val syncIntervalMinutes = settingsRepository.syncIntervalMinutesFlow
     val isSyncing = cloudSyncDelegate.isSyncing
     val userEmail = cloudSyncDelegate.userEmail
     
@@ -133,6 +135,7 @@ class SettingsViewModel @Inject constructor(
     fun syncNow() = cloudSyncDelegate.performManualSync(com.andreas_kratzer.ghosttalk.domain.SyncMode.TWO_WAY, viewModelScope)
     fun backupNow() = cloudSyncDelegate.performManualSync(com.andreas_kratzer.ghosttalk.domain.SyncMode.BACKUP_ONLY, viewModelScope)
     fun setSyncMode(m: String) { settingsRepository.syncMode = m }
+    fun setSyncIntervalMinutes(minutes: Long) { settingsRepository.syncIntervalMinutes = minutes }
 
     fun setGeminiEnabled(e: Boolean) {
         settingsRepository.isGeminiEnabled = e

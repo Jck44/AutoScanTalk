@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -26,11 +27,16 @@ import com.andreas_kratzer.ghosttalk.ui.settings.PreferenceCategory
 import com.andreas_kratzer.ghosttalk.ui.settings.SettingsClickableItem
 import com.andreas_kratzer.ghosttalk.ui.settings.SettingsToggleItem
 import com.andreas_kratzer.ghosttalk.ui.settings.SettingsViewModel
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun CloudSettingsSection(viewModel: SettingsViewModel) {
     val isEnabled by viewModel.isCloudSyncEnabled.collectAsState(false)
     val syncMode by viewModel.syncMode.collectAsState("TWO_WAY")
+    val lastSyncTime by viewModel.lastSuccessfulSyncTime.collectAsState(0L)
+    val syncInterval by viewModel.syncIntervalMinutes.collectAsState(15L)
     val userEmail by viewModel.userEmail.collectAsState(null)
     val isSyncing by viewModel.isSyncing.collectAsState(false)
     val context = LocalContext.current
@@ -77,6 +83,28 @@ fun CloudSettingsSection(viewModel: SettingsViewModel) {
                         DropdownMenuItem(text = { Text(itemLabel) }, onClick = { viewModel.setSyncMode(mode); expandedMode = false })
                     }
                 }
+            }
+
+            if (isEnabled) {
+                com.andreas_kratzer.ghosttalk.ui.settings.SettingsEditTextItem(
+                    label = "Sync-Intervall (Minuten)",
+                    value = syncInterval.toString(),
+                    onValueChange = { newValue ->
+                        newValue.toLongOrNull()?.let { viewModel.setSyncIntervalMinutes(it) }
+                    }
+                )
+
+                val lastSyncText = if (lastSyncTime > 0) {
+                    val sdf = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
+                    sdf.format(Date(lastSyncTime))
+                } else {
+                    "Nie"
+                }
+                Text(
+                    text = "Letzter Sync: $lastSyncText",
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(vertical = 4.dp)
+                )
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
