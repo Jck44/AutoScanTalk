@@ -18,6 +18,8 @@ class SettingsRepository(context: Context) {
             refreshFlows()
         }
 
+    // ── Scoped SharedPreferences helpers ──────────────────────────────────
+
     private fun getScopedKey(key: String): String = "${activeBookId}_$key"
 
     private fun getStringScoped(key: String, defaultValue: String? = null): String? {
@@ -80,323 +82,313 @@ class SettingsRepository(context: Context) {
         prefs.edit().putStringSet(getScopedKey(key), value).apply()
     }
 
-    private fun refreshFlows() {
-        _ttsLanguageFlow.value = ttsLanguage
-        _scanDelayFlow.value = scanDelayMillis
-        _defaultStartPageIdFlow.value = defaultStartPageId
-        _ttsVoiceNameFlow.value = ttsVoiceName
-        _persistActionLogsFlow.value = persistActionLogs
-        _actionLogsStorageFlow.value = actionLogsStorage
-        _switchActivationKeyFlow.value = switchActivationKey
-        _volumeKeysActivateFlow.value = volumeKeysActivate
-        _showTestButtonsFlow.value = showTestButtons
-        _defaultScanPatternFlow.value = defaultScanPattern
-        _themeModeFlow.value = themeMode
-        _pageSortOrderFlow.value = pageSortOrder
-        _templateSortOrderFlow.value = templateSortOrder
-        _lastSuccessfulSyncTimeFlow.value = lastSuccessfulSyncTime
-        _experimentalManualSortingFlow.value = experimentalManualSorting
-        _smartPredictionDelayMillisFlow.value = smartPredictionDelayMillis
-        _isSmartPredictionEnabledFlow.value = isSmartPredictionEnabled
-        _bluetoothDelayFlow.value = bluetoothDelay
-        _ttsVolumeMultiplierFlow.value = ttsVolumeMultiplier
-        _cuesVolumeMultiplierFlow.value = cuesVolumeMultiplier
+    // ── ObservableSetting: eliminates per-setting boilerplate ─────────────
+    //
+    // Each ObservableSetting encapsulates:
+    //   - A MutableStateFlow that emits the current value
+    //   - A public StateFlow for observing
+    //   - read()/write() methods for SharedPreferences
+    //   - refresh() to re-read when activeBookId changes
+    //
+    // This replaces the old pattern of 8+ lines per setting.
+
+    private inner class StringSetting(
+        private val key: String,
+        private val default: String? = null
+    ) {
+        private val _flow = MutableStateFlow(getStringScoped(key, default))
+        val flow: StateFlow<String?> = _flow.asStateFlow()
+
+        var value: String?
+            get() = getStringScoped(key, default)
+            set(v) {
+                putStringScoped(key, v)
+                _flow.value = v
+            }
+
+        fun refresh() { _flow.value = value }
     }
 
-    private val _pageSortOrderFlow = MutableStateFlow(getStringScoped(KEY_PAGE_SORT_ORDER, "MANUAL") ?: "MANUAL")
-    val pageSortOrderFlow: StateFlow<String> = _pageSortOrderFlow.asStateFlow()
+    private inner class NonNullStringSetting(
+        private val key: String,
+        private val default: String
+    ) {
+        private val _flow = MutableStateFlow(getStringScoped(key, default) ?: default)
+        val flow: StateFlow<String> = _flow.asStateFlow()
 
-    var pageSortOrder: String
-        get() = getStringScoped(KEY_PAGE_SORT_ORDER, "MANUAL") ?: "MANUAL"
-        set(value) {
-            putStringScoped(KEY_PAGE_SORT_ORDER, value)
-            _pageSortOrderFlow.value = value
-        }
+        var value: String
+            get() = getStringScoped(key, default) ?: default
+            set(v) {
+                putStringScoped(key, v)
+                _flow.value = v
+            }
 
-    private val _templateSortOrderFlow = MutableStateFlow(getStringScoped(KEY_TEMPLATE_SORT_ORDER, "MANUAL") ?: "MANUAL")
-    val templateSortOrderFlow: StateFlow<String> = _templateSortOrderFlow.asStateFlow()
+        fun refresh() { _flow.value = value }
+    }
 
-    var templateSortOrder: String
-        get() = getStringScoped(KEY_TEMPLATE_SORT_ORDER, "MANUAL") ?: "MANUAL"
-        set(value) {
-            putStringScoped(KEY_TEMPLATE_SORT_ORDER, value)
-            _templateSortOrderFlow.value = value
-        }
+    private inner class BooleanSetting(
+        private val key: String,
+        private val default: Boolean
+    ) {
+        private val _flow = MutableStateFlow(getBooleanScoped(key, default))
+        val flow: StateFlow<Boolean> = _flow.asStateFlow()
 
-    private val _lastSuccessfulSyncTimeFlow = MutableStateFlow(getLongScoped(KEY_LAST_SYNC_TIME, 0L))
-    val lastSuccessfulSyncTimeFlow: StateFlow<Long> = _lastSuccessfulSyncTimeFlow.asStateFlow()
+        var value: Boolean
+            get() = getBooleanScoped(key, default)
+            set(v) {
+                putBooleanScoped(key, v)
+                _flow.value = v
+            }
 
-    var lastSuccessfulSyncTime: Long
-        get() = getLongScoped(KEY_LAST_SYNC_TIME, 0L)
-        set(value) {
-            putLongScoped(KEY_LAST_SYNC_TIME, value)
-            _lastSuccessfulSyncTimeFlow.value = value
-        }
+        fun refresh() { _flow.value = value }
+    }
 
+    private inner class LongSetting(
+        private val key: String,
+        private val default: Long
+    ) {
+        private val _flow = MutableStateFlow(getLongScoped(key, default))
+        val flow: StateFlow<Long> = _flow.asStateFlow()
 
+        var value: Long
+            get() = getLongScoped(key, default)
+            set(v) {
+                putLongScoped(key, v)
+                _flow.value = v
+            }
 
-    var showPageIdInLog: Boolean
-        get() = getBooleanScoped(KEY_SHOW_PAGE_ID_IN_LOG, false)
-        set(value) {
-            putBooleanScoped(KEY_SHOW_PAGE_ID_IN_LOG, value)
-        }
+        fun refresh() { _flow.value = value }
+    }
 
-    
-    private val _experimentalManualSortingFlow = MutableStateFlow(getBooleanScoped(KEY_EXPERIMENTAL_MANUAL_SORTING, false))
-    val experimentalManualSortingFlow: StateFlow<Boolean> = _experimentalManualSortingFlow.asStateFlow()
+    private inner class FloatSetting(
+        private val key: String,
+        private val default: Float,
+        private val coerce: ((Float) -> Float)? = null
+    ) {
+        private val _flow = MutableStateFlow(getFloatScoped(key, default))
+        val flow: StateFlow<Float> = _flow.asStateFlow()
 
-    var experimentalManualSorting: Boolean
-        get() = getBooleanScoped(KEY_EXPERIMENTAL_MANUAL_SORTING, false)
-        set(value) {
-            putBooleanScoped(KEY_EXPERIMENTAL_MANUAL_SORTING, value)
-            _experimentalManualSortingFlow.value = value
-        }
+        var value: Float
+            get() = getFloatScoped(key, default)
+            set(v) {
+                val coerced = coerce?.invoke(v) ?: v
+                putFloatScoped(key, coerced)
+                _flow.value = coerced
+            }
 
-    private val _smartPredictionDelayMillisFlow = MutableStateFlow(getLongScoped(KEY_SMART_PREDICTION_DELAY, 2000L))
-    val smartPredictionDelayMillisFlow: StateFlow<Long> = _smartPredictionDelayMillisFlow.asStateFlow()
+        fun refresh() { _flow.value = value }
+    }
 
-    var smartPredictionDelayMillis: Long
-        get() = getLongScoped(KEY_SMART_PREDICTION_DELAY, 2000L)
-        set(value) {
-            putLongScoped(KEY_SMART_PREDICTION_DELAY, value)
-            _smartPredictionDelayMillisFlow.value = value
-        }
+    // ── Observable settings (have a StateFlow for UI observation) ─────────
 
-    private val _bluetoothDelayFlow = MutableStateFlow(getLongScoped(KEY_BLUETOOTH_DELAY, 1500L))
-    val bluetoothDelayFlow: StateFlow<Long> = _bluetoothDelayFlow.asStateFlow()
+    private val _ttsLanguage = StringSetting(KEY_TTS_LANGUAGE)
+    private val _ttsVoiceName = StringSetting(KEY_TTS_VOICE_NAME)
+    private val _scanDelay = LongSetting(KEY_SCAN_DELAY_MILLIS, 100L)
+    private val _defaultStartPageId = StringSetting(KEY_DEFAULT_START_PAGE_ID)
+    private val _persistActionLogs = BooleanSetting(KEY_PERSIST_ACTION_LOGS, false)
+    private val _actionLogsStorage = StringSetting(KEY_ACTION_LOGS_STORAGE)
+    private val _switchActivationKey = NonNullStringSetting(KEY_SWITCH_ACTIVATION_KEY, "Space")
+    private val _volumeKeysActivate = BooleanSetting(KEY_VOLUME_KEYS_ACTIVATE, false)
+    private val _showTestButtons = BooleanSetting(KEY_SHOW_TEST_BUTTONS, false)
+    private val _defaultScanPattern = NonNullStringSetting(KEY_DEFAULT_SCAN_PATTERN, "linear")
+    private val _themeMode = NonNullStringSetting(KEY_THEME_MODE, "SYSTEM")
+    private val _pageSortOrder = NonNullStringSetting(KEY_PAGE_SORT_ORDER, "MANUAL")
+    private val _templateSortOrder = NonNullStringSetting(KEY_TEMPLATE_SORT_ORDER, "MANUAL")
+    private val _lastSuccessfulSyncTime = LongSetting(KEY_LAST_SYNC_TIME, 0L)
+    private val _experimentalManualSorting = BooleanSetting(KEY_EXPERIMENTAL_MANUAL_SORTING, false)
+    private val _smartPredictionDelay = LongSetting(KEY_SMART_PREDICTION_DELAY, 2000L)
+    private val _isSmartPredictionEnabled = BooleanSetting(KEY_SMART_PREDICTION_ENABLED, false)
+    private val _bluetoothDelay = LongSetting(KEY_BLUETOOTH_DELAY, 1500L)
+    private val _ttsVolume = FloatSetting(KEY_TTS_VOLUME_MULTIPLIER, 1.0f) { it.coerceIn(0.0f, 1.0f) }
+    private val _cuesVolume = FloatSetting(KEY_CUES_VOLUME_MULTIPLIER, 1.0f) { it.coerceIn(0.0f, 1.0f) }
 
-    var bluetoothDelay: Long
-        get() = getLongScoped(KEY_BLUETOOTH_DELAY, 1500L)
-        set(value) {
-            putLongScoped(KEY_BLUETOOTH_DELAY, value)
-            _bluetoothDelayFlow.value = value
-        }
+    private fun refreshFlows() {
+        _ttsLanguage.refresh()
+        _scanDelay.refresh()
+        _defaultStartPageId.refresh()
+        _ttsVoiceName.refresh()
+        _persistActionLogs.refresh()
+        _actionLogsStorage.refresh()
+        _switchActivationKey.refresh()
+        _volumeKeysActivate.refresh()
+        _showTestButtons.refresh()
+        _defaultScanPattern.refresh()
+        _themeMode.refresh()
+        _pageSortOrder.refresh()
+        _templateSortOrder.refresh()
+        _lastSuccessfulSyncTime.refresh()
+        _experimentalManualSorting.refresh()
+        _smartPredictionDelay.refresh()
+        _isSmartPredictionEnabled.refresh()
+        _bluetoothDelay.refresh()
+        _ttsVolume.refresh()
+        _cuesVolume.refresh()
+    }
 
-    private val _isSmartPredictionEnabledFlow = MutableStateFlow(getBooleanScoped(KEY_SMART_PREDICTION_ENABLED, false))
-    val isSmartPredictionEnabledFlow: StateFlow<Boolean> = _isSmartPredictionEnabledFlow.asStateFlow()
+    // ── Public API: Flows ────────────────────────────────────────────────
 
-    var isSmartPredictionEnabled: Boolean
-        get() = getBooleanScoped(KEY_SMART_PREDICTION_ENABLED, false)
-        set(value) {
-            putBooleanScoped(KEY_SMART_PREDICTION_ENABLED, value)
-            _isSmartPredictionEnabledFlow.value = value
-        }
+    val ttsLanguageFlow: StateFlow<String?> get() = _ttsLanguage.flow
+    val ttsVoiceNameFlow: StateFlow<String?> get() = _ttsVoiceName.flow
+    val scanDelayFlow: StateFlow<Long> get() = _scanDelay.flow
+    val defaultStartPageIdFlow: StateFlow<String?> get() = _defaultStartPageId.flow
+    val persistActionLogsFlow: StateFlow<Boolean> get() = _persistActionLogs.flow
+    val actionLogsStorageFlow: StateFlow<String?> get() = _actionLogsStorage.flow
+    val switchActivationKeyFlow: StateFlow<String> get() = _switchActivationKey.flow
+    val volumeKeysActivateFlow: StateFlow<Boolean> get() = _volumeKeysActivate.flow
+    val showTestButtonsFlow: StateFlow<Boolean> get() = _showTestButtons.flow
+    val defaultScanPatternFlow: StateFlow<String> get() = _defaultScanPattern.flow
+    val themeModeFlow: StateFlow<String> get() = _themeMode.flow
+    val pageSortOrderFlow: StateFlow<String> get() = _pageSortOrder.flow
+    val templateSortOrderFlow: StateFlow<String> get() = _templateSortOrder.flow
+    val lastSuccessfulSyncTimeFlow: StateFlow<Long> get() = _lastSuccessfulSyncTime.flow
+    val experimentalManualSortingFlow: StateFlow<Boolean> get() = _experimentalManualSorting.flow
+    val smartPredictionDelayMillisFlow: StateFlow<Long> get() = _smartPredictionDelay.flow
+    val isSmartPredictionEnabledFlow: StateFlow<Boolean> get() = _isSmartPredictionEnabled.flow
+    val bluetoothDelayFlow: StateFlow<Long> get() = _bluetoothDelay.flow
+    val ttsVolumeMultiplierFlow: StateFlow<Float> get() = _ttsVolume.flow
+    val cuesVolumeMultiplierFlow: StateFlow<Float> get() = _cuesVolume.flow
 
-
-
-
-    var isNotificationReadingEnabled: Boolean
-        get() = getBooleanScoped(KEY_NOTIFICATION_READING_ENABLED, false)
-        set(value) {
-            putBooleanScoped(KEY_NOTIFICATION_READING_ENABLED, value)
-        }
-
-
-
-
-    var monitoredNotificationApps: Set<String>
-        get() = getStringSetScoped(KEY_MONITORED_NOTIFICATION_APPS) ?: emptySet()
-        set(value) {
-            putStringSetScoped(KEY_MONITORED_NOTIFICATION_APPS, value)
-        }
-
-    private val _ttsLanguageFlow = MutableStateFlow(getStringScoped(KEY_TTS_LANGUAGE))
-    val ttsLanguageFlow: StateFlow<String?> = _ttsLanguageFlow.asStateFlow()
-
-    private val _scanDelayFlow = MutableStateFlow(getLongScoped(KEY_SCAN_DELAY_MILLIS, 100L))
-    val scanDelayFlow: StateFlow<Long> = _scanDelayFlow.asStateFlow()
+    // ── Public API: Properties ───────────────────────────────────────────
 
     var ttsLanguage: String?
-        get() = getStringScoped(KEY_TTS_LANGUAGE)
-        set(value) {
-            putStringScoped(KEY_TTS_LANGUAGE, value)
-            _ttsLanguageFlow.value = value
-        }
+        get() = _ttsLanguage.value
+        set(value) { _ttsLanguage.value = value }
 
-    private val _ttsVolumeMultiplierFlow = MutableStateFlow(getFloatScoped(KEY_TTS_VOLUME_MULTIPLIER, 1.0f))
-    val ttsVolumeMultiplierFlow: StateFlow<Float> = _ttsVolumeMultiplierFlow.asStateFlow()
-
-    var ttsVolumeMultiplier: Float
-        get() = getFloatScoped(KEY_TTS_VOLUME_MULTIPLIER, 1.0f)
-        set(value) {
-            val coerced = value.coerceIn(0.0f, 1.0f)
-            putFloatScoped(KEY_TTS_VOLUME_MULTIPLIER, coerced)
-            _ttsVolumeMultiplierFlow.value = coerced
-        }
-        
-    private val _cuesVolumeMultiplierFlow = MutableStateFlow(getFloatScoped(KEY_CUES_VOLUME_MULTIPLIER, 1.0f))
-    val cuesVolumeMultiplierFlow: StateFlow<Float> = _cuesVolumeMultiplierFlow.asStateFlow()
-
-    var cuesVolumeMultiplier: Float
-        get() = getFloatScoped(KEY_CUES_VOLUME_MULTIPLIER, 1.0f)
-        set(value) {
-            val coerced = value.coerceIn(0.0f, 1.0f)
-            putFloatScoped(KEY_CUES_VOLUME_MULTIPLIER, coerced)
-            _cuesVolumeMultiplierFlow.value = coerced
-        }
-
-    var autoStartScanning: Boolean
-        get() = getBooleanScoped(KEY_AUTO_START_SCANNING, true)
-        set(value) {
-            putBooleanScoped(KEY_AUTO_START_SCANNING, value)
-        }
+    var ttsVoiceName: String?
+        get() = _ttsVoiceName.value
+        set(value) { _ttsVoiceName.value = value }
 
     var scanDelayMillis: Long
         get() = getLongScoped(KEY_SCAN_DELAY_MILLIS, 3000L)
-        set(value) {
-            putLongScoped(KEY_SCAN_DELAY_MILLIS, value)
-            _scanDelayFlow.value = value
-        }
+        set(value) { _scanDelay.value = value }
+
+    var defaultStartPageId: String?
+        get() = _defaultStartPageId.value
+        set(value) { _defaultStartPageId.value = value }
+
+    var persistActionLogs: Boolean
+        get() = _persistActionLogs.value
+        set(value) { _persistActionLogs.value = value }
+
+    var actionLogsStorage: String?
+        get() = _actionLogsStorage.value
+        set(value) { _actionLogsStorage.value = value }
+
+    var switchActivationKey: String
+        get() = _switchActivationKey.value
+        set(value) { _switchActivationKey.value = value }
+
+    var volumeKeysActivate: Boolean
+        get() = _volumeKeysActivate.value
+        set(value) { _volumeKeysActivate.value = value }
+
+    var showTestButtons: Boolean
+        get() = _showTestButtons.value
+        set(value) { _showTestButtons.value = value }
+
+    var defaultScanPattern: String
+        get() = _defaultScanPattern.value
+        set(value) { _defaultScanPattern.value = value }
+
+    var themeMode: String
+        get() = _themeMode.value
+        set(value) { _themeMode.value = value }
+
+    var pageSortOrder: String
+        get() = _pageSortOrder.value
+        set(value) { _pageSortOrder.value = value }
+
+    var templateSortOrder: String
+        get() = _templateSortOrder.value
+        set(value) { _templateSortOrder.value = value }
+
+    var lastSuccessfulSyncTime: Long
+        get() = _lastSuccessfulSyncTime.value
+        set(value) { _lastSuccessfulSyncTime.value = value }
+
+    var experimentalManualSorting: Boolean
+        get() = _experimentalManualSorting.value
+        set(value) { _experimentalManualSorting.value = value }
+
+    var smartPredictionDelayMillis: Long
+        get() = _smartPredictionDelay.value
+        set(value) { _smartPredictionDelay.value = value }
+
+    var isSmartPredictionEnabled: Boolean
+        get() = _isSmartPredictionEnabled.value
+        set(value) { _isSmartPredictionEnabled.value = value }
+
+    var bluetoothDelay: Long
+        get() = _bluetoothDelay.value
+        set(value) { _bluetoothDelay.value = value }
+
+    var ttsVolumeMultiplier: Float
+        get() = _ttsVolume.value
+        set(value) { _ttsVolume.value = value }
+
+    var cuesVolumeMultiplier: Float
+        get() = _cuesVolume.value
+        set(value) { _cuesVolume.value = value }
+
+    // ── Simple settings (no Flow) ────────────────────────────────────────
+
+    var autoStartScanning: Boolean
+        get() = getBooleanScoped(KEY_AUTO_START_SCANNING, true)
+        set(value) { putBooleanScoped(KEY_AUTO_START_SCANNING, value) }
 
     var resumeScanningFromStart: Boolean
         get() = getBooleanScoped(KEY_RESUME_SCANNING_FROM_START, true)
-        set(value) {
-            putBooleanScoped(KEY_RESUME_SCANNING_FROM_START, value)
-        }
-
-    private val _defaultStartPageIdFlow = MutableStateFlow(getStringScoped(KEY_DEFAULT_START_PAGE_ID))
-    val defaultStartPageIdFlow: StateFlow<String?> = _defaultStartPageIdFlow.asStateFlow()
-
-    var defaultStartPageId: String?
-        get() = getStringScoped(KEY_DEFAULT_START_PAGE_ID)
-        set(value) {
-            putStringScoped(KEY_DEFAULT_START_PAGE_ID, value)
-            _defaultStartPageIdFlow.value = value
-        }
-
-    private val _defaultScanPatternFlow = MutableStateFlow(getStringScoped(KEY_DEFAULT_SCAN_PATTERN, "linear") ?: "linear")
-    val defaultScanPatternFlow: StateFlow<String> = _defaultScanPatternFlow.asStateFlow()
-
-    private val _themeModeFlow = MutableStateFlow(getStringScoped(KEY_THEME_MODE, "SYSTEM") ?: "SYSTEM")
-    val themeModeFlow: StateFlow<String> = _themeModeFlow.asStateFlow()
-
-    var themeMode: String
-        get() = getStringScoped(KEY_THEME_MODE, "SYSTEM") ?: "SYSTEM"
-        set(value) {
-            putStringScoped(KEY_THEME_MODE, value)
-            _themeModeFlow.value = value
-        }
-
-    var defaultScanPattern: String
-        get() = getStringScoped(KEY_DEFAULT_SCAN_PATTERN, "linear") ?: "linear"
-        set(value) {
-            putStringScoped(KEY_DEFAULT_SCAN_PATTERN, value)
-            _defaultScanPatternFlow.value = value
-        }
-
-    private val _ttsVoiceNameFlow = MutableStateFlow(getStringScoped(KEY_TTS_VOICE_NAME))
-    val ttsVoiceNameFlow: StateFlow<String?> = _ttsVoiceNameFlow.asStateFlow()
-
-    var ttsVoiceName: String?
-        get() = getStringScoped(KEY_TTS_VOICE_NAME)
-        set(value) {
-            putStringScoped(KEY_TTS_VOICE_NAME, value)
-            _ttsVoiceNameFlow.value = value
-        }
+        set(value) { putBooleanScoped(KEY_RESUME_SCANNING_FROM_START, value) }
 
     var ttsAudioDeviceAddress: String?
         get() = getStringScoped(KEY_TTS_AUDIO_DEVICE)
-        set(value) {
-            putStringScoped(KEY_TTS_AUDIO_DEVICE, value)
-        }
+        set(value) { putStringScoped(KEY_TTS_AUDIO_DEVICE, value) }
 
     var cuesAudioDeviceAddress: String?
         get() = getStringScoped(KEY_CUES_AUDIO_DEVICE)
-        set(value) {
-            putStringScoped(KEY_CUES_AUDIO_DEVICE, value)
-        }
-
-    private val _persistActionLogsFlow = MutableStateFlow(getBooleanScoped(KEY_PERSIST_ACTION_LOGS, false))
-    val persistActionLogsFlow: StateFlow<Boolean> = _persistActionLogsFlow.asStateFlow()
-
-    var persistActionLogs: Boolean
-        get() = getBooleanScoped(KEY_PERSIST_ACTION_LOGS, false)
-        set(value) {
-            putBooleanScoped(KEY_PERSIST_ACTION_LOGS, value)
-            _persistActionLogsFlow.value = value
-        }
-
-    private val _actionLogsStorageFlow = MutableStateFlow(getStringScoped(KEY_ACTION_LOGS_STORAGE))
-    val actionLogsStorageFlow: StateFlow<String?> = _actionLogsStorageFlow.asStateFlow()
-
-    var actionLogsStorage: String?
-        get() = getStringScoped(KEY_ACTION_LOGS_STORAGE)
-        set(value) {
-            putStringScoped(KEY_ACTION_LOGS_STORAGE, value)
-            _actionLogsStorageFlow.value = value
-        }
-
-    private val _switchActivationKeyFlow = MutableStateFlow(getStringScoped(KEY_SWITCH_ACTIVATION_KEY, "Space") ?: "Space")
-    val switchActivationKeyFlow: StateFlow<String> = _switchActivationKeyFlow.asStateFlow()
-
-    var switchActivationKey: String
-        get() = getStringScoped(KEY_SWITCH_ACTIVATION_KEY, "Space") ?: "Space"
-        set(value) {
-            putStringScoped(KEY_SWITCH_ACTIVATION_KEY, value)
-            _switchActivationKeyFlow.value = value
-        }
-
-    private val _volumeKeysActivateFlow = MutableStateFlow(getBooleanScoped(KEY_VOLUME_KEYS_ACTIVATE, false))
-    val volumeKeysActivateFlow: StateFlow<Boolean> = _volumeKeysActivateFlow.asStateFlow()
-
-    var volumeKeysActivate: Boolean
-        get() = getBooleanScoped(KEY_VOLUME_KEYS_ACTIVATE, false)
-        set(value) {
-            putBooleanScoped(KEY_VOLUME_KEYS_ACTIVATE, value)
-            _volumeKeysActivateFlow.value = value
-        }
-
-    private val _showTestButtonsFlow = MutableStateFlow(getBooleanScoped(KEY_SHOW_TEST_BUTTONS, false))
-    val showTestButtonsFlow: StateFlow<Boolean> = _showTestButtonsFlow.asStateFlow()
-
-    var showTestButtons: Boolean
-        get() = getBooleanScoped(KEY_SHOW_TEST_BUTTONS, false)
-        set(value) {
-            putBooleanScoped(KEY_SHOW_TEST_BUTTONS, value)
-            _showTestButtonsFlow.value = value
-        }
+        set(value) { putStringScoped(KEY_CUES_AUDIO_DEVICE, value) }
 
     var holdingTimeMillis: Long
         get() = getLongScoped(KEY_HOLDING_TIME_MILLIS, 0L)
-        set(value) {
-            putLongScoped(KEY_HOLDING_TIME_MILLIS, value)
-        }
+        set(value) { putLongScoped(KEY_HOLDING_TIME_MILLIS, value) }
 
     var isCloudSyncEnabled: Boolean
         get() = getBooleanScoped(KEY_CLOUD_SYNC_ENABLED, false)
-        set(value) {
-            putBooleanScoped(KEY_CLOUD_SYNC_ENABLED, value)
-        }
+        set(value) { putBooleanScoped(KEY_CLOUD_SYNC_ENABLED, value) }
 
     var isGeminiEnabled: Boolean
         get() = getBooleanScoped(KEY_GEMINI_ENABLED, false)
-        set(value) {
-            putBooleanScoped(KEY_GEMINI_ENABLED, value)
-        }
+        set(value) { putBooleanScoped(KEY_GEMINI_ENABLED, value) }
+
+    var showPageIdInLog: Boolean
+        get() = getBooleanScoped(KEY_SHOW_PAGE_ID_IN_LOG, false)
+        set(value) { putBooleanScoped(KEY_SHOW_PAGE_ID_IN_LOG, value) }
+
+    var isNotificationReadingEnabled: Boolean
+        get() = getBooleanScoped(KEY_NOTIFICATION_READING_ENABLED, false)
+        set(value) { putBooleanScoped(KEY_NOTIFICATION_READING_ENABLED, value) }
+
+    var monitoredNotificationApps: Set<String>
+        get() = getStringSetScoped(KEY_MONITORED_NOTIFICATION_APPS) ?: emptySet()
+        set(value) { putStringSetScoped(KEY_MONITORED_NOTIFICATION_APPS, value) }
 
     var initialTemplatesCreated: Boolean
         get() = prefs.getBoolean(KEY_INITIAL_TEMPLATES_CREATED, false)
-        set(value) {
-            prefs.edit().putBoolean(KEY_INITIAL_TEMPLATES_CREATED, value).apply()
-        }
+        set(value) { prefs.edit().putBoolean(KEY_INITIAL_TEMPLATES_CREATED, value).apply() }
 
     var appLanguage: String?
         get() = getStringScoped(KEY_APP_LANGUAGE)
-        set(value) {
-            putStringScoped(KEY_APP_LANGUAGE, value)
-        }
+        set(value) { putStringScoped(KEY_APP_LANGUAGE, value) }
 
     var syncIntervalMinutes: Long
         get() = getLongScoped(KEY_SYNC_INTERVAL_MINUTES, 15L)
-        set(value) {
-            putLongScoped(KEY_SYNC_INTERVAL_MINUTES, value)
-        }
+        set(value) { putLongScoped(KEY_SYNC_INTERVAL_MINUTES, value) }
 
     var syncMode: String
         get() = getStringScoped(KEY_SYNC_MODE, "TWO_WAY") ?: "TWO_WAY"
-        set(value) {
-            putStringScoped(KEY_SYNC_MODE, value)
-        }
+        set(value) { putStringScoped(KEY_SYNC_MODE, value) }
+
+    // ── Device name cache ────────────────────────────────────────────────
 
     fun getDeviceName(persistentId: String): String? {
         return prefs.getString("device_name_$persistentId", null)

@@ -142,8 +142,6 @@ class PageViewModel @Inject constructor(
     private val _authRecoverIntent = MutableSharedFlow<Intent>()
     val authRecoverIntent: SharedFlow<Intent> = _authRecoverIntent.asSharedFlow()
 
-    val focusedButtonIndex: StateFlow<Int?> = scannerEngine.focusedButtonIndex
-    val focusedRowIndex: StateFlow<Int?> = scannerEngine.focusedRowIndex
     val defaultScanPattern: StateFlow<String> = settingsRepository.defaultScanPatternFlow
     val showTestButtons: StateFlow<Boolean> = settingsRepository.showTestButtonsFlow
     val experimentalManualSorting: StateFlow<Boolean> = settingsRepository.experimentalManualSortingFlow
@@ -159,10 +157,22 @@ class PageViewModel @Inject constructor(
 
     private val _isUserModeActive = MutableStateFlow(false)
 
+    private val scanCoordinator = ScanCoordinator(
+        scope = viewModelScope,
+        scannerEngine = scannerEngine,
+        settingsRepository = settingsRepository,
+        actionExecutor = actionExecutor,
+        currentPage = _currentPage,
+        isUserModeActive = _isUserModeActive
+    )
+
+    val focusedButtonIndex: StateFlow<Int?> = scanCoordinator.focusedButtonIndex
+    val focusedRowIndex: StateFlow<Int?> = scanCoordinator.focusedRowIndex
+
     fun setUserModeActive(isActive: Boolean) {
         _isUserModeActive.value = isActive
         if (!isActive) {
-            stopScanningTemporarily()
+            scanCoordinator.stopScanningTemporarily()
             ttsHelper.stopNotificationTTS()
         }
     }
@@ -179,27 +189,8 @@ class PageViewModel @Inject constructor(
         
         actionExecutor.ttsHelper = ttsHelper
 
-        // Consolidated scanner trigger: observe both ActionExecutor and current Page
-        viewModelScope.launch {
-            kotlinx.coroutines.flow.combine(
-                actionExecutor.isExecuting,
-                _currentPage,
-                _isUserModeActive
-            ) { isExecuting, page, isActive -> Triple(isExecuting, page, isActive) }
-                .collect { (isExecuting, page, isActive) ->
-                    if (!isActive) {
-                        Log.d("PageViewModel", "Scanner Trigger: User mode inactive, ignoring state change.")
-                        return@collect
-                    }
-                    if (isExecuting) {
-                        Log.d("PageViewModel", "Scanner Trigger: ActionExecutor is executing. Pausing scan.")
-                        stopScanningTemporarily()
-                    } else if (page != null) {
-                        Log.d("PageViewModel", "Scanner Trigger: Ready to resume on page ${page.id}")
-                        resumeScanningIfEnabled()
-                    }
-                }
-        }
+        // Initialize scanning coordination
+        scanCoordinator.init()
 
         // Observe ActionExecutor events
         viewModelScope.launch {
@@ -230,10 +221,6 @@ class PageViewModel @Inject constructor(
                     }
                 }
             }
-        }
-
-        viewModelScope.launch {
-            settingsRepository.scanDelayFlow.collect { delay -> setScanDelay(delay) }
         }
 
         // Gemini Prediction Triggers
@@ -319,13 +306,7 @@ class PageViewModel @Inject constructor(
     fun loadPage(page: Page) {
         viewModelScope.launch {
             val isSamePage = _currentPage.value?.id == page.id
-            
-            if (isSamePage) {
-                // Keep focus index if it's just a dynamic update (Stats)
-                scannerEngine.pauseScanning()
-            } else {
-                scannerEngine.stopScanning()
-            }
+            scanCoordinator.onPageChanged(isSamePage)
             
             val bookId = _activeBookId.value ?: page.bookId
             val resolvedPage = frequentActionResolver.resolve(page, bookId)
@@ -333,49 +314,10 @@ class PageViewModel @Inject constructor(
         }
     }
 
-    fun resumeScanningIfEnabled() {
-        if (actionExecutor.isExecuting.value) {
-            Log.d("PageViewModel", "resumeScanningIfEnabled: ActionExecutor is busy, skipping scan resume.")
-            return
-        }
-        if (settingsRepository.autoStartScanning) {
-            val startIndex = if (settingsRepository.resumeScanningFromStart) {
-                0
-            } else {
-                focusedButtonIndex.value ?: 0
-            }
-            startScanning(startIndex)
-        }
-    }
-
-    fun setScanDelay(delayMillis: Long) {
-        scannerEngine.scanDelayMillis = delayMillis
-        if (settingsRepository.autoStartScanning) {
-            startScanning()
-        }
-    }
-
-    fun startScanning(startIndex: Int = 0) {
-        val page = _currentPage.value ?: return
-        val defaultPattern = settingsRepository.defaultScanPattern
-        page.scanPattern ?: defaultPattern
-        scannerEngine.startScanning(
-            buttonConfigs = page.buttonConfigs,
-            startIndex = startIndex,
-            pattern = page.scanPattern ?: settingsRepository.defaultScanPattern,
-            columns = page.columns,
-            rowNames = page.rowNames,
-            pageId = page.id
-        )
-    }
-
-    fun stopScanningTemporarily() {
-        scannerEngine.pauseScanning()
-    }
-
-    fun stopScanning() {
-        scannerEngine.stopScanning()
-    }
+    fun resumeScanningIfEnabled() = scanCoordinator.resumeScanningIfEnabled()
+    fun startScanning(startIndex: Int = 0) = scanCoordinator.startScanning(startIndex)
+    fun stopScanningTemporarily() = scanCoordinator.stopScanningTemporarily()
+    fun stopScanning() = scanCoordinator.stopScanning()
 
     fun activateButtonAtIndex(index: Int) {
         // Prevent interaction during execution (non-interruptible audio policy)
@@ -390,7 +332,7 @@ class PageViewModel @Inject constructor(
         val page = _currentPage.value ?: return
         val buttonConfig = page.buttonConfigs.getOrNull(index) ?: return
         
-        scannerEngine.setFocusedIndex(index)
+        scanCoordinator.setFocusedIndex(index)
         
         val smartAction = buttonConfig.buttonAction as? SmartPredictionButtonAction
         if (smartAction != null) {
@@ -439,7 +381,7 @@ class PageViewModel @Inject constructor(
         if (focusedIdx != null) {
             activateButtonAtIndex(focusedIdx)
         } else if (focusedRow != null) {
-            scannerEngine.selectCurrentRow()
+            scanCoordinator.selectCurrentRow()
         }
     }
 
@@ -515,6 +457,6 @@ class PageViewModel @Inject constructor(
     override fun onCleared() {
         super.onCleared()
         ttsHelper.shutdown()
-        scannerEngine.clear()
+        scanCoordinator.clear()
     }
 }

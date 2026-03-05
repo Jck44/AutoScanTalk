@@ -5,8 +5,14 @@ import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.domain.GeminiUseCase
 import com.andreas_kratzer.ghosttalk.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.model.ChangeVolumeButtonAction
+import com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction
 import com.andreas_kratzer.ghosttalk.model.GeminiButtonAction
 import com.andreas_kratzer.ghosttalk.model.GeminiSearchButtonAction
+import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
+import com.andreas_kratzer.ghosttalk.model.NotificationButtonAction
+import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
+import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
 import com.google.android.gms.auth.UserRecoverableAuthException
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
@@ -40,7 +46,9 @@ class GeminiActionHandler(
         val ttsMode = when (action) {
             is GeminiButtonAction -> action.ttsMode
             is GeminiSearchButtonAction -> action.ttsMode
-            else -> "NORMAL"
+            is SpeakTextButtonAction, is NavigateToPageButtonAction,
+            is FrequentActionButtonAction, is SmartPredictionButtonAction,
+            is NotificationButtonAction, is ChangeVolumeButtonAction -> "NORMAL"
         }
 
         log("Gemini ${if (useGoogleSearch) "Suche " else ""}aufgerufen mit: \"$prompt\"")

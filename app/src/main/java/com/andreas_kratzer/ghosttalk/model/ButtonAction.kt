@@ -4,7 +4,7 @@ package com.andreas_kratzer.ghosttalk.model
  * Represents an action that can be executed when a button is triggered.
  * The actual execution logic is handled by the PageViewModel.
  */
-abstract class ButtonAction {
+sealed class ButtonAction {
     abstract val ttsMode: String
 }
 

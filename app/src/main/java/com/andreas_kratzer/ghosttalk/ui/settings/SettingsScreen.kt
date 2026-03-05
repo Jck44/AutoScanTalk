@@ -185,9 +185,9 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.height(24.dp))
                         HardwareSettings(switchActivationKey, settingsViewModel)
                         Spacer(modifier = Modifier.height(24.dp))
-                        TestSettings(showTestButtons, volumeKeysActivate, settingsViewModel)
-                        Spacer(modifier = Modifier.height(24.dp))
                         ActionLogSettings(persistActionLogs, settingsViewModel)
+                        Spacer(modifier = Modifier.height(24.dp))
+                        TestSettings(showTestButtons, volumeKeysActivate, settingsViewModel)
                     }
                 }
             } else {
@@ -216,9 +216,9 @@ fun SettingsScreen(
                 Spacer(modifier = Modifier.height(24.dp))
                 HardwareSettings(switchActivationKey, settingsViewModel)
                 Spacer(modifier = Modifier.height(24.dp))
-                TestSettings(showTestButtons, volumeKeysActivate, settingsViewModel)
-                Spacer(modifier = Modifier.height(24.dp))
                 ActionLogSettings(persistActionLogs, settingsViewModel)
+                Spacer(modifier = Modifier.height(24.dp))
+                TestSettings(showTestButtons, volumeKeysActivate, settingsViewModel)
             }
             
             Spacer(modifier = Modifier.height(48.dp))
@@ -677,6 +677,22 @@ fun TestSettings(
             }
             Switch(checked = volumeKeysActivate, onCheckedChange = { settingsViewModel.setVolumeKeysActivate(it) })
         }
+
+        val showPageIdInLog by settingsViewModel.showPageIdInLog.collectAsState()
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.clickable { settingsViewModel.setShowPageIdInLog(!showPageIdInLog) }
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(stringResource(R.string.settings_show_page_id_in_log))
+                Text(
+                    text = stringResource(R.string.settings_show_page_id_in_log_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Switch(checked = showPageIdInLog, onCheckedChange = { settingsViewModel.setShowPageIdInLog(it) })
+        }
     }
 }
 
@@ -850,22 +866,6 @@ fun ActionLogSettings(
                 )
             }
             Switch(checked = persistActionLogs, onCheckedChange = { settingsViewModel.setPersistActionLogs(it) })
-        }
-
-        val showPageIdInLog by settingsViewModel.showPageIdInLog.collectAsState()
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.clickable { settingsViewModel.setShowPageIdInLog(!showPageIdInLog) }
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(stringResource(R.string.settings_show_page_id_in_log))
-                Text(
-                    text = stringResource(R.string.settings_show_page_id_in_log_hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Switch(checked = showPageIdInLog, onCheckedChange = { settingsViewModel.setShowPageIdInLog(it) })
         }
 
         val experimentalManualSorting by settingsViewModel.experimentalManualSorting.collectAsState()
