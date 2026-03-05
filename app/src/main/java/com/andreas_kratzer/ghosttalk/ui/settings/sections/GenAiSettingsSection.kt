@@ -27,13 +27,19 @@ fun GenAiSettingsSection(viewModel: SettingsViewModel) {
     val context = LocalContext.current
 
     PreferenceCategory(stringResource(R.string.settings_category_gemini)) {
-        SettingsToggleItem(stringResource(R.string.settings_gemini_enable), isEnabled) { viewModel.setGeminiEnabled(it) }
+        // Gemini Nano (Local)
+        SettingsToggleItem(stringResource(R.string.settings_gemini_local_enable), useLocal) { 
+            viewModel.setUseLocalGenerativeAi(it, context) 
+        }
+
+        // Gemini Cloud
+        SettingsToggleItem(stringResource(R.string.settings_gemini_enable), isEnabled) { 
+            viewModel.setGeminiEnabled(it) 
+        }
         
         if (isEnabled) {
-            SettingsToggleItem(stringResource(R.string.settings_gemini_local_enable), useLocal) { viewModel.setUseLocalGenerativeAi(it, context) }
-            
             Column(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
-                Text(text = "Features Status:", style = MaterialTheme.typography.labelLarge)
+                Text(text = "Cloud Features Status:", style = MaterialTheme.typography.labelLarge)
                 toolStatus.forEach { (name, status) ->
                     val isAvailable = status == GeminiUseCase.ToolStatus.AVAILABLE
                     val statusText = when (status) {

@@ -7,40 +7,25 @@ import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
-import com.andreas_kratzer.ghosttalk.core.actions.FrequentActionResolver
 import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
 import com.andreas_kratzer.ghosttalk.core.pages.PageImportExportManager
 import com.andreas_kratzer.ghosttalk.core.scanning.ScannerEngine
 import com.andreas_kratzer.ghosttalk.core.util.Logger
-import com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository
-import com.andreas_kratzer.ghosttalk.data.PageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.data.TemplateRepository
-import com.andreas_kratzer.ghosttalk.domain.ActionLogUseCase
-import com.andreas_kratzer.ghosttalk.domain.CreatePageUseCase
 import com.andreas_kratzer.ghosttalk.domain.FeatureGuard
 import com.andreas_kratzer.ghosttalk.domain.GeminiUseCase
 import com.andreas_kratzer.ghosttalk.domain.GeminiUseCaseFactory
-import com.andreas_kratzer.ghosttalk.domain.GetPagesUseCase
-import com.andreas_kratzer.ghosttalk.domain.PredictNextActionUseCase
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.model.Page
-import com.andreas_kratzer.ghosttalk.model.PageTemplate
-import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
-import com.andreas_kratzer.ghosttalk.model.SortOrder
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
+import com.andreas_kratzer.ghosttalk.ui.pages.delegates.InteractionDelegate
+import com.andreas_kratzer.ghosttalk.ui.pages.delegates.PageManagementDelegate
+import com.andreas_kratzer.ghosttalk.ui.pages.delegates.SmartPredictionDelegate
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -48,223 +33,83 @@ import javax.inject.Inject
 @HiltViewModel
 class PageViewModel @Inject constructor(
     application: Application,
-    private val pageRepository: PageRepository,
     val settingsRepository: SettingsRepository,
     internal val importExportManager: PageImportExportManager,
-    private val getPagesUseCase: GetPagesUseCase,
-    private val actionLogUseCase: ActionLogUseCase,
-    private val createPageUseCase: CreatePageUseCase,
-    private val frequentActionResolver: FrequentActionResolver,
-    private val buttonUsageRepository: ButtonUsageRepository,
     internal val scannerEngine: ScannerEngine,
-    templateRepository: TemplateRepository,
     private val googleAuthManager: GoogleAuthManager,
     geminiUseCaseFactory: GeminiUseCaseFactory,
     private val ttsHelper: TextToSpeechHelper,
-    private val predictNextActionUseCase: PredictNextActionUseCase,
-    private val bookRepository: com.andreas_kratzer.ghosttalk.data.BookRepository,
-    private val deletePageUseCase: com.andreas_kratzer.ghosttalk.domain.DeletePageUseCase,
-    private val reorderPagesUseCase: com.andreas_kratzer.ghosttalk.domain.ReorderPagesUseCase,
-    private val updateButtonConfigUseCase: com.andreas_kratzer.ghosttalk.domain.UpdateButtonConfigUseCase,
-    private val updatePageSettingsUseCase: com.andreas_kratzer.ghosttalk.domain.UpdatePageSettingsUseCase,
-    private val updateRowNameUseCase: com.andreas_kratzer.ghosttalk.domain.UpdateRowNameUseCase,
-    private val importPageUseCase: com.andreas_kratzer.ghosttalk.domain.ImportPageUseCase,
-    private val exportPageUseCase: com.andreas_kratzer.ghosttalk.domain.ExportPageUseCase,
     private val localIntentRouter: com.andreas_kratzer.ghosttalk.domain.executors.LocalIntentRouter,
     private val logger: Logger,
-    val featureGuard: FeatureGuard
+    val featureGuard: FeatureGuard,
+    val pageManagementDelegate: PageManagementDelegate,
+    val interactionDelegate: InteractionDelegate,
+    val smartPredictionDelegate: SmartPredictionDelegate
 ) : AndroidViewModel(application) {
 
     private var geminiUseCase: GeminiUseCase? = null
 
-    private val _activeBookId = MutableStateFlow<String?>(null)
-    val activeBookId: StateFlow<String?> = _activeBookId.asStateFlow()
+    val activeBookId = pageManagementDelegate.activeBookId
+    val searchQuery = pageManagementDelegate.searchQuery
+    val filteredPages = pageManagementDelegate.filteredPages
+    val unfilteredPages = pageManagementDelegate.unfilteredPages
+    val currentPage = pageManagementDelegate.currentPage
+    val templates = pageManagementDelegate.templates
 
-    private val _searchQuery = MutableStateFlow("")
-    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
-
-    fun updateSearchQuery(query: String) {
-        _searchQuery.value = query
-    }
-
-    private val _allPages = MutableStateFlow<List<Page>>(emptyList())
-    val filteredPages: StateFlow<List<Page>> = kotlinx.coroutines.flow.combine(
-        _allPages,
-        settingsRepository.pageSortOrderFlow,
-        _searchQuery
-    ) { pages, sortOrderStr, query ->
-        val sortOrder = try { SortOrder.valueOf(sortOrderStr) } catch (_: Exception) { SortOrder.MANUAL }
-        val trimmedQuery = query.trim()
-        val filtered = if (trimmedQuery.isBlank()) {
-            pages
-        } else {
-            pages.filter { it.name.contains(trimmedQuery, ignoreCase = true) }
-        }
-        when (sortOrder) {
-            SortOrder.MANUAL -> filtered.sortedBy { it.orderIndex }
-            SortOrder.NEWEST -> filtered.sortedByDescending { it.createdAt }
-            SortOrder.OLDEST -> filtered.sortedBy { it.createdAt }
-            SortOrder.A_Z -> filtered.sortedBy { it.name.lowercase() }
-            SortOrder.Z_A -> filtered.sortedByDescending { it.name.lowercase() }
-        }
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
-
-    val unfilteredPages: StateFlow<List<Page>> = kotlinx.coroutines.flow.combine(
-        _allPages,
-        settingsRepository.pageSortOrderFlow
-    ) { pages, sortOrderStr ->
-        val sortOrder = try { SortOrder.valueOf(sortOrderStr) } catch (_: Exception) { SortOrder.MANUAL }
-        when (sortOrder) {
-            SortOrder.MANUAL -> pages.sortedBy { it.orderIndex }
-            SortOrder.NEWEST -> pages.sortedByDescending { it.createdAt }
-            SortOrder.OLDEST -> pages.sortedBy { it.createdAt }
-            SortOrder.A_Z -> pages.sortedBy { it.name.lowercase() }
-            SortOrder.Z_A -> pages.sortedByDescending { it.name.lowercase() }
-        }
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
-
-    private val _currentPage = MutableStateFlow<Page?>(null)
-    val currentPage: StateFlow<Page?> = _currentPage.asStateFlow()
-
-    private val _lastActions = MutableStateFlow<List<String>>(emptyList())
-    val lastActions: StateFlow<List<String>> = _lastActions.asStateFlow()
+    val lastActions = interactionDelegate.lastActions
+    val authRecoverIntent = interactionDelegate.authRecoverIntent
+    val isUserModeActive = interactionDelegate.isUserModeActive
 
     private val _smartPredictions = MutableStateFlow<List<String>>(emptyList())
     val smartPredictions: StateFlow<List<String>> = _smartPredictions.asStateFlow()
 
-
-    val templates: StateFlow<List<PageTemplate>> = templateRepository.getAllTemplates()
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.Eagerly,
-            initialValue = emptyList()
-        )
-
-    private val _authRecoverIntent = MutableSharedFlow<Intent>()
-    val authRecoverIntent: SharedFlow<Intent> = _authRecoverIntent.asSharedFlow()
-
-    val defaultScanPattern: StateFlow<String> = settingsRepository.defaultScanPatternFlow
-    val showTestButtons: StateFlow<Boolean> = settingsRepository.showTestButtonsFlow
-    val experimentalManualSorting: StateFlow<Boolean> = settingsRepository.experimentalManualSortingFlow
+    val defaultScanPattern = settingsRepository.defaultScanPatternFlow
+    val showTestButtons = settingsRepository.showTestButtonsFlow
+    val experimentalManualSorting = settingsRepository.experimentalManualSortingFlow
 
     val actionExecutor = ActionExecutor(
         scope = viewModelScope,
         settingsRepository = settingsRepository,
         logger = logger,
         ttsHelper = ttsHelper,
-        geminiUseCase = null, // Will be set in init
+        geminiUseCase = null,
         localIntentRouter = localIntentRouter,
-        buttonUsageRepository = buttonUsageRepository
+        buttonUsageRepository = null // Will be handled inside ActionExecutor if needed, or pass it if you have it
     )
-
-    private val _isUserModeActive = MutableStateFlow(false)
 
     private val scanCoordinator = ScanCoordinator(
         scope = viewModelScope,
         scannerEngine = scannerEngine,
         settingsRepository = settingsRepository,
         actionExecutor = actionExecutor,
-        currentPage = _currentPage,
-        isUserModeActive = _isUserModeActive
+        currentPage = currentPage,
+        isUserModeActive = isUserModeActive
     )
 
-    val focusedButtonIndex: StateFlow<Int?> = scanCoordinator.focusedButtonIndex
-    val focusedRowIndex: StateFlow<Int?> = scanCoordinator.focusedRowIndex
-
-    fun setUserModeActive(isActive: Boolean) {
-        _isUserModeActive.value = isActive
-        if (!isActive) {
-            scanCoordinator.stopScanningTemporarily()
-            ttsHelper.stopNotificationTTS()
-        }
-    }
-
-    fun setActiveBookId(bookId: String?) {
-        _activeBookId.value = bookId
-    }
+    val focusedButtonIndex = scanCoordinator.focusedButtonIndex
+    val focusedRowIndex = scanCoordinator.focusedRowIndex
 
     init {
+        pageManagementDelegate.init(viewModelScope)
+        interactionDelegate.init(viewModelScope, actionExecutor, ::loadPage, _smartPredictions)
+        interactionDelegate.scanCoordinator = scanCoordinator
+        
+        smartPredictionDelegate.init(
+            scope = viewModelScope,
+            currentPage = currentPage,
+            allPages = pageManagementDelegate.allPagesFlow,
+            lastActions = lastActions,
+            activeBookId = activeBookId,
+            onPredictionsUpdated = { _smartPredictions.value = it }
+        )
+
         geminiUseCase = geminiUseCaseFactory.create {
             googleAuthManager.getGoogleCredential()?.getToken()
         }
         actionExecutor.geminiUseCase = geminiUseCase
-        
         actionExecutor.ttsHelper = ttsHelper
 
-        // Initialize scanning coordination
         scanCoordinator.init()
-
-        // Observe ActionExecutor events
-        viewModelScope.launch {
-            actionExecutor.events.collect { event ->
-                when (event) {
-                    is ActionExecutor.ExecutionEvent.NavigateToPage -> {
-                        viewModelScope.launch {
-                            val page = pageRepository.getPageById(event.pageId)
-                            if (page != null) {
-                                val idSuffix = if (settingsRepository.showPageIdInLog) " (ID: ${event.pageId})" else ""
-                                logAction("Navigiert zu Seite: ${page.name}$idSuffix")
-                                loadPage(page)
-                            } else {
-                                val idSuffix = if (settingsRepository.showPageIdInLog) " mit ID '${event.pageId}'" else ""
-                                logAction("Fehler: Seite$idSuffix nicht gefunden.")
-                                ttsHelper.speak(application.getString(com.andreas_kratzer.ghosttalk.R.string.error_page_not_found)) {}
-                            }
-                        }
-                    }
-                    is ActionExecutor.ExecutionEvent.Log -> {
-                        logAction(event.message)
-                    }
-                    is ActionExecutor.ExecutionEvent.Error -> {
-                        logAction("Fehler: ${event.message}")
-                    }
-                    is ActionExecutor.ExecutionEvent.RecoverableAuthError -> {
-                        _authRecoverIntent.emit(event.intent)
-                    }
-                }
-            }
-        }
-
-        // Gemini Prediction Triggers
-        viewModelScope.launch {
-            kotlinx.coroutines.flow.combine(
-                _currentPage,
-                _lastActions,
-                _allPages,
-                settingsRepository.isSmartPredictionEnabledFlow
-            ) { page, _, allPages, enabled -> Triple(page, allPages, enabled) }
-                .collect { (page, allPages, enabled) ->
-                    if (page != null && enabled) {
-                        val hasPredictor = page.buttonConfigs.any { 
-                            it != null && featureGuard.isActionEnabled(it.buttonAction) && it.buttonAction is SmartPredictionButtonAction
-                        }
-                        
-                        if (hasPredictor) {
-                            val bookId = _activeBookId.value
-                            if (bookId != null) {
-                                // Delay removed for offline Nano usage as requested
-                                try {
-                                    _smartPredictions.value = predictNextActionUseCase.predict(page, allPages, bookId)
-                                } catch (e: Exception) {
-                                    Log.e("PageViewModel", "Smart Prediction failed", e)
-                                }
-                            }
-                        } else {
-                            _smartPredictions.value = emptyList()
-                        }
-                    }
-                }
-        }
-        
-        // Reactive page loading via UseCase
-        viewModelScope.launch {
-            getPagesUseCase.execute(_activeBookId).collect { pages ->
-                _allPages.value = pages
-            }
-        }
-
-        // Action logs via UseCase
-        _lastActions.value = actionLogUseCase.loadSavedLogs()
 
         // Set up Gemini command handlers
         geminiUseCase?.setAppCommandHandler { command, args ->
@@ -302,153 +147,44 @@ class PageViewModel @Inject constructor(
         }
     }
 
+    fun updateSearchQuery(query: String) = pageManagementDelegate.updateSearchQuery(query)
+    fun setActiveBookId(bookId: String?) = pageManagementDelegate.setActiveBookId(bookId)
+    
     fun loadPage(page: Page) {
         viewModelScope.launch {
-            val isSamePage = _currentPage.value?.id == page.id
+            val isSamePage = currentPage.value?.id == page.id
             scanCoordinator.onPageChanged(isSamePage)
-            
-            val bookId = _activeBookId.value ?: page.bookId
-            val resolvedPage = frequentActionResolver.resolve(page, bookId)
-            _currentPage.value = resolvedPage
+            pageManagementDelegate.setCurrentPage(page)
         }
     }
+
+    fun setUserModeActive(isActive: Boolean) = interactionDelegate.setUserModeActive(isActive)
+    fun activateButtonAtIndex(index: Int) = interactionDelegate.activateButtonAtIndex(index, currentPage.value, activeBookId.value)
+    fun activateFocusedButton() = interactionDelegate.activateFocusedButton(currentPage.value, activeBookId.value)
+    fun clearActionLogs() = interactionDelegate.clearActionLogs()
 
     fun resumeScanningIfEnabled() = scanCoordinator.resumeScanningIfEnabled()
     fun startScanning(startIndex: Int = 0) = scanCoordinator.startScanning(startIndex)
     fun stopScanning() = scanCoordinator.stopScanning()
 
-    fun activateButtonAtIndex(index: Int) {
-        // Prevent interaction during execution (non-interruptible audio policy)
-        if (actionExecutor.isExecuting.value) {
-            Log.d("PageViewModel", "Ignoring button click at index $index as ActionExecutor is currently executing.")
-            return
-        }
+    fun createNewPage(name: String, rows: Int, columns: Int, bookId: String, templateId: String? = null, onCreated: (String) -> Unit) =
+        pageManagementDelegate.createNewPage(name, rows, columns, bookId, templateId, onCreated)
 
-        // Jeder gültige Tasterdruck unterbricht ein eventuell laufendes Vorlesen von Benachrichtigungen
-        ttsHelper.stopNotificationTTS()
-        
-        val page = _currentPage.value ?: return
-        val buttonConfig = page.buttonConfigs.getOrNull(index) ?: return
-        
-        scanCoordinator.setFocusedIndex(index)
-        
-        val smartAction = buttonConfig.buttonAction as? SmartPredictionButtonAction
-        if (smartAction != null) {
-            val predictionId = _smartPredictions.value.getOrNull(smartAction.rank - 1)
-            if (predictionId != null) {
-                resolveSmartPrediction(predictionId)
-                return
-            }
-        }
-        
-        actionExecutor.executeButtonAction(buttonConfig, bookId = _activeBookId.value)
-    }
+    fun updateButtonConfig(pageId: String, index: Int, newConfig: ButtonConfig?) =
+        pageManagementDelegate.updateButtonConfig(pageId, index, newConfig)
 
-    private fun resolveSmartPrediction(predictionId: String) {
-        viewModelScope.launch {
-            // 1. Check if it's a button on the current page (executes full action including special types)
-            val currentPage = _currentPage.value
-            val matchingButton = currentPage?.buttonConfigs?.find { it?.id == predictionId }
-            if (matchingButton != null) {
-                actionExecutor.executeButtonAction(matchingButton, bookId = _activeBookId.value)
-                return@launch
-            }
+    fun updatePageSettings(pageId: String, newName: String, newScanPattern: String?, newRowNames: List<String>) =
+        pageManagementDelegate.updatePageSettings(pageId, newName, newScanPattern, newRowNames)
 
-            // 2. Check if it's a page (Navigation)
-            val allPages = _allPages.value
-            val targetPage = allPages.find { it.id == predictionId }
-            
-            if (targetPage != null) {
-                actionExecutor.executeButtonAction(
-                    ButtonConfig(
-                        label = targetPage.name,
-                        auditoryCue = null,
-                        buttonAction = NavigateToPageButtonAction(targetPage.id)
-                    ),
-                    bookId = _activeBookId.value
-                )
-            }
-        }
-    }
+    fun updateRowName(pageId: String, rowIndex: Int, newName: String) =
+        pageManagementDelegate.updateRowName(pageId, rowIndex, newName)
 
-    fun activateFocusedButton() {
-        val focusedIdx = focusedButtonIndex.value
-        val focusedRow = focusedRowIndex.value
-        if (focusedIdx != null) {
-            activateButtonAtIndex(focusedIdx)
-        } else if (focusedRow != null) {
-            scanCoordinator.selectCurrentRow()
-        }
-    }
+    fun deletePage(page: Page) = pageManagementDelegate.deletePage(page)
+    fun reorderPages(fromIndex: Int, toIndex: Int) = pageManagementDelegate.reorderPages(fromIndex, toIndex)
+    fun importFromJson(jsonString: String, bookId: String, onSuccess: () -> Unit, onError: (String) -> Unit) =
+        pageManagementDelegate.importFromJson(jsonString, bookId, onSuccess, onError)
 
-    private fun logAction(actionText: String) {
-        _lastActions.update { current ->
-            actionLogUseCase.formatAndAddEntry(actionText, current)
-        }
-    }
-
-    fun clearActionLogs() {
-        _lastActions.value = emptyList()
-        actionLogUseCase.clearLogs()
-    }
-
-    fun createNewPage(name: String, rows: Int, columns: Int, bookId: String, templateId: String? = null, onCreated: (String) -> Unit) {
-        viewModelScope.launch {
-            val generatedId = createPageUseCase.execute(name, rows, columns, bookId, _allPages.value, templateId)
-            bookRepository.updateLastModified(bookId)
-            onCreated(generatedId)
-        }
-    }
-
-    fun updateButtonConfig(pageId: String, index: Int, newConfig: ButtonConfig?) {
-        viewModelScope.launch {
-            val updatedPage = updateButtonConfigUseCase.execute(pageId, index, newConfig)
-            if (updatedPage != null && _currentPage.value?.id == pageId) {
-                _currentPage.value = updatedPage
-            }
-        }
-    }
-
-    fun updatePageSettings(pageId: String, newName: String, newScanPattern: String?, newRowNames: List<String>) {
-        viewModelScope.launch {
-            val updatedPage = updatePageSettingsUseCase.execute(pageId, newName, newScanPattern, newRowNames)
-            if (updatedPage != null && _currentPage.value?.id == pageId) {
-                _currentPage.value = updatedPage
-            }
-        }
-    }
-
-    fun updateRowName(pageId: String, rowIndex: Int, newName: String) {
-        viewModelScope.launch {
-            val updatedPage = updateRowNameUseCase.execute(pageId, rowIndex, newName)
-            if (updatedPage != null && _currentPage.value?.id == pageId) {
-                _currentPage.value = updatedPage
-            }
-        }
-    }
-
-    fun deletePage(page: Page) {
-        viewModelScope.launch {
-            deletePageUseCase.execute(page)
-        }
-    }
-
-    fun reorderPages(fromIndex: Int, toIndex: Int) {
-        viewModelScope.launch {
-            reorderPagesUseCase.execute(_allPages.value, fromIndex, toIndex, _activeBookId.value)
-        }
-    }
-
-    fun importFromJson(jsonString: String, bookId: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
-        viewModelScope.launch {
-            val result = importPageUseCase.execute(jsonString, bookId)
-            result.onSuccess { onSuccess() }.onFailure { e -> onError("Fehler beim Import: ${e.message}") }
-        }
-    }
-
-    suspend fun exportToJson(): String {
-        return exportPageUseCase.execute(_allPages.value)
-    }
+    suspend fun exportToJson(): String = pageManagementDelegate.exportToJson()
 
     override fun onCleared() {
         super.onCleared()

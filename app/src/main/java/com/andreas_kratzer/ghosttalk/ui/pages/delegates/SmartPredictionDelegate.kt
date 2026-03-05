@@ -13,12 +13,12 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 class SmartPredictionDelegate @Inject constructor(
-    private val scope: CoroutineScope,
     private val settingsRepository: SettingsRepository,
     private val featureGuard: FeatureGuard,
     private val predictNextActionUseCase: PredictNextActionUseCase
 ) {
     fun init(
+        scope: CoroutineScope,
         currentPage: StateFlow<Page?>,
         allPages: StateFlow<List<Page>>,
         lastActions: StateFlow<List<String>>,
