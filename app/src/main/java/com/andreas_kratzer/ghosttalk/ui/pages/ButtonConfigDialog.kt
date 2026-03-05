@@ -133,18 +133,10 @@ fun ButtonConfigDialog(
     var expandedButtonTtsMode by remember { mutableStateOf(false) }
     val buttonTtsModes = listOf(ttsModeNormalLabel, ttsModeWhisperLabel, ttsModeShoutLabel)
 
-    var showAddPageDialog by remember { mutableStateOf(false) }
 
     // Navigation Details
     val navAction = initialConfig?.buttonAction as? NavigateToPageButtonAction
     var navigateToPageId by remember { mutableStateOf(navAction?.pageId ?: "") }
-    var expandedPageSelect by remember { mutableStateOf(false) }
-    var pageSearchQuery by remember { mutableStateOf("") }
-    val filteredPages = remember(pageSearchQuery, availablePages) {
-        val trimmedQuery = pageSearchQuery.trim()
-        if (trimmedQuery.isBlank()) availablePages
-        else availablePages.filter { it.name.contains(trimmedQuery, ignoreCase = true) }
-    }
 
     // Gemini Details
     val geminiAction = initialConfig?.buttonAction as? GeminiButtonAction
@@ -171,7 +163,6 @@ fun ButtonConfigDialog(
         "org.telegram.messenger" to "Telegram",
         "com.google.android.apps.messaging" to "SMS (Messages)"
     )
-    var expandedNotificationApp by remember { mutableStateOf(false) }
 
     // Volume Details
     val volumeActionDef = initialConfig?.buttonAction as? ChangeVolumeButtonAction
@@ -183,7 +174,6 @@ fun ButtonConfigDialog(
             if (volumeActionDef?.isAbsolute == true) volumeAbsolutLabel else volumeRelativLabel
         )
     }
-    var expandedVolumeType by remember { mutableStateOf(false) }
     val volumeTypes = listOf(volumeAbsolutLabel, volumeRelativLabel)
 
     var volumePercentInput by remember {
@@ -303,198 +293,49 @@ fun ButtonConfigDialog(
                     }
                 }
 
-                // Conditional fields for Navigation
-                if (selectedActionType == actionTypeNavigate) {
-                    ExposedDropdownMenuBox(
-                        expanded = expandedPageSelect,
-                        onExpandedChange = { expandedPageSelect = !expandedPageSelect }
-                    ) {
-                        val selectedPageName = availablePages.find { it.id == navigateToPageId }?.name ?: stringResource(R.string.button_no_page_selected)
-                        OutlinedTextField(
-                            value = if (expandedPageSelect) pageSearchQuery else selectedPageName,
-                            onValueChange = { 
-                                if (expandedPageSelect) pageSearchQuery = it 
-                            },
-                            readOnly = !expandedPageSelect,
-                            label = { Text(stringResource(R.string.button_target_page_label)) },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedPageSelect) },
-                            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
-                            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable).fillMaxWidth()
+                // Conditional fields for specific actions
+                when (selectedActionType) {
+                    actionTypeNavigate -> {
+                        NavigationActionFields(
+                            navigateToPageId = navigateToPageId,
+                            onPageSelected = { navigateToPageId = it },
+                            availablePages = availablePages,
+                            templates = templates,
+                            onNavigateToPage = onNavigateToPage,
+                            onCreatePage = onCreatePage,
+                            onDismissDialog = onDismiss
                         )
-                        ExposedDropdownMenu(
-                            expanded = expandedPageSelect,
-                            onDismissRequest = { 
-                                expandedPageSelect = false
-                                pageSearchQuery = ""
-                            }
-                        ) {
-                            filteredPages.forEach { pageOption ->
-                                DropdownMenuItem(
-                                    text = { Text(pageOption.name) },
-                                    onClick = {
-                                        navigateToPageId = pageOption.id
-                                        expandedPageSelect = false
-                                        pageSearchQuery = ""
-                                    }
-                                )
-                            }
-                            if (filteredPages.isEmpty()) {
-                                DropdownMenuItem(
-                                    text = { Text("Keine Seiten gefunden") },
-                                    onClick = { },
-                                    enabled = false
-                                )
-                            }
-                        }
                     }
-
-                    // "Ziel-Seite verwalten" button
-                    if (navigateToPageId.isNotEmpty() && onNavigateToPage != null) {
-                        androidx.compose.material3.OutlinedButton(
-                            onClick = {
-                                onDismiss()
-                                onNavigateToPage(navigateToPageId)
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Ziel-Seite verwalten")
-                        }
-                    }
-
-                    // "Neue Ziel-Seite erstellen" button
-                    if (onCreatePage != null) {
-                        androidx.compose.material3.OutlinedButton(
-                            onClick = { showAddPageDialog = true },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Neue Ziel-Seite erstellen")
-                        }
-                    }
-                }
-
-                // Conditional fields for Gemini
-                if (selectedActionType == actionTypeGemini || 
-                    selectedActionType == actionTypeGeminiSearch ||
-                    selectedActionType == actionTypeGeminiNano
-                ) {
-                    OutlinedTextField(
-                        value = geminiPrompt,
-                        onValueChange = { geminiPrompt = it },
-                        label = { Text(stringResource(R.string.button_gemini_prompt_field)) },
-                        placeholder = { Text(stringResource(R.string.button_gemini_prompt_hint)) },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-
-                // Conditional fields for Frequent Action
-                if (selectedActionType == actionTypeFrequent) {
-                    OutlinedTextField(
-                        value = frequentRank,
-                        onValueChange = { newValue ->
-                            if (newValue.isEmpty() || newValue.all { it.isDigit() }) {
-                                frequentRank = newValue
-                            }
-                        },
-                        label = { Text(stringResource(R.string.button_smart_prediction_rank_label)) }, // Reusing same rank label
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-
-                // Conditional fields for Smart Prediction
-                if (selectedActionType == actionTypeSmart) {
-                    OutlinedTextField(
-                        value = smartRank,
-                        onValueChange = { newValue -> 
-                            if (newValue.isEmpty() || newValue.all { it.isDigit() }) {
-                                smartRank = newValue
-                            }
-                        },
-                        label = { Text(stringResource(R.string.button_smart_prediction_rank_label)) },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-
-                // Conditional fields for Notification
-                if (selectedActionType == stringResource(R.string.button_action_notification)) {
-                    ExposedDropdownMenuBox(
-                        expanded = expandedNotificationApp,
-                        onExpandedChange = { expandedNotificationApp = !expandedNotificationApp }
-                    ) {
-                        OutlinedTextField(
-                            readOnly = true,
-                            value = notificationApps[notificationTargetApp] ?: "Unbekannt",
-                            onValueChange = { },
-                            label = { Text(stringResource(R.string.button_notification_target_app)) },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedNotificationApp) },
-                            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
+                    actionTypeGemini, actionTypeGeminiSearch, actionTypeGeminiNano -> {
+                        GeminiActionFields(
+                            prompt = geminiPrompt,
+                            onPromptChanged = { geminiPrompt = it }
                         )
-                        ExposedDropdownMenu(
-                            expanded = expandedNotificationApp,
-                            onDismissRequest = { expandedNotificationApp = false }
-                        ) {
-                            notificationApps.forEach { (appId, appName) ->
-                                DropdownMenuItem(
-                                    text = { Text(appName) },
-                                    onClick = {
-                                        notificationTargetApp = appId
-                                        expandedNotificationApp = false
-                                    }
-                                )
-                            }
-                        }
                     }
-                }
-
-                // Conditional fields for Volume (TTS & Cues)
-                if (selectedActionType == actionTypeVolumeTts || selectedActionType == actionTypeVolumeCues) {
-                    androidx.compose.foundation.layout.Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        ExposedDropdownMenuBox(
-                            expanded = expandedVolumeType,
-                            onExpandedChange = { expandedVolumeType = !expandedVolumeType },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            OutlinedTextField(
-                                readOnly = true,
-                                value = selectedVolumeType,
-                                onValueChange = { },
-                                label = { Text("Art") },
-                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedVolumeType) },
-                                modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
-                            )
-                            ExposedDropdownMenu(
-                                expanded = expandedVolumeType,
-                                onDismissRequest = { expandedVolumeType = false }
-                            ) {
-                                volumeTypes.forEach { typeLabel ->
-                                    DropdownMenuItem(
-                                        text = { Text(typeLabel) },
-                                        onClick = {
-                                            selectedVolumeType = typeLabel
-                                            expandedVolumeType = false
-                                        }
-                                    )
-                                }
-                            }
-                        }
-
-                        OutlinedTextField(
-                            value = volumePercentInput,
-                            onValueChange = { newValue ->
-                                if (newValue.isEmpty() || newValue.all { it.isDigit() || it == '-' }) {
-                                    volumePercentInput = newValue
-                                }
-                            },
-                            label = { Text("Wert (%)") },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier.weight(1f)
+                    actionTypeFrequent -> {
+                        RankActionFields(
+                            rank = frequentRank,
+                            onRankChanged = { frequentRank = it }
+                        )
+                    }
+                    actionTypeSmart -> {
+                        RankActionFields(
+                            rank = smartRank,
+                            onRankChanged = { smartRank = it }
+                        )
+                    }
+                    actionTypeNotification -> {
+                        NotificationActionFields(
+                            targetApp = notificationTargetApp,
+                            onTargetAppChanged = { notificationTargetApp = it }
+                        )
+                    }
+                    actionTypeVolumeTts, actionTypeVolumeCues -> {
+                        VolumeActionFields(
+                            selectedVolumeType = selectedVolumeType,
+                            onVolumeTypeChanged = { selectedVolumeType = it },
+                            volumePercentInput = volumePercentInput,
+                            onVolumePercentChanged = { volumePercentInput = it }
                         )
                     }
                 }
@@ -665,17 +506,4 @@ fun ButtonConfigDialog(
             }
         }
     )
-
-    if (showAddPageDialog) {
-        AddPageDialog(
-            templates = templates,
-            onDismiss = { showAddPageDialog = false },
-            onConfirm = { name, rows, cols, templateId ->
-                onCreatePage?.invoke(name, rows, cols, templateId) { newId ->
-                    navigateToPageId = newId
-                    showAddPageDialog = false
-                }
-            }
-        )
-    }
 }
