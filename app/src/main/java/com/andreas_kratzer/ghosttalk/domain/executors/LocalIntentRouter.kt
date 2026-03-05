@@ -1,5 +1,6 @@
 package com.andreas_kratzer.ghosttalk.domain.executors
 
+import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.google.gson.JsonParser
 import com.google.mlkit.genai.prompt.GenerateContentRequest
 import com.google.mlkit.genai.prompt.Generation
@@ -10,7 +11,8 @@ import javax.inject.Inject
 
 class LocalIntentRouter @Inject constructor(
     private val systemTimeExecutor: SystemTimeExecutor,
-    private val androidClockExecutor: AndroidClockExecutor
+    private val androidClockExecutor: AndroidClockExecutor,
+    private val logger: Logger
 ) {
     // Note: JSON Schema constraint parsing in ML Kit Prompt API is still highly experimental.
     // For this Phase 1 integration, we instruct the model to return plain JSON via system prompt.
@@ -42,7 +44,7 @@ class LocalIntentRouter @Inject constructor(
             val response = model.generateContent(request)
             return@withContext response.candidates.firstOrNull()?.text ?: ""
         } catch (e: Exception) {
-            android.util.Log.e("LocalIntentRouter", "Raw generation failed", e)
+            logger.e("LocalIntentRouter", "Raw generation failed", e)
             ""
         }
     }
@@ -52,15 +54,15 @@ class LocalIntentRouter @Inject constructor(
             val promptText = "${getSystemInstruction()}\n\nNutzer: $prompt"
             val text = generateRawResponse(promptText)
             
-            // Log raw response for debugging (visible in logcat)
-            android.util.Log.d("LocalIntentRouter", "Raw Gemini Nano response: $text")
+            // Log raw response for debugging
+            logger.d("LocalIntentRouter", "Raw Gemini Nano response: $text")
 
             // Clean up backticks if model generated markdown
             val cleanJson = text.replace("```json", "").replace("```", "").trim()
             handleJsonIntent(cleanJson, onSpeak)
             
         } catch (e: Exception) {
-            e.printStackTrace()
+            logger.e("LocalIntentRouter", "Intent routing failed", e)
             onSpeak("Fehler bei der lokalen Verarbeitung: ${e.message}")
         }
     }
@@ -111,7 +113,7 @@ class LocalIntentRouter @Inject constructor(
                 }
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            logger.e("LocalIntentRouter", "JSON handling failed: $jsonString")
             onSpeak("Konnte das JSON nicht verarbeiten.")
         }
     }

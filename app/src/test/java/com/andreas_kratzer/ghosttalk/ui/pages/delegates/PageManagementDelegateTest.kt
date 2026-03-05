@@ -22,7 +22,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -35,7 +36,7 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class PageManagementDelegateTest {
 
-    private val testDispatcher = StandardTestDispatcher()
+    private val testDispatcher = UnconfinedTestDispatcher()
 
     private lateinit var pageRepository: PageRepository
     private lateinit var bookRepository: BookRepository
@@ -97,40 +98,39 @@ class PageManagementDelegateTest {
     }
 
     @Test
-    fun `init sets up flows and collects pages`() = runTest {
+    fun `init sets up flows and collects pages`() = runTest(testDispatcher) {
         val pages = listOf(Page(id = "1", bookId = "book1", name = "Page 1", buttonConfigs = emptyList()))
         val pagesFlow = MutableStateFlow(pages)
-        every { getPagesUseCase.execute(any()) } returns pagesFlow
+        every { getPagesUseCase.execute(any<kotlinx.coroutines.flow.Flow<String?>>()) } returns pagesFlow
 
-        delegate.init(this)
+        delegate.init(backgroundScope)
 
         assertEquals(pages, delegate.allPagesFlow.value)
-        assertEquals(pages, delegate.unfilteredPages.first())
+        assertEquals(pages, delegate.unfilteredPages.value)
     }
 
     @Test
-    fun `createNewPage delegates to use case`() = runTest {
-        delegate.init(this)
+    fun `createNewPage delegates to use case`() = runTest(testDispatcher) {
+        delegate.init(backgroundScope)
+        
         delegate.createNewPage("New Page", 2, 2, "book1", null) {}
-        testDispatcher.scheduler.advanceUntilIdle()
+        
         coVerify { createPageUseCase.execute("New Page", 2, 2, "book1", any(), null) }
         coVerify { bookRepository.updateLastModified("book1") }
     }
 
     @Test
-    fun `filteredPages respects searchQuery`() = runTest {
+    fun `filteredPages respects searchQuery`() = runTest(testDispatcher) {
         val page1 = Page(id = "1", name = "Apple", bookId = "book1", buttonConfigs = emptyList())
         val page2 = Page(id = "2", name = "Banana", bookId = "book1", buttonConfigs = emptyList())
         val allPagesFlow = MutableStateFlow(listOf(page1, page2))
-        every { getPagesUseCase.execute(any()) } returns allPagesFlow
+        every { getPagesUseCase.execute(any<kotlinx.coroutines.flow.Flow<String?>>()) } returns allPagesFlow
 
-        delegate.init(this)
-        testDispatcher.scheduler.advanceUntilIdle()
+        delegate.init(backgroundScope)
 
         assertEquals(2, delegate.filteredPages.value.size)
 
         delegate.updateSearchQuery("Apple")
-        testDispatcher.scheduler.advanceUntilIdle()
 
         val filtered = delegate.filteredPages.value
         assertEquals(1, filtered.size)
@@ -138,11 +138,12 @@ class PageManagementDelegateTest {
     }
 
     @Test
-    fun `deletePage delegates to use case`() = runTest {
-        delegate.init(this)
+    fun `deletePage delegates to use case`() = runTest(testDispatcher) {
+        delegate.init(backgroundScope)
+        
         val page = Page(id = "1", name = "Test", bookId = "book1", buttonConfigs = emptyList())
         delegate.deletePage(page)
-        testDispatcher.scheduler.advanceUntilIdle()
+        
         coVerify { deletePageUseCase.execute(page) }
     }
 }
