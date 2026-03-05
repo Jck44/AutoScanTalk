@@ -1,0 +1,148 @@
+package com.andreas_kratzer.ghosttalk.ui.pages.delegates
+
+import com.andreas_kratzer.ghosttalk.data.BookRepository
+import com.andreas_kratzer.ghosttalk.data.PageRepository
+import com.andreas_kratzer.ghosttalk.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.data.TemplateRepository
+import com.andreas_kratzer.ghosttalk.domain.CreatePageUseCase
+import com.andreas_kratzer.ghosttalk.domain.DeletePageUseCase
+import com.andreas_kratzer.ghosttalk.domain.ExportPageUseCase
+import com.andreas_kratzer.ghosttalk.domain.GetPagesUseCase
+import com.andreas_kratzer.ghosttalk.domain.ImportPageUseCase
+import com.andreas_kratzer.ghosttalk.domain.ReorderPagesUseCase
+import com.andreas_kratzer.ghosttalk.domain.UpdateButtonConfigUseCase
+import com.andreas_kratzer.ghosttalk.domain.UpdatePageSettingsUseCase
+import com.andreas_kratzer.ghosttalk.domain.UpdateRowNameUseCase
+import com.andreas_kratzer.ghosttalk.model.Page
+import com.andreas_kratzer.ghosttalk.model.SortOrder
+import io.mockk.coVerify
+import io.mockk.every
+import io.mockk.mockk
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.Test
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class PageManagementDelegateTest {
+
+    private val testDispatcher = StandardTestDispatcher()
+
+    private lateinit var pageRepository: PageRepository
+    private lateinit var bookRepository: BookRepository
+    private lateinit var settingsRepository: SettingsRepository
+    private lateinit var templateRepository: TemplateRepository
+    private lateinit var getPagesUseCase: GetPagesUseCase
+    private lateinit var createPageUseCase: CreatePageUseCase
+    private lateinit var deletePageUseCase: DeletePageUseCase
+    private lateinit var reorderPagesUseCase: ReorderPagesUseCase
+    private lateinit var updateButtonConfigUseCase: UpdateButtonConfigUseCase
+    private lateinit var updatePageSettingsUseCase: UpdatePageSettingsUseCase
+    private lateinit var updateRowNameUseCase: UpdateRowNameUseCase
+    private lateinit var importPageUseCase: ImportPageUseCase
+    private lateinit var exportPageUseCase: ExportPageUseCase
+
+    private lateinit var delegate: PageManagementDelegate
+
+    @Before
+    fun setUp() {
+        Dispatchers.setMain(testDispatcher)
+
+        pageRepository = mockk(relaxed = true)
+        bookRepository = mockk(relaxed = true)
+        settingsRepository = mockk(relaxed = true)
+        templateRepository = mockk(relaxed = true)
+        getPagesUseCase = mockk(relaxed = true)
+        createPageUseCase = mockk(relaxed = true)
+        deletePageUseCase = mockk(relaxed = true)
+        reorderPagesUseCase = mockk(relaxed = true)
+        updateButtonConfigUseCase = mockk(relaxed = true)
+        updatePageSettingsUseCase = mockk(relaxed = true)
+        updateRowNameUseCase = mockk(relaxed = true)
+        importPageUseCase = mockk(relaxed = true)
+        exportPageUseCase = mockk(relaxed = true)
+
+        every { settingsRepository.pageSortOrderFlow } returns MutableStateFlow(SortOrder.MANUAL.name)
+        every { templateRepository.getAllTemplates() } returns MutableStateFlow(emptyList())
+
+        delegate = PageManagementDelegate(
+            pageRepository,
+            bookRepository,
+            settingsRepository,
+            templateRepository,
+            getPagesUseCase,
+            createPageUseCase,
+            deletePageUseCase,
+            reorderPagesUseCase,
+            updateButtonConfigUseCase,
+            updatePageSettingsUseCase,
+            updateRowNameUseCase,
+            importPageUseCase,
+            exportPageUseCase
+        )
+    }
+
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
+    }
+
+    @Test
+    fun `init sets up flows and collects pages`() = runTest {
+        val pages = listOf(Page(id = "1", bookId = "book1", name = "Page 1", buttonConfigs = emptyList()))
+        val pagesFlow = MutableStateFlow(pages)
+        every { getPagesUseCase.execute(any()) } returns pagesFlow
+
+        delegate.init(this)
+
+        assertEquals(pages, delegate.allPagesFlow.value)
+        assertEquals(pages, delegate.unfilteredPages.first())
+    }
+
+    @Test
+    fun `createNewPage delegates to use case`() = runTest {
+        delegate.init(this)
+        delegate.createNewPage("New Page", 2, 2, "book1", null) {}
+        testDispatcher.scheduler.advanceUntilIdle()
+        coVerify { createPageUseCase.execute("New Page", 2, 2, "book1", any(), null) }
+        coVerify { bookRepository.updateLastModified("book1") }
+    }
+
+    @Test
+    fun `filteredPages respects searchQuery`() = runTest {
+        val page1 = Page(id = "1", name = "Apple", bookId = "book1", buttonConfigs = emptyList())
+        val page2 = Page(id = "2", name = "Banana", bookId = "book1", buttonConfigs = emptyList())
+        val allPagesFlow = MutableStateFlow(listOf(page1, page2))
+        every { getPagesUseCase.execute(any()) } returns allPagesFlow
+
+        delegate.init(this)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(2, delegate.filteredPages.value.size)
+
+        delegate.updateSearchQuery("Apple")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val filtered = delegate.filteredPages.value
+        assertEquals(1, filtered.size)
+        assertEquals("Apple", filtered.first().name)
+    }
+
+    @Test
+    fun `deletePage delegates to use case`() = runTest {
+        delegate.init(this)
+        val page = Page(id = "1", name = "Test", bookId = "book1", buttonConfigs = emptyList())
+        delegate.deletePage(page)
+        testDispatcher.scheduler.advanceUntilIdle()
+        coVerify { deletePageUseCase.execute(page) }
+    }
+}

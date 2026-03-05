@@ -11,12 +11,14 @@ import com.andreas_kratzer.ghosttalk.R
 import com.google.android.gms.auth.UserRecoverableAuthException
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -46,7 +48,9 @@ class GenAiSettingsDelegate @Inject constructor(
                 gemini.generateResponse("Ping")
                 settingsRepository.isGeminiEnabled = true
                 updateGeminiToolStatus()
-                Toast.makeText(context, application.getString(R.string.settings_gemini_activation_success), Toast.LENGTH_SHORT).show()
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, application.getString(R.string.settings_gemini_activation_success), Toast.LENGTH_SHORT).show()
+                }
             } catch (e: Exception) {
                 handleGenAiException(e)
             }
@@ -57,10 +61,15 @@ class GenAiSettingsDelegate @Inject constructor(
         scope.launch {
             try {
                 localIntentRouter.routeIntent("Ping") { response ->
-                    Toast.makeText(context, "Gemini Nano bereit: $response", Toast.LENGTH_SHORT).show()
+                    // Ensure UI updates happen on the Main thread
+                    scope.launch(Dispatchers.Main) {
+                        Toast.makeText(context, "Gemini Nano bereit: $response", Toast.LENGTH_SHORT).show()
+                    }
                 }
             } catch (e: Exception) {
-                Toast.makeText(context, "Gemini Nano Fehler: ${e.message}", Toast.LENGTH_LONG).show()
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, "Gemini Nano Fehler: ${e.message}", Toast.LENGTH_LONG).show()
+                }
             }
         }
     }
