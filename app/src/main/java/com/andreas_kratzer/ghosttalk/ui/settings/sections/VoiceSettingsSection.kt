@@ -35,12 +35,21 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel) {
     val availableVoices by viewModel.availableVoices.collectAsState()
     val ttsVolume by viewModel.ttsVolumeMultiplier.collectAsState(1.0f)
     val cuesVolume by viewModel.cuesVolumeMultiplier.collectAsState(1.0f)
+    val availableAudioDevices by viewModel.availableAudioDevices.collectAsState()
+    val selectedTtsAddress by viewModel.selectedTtsAudioDeviceAddress.collectAsState(null)
+    val selectedCuesAddress by viewModel.selectedCuesAudioDeviceAddress.collectAsState(null)
 
     var expandedLanguage by remember { mutableStateOf(false) }
     var expandedVoice by remember { mutableStateOf(false) }
+    var expandedTtsDevice by remember { mutableStateOf(false) }
+    var expandedCuesDevice by remember { mutableStateOf(false) }
 
-    LaunchedEffect(expandedLanguage) {
-        if (expandedLanguage && availableLanguages.isEmpty()) viewModel.refresh()
+    LaunchedEffect(expandedLanguage, expandedTtsDevice, expandedCuesDevice) {
+        if ((expandedLanguage && availableLanguages.isEmpty()) || 
+            (expandedTtsDevice && availableAudioDevices.isEmpty()) ||
+            (expandedCuesDevice && availableAudioDevices.isEmpty())) {
+            viewModel.refresh()
+        }
     }
 
     PreferenceCategory(stringResource(R.string.settings_category_voice)) {
@@ -98,6 +107,48 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel) {
                             expandedVoice = false
                         }
                     )
+                }
+            }
+        }
+
+        // TTS Audio Device Select
+        Box(modifier = Modifier.fillMaxWidth()) {
+            SettingsClickableItem(
+                label = stringResource(R.string.settings_audio_tts),
+                value = viewModel.getResolvedDeviceName(selectedTtsAddress),
+                onClick = { expandedTtsDevice = true }
+            )
+            DropdownMenu(expanded = expandedTtsDevice, onDismissRequest = { expandedTtsDevice = false }) {
+                DropdownMenuItem(text = { Text(stringResource(R.string.settings_audio_default)) }, onClick = {
+                    viewModel.setTtsAudioDevice(null)
+                    expandedTtsDevice = false
+                })
+                availableAudioDevices.forEach { device ->
+                    DropdownMenuItem(text = { Text(device.name) }, onClick = {
+                        viewModel.setTtsAudioDevice(device.address)
+                        expandedTtsDevice = false
+                    })
+                }
+            }
+        }
+
+        // Cues Audio Device Select
+        Box(modifier = Modifier.fillMaxWidth()) {
+            SettingsClickableItem(
+                label = stringResource(R.string.settings_audio_cues),
+                value = viewModel.getResolvedDeviceName(selectedCuesAddress),
+                onClick = { expandedCuesDevice = true }
+            )
+            DropdownMenu(expanded = expandedCuesDevice, onDismissRequest = { expandedCuesDevice = false }) {
+                DropdownMenuItem(text = { Text(stringResource(R.string.settings_audio_default)) }, onClick = {
+                    viewModel.setCuesAudioDevice(null)
+                    expandedCuesDevice = false
+                })
+                availableAudioDevices.forEach { device ->
+                    DropdownMenuItem(text = { Text(device.name) }, onClick = {
+                        viewModel.setCuesAudioDevice(device.address)
+                        expandedCuesDevice = false
+                    })
                 }
             }
         }
