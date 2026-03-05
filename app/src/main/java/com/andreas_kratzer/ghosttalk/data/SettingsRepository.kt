@@ -183,7 +183,7 @@ class SettingsRepository(context: Context) {
 
     private val _ttsLanguage = StringSetting(KEY_TTS_LANGUAGE)
     private val _ttsVoiceName = StringSetting(KEY_TTS_VOICE_NAME)
-    private val _scanDelay = LongSetting(KEY_SCAN_DELAY_MILLIS, 100L)
+    private val _scanDelay = LongSetting(KEY_SCAN_DELAY_MILLIS, 3000L)
     private val _defaultStartPageId = StringSetting(KEY_DEFAULT_START_PAGE_ID)
     private val _persistActionLogs = BooleanSetting(KEY_PERSIST_ACTION_LOGS, false)
     private val _actionLogsStorage = StringSetting(KEY_ACTION_LOGS_STORAGE)
@@ -259,7 +259,7 @@ class SettingsRepository(context: Context) {
         set(value) { _ttsVoiceName.value = value }
 
     var scanDelayMillis: Long
-        get() = getLongScoped(KEY_SCAN_DELAY_MILLIS, 3000L)
+        get() = _scanDelay.value
         set(value) { _scanDelay.value = value }
 
     var defaultStartPageId: String?

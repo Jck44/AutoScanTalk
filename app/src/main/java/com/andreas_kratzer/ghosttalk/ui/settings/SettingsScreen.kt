@@ -76,7 +76,7 @@ fun SettingsScreen(
     val autoStartScanning by settingsViewModel.autoStartScanning.collectAsState()
     val scanDelayInput by settingsViewModel.scanDelayInput.collectAsState()
     val defaultStartPageId by settingsViewModel.defaultStartPageId.collectAsState()
-    val allPages by pageViewModel.allPages.collectAsState()
+    val allPages by pageViewModel.unfilteredPages.collectAsState()
     val availableVoices by settingsViewModel.availableVoices.collectAsState()
     val selectedVoiceName by settingsViewModel.selectedVoiceName.collectAsState()
     val availableAudioDevices by settingsViewModel.availableAudioDevices.collectAsState()
