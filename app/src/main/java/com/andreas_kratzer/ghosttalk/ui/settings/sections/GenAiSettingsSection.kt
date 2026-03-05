@@ -27,23 +27,30 @@ fun GenAiSettingsSection(viewModel: SettingsViewModel) {
     val context = LocalContext.current
 
     PreferenceCategory(stringResource(R.string.settings_category_gemini)) {
-        SettingsToggleItem(stringResource(R.string.settings_gemini_enabled), isEnabled) { viewModel.setGeminiEnabled(it) }
+        SettingsToggleItem(stringResource(R.string.settings_gemini_enable), isEnabled) { viewModel.setGeminiEnabled(it) }
         
         if (isEnabled) {
-            SettingsToggleItem(stringResource(R.string.settings_use_local_generative_ai), useLocal) { viewModel.setUseLocalGenerativeAi(it, context) }
+            SettingsToggleItem(stringResource(R.string.settings_gemini_local_enable), useLocal) { viewModel.setUseLocalGenerativeAi(it, context) }
             
             Column(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
                 Text(text = "Features Status:", style = MaterialTheme.typography.labelLarge)
                 toolStatus.forEach { (name, status) ->
-                    val color = if (status.isAvailable) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
-                    Text(text = "• $name: ${if (status.isAvailable) "Ready" else "Missing: ${status.reason}"}", color = color, style = MaterialTheme.typography.bodySmall)
+                    val isAvailable = status == GeminiUseCase.ToolStatus.AVAILABLE
+                    val statusText = when (status) {
+                        GeminiUseCase.ToolStatus.AVAILABLE -> stringResource(R.string.settings_gemini_tool_status_active)
+                        GeminiUseCase.ToolStatus.REQUIRES_AUTH -> stringResource(R.string.settings_gemini_tool_status_requires_auth)
+                        GeminiUseCase.ToolStatus.FAILED -> stringResource(R.string.settings_gemini_tool_status_failed)
+                        GeminiUseCase.ToolStatus.PENDING -> stringResource(R.string.settings_gemini_tool_status_pending)
+                    }
+                    val color = if (isAvailable) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                    Text(text = "• $name: $statusText", color = color, style = MaterialTheme.typography.bodySmall)
                 }
                 
                 Button(
                     onClick = { viewModel.activateGemini(context) },
                     modifier = Modifier.padding(top = 8.dp)
                 ) {
-                    Text(stringResource(R.string.settings_gemini_test_connection))
+                    Text(stringResource(R.string.settings_gemini_activate_button))
                 }
             }
         }

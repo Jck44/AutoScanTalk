@@ -3,6 +3,7 @@ package com.andreas_kratzer.ghosttalk.ui.settings
 import android.app.Application
 import android.content.Context
 import android.content.Intent
+import android.widget.Toast
 import android.speech.tts.Voice
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
@@ -16,6 +17,10 @@ import com.andreas_kratzer.ghosttalk.domain.CloudSyncUseCase
 import com.andreas_kratzer.ghosttalk.domain.GeminiUseCaseFactory
 import com.andreas_kratzer.ghosttalk.model.AudioOutputDevice
 import com.andreas_kratzer.ghosttalk.domain.executors.LocalIntentRouter
+import com.andreas_kratzer.ghosttalk.ui.settings.delegates.CloudSyncSettingsDelegate
+import com.andreas_kratzer.ghosttalk.ui.settings.delegates.GenAiSettingsDelegate
+import com.andreas_kratzer.ghosttalk.ui.settings.delegates.ScanningSettingsDelegate
+import com.andreas_kratzer.ghosttalk.ui.settings.delegates.TtsSettingsDelegate
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
 import com.google.android.gms.auth.UserRecoverableAuthException
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
@@ -75,7 +80,7 @@ class SettingsViewModel @Inject constructor(
     val syncMode = settingsRepository.syncModeFlow
     val lastSuccessfulSyncTime = settingsRepository.lastSuccessfulSyncTimeFlow
     val isSyncing = cloudSyncDelegate.isSyncing
-    val userEmail = com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager(application).userEmail // Simplified for now
+    val userEmail = cloudSyncDelegate.userEmail
     
     val isGeminiEnabled = settingsRepository.isGeminiEnabledFlow
     val useLocalGenerativeAi = settingsRepository.useLocalGenerativeAiFlow

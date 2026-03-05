@@ -34,12 +34,12 @@ fun ScanningSettingsSection(viewModel: SettingsViewModel) {
     var expandedPattern by remember { mutableStateOf(false) }
 
     PreferenceCategory(stringResource(R.string.settings_category_scanning)) {
-        SettingsToggleItem(stringResource(R.string.settings_auto_start_scanning), autoStart) { viewModel.setAutoStartScanning(it) }
+        SettingsToggleItem(stringResource(R.string.settings_auto_scan), autoStart) { viewModel.setAutoStartScanning(it) }
         SettingsEditTextItem(stringResource(R.string.settings_scan_delay), scanDelay.toString()) { viewModel.setScanDelayInput(it) }
-        SettingsToggleItem(stringResource(R.string.settings_resume_scanning_from_start), resumeFromStart) { viewModel.setResumeScanningFromStart(it) }
+        SettingsToggleItem(stringResource(R.string.settings_restart_scan), resumeFromStart) { viewModel.setResumeScanningFromStart(it) }
         
         Box(modifier = Modifier.fillMaxWidth()) {
-            SettingsClickableItem(stringResource(R.string.settings_default_scan_pattern), scanPattern) { expandedPattern = true }
+            SettingsClickableItem(stringResource(R.string.settings_scan_pattern), scanPattern) { expandedPattern = true }
             DropdownMenu(expanded = expandedPattern, onDismissRequest = { expandedPattern = false }) {
                 listOf("linear", "row_column").forEach { pattern ->
                     DropdownMenuItem(text = { Text(pattern) }, onClick = { viewModel.setDefaultScanPattern(pattern); expandedPattern = false })

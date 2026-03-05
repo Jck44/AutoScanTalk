@@ -48,6 +48,8 @@ class CloudSyncSettingsDelegate @Inject constructor(
     private val _signInErrorMessage = MutableStateFlow<String?>(null)
     val signInErrorMessage: StateFlow<String?> = _signInErrorMessage.asStateFlow()
 
+    val userEmail = googleAuthManager.userEmail
+
     fun signIn(context: Context, scope: CoroutineScope) {
         val activity = findActivity(context) ?: return
         scope.launch {

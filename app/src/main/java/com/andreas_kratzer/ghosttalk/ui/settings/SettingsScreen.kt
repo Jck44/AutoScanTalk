@@ -126,7 +126,7 @@ fun AppLanguageSection(viewModel: SettingsViewModel) {
     val selectedAppLanguage by viewModel.selectedAppLanguage.collectAsState("default")
     var expanded by remember { mutableStateOf(false) }
     
-    PreferenceCategory(stringResource(R.string.settings_category_language)) {
+    PreferenceCategory(stringResource(R.string.settings_app_language)) {
         Box(modifier = Modifier.fillMaxWidth()) {
             val label = if (selectedAppLanguage == "default" || selectedAppLanguage == null) {
                 stringResource(R.string.settings_system_default)

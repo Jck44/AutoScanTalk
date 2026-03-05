@@ -101,8 +101,7 @@ fun GhosTTalkNavHost(
         }
         composable("settings") {
             SettingsScreen(
-                settingsViewModel = settingsViewModel,
-                pageViewModel = pageViewModel,
+                viewModel = settingsViewModel,
                 onNavigateBack = { navController.popBackStack() }
             )
         }

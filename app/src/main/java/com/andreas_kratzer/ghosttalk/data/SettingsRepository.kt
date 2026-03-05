@@ -212,7 +212,7 @@ class SettingsRepository(context: Context) {
     private val _actionLogsStorage = StringSetting(KEY_ACTION_LOGS_STORAGE)
     private val _switchActivationKey = NonNullStringSetting(KEY_SWITCH_ACTIVATION_KEY, "Space")
     private val _volumeKeysActivate = BooleanSetting(KEY_VOLUME_KEYS_ACTIVATE, false)
-    private val _showTestButtons = BooleanSetting(KEY_SHOW_TEST_BUTTON_S, false)
+    private val _showTestButtons = BooleanSetting(KEY_SHOW_TEST_BUTTONS, false)
     private val _defaultScanPattern = NonNullStringSetting(KEY_DEFAULT_SCAN_PATTERN, "linear")
     private val _themeMode = NonNullStringSetting(KEY_THEME_MODE, "SYSTEM")
     private val _pageSortOrder = NonNullStringSetting(KEY_PAGE_SORT_ORDER, "MANUAL")

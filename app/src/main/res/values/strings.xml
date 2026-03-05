@@ -57,8 +57,13 @@
     <string name="settings_persist_logs_hint">Behält Verlauf auch nach Neustart</string>
     <string name="settings_show_page_id_in_log">Page ID im Verlauf anzeigen</string>
     <string name="settings_show_page_id_in_log_hint">Zeigt die technische ID der Seite in den Protokollen an</string>
-    <string name="settings_experimental_manual_sorting">Manuelles Sortieren (Experimentell)</string>
     <string name="settings_experimental_manual_sorting_hint">Ermöglicht das Sortieren von Seiten und Vorlagen via Drag &amp; Drop. (In Entwicklung)</string>
+    
+    <string name="settings_category_ui">Benutzeroberfläche</string>
+    <string name="settings_category_maintenance">Wartung</string>
+    <string name="settings_clear_usage_stats">Nutzungsstatistiken löschen</string>
+    <string name="settings_category_advanced">Erweiterte Einstellungen</string>
+    <string name="settings_bluetooth_delay">Bluetooth-Verzögerung (ms)</string>
     
     <!-- Start Screen -->
     <string name="start_tagline">Unterstützte Kommunikation</string>
