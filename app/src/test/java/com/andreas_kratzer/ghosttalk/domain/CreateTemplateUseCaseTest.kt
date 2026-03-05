@@ -1,9 +1,7 @@
 package com.andreas_kratzer.ghosttalk.domain
 
-import com.andreas_kratzer.ghosttalk.domain.templates.CreateTemplateUseCase
-
 import com.andreas_kratzer.ghosttalk.data.TemplateRepository
-import com.andreas_kratzer.ghosttalk.model.PageTemplate
+import com.andreas_kratzer.ghosttalk.domain.templates.CreateTemplateUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk

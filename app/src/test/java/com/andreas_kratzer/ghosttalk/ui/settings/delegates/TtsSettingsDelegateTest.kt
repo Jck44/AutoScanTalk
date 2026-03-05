@@ -1,6 +1,5 @@
 package com.andreas_kratzer.ghosttalk.ui.settings.delegates
 
-import android.speech.tts.Voice
 import com.andreas_kratzer.ghosttalk.core.audio.AudioDeviceManager
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.domain.tts.GetAudioDevicesUseCase
@@ -8,11 +7,10 @@ import com.andreas_kratzer.ghosttalk.domain.tts.SetAudioDeviceUseCase
 import com.andreas_kratzer.ghosttalk.domain.tts.SetTtsLanguageUseCase
 import com.andreas_kratzer.ghosttalk.domain.tts.SetTtsVoiceUseCase
 import com.andreas_kratzer.ghosttalk.domain.tts.SetTtsVolumeUseCase
-import com.andreas_kratzer.ghosttalk.model.AudioOutputDevice
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
-import io.mockk.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -21,7 +19,6 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
-import java.util.Locale
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class TtsSettingsDelegateTest {

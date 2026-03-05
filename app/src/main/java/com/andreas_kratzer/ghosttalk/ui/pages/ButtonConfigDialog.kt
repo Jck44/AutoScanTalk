@@ -9,13 +9,13 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.ExposedDropdownMenuAnchorType
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -23,25 +23,22 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.model.AuditoryCue
 import com.andreas_kratzer.ghosttalk.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.model.GeminiButtonAction
-import com.andreas_kratzer.ghosttalk.model.GeminiSearchButtonAction
-import com.andreas_kratzer.ghosttalk.model.GeminiNanoButtonAction
-import com.andreas_kratzer.ghosttalk.model.NotificationButtonAction
-import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
-import com.andreas_kratzer.ghosttalk.model.Page
-import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
-import com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction
-import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.model.ChangeVolumeButtonAction
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.ui.text.input.KeyboardType
-
-import androidx.compose.ui.res.stringResource
-import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction
+import com.andreas_kratzer.ghosttalk.model.GeminiButtonAction
+import com.andreas_kratzer.ghosttalk.model.GeminiNanoButtonAction
+import com.andreas_kratzer.ghosttalk.model.GeminiSearchButtonAction
+import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
+import com.andreas_kratzer.ghosttalk.model.NotificationButtonAction
+import com.andreas_kratzer.ghosttalk.model.Page
+import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
+import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

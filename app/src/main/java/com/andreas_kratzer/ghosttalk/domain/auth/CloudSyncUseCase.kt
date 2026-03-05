@@ -2,18 +2,15 @@ package com.andreas_kratzer.ghosttalk.domain.auth
 
 import android.content.Context
 import com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper
-import com.andreas_kratzer.ghosttalk.data.PageRepository
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.pages.PageImportExportManager
+import com.andreas_kratzer.ghosttalk.core.util.Logger
+import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.google.api.services.drive.Drive
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
-
-import com.andreas_kratzer.ghosttalk.core.util.Logger
-
 import javax.inject.Inject
-import dagger.hilt.android.qualifiers.ApplicationContext
 
 enum class SyncMode {
     TWO_WAY,
