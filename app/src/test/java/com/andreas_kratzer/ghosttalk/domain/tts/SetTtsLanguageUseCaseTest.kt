@@ -1,4 +1,4 @@
-package com.andreas_kratzer.ghosttalk.domain
+package com.andreas_kratzer.ghosttalk.domain.tts
 
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.domain.tts.SetTtsLanguageUseCase

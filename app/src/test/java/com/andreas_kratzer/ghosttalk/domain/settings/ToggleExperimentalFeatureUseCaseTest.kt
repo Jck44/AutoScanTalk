@@ -1,4 +1,4 @@
-package com.andreas_kratzer.ghosttalk.domain
+package com.andreas_kratzer.ghosttalk.domain.settings
 
 import com.andreas_kratzer.ghosttalk.domain.settings.ToggleExperimentalFeatureUseCase
 import com.andreas_kratzer.ghosttalk.domain.settings.ExperimentalFeature

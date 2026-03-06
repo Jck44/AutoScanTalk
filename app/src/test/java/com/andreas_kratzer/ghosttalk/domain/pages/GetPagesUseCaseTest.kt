@@ -1,4 +1,4 @@
-package com.andreas_kratzer.ghosttalk.domain
+package com.andreas_kratzer.ghosttalk.domain.pages
 
 import com.andreas_kratzer.ghosttalk.domain.pages.GetPagesUseCase
 

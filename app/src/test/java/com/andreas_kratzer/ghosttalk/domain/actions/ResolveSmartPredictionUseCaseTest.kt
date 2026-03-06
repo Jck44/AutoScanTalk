@@ -1,4 +1,4 @@
-package com.andreas_kratzer.ghosttalk.domain
+package com.andreas_kratzer.ghosttalk.domain.actions
 
 import com.andreas_kratzer.ghosttalk.domain.actions.ResolveSmartPredictionUseCase
 

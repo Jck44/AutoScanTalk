@@ -1,4 +1,4 @@
-package com.andreas_kratzer.ghosttalk.domain
+package com.andreas_kratzer.ghosttalk.domain.auth
 
 import com.andreas_kratzer.ghosttalk.domain.auth.CloudSyncUseCase
 import com.andreas_kratzer.ghosttalk.domain.auth.PerformManualSyncUseCase

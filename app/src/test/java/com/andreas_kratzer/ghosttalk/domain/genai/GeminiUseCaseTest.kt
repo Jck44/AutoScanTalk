@@ -1,4 +1,4 @@
-package com.andreas_kratzer.ghosttalk.domain
+package com.andreas_kratzer.ghosttalk.domain.genai
 
 import com.andreas_kratzer.ghosttalk.domain.genai.GeminiUseCase
 
