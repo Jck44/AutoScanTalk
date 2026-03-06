@@ -41,7 +41,6 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.ui.util.GridUtils
@@ -234,7 +233,6 @@ fun PageEditorScreen(
                         }
                     }
 
-                    val startRow = r
                     val numCols = page.columns
                     
                     for (c in 0 until numCols) {

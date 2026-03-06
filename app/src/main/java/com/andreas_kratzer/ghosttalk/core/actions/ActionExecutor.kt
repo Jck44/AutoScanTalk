@@ -22,7 +22,7 @@ class ActionExecutor internal constructor(
     private val logger: Logger,
     var geminiUseCase: GeminiUseCase?,
     var ttsHelper: TextToSpeechHelper?,
-    private val localIntentRouter: com.andreas_kratzer.ghosttalk.domain.executors.LocalIntentRouter,
+    localIntentRouter: com.andreas_kratzer.ghosttalk.domain.executors.LocalIntentRouter,
     private val buttonUsageRepository: ButtonUsageRepository? = null,
     private val timeProvider: () -> Long = { System.currentTimeMillis() }
 ) {

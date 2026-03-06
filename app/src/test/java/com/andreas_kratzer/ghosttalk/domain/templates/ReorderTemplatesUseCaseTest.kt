@@ -22,8 +22,8 @@ class ReorderTemplatesUseCaseTest {
 
     @Before
     fun setup() {
-        templateRepository = mockk(relaxed = true)
-        settingsRepository = mockk(relaxed = true)
+        templateRepository = mockk<TemplateRepository>(relaxed = true)
+        settingsRepository = mockk<SettingsRepository>(relaxed = true)
         reorderTemplatesUseCase = ReorderTemplatesUseCase(templateRepository, settingsRepository)
     }
 

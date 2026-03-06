@@ -27,9 +27,7 @@ object GridUtils {
      * This preserves button positions regardless of the current visible grid size.
      */
     fun adjustButtonConfigs(
-        configs: List<ButtonConfig?>,
-        rows: Int = MAX_GRID_SIZE,
-        columns: Int = MAX_GRID_SIZE
+        configs: List<ButtonConfig?>
     ): List<ButtonConfig?> {
         val mutableConfigs = configs.toMutableList()
         

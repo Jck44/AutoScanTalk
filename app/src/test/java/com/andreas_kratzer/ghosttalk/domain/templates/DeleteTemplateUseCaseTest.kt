@@ -18,7 +18,7 @@ class DeleteTemplateUseCaseTest {
 
     @Before
     fun setup() {
-        templateRepository = mockk(relaxed = true)
+        templateRepository = mockk<TemplateRepository>(relaxed = true)
         deleteTemplateUseCase = DeleteTemplateUseCase(templateRepository)
     }
 

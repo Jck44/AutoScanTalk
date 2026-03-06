@@ -20,7 +20,7 @@ class UpdateButtonConfigInTemplateUseCaseTest {
 
     @Before
     fun setup() {
-        templateRepository = mockk(relaxed = true)
+        templateRepository = mockk<TemplateRepository>(relaxed = true)
         updateButtonConfigInTemplateUseCase = UpdateButtonConfigInTemplateUseCase(templateRepository)
     }
 

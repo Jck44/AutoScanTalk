@@ -20,7 +20,7 @@ class ResolveSmartPredictionUseCase @Inject constructor(
         val matchingIndex = currentPage?.buttonConfigs?.indexOfFirst { it?.id == predictionId } ?: -1
         val matchingButton = if (matchingIndex != -1) currentPage?.buttonConfigs?.getOrNull(matchingIndex) else null
 
-        if (matchingButton != null && matchingIndex != -1) {
+        if (matchingButton != null) {
             actionExecutor.executeButtonAction(
                 matchingButton,
                 bookId = activeBookId.takeIf { isUserModeActive },

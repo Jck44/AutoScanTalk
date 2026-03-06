@@ -86,7 +86,7 @@ class CreatePageUseCase @Inject constructor(
             name = name,
             rows = finalRows,
             columns = finalColumns,
-            buttonConfigs = GridUtils.adjustButtonConfigs(buttonConfigs, finalRows, finalColumns),
+            buttonConfigs = GridUtils.adjustButtonConfigs(buttonConfigs),
             orderIndex = maxOrderIndex + 1,
             createdAt = System.currentTimeMillis()
         )
