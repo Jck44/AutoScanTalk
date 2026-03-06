@@ -6,20 +6,18 @@ import android.os.Looper
 import android.speech.tts.TextToSpeech
 import android.util.Log
 import android.widget.Toast
-import com.andreas_kratzer.ghosttalk.core.audio.AudioDeviceManager
 import com.andreas_kratzer.ghosttalk.core.audio.RoutedAudioPlayer
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
-import java.io.File
-import java.util.Locale
-import java.util.concurrent.ConcurrentHashMap
+import com.andreas_kratzer.ghosttalk.di.ApplicationScope
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
-import com.andreas_kratzer.ghosttalk.di.ApplicationScope
-
+import java.io.File
+import java.util.Locale
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
-import dagger.hilt.android.qualifiers.ApplicationContext
 
 @Singleton
 class TextToSpeechHelper @Inject constructor(

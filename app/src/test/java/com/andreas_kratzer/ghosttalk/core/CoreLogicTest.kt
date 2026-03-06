@@ -1,9 +1,8 @@
 import com.andreas_kratzer.ghosttalk.core.scanning.ScannerEngine
-
 import com.andreas_kratzer.ghosttalk.core.scanning.ScannerFeedbackProvider
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
+import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi

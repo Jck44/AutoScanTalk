@@ -2,7 +2,6 @@ package com.andreas_kratzer.ghosttalk.ui.pages.delegates
 
 import android.app.Application
 import android.content.Intent
-import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
 import com.andreas_kratzer.ghosttalk.data.PageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository

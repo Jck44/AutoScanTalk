@@ -6,7 +6,6 @@ import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
 import com.andreas_kratzer.ghosttalk.ui.pages.ScanCoordinator
-import kotlinx.coroutines.flow.StateFlow
 import javax.inject.Inject
 
 class ActivateButtonUseCase @Inject constructor(

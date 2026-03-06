@@ -4,18 +4,17 @@ import android.content.Context
 import android.media.AudioAttributes
 import android.media.AudioDeviceInfo
 import android.media.AudioManager
+import android.media.AudioTrack
 import android.media.MediaPlayer
 import android.util.Log
+import com.andreas_kratzer.ghosttalk.data.SettingsRepository
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.Job
-import android.media.AudioTrack
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
+import kotlinx.coroutines.launch
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
-
-import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 

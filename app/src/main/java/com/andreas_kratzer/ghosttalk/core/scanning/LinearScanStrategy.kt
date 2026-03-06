@@ -1,9 +1,9 @@
 package com.andreas_kratzer.ghosttalk.core.scanning
 
+import com.andreas_kratzer.ghosttalk.domain.settings.FeatureGuard
 import com.andreas_kratzer.ghosttalk.model.AuditoryCue
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import kotlinx.coroutines.delay
-import com.andreas_kratzer.ghosttalk.domain.settings.FeatureGuard
 import kotlinx.coroutines.flow.MutableStateFlow
 
 class LinearScanStrategy : ScanStrategy {

@@ -1,17 +1,21 @@
 import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
-
+import com.andreas_kratzer.ghosttalk.core.util.Logger
+import com.andreas_kratzer.ghosttalk.core.util.TestLogger
 import com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
-import io.mockk.*
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.slot
+import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
-import com.andreas_kratzer.ghosttalk.core.util.TestLogger
-import com.andreas_kratzer.ghosttalk.core.util.Logger
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before

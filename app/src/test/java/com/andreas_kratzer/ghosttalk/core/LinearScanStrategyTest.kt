@@ -1,16 +1,16 @@
 import com.andreas_kratzer.ghosttalk.core.scanning.LinearScanStrategy
-
+import com.andreas_kratzer.ghosttalk.domain.settings.FeatureGuard
 import com.andreas_kratzer.ghosttalk.model.AuditoryCue
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
+import io.mockk.every
+import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
-import com.andreas_kratzer.ghosttalk.domain.settings.FeatureGuard
-import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
-import io.mockk.*
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Before

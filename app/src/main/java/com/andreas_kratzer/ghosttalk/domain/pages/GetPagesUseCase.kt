@@ -2,10 +2,10 @@ package com.andreas_kratzer.ghosttalk.domain.pages
 
 import com.andreas_kratzer.ghosttalk.data.PageRepository
 import com.andreas_kratzer.ghosttalk.model.Page
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 /**
  * Use case to get the reactive list of pages for a specific book.

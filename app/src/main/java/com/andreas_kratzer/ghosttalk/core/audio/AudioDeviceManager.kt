@@ -7,13 +7,12 @@ import android.media.AudioManager
 import android.os.Handler
 import android.os.Looper
 import com.andreas_kratzer.ghosttalk.model.AudioOutputDevice
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-
 import javax.inject.Inject
 import javax.inject.Singleton
-import dagger.hilt.android.qualifiers.ApplicationContext
 
 @Singleton
 class AudioDeviceManager @Inject constructor(

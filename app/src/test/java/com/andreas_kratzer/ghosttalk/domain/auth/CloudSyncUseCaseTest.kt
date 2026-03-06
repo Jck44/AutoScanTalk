@@ -2,6 +2,7 @@ package com.andreas_kratzer.ghosttalk.domain.auth
 
 
 import android.content.Context
+import android.util.Log
 import com.andreas_kratzer.ghosttalk.core.pages.PageImportExportManager
 import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
@@ -11,6 +12,7 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkConstructor
+import io.mockk.mockkStatic
 import io.mockk.unmockkAll
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -19,8 +21,6 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import java.io.File
-import android.util.Log
-import io.mockk.mockkStatic
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class CloudSyncUseCaseTest {

@@ -11,8 +11,6 @@ import com.andreas_kratzer.ghosttalk.data.PageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.data.TemplateDao
 import com.andreas_kratzer.ghosttalk.data.TemplateRepository
-import com.andreas_kratzer.ghosttalk.core.util.Logger
-import com.andreas_kratzer.ghosttalk.core.util.AppLogger
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

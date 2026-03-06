@@ -5,10 +5,10 @@ import android.content.Context
 import android.widget.Toast
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.domain.genai.ActivateGeminiUseCase
+import com.andreas_kratzer.ghosttalk.domain.genai.GeminiUseCase
 import com.andreas_kratzer.ghosttalk.domain.genai.GetGeminiToolStatusUseCase
 import com.andreas_kratzer.ghosttalk.domain.genai.HandleGenAiExceptionUseCase
 import com.andreas_kratzer.ghosttalk.domain.genai.TestGeminiNanoUseCase
-import com.andreas_kratzer.ghosttalk.domain.genai.GeminiUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow

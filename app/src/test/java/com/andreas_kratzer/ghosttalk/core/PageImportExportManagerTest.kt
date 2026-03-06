@@ -1,21 +1,20 @@
 import com.andreas_kratzer.ghosttalk.core.pages.PageImportExportManager
-
 import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.andreas_kratzer.ghosttalk.core.util.TestLogger
 import com.andreas_kratzer.ghosttalk.data.PageRepository
-import com.andreas_kratzer.ghosttalk.model.Page
+import com.andreas_kratzer.ghosttalk.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.data.TemplateRepository
+import com.andreas_kratzer.ghosttalk.model.AuditoryCue
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
 import io.mockk.coEvery
 import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.data.TemplateRepository
-import com.andreas_kratzer.ghosttalk.model.AuditoryCue
-import kotlinx.coroutines.flow.flowOf
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull

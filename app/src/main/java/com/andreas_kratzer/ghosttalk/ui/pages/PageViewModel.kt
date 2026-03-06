@@ -12,10 +12,9 @@ import com.andreas_kratzer.ghosttalk.core.pages.PageImportExportManager
 import com.andreas_kratzer.ghosttalk.core.scanning.ScannerEngine
 import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.domain.settings.FeatureGuard
 import com.andreas_kratzer.ghosttalk.domain.genai.GeminiUseCase
 import com.andreas_kratzer.ghosttalk.domain.genai.GeminiUseCaseFactory
-import com.andreas_kratzer.ghosttalk.domain.actions.HandleActionExecutionEventUseCase
+import com.andreas_kratzer.ghosttalk.domain.settings.FeatureGuard
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
