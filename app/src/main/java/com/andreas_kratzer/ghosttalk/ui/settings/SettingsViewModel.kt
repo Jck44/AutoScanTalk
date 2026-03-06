@@ -133,16 +133,23 @@ class SettingsViewModel @Inject constructor(
     fun setBluetoothDelay(d: String) = scanningDelegate.setBluetoothDelay(d)
 
     fun signIn(ctx: Context) = cloudSyncDelegate.signIn(ctx, viewModelScope)
-    fun signOut() = cloudSyncDelegate.signOut(viewModelScope)
-    fun setCloudSyncEnabled(e: Boolean) = cloudSyncDelegate.setCloudSyncEnabled(e)
+    
+    fun signOut() {
+        cloudSyncDelegate.signOut(viewModelScope)
+        // Disable cloud-dependent features on sign out
+        settingsRepository.isCloudSyncEnabled = false
+        settingsRepository.isGeminiEnabled = false
+        genAiDelegate.updateGeminiToolStatus()
+    }
+
+    fun setCloudSyncEnabled(ctx: Context, e: Boolean) = cloudSyncDelegate.setCloudSyncEnabled(ctx, e, viewModelScope)
     fun syncNow() = cloudSyncDelegate.performManualSync(com.andreas_kratzer.ghosttalk.domain.auth.SyncMode.TWO_WAY, viewModelScope)
     fun backupNow() = cloudSyncDelegate.performManualSync(com.andreas_kratzer.ghosttalk.domain.auth.SyncMode.BACKUP_ONLY, viewModelScope)
     fun setSyncMode(m: String) { settingsRepository.syncMode = m }
     fun setSyncIntervalMinutes(minutes: Long) { settingsRepository.syncIntervalMinutes = minutes }
 
-    fun setGeminiEnabled(e: Boolean) {
-        settingsRepository.isGeminiEnabled = e
-        genAiDelegate.updateGeminiToolStatus()
+    fun setGeminiEnabled(ctx: Context, e: Boolean) {
+        genAiDelegate.setGeminiEnabled(ctx, e, viewModelScope)
     }
     fun activateGemini(ctx: Context) = genAiDelegate.activateGemini(ctx, viewModelScope)
     fun testGeminiNano(ctx: Context) = genAiDelegate.testGeminiNano(ctx, viewModelScope)

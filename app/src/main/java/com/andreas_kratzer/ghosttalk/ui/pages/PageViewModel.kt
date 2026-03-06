@@ -20,6 +20,7 @@ import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.InteractionDelegate
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.PageManagementDelegate
+import com.andreas_kratzer.ghosttalk.ui.pages.delegates.ScreenManagementDelegate
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.SmartPredictionDelegate
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -45,6 +46,7 @@ class PageViewModel @Inject constructor(
     val featureGuard: FeatureGuard,
     val pageManagementDelegate: PageManagementDelegate,
     val interactionDelegate: InteractionDelegate,
+    val screenManagementDelegate: ScreenManagementDelegate,
     smartPredictionDelegate: SmartPredictionDelegate
 ) : AndroidViewModel(application) {
 
@@ -60,6 +62,7 @@ class PageViewModel @Inject constructor(
     val lastActions = interactionDelegate.lastActions
     val authRecoverIntent = interactionDelegate.authRecoverIntent
     val isUserModeActive = interactionDelegate.isUserModeActive
+    val screenState get() = screenManagementDelegate.screenState
 
     private val _smartPredictions = MutableStateFlow<List<String>>(emptyList())
     val smartPredictions: StateFlow<List<String>> = _smartPredictions.asStateFlow()
@@ -94,6 +97,7 @@ class PageViewModel @Inject constructor(
         pageManagementDelegate.init(viewModelScope)
         interactionDelegate.init(viewModelScope, actionExecutor, ::loadPage, _smartPredictions)
         interactionDelegate.scanCoordinator = scanCoordinator
+        screenManagementDelegate.init(viewModelScope, isUserModeActive)
         
         smartPredictionDelegate.init(
             scope = viewModelScope,

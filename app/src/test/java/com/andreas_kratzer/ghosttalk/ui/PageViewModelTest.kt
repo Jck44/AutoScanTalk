@@ -37,6 +37,7 @@ import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
 import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.InteractionDelegate
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.PageManagementDelegate
+import com.andreas_kratzer.ghosttalk.ui.pages.delegates.ScreenManagementDelegate
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.SmartPredictionDelegate
 import io.mockk.coEvery
 import io.mockk.every
@@ -131,6 +132,8 @@ class PageViewModelTest {
         every { settingsRepository.experimentalManualSortingFlow } returns MutableStateFlow<Boolean>(false)
         every { settingsRepository.scanDelayFlow } returns MutableStateFlow<Long>(3000L)
         every { settingsRepository.persistActionLogsFlow } returns MutableStateFlow<Boolean>(false)
+        every { settingsRepository.keepScreenOnUserModeFlow } returns MutableStateFlow<Boolean>(false)
+        every { settingsRepository.userModeScreenBehaviorFlow } returns MutableStateFlow<String>("NONE")
         every { settingsRepository.holdingTimeMillis } returns 0L
         
         every { templateRepository.getAllTemplates() } returns MutableStateFlow<List<PageTemplate>>(emptyList())
@@ -173,11 +176,12 @@ class PageViewModelTest {
         val smartPredictionDelegate = SmartPredictionDelegate(
             updateSmartPredictionsUseCase = UpdateSmartPredictionsUseCase(settingsRepository, predictNextActionUseCase, checkForPredictorUseCase)
         )
+        val screenManagementDelegate = ScreenManagementDelegate(settingsRepository)
 
         return PageViewModel(
             application, settingsRepository, importExportManager, scannerEngine, googleAuthManager,
             geminiUseCaseFactory, ttsHelper, localIntentRouter, logger, buttonUsageRepository, 
-            featureGuard, pageManagementDelegate, interactionDelegate, smartPredictionDelegate
+            featureGuard, pageManagementDelegate, interactionDelegate, screenManagementDelegate, smartPredictionDelegate
         )
     }
 

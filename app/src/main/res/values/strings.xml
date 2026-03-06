@@ -22,7 +22,8 @@
     <string name="settings_screen_behavior">Bildschirm-Verhalten</string>
     <string name="settings_screen_behavior_normal">Normal</string>
     <string name="settings_screen_behavior_dimmed">Gedimmt (Akku sparen)</string>
-    <string name="settings_screen_behavior_black">Schwarz (Nur vorausgesehen)</string>
+    <string name="settings_screen_behavior_black">Schwarz (für OLED)</string>
+    <string name="settings_screen_black_overlay_text">Akku Sparmodus.\nÜber Zurück zur App zurückkehren</string>
 
     <string name="settings_category_voice">Text-to-Speech</string>
     <string name="settings_tts_language">TTS Sprache</string>
@@ -58,7 +59,7 @@
     <string name="settings_category_system">System</string>
     <string name="settings_category_test">Test-Einstellungen</string>
     <string name="settings_show_test_buttons">Test-Buttons auf Seite anzeigen</string>
-    <string name="settings_persist_logs">Aktionen protokollieren</string>
+    <string name="settings_persist_logs">Aktionen persistent protokollieren</string>
     <string name="settings_persist_logs_hint">Behält Verlauf auch nach Neustart</string>
     <string name="settings_show_page_id_in_log">Page ID im Verlauf anzeigen</string>
     <string name="settings_show_page_id_in_log_hint">Zeigt die technische ID der Seite in den Protokollen an</string>

@@ -34,7 +34,7 @@ fun GenAiSettingsSection(viewModel: SettingsViewModel) {
 
         // Gemini Cloud
         SettingsToggleItem(stringResource(R.string.settings_gemini_enable), isEnabled) { 
-            viewModel.setGeminiEnabled(it) 
+            viewModel.setGeminiEnabled(context, it)
         }
         
         if (isEnabled) {

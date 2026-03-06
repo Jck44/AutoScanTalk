@@ -1,9 +1,14 @@
 package com.andreas_kratzer.ghosttalk.ui.settings.delegates
 
+import android.app.Activity
 import android.app.Application
 import android.content.Context
+import android.content.ContextWrapper
 import android.widget.Toast
 import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
+import com.andreas_kratzer.ghosttalk.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.domain.auth.SignInUseCase
 import com.andreas_kratzer.ghosttalk.domain.genai.ActivateGeminiUseCase
 import com.andreas_kratzer.ghosttalk.domain.genai.GeminiUseCase
 import com.andreas_kratzer.ghosttalk.domain.genai.GetGeminiToolStatusUseCase
@@ -23,10 +28,13 @@ import javax.inject.Singleton
 @Singleton
 class GenAiSettingsDelegate @Inject constructor(
     private val application: Application,
+    private val settingsRepository: SettingsRepository,
+    private val googleAuthManager: GoogleAuthManager,
     private val getGeminiToolStatusUseCase: GetGeminiToolStatusUseCase,
     private val activateGeminiUseCase: ActivateGeminiUseCase,
     private val handleGenAiExceptionUseCase: HandleGenAiExceptionUseCase,
-    private val testGeminiNanoUseCase: TestGeminiNanoUseCase
+    private val testGeminiNanoUseCase: TestGeminiNanoUseCase,
+    private val signInUseCase: SignInUseCase
 ) {
     private val _geminiToolStatus = MutableStateFlow<Map<String, GeminiUseCase.ToolStatus>>(emptyMap())
     val geminiToolStatus: StateFlow<Map<String, GeminiUseCase.ToolStatus>> = _geminiToolStatus.asStateFlow()
@@ -36,6 +44,22 @@ class GenAiSettingsDelegate @Inject constructor(
 
     fun updateGeminiToolStatus() {
         _geminiToolStatus.value = getGeminiToolStatusUseCase()
+    }
+
+    fun setGeminiEnabled(context: Context, enabled: Boolean, scope: CoroutineScope) {
+        if (enabled && googleAuthManager.userEmail.value == null) {
+            val activity = findActivity(context) ?: return
+            scope.launch {
+                val result = signInUseCase.execute(activity)
+                if (result) {
+                    settingsRepository.isGeminiEnabled = true
+                    updateGeminiToolStatus()
+                }
+            }
+        } else {
+            settingsRepository.isGeminiEnabled = enabled
+            updateGeminiToolStatus()
+        }
     }
 
     fun activateGemini(context: Context, scope: CoroutineScope) {
@@ -74,5 +98,14 @@ class GenAiSettingsDelegate @Inject constructor(
                 }
             )
         }
+    }
+
+    private fun findActivity(context: Context): Activity? {
+        var currentContext = context
+        while (currentContext is ContextWrapper) {
+            if (currentContext is Activity) return currentContext
+            currentContext = currentContext.baseContext
+        }
+        return null
     }
 }

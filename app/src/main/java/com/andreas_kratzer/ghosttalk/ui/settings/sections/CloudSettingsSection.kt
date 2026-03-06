@@ -62,55 +62,54 @@ fun CloudSettingsSection(viewModel: SettingsViewModel) {
         }
     }
 
-    if (userEmail != null) {
-        PreferenceCategory(stringResource(R.string.settings_category_cloud)) {
-            SettingsToggleItem(stringResource(R.string.settings_cloud_sync_enabled), isEnabled) { viewModel.setCloudSyncEnabled(it) }
-            
-            Box(modifier = Modifier.fillMaxWidth()) {
-                val modeLabel = when (syncMode) {
-                    "BACKUP_ONLY" -> stringResource(R.string.settings_cloud_sync_mode_backup)
-                    "RESTORE_ONLY" -> stringResource(R.string.settings_cloud_sync_mode_restore)
-                    else -> stringResource(R.string.settings_cloud_sync_mode_two_way)
-                }
-                SettingsClickableItem(stringResource(R.string.settings_cloud_sync_mode), modeLabel) { expandedMode = true }
-                DropdownMenu(expanded = expandedMode, onDismissRequest = { expandedMode = false }) {
-                    listOf("TWO_WAY", "BACKUP_ONLY", "RESTORE_ONLY").forEach { mode ->
-                        val itemLabel = when (mode) {
-                            "BACKUP_ONLY" -> stringResource(R.string.settings_cloud_sync_mode_backup)
-                            "RESTORE_ONLY" -> stringResource(R.string.settings_cloud_sync_mode_restore)
-                            else -> stringResource(R.string.settings_cloud_sync_mode_two_way)
-                        }
-                        DropdownMenuItem(text = { Text(itemLabel) }, onClick = { viewModel.setSyncMode(mode); expandedMode = false })
+    PreferenceCategory(stringResource(R.string.settings_category_cloud)) {
+        SettingsToggleItem(stringResource(R.string.settings_cloud_sync_enabled), isEnabled) { viewModel.setCloudSyncEnabled(context, it) }
+        
+        Box(modifier = Modifier.fillMaxWidth()) {
+            val modeLabel = when (syncMode) {
+                "BACKUP_ONLY" -> stringResource(R.string.settings_cloud_sync_mode_backup)
+                "RESTORE_ONLY" -> stringResource(R.string.settings_cloud_sync_mode_restore)
+                else -> stringResource(R.string.settings_cloud_sync_mode_two_way)
+            }
+            SettingsClickableItem(stringResource(R.string.settings_cloud_sync_mode), modeLabel) { expandedMode = true }
+            DropdownMenu(expanded = expandedMode, onDismissRequest = { expandedMode = false }) {
+                listOf("TWO_WAY", "BACKUP_ONLY", "RESTORE_ONLY").forEach { mode ->
+                    val itemLabel = when (mode) {
+                        "BACKUP_ONLY" -> stringResource(R.string.settings_cloud_sync_mode_backup)
+                        "RESTORE_ONLY" -> stringResource(R.string.settings_cloud_sync_mode_restore)
+                        else -> stringResource(R.string.settings_cloud_sync_mode_two_way)
                     }
+                    DropdownMenuItem(text = { Text(itemLabel) }, onClick = { viewModel.setSyncMode(mode); expandedMode = false })
                 }
             }
+        }
 
-            if (isEnabled) {
-                com.andreas_kratzer.ghosttalk.ui.settings.SettingsEditTextItem(
-                    label = "Sync-Intervall (Minuten)",
-                    value = syncInterval.toString(),
-                    onValueChange = { newValue ->
-                        newValue.toLongOrNull()?.let { viewModel.setSyncIntervalMinutes(it) }
-                    }
-                )
-
-                val lastSyncText = if (lastSyncTime > 0) {
-                    val sdf = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
-                    sdf.format(Date(lastSyncTime))
-                } else {
-                    "Nie"
+        if (isEnabled) {
+            com.andreas_kratzer.ghosttalk.ui.settings.SettingsEditTextItem(
+                label = "Sync-Intervall (Minuten)",
+                value = syncInterval.toString(),
+                onValueChange = { newValue ->
+                    newValue.toLongOrNull()?.let { viewModel.setSyncIntervalMinutes(it) }
                 }
-                Text(
-                    text = "Letzter Sync: $lastSyncText",
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(vertical = 4.dp)
-                )
-            }
+            )
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = { viewModel.syncNow() }, enabled = !isSyncing) { Text(stringResource(R.string.action_search).replace("…", "")) } // Reuse Search or similar? Let's use fixed for now
-                OutlinedButton(onClick = { viewModel.backupNow() }, enabled = !isSyncing) { Text(stringResource(R.string.settings_cloud_backup_now)) }
+            val lastSyncTimeValue = lastSyncTime
+            val lastSyncText = if (lastSyncTimeValue > 0) {
+                val sdf = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
+                sdf.format(Date(lastSyncTimeValue))
+            } else {
+                "Nie"
             }
+            Text(
+                text = "Letzter Sync: $lastSyncText",
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(vertical = 4.dp)
+            )
+        }
+
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(onClick = { viewModel.syncNow() }, enabled = !isSyncing && userEmail != null) { Text(stringResource(R.string.action_search).replace("…", "")) } // Reuse Search or similar? Let's use fixed for now
+            OutlinedButton(onClick = { viewModel.backupNow() }, enabled = !isSyncing && userEmail != null) { Text(stringResource(R.string.settings_cloud_backup_now)) }
         }
     }
 }

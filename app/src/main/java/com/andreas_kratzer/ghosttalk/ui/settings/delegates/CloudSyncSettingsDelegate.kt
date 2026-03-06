@@ -60,8 +60,12 @@ class CloudSyncSettingsDelegate @Inject constructor(
         }
     }
 
-    fun setCloudSyncEnabled(enabled: Boolean) {
-        setCloudSyncEnabledUseCase(enabled)
+    fun setCloudSyncEnabled(context: Context, enabled: Boolean, scope: CoroutineScope) {
+        if (enabled && userEmail.value == null) {
+            signIn(context, scope)
+        } else {
+            setCloudSyncEnabledUseCase(enabled)
+        }
     }
 
     fun performManualSync(mode: SyncMode, scope: CoroutineScope, driveOverride: Drive? = null) {
