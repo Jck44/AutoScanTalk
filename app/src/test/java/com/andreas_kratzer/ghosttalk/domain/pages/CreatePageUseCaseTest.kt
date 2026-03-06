@@ -4,7 +4,6 @@ import com.andreas_kratzer.ghosttalk.data.BookRepository
 import com.andreas_kratzer.ghosttalk.data.PageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.data.TemplateRepository
-import com.andreas_kratzer.ghosttalk.domain.pages.CreatePageUseCase
 import com.andreas_kratzer.ghosttalk.model.PageTemplate
 import io.mockk.coEvery
 import io.mockk.coVerify

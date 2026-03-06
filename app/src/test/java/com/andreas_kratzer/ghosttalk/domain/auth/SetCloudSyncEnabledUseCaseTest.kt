@@ -1,6 +1,5 @@
 package com.andreas_kratzer.ghosttalk.domain.auth
 
-import com.andreas_kratzer.ghosttalk.domain.auth.SetCloudSyncEnabledUseCase
 
 import androidx.work.WorkManager
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository

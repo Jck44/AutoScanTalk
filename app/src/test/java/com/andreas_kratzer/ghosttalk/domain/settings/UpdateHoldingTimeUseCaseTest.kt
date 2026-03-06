@@ -1,6 +1,5 @@
 package com.andreas_kratzer.ghosttalk.domain.settings
 
-import com.andreas_kratzer.ghosttalk.domain.settings.UpdateHoldingTimeUseCase
 
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import io.mockk.mockk

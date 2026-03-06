@@ -1,7 +1,5 @@
 package com.andreas_kratzer.ghosttalk.domain.actions
 
-import com.andreas_kratzer.ghosttalk.domain.actions.ResolveSmartPredictionUseCase
-import com.andreas_kratzer.ghosttalk.domain.actions.ActivateButtonUseCase
 
 import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
@@ -13,6 +11,8 @@ import com.andreas_kratzer.ghosttalk.ui.pages.ScanCoordinator
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.unmockkAll
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow

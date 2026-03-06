@@ -1,7 +1,5 @@
 package com.andreas_kratzer.ghosttalk.domain.settings
 
-import com.andreas_kratzer.ghosttalk.domain.settings.CheckForPredictorUseCase
-import com.andreas_kratzer.ghosttalk.domain.settings.FeatureGuard
 
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.Page
