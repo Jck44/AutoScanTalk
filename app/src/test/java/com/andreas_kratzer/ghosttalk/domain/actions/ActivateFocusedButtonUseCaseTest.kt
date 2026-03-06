@@ -5,8 +5,6 @@ import com.andreas_kratzer.ghosttalk.ui.pages.ScanCoordinator
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.unmockkAll
-import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
