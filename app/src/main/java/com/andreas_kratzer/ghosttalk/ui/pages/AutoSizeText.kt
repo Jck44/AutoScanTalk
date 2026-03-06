@@ -21,29 +21,29 @@ fun AutoSizeText(
     maxLines: Int = 4
 ) {
     val defaultFontSize = MaterialTheme.typography.titleLarge.fontSize
-    var fontSize by remember { mutableStateOf(defaultFontSize) }
-    var readyToDraw by remember { mutableStateOf(false) }
+    val fontSizeState = remember { mutableStateOf(defaultFontSize) }
+    val readyToDrawState = remember { mutableStateOf(false) }
 
     Text(
         text = text,
-        color = if (readyToDraw) color else Color.Transparent,
+        color = if (readyToDrawState.value) color else Color.Transparent,
         textAlign = textAlign,
         maxLines = maxLines,
-        fontSize = fontSize,
+        fontSize = fontSizeState.value,
         overflow = TextOverflow.Ellipsis,
         softWrap = true,
         modifier = modifier,
         onTextLayout = { textLayoutResult ->
             if (textLayoutResult.didOverflowHeight || textLayoutResult.didOverflowWidth) {
-                val nextSize = fontSize * 0.9f
+                val nextSize = fontSizeState.value * 0.9f
                 // Stoppe Verkleinerung bei 9.sp, um Lesbarkeit auf Handys zu garantieren
                 if (nextSize.value > 9f) {
-                    fontSize = nextSize
+                    fontSizeState.value = nextSize
                 } else {
-                    readyToDraw = true // Text is too long, we stop shrinking and let it truncate/ellipsis
+                    readyToDrawState.value = true // Text is too long, we stop shrinking and let it truncate/ellipsis
                 }
             } else {
-                readyToDraw = true
+                readyToDrawState.value = true
             }
         }
     )

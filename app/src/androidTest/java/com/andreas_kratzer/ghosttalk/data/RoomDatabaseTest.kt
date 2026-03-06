@@ -123,7 +123,7 @@ class RoomDatabaseTest {
         assertEquals("Speak Label", loadedBtn1.label)
         assertEquals("I override the label", loadedBtn1.spokenText)
         assertTrue(loadedBtn1.buttonAction is SpeakTextButtonAction)
-        assertEquals("Action String", (loadedBtn1.buttonAction as SpeakTextButtonAction).textToSpeech)
+        assertEquals("Action String", (loadedBtn1.buttonAction as SpeakTextButtonAction).ttsMode)
 
         // Slot 2: Null
         assertNull(retrievedPage.buttonConfigs[1])

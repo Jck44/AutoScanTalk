@@ -27,7 +27,6 @@ import javax.inject.Inject
 class PageManagementDelegate @Inject constructor(
     private val pageRepository: PageRepository,
     private val bookRepository: BookRepository,
-    private val settingsRepository: SettingsRepository,
     private val templateRepository: TemplateRepository,
     private val getPagesUseCase: GetPagesUseCase,
     private val createPageUseCase: CreatePageUseCase,

@@ -23,8 +23,6 @@ import javax.inject.Inject
 
 class InteractionDelegate @Inject constructor(
     private val application: Application,
-    private val pageRepository: PageRepository,
-    private val settingsRepository: SettingsRepository,
     private val actionLogUseCase: ActionLogUseCase,
     private val ttsHelper: TextToSpeechHelper,
     private val activateButtonUseCase: ActivateButtonUseCase,

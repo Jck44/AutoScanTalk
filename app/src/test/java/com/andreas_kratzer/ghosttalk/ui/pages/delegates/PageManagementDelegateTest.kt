@@ -78,7 +78,6 @@ class PageManagementDelegateTest {
         delegate = PageManagementDelegate(
             pageRepository,
             bookRepository,
-            settingsRepository,
             templateRepository,
             getPagesUseCase,
             createPageUseCase,

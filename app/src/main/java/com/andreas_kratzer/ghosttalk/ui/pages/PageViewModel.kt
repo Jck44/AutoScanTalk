@@ -45,7 +45,7 @@ class PageViewModel @Inject constructor(
     val featureGuard: FeatureGuard,
     val pageManagementDelegate: PageManagementDelegate,
     val interactionDelegate: InteractionDelegate,
-    val smartPredictionDelegate: SmartPredictionDelegate
+    smartPredictionDelegate: SmartPredictionDelegate
 ) : AndroidViewModel(application) {
 
     private var geminiUseCase: GeminiUseCase? = null

@@ -39,7 +39,7 @@ fun NavigationActionFields(
 ) {
     var expandedPageSelect by remember { mutableStateOf(false) }
     var pageSearchQuery by remember { mutableStateOf("") }
-    var showAddPageDialog by remember { mutableStateOf(false) }
+    val showAddPageDialogState = remember { mutableStateOf(false) }
 
     val filteredPages = remember(pageSearchQuery, availablePages) {
         val trimmedQuery = pageSearchQuery.trim()
@@ -106,7 +106,7 @@ fun NavigationActionFields(
 
         if (onCreatePage != null) {
             OutlinedButton(
-                onClick = { showAddPageDialog = true },
+                onClick = { showAddPageDialogState.value = true },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Neue Ziel-Seite erstellen")
@@ -114,14 +114,14 @@ fun NavigationActionFields(
         }
     }
 
-    if (showAddPageDialog) {
+    if (showAddPageDialogState.value) {
         AddPageDialog(
             templates = templates,
-            onDismiss = { showAddPageDialog = false },
+            onDismiss = { showAddPageDialogState.value = false },
             onConfirm = { name, rows, cols, templateId ->
                 onCreatePage?.invoke(name, rows, cols, templateId) { newId ->
                     onPageSelected(newId)
-                    showAddPageDialog = false
+                    showAddPageDialogState.value = false
                 }
             }
         )

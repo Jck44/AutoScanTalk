@@ -151,7 +151,6 @@ class PageViewModelTest {
         val pageManagementDelegate = PageManagementDelegate(
             pageRepository = pageRepository,
             bookRepository = bookRepository,
-            settingsRepository = settingsRepository,
             templateRepository = templateRepository,
             getPagesUseCase = getPagesUseCase,
             createPageUseCase = createPageUseCase,
@@ -166,8 +165,6 @@ class PageViewModelTest {
         )
         val interactionDelegate = InteractionDelegate(
             application = application,
-            pageRepository = pageRepository,
-            settingsRepository = settingsRepository,
             actionLogUseCase = actionLogUseCase,
             ttsHelper = ttsHelper,
             activateButtonUseCase = ActivateButtonUseCase(ttsHelper, ResolveSmartPredictionUseCase(pageRepository)),
