@@ -1,3 +1,5 @@
+package com.andreas_kratzer.ghosttalk.core.scanning
+
 import com.andreas_kratzer.ghosttalk.core.scanning.ScannerEngine
 import com.andreas_kratzer.ghosttalk.core.scanning.ScannerFeedbackProvider
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig

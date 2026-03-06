@@ -1,3 +1,5 @@
+package com.andreas_kratzer.ghosttalk.core.actions
+
 import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
 import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.andreas_kratzer.ghosttalk.core.util.TestLogger
@@ -331,5 +333,66 @@ class ActionExecutorTest {
         // Cleanup
         ttsCallback.captured.invoke()
         runCurrent()
+    }
+
+    @Test
+    fun testExecuteButonAction_WithinHoldingTime_IgnoresAction() = runTest {
+        val actionExecutor = createExecutor(this)
+        val button = ButtonConfig(id = "1", label = "B1", buttonAction = SpeakTextButtonAction(), auditoryCue = null)
+        
+        // First press at T=200
+        currentTimeMillis = 200L
+        actionExecutor.executeButtonAction(button)
+        runCurrent()
+        verify(exactly = 1) { ttsHelper.speakRouted(any(), any(), any(), any(), any(), any()) }
+
+        // Second press at T=300 (holding time 1000ms active)
+        currentTimeMillis = 300L
+        actionExecutor.executeButtonAction(button)
+        runCurrent()
+        
+        // Still only 1 execution
+        verify(exactly = 1) { ttsHelper.speakRouted(any(), any(), any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun testExecuteButtonAction_WhileExecuting_IgnoresAction() = runTest {
+        val actionExecutor = createExecutor(this)
+        val button = ButtonConfig(id = "1", label = "B1", buttonAction = SpeakTextButtonAction(), auditoryCue = null)
+        
+        // Force executing state
+        actionExecutor.setExecutingStateForTest(true)
+        
+        // Past holding time, but still executing
+        currentTimeMillis = 2000L
+        actionExecutor.executeButtonAction(button)
+        runCurrent()
+        
+        // No execution should happen
+        verify(exactly = 0) { ttsHelper.speakRouted(any(), any(), any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun testExecuteButtonAction_MissingHandler_LogsAndFinishes() = runTest {
+        val actionExecutor = createExecutor(this)
+        // Clear handlers to simulate missing handler
+        actionExecutor.handlers = emptyList()
+        
+        val button = ButtonConfig(id = "1", label = "B1", buttonAction = SpeakTextButtonAction(), auditoryCue = null)
+        
+        val events = mutableListOf<ActionExecutor.ExecutionEvent>()
+        val eventsJob = launch {
+            actionExecutor.events.collect { events.add(it) }
+        }
+
+        currentTimeMillis = 0L
+        actionExecutor.executeButtonAction(button)
+        runCurrent()
+        
+        // Should log and NOT be executing anymore
+        assertTrue(events.any { it is ActionExecutor.ExecutionEvent.Log && it.message.contains("Kein Handler") })
+        assertEquals(false, actionExecutor.isExecuting.value)
+        
+        eventsJob.cancel()
     }
 }

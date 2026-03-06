@@ -237,6 +237,8 @@ class SettingsRepository(context: Context) {
     private val _isNotificationReadingEnabled = BooleanSetting(KEY_NOTIFICATION_READING_ENABLED, false)
     private val _monitoredNotificationApps = StringSetSetting(KEY_MONITORED_NOTIFICATION_APPS)
     private val _appLanguage = StringSetting(KEY_APP_LANGUAGE)
+    private val _keepScreenOnUserMode = BooleanSetting(KEY_KEEP_SCREEN_ON_USER_MODE, true)
+    private val _userModeScreenBehavior = NonNullStringSetting(KEY_USER_MODE_SCREEN_BEHAVIOR, "NORMAL")
 
     private fun refreshFlows() {
         _ttsLanguage.refresh()
@@ -273,6 +275,8 @@ class SettingsRepository(context: Context) {
         _isNotificationReadingEnabled.refresh()
         _monitoredNotificationApps.refresh()
         _appLanguage.refresh()
+        _keepScreenOnUserMode.refresh()
+        _userModeScreenBehavior.refresh()
     }
 
     // ── Public API: Flows ────────────────────────────────────────────────
@@ -310,6 +314,8 @@ class SettingsRepository(context: Context) {
     val isNotificationReadingEnabledFlow: StateFlow<Boolean> get() = _isNotificationReadingEnabled.flow
     val monitoredNotificationAppsFlow: StateFlow<Set<String>> get() = _monitoredNotificationApps.flow
     val appLanguageFlow: StateFlow<String?> get() = _appLanguage.flow
+    val keepScreenOnUserModeFlow: StateFlow<Boolean> get() = _keepScreenOnUserMode.flow
+    val userModeScreenBehaviorFlow: StateFlow<String> get() = _userModeScreenBehavior.flow
 
     // ── Public API: Properties ───────────────────────────────────────────
 
@@ -453,6 +459,14 @@ class SettingsRepository(context: Context) {
         get() = prefs.getBoolean(KEY_INITIAL_TEMPLATES_CREATED, false)
         set(value) { prefs.edit().putBoolean(KEY_INITIAL_TEMPLATES_CREATED, value).apply() }
 
+    var keepScreenOnUserMode: Boolean
+        get() = _keepScreenOnUserMode.value
+        set(value) { _keepScreenOnUserMode.value = value }
+
+    var userModeScreenBehavior: String
+        get() = _userModeScreenBehavior.value
+        set(value) { _userModeScreenBehavior.value = value }
+
     // ── Device name cache ────────────────────────────────────────────────
 
     fun getDeviceName(persistentId: String): String? {
@@ -515,5 +529,7 @@ class SettingsRepository(context: Context) {
         private const val KEY_TTS_VOLUME_MULTIPLIER = "tts_volume_multiplier"
         private const val KEY_CUES_VOLUME_MULTIPLIER = "cues_volume_multiplier"
         private const val KEY_ACTIVE_BOOK_ID = "active_book_id"
+        private const val KEY_KEEP_SCREEN_ON_USER_MODE = "keep_screen_on_user_mode"
+        private const val KEY_USER_MODE_SCREEN_BEHAVIOR = "user_mode_screen_behavior"
     }
 }

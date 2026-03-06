@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.os.Bundle
 import android.util.Log
 import android.view.KeyEvent
+import android.view.WindowManager
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
@@ -14,7 +15,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.compose.rememberNavController
 import com.andreas_kratzer.ghosttalk.core.KeyEventCoordinator
 import com.andreas_kratzer.ghosttalk.core.UpdateManager
@@ -27,6 +30,7 @@ import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
 import com.andreas_kratzer.ghosttalk.ui.settings.SettingsViewModel
 import com.andreas_kratzer.ghosttalk.ui.theme.GhosTTalkTheme
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -99,6 +103,38 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             pageViewModel.authRecoverIntent.collect { intent ->
                 authLauncher.launch(intent)
+            }
+        }
+
+        // --- Screen Keeping / Dimming Logic ---
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                combine(
+                    pageViewModel.isUserModeActive,
+                    settingsViewModel.keepScreenOnUserMode,
+                    settingsViewModel.userModeScreenBehavior
+                ) { isUserMode, keepOn, behavior ->
+                    Triple(isUserMode, keepOn, behavior)
+                }.collect { (isUserMode, keepOn, behavior) ->
+                    val shouldKeepOn = isUserMode && keepOn
+                    
+                    if (shouldKeepOn) {
+                        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                        
+                        val params = window.attributes
+                        if (behavior == "DIMMED") {
+                            params.screenBrightness = 0.01f
+                        } else {
+                            params.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+                        }
+                        window.attributes = params
+                    } else {
+                        window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                        val params = window.attributes
+                        params.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+                        window.attributes = params
+                    }
+                }
             }
         }
 

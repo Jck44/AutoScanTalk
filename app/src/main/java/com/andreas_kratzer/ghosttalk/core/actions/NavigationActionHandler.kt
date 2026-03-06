@@ -34,9 +34,14 @@ class NavigationActionHandler(
         }
 
         if (feedback != null && ttsHelper?.isReady == true) {
-            ttsHelper.speakRouted(feedback, settingsRepository.cuesAudioDeviceAddress, action.ttsMode) {
-                performNavigation()
-            }
+            ttsHelper.speakRouted(
+                text = feedback,
+                deviceAddress = settingsRepository.cuesAudioDeviceAddress,
+                ttsMode = action.ttsMode,
+                queueMode = android.speech.tts.TextToSpeech.QUEUE_FLUSH,
+                isForCues = true,
+                onDone = { performNavigation() }
+            )
             log("Navigations-Feedback: \"$feedback\"")
         } else {
             if (feedback != null) log("Nav-Feedback (TTS nicht bereit): \"$feedback\"")

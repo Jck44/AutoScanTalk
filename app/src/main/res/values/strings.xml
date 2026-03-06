@@ -18,7 +18,12 @@
     <string name="settings_theme_system">System-Standard</string>
     <string name="settings_theme_light">Hell</string>
     <string name="settings_theme_dark">Dunkel</string>
-    
+    <string name="settings_keep_screen_on">Bildschirm im Nutzer-Modus anlassen</string>
+    <string name="settings_screen_behavior">Bildschirm-Verhalten</string>
+    <string name="settings_screen_behavior_normal">Normal</string>
+    <string name="settings_screen_behavior_dimmed">Gedimmt (Akku sparen)</string>
+    <string name="settings_screen_behavior_black">Schwarz (Nur vorausgesehen)</string>
+
     <string name="settings_category_voice">Text-to-Speech</string>
     <string name="settings_tts_language">TTS Sprache</string>
     <string name="settings_system_default">System Standard</string>

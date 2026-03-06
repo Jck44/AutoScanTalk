@@ -26,7 +26,7 @@ class LocalIntentRouter @Inject constructor(
             
             Mögliche Intents:
             1. Zeitabfrage: {"intent": "time", "query": "time", "response": "<natürliche Antwort zur Uhrzeit>"}
-            2. Datumsabfrage: {"intent": "time", "query": "date", "response": "<natürliche Antwort zum Datum, wobei der Tag als z.B.: vierter statt vier zu formatieren sind>"}
+            2. Datumsabfrage: {"intent": "time", "query": "date", "response": "<natürliche Antwort zum Datum, wobei der Tag als z.B.: 'Heute ist der vierte Jänner 2025' zu formatieren sind>"}
             3. Wecker stellen: {"intent": "alarm", "action": "set", "hour": <0-23>, "minute": <0-59>}
             4. Unbekannt: {"intent": "unknown"}
         """.trimIndent()

@@ -29,20 +29,23 @@ class CreatePageUseCase @Inject constructor(
         val newPageId = UUID.randomUUID().toString()
         val homePageId = settingsRepository.defaultStartPageId ?: currentPages.firstOrNull()?.id
 
-        var finalRows = rows
-        var finalColumns = columns
+        val (finalRows, finalColumns) = if (templateId != null) {
+            val template = templateRepository.getById(templateId)
+                ?: throw IllegalArgumentException("Template not found: $templateId")
+            template.rows to template.columns
+        } else {
+            rows to columns
+        }
+
+        if (finalRows > 6 || finalColumns > 6) {
+            throw IllegalArgumentException("Grid size cannot exceed 6x6")
+        }
+
         var buttonConfigs: List<ButtonConfig?>
 
         val template = templateId?.let { templateRepository.getById(it) }
 
         if (template != null) {
-            finalRows = template.rows
-            finalColumns = template.columns
-            
-            if (finalRows * finalColumns > 36 || finalRows > 6 || finalColumns > 6) {
-                throw IllegalArgumentException("Maximale Grid-Größe ist 6x6")
-            }
-
             buttonConfigs = template.buttonConfigs.map { config ->
                 val action = config?.buttonAction
                 if (action is NavigateToPageButtonAction) {
@@ -53,10 +56,6 @@ class CreatePageUseCase @Inject constructor(
             }
             
         } else {
-            if (finalRows * finalColumns > 36 || finalRows > 6 || finalColumns > 6) {
-                throw IllegalArgumentException("Maximale Grid-Größe ist 6x6")
-            }
-
             val totalSlots = finalRows * finalColumns
             val initialConfigs = MutableList<ButtonConfig?>(totalSlots) { null }
 

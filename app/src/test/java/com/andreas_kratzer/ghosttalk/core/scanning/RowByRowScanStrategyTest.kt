@@ -1,3 +1,5 @@
+package com.andreas_kratzer.ghosttalk.core.scanning
+
 
 
 import com.andreas_kratzer.ghosttalk.core.scanning.RowByRowScanStrategy

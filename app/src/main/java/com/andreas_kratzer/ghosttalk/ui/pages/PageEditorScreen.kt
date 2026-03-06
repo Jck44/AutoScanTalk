@@ -50,7 +50,7 @@ fun PageEditorScreen(
     val allPages by pageViewModel.filteredPages.collectAsState()
     val unfilteredPages by pageViewModel.unfilteredPages.collectAsState()
     val bookDefaultScanPattern by pageViewModel.defaultScanPattern.collectAsState()
-    val page = allPages.find { it.id == pageId }
+    val page = unfilteredPages.find { it.id == pageId }
 
     var selectedButtonIndex by remember { mutableStateOf<Int?>(null) }
     var showDialog by remember { mutableStateOf(false) }

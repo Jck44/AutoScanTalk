@@ -31,9 +31,14 @@ class SpeechActionHandler(
         
         val tts = ttsHelper
         if (tts?.isReady == true) {
-            tts.speakRouted(textToSpeak, targetDeviceAddress, action.ttsMode) {
-                onFinish(executionId)
-            }
+            tts.speakRouted(
+                text = textToSpeak,
+                deviceAddress = targetDeviceAddress,
+                ttsMode = action.ttsMode,
+                queueMode = android.speech.tts.TextToSpeech.QUEUE_FLUSH,
+                isForCues = buttonConfig.playActionAsAuditoryCue,
+                onDone = { onFinish(executionId) }
+            )
             log("Gesprochen: \"$textToSpeak\"")
         } else {
             log("Sprechen (TTS nicht bereit): \"$textToSpeak\"")

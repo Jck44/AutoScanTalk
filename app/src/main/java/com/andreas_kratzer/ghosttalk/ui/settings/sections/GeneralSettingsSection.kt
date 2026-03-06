@@ -26,8 +26,12 @@ fun GeneralSettingsSection(viewModel: SettingsViewModel) {
     val defaultStartPageId by viewModel.defaultStartPageId.collectAsState(null)
     val allPages by viewModel.allPages.collectAsState()
     
+    val keepScreenOn by viewModel.keepScreenOnUserMode.collectAsState(true)
+    val screenBehavior by viewModel.userModeScreenBehavior.collectAsState("NORMAL")
+
     var expandedTheme by remember { mutableStateOf(false) }
     var expandedStartPage by remember { mutableStateOf(false) }
+    var expandedScreenBehavior by remember { mutableStateOf(false) }
 
     PreferenceCategory(stringResource(R.string.settings_category_ui)) {
         Box(modifier = Modifier.fillMaxWidth()) {
@@ -51,6 +55,42 @@ fun GeneralSettingsSection(viewModel: SettingsViewModel) {
                     text = { Text(stringResource(R.string.settings_theme_dark)) },
                     onClick = { viewModel.setThemeMode("DARK"); expandedTheme = false }
                 )
+            }
+        }
+
+        SettingsToggleItem(
+            label = stringResource(R.string.settings_keep_screen_on),
+            checked = keepScreenOn,
+            onCheckedChange = { viewModel.setKeepScreenOnUserMode(it) }
+        )
+
+        if (keepScreenOn) {
+            Box(modifier = Modifier.fillMaxWidth()) {
+                val behaviorLabel = when (screenBehavior) {
+                    "DIMMED" -> stringResource(R.string.settings_screen_behavior_dimmed)
+                    "BLACK" -> stringResource(R.string.settings_screen_behavior_black)
+                    else -> stringResource(R.string.settings_screen_behavior_normal)
+                }
+
+                SettingsClickableItem(
+                    label = stringResource(R.string.settings_screen_behavior),
+                    value = behaviorLabel,
+                    onClick = { expandedScreenBehavior = true }
+                )
+                DropdownMenu(expanded = expandedScreenBehavior, onDismissRequest = { expandedScreenBehavior = false }) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.settings_screen_behavior_normal)) },
+                        onClick = { viewModel.setUserModeScreenBehavior("NORMAL"); expandedScreenBehavior = false }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.settings_screen_behavior_dimmed)) },
+                        onClick = { viewModel.setUserModeScreenBehavior("DIMMED"); expandedScreenBehavior = false }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.settings_screen_behavior_black)) },
+                        onClick = { viewModel.setUserModeScreenBehavior("BLACK"); expandedScreenBehavior = false }
+                    )
+                }
             }
         }
     }

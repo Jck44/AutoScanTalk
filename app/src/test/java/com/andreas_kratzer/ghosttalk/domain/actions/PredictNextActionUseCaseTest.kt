@@ -35,6 +35,9 @@ class PredictNextActionUseCaseTest {
             settingsRepository,
             localIntentRouter
         )
+        
+        // Default mock responses for settings frequently used
+        every { settingsRepository.showPageIdInLog } returns false
     }
 
     @Test
@@ -49,7 +52,6 @@ class PredictNextActionUseCaseTest {
     @Test
     fun `predict returns parsed IDs from model response`() = runTest {
         every { settingsRepository.useLocalGenerativeAi } returns true
-        every { settingsRepository.showPageIdInLog } returns false
         every { actionLogUseCase.loadSavedLogs() } returns emptyList()
         coEvery { buttonUsageRepository.getTopActions(any(), any()) } returns emptyList()
         coEvery { localIntentRouter.generateRawResponse(any()) } returns "id1, id2, id3"
@@ -75,7 +77,6 @@ class PredictNextActionUseCaseTest {
     @Test
     fun `predict handles dirty model response with quotes`() = runTest {
         every { settingsRepository.useLocalGenerativeAi } returns true
-        every { settingsRepository.showPageIdInLog } returns false
         every { actionLogUseCase.loadSavedLogs() } returns emptyList()
         coEvery { buttonUsageRepository.getTopActions(any(), any()) } returns emptyList()
         coEvery { localIntentRouter.generateRawResponse(any()) } returns "'id1', \"id2\" , id3"

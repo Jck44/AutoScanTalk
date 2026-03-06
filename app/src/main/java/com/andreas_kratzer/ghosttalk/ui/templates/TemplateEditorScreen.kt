@@ -48,7 +48,7 @@ fun TemplateEditorScreen(
 ) {
     val scope = rememberCoroutineScope()
     val templates by templateViewModel.templates.collectAsState()
-    val allPages by pageViewModel.filteredPages.collectAsState()
+    val unfilteredPages by pageViewModel.unfilteredPages.collectAsState()
     val template = templates.find { it.id == templateId }
 
     var selectedButtonIndex by remember { mutableStateOf<Int?>(null) }
@@ -122,7 +122,7 @@ fun TemplateEditorScreen(
         ButtonConfigDialog(
             initialConfig = currentConfig,
             buttonId = buttonId,
-            availablePages = allPages, // Allow templates to navigate to specific pages if needed
+            availablePages = unfilteredPages, // Allow templates to navigate to specific pages regardless of filters
             featureGuard = pageViewModel.featureGuard,
             templates = allTemplates,
             onDismiss = {

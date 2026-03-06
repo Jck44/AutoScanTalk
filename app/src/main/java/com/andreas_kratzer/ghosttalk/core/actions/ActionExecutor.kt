@@ -42,17 +42,15 @@ class ActionExecutor internal constructor(
     private var lastExecutionTime = -1L
     private var activeExecutionId = 0
 
-    private val handlers: List<ActionHandler<out ButtonAction>> by lazy {
-        listOf(
-            SpeechActionHandler(settingsRepository, ttsHelper, ::log),
-            NavigationActionHandler(scope, settingsRepository, ttsHelper, ::emitEvent, ::log),
-            VolumeActionHandler(settingsRepository, ttsHelper, ::log),
-            GeminiActionHandler(scope, settingsRepository, geminiUseCase, localIntentRouter, ttsHelper, ::emitEvent, ::log),
-            NotificationActionHandler(settingsRepository, ttsHelper, ::log),
-            FrequentActionHandler(::log),
-            SmartPredictionActionHandler(::log)
-        )
-    }
+    internal var handlers: List<ActionHandler<out ButtonAction>> = listOf(
+        SpeechActionHandler(settingsRepository, ttsHelper, ::log),
+        NavigationActionHandler(scope, settingsRepository, ttsHelper, ::emitEvent, ::log),
+        VolumeActionHandler(settingsRepository, ttsHelper, ::log),
+        GeminiActionHandler(scope, settingsRepository, geminiUseCase, localIntentRouter, ttsHelper, ::emitEvent, ::log),
+        NotificationActionHandler(settingsRepository, ttsHelper, ::log),
+        FrequentActionHandler(::log),
+        SmartPredictionActionHandler(::log)
+    )
 
 
     fun executeButtonAction(buttonConfig: ButtonConfig, bookId: String? = null) {

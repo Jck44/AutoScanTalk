@@ -86,6 +86,9 @@ class SettingsViewModel @Inject constructor(
     val themeMode = settingsRepository.themeModeFlow
     val experimentalManualSorting = settingsRepository.experimentalManualSortingFlow
 
+    val keepScreenOnUserMode = settingsRepository.keepScreenOnUserModeFlow
+    val userModeScreenBehavior = settingsRepository.userModeScreenBehaviorFlow
+
     val authIntentFlow = kotlinx.coroutines.flow.merge(
         cloudSyncDelegate.authIntentFlow,
         genAiDelegate.authIntentFlow
@@ -175,6 +178,9 @@ class SettingsViewModel @Inject constructor(
     fun clearButtonUsageStats(bookId: String) {
         viewModelScope.launch { buttonUsageRepository.clearStats(bookId) }
     }
+
+    fun setKeepScreenOnUserMode(e: Boolean) { settingsRepository.keepScreenOnUserMode = e }
+    fun setUserModeScreenBehavior(m: String) { settingsRepository.userModeScreenBehavior = m }
 
     val activeBookId: String
         get() = settingsRepository.activeBookId
