@@ -48,6 +48,7 @@ import com.andreas_kratzer.ghosttalk.model.SortOrder
 import com.andreas_kratzer.ghosttalk.ui.components.GhostTalkCard
 import com.andreas_kratzer.ghosttalk.ui.components.rememberReorderableState
 import com.andreas_kratzer.ghosttalk.ui.components.reorderableItem
+import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,6 +63,7 @@ fun TemplateScreen(
     var templateToDelete by remember { mutableStateOf<PageTemplate?>(null) }
     val reorderState = rememberReorderableState()
     val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+    val dimensions = LocalDimensions.current
 
     Scaffold(
         topBar = {
@@ -106,7 +108,10 @@ fun TemplateScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { if (!showAddDialog) showAddDialog = true }) {
+            FloatingActionButton(
+                onClick = { if (!showAddDialog) showAddDialog = true },
+                shape = MaterialTheme.shapes.large
+            ) {
                 Icon(Icons.Default.Add, contentDescription = stringResource(R.string.template_create_new))
             }
         }
@@ -129,9 +134,10 @@ fun TemplateScreen(
                         }
                     }
                 },
+                shape = MaterialTheme.shapes.large,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(horizontal = dimensions.paddingLarge, vertical = dimensions.paddingMedium),
                 singleLine = true
             )
 
@@ -140,89 +146,94 @@ fun TemplateScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(vertical = 8.dp)
+                    .padding(horizontal = dimensions.paddingLarge),
+                verticalArrangement = Arrangement.spacedBy(dimensions.gridSpacing),
+                contentPadding = PaddingValues(vertical = dimensions.paddingMedium)
             ) {
-            items(templates.size, key = { index -> templates[index].id }) { index ->
-                val template = templates[index]
-                GhostTalkCard(
-                    title = template.name,
-                    subtitle = "Raster: ${template.rows}x${template.columns} " + if (template.isBuiltIn) "(${stringResource(R.string.template_built_in_label)})" else "(${stringResource(R.string.template_custom_label)})",
-                    icon = Icons.Default.GridView,
-                    onClick = { onTemplateClick(template.id) },
-                    modifier = if (experimentalSorting) {
-                        Modifier.reorderableItem(
-                            state = reorderState,
-                            index = index,
-                            onDrag = {
-                                reorderState.findTargetIndexForList(listState)?.let { targetIndex ->
-                                    templateViewModel.reorderTemplates(index, targetIndex)
+                items(templates.size, key = { index -> templates[index].id }) { index ->
+                    val template = templates[index]
+                    GhostTalkCard(
+                        title = template.name,
+                        subtitle = "Raster: ${template.rows}x${template.columns} " + if (template.isBuiltIn) "(${stringResource(R.string.template_built_in_label)})" else "(${stringResource(R.string.template_custom_label)})",
+                        icon = Icons.Default.GridView,
+                        onClick = { onTemplateClick(template.id) },
+                        modifier = if (experimentalSorting) {
+                            Modifier.reorderableItem(
+                                state = reorderState,
+                                index = index,
+                                onDrag = {
+                                    reorderState.findTargetIndexForList(listState)?.let { targetIndex ->
+                                        templateViewModel.reorderTemplates(index, targetIndex)
+                                    }
+                                }
+                            )
+                        } else {
+                            Modifier
+                        },
+                        trailingAction = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (experimentalSorting) {
+                                    Icon(
+                                        imageVector = Icons.Default.DragHandle,
+                                        contentDescription = "Verschieben",
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                        modifier = Modifier.padding(end = 8.dp)
+                                    )
+                                }
+                                
+                                IconButton(
+                                    onClick = { templateToDelete = template }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = stringResource(R.string.action_delete),
+                                        tint = MaterialTheme.colorScheme.error
+                                    )
                                 }
                             }
-                        )
-                    } else {
-                        Modifier
+                        }
+                    )
+                }
+            }
+
+            templateToDelete?.let { template ->
+                AlertDialog(
+                    onDismissRequest = { templateToDelete = null },
+                    title = { Text(stringResource(R.string.template_delete_title)) },
+                    text = { Text(stringResource(R.string.template_delete_confirm, template.name)) },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                templateViewModel.deleteTemplate(template)
+                                templateToDelete = null
+                            },
+                            shape = MaterialTheme.shapes.medium,
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                        ) {
+                            Text("Löschen")
+                        }
                     },
-                    trailingAction = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            if (experimentalSorting) {
-                                Icon(
-                                    imageVector = Icons.Default.DragHandle,
-                                    contentDescription = "Verschieben",
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                                    modifier = Modifier.padding(end = 8.dp)
-                                )
-                            }
-                            
-                            IconButton(
-                                onClick = { templateToDelete = template }
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = stringResource(R.string.action_delete),
-                                    tint = MaterialTheme.colorScheme.error
-                                )
-                            }
+                    dismissButton = {
+                        Button(
+                            onClick = { templateToDelete = null },
+                            shape = MaterialTheme.shapes.medium,
+                            colors = ButtonDefaults.textButtonColors()
+                        ) {
+                            Text("Abbrechen")
                         }
                     }
                 )
             }
-        }
 
-        templateToDelete?.let { template ->
-            AlertDialog(
-                onDismissRequest = { templateToDelete = null },
-                title = { Text(stringResource(R.string.template_delete_title)) },
-                text = { Text(stringResource(R.string.template_delete_confirm, template.name)) },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            templateViewModel.deleteTemplate(template)
-                            templateToDelete = null
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                    ) {
-                        Text("Löschen")
+            if (showAddDialog) {
+                AddTemplateDialog(
+                    onDismiss = { showAddDialog = false },
+                    onConfirm = { name, rows, cols ->
+                        templateViewModel.createTemplate(name, rows, cols)
+                        showAddDialog = false
                     }
-                },
-                dismissButton = {
-                    Button(onClick = { templateToDelete = null }, colors = ButtonDefaults.textButtonColors()) {
-                        Text("Abbrechen")
-                    }
-                }
-            )
-        }
-
-        if (showAddDialog) {
-            AddTemplateDialog(
-                onDismiss = { showAddDialog = false },
-                onConfirm = { name, rows, cols ->
-                    templateViewModel.createTemplate(name, rows, cols)
-                    showAddDialog = false
-                }
-            )
-        }
+                )
+            }
         }
     }
 }
@@ -233,17 +244,19 @@ fun AddTemplateDialog(
     onConfirm: (name: String, rows: Int, columns: Int) -> Unit
 ) {
     var name by remember { mutableStateOf("") }
+    val dimensions = LocalDimensions.current
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.template_create_new)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(dimensions.paddingMedium)) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
                     label = { Text(stringResource(R.string.template_name_label)) },
                     singleLine = true,
+                    shape = MaterialTheme.shapes.large,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -256,13 +269,18 @@ fun AddTemplateDialog(
                         onConfirm(name, 4, 4)
                     }
                 },
+                shape = MaterialTheme.shapes.medium,
                 enabled = name.isNotBlank()
             ) {
                 Text("Erstellen")
             }
         },
         dismissButton = {
-            Button(onClick = onDismiss, colors = ButtonDefaults.textButtonColors()) {
+            Button(
+                onClick = onDismiss,
+                shape = MaterialTheme.shapes.medium,
+                colors = ButtonDefaults.textButtonColors()
+            ) {
                 Text("Abbrechen")
             }
         }

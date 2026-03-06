@@ -77,6 +77,7 @@ class ScanCoordinator(
             buttonConfigs = page.buttonConfigs,
             startIndex = startIndex,
             pattern = page.scanPattern ?: settingsRepository.defaultScanPattern,
+            rows = page.rows,
             columns = page.columns,
             rowNames = page.rowNames,
             pageId = page.id

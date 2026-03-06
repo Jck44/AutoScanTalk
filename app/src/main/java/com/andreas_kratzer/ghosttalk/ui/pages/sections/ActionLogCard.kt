@@ -23,27 +23,37 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 
 @Composable
 fun ActionLogCard(
     lastActions: List<String>,
     onClearLogs: () -> Unit
 ) {
+    val dimensions = LocalDimensions.current
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(210.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            .height(210.dp), // Specific height for this log area is okay, but could be moved to Dimens
+        shape = MaterialTheme.shapes.large,
+        elevation = CardDefaults.cardElevation(defaultElevation = dimensions.cardElevation),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+        )
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(dimensions.paddingLarge)) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 8.dp),
+                    .padding(bottom = dimensions.paddingMedium),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = stringResource(R.string.page_last_actions_title), style = MaterialTheme.typography.titleMedium)
+                Text(
+                    text = stringResource(R.string.page_last_actions_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
                 IconButton(onClick = onClearLogs) {
                     Icon(
                         imageVector = Icons.Default.Delete,
@@ -54,11 +64,19 @@ fun ActionLogCard(
             }
 
             if (lastActions.isEmpty()) {
-                Text(stringResource(R.string.page_no_actions_yet))
+                Text(
+                    text = stringResource(R.string.page_no_actions_yet),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             } else {
                 LazyColumn(modifier = Modifier.fillMaxSize()) {
                     items(lastActions) { actionText ->
-                        Text("- $actionText")
+                        Text(
+                            text = "• $actionText",
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(vertical = 2.dp)
+                        )
                     }
                 }
             }

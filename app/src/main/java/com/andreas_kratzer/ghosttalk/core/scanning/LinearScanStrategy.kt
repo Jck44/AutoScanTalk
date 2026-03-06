@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 class LinearScanStrategy : ScanStrategy {
     override suspend fun executeScan(
         buttonConfigs: List<ButtonConfig?>,
+        rows: Int,
         columns: Int,
         rowNames: List<String>,
         startIndex: Int,
@@ -24,7 +25,7 @@ class LinearScanStrategy : ScanStrategy {
             .mapIndexedNotNull { index, buttonConfig ->
                 if (buttonConfig != null && 
                     buttonConfig.isActive && 
-                    com.andreas_kratzer.ghosttalk.ui.util.GridUtils.isVisibleInGrid(index, rows = (buttonConfigs.size + columns - 1) / columns, columns = columns) &&
+                    com.andreas_kratzer.ghosttalk.ui.util.GridUtils.isVisibleInGrid(index, rows = rows, columns = columns) &&
                     featureGuard.isButtonVisible(buttonConfig)) {
                     Pair(index, buttonConfig)
                 } else null

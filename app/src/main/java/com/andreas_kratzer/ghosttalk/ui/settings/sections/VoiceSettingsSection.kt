@@ -23,6 +23,7 @@ import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.ui.settings.PreferenceCategory
 import com.andreas_kratzer.ghosttalk.ui.settings.SettingsClickableItem
 import com.andreas_kratzer.ghosttalk.ui.settings.SettingsViewModel
+import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.util.VoiceUtils
 import java.util.Locale
 
@@ -64,15 +65,21 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel) {
                 onClick = { expandedLanguage = true }
             )
             DropdownMenu(expanded = expandedLanguage, onDismissRequest = { expandedLanguage = false }) {
-                DropdownMenuItem(text = { Text(stringResource(R.string.settings_system_default)) }, onClick = {
-                    viewModel.setTtsLanguage("default")
-                    expandedLanguage = false
-                })
-                availableLanguages.forEach { locale ->
-                    DropdownMenuItem(text = { Text(locale.displayName) }, onClick = {
-                        viewModel.setTtsLanguage(locale.toLanguageTag())
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.settings_system_default), style = MaterialTheme.typography.bodyLarge) }, 
+                    onClick = {
+                        viewModel.setTtsLanguage("default")
                         expandedLanguage = false
-                    })
+                    }
+                )
+                availableLanguages.forEach { locale ->
+                    DropdownMenuItem(
+                        text = { Text(locale.displayName, style = MaterialTheme.typography.bodyLarge) }, 
+                        onClick = {
+                            viewModel.setTtsLanguage(locale.toLanguageTag())
+                            expandedLanguage = false
+                        }
+                    )
                 }
             }
         }
@@ -89,10 +96,13 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel) {
                 onClick = { expandedVoice = true }
             )
             DropdownMenu(expanded = expandedVoice, onDismissRequest = { expandedVoice = false }) {
-                DropdownMenuItem(text = { Text(stringResource(R.string.settings_voice_default)) }, onClick = {
-                    viewModel.setTtsVoice(null)
-                    expandedVoice = false
-                })
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.settings_voice_default), style = MaterialTheme.typography.bodyLarge) }, 
+                    onClick = {
+                        viewModel.setTtsVoice(null)
+                        expandedVoice = false
+                    }
+                )
                 availableVoices.forEach { voice ->
                     val hint = if (voice.isNetworkConnectionRequired) {
                         stringResource(R.string.settings_voice_network_hint)
@@ -100,7 +110,7 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel) {
                         stringResource(R.string.settings_voice_local_hint)
                     }
                     DropdownMenuItem(
-                        text = { Text(VoiceUtils.formatVoiceName(voice.name) + hint) },
+                        text = { Text(VoiceUtils.formatVoiceName(voice.name) + hint, style = MaterialTheme.typography.bodyLarge) },
                         onClick = {
                             viewModel.setTtsVoice(voice.name)
                             expandedVoice = false
@@ -118,15 +128,21 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel) {
                 onClick = { expandedTtsDevice = true }
             )
             DropdownMenu(expanded = expandedTtsDevice, onDismissRequest = { expandedTtsDevice = false }) {
-                DropdownMenuItem(text = { Text(stringResource(R.string.settings_audio_default)) }, onClick = {
-                    viewModel.setTtsAudioDevice(null)
-                    expandedTtsDevice = false
-                })
-                availableAudioDevices.forEach { device ->
-                    DropdownMenuItem(text = { Text(device.name) }, onClick = {
-                        viewModel.setTtsAudioDevice(device.address)
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.settings_audio_default), style = MaterialTheme.typography.bodyLarge) }, 
+                    onClick = {
+                        viewModel.setTtsAudioDevice(null)
                         expandedTtsDevice = false
-                    })
+                    }
+                )
+                availableAudioDevices.forEach { device ->
+                    DropdownMenuItem(
+                        text = { Text(device.name, style = MaterialTheme.typography.bodyLarge) }, 
+                        onClick = {
+                            viewModel.setTtsAudioDevice(device.address)
+                            expandedTtsDevice = false
+                        }
+                    )
                 }
             }
         }
@@ -139,15 +155,21 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel) {
                 onClick = { expandedCuesDevice = true }
             )
             DropdownMenu(expanded = expandedCuesDevice, onDismissRequest = { expandedCuesDevice = false }) {
-                DropdownMenuItem(text = { Text(stringResource(R.string.settings_audio_default)) }, onClick = {
-                    viewModel.setCuesAudioDevice(null)
-                    expandedCuesDevice = false
-                })
-                availableAudioDevices.forEach { device ->
-                    DropdownMenuItem(text = { Text(device.name) }, onClick = {
-                        viewModel.setCuesAudioDevice(device.address)
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.settings_audio_default), style = MaterialTheme.typography.bodyLarge) }, 
+                    onClick = {
+                        viewModel.setCuesAudioDevice(null)
                         expandedCuesDevice = false
-                    })
+                    }
+                )
+                availableAudioDevices.forEach { device ->
+                    DropdownMenuItem(
+                        text = { Text(device.name, style = MaterialTheme.typography.bodyLarge) }, 
+                        onClick = {
+                            viewModel.setCuesAudioDevice(device.address)
+                            expandedCuesDevice = false
+                        }
+                    )
                 }
             }
         }
@@ -160,7 +182,8 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel) {
 
 @Composable
 private fun VolumeSlider(label: String, value: Float, onValueChange: (Float) -> Unit) {
-    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)) {
+    val dimensions = LocalDimensions.current
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = dimensions.paddingMedium)) {
         Text(text = label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
         Slider(value = value, onValueChange = onValueChange, valueRange = 0f..1f, steps = 9)
     }

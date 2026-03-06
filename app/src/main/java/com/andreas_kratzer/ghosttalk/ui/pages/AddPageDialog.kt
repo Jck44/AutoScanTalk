@@ -11,6 +11,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,9 +21,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.model.PageTemplate
+import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,12 +35,18 @@ fun AddPageDialog(
     var name by remember { mutableStateOf("") }
     var selectedTemplate by remember { mutableStateOf<PageTemplate?>(null) }
     var expanded by remember { mutableStateOf(false) }
+    val dimensions = LocalDimensions.current
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.page_dialog_new_title)) },
+        title = { 
+            Text(
+                text = stringResource(R.string.page_dialog_new_title),
+                style = MaterialTheme.typography.headlineSmall
+            ) 
+        },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(dimensions.paddingLarge)) {
                 
                 // Template Dropdown
                 ExposedDropdownMenuBox(
@@ -53,6 +60,7 @@ fun AddPageDialog(
                         label = { Text("Template (Optional)") },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                         colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                        shape = MaterialTheme.shapes.large,
                         modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
                     )
                     ExposedDropdownMenu(
@@ -60,7 +68,7 @@ fun AddPageDialog(
                         onDismissRequest = { expanded = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Leere Seite (Kein Template)") },
+                            text = { Text("Leere Seite (Kein Template)", style = MaterialTheme.typography.bodyLarge) },
                             onClick = {
                                 selectedTemplate = null
                                 expanded = false
@@ -68,7 +76,7 @@ fun AddPageDialog(
                         )
                         templates.forEach { template ->
                             DropdownMenuItem(
-                                text = { Text(template.name) },
+                                text = { Text(template.name, style = MaterialTheme.typography.bodyLarge) },
                                 onClick = {
                                     selectedTemplate = template
                                     expanded = false
@@ -83,6 +91,7 @@ fun AddPageDialog(
                     onValueChange = { name = it },
                     label = { Text(stringResource(R.string.page_name_field)) },
                     singleLine = true,
+                    shape = MaterialTheme.shapes.large,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -97,6 +106,7 @@ fun AddPageDialog(
                         onConfirm(name, rows, cols, selectedTemplate?.id)
                     }
                 },
+                shape = MaterialTheme.shapes.medium,
                 enabled = name.isNotBlank()
             ) {
                 Text(stringResource(R.string.action_create))
@@ -105,6 +115,7 @@ fun AddPageDialog(
         dismissButton = {
             Button(
                 onClick = onDismiss,
+                shape = MaterialTheme.shapes.medium,
                 colors = ButtonDefaults.textButtonColors()
             ) {
                 Text(stringResource(R.string.action_cancel))

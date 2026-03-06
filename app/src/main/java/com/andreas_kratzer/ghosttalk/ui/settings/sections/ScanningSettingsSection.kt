@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -45,11 +46,11 @@ fun ScanningSettingsSection(viewModel: SettingsViewModel) {
             SettingsClickableItem(stringResource(R.string.settings_scan_pattern), patternLabel) { expandedPattern = true }
             DropdownMenu(expanded = expandedPattern, onDismissRequest = { expandedPattern = false }) {
                 DropdownMenuItem(
-                    text = { Text(stringResource(R.string.settings_pattern_linear)) },
+                    text = { Text(stringResource(R.string.settings_pattern_linear), style = MaterialTheme.typography.bodyLarge) },
                     onClick = { viewModel.setDefaultScanPattern("linear"); expandedPattern = false }
                 )
                 DropdownMenuItem(
-                    text = { Text(stringResource(R.string.settings_pattern_row_by_row)) },
+                    text = { Text(stringResource(R.string.settings_pattern_row_by_row), style = MaterialTheme.typography.bodyLarge) },
                     onClick = { viewModel.setDefaultScanPattern("row_column"); expandedPattern = false }
                 )
             }

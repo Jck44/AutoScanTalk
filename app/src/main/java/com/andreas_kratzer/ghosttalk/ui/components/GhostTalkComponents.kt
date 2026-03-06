@@ -26,15 +26,17 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 
 @Composable
 fun AppBrandHeader(
     modifier: Modifier = Modifier,
     isLandscape: Boolean = false
 ) {
+    val dimensions = LocalDimensions.current
     val titleStyle = if (isLandscape) MaterialTheme.typography.displaySmall else MaterialTheme.typography.displayMedium
     val subtitleStyle = MaterialTheme.typography.titleMedium
-    val logoSize = if (isLandscape) 48.dp else 64.dp
+    val logoSize = if (isLandscape) dimensions.logoSizeSmall else dimensions.logoSizeMedium
 
     Row(
         modifier = modifier,
@@ -46,7 +48,7 @@ fun AppBrandHeader(
             contentDescription = null,
             modifier = Modifier.size(logoSize)
         )
-        Spacer(modifier = Modifier.width(if (isLandscape) 12.dp else 16.dp))
+        Spacer(modifier = Modifier.width(if (isLandscape) 12.dp else dimensions.paddingLarge))
         Column {
             Text(
                 text = stringResource(R.string.app_name),
@@ -81,29 +83,30 @@ fun GhostTalkCard(
     iconColor: Color = MaterialTheme.colorScheme.primary,
     trailingAction: (@Composable () -> Unit)? = null
 ) {
+    val dimensions = LocalDimensions.current
     Card(
         onClick = onClick,
         modifier = modifier
             .fillMaxWidth()
-            .height(100.dp),
+            .height(dimensions.cardHeight),
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
             containerColor = containerColor,
             contentColor = contentColor
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = dimensions.cardElevation)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(dimensions.paddingLarge),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(dimensions.paddingLarge)
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                modifier = Modifier.size(40.dp),
+                modifier = Modifier.size(dimensions.iconSizeLarge),
                 tint = iconColor
             )
             

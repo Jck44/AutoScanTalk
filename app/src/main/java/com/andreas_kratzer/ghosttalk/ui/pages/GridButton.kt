@@ -17,6 +17,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 
 @Composable
 fun GridButton(
@@ -27,13 +28,18 @@ fun GridButton(
     overrideLabel: String? = null,
     onClick: () -> Unit
 ) {
+    val dimensions = LocalDimensions.current
     val isActive = buttonConfig?.isActive ?: true
+    
     Card(
         modifier = Modifier
             .aspectRatio(1f)
             .clickable(onClick = onClick)
             .alpha(if (isEditorMode && !isActive) 0.5f else 1f),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (buttonConfig != null) 4.dp else 0.dp),
+        shape = MaterialTheme.shapes.medium,
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (buttonConfig != null) dimensions.cardElevation else 0.dp
+        ),
         border = if (isFocused) {
             BorderStroke(4.dp, MaterialTheme.colorScheme.primary)
         } else if (isRowFocused) {
@@ -46,14 +52,13 @@ fun GridButton(
                 if (isEditorMode) MaterialTheme.colorScheme.primaryContainer 
                 else MaterialTheme.colorScheme.surfaceVariant
             } else {
-                if (isEditorMode) MaterialTheme.colorScheme.surface 
-                else MaterialTheme.colorScheme.surface
+                MaterialTheme.colorScheme.surface
             }
         )
     ) {
         Box(
             contentAlignment = Alignment.Center,
-            modifier = Modifier.fillMaxSize().padding(8.dp)
+            modifier = Modifier.fillMaxSize().padding(dimensions.paddingMedium)
         ) {
             if (buttonConfig != null) {
                 AutoSizeText(

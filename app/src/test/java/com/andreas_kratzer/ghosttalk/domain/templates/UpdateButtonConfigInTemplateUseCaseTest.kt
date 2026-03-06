@@ -31,7 +31,13 @@ class UpdateButtonConfigInTemplateUseCaseTest {
             null, 
             ButtonConfig(id = "btn1", label = "Old", auditoryCue = null, buttonAction = SpeakTextButtonAction(""))
         )
-        val template = PageTemplate("id", "Name", 1, 2, initialConfigs)
+        val template = PageTemplate(
+            id = "id",
+            name = "Name",
+            rows = 1,
+            columns = 2,
+            buttonConfigs = initialConfigs
+        )
         val newConfig = ButtonConfig(id = "btn2", label = "New", auditoryCue = null, buttonAction = SpeakTextButtonAction("New"))
 
         // When

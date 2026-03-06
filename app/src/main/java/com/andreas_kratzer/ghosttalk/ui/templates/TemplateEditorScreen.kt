@@ -38,12 +38,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.ui.pages.ButtonConfigDialog
 import com.andreas_kratzer.ghosttalk.ui.pages.GridButton
 import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
 import com.andreas_kratzer.ghosttalk.ui.pages.RowNameEditor
+import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 import kotlinx.coroutines.launch
 import java.util.UUID
 
@@ -60,6 +60,7 @@ fun TemplateEditorScreen(
     val unfilteredPages by pageViewModel.unfilteredPages.collectAsState()
     val bookDefaultScanPattern by pageViewModel.defaultScanPattern.collectAsState()
     val template = templates.find { it.id == templateId }
+    val dimensions = LocalDimensions.current
 
     var selectedButtonIndex by remember { mutableStateOf<Int?>(null) }
     var showDialog by remember { mutableStateOf(false) }
@@ -83,7 +84,7 @@ fun TemplateEditorScreen(
                         label = { Text(stringResource(R.string.template_name_label)) },
                         singleLine = true,
                         shape = MaterialTheme.shapes.large,
-                        modifier = Modifier.fillMaxWidth().padding(end = 16.dp)
+                        modifier = Modifier.fillMaxWidth().padding(end = dimensions.paddingLarge)
                     )
                 },
                 navigationIcon = {
@@ -100,12 +101,12 @@ fun TemplateEditorScreen(
         Column(
             modifier = Modifier
                 .padding(paddingValues)
-                .padding(if (isLandscape) 8.dp else 16.dp)
+                .padding(if (isLandscape) dimensions.paddingMedium else dimensions.paddingLarge)
         ) {
             // Grid Size Controls
             Row(
-                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(24.dp),
+                modifier = Modifier.fillMaxWidth().padding(bottom = dimensions.paddingLarge),
+                horizontalArrangement = Arrangement.spacedBy(dimensions.paddingExtraLarge),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
@@ -154,7 +155,7 @@ fun TemplateEditorScreen(
             ExposedDropdownMenuBox(
                 expanded = expandedPattern,
                 onExpandedChange = { expandedPattern = !expandedPattern },
-                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+                modifier = Modifier.fillMaxWidth().padding(bottom = dimensions.paddingLarge)
             ) {
                 OutlinedTextField(
                     value = currentPatternLabel,
@@ -192,9 +193,9 @@ fun TemplateEditorScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f),
-                contentPadding = PaddingValues(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                contentPadding = PaddingValues(dimensions.paddingMedium),
+                verticalArrangement = Arrangement.spacedBy(dimensions.gridSpacing),
+                horizontalArrangement = Arrangement.spacedBy(dimensions.gridSpacing)
             ) {
                 val totalRows = template.rows
                 val numCols = template.columns

@@ -41,7 +41,13 @@ class CreatePageUseCaseTest {
         // Given
         // Template with 4 configs but it must have 36 for validation if we strict check PageTemplate as well
         // However, CreatePageUseCase calls GridUtils.adjustButtonConfigs which pads it
-        val template = PageTemplate("template1", "Test Template", 2, 2, listOf(null, null, null, null))
+        val template = PageTemplate(
+            id = "template1",
+            name = "Test Template",
+            rows = 2,
+            columns = 2,
+            buttonConfigs = listOf(null, null, null, null)
+        )
         coEvery { templateRepository.getById("template1") } returns template
 
         // When
@@ -91,7 +97,13 @@ class CreatePageUseCaseTest {
         // Template 7x1
         // Note: PageTemplate constructor also validates now, so we must be careful
         assertThrows(IllegalArgumentException::class.java) {
-             PageTemplate("t1", "Big", 7, 1, emptyList())
+             PageTemplate(
+                 id = "t1",
+                 name = "Big",
+                 rows = 7,
+                 columns = 1,
+                 buttonConfigs = emptyList()
+             )
         }
     }
 
@@ -100,7 +112,13 @@ class CreatePageUseCaseTest {
         // Given
         val navAction = NavigateToPageButtonAction(pageId = "")
         val btnConfig = ButtonConfig(id = "b1", label = "Back", buttonAction = navAction, auditoryCue = null)
-        val template = PageTemplate("t1", "T", 1, 1, listOf(btnConfig))
+        val template = PageTemplate(
+            id = "t1",
+            name = "T",
+            rows = 1,
+            columns = 1,
+            buttonConfigs = listOf(btnConfig)
+        )
         
         coEvery { templateRepository.getById("t1") } returns template
         every { settingsRepository.defaultStartPageId } returns "home-id"
@@ -122,7 +140,13 @@ class CreatePageUseCaseTest {
         // Given
         val navAction = NavigateToPageButtonAction(pageId = "existing-id")
         val btnConfig = ButtonConfig(id = "b1", label = "Back", buttonAction = navAction, auditoryCue = null)
-        val template = PageTemplate("t1", "T", 1, 1, listOf(btnConfig))
+        val template = PageTemplate(
+            id = "t1",
+            name = "T",
+            rows = 1,
+            columns = 1,
+            buttonConfigs = listOf(btnConfig)
+        )
         
         coEvery { templateRepository.getById("t1") } returns template
         every { settingsRepository.defaultStartPageId } returns "home-id"

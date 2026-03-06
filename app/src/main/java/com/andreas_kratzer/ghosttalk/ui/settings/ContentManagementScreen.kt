@@ -21,6 +21,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.ui.components.GhostTalkCard
+import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,6 +30,7 @@ fun ContentManagementScreen(
     onNavigateToTemplateManager: () -> Unit,
     onNavigateBack: () -> Unit
 ) {
+    val dimensions = LocalDimensions.current
     Scaffold(
         topBar = {
             TopAppBar(
@@ -48,9 +50,9 @@ fun ContentManagementScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(16.dp),
+                .padding(dimensions.paddingLarge),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(dimensions.paddingLarge)
         ) {
             GhostTalkCard(
                 title = stringResource(R.string.page_list_title),

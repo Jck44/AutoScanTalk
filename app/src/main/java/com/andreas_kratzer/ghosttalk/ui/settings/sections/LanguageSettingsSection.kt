@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -33,12 +34,17 @@ fun LanguageSettingsSection(viewModel: SettingsViewModel) {
             SettingsClickableItem(stringResource(R.string.settings_app_language), label) { expanded = true }
             DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                 DropdownMenuItem(
-                    text = { Text(stringResource(R.string.settings_system_default)) },
+                    text = { Text(stringResource(R.string.settings_system_default), style = MaterialTheme.typography.bodyLarge) },
                     onClick = { viewModel.setAppLanguage("default"); expanded = false }
                 )
                 listOf("de", "en").forEach { code ->
                     DropdownMenuItem(
-                        text = { Text(Locale.forLanguageTag(code).getDisplayName(Locale.forLanguageTag(code))) },
+                        text = { 
+                            Text(
+                                text = Locale.forLanguageTag(code).getDisplayName(Locale.forLanguageTag(code)),
+                                style = MaterialTheme.typography.bodyLarge
+                            ) 
+                        },
                         onClick = { viewModel.setAppLanguage(code); expanded = false }
                     )
                 }

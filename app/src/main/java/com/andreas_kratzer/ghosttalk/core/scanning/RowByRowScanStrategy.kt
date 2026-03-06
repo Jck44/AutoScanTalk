@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 class RowByRowScanStrategy : ScanStrategy {
     override suspend fun executeScan(
         buttonConfigs: List<ButtonConfig?>,
+        rows: Int,
         columns: Int,
         rowNames: List<String>,
         startIndex: Int, // This is startIndex for ROWS in this strategy
@@ -20,7 +21,6 @@ class RowByRowScanStrategy : ScanStrategy {
     ) {
         focusedButtonIndex.value = null
         
-        val totalVisibleRows = (buttonConfigs.size + columns - 1) / columns
         val activeRows = mutableListOf<Int>()
         
         for (r in 0 until GridUtils.MAX_GRID_SIZE) {
@@ -31,7 +31,7 @@ class RowByRowScanStrategy : ScanStrategy {
                 val btn = buttonConfigs.getOrNull(i)
                 if (btn != null && 
                     btn.isActive && 
-                    GridUtils.isVisibleInGrid(i, rows = totalVisibleRows, columns = columns) &&
+                    GridUtils.isVisibleInGrid(i, rows = rows, columns = columns) &&
                     featureGuard.isButtonVisible(btn)) {
                     hasActive = true
                     break
@@ -75,6 +75,7 @@ class RowByRowScanStrategy : ScanStrategy {
      */
     suspend fun executeButtonScanInRow(
         buttonConfigs: List<ButtonConfig?>,
+        rows: Int,
         columns: Int,
         rowIndex: Int,
         focusedButtonIndex: MutableStateFlow<Int?>,
@@ -82,14 +83,12 @@ class RowByRowScanStrategy : ScanStrategy {
         delayMillis: Long,
         featureGuard: FeatureGuard
     ) {
-        val totalVisibleRows = (buttonConfigs.size + columns - 1) / columns
-        
         val activeButtonsInRow = buttonConfigs
             .mapIndexedNotNull { index, config ->
                 if (config != null && 
                     config.isActive && 
                     index / GridUtils.MAX_GRID_SIZE == rowIndex && 
-                    GridUtils.isVisibleInGrid(index, rows = totalVisibleRows, columns = columns) &&
+                    GridUtils.isVisibleInGrid(index, rows = rows, columns = columns) &&
                     featureGuard.isButtonVisible(config)) {
                     Pair(index, config)
                 } else null

@@ -2,6 +2,7 @@ package com.andreas_kratzer.ghosttalk.ui.pages
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
@@ -39,6 +40,7 @@ import com.andreas_kratzer.ghosttalk.model.NotificationButtonAction
 import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
+import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,6 +56,8 @@ fun ButtonConfigDialog(
     onNavigateToPage: ((String) -> Unit)? = null,
     onCreatePage: ((String, Int, Int, String?, (String) -> Unit) -> Unit)? = null
 ) {
+    val dimensions = LocalDimensions.current
+    
     // Current State
     var label by remember { mutableStateOf(initialConfig?.label ?: "") }
     var spokenText by remember { mutableStateOf(initialConfig?.spokenText ?: "") }
@@ -152,14 +156,6 @@ fun ButtonConfigDialog(
     // Notification Details
     val notificationActionDef = initialConfig?.buttonAction as? NotificationButtonAction
     var notificationTargetApp by remember { mutableStateOf(notificationActionDef?.targetApp ?: "ALL") }
-    val appAllLabel = stringResource(R.string.button_notification_target_all)
-    mapOf(
-        "ALL" to appAllLabel,
-        "com.whatsapp" to "WhatsApp",
-        "org.thoughtcrime.securesms" to "Signal",
-        "org.telegram.messenger" to "Telegram",
-        "com.google.android.apps.messaging" to "SMS (Messages)"
-    )
 
     // Volume Details
     val volumeActionDef = initialConfig?.buttonAction as? ChangeVolumeButtonAction
@@ -171,7 +167,6 @@ fun ButtonConfigDialog(
             if (volumeActionDef?.isAbsolute == true) volumeAbsolutLabel else volumeRelativLabel
         )
     }
-    listOf(volumeAbsolutLabel, volumeRelativLabel)
 
     var volumePercentInput by remember {
         mutableStateOf(
@@ -213,9 +208,9 @@ fun ButtonConfigDialog(
         onDismissRequest = onDismiss,
         title = { Text(if (initialConfig == null) stringResource(R.string.button_dialog_new_title) else stringResource(R.string.button_dialog_edit_title)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(dimensions.paddingMedium)) {
                 // IsActive Toggle (Moved to top)
-                androidx.compose.foundation.layout.Row(
+                Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -234,7 +229,7 @@ fun ButtonConfigDialog(
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 8.dp)
+                            .padding(bottom = dimensions.paddingMedium)
                     )
                 }
                 
@@ -245,7 +240,7 @@ fun ButtonConfigDialog(
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 8.dp)
+                            .padding(bottom = dimensions.paddingMedium)
                     )
                 }
 
@@ -256,7 +251,7 @@ fun ButtonConfigDialog(
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 8.dp)
+                            .padding(bottom = dimensions.paddingMedium)
                     )
                 }
 
@@ -266,6 +261,7 @@ fun ButtonConfigDialog(
                     onValueChange = { label = it },
                     label = { Text(stringResource(R.string.button_label_field)) },
                     singleLine = true,
+                    shape = MaterialTheme.shapes.large,
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -275,6 +271,7 @@ fun ButtonConfigDialog(
                     onValueChange = { spokenText = it },
                     label = { Text(stringResource(R.string.button_spoken_text_field)) },
                     singleLine = false,
+                    shape = MaterialTheme.shapes.large,
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -284,6 +281,7 @@ fun ButtonConfigDialog(
                     onValueChange = { ttsFeedback = it },
                     label = { Text(stringResource(R.string.button_auditory_cue_field)) },
                     singleLine = true,
+                    shape = MaterialTheme.shapes.large,
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -298,6 +296,7 @@ fun ButtonConfigDialog(
                         onValueChange = { },
                         label = { Text(stringResource(R.string.button_action_label)) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedActionType) },
+                        shape = MaterialTheme.shapes.large,
                         modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
                     )
                     ExposedDropdownMenu(
@@ -370,7 +369,7 @@ fun ButtonConfigDialog(
                     selectedActionType == actionTypeGeminiNano ||
                     selectedActionType == actionTypeSmart || 
                     selectedActionType == actionTypeNotification) {
-                    androidx.compose.foundation.layout.Row(
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
@@ -393,6 +392,7 @@ fun ButtonConfigDialog(
                             onValueChange = { },
                             label = { Text(stringResource(R.string.settings_tts_mode)) },
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedButtonTtsMode) },
+                            shape = MaterialTheme.shapes.large,
                             modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
                         )
                         ExposedDropdownMenu(
@@ -414,7 +414,7 @@ fun ButtonConfigDialog(
             }
         },
         confirmButton = {
-            androidx.compose.foundation.layout.Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium)) {
                 if (onTest != null) {
                     Button(
                         onClick = {
@@ -439,6 +439,7 @@ fun ButtonConfigDialog(
                                 )
                             }
                         },
+                        shape = MaterialTheme.shapes.medium,
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
                     ) {
                         Text(stringResource(R.string.button_action_test))
@@ -467,7 +468,8 @@ fun ButtonConfigDialog(
                                 )
                             )
                         }
-                    }
+                    },
+                    shape = MaterialTheme.shapes.medium
                 ) {
                     Text(stringResource(R.string.action_save))
                 }
@@ -476,6 +478,7 @@ fun ButtonConfigDialog(
         dismissButton = {
             Button(
                 onClick = { onSave(null) },
+                shape = MaterialTheme.shapes.medium,
                 colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
             ) {
                 Text(stringResource(R.string.action_clear_delete))

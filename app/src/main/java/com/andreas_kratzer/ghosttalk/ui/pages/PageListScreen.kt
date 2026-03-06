@@ -54,6 +54,7 @@ import com.andreas_kratzer.ghosttalk.model.SortOrder
 import com.andreas_kratzer.ghosttalk.ui.components.GhostTalkCard
 import com.andreas_kratzer.ghosttalk.ui.components.rememberReorderableState
 import com.andreas_kratzer.ghosttalk.ui.components.reorderableItem
+import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -76,6 +77,7 @@ fun PageListScreen(
     var pageToDelete by remember { mutableStateOf<Page?>(null) }
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
+    val dimensions = LocalDimensions.current
     
     // String resources for Toasts (need to be accessed outside Composable for the launcher)
     val importSuccessMsg = stringResource(R.string.page_import_success)
@@ -237,7 +239,7 @@ fun PageListScreen(
                 shape = MaterialTheme.shapes.large,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(horizontal = dimensions.paddingLarge, vertical = dimensions.paddingMedium),
                 singleLine = true
             )
 
@@ -247,56 +249,56 @@ fun PageListScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(vertical = 8.dp)
+                    .padding(horizontal = dimensions.paddingLarge),
+                verticalArrangement = Arrangement.spacedBy(dimensions.gridSpacing),
+                horizontalArrangement = Arrangement.spacedBy(dimensions.gridSpacing),
+                contentPadding = PaddingValues(vertical = dimensions.paddingMedium)
             ) {
-            items(allPages.size, key = { index -> allPages[index].id }) { index ->
-                val page = allPages[index]
-                GhostTalkCard(
-                    title = page.name,
-                    subtitle = stringResource(R.string.page_grid_info, page.rows, page.columns),
-                    icon = Icons.Default.Description,
-                    onClick = { onEditPage(page.id) },
-                    modifier = if (experimentalSorting) {
-                        Modifier.reorderableItem(
-                            state = reorderState,
-                            index = index,
-                            onDrag = {
-                                reorderState.findTargetIndexForGrid(gridState)?.let { targetIndex ->
-                                    pageViewModel.reorderPages(index, targetIndex)
+                items(allPages.size, key = { index -> allPages[index].id }) { index ->
+                    val page = allPages[index]
+                    GhostTalkCard(
+                        title = page.name,
+                        subtitle = stringResource(R.string.page_grid_info, page.rows, page.columns),
+                        icon = Icons.Default.Description,
+                        onClick = { onEditPage(page.id) },
+                        modifier = if (experimentalSorting) {
+                            Modifier.reorderableItem(
+                                state = reorderState,
+                                index = index,
+                                onDrag = {
+                                    reorderState.findTargetIndexForGrid(gridState)?.let { targetIndex ->
+                                        pageViewModel.reorderPages(index, targetIndex)
+                                    }
+                                }
+                            )
+                        } else {
+                            Modifier
+                        },
+                        trailingAction = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (experimentalSorting) {
+                                    Icon(
+                                        imageVector = Icons.Default.DragHandle,
+                                        contentDescription = "Verschieben",
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                        modifier = Modifier.padding(end = 8.dp)
+                                    )
+                                }
+                                
+                                IconButton(
+                                    onClick = { pageToDelete = page }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = stringResource(R.string.page_delete_description),
+                                        tint = MaterialTheme.colorScheme.error
+                                    )
                                 }
                             }
-                        )
-                    } else {
-                        Modifier
-                    },
-                    trailingAction = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            if (experimentalSorting) {
-                                Icon(
-                                    imageVector = Icons.Default.DragHandle,
-                                    contentDescription = "Verschieben",
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                                    modifier = Modifier.padding(end = 8.dp)
-                                )
-                            }
-                            
-                            IconButton(
-                                onClick = { pageToDelete = page }
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = stringResource(R.string.page_delete_description),
-                                    tint = MaterialTheme.colorScheme.error
-                                )
-                            }
                         }
-                    }
-                )
+                    )
+                }
             }
-        }
         }
 
         pageToDelete?.let { page ->

@@ -49,6 +49,7 @@ import com.andreas_kratzer.ghosttalk.ui.settings.sections.NotificationSettingsSe
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.ScanningSettingsSection
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.TestSettingsSection
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.VoiceSettingsSection
+import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -58,6 +59,7 @@ fun SettingsScreen(
 ) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
+    val dimensions = LocalDimensions.current
     
     val authIntent by viewModel.authIntentFlow.collectAsState(null)
     val signInError by viewModel.signInErrorMessage.collectAsState()
@@ -95,48 +97,48 @@ fun SettingsScreen(
                 .padding(padding)
                 .fillMaxSize()
                 .verticalScroll(scrollState)
-                .padding(16.dp)
+                .padding(dimensions.paddingLarge)
         ) {
             // 1. General & UI
             LanguageSettingsSection(viewModel)
             GeneralSettingsSection(viewModel)
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(dimensions.paddingLarge))
             
             // 2. Voice Settings
             VoiceSettingsSection(viewModel)
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(dimensions.paddingLarge))
 
             // 3. Scanning & Input
             ScanningSettingsSection(viewModel)
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(dimensions.paddingLarge))
 
             // 4. Cloud Sync
             CloudSettingsSection(viewModel)
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(dimensions.paddingLarge))
 
             // 5. Generative AI
             GenAiSettingsSection(viewModel)
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(dimensions.paddingLarge))
 
             // 6. Notifications
             NotificationSettingsSection(viewModel)
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(dimensions.paddingLarge))
 
             // 7. Experimental Features
             ExperimentalSettingsSection(viewModel)
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(dimensions.paddingLarge))
 
             // 8. Test Settings
             TestSettingsSection(viewModel)
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(dimensions.paddingLarge))
 
             // 9. Maintenance
             MaintenanceSection(viewModel)
@@ -158,27 +160,29 @@ fun SettingsScreen(
 
 @Composable
 fun PreferenceCategory(title: String, content: @Composable ColumnScope.() -> Unit) {
-    Column(modifier = Modifier.padding(vertical = 8.dp)) {
+    val dimensions = LocalDimensions.current
+    Column(modifier = Modifier.padding(vertical = dimensions.paddingMedium)) {
         Text(
             text = title,
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(bottom = 8.dp)
+            modifier = Modifier.padding(bottom = dimensions.paddingMedium)
         )
         Surface(
             shape = MaterialTheme.shapes.medium,
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+            color = MaterialTheme.colorScheme.surfaceContainerLow,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Column(modifier = Modifier.padding(8.dp), content = content)
+            Column(modifier = Modifier.padding(dimensions.paddingMedium), content = content)
         }
     }
 }
 
 @Composable
 fun SettingsToggleItem(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    val dimensions = LocalDimensions.current
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        modifier = Modifier.fillMaxWidth().padding(vertical = dimensions.paddingSmall),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(text = label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
@@ -188,8 +192,9 @@ fun SettingsToggleItem(label: String, checked: Boolean, onCheckedChange: (Boolea
 
 @Composable
 fun SettingsClickableItem(label: String, value: String, onClick: () -> Unit) {
+    val dimensions = LocalDimensions.current
     Column(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 8.dp)
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = dimensions.paddingMedium)
     ) {
         Text(text = label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
         Text(text = value, style = MaterialTheme.typography.bodyMedium)
@@ -198,11 +203,13 @@ fun SettingsClickableItem(label: String, value: String, onClick: () -> Unit) {
 
 @Composable
 fun SettingsEditTextItem(label: String, value: String, onValueChange: (String) -> Unit) {
+    val dimensions = LocalDimensions.current
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
         label = { Text(label) },
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        shape = MaterialTheme.shapes.large,
+        modifier = Modifier.fillMaxWidth().padding(vertical = dimensions.paddingSmall),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         singleLine = true
     )

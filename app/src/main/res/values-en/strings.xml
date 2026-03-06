@@ -198,7 +198,7 @@
     <string name="settings_gemini_activation_success">Gemini successfully activated!</string>
     <string name="settings_gemini_activation_error">Activation error: %s</string>
     <string name="settings_gemini_enable">Gemini (Cloud)</string>
-    <string name="settings_gemini_local_enable">Process locally (Gemini Nano)</string>
+    <string name="settings_gemini_local_enable">Gemini Nano (offline)</string>
     <string name="settings_gemini_local_desc">Faster, completely offline and free. Uses a small AI model on your device for Smart Home and time. No internet connection required.</string>
     <string name="settings_smart_prediction_enable">Gemini Prediction (Experimental)</string>
     <string name="settings_smart_prediction_hint">Enables buttons that dynamically predict the next likely action.</string>
@@ -208,7 +208,7 @@
     <string name="settings_gemini_tool_status_active">Active</string>
     <string name="settings_gemini_tool_status_requires_auth">Sign-in required</string>
     <string name="settings_gemini_tool_status_failed">Not available</string>
-    <string name="settings_gemini_tool_status_pending">Checking…</string>
+    <string name="settings_gemini_tool_status_pending">Pending…</string>
     <string name="settings_gemini_tool_google_search">Google Search (Grounding)</string>
     <string name="settings_gemini_tool_drive">Google Drive Search</string>
     <string name="settings_gemini_tool_calendar">Google Calendar</string>

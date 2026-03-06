@@ -25,7 +25,13 @@ class DeleteTemplateUseCaseTest {
     @Test
     fun `execute calls repository delete`() = runTest {
         // Given
-        val template = PageTemplate("id", "Name", 1, 1, emptyList())
+        val template = PageTemplate(
+            id = "id",
+            name = "Name",
+            rows = 1,
+            columns = 1,
+            buttonConfigs = emptyList()
+        )
 
         // When
         deleteTemplateUseCase.execute(template)

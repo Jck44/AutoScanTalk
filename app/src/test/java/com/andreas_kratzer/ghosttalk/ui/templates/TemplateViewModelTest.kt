@@ -78,7 +78,13 @@ class TemplateViewModelTest {
 
     @Test
     fun `deleteTemplate calls use case`() = runTest {
-        val template = PageTemplate("id", "Name", 1, 1, emptyList())
+        val template = PageTemplate(
+            id = "id",
+            name = "Name",
+            rows = 1,
+            columns = 1,
+            buttonConfigs = emptyList()
+        )
         viewModel.deleteTemplate(template)
         advanceUntilIdle()
 
@@ -87,8 +93,8 @@ class TemplateViewModelTest {
 
     @Test
     fun `updateSearchQuery updates flow and filters results`() = runTest {
-        val t1 = PageTemplate("1", "Apple", 1, 1, emptyList(), orderIndex = 0)
-        val t2 = PageTemplate("2", "Banana", 1, 1, emptyList(), orderIndex = 1)
+        val t1 = PageTemplate(id = "1", name = "Apple", rows = 1, columns = 1, buttonConfigs = emptyList(), orderIndex = 0)
+        val t2 = PageTemplate(id = "2", name = "Banana", rows = 1, columns = 1, buttonConfigs = emptyList(), orderIndex = 1)
         every { templateRepository.getAllTemplates() } returns flowOf(listOf(t1, t2))
 
         viewModel = TemplateViewModel(
@@ -112,8 +118,8 @@ class TemplateViewModelTest {
 
     @Test
     fun `reorderTemplates calls use case`() = runTest {
-        val t1 = PageTemplate("1", "T1", 1, 1, emptyList(), orderIndex = 0)
-        val t2 = PageTemplate("2", "T2", 1, 1, emptyList(), orderIndex = 1)
+        val t1 = PageTemplate(id = "1", name = "T1", rows = 1, columns = 1, buttonConfigs = emptyList(), orderIndex = 0)
+        val t2 = PageTemplate(id = "2", name = "T2", rows = 1, columns = 1, buttonConfigs = emptyList(), orderIndex = 1)
         val templates = listOf(t1, t2)
         every { templateRepository.getAllTemplates() } returns flowOf(templates)
 

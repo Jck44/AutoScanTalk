@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -44,15 +45,15 @@ fun GeneralSettingsSection(viewModel: SettingsViewModel) {
             SettingsClickableItem(stringResource(R.string.settings_theme_mode), themeLabel) { expandedTheme = true }
             DropdownMenu(expanded = expandedTheme, onDismissRequest = { expandedTheme = false }) {
                 DropdownMenuItem(
-                    text = { Text(stringResource(R.string.settings_theme_system)) },
+                    text = { Text(stringResource(R.string.settings_theme_system), style = MaterialTheme.typography.bodyLarge) },
                     onClick = { viewModel.setThemeMode("SYSTEM"); expandedTheme = false }
                 )
                 DropdownMenuItem(
-                    text = { Text(stringResource(R.string.settings_theme_light)) },
+                    text = { Text(stringResource(R.string.settings_theme_light), style = MaterialTheme.typography.bodyLarge) },
                     onClick = { viewModel.setThemeMode("LIGHT"); expandedTheme = false }
                 )
                 DropdownMenuItem(
-                    text = { Text(stringResource(R.string.settings_theme_dark)) },
+                    text = { Text(stringResource(R.string.settings_theme_dark), style = MaterialTheme.typography.bodyLarge) },
                     onClick = { viewModel.setThemeMode("DARK"); expandedTheme = false }
                 )
             }
@@ -79,15 +80,15 @@ fun GeneralSettingsSection(viewModel: SettingsViewModel) {
                 )
                 DropdownMenu(expanded = expandedScreenBehavior, onDismissRequest = { expandedScreenBehavior = false }) {
                     DropdownMenuItem(
-                        text = { Text(stringResource(R.string.settings_screen_behavior_normal)) },
+                        text = { Text(stringResource(R.string.settings_screen_behavior_normal), style = MaterialTheme.typography.bodyLarge) },
                         onClick = { viewModel.setUserModeScreenBehavior("NORMAL"); expandedScreenBehavior = false }
                     )
                     DropdownMenuItem(
-                        text = { Text(stringResource(R.string.settings_screen_behavior_dimmed)) },
+                        text = { Text(stringResource(R.string.settings_screen_behavior_dimmed), style = MaterialTheme.typography.bodyLarge) },
                         onClick = { viewModel.setUserModeScreenBehavior("DIMMED"); expandedScreenBehavior = false }
                     )
                     DropdownMenuItem(
-                        text = { Text(stringResource(R.string.settings_screen_behavior_black)) },
+                        text = { Text(stringResource(R.string.settings_screen_behavior_black), style = MaterialTheme.typography.bodyLarge) },
                         onClick = { viewModel.setUserModeScreenBehavior("BLACK"); expandedScreenBehavior = false }
                     )
                 }
@@ -108,12 +109,12 @@ fun GeneralSettingsSection(viewModel: SettingsViewModel) {
             )
             DropdownMenu(expanded = expandedStartPage, onDismissRequest = { expandedStartPage = false }) {
                 DropdownMenuItem(
-                    text = { Text(stringResource(R.string.settings_start_page_auto)) },
+                    text = { Text(stringResource(R.string.settings_start_page_auto), style = MaterialTheme.typography.bodyLarge) },
                     onClick = { viewModel.setDefaultStartPageId(null); expandedStartPage = false }
                 )
                 allPages.forEach { page ->
                     DropdownMenuItem(
-                        text = { Text(page.name) },
+                        text = { Text(page.name, style = MaterialTheme.typography.bodyLarge) },
                         onClick = { viewModel.setDefaultStartPageId(page.id); expandedStartPage = false }
                     )
                 }

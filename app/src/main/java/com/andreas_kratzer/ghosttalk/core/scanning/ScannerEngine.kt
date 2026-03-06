@@ -26,6 +26,7 @@ class ScannerEngine @Inject constructor(
     val focusedRowIndex: StateFlow<Int?> = _focusedRowIndex.asStateFlow()
 
     private var currentButtonConfigs: List<ButtonConfig?> = emptyList()
+    private var currentRows: Int = 4
     private var currentColumns: Int = 4
     private var currentRowNames: List<String> = emptyList()
 
@@ -43,6 +44,7 @@ class ScannerEngine @Inject constructor(
         buttonConfigs: List<ButtonConfig?>, 
         startIndex: Int = 0, 
         pattern: String = "linear", 
+        rows: Int = 4,
         columns: Int = 4, 
         rowNames: List<String> = emptyList(),
         pageId: String? = null
@@ -53,6 +55,7 @@ class ScannerEngine @Inject constructor(
             currentButtonConfigs == buttonConfigs &&
             currentStartIndex == startIndex &&
             currentPattern == pattern &&
+            currentRows == rows &&
             currentColumns == columns &&
             currentRowNames == rowNames
         ) {
@@ -69,6 +72,7 @@ class ScannerEngine @Inject constructor(
         scanJob?.cancel()
         scanJob = null
         currentButtonConfigs = buttonConfigs
+        currentRows = rows
         currentColumns = columns
         currentRowNames = rowNames
         currentPattern = pattern
@@ -79,6 +83,7 @@ class ScannerEngine @Inject constructor(
             if (pattern == "row_by_row") {
                 rowByRowStrategy.executeScan(
                     buttonConfigs = buttonConfigs,
+                    rows = rows,
                     columns = columns,
                     rowNames = rowNames,
                     startIndex = startIndex,
@@ -91,6 +96,7 @@ class ScannerEngine @Inject constructor(
             } else if (pattern == "linear") {
                 linearStrategy.executeScan(
                     buttonConfigs = buttonConfigs,
+                    rows = rows,
                     columns = columns,
                     rowNames = rowNames,
                     startIndex = startIndex,
@@ -115,6 +121,7 @@ class ScannerEngine @Inject constructor(
         scanJob = scope.launch {
             rowByRowStrategy.executeButtonScanInRow(
                 buttonConfigs = currentButtonConfigs,
+                rows = currentRows,
                 columns = currentColumns,
                 rowIndex = currentRow,
                 focusedButtonIndex = _focusedButtonIndex,

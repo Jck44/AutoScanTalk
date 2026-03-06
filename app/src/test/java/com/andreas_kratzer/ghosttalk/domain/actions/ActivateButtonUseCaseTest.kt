@@ -50,10 +50,10 @@ class ActivateButtonUseCaseTest {
 
     @Test
     fun `execute stops notification tts and sets focus`() = runTest {
-        val button = ButtonConfig(id = "btn1", label = "Test", auditoryCue = null, buttonAction = SpeakTextButtonAction())
-        val page = Page(id = "p1", bookId = "b1", name = "P1", buttonConfigs = MutableList(36) { if (it == 0) button else null }, rows = 2, columns = 2)
+        val testButton = ButtonConfig(id = "btn1", label = "Test", auditoryCue = null, buttonAction = SpeakTextButtonAction())
+        val testPage = Page(id = "p1", bookId = "b1", name = "P1", buttonConfigs = MutableList(36) { if (it == 0) testButton else null }, rows = 2, columns = 2)
 
-        useCase.execute(0, page, "b1", true, emptyList(), actionExecutor, scanCoordinator)
+        useCase.execute(0, testPage, "b1", true, emptyList(), actionExecutor, scanCoordinator)
 
         verify { ttsHelper.stopNotificationTTS() }
         verify { scanCoordinator.setFocusedIndex(0) }
@@ -61,12 +61,12 @@ class ActivateButtonUseCaseTest {
 
     @Test
     fun `execute calls actionExecutor`() = runTest {
-        val button = ButtonConfig(id = "btn1", label = "Test", auditoryCue = null, buttonAction = SpeakTextButtonAction())
-        val page = Page(id = "p1", bookId = "b1", name = "P1", buttonConfigs = MutableList(36) { if (it == 0) button else null }, rows = 2, columns = 2)
+        val execButton = ButtonConfig(id = "btn1", label = "Test", auditoryCue = null, buttonAction = SpeakTextButtonAction())
+        val execPage = Page(id = "p1", bookId = "b1", name = "P1", buttonConfigs = MutableList(36) { if (it == 0) execButton else null }, rows = 2, columns = 2)
 
-        useCase.execute(0, page, "b1", true, emptyList(), actionExecutor, scanCoordinator)
+        useCase.execute(0, execPage, "b1", true, emptyList(), actionExecutor, scanCoordinator)
 
-        verify { actionExecutor.executeButtonAction(button, bookId = "b1", rows = 2, columns = 2, index = 0) }
+        verify { actionExecutor.executeButtonAction(execButton, bookId = "b1", rows = 2, columns = 2, index = 0) }
     }
 
     @Test

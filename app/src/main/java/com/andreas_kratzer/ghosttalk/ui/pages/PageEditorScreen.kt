@@ -43,6 +43,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.ui.util.GridUtils
 import java.util.UUID
 
@@ -57,6 +58,7 @@ fun PageEditorScreen(
     val unfilteredPages by pageViewModel.unfilteredPages.collectAsState()
     val bookDefaultScanPattern by pageViewModel.defaultScanPattern.collectAsState()
     val page = unfilteredPages.find { it.id == pageId }
+    val dimensions = LocalDimensions.current
 
     var selectedButtonIndex by remember { mutableStateOf<Int?>(null) }
     var showDialog by remember { mutableStateOf(false) }
@@ -87,7 +89,7 @@ fun PageEditorScreen(
                         label = { Text(stringResource(R.string.page_name_label)) },
                         singleLine = true,
                         shape = MaterialTheme.shapes.large,
-                        modifier = Modifier.fillMaxWidth().padding(end = 16.dp)
+                        modifier = Modifier.fillMaxWidth().padding(end = dimensions.paddingLarge)
                     )
                 },
                 navigationIcon = {
@@ -104,12 +106,12 @@ fun PageEditorScreen(
         Column(
             modifier = Modifier
                 .padding(paddingValues)
-                .padding(if (isLandscape) 8.dp else 16.dp)
+                .padding(if (isLandscape) dimensions.paddingMedium else dimensions.paddingLarge)
         ) {
             // Grid Size Controls
             Row(
-                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(24.dp),
+                modifier = Modifier.fillMaxWidth().padding(bottom = dimensions.paddingLarge),
+                horizontalArrangement = Arrangement.spacedBy(dimensions.paddingExtraLarge),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
@@ -172,7 +174,7 @@ fun PageEditorScreen(
             ExposedDropdownMenuBox(
                 expanded = expandedPattern,
                 onExpandedChange = { expandedPattern = !expandedPattern },
-                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+                modifier = Modifier.fillMaxWidth().padding(bottom = dimensions.paddingLarge)
             ) {
                 OutlinedTextField(
                     value = currentPatternLabel,
@@ -215,9 +217,9 @@ fun PageEditorScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f),
-                contentPadding = PaddingValues(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                contentPadding = PaddingValues(dimensions.paddingMedium),
+                verticalArrangement = Arrangement.spacedBy(dimensions.gridSpacing),
+                horizontalArrangement = Arrangement.spacedBy(dimensions.gridSpacing)
             ) {
                 val totalRows = page.rows
                 for (r in 0 until totalRows) {
@@ -297,6 +299,7 @@ fun PageEditorScreen(
 @Composable
 fun RowNameEditor(initialName: String, onNameChanged: (String) -> Unit) {
     var text by remember(initialName) { mutableStateOf(initialName) }
+    val dimensions = LocalDimensions.current
     OutlinedTextField(
         value = text,
         onValueChange = { text = it },
@@ -309,7 +312,7 @@ fun RowNameEditor(initialName: String, onNameChanged: (String) -> Unit) {
         }),
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp)
+            .padding(vertical = dimensions.paddingSmall)
             .onFocusChanged { focusState ->
                 if (!focusState.isFocused && text != initialName) {
                     onNameChanged(text)

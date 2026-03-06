@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -28,6 +29,7 @@ import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.ui.pages.sections.ActionLogCard
 import com.andreas_kratzer.ghosttalk.ui.pages.sections.ButtonGrid
 import com.andreas_kratzer.ghosttalk.ui.pages.sections.ControlButtons
+import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,6 +43,7 @@ fun PageScreen(
     val lastActions by pageViewModel.lastActions.collectAsState()
     val smartPredictions by pageViewModel.smartPredictions.collectAsState()
     val showTestButtons by pageViewModel.showTestButtons.collectAsState()
+    val dimensions = LocalDimensions.current
 
     val page = currentPage
 
@@ -78,7 +81,12 @@ fun PageScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(page.name) }
+                title = { 
+                    Text(
+                        text = page.name,
+                        style = MaterialTheme.typography.headlineMedium
+                    ) 
+                }
             )
         }
     ) { paddingValues ->
@@ -89,9 +97,9 @@ fun PageScreen(
             Row(
                 modifier = modifier
                     .padding(paddingValues)
-                    .padding(16.dp)
+                    .padding(dimensions.paddingLarge)
                     .fillMaxSize(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(dimensions.paddingLarge)
             ) {
                 Box(modifier = Modifier.weight(0.7f)) {
                     ButtonGrid(
@@ -115,7 +123,7 @@ fun PageScreen(
                             onStopScanning = { pageViewModel.stopScanning() },
                             isFocused = focusedButtonIndex != null || focusedRowIndex != null
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(dimensions.paddingLarge))
                     }
                     ActionLogCard(lastActions) { pageViewModel.clearActionLogs() }
                 }
@@ -124,7 +132,7 @@ fun PageScreen(
             Column(
                 modifier = modifier
                     .padding(paddingValues)
-                    .padding(16.dp)
+                    .padding(dimensions.paddingLarge)
                     .fillMaxSize()
             ) {
                 Box(modifier = Modifier.weight(1f)) {
@@ -136,7 +144,7 @@ fun PageScreen(
                         pageViewModel = pageViewModel
                     )
                 }
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(dimensions.paddingLarge))
                 if (showTestButtons) {
                     ControlButtons(
                         onStartScanning = { pageViewModel.startScanning() },
@@ -144,7 +152,7 @@ fun PageScreen(
                         onStopScanning = { pageViewModel.stopScanning() },
                         isFocused = focusedButtonIndex != null || focusedRowIndex != null
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(dimensions.paddingLarge))
                 }
                 ActionLogCard(lastActions) { pageViewModel.clearActionLogs() }
             }

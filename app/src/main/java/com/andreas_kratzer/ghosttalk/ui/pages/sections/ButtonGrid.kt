@@ -5,15 +5,13 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import com.andreas_kratzer.ghosttalk.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.ui.pages.GridButton
 import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
+import com.andreas_kratzer.ghosttalk.model.Page
+import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 
 @Composable
 fun ButtonGrid(
@@ -23,12 +21,13 @@ fun ButtonGrid(
     smartPredictions: List<String>,
     pageViewModel: PageViewModel
 ) {
+    val dimensions = LocalDimensions.current
     LazyVerticalGrid(
         columns = GridCells.Fixed(page.columns),
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        contentPadding = PaddingValues(dimensions.paddingMedium),
+        verticalArrangement = Arrangement.spacedBy(dimensions.gridSpacing),
+        horizontalArrangement = Arrangement.spacedBy(dimensions.gridSpacing)
     ) {
         val rows = page.rows
         val cols = page.columns
@@ -36,8 +35,7 @@ fun ButtonGrid(
         
         items(totalVisible) { visibleIndex ->
             val r = visibleIndex / cols
-            val c = visibleIndex % cols
-            val globalIndex = com.andreas_kratzer.ghosttalk.ui.util.GridUtils.getGlobalIndex(r, c)
+            val globalIndex = com.andreas_kratzer.ghosttalk.ui.util.GridUtils.getGlobalIndex(r, visibleIndex % cols)
             val buttonConfig = page.buttonConfigs.getOrNull(globalIndex)
 
             val isFocused = globalIndex == focusedButtonIndex

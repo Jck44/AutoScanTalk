@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 interface ScanStrategy {
     suspend fun executeScan(
         buttonConfigs: List<ButtonConfig?>,
+        rows: Int,
         columns: Int,
         rowNames: List<String>,
         startIndex: Int,

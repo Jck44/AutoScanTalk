@@ -39,6 +39,7 @@ import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.model.Book
 import com.andreas_kratzer.ghosttalk.ui.components.AppBrandHeader
 import com.andreas_kratzer.ghosttalk.ui.components.GhostTalkCard
+import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -53,6 +54,7 @@ fun BookListScreen(
     var showAddDialog by remember { mutableStateOf(false) }
     var bookToEdit by remember { mutableStateOf<Book?>(null) }
     var bookToDelete by remember { mutableStateOf<Book?>(null) }
+    val dimensions = LocalDimensions.current
 
     Scaffold(
         topBar = {
@@ -79,10 +81,10 @@ fun BookListScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(vertical = 8.dp)
+                .padding(horizontal = dimensions.paddingLarge),
+            verticalArrangement = Arrangement.spacedBy(dimensions.gridSpacing),
+            horizontalArrangement = Arrangement.spacedBy(dimensions.gridSpacing),
+            contentPadding = PaddingValues(vertical = dimensions.paddingMedium)
         ) {
             items(allBooks) { book ->
                 val dateFormat = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())

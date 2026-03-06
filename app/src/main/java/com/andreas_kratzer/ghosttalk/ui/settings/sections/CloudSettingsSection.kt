@@ -27,6 +27,7 @@ import com.andreas_kratzer.ghosttalk.ui.settings.PreferenceCategory
 import com.andreas_kratzer.ghosttalk.ui.settings.SettingsClickableItem
 import com.andreas_kratzer.ghosttalk.ui.settings.SettingsToggleItem
 import com.andreas_kratzer.ghosttalk.ui.settings.SettingsViewModel
+import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -40,6 +41,7 @@ fun CloudSettingsSection(viewModel: SettingsViewModel) {
     val userEmail by viewModel.userEmail.collectAsState(null)
     val isSyncing by viewModel.isSyncing.collectAsState(false)
     val context = LocalContext.current
+    val dimensions = LocalDimensions.current
 
     var expandedMode by remember { mutableStateOf(false) }
 
@@ -55,9 +57,19 @@ fun CloudSettingsSection(viewModel: SettingsViewModel) {
                 style = MaterialTheme.typography.bodyMedium
             )
             if (userEmail == null) {
-                Button(onClick = { viewModel.signIn(context) }) { Text(stringResource(R.string.settings_google_account_sign_in)) }
+                Button(
+                    onClick = { viewModel.signIn(context) },
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Text(stringResource(R.string.settings_google_account_sign_in))
+                }
             } else {
-                OutlinedButton(onClick = { viewModel.signOut() }) { Text(stringResource(R.string.settings_google_account_sign_out)) }
+                OutlinedButton(
+                    onClick = { viewModel.signOut() },
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Text(stringResource(R.string.settings_google_account_sign_out))
+                }
             }
         }
     }
@@ -103,13 +115,29 @@ fun CloudSettingsSection(viewModel: SettingsViewModel) {
             Text(
                 text = "Letzter Sync: $lastSyncText",
                 style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(vertical = 4.dp)
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(vertical = dimensions.paddingSmall)
             )
         }
 
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = { viewModel.syncNow() }, enabled = !isSyncing && userEmail != null) { Text(stringResource(R.string.action_search).replace("…", "")) } // Reuse Search or similar? Let's use fixed for now
-            OutlinedButton(onClick = { viewModel.backupNow() }, enabled = !isSyncing && userEmail != null) { Text(stringResource(R.string.settings_cloud_backup_now)) }
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium),
+            modifier = Modifier.padding(top = dimensions.paddingMedium)
+        ) {
+            Button(
+                onClick = { viewModel.syncNow() },
+                enabled = !isSyncing && userEmail != null,
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Text(stringResource(R.string.action_search).replace("…", ""))
+            }
+            OutlinedButton(
+                onClick = { viewModel.backupNow() },
+                enabled = !isSyncing && userEmail != null,
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Text(stringResource(R.string.settings_cloud_backup_now))
+            }
         }
     }
 }

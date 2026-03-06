@@ -18,6 +18,7 @@ import com.andreas_kratzer.ghosttalk.domain.genai.GeminiUseCase
 import com.andreas_kratzer.ghosttalk.ui.settings.PreferenceCategory
 import com.andreas_kratzer.ghosttalk.ui.settings.SettingsToggleItem
 import com.andreas_kratzer.ghosttalk.ui.settings.SettingsViewModel
+import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 
 @Composable
 fun GenAiSettingsSection(viewModel: SettingsViewModel) {
@@ -25,6 +26,7 @@ fun GenAiSettingsSection(viewModel: SettingsViewModel) {
     val useLocal by viewModel.useLocalGenerativeAi.collectAsState(false)
     val toolStatus by viewModel.geminiToolStatus.collectAsState(emptyMap())
     val context = LocalContext.current
+    val dimensions = LocalDimensions.current
 
     PreferenceCategory(stringResource(R.string.settings_category_gemini)) {
         // Gemini Nano (Local)
@@ -38,8 +40,12 @@ fun GenAiSettingsSection(viewModel: SettingsViewModel) {
         }
         
         if (isEnabled) {
-            Column(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
-                Text(text = "Cloud Features Status:", style = MaterialTheme.typography.labelLarge)
+            Column(modifier = Modifier.fillMaxWidth().padding(dimensions.paddingMedium)) {
+                Text(
+                    text = "Cloud Features Status:", 
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary
+                )
                 toolStatus.forEach { (name, status) ->
                     val isAvailable = status == GeminiUseCase.ToolStatus.AVAILABLE
                     val statusText = when (status) {
@@ -54,7 +60,8 @@ fun GenAiSettingsSection(viewModel: SettingsViewModel) {
                 
                 Button(
                     onClick = { viewModel.activateGemini(context) },
-                    modifier = Modifier.padding(top = 8.dp)
+                    shape = MaterialTheme.shapes.medium,
+                    modifier = Modifier.padding(top = dimensions.paddingMedium)
                 ) {
                     Text(stringResource(R.string.settings_gemini_activate_button))
                 }

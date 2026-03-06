@@ -10,6 +10,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -25,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.model.PageTemplate
+import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,6 +42,7 @@ fun NavigationActionFields(
     var expandedPageSelect by remember { mutableStateOf(false) }
     var pageSearchQuery by remember { mutableStateOf("") }
     val showAddPageDialogState = remember { mutableStateOf(false) }
+    val dimensions = LocalDimensions.current
 
     val filteredPages = remember(pageSearchQuery, availablePages) {
         val trimmedQuery = pageSearchQuery.trim()
@@ -47,7 +50,7 @@ fun NavigationActionFields(
         else availablePages.filter { it.name.contains(trimmedQuery, ignoreCase = true) }
     }
 
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(dimensions.paddingMedium)) {
         ExposedDropdownMenuBox(
             expanded = expandedPageSelect,
             onExpandedChange = { expandedPageSelect = !expandedPageSelect }
@@ -62,6 +65,7 @@ fun NavigationActionFields(
                 label = { Text(stringResource(R.string.button_target_page_label)) },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedPageSelect) },
                 colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                shape = MaterialTheme.shapes.large,
                 modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable).fillMaxWidth()
             )
             
@@ -74,7 +78,7 @@ fun NavigationActionFields(
             ) {
                 filteredPages.forEach { pageOption ->
                     DropdownMenuItem(
-                        text = { Text(pageOption.name) },
+                        text = { Text(pageOption.name, style = MaterialTheme.typography.bodyLarge) },
                         onClick = {
                             onPageSelected(pageOption.id)
                             expandedPageSelect = false
@@ -84,7 +88,7 @@ fun NavigationActionFields(
                 }
                 if (filteredPages.isEmpty()) {
                     DropdownMenuItem(
-                        text = { Text("Keine Seiten gefunden") },
+                        text = { Text("Keine Seiten gefunden", style = MaterialTheme.typography.bodyLarge) },
                         onClick = { },
                         enabled = false
                     )
@@ -98,6 +102,7 @@ fun NavigationActionFields(
                     onDismissDialog()
                     onNavigateToPage(navigateToPageId)
                 },
+                shape = MaterialTheme.shapes.medium,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Ziel-Seite verwalten")
@@ -107,6 +112,7 @@ fun NavigationActionFields(
         if (onCreatePage != null) {
             OutlinedButton(
                 onClick = { showAddPageDialogState.value = true },
+                shape = MaterialTheme.shapes.medium,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Neue Ziel-Seite erstellen")
@@ -138,6 +144,7 @@ fun GeminiActionFields(
         onValueChange = onPromptChanged,
         label = { Text(stringResource(R.string.button_gemini_prompt_field)) },
         placeholder = { Text(stringResource(R.string.button_gemini_prompt_hint)) },
+        shape = MaterialTheme.shapes.large,
         modifier = Modifier.fillMaxWidth()
     )
 }
@@ -156,6 +163,7 @@ fun RankActionFields(
         },
         label = { Text(stringResource(R.string.button_smart_prediction_rank_label)) },
         singleLine = true,
+        shape = MaterialTheme.shapes.large,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         modifier = Modifier.fillMaxWidth()
     )
@@ -187,6 +195,7 @@ fun NotificationActionFields(
             onValueChange = { },
             label = { Text(stringResource(R.string.button_notification_target_app)) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedNotificationApp) },
+            shape = MaterialTheme.shapes.large,
             modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
         )
         ExposedDropdownMenu(
@@ -195,7 +204,7 @@ fun NotificationActionFields(
         ) {
             notificationApps.forEach { (appId, appName) ->
                 DropdownMenuItem(
-                    text = { Text(appName) },
+                    text = { Text(appName, style = MaterialTheme.typography.bodyLarge) },
                     onClick = {
                         onTargetAppChanged(appId)
                         expandedNotificationApp = false
@@ -218,10 +227,11 @@ fun VolumeActionFields(
     val volumeRelativLabel = "Relativ"
     val volumeTypes = listOf(volumeAbsolutLabel, volumeRelativLabel)
     var expandedVolumeType by remember { mutableStateOf(false) }
+    val dimensions = LocalDimensions.current
 
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium)
     ) {
         ExposedDropdownMenuBox(
             expanded = expandedVolumeType,
@@ -234,6 +244,7 @@ fun VolumeActionFields(
                 onValueChange = { },
                 label = { Text("Art") },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedVolumeType) },
+                shape = MaterialTheme.shapes.large,
                 modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
             )
             ExposedDropdownMenu(
@@ -242,7 +253,7 @@ fun VolumeActionFields(
             ) {
                 volumeTypes.forEach { typeLabel ->
                     DropdownMenuItem(
-                        text = { Text(typeLabel) },
+                        text = { Text(typeLabel, style = MaterialTheme.typography.bodyLarge) },
                         onClick = {
                             onVolumeTypeChanged(typeLabel)
                             expandedVolumeType = false
@@ -261,6 +272,7 @@ fun VolumeActionFields(
             },
             label = { Text("Wert (%)") },
             singleLine = true,
+            shape = MaterialTheme.shapes.large,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.weight(1f)
         )

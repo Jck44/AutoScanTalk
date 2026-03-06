@@ -31,9 +31,9 @@ class ReorderTemplatesUseCaseTest {
     fun `execute reorders templates and sets sort order`() = runTest {
         // Given
         val templates = listOf(
-            PageTemplate("1", "T1", 1, 1, emptyList(), orderIndex = 0),
-            PageTemplate("2", "T2", 1, 1, emptyList(), orderIndex = 1),
-            PageTemplate("3", "T3", 1, 1, emptyList(), orderIndex = 2)
+            PageTemplate(id = "1", name = "T1", rows = 1, columns = 1, buttonConfigs = emptyList(), orderIndex = 0),
+            PageTemplate(id = "2", name = "T2", rows = 1, columns = 1, buttonConfigs = emptyList(), orderIndex = 1),
+            PageTemplate(id = "3", name = "T3", rows = 1, columns = 1, buttonConfigs = emptyList(), orderIndex = 2)
         )
 
         // When

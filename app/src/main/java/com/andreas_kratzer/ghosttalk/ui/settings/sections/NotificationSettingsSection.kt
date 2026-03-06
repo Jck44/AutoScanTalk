@@ -25,6 +25,7 @@ import androidx.core.app.NotificationManagerCompat
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.ui.settings.PreferenceCategory
 import com.andreas_kratzer.ghosttalk.ui.settings.SettingsViewModel
+import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 
 @Composable
 fun NotificationSettingsSection(viewModel: SettingsViewModel) {
@@ -32,6 +33,7 @@ fun NotificationSettingsSection(viewModel: SettingsViewModel) {
     val monitoredApps by viewModel.monitoredNotificationApps.collectAsState(emptySet())
     val context = LocalContext.current
     val packageName = context.packageName
+    val dimensions = LocalDimensions.current
 
     val enabledListeners = NotificationManagerCompat.getEnabledListenerPackages(context)
     val hasPermission = enabledListeners.contains(packageName)
@@ -45,10 +47,13 @@ fun NotificationSettingsSection(viewModel: SettingsViewModel) {
                 } else {
                     context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
                 }
-            }
+            }.padding(vertical = dimensions.paddingSmall)
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(stringResource(R.string.settings_notifications_enable))
+                Text(
+                    text = stringResource(R.string.settings_notifications_enable),
+                    style = MaterialTheme.typography.bodyMedium
+                )
                 Text(
                     text = stringResource(R.string.settings_notifications_enable_desc),
                     style = MaterialTheme.typography.bodySmall,
@@ -58,14 +63,17 @@ fun NotificationSettingsSection(viewModel: SettingsViewModel) {
             if (hasPermission) {
                 Switch(checked = isEnabled, onCheckedChange = { viewModel.setNotificationReadingEnabled(it) })
             } else {
-                TextButton(onClick = { context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) }) {
+                TextButton(
+                    onClick = { context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) },
+                    shape = MaterialTheme.shapes.medium
+                ) {
                     Text(stringResource(R.string.settings_notifications_permission_button))
                 }
             }
         }
 
         if (isEnabled && hasPermission) {
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            HorizontalDivider(modifier = Modifier.padding(vertical = dimensions.paddingMedium))
             val apps = listOf(
                 "com.whatsapp" to "WhatsApp",
                 "org.thoughtcrime.securesms" to "Signal",
@@ -78,9 +86,13 @@ fun NotificationSettingsSection(viewModel: SettingsViewModel) {
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth().clickable {
                         viewModel.toggleMonitoredNotificationApp(pkg, !monitoredApps.contains(pkg))
-                    }.padding(vertical = 4.dp)
+                    }.padding(vertical = dimensions.paddingSmall)
                 ) {
-                    Text(text = name, modifier = Modifier.weight(1f))
+                    Text(
+                        text = name, 
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
                     Checkbox(checked = monitoredApps.contains(pkg), onCheckedChange = { viewModel.toggleMonitoredNotificationApp(pkg, it) })
                 }
             }

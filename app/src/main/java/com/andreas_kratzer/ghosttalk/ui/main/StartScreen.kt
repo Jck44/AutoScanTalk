@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.ui.components.AppBrandHeader
 import com.andreas_kratzer.ghosttalk.ui.components.GhostTalkCard
+import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,7 +39,8 @@ fun StartScreen(
 ) {
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-    val vSpacing = if (isLandscape) 16.dp else 24.dp
+    val dimensions = LocalDimensions.current
+    val vSpacing = if (isLandscape) dimensions.paddingLarge else dimensions.paddingExtraLarge
 
     Scaffold(
         topBar = {
@@ -56,16 +58,16 @@ fun StartScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(24.dp),
+                .padding(dimensions.paddingExtraLarge),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top // Changed from Center to Top for unified look
         ) {
-            Spacer(modifier = Modifier.height(if (isLandscape) 16.dp else 32.dp))
+            Spacer(modifier = Modifier.height(if (isLandscape) dimensions.paddingLarge else dimensions.paddingExtraLarge))
             
             @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
+                horizontalArrangement = Arrangement.spacedBy(dimensions.paddingLarge, Alignment.CenterHorizontally),
                 verticalArrangement = Arrangement.spacedBy(vSpacing),
                 maxItemsInEachRow = if (isLandscape) 3 else 1
             ) {
@@ -99,7 +101,7 @@ fun StartScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(if (isLandscape) 16.dp else 32.dp))
+            Spacer(modifier = Modifier.height(if (isLandscape) dimensions.paddingLarge else dimensions.paddingExtraLarge))
 
             GhostTalkCard(
                 title = stringResource(R.string.start_back_to_books),
