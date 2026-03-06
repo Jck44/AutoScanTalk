@@ -53,6 +53,9 @@ android {
                 test.maxHeapSize = "2G"
                 // Unterdrückt die Byte Buddy / JDK 21 Agent Warnung
                 test.jvmArgs("-XX:+EnableDynamicAgentLoading")
+                
+                // Enable parallel test execution
+                test.maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
             }
         }
     }
