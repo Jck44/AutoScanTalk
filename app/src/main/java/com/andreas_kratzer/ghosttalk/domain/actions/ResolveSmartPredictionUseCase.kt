@@ -17,11 +17,16 @@ class ResolveSmartPredictionUseCase @Inject constructor(
         isUserModeActive: Boolean,
         actionExecutor: ActionExecutor
     ) {
-        val matchingButton = currentPage?.buttonConfigs?.find { it?.id == predictionId }
-        if (matchingButton != null) {
+        val matchingIndex = currentPage?.buttonConfigs?.indexOfFirst { it?.id == predictionId } ?: -1
+        val matchingButton = if (matchingIndex != -1) currentPage?.buttonConfigs?.getOrNull(matchingIndex) else null
+
+        if (matchingButton != null && matchingIndex != -1) {
             actionExecutor.executeButtonAction(
                 matchingButton,
-                bookId = activeBookId.takeIf { isUserModeActive }
+                bookId = activeBookId.takeIf { isUserModeActive },
+                rows = currentPage!!.rows,
+                columns = currentPage.columns,
+                index = matchingIndex
             )
             return
         }

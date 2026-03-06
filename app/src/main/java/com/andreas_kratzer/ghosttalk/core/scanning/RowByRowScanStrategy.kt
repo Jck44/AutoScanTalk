@@ -23,12 +23,15 @@ class RowByRowScanStrategy : ScanStrategy {
         val totalRows = (buttonConfigs.size + columns - 1) / columns
         
         for (r in 0 until totalRows) {
-            val startIdx = r * columns
-            val endIdx = minOf(startIdx + columns, buttonConfigs.size)
+            val startIdx = r * 6 // Mapping always assumes 6-wide
+            val endIdx = startIdx + 6
             var hasActive = false
             for (i in startIdx until endIdx) {
-                val btn = buttonConfigs[i]
-                if (btn != null && btn.isActive && featureGuard.isButtonVisible(btn)) {
+                val btn = buttonConfigs.getOrNull(i)
+                if (btn != null && 
+                    btn.isActive && 
+                    com.andreas_kratzer.ghosttalk.ui.util.GridUtils.isVisibleInGrid(i, rows = totalRows, columns = columns) &&
+                    featureGuard.isButtonVisible(btn)) {
                     hasActive = true
                     break
                 }
@@ -81,7 +84,11 @@ class RowByRowScanStrategy : ScanStrategy {
         // Keep focusedRowIndex as is (to highlight the row)
         val activeButtonsInRow = buttonConfigs
             .mapIndexedNotNull { index, config ->
-                if (config != null && config.isActive && index / columns == rowIndex && featureGuard.isButtonVisible(config)) {
+                if (config != null && 
+                    config.isActive && 
+                    index / 6 == rowIndex && 
+                    com.andreas_kratzer.ghosttalk.ui.util.GridUtils.isVisibleInGrid(index, rows = (buttonConfigs.size + 5) / 6, columns = columns) &&
+                    featureGuard.isButtonVisible(config)) {
                     Pair(index, config)
                 } else null
             }

@@ -56,11 +56,16 @@ class CreatePageUseCase @Inject constructor(
             }
             
         } else {
-            val totalSlots = finalRows * finalColumns
-            val initialConfigs = MutableList<ButtonConfig?>(totalSlots) { null }
+            val initialConfigs = MutableList<ButtonConfig?>(GridUtils.TOTAL_SLOTS) { null }
 
-            if (totalSlots > 0 && homePageId != null) {
-                initialConfigs[totalSlots - 1] = ButtonConfig(
+            if (homePageId != null) {
+                // Determine persistent index for "back to start"
+                // Usually we anchor it to the bottom-right of the current grid (e.g. at index rows*columns - 1)
+                // BUT to preserve it across resizes, we might want to put it at 35 or calculate based on rows/cols
+                // Here we stick to bottom-right of the INITIAL grid size
+                val persistentIndex = GridUtils.getGlobalIndex(finalRows - 1, finalColumns - 1)
+                
+                initialConfigs[persistentIndex] = ButtonConfig(
                     id = UUID.randomUUID().toString(),
                     label = "zurück zum Start",
                     spokenText = "Zurück zur Startseite",

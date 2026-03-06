@@ -9,13 +9,22 @@ class UpdatePageSettingsUseCase @Inject constructor(
     private val pageRepository: PageRepository,
     private val bookRepository: BookRepository
 ) {
-    suspend fun execute(pageId: String, newName: String, newScanPattern: String?, newRowNames: List<String>): Page? {
+    suspend fun execute(
+        pageId: String, 
+        newName: String, 
+        newScanPattern: String?, 
+        newRowNames: List<String>,
+        newRows: Int? = null,
+        newColumns: Int? = null
+    ): Page? {
         val page = pageRepository.getPageById(pageId)
         if (page != null) {
             val updatedPage = page.copy(
                 name = newName,
                 scanPattern = newScanPattern,
-                rowNames = newRowNames
+                rowNames = newRowNames,
+                rows = newRows ?: page.rows,
+                columns = newColumns ?: page.columns
             )
             pageRepository.updatePage(updatedPage)
             bookRepository.updateLastModified(page.bookId)

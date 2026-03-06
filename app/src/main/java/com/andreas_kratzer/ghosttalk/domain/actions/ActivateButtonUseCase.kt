@@ -50,7 +50,10 @@ class ActivateButtonUseCase @Inject constructor(
         
         actionExecutor.executeButtonAction(
             buttonConfig, 
-            bookId = activeBookId.takeIf { isUserModeActive }
+            bookId = activeBookId.takeIf { isUserModeActive },
+            rows = page.rows,
+            columns = page.columns,
+            index = index
         )
     }
 }

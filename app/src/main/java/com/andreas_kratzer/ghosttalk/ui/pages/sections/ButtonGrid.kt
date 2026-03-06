@@ -30,9 +30,18 @@ fun ButtonGrid(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        itemsIndexed(page.buttonConfigs) { globalIndex: Int, buttonConfig: ButtonConfig? ->
+        val rows = page.rows
+        val cols = page.columns
+        val totalVisible = rows * cols
+        
+        items(totalVisible) { visibleIndex ->
+            val r = visibleIndex / cols
+            val c = visibleIndex % cols
+            val globalIndex = com.andreas_kratzer.ghosttalk.ui.util.GridUtils.getGlobalIndex(r, c)
+            val buttonConfig = page.buttonConfigs.getOrNull(globalIndex)
+
             val isFocused = globalIndex == focusedButtonIndex
-            val isRowFocused = focusedRowIndex != null && (globalIndex / page.columns) == focusedRowIndex
+            val isRowFocused = focusedRowIndex != null && r == focusedRowIndex
 
             val isVisible = buttonConfig != null && pageViewModel.featureGuard.isButtonVisible(buttonConfig)
 

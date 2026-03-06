@@ -35,7 +35,9 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.material3.Slider
 import androidx.compose.ui.unit.dp
+import com.andreas_kratzer.ghosttalk.ui.util.GridUtils
 import com.andreas_kratzer.ghosttalk.R
 import java.util.UUID
 
@@ -85,8 +87,62 @@ fun PageEditorScreen(
             Text(
                 stringResource(R.string.page_editor_hint),
                 style = if (isLandscape) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(bottom = if (isLandscape) 8.dp else 16.dp)
+                modifier = Modifier.padding(bottom = if (isLandscape) 8.dp else 8.dp)
             )
+
+            // Grid Size Controls
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(24.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    val rowsLabel = stringResource(R.string.page_rows_field) + ": ${page.rows}"
+                    Text(
+                        text = rowsLabel,
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Slider(
+                        value = page.rows.toFloat(),
+                        onValueChange = { newValue ->
+                            pageViewModel.updatePageSettings(
+                                pageId = page.id,
+                                newName = page.name,
+                                newScanPattern = page.scanPattern,
+                                newRowNames = page.rowNames,
+                                newRows = newValue.toInt(),
+                                newColumns = page.columns
+                            )
+                        },
+                        valueRange = 1f..6f,
+                        steps = 4
+                    )
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    val colsLabel = stringResource(R.string.page_cols_field) + ": ${page.columns}"
+                    Text(
+                        text = colsLabel,
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Slider(
+                        value = page.columns.toFloat(),
+                        onValueChange = { newValue ->
+                            pageViewModel.updatePageSettings(
+                                pageId = page.id,
+                                newName = page.name,
+                                newScanPattern = page.scanPattern,
+                                newRowNames = page.rowNames,
+                                newRows = page.rows,
+                                newColumns = newValue.toInt()
+                            )
+                        },
+                        valueRange = 1f..6f,
+                        steps = 4
+                    )
+                }
+            }
 
             val effectiveScanPattern = page.scanPattern ?: bookDefaultScanPattern
             val rowDefaultLabelTemplate = stringResource(R.string.page_row_label)
@@ -114,18 +170,19 @@ fun PageEditorScreen(
                         }
                     }
 
-                    val startIdx = r * page.columns
-                    val endIdx = minOf(startIdx + page.columns, page.buttonConfigs.size)
-
-                    for (i in startIdx until endIdx) {
+                    val startRow = r
+                    val numCols = page.columns
+                    
+                    for (c in 0 until numCols) {
                         item {
-                            val buttonConfig = page.buttonConfigs[i]
+                            val globalIndex = GridUtils.getGlobalIndex(r, c)
+                            val buttonConfig = page.buttonConfigs.getOrNull(globalIndex)
                             GridButton(
                                 buttonConfig = buttonConfig,
                                 isFocused = false,
                                 isEditorMode = true,
                                 onClick = {
-                                    selectedButtonIndex = i
+                                    selectedButtonIndex = globalIndex
                                     showDialog = true
                                 }
                             )

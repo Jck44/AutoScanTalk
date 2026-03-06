@@ -12,7 +12,7 @@ class CreateTemplateUseCase @Inject constructor(
     private val templateRepository: TemplateRepository
 ) {
     suspend fun execute(name: String, rows: Int, columns: Int, initialConfigs: List<ButtonConfig?>?) {
-        val buttonConfigs = GridUtils.adjustButtonConfigs(initialConfigs ?: emptyList(), rows, columns)
+        val buttonConfigs = GridUtils.adjustButtonConfigs(initialConfigs ?: emptyList())
         val maxOrderIndex = templateRepository.getAllTemplates().first().maxOfOrNull { it.orderIndex } ?: -1
 
         val newTemplate = PageTemplate(

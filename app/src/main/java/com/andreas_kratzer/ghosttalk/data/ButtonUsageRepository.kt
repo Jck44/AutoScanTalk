@@ -21,9 +21,19 @@ class ButtonUsageRepository @Inject constructor(
     /**
      * Records a button press. Increments the usage counter or creates a new entry.
      */
-    suspend fun recordUsage(bookId: String, buttonConfig: ButtonConfig) {
+    suspend fun recordUsage(bookId: String, buttonConfig: ButtonConfig, rows: Int, columns: Int, indexInPage: Int) {
+        // Ignore inactive buttons
+        if (!buttonConfig.isActive) {
+            return
+        }
+
         // Ignore FrequentActionButtonAction to prevent ranking loops
         if (buttonConfig.buttonAction is com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction) {
+            return
+        }
+
+        // Only record if visible in the current grid configuration
+        if (!com.andreas_kratzer.ghosttalk.ui.util.GridUtils.isVisibleInGrid(indexInPage, rows, columns)) {
             return
         }
         

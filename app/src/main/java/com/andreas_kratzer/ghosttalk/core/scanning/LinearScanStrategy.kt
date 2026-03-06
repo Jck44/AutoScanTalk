@@ -22,7 +22,10 @@ class LinearScanStrategy : ScanStrategy {
         
         val activeButtonsWithGlobalIndices = buttonConfigs
             .mapIndexedNotNull { index, buttonConfig ->
-                if (buttonConfig != null && buttonConfig.isActive && featureGuard.isButtonVisible(buttonConfig)) {
+                if (buttonConfig != null && 
+                    buttonConfig.isActive && 
+                    com.andreas_kratzer.ghosttalk.ui.util.GridUtils.isVisibleInGrid(index, rows = (buttonConfigs.size + columns - 1) / columns, columns = columns) &&
+                    featureGuard.isButtonVisible(buttonConfig)) {
                     Pair(index, buttonConfig)
                 } else null
             }

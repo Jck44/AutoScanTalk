@@ -53,7 +53,13 @@ class ActionExecutor internal constructor(
     )
 
 
-    fun executeButtonAction(buttonConfig: ButtonConfig, bookId: String? = null) {
+    fun executeButtonAction(
+        buttonConfig: ButtonConfig, 
+        bookId: String? = null,
+        rows: Int = 1,
+        columns: Int = 1,
+        index: Int = -1
+    ) {
         val currentTime = timeProvider()
         val holdingTime = settingsRepository.holdingTimeMillis
         
@@ -72,10 +78,10 @@ class ActionExecutor internal constructor(
         _isExecuting.value = true
 
         // Record button usage for statistics
-        if (bookId != null && buttonUsageRepository != null) {
+        if (bookId != null && buttonUsageRepository != null && index != -1) {
             scope.launch {
                 try {
-                    buttonUsageRepository.recordUsage(bookId, buttonConfig)
+                    buttonUsageRepository.recordUsage(bookId, buttonConfig, rows, columns, index)
                 } catch (_: Exception) { /* Non-critical, don't block action */ }
             }
         }

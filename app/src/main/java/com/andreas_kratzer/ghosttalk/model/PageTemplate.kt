@@ -14,4 +14,9 @@ data class PageTemplate(
     val isBuiltIn: Boolean = false,
     override val orderIndex: Int = 0,
     override val createdAt: Long = System.currentTimeMillis()
-) : ListableItem
+) : ListableItem {
+    init {
+        require(rows in 1..6) { "Rows must be between 1 and 6." }
+        require(columns in 1..6) { "Columns must be between 1 and 6." }
+    }
+}

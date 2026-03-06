@@ -38,9 +38,17 @@ class PredictNextActionUseCase @Inject constructor(
         // Map buttons and pages to IDs for the model. 
         // Filter out SmartPrediction buttons to prevent recursive predictions.
         val buttonContext = currentPage.buttonConfigs
-            .filterNotNull()
-            .filter { it.isActive && it.label.isNotBlank() && it.buttonAction !is SmartPredictionButtonAction }
-            .joinToString("\n") { "- ${it.id}: ${it.label}" }
+            .mapIndexedNotNull { index, it ->
+                if (it != null && 
+                    it.isActive && 
+                    it.label.isNotBlank() && 
+                    it.buttonAction !is SmartPredictionButtonAction &&
+                    com.andreas_kratzer.ghosttalk.ui.util.GridUtils.isVisibleInGrid(index, currentPage.rows, currentPage.columns)
+                ) {
+                    "- ${it.id}: ${it.label}"
+                } else null
+            }
+            .joinToString("\n")
 
         val pageContext = allPages
             .filter { it.id != currentPage.id }

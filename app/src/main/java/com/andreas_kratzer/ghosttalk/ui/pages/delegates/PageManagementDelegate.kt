@@ -114,9 +114,16 @@ class PageManagementDelegate @Inject constructor(
         }
     }
 
-    fun updatePageSettings(pageId: String, newName: String, newScanPattern: String?, newRowNames: List<String>) {
+    fun updatePageSettings(
+        pageId: String, 
+        newName: String, 
+        newScanPattern: String?, 
+        newRowNames: List<String>,
+        newRows: Int? = null,
+        newColumns: Int? = null
+    ) {
         scope.launch {
-            val updatedPage = updatePageSettingsUseCase.execute(pageId, newName, newScanPattern, newRowNames)
+            val updatedPage = updatePageSettingsUseCase.execute(pageId, newName, newScanPattern, newRowNames, newRows, newColumns)
             if (updatedPage != null && _currentPage.value?.id == pageId) {
                 _currentPage.value = updatedPage
             }

@@ -178,8 +178,14 @@ class PageViewModel @Inject constructor(
     fun updateButtonConfig(pageId: String, index: Int, newConfig: ButtonConfig?) =
         pageManagementDelegate.updateButtonConfig(pageId, index, newConfig)
 
-    fun updatePageSettings(pageId: String, newName: String, newScanPattern: String?, newRowNames: List<String>) =
-        pageManagementDelegate.updatePageSettings(pageId, newName, newScanPattern, newRowNames)
+    fun updatePageSettings(
+        pageId: String, 
+        newName: String, 
+        newScanPattern: String?, 
+        newRowNames: List<String>,
+        newRows: Int? = null,
+        newColumns: Int? = null
+    ) = pageManagementDelegate.updatePageSettings(pageId, newName, newScanPattern, newRowNames, newRows, newColumns)
 
     fun updateRowName(pageId: String, rowIndex: Int, newName: String) =
         pageManagementDelegate.updateRowName(pageId, rowIndex, newName)
