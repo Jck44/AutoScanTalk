@@ -1,5 +1,6 @@
 package com.andreas_kratzer.ghosttalk.ui.settings.delegates
 
+import android.app.Activity
 import android.app.Application
 import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
 import com.andreas_kratzer.ghosttalk.domain.auth.PerformManualSyncUseCase
@@ -9,9 +10,11 @@ import com.andreas_kratzer.ghosttalk.domain.auth.SignOutUseCase
 import com.andreas_kratzer.ghosttalk.domain.auth.SyncMode
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -33,6 +36,8 @@ class CloudSyncSettingsDelegateTest {
     private lateinit var signOutUseCase: SignOutUseCase
     private lateinit var delegate: CloudSyncSettingsDelegate
 
+    private val userEmailFlow = MutableStateFlow<String?>(null)
+
     @Before
     fun setup() {
         application = mockk(relaxed = true)
@@ -42,6 +47,8 @@ class CloudSyncSettingsDelegateTest {
         signInUseCase = mockk(relaxed = true)
         signOutUseCase = mockk(relaxed = true)
         
+        every { googleAuthManager.userEmail } returns userEmailFlow
+
         delegate = CloudSyncSettingsDelegate(
             application,
             googleAuthManager,
@@ -53,12 +60,28 @@ class CloudSyncSettingsDelegateTest {
     }
 
     @Test
-    fun `setCloudSyncEnabled calls use case`() {
-        delegate.setCloudSyncEnabled(true)
+    fun `setCloudSyncEnabled calls use case when logged in`() {
+        userEmailFlow.value = "test@example.com"
+        val context = mockk<Activity>(relaxed = true)
+
+        delegate.setCloudSyncEnabled(context, true, testScope)
         verify { setCloudSyncEnabledUseCase(true) }
 
-        delegate.setCloudSyncEnabled(false)
+        delegate.setCloudSyncEnabled(context, false, testScope)
         verify { setCloudSyncEnabledUseCase(false) }
+    }
+
+    @Test
+    fun `setCloudSyncEnabled triggers sign in when not logged in`() = runTest {
+        userEmailFlow.value = null
+        val context = mockk<Activity>(relaxed = true)
+        coEvery { signInUseCase.execute(any()) } returns true
+
+        delegate.setCloudSyncEnabled(context, true, testScope)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify { signInUseCase.execute(context) }
+        verify(exactly = 0) { setCloudSyncEnabledUseCase(any()) }
     }
 
     @Test
@@ -71,8 +94,8 @@ class CloudSyncSettingsDelegateTest {
 
     @Test
     fun `signIn handles failure correctly`() = runTest {
-        val activity = mockk<android.app.Activity>(relaxed = true)
-        coEvery { googleAuthManager.signIn(activity) } returns false
+        val activity = mockk<Activity>(relaxed = true)
+        coEvery { signInUseCase.execute(activity) } returns false
         
         delegate.signIn(activity, testScope)
         testDispatcher.scheduler.advanceUntilIdle()
