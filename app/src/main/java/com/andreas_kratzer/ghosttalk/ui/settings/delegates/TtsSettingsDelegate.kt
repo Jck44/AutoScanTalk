@@ -89,12 +89,12 @@ class TtsSettingsDelegate @Inject constructor(
         setTtsVoiceUseCase(voiceName)
     }
 
-    fun setTtsVolumeMultiplier(multiplier: Float) {
-        setTtsVolumeUseCase.execute(multiplier, isForCues = false)
+    fun setTtsVolumeMultiplier(multiplier: Float, playFeedback: Boolean = true) {
+        setTtsVolumeUseCase.execute(multiplier, isForCues = false, playFeedback = playFeedback)
     }
     
-    fun setCuesVolumeMultiplier(multiplier: Float) {
-        setTtsVolumeUseCase.execute(multiplier, isForCues = true)
+    fun setCuesVolumeMultiplier(multiplier: Float, playFeedback: Boolean = true) {
+        setTtsVolumeUseCase.execute(multiplier, isForCues = true, playFeedback = playFeedback)
     }
 
     fun setTtsAudioDevice(address: String?) {

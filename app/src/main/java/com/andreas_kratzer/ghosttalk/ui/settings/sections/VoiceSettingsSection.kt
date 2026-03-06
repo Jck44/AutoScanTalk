@@ -174,16 +174,37 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel) {
         }
 
         // Sliders
-        VolumeSlider(stringResource(R.string.settings_tts_volume, (ttsVolume * 100).toInt()), ttsVolume) { viewModel.setTtsVolumeMultiplier(it) }
-        VolumeSlider(stringResource(R.string.settings_cues_volume, (cuesVolume * 100).toInt()), cuesVolume) { viewModel.setCuesVolumeMultiplier(it) }
+        VolumeSlider(
+            label = stringResource(R.string.settings_tts_volume, (ttsVolume * 100).toInt()),
+            value = ttsVolume,
+            onValueChange = { viewModel.setTtsVolumeMultiplier(it, playFeedback = false) },
+            onValueChangeFinished = { viewModel.setTtsVolumeMultiplier(ttsVolume, playFeedback = true) }
+        )
+        VolumeSlider(
+            label = stringResource(R.string.settings_cues_volume, (cuesVolume * 100).toInt()),
+            value = cuesVolume,
+            onValueChange = { viewModel.setCuesVolumeMultiplier(it, playFeedback = false) },
+            onValueChangeFinished = { viewModel.setCuesVolumeMultiplier(cuesVolume, playFeedback = true) }
+        )
     }
 }
 
 @Composable
-private fun VolumeSlider(label: String, value: Float, onValueChange: (Float) -> Unit) {
+private fun VolumeSlider(
+    label: String,
+    value: Float,
+    onValueChange: (Float) -> Unit,
+    onValueChangeFinished: () -> Unit
+) {
     val dimensions = LocalDimensions.current
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = dimensions.paddingMedium)) {
         Text(text = label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-        Slider(value = value, onValueChange = onValueChange, valueRange = 0f..1f, steps = 9)
+        Slider(
+            value = value,
+            onValueChange = onValueChange,
+            onValueChangeFinished = onValueChangeFinished,
+            valueRange = 0f..1f,
+            steps = 9
+        )
     }
 }

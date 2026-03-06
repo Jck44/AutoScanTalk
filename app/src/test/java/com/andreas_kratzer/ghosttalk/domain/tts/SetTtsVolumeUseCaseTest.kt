@@ -23,17 +23,33 @@ class SetTtsVolumeUseCaseTest {
 
     @Test
     fun `execute for TTS volume updates settings and speaks`() {
-        useCase.execute(0.8f, isForCues = false)
+        useCase.execute(0.8f, isForCues = false, playFeedback = true)
 
         verify { settingsRepository.ttsVolumeMultiplier = 0.8f }
         verify { ttsHelper.speakRouted("Lautstärke geändert", any()) }
     }
 
     @Test
+    fun `execute for TTS volume updates settings but does NOT speak when playFeedback is false`() {
+        useCase.execute(0.7f, isForCues = false, playFeedback = false)
+
+        verify { settingsRepository.ttsVolumeMultiplier = 0.7f }
+        verify(exactly = 0) { ttsHelper.speakRouted(any(), any()) }
+    }
+
+    @Test
     fun `execute for Cues volume updates settings and speaks`() {
-        useCase.execute(0.5f, isForCues = true)
+        useCase.execute(0.5f, isForCues = true, playFeedback = true)
 
         verify { settingsRepository.cuesVolumeMultiplier = 0.5f }
         verify { ttsHelper.speakRouted("Hinweis Lautstärke geändert", any()) }
+    }
+
+    @Test
+    fun `execute for Cues volume updates settings but does NOT speak when playFeedback is false`() {
+        useCase.execute(0.4f, isForCues = true, playFeedback = false)
+
+        verify { settingsRepository.cuesVolumeMultiplier = 0.4f }
+        verify(exactly = 0) { ttsHelper.speakRouted(any(), any()) }
     }
 }

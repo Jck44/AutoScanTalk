@@ -119,8 +119,8 @@ class SettingsViewModel @Inject constructor(
 
     fun setTtsLanguage(tag: String) = ttsDelegate.setTtsLanguage(tag)
     fun setTtsVoice(name: String?) = ttsDelegate.setTtsVoice(name)
-    fun setTtsVolumeMultiplier(m: Float) = ttsDelegate.setTtsVolumeMultiplier(m)
-    fun setCuesVolumeMultiplier(m: Float) = ttsDelegate.setCuesVolumeMultiplier(m)
+    fun setTtsVolumeMultiplier(m: Float, playFeedback: Boolean = true) = ttsDelegate.setTtsVolumeMultiplier(m, playFeedback)
+    fun setCuesVolumeMultiplier(m: Float, playFeedback: Boolean = true) = ttsDelegate.setCuesVolumeMultiplier(m, playFeedback)
     fun setTtsAudioDevice(addr: String?) = ttsDelegate.setTtsAudioDevice(addr)
     fun setCuesAudioDevice(addr: String?) = ttsDelegate.setCuesAudioDevice(addr)
     fun getResolvedDeviceName(addr: String?) = ttsDelegate.getResolvedDeviceName(addr)

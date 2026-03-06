@@ -8,13 +8,17 @@ class SetTtsVolumeUseCase @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val ttsHelper: TextToSpeechHelper
 ) {
-    fun execute(multiplier: Float, isForCues: Boolean) {
+    fun execute(multiplier: Float, isForCues: Boolean, playFeedback: Boolean = true) {
         if (isForCues) {
             settingsRepository.cuesVolumeMultiplier = multiplier
-            ttsHelper.speakRouted("Hinweis Lautstärke geändert", settingsRepository.cuesAudioDeviceAddress)
+            if (playFeedback) {
+                ttsHelper.speakRouted("Hinweis Lautstärke geändert", settingsRepository.cuesAudioDeviceAddress)
+            }
         } else {
             settingsRepository.ttsVolumeMultiplier = multiplier
-            ttsHelper.speakRouted("Lautstärke geändert", settingsRepository.ttsAudioDeviceAddress)
+            if (playFeedback) {
+                ttsHelper.speakRouted("Lautstärke geändert", settingsRepository.ttsAudioDeviceAddress)
+            }
         }
     }
 }
