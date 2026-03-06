@@ -5,18 +5,26 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -35,6 +43,7 @@ import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.ui.pages.ButtonConfigDialog
 import com.andreas_kratzer.ghosttalk.ui.pages.GridButton
 import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
+import com.andreas_kratzer.ghosttalk.ui.pages.RowNameEditor
 import kotlinx.coroutines.launch
 import java.util.UUID
 
@@ -49,9 +58,11 @@ fun TemplateEditorScreen(
     val scope = rememberCoroutineScope()
     val templates by templateViewModel.templates.collectAsState()
     val unfilteredPages by pageViewModel.unfilteredPages.collectAsState()
+    val bookDefaultScanPattern by pageViewModel.defaultScanPattern.collectAsState()
     val template = templates.find { it.id == templateId }
 
     var selectedButtonIndex by remember { mutableStateOf<Int?>(null) }
+    var showDialog by remember { mutableStateOf(false) }
 
     if (template == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -63,7 +74,18 @@ fun TemplateEditorScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.template_edit_title, template.name)) },
+                title = { 
+                    OutlinedTextField(
+                        value = template.name,
+                        onValueChange = { newName ->
+                            templateViewModel.updateTemplate(template.copy(name = newName))
+                        },
+                        label = { Text(stringResource(R.string.template_name_label)) },
+                        singleLine = true,
+                        shape = MaterialTheme.shapes.large,
+                        modifier = Modifier.fillMaxWidth().padding(end = 16.dp)
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_button_content_description))
@@ -80,11 +102,89 @@ fun TemplateEditorScreen(
                 .padding(paddingValues)
                 .padding(if (isLandscape) 8.dp else 16.dp)
         ) {
-            Text(
-                stringResource(R.string.template_editor_hint),
-                style = if (isLandscape) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(bottom = if (isLandscape) 8.dp else 16.dp)
+            // Grid Size Controls
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(24.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    val rowsLabel = stringResource(R.string.page_rows_field) + ": ${template.rows}"
+                    Text(
+                        text = rowsLabel,
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Slider(
+                        value = template.rows.toFloat(),
+                        onValueChange = { newValue ->
+                            templateViewModel.updateTemplate(template.copy(rows = newValue.toInt()))
+                        },
+                        valueRange = 1f..6f,
+                        steps = 4
+                    )
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    val colsLabel = stringResource(R.string.page_cols_field) + ": ${template.columns}"
+                    Text(
+                        text = colsLabel,
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Slider(
+                        value = template.columns.toFloat(),
+                        onValueChange = { newValue ->
+                            templateViewModel.updateTemplate(template.copy(columns = newValue.toInt()))
+                        },
+                        valueRange = 1f..6f,
+                        steps = 4
+                    )
+                }
+            }
+
+            // Scan Pattern Dropdown (Material 3 Expressive Style)
+            var expandedPattern by remember { mutableStateOf(false) }
+            val options = listOf(
+                null to stringResource(R.string.page_pattern_default),
+                "linear" to stringResource(R.string.settings_pattern_linear),
+                "row_by_row" to stringResource(R.string.settings_pattern_row_by_row)
             )
+            val currentPatternLabel = options.find { it.first == template.scanPattern }?.second ?: stringResource(R.string.page_pattern_default)
+
+            ExposedDropdownMenuBox(
+                expanded = expandedPattern,
+                onExpandedChange = { expandedPattern = !expandedPattern },
+                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+            ) {
+                OutlinedTextField(
+                    value = currentPatternLabel,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text(stringResource(R.string.page_scan_pattern_override)) },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedPattern) },
+                    colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                    shape = MaterialTheme.shapes.large,
+                    modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
+                )
+                ExposedDropdownMenu(
+                    expanded = expandedPattern,
+                    onDismissRequest = { expandedPattern = false }
+                ) {
+                    options.forEach { (pattern, label) ->
+                        DropdownMenuItem(
+                            text = { Text(label, style = MaterialTheme.typography.bodyLarge) },
+                            onClick = {
+                                templateViewModel.updateTemplate(template.copy(scanPattern = pattern))
+                                expandedPattern = false
+                            },
+                            contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                        )
+                    }
+                }
+            }
+
+            val effectiveScanPattern = template.scanPattern ?: bookDefaultScanPattern
+            val rowDefaultLabelTemplate = stringResource(R.string.page_row_label)
 
             // Button Grid for editing
             LazyVerticalGrid(
@@ -96,25 +196,46 @@ fun TemplateEditorScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                val totalSlots = template.rows * template.columns
-                for (i in 0 until totalSlots) {
-                    item {
-                        val buttonConfig = template.buttonConfigs.getOrNull(i)
-                        GridButton(
-                            buttonConfig = buttonConfig,
-                            isFocused = false,
-                            isEditorMode = true,
-                            onClick = {
-                                selectedButtonIndex = i
-                            }
-                        )
+                val totalRows = template.rows
+                val numCols = template.columns
+
+                for (r in 0 until totalRows) {
+                    if (effectiveScanPattern == "row_by_row") {
+                        item(span = { GridItemSpan(maxLineSpan) }) {
+                            RowNameEditor(
+                                initialName = template.rowNames.getOrNull(r) ?: rowDefaultLabelTemplate.format(r + 1),
+                                onNameChanged = { newName ->
+                                    val updatedNames = template.rowNames.toMutableList()
+                                    while (updatedNames.size <= r) updatedNames.add(rowDefaultLabelTemplate.format(updatedNames.size + 1))
+                                    updatedNames[r] = newName
+                                    templateViewModel.updateTemplate(template.copy(rowNames = updatedNames))
+                                }
+                            )
+                        }
+                    }
+
+                    for (c in 0 until numCols) {
+                        item {
+                            val globalIndex = r * 6 + c // Persistent 6x6 mapping
+                            val buttonConfig = template.buttonConfigs.getOrNull(globalIndex)
+                            GridButton(
+                                buttonConfig = buttonConfig,
+                                isFocused = false,
+                                isEditorMode = true,
+                                onClick = {
+                                    selectedButtonIndex = globalIndex
+                                    showDialog = true
+                                }
+                            )
+                        }
                     }
                 }
             }
         }
     }
 
-    selectedButtonIndex?.let { editingIndex ->
+    if (showDialog && selectedButtonIndex != null) {
+        val editingIndex = selectedButtonIndex!!
         val currentConfig = template.buttonConfigs.getOrNull(editingIndex)
         val buttonId = currentConfig?.id ?: UUID.randomUUID().toString()
         val allTemplates by pageViewModel.templates.collectAsState()
@@ -122,18 +243,20 @@ fun TemplateEditorScreen(
         ButtonConfigDialog(
             initialConfig = currentConfig,
             buttonId = buttonId,
-            availablePages = unfilteredPages, // Allow templates to navigate to specific pages regardless of filters
+            availablePages = unfilteredPages,
             featureGuard = pageViewModel.featureGuard,
             templates = allTemplates,
             onDismiss = {
+                showDialog = false
                 selectedButtonIndex = null
             },
             onSave = { newConfig ->
                 templateViewModel.updateButtonConfig(template, editingIndex, newConfig)
+                showDialog = false
                 selectedButtonIndex = null
             },
             onTest = { testConfig ->
-                pageViewModel.activateButtonAtIndex(editingIndex) // Use VM's method which uses InteractionDelegate
+                pageViewModel.actionExecutor.executeButtonAction(testConfig)
             },
             onNavigateToPage = { pageId ->
                 scope.launch {

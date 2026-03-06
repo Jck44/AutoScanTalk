@@ -2,9 +2,7 @@ package com.andreas_kratzer.ghosttalk.ui.pages
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -22,7 +20,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.model.PageTemplate
@@ -36,8 +33,6 @@ fun AddPageDialog(
 ) {
     var name by remember { mutableStateOf("") }
     var selectedTemplate by remember { mutableStateOf<PageTemplate?>(null) }
-    var rowsStr by remember { mutableStateOf("4") }
-    var columnsStr by remember { mutableStateOf("4") }
     var expanded by remember { mutableStateOf(false) }
 
     AlertDialog(
@@ -76,8 +71,6 @@ fun AddPageDialog(
                                 text = { Text(template.name) },
                                 onClick = {
                                     selectedTemplate = template
-                                    rowsStr = template.rows.toString()
-                                    columnsStr = template.columns.toString()
                                     expanded = false
                                 }
                             )
@@ -92,35 +85,15 @@ fun AddPageDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
-                
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = rowsStr,
-                        onValueChange = { rowsStr = it },
-                        label = { Text(stringResource(R.string.page_rows_field)) },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        singleLine = true,
-                        readOnly = selectedTemplate != null,
-                        modifier = Modifier.weight(1f)
-                    )
-                    OutlinedTextField(
-                        value = columnsStr,
-                        onValueChange = { columnsStr = it },
-                        label = { Text(stringResource(R.string.page_cols_field)) },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        singleLine = true,
-                        readOnly = selectedTemplate != null,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
             }
         },
         confirmButton = {
             Button(
                 onClick = {
-                    val rows = rowsStr.toIntOrNull() ?: 4
-                    val cols = columnsStr.toIntOrNull() ?: 4
-                    if (name.isNotBlank() && rows in 1..6 && cols in 1..6) {
+                    // Default grid size is 4x4 unless template specifies otherwise
+                    val rows = selectedTemplate?.rows ?: 4
+                    val cols = selectedTemplate?.columns ?: 4
+                    if (name.isNotBlank()) {
                         onConfirm(name, rows, cols, selectedTemplate?.id)
                     }
                 },

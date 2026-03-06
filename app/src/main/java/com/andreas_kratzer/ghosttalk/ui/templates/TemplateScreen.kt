@@ -233,8 +233,6 @@ fun AddTemplateDialog(
     onConfirm: (name: String, rows: Int, columns: Int) -> Unit
 ) {
     var name by remember { mutableStateOf("") }
-    var rowsStr by remember { mutableStateOf("4") }
-    var columnsStr by remember { mutableStateOf("4") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -248,32 +246,14 @@ fun AddTemplateDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
-
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = rowsStr,
-                        onValueChange = { rowsStr = it },
-                        label = { Text("Zeilen (max 6)") },
-                        singleLine = true,
-                        modifier = Modifier.weight(1f)
-                    )
-                    OutlinedTextField(
-                        value = columnsStr,
-                        onValueChange = { columnsStr = it },
-                        label = { Text("Spalten (max 6)") },
-                        singleLine = true,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
             }
         },
         confirmButton = {
             Button(
                 onClick = {
-                    val rows = rowsStr.toIntOrNull() ?: 4
-                    val cols = columnsStr.toIntOrNull() ?: 4
-                    if (name.isNotBlank() && rows in 1..6 && cols in 1..6) {
-                        onConfirm(name, rows, cols)
+                    // Standardmäßig 4x4
+                    if (name.isNotBlank()) {
+                        onConfirm(name, 4, 4)
                     }
                 },
                 enabled = name.isNotBlank()

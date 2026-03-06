@@ -10,6 +10,8 @@ data class PageTemplate(
     override val name: String,
     val rows: Int,
     val columns: Int,
+    val scanPattern: String? = null,
+    val rowNames: List<String> = emptyList(),
     val buttonConfigs: List<ButtonConfig?>,
     val isBuiltIn: Boolean = false,
     override val orderIndex: Int = 0,

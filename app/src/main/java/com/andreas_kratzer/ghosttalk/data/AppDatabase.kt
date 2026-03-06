@@ -13,7 +13,7 @@ import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.model.PageTemplate
 import java.util.UUID
 
-@Database(entities = [Page::class, Book::class, ButtonUsageStat::class, PageTemplate::class], version = 7, exportSchema = false)
+@Database(entities = [Page::class, Book::class, ButtonUsageStat::class, PageTemplate::class], version = 8, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
 
@@ -28,21 +28,16 @@ abstract class AppDatabase : RoomDatabase() {
         
         val MIGRATION_1_2: Migration = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                // 1. Create the new books table
                 db.execSQL(
                     "CREATE TABLE IF NOT EXISTS `books` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, PRIMARY KEY(`id`))"
                 )
 
-                // 2. Generate a Default Book ID and insert it
                 val defaultBookId = "book-default-" + UUID.randomUUID().toString()
                 val currentTime = System.currentTimeMillis()
                 db.execSQL(
                     "INSERT INTO `books` (`id`, `name`, `createdAt`) VALUES ('$defaultBookId', 'Standardbuch', $currentTime)"
                 )
 
-                // 3. Add the bookId column to the existing pages table
-                // SQLite ALTER TABLE ADD COLUMN allows adding a column. We can set a DEFAULT value or allow NULL.
-                // Since our model defines val bookId: String (NOT NULL), we must provide a default for existing rows.
                 db.execSQL(
                     "ALTER TABLE `pages` ADD COLUMN `bookId` TEXT NOT NULL DEFAULT '$defaultBookId'"
                 )
@@ -51,7 +46,6 @@ abstract class AppDatabase : RoomDatabase() {
 
         val MIGRATION_2_3: Migration = object : Migration(2, 3) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                // Add scanPattern (nullable) and rowNames (not null with default empty JSON array) to pages
                 db.execSQL(
                     "ALTER TABLE `pages` ADD COLUMN `scanPattern` TEXT DEFAULT NULL"
                 )
@@ -92,43 +86,29 @@ abstract class AppDatabase : RoomDatabase() {
 
         val MIGRATION_4_5: Migration = object : Migration(4, 5) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                // Add orderIndex and createdAt to pages
                 db.execSQL("ALTER TABLE `pages` ADD COLUMN `orderIndex` INTEGER NOT NULL DEFAULT 0")
                 db.execSQL("ALTER TABLE `pages` ADD COLUMN `createdAt` INTEGER NOT NULL DEFAULT 0")
-                
-                // Add orderIndex to templates (createdAt was already there)
                 db.execSQL("ALTER TABLE `templates` ADD COLUMN `orderIndex` INTEGER NOT NULL DEFAULT 0")
             }
         }
+
         val MIGRATION_5_6: Migration = object : Migration(5, 6) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                // Add updatedAt to books. We use 0 as default, or we could try to copy createdAt.
-                // Simple approach: Add with default 0.
                 db.execSQL("ALTER TABLE `books` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT 0")
-                // Retroactively set updatedAt to createdAt for existing rows to avoid having '1970' everywhere
                 db.execSQL("UPDATE `books` SET `updatedAt` = `createdAt` WHERE `updatedAt` = 0")
             }
         }
 
         val MIGRATION_6_7: Migration = object : Migration(6, 7) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                // We need to update ButtonConfig JSONs in 'pages' and 'templates' tables.
-                // Since Room uses JSON for these, we'll use a cursor to read, modify, and write back.
-                
-                val tables = listOf("pages", "templates")
-                for (table in tables) {
-                    val cursor = db.query("SELECT id, buttonConfigs FROM $table")
-                    while (cursor.moveToNext()) {
-                        // val id = cursor.getString(0) 
-                        // val json = cursor.getString(1)
-                        // Note: Complex JSON migration via SQL is avoided here.
-                        // Converters handle model changes where possible.
-                    }
-                    cursor.close()
-                }
-                // Revision: The most reliable way for this specific app is to perform the migration via a temporary column or 
-                // just accept that users might need to re-enter spoken text IF they had custom ones that differed from labels.
-                // BUT the user specifically asked for a schema update.
+                // Placeholder for potential data migrations within JSON strings
+            }
+        }
+
+        val MIGRATION_7_8: Migration = object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `templates` ADD COLUMN `scanPattern` TEXT DEFAULT NULL")
+                db.execSQL("ALTER TABLE `templates` ADD COLUMN `rowNames` TEXT NOT NULL DEFAULT '[]'")
             }
         }
 
@@ -139,7 +119,15 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "ghosttalk_database"
                 )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
+                .addMigrations(
+                    MIGRATION_1_2, 
+                    MIGRATION_2_3, 
+                    MIGRATION_3_4, 
+                    MIGRATION_4_5, 
+                    MIGRATION_5_6, 
+                    MIGRATION_6_7,
+                    MIGRATION_7_8
+                )
                 .fallbackToDestructiveMigration(true)
                 .build()
                 INSTANCE = instance

@@ -86,6 +86,7 @@ fun GhostTalkCard(
         modifier = modifier
             .fillMaxWidth()
             .height(100.dp),
+        shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
             containerColor = containerColor,
             contentColor = contentColor

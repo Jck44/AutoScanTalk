@@ -5,9 +5,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -16,12 +16,17 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -36,10 +41,9 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.material3.Slider
 import androidx.compose.ui.unit.dp
-import com.andreas_kratzer.ghosttalk.ui.util.GridUtils
 import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.ui.util.GridUtils
 import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -50,7 +54,6 @@ fun PageEditorScreen(
     onNavigateBack: () -> Unit,
     onEditPage: ((String) -> Unit)? = null
 ) {
-    val allPages by pageViewModel.filteredPages.collectAsState()
     val unfilteredPages by pageViewModel.unfilteredPages.collectAsState()
     val bookDefaultScanPattern by pageViewModel.defaultScanPattern.collectAsState()
     val page = unfilteredPages.find { it.id == pageId }
@@ -68,7 +71,25 @@ fun PageEditorScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.page_editor_title, page.name)) },
+                title = { 
+                    OutlinedTextField(
+                        value = page.name,
+                        onValueChange = { newName ->
+                            pageViewModel.updatePageSettings(
+                                pageId = page.id,
+                                newName = newName,
+                                newScanPattern = page.scanPattern,
+                                newRowNames = page.rowNames,
+                                newRows = page.rows,
+                                newColumns = page.columns
+                            )
+                        },
+                        label = { Text(stringResource(R.string.page_name_label)) },
+                        singleLine = true,
+                        shape = MaterialTheme.shapes.large,
+                        modifier = Modifier.fillMaxWidth().padding(end = 16.dp)
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_button_content_description))
@@ -85,12 +106,6 @@ fun PageEditorScreen(
                 .padding(paddingValues)
                 .padding(if (isLandscape) 8.dp else 16.dp)
         ) {
-            Text(
-                stringResource(R.string.page_editor_hint),
-                style = if (isLandscape) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(bottom = if (isLandscape) 8.dp else 8.dp)
-            )
-
             // Grid Size Controls
             Row(
                 modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
@@ -142,6 +157,52 @@ fun PageEditorScreen(
                         valueRange = 1f..6f,
                         steps = 4
                     )
+                }
+            }
+
+            // Scan Pattern Dropdown (Material 3 Expressive Style)
+            var expandedPattern by remember { mutableStateOf(false) }
+            val options = listOf(
+                null to stringResource(R.string.page_pattern_default),
+                "linear" to stringResource(R.string.settings_pattern_linear),
+                "row_by_row" to stringResource(R.string.settings_pattern_row_by_row)
+            )
+            val currentPatternLabel = options.find { it.first == page.scanPattern }?.second ?: stringResource(R.string.page_pattern_default)
+
+            ExposedDropdownMenuBox(
+                expanded = expandedPattern,
+                onExpandedChange = { expandedPattern = !expandedPattern },
+                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+            ) {
+                OutlinedTextField(
+                    value = currentPatternLabel,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text(stringResource(R.string.page_scan_pattern_override)) },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedPattern) },
+                    colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                    shape = MaterialTheme.shapes.large,
+                    modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
+                )
+                ExposedDropdownMenu(
+                    expanded = expandedPattern,
+                    onDismissRequest = { expandedPattern = false }
+                ) {
+                    options.forEach { (pattern, label) ->
+                        DropdownMenuItem(
+                            text = { Text(label, style = MaterialTheme.typography.bodyLarge) },
+                            onClick = {
+                                pageViewModel.updatePageSettings(
+                                    pageId = page.id,
+                                    newName = page.name,
+                                    newScanPattern = pattern,
+                                    newRowNames = page.rowNames
+                                )
+                                expandedPattern = false
+                            },
+                            contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                        )
+                    }
                 }
             }
 
@@ -241,6 +302,7 @@ fun RowNameEditor(initialName: String, onNameChanged: (String) -> Unit) {
         onValueChange = { text = it },
         label = { Text(stringResource(R.string.page_editor_row_name_label)) },
         singleLine = true,
+        shape = MaterialTheme.shapes.large,
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
         keyboardActions = KeyboardActions(onDone = { 
             if (text != initialName) onNameChanged(text) 

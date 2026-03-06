@@ -1,6 +1,7 @@
 package com.andreas_kratzer.ghosttalk.ui.books
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -65,7 +66,10 @@ fun BookListScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { if (!showAddDialog) showAddDialog = true }) {
+            FloatingActionButton(
+                onClick = { if (!showAddDialog) showAddDialog = true },
+                shape = MaterialTheme.shapes.large
+            ) {
                 Icon(Icons.Default.Add, contentDescription = stringResource(R.string.book_add_description))
             }
         }
@@ -85,7 +89,7 @@ fun BookListScreen(
                 GhostTalkCard(
                     title = book.name,
                     subtitle = stringResource(R.string.book_last_modified_label, dateFormat.format(Date(book.updatedAt))),
-                    icon = Icons.Default.Edit, // Books usually don't have a specific icon, but we can use Edit or a custom one
+                    icon = Icons.Default.Edit, 
                     onClick = { onBookSelected(book.id) },
                     trailingAction = {
                         Row {
@@ -123,6 +127,7 @@ fun BookListScreen(
                         onValueChange = { newBookName = it },
                         label = { Text(stringResource(R.string.book_name_label)) },
                         singleLine = true,
+                        shape = MaterialTheme.shapes.large,
                         modifier = Modifier.fillMaxWidth()
                     )
                 },
@@ -133,7 +138,8 @@ fun BookListScreen(
                                 bookViewModel.createNewBook(newBookName)
                                 showAddDialog = false
                             }
-                        }
+                        },
+                        shape = MaterialTheme.shapes.medium
                     ) {
                         Text(stringResource(R.string.action_create))
                     }
@@ -141,6 +147,7 @@ fun BookListScreen(
                 dismissButton = {
                     Button(
                         onClick = { showAddDialog = false },
+                        shape = MaterialTheme.shapes.medium,
                         colors = ButtonDefaults.textButtonColors()
                     ) {
                         Text(stringResource(R.string.action_cancel))
@@ -161,6 +168,7 @@ fun BookListScreen(
                         onValueChange = { editBookName = it },
                         label = { Text(stringResource(R.string.book_name_label)) },
                         singleLine = true,
+                        shape = MaterialTheme.shapes.large,
                         modifier = Modifier.fillMaxWidth()
                     )
                 },
@@ -171,7 +179,8 @@ fun BookListScreen(
                                 bookViewModel.updateBookName(book, editBookName)
                                 bookToEdit = null
                             }
-                        }
+                        },
+                        shape = MaterialTheme.shapes.medium
                     ) {
                         Text(stringResource(R.string.action_save))
                     }
@@ -179,6 +188,7 @@ fun BookListScreen(
                 dismissButton = {
                     Button(
                         onClick = { bookToEdit = null },
+                        shape = MaterialTheme.shapes.medium,
                         colors = ButtonDefaults.textButtonColors()
                     ) {
                         Text(stringResource(R.string.action_cancel))
@@ -198,6 +208,7 @@ fun BookListScreen(
                             bookViewModel.deleteBook(book)
                             bookToDelete = null
                         },
+                        shape = MaterialTheme.shapes.medium,
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                     ) {
                         Text(stringResource(R.string.action_delete))
@@ -206,6 +217,7 @@ fun BookListScreen(
                 dismissButton = {
                     Button(
                         onClick = { bookToDelete = null },
+                        shape = MaterialTheme.shapes.medium,
                         colors = ButtonDefaults.textButtonColors()
                     ) {
                         Text(stringResource(R.string.action_cancel))

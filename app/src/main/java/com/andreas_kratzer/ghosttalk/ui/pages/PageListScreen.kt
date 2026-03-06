@@ -2,9 +2,7 @@ package com.andreas_kratzer.ghosttalk.ui.pages
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -13,8 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Sort
@@ -24,7 +20,6 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.DragHandle
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -77,9 +72,7 @@ fun PageListScreen(
     val templates by pageViewModel.templates.collectAsState()
     val experimentalSorting by pageViewModel.experimentalManualSorting.collectAsState()
     val activeBookId by pageViewModel.activeBookId.collectAsState()
-    val bookDefaultScanPattern by pageViewModel.defaultScanPattern.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
-    var pageToEdit by remember { mutableStateOf<Page?>(null) }
     var pageToDelete by remember { mutableStateOf<Page?>(null) }
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -215,7 +208,10 @@ fun PageListScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { if (!showAddDialog) showAddDialog = true }) {
+            FloatingActionButton(
+                onClick = { if (!showAddDialog) showAddDialog = true },
+                shape = MaterialTheme.shapes.large
+            ) {
                 Icon(Icons.Default.Add, contentDescription = stringResource(R.string.page_add_description))
             }
         }
@@ -238,6 +234,7 @@ fun PageListScreen(
                         }
                     }
                 },
+                shape = MaterialTheme.shapes.large,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
@@ -286,13 +283,6 @@ fun PageListScreen(
                                 )
                             }
                             
-                            IconButton(onClick = { pageToEdit = page }) {
-                                Icon(
-                                    imageVector = Icons.Default.Edit,
-                                    contentDescription = stringResource(R.string.page_rename_description),
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            }
                             IconButton(
                                 onClick = { pageToDelete = page }
                             ) {
@@ -320,6 +310,7 @@ fun PageListScreen(
                             pageViewModel.deletePage(page)
                             pageToDelete = null
                         },
+                        shape = MaterialTheme.shapes.medium,
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                     ) {
                         Text(stringResource(R.string.action_delete))
@@ -328,6 +319,7 @@ fun PageListScreen(
                 dismissButton = {
                     Button(
                         onClick = { pageToDelete = null },
+                        shape = MaterialTheme.shapes.medium,
                         colors = ButtonDefaults.textButtonColors()
                     ) {
                         Text(stringResource(R.string.action_cancel))
@@ -349,111 +341,5 @@ fun PageListScreen(
                 }
             )
         }
-
-        pageToEdit?.let { page ->
-            var editPageName by remember { mutableStateOf(page.name) }
-            var editScanPattern by remember { mutableStateOf(page.scanPattern) }
-            val gridRowLabelTemplate = stringResource(R.string.page_row_label)
-            val mutableRowNames = remember { 
-                androidx.compose.runtime.mutableStateListOf<String>().apply {
-                    val initialNames = page.rowNames
-                    for (i in 0 until page.rows) {
-                        add(initialNames.getOrNull(i) ?: gridRowLabelTemplate.format(i + 1))
-                    }
-                }
-            }
-            var expandedPattern by remember { mutableStateOf(false) }
-
-            AlertDialog(
-                onDismissRequest = { pageToEdit = null },
-                title = { Text(stringResource(R.string.page_dialog_settings_title)) },
-                text = {
-                    Column(
-                        modifier = Modifier.verticalScroll(rememberScrollState()),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        OutlinedTextField(
-                            value = editPageName,
-                            onValueChange = { editPageName = it },
-                            label = { Text(stringResource(R.string.page_name_label)) },
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-                        val currentPatternLabel = when (editScanPattern) {
-                            "linear" -> stringResource(R.string.settings_pattern_linear)
-                            "row_by_row" -> stringResource(R.string.settings_pattern_row_by_row)
-                            else -> stringResource(R.string.page_pattern_default)
-                        }
-
-                        Box {
-                            OutlinedTextField(
-                                value = currentPatternLabel,
-                                onValueChange = {},
-                                readOnly = true,
-                                label = { Text(stringResource(R.string.page_scan_pattern_override)) },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { expandedPattern = true }
-                            )
-                            Box(modifier = Modifier.matchParentSize().clickable { expandedPattern = true })
-                            DropdownMenu(
-                                expanded = expandedPattern,
-                                onDismissRequest = { expandedPattern = false },
-                                modifier = Modifier.fillMaxWidth(0.8f)
-                            ) {
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.page_pattern_default)) },
-                                    onClick = { editScanPattern = null; expandedPattern = false }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.settings_pattern_linear)) },
-                                    onClick = { editScanPattern = "linear"; expandedPattern = false }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.settings_pattern_row_by_row)) },
-                                    onClick = { editScanPattern = "row_by_row"; expandedPattern = false }
-                                )
-                            }
-                        }
-
-                        val effectiveScanPattern = editScanPattern ?: bookDefaultScanPattern
-                        if (effectiveScanPattern == "row_by_row") {
-                            Text(stringResource(R.string.page_row_announcement_config), style = MaterialTheme.typography.titleSmall)
-                            for (i in 0 until page.rows) {
-                                OutlinedTextField(
-                                    value = mutableRowNames[i],
-                                    onValueChange = { mutableRowNames[i] = it },
-                                    label = { Text(gridRowLabelTemplate.format(i + 1)) },
-                                    singleLine = true,
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-                            }
-                        }
-                    }
-                },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            if (editPageName.isNotBlank()) {
-                                pageViewModel.updatePageSettings(page.id, editPageName, editScanPattern, mutableRowNames.toList())
-                                pageToEdit = null
-                            }
-                        }
-                    ) {
-                        Text(stringResource(R.string.action_save))
-                    }
-                },
-                dismissButton = {
-                    Button(
-                        onClick = { pageToEdit = null },
-                        colors = ButtonDefaults.textButtonColors()
-                    ) {
-                        Text(stringResource(R.string.action_cancel))
-                    }
-                }
-            )
-        }
     }
 }
-
