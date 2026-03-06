@@ -36,6 +36,7 @@ class LinearScanStrategyTest {
     fun `executeScan with empty configs sets focus to null`() = runTest {
         strategy.executeScan(
             buttonConfigs = emptyList(),
+            rows = 4,
             columns = 4,
             rowNames = emptyList(),
             startIndex = 0,
@@ -65,6 +66,7 @@ class LinearScanStrategyTest {
         val job = launch {
             strategy.executeScan(
                 buttonConfigs = configs,
+                rows = 1,
                 columns = 4,
                 rowNames = emptyList(),
                 startIndex = 0,
@@ -105,6 +107,7 @@ class LinearScanStrategyTest {
         val job = launch {
             strategy.executeScan(
                 buttonConfigs = listOf(config),
+                rows = 1,
                 columns = 4,
                 rowNames = emptyList(),
                 startIndex = 0,
@@ -132,6 +135,7 @@ class LinearScanStrategyTest {
         val job = launch {
             strategy.executeScan(
                 buttonConfigs = configs,
+                rows = 1,
                 columns = 4,
                 rowNames = emptyList(),
                 startIndex = 2,

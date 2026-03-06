@@ -57,6 +57,7 @@ class RowByRowScanStrategyTest {
         val job = launch {
             strategy.executeScan(
                 buttonConfigs = modifiedConfigs,
+                rows = 18,
                 columns = 2,
                 rowNames = listOf("R1", "R2"),
                 startIndex = 0,
@@ -85,6 +86,7 @@ class RowByRowScanStrategyTest {
         val job = launch {
             strategy.executeScan(
                 buttonConfigs = configs,
+                rows = 36,
                 columns = 1,
                 rowNames = emptyList(),
                 startIndex = 0,
@@ -112,6 +114,7 @@ class RowByRowScanStrategyTest {
         val job = launch {
             strategy.executeButtonScanInRow(
                 buttonConfigs = configs,
+                rows = 18,
                 columns = 2,
                 rowIndex = 1,
                 focusedButtonIndex = focusedButtonIndex,
@@ -143,6 +146,7 @@ class RowByRowScanStrategyTest {
         
         strategy.executeButtonScanInRow(
             buttonConfigs = configs,
+            rows = 36,
             columns = 1,
             rowIndex = 0,
             focusedButtonIndex = focusedButtonIndex,
