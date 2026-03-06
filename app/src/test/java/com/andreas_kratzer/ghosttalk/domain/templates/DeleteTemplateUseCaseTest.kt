@@ -1,6 +1,5 @@
 package com.andreas_kratzer.ghosttalk.domain.templates
 
-import com.andreas_kratzer.ghosttalk.domain.templates.DeleteTemplateUseCase
 
 import com.andreas_kratzer.ghosttalk.data.TemplateRepository
 import com.andreas_kratzer.ghosttalk.model.PageTemplate

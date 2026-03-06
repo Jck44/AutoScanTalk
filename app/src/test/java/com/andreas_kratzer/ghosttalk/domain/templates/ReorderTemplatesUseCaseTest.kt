@@ -1,6 +1,5 @@
 package com.andreas_kratzer.ghosttalk.domain.templates
 
-import com.andreas_kratzer.ghosttalk.domain.templates.ReorderTemplatesUseCase
 
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.data.TemplateRepository
