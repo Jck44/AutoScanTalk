@@ -1,6 +1,5 @@
 package com.andreas_kratzer.ghosttalk.domain.templates
 
-
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.data.TemplateRepository
 import com.andreas_kratzer.ghosttalk.model.PageTemplate
@@ -13,7 +12,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
 
-@ExperimentalCoroutinesApi
+@OptIn(ExperimentalCoroutinesApi::class)
 class ReorderTemplatesUseCaseTest {
 
     private lateinit var templateRepository: TemplateRepository

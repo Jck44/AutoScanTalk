@@ -1,6 +1,7 @@
 package com.andreas_kratzer.ghosttalk.domain.templates
 
 import com.andreas_kratzer.ghosttalk.data.TemplateRepository
+import com.andreas_kratzer.ghosttalk.domain.templates.CreateTemplateUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -10,7 +11,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
 
-@ExperimentalCoroutinesApi
+@OptIn(ExperimentalCoroutinesApi::class)
 class CreateTemplateUseCaseTest {
 
     private lateinit var templateRepository: TemplateRepository
