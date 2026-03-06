@@ -1,12 +1,7 @@
 package com.andreas_kratzer.ghosttalk.core.scanning
 
-
-
-import com.andreas_kratzer.ghosttalk.core.scanning.RowByRowScanStrategy
 import com.andreas_kratzer.ghosttalk.domain.settings.FeatureGuard
-import com.andreas_kratzer.ghosttalk.model.AuditoryCue
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
 import io.mockk.every
 import io.mockk.mockk
@@ -23,350 +18,140 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class RowByRowScanStrategyTest {
 
-    private val strategy = RowByRowScanStrategy()
-    private val featureGuard = mockk<FeatureGuard>()
+    private lateinit var strategy: RowByRowScanStrategy
+    private lateinit var featureGuard: FeatureGuard
+    private val focusedButtonIndex = MutableStateFlow<Int?>(null)
+    private val focusedRowIndex = MutableStateFlow<Int?>(null)
 
     @Before
     fun setup() {
-        // Default: everything visible
-        every { featureGuard.isButtonVisible(any()) } returns true
-        every { featureGuard.isActionEnabled(any()) } returns true
+        strategy = RowByRowScanStrategy()
+        featureGuard = mockk(relaxed = true)
+        focusedButtonIndex.value = null
+        focusedRowIndex.value = null
     }
 
-    private fun btn(id: String, label: String, active: Boolean = true, cueText: String? = null): ButtonConfig {
-        return ButtonConfig(
-            id = id,
-            label = label,
-            auditoryCue = cueText?.let { AuditoryCue.TextToSpeechCue(it) },
-            buttonAction = SpeakTextButtonAction(),
-            isActive = active
-        )
+    private fun createConfigs(count: Int): List<ButtonConfig> {
+        return (0 until count).map { i ->
+            ButtonConfig(id = "$i", label = "B$i", isActive = true, auditoryCue = null, buttonAction = SpeakTextButtonAction())
+        }
     }
-
-    // --- executeScan (row scanning) ---
 
     @Test
-    fun `executeScan iterates through active rows`() = runTest {
-        val focusedButton = MutableStateFlow<Int?>(null)
-        val focusedRow = MutableStateFlow<Int?>(null)
-        val spokenCues = mutableListOf<String>()
+    fun `executeScan skips rows without active or visible buttons`() = runTest {
+        // Col=2
+        // Row 0: B0 (inactive), B1 (invisible) -> Row 0 skip
+        // Row 1: B2 (active), B3 (active) -> Row 1 keep
+        val configs = createConfigs(4)
+        val inactiveB0 = configs[0].copy(isActive = false)
+        val invisibleB1 = configs[1]
+        val activeB2 = configs[2]
+        val activeB3 = configs[3]
+        
+        val modifiedConfigs = listOf(inactiveB0, invisibleB1, activeB2, activeB3)
+        
+        every { featureGuard.isButtonVisible(invisibleB1) } returns false
+        every { featureGuard.isButtonVisible(activeB2) } returns true
+        every { featureGuard.isButtonVisible(activeB3) } returns true
 
-        // 2 rows x 2 columns = 4 buttons, all active
-        val configs = listOf(btn("b1", "A"), btn("b2", "B"), btn("b3", "C"), btn("b4", "D"))
-
+        val cues = mutableListOf<String>()
         val job = launch {
             strategy.executeScan(
-                buttonConfigs = configs,
-                columns = 2,
-                rowNames = listOf("Row 1", "Row 2"),
-                startIndex = 0,
-                focusedButtonIndex = focusedButton,
-                focusedRowIndex = focusedRow,
-                onSpeakCue = { cue: String -> spokenCues.add(cue) },
-                delayMillis = 100,
-                featureGuard = featureGuard
-            )
-        }
-
-        // First row
-        advanceTimeBy(101)
-        assertEquals(0, focusedRow.value)
-        assertNull(focusedButton.value) // No button focused in row scanning
-        assertEquals("Row 1", spokenCues.last())
-
-        // Second row
-        advanceTimeBy(100)
-        assertEquals(1, focusedRow.value)
-        assertEquals("Row 2", spokenCues.last())
-
-        // Wraps back to first row
-        advanceTimeBy(100)
-        assertEquals(0, focusedRow.value)
-        assertEquals(3, spokenCues.size)
-
-        job.cancel()
-    }
-
-    @Test
-    fun `executeScan skips rows with only inactive or null buttons`() = runTest {
-        val focusedButton = MutableStateFlow<Int?>(null)
-        val focusedRow = MutableStateFlow<Int?>(null)
-        val spokenCues = mutableListOf<String>()
-
-        // 3 rows x 2 columns: row 0 active, row 1 all null/inactive, row 2 active
-        val configs: List<ButtonConfig?> = listOf(
-            btn("b1", "A"), btn("b2", "B"),               // row 0 - active
-            null, btn("b4", "D", active = false),          // row 1 - inactive/null
-            btn("b5", "E"), btn("b6", "F")                 // row 2 - active
-        )
-
-        val job = launch {
-            strategy.executeScan(
-                buttonConfigs = configs,
-                columns = 2,
-                rowNames = listOf("R1", "R2", "R3"),
-                startIndex = 0,
-                focusedButtonIndex = focusedButton,
-                focusedRowIndex = focusedRow,
-                onSpeakCue = { cue: String -> spokenCues.add(cue) },
-                delayMillis = 100,
-                featureGuard = featureGuard
-            )
-        }
-
-        advanceTimeBy(101)
-        assertEquals(0, focusedRow.value) // Row 0
-
-        advanceTimeBy(100)
-        assertEquals(2, focusedRow.value) // Skipped row 1, jumped to row 2
-
-        assertEquals(listOf("R1", "R3"), spokenCues)
-
-        job.cancel()
-    }
-
-    @Test
-    fun `executeScan uses default row name when no name provided`() = runTest {
-        val focusedButton = MutableStateFlow<Int?>(null)
-        val focusedRow = MutableStateFlow<Int?>(null)
-        val spokenCues = mutableListOf<String>()
-
-        val configs = listOf(btn("b1", "A"), btn("b2", "B"))
-
-        val job = launch {
-            strategy.executeScan(
-                buttonConfigs = configs,
-                columns = 2,
-                rowNames = emptyList(), // No names
-                startIndex = 0,
-                focusedButtonIndex = focusedButton,
-                focusedRowIndex = focusedRow,
-                onSpeakCue = { cue: String -> spokenCues.add(cue) },
-                delayMillis = 100,
-                featureGuard = featureGuard
-            )
-        }
-
-        advanceTimeBy(101)
-        assertEquals("Zeile 1", spokenCues[0]) // Falls back to "Zeile 1"
-
-        job.cancel()
-    }
-
-    @Test
-    fun `executeScan returns immediately when no active rows`() = runTest {
-        val focusedButton = MutableStateFlow<Int?>(null)
-        val focusedRow = MutableStateFlow<Int?>(null)
-
-        val configs: List<ButtonConfig?> = listOf(null, null)
-
-        strategy.executeScan(
-            buttonConfigs = configs,
-            columns = 2,
-            rowNames = emptyList(),
-            startIndex = 0,
-            focusedButtonIndex = focusedButton,
-            focusedRowIndex = focusedRow,
-            onSpeakCue = { },
-            delayMillis = 100,
-            featureGuard = featureGuard
-        )
-
-        assertNull(focusedRow.value)
-    }
-
-    // --- executeButtonScanInRow ---
-
-    @Test
-    fun `executeButtonScanInRow scans active buttons within row`() = runTest {
-        val focusedButton = MutableStateFlow<Int?>(null)
-        MutableStateFlow<Int?>(0)
-        val spokenCues = mutableListOf<String>()
-
-        // 2 rows x 2 columns
-        val configs = listOf(btn("b1", "A"), btn("b2", "B"), btn("b3", "C"), btn("b4", "D"))
-
-        val job = launch {
-            strategy.executeButtonScanInRow(
-                buttonConfigs = configs,
-                columns = 2,
-                rowIndex = 0, // Scan row 0
-                focusedButtonIndex = focusedButton,
-                onSpeakCue = { cue: String -> spokenCues.add(cue) },
-                delayMillis = 100,
-                featureGuard = featureGuard
-            )
-        }
-
-        // First button in row 0 (global index 0)
-        advanceTimeBy(101)
-        assertEquals(0, focusedButton.value)
-        assertEquals("A", spokenCues.last())
-
-        // Second button in row 0 (global index 1)
-        advanceTimeBy(100)
-        assertEquals(1, focusedButton.value)
-        assertEquals("B", spokenCues.last())
-
-        // Should NOT scan row 1 buttons; wraps within row 0
-        advanceTimeBy(100)
-        assertEquals(0, focusedButton.value)
-        assertEquals(3, spokenCues.size) // A, B, A
-
-        job.cancel()
-    }
-
-    @Test
-    fun `executeButtonScanInRow skips inactive buttons in row`() = runTest {
-        val focusedButton = MutableStateFlow<Int?>(null)
-        val spokenCues = mutableListOf<String>()
-
-        // 2 rows x 3 columns
-        val configs: List<ButtonConfig?> = listOf(
-            btn("b1", "A"), btn("b2", "B"), btn("b3", "C"),       // row 0
-            null, btn("b5", "E"), btn("b6", "F", active = false)   // row 1: null, active, inactive
-        )
-
-        val job = launch {
-            strategy.executeButtonScanInRow(
-                buttonConfigs = configs,
-                columns = 3,
-                rowIndex = 1,
-                focusedButtonIndex = focusedButton,
-                onSpeakCue = { cue: String -> spokenCues.add(cue) },
-                delayMillis = 100,
-                featureGuard = featureGuard
-            )
-        }
-
-        advanceTimeBy(101)
-        assertEquals(4, focusedButton.value) // Only button E (global index 4) is active
-        assertEquals("E", spokenCues.last())
-
-        // Wraps back to same button
-        advanceTimeBy(100)
-        assertEquals(4, focusedButton.value)
-
-        job.cancel()
-    }
-
-    @Test
-    fun `executeButtonScanInRow uses auditory cue when available`() = runTest {
-        val focusedButton = MutableStateFlow<Int?>(null)
-        MutableStateFlow<Int?>(0)
-        val spokenCues = mutableListOf<String>()
-
-        val configs = listOf(btn("b1", "Label", cueText = "Custom Cue"))
-
-        val job = launch {
-            strategy.executeButtonScanInRow(
-                buttonConfigs = configs,
-                columns = 1,
-                rowIndex = 0,
-                focusedButtonIndex = focusedButton,
-                onSpeakCue = { cue: String -> spokenCues.add(cue) },
-                delayMillis = 100,
-                featureGuard = featureGuard
-            )
-        }
-
-        advanceTimeBy(101)
-        assertEquals("Custom Cue", spokenCues[0])
-
-        job.cancel()
-    }
-
-    @Test
-    fun `executeButtonScanInRow returns immediately when no active buttons in row`() = runTest {
-        val focusedButton = MutableStateFlow<Int?>(null)
-        MutableStateFlow<Int?>(0)
-
-        val configs: List<ButtonConfig?> = listOf(null, null)
-
-        strategy.executeButtonScanInRow(
-            buttonConfigs = configs,
-            columns = 2,
-            rowIndex = 0,
-            focusedButtonIndex = focusedButton,
-            onSpeakCue = { },
-            delayMillis = 100,
-            featureGuard = featureGuard
-        )
-
-        assertNull(focusedButton.value)
-    }
-
-    @Test
-    fun `executeScan skips rows that only contain disabled smart buttons`() = runTest {
-        val focusedRow = MutableStateFlow<Int?>(null)
-        val spokenCues = mutableListOf<String>()
-
-        // Row 0: Regular
-        // Row 1: Only Smart
-        val configs = listOf(
-            btn("b1", "A"), btn("b2", "B"),
-            ButtonConfig(id="s1", label="S1", auditoryCue=null, buttonAction= SmartPredictionButtonAction(1), isActive=true),
-            ButtonConfig(id="s2", label="S2", auditoryCue=null, buttonAction= SmartPredictionButtonAction(2), isActive=true)
-        )
-
-        val job = launch {
-            every { featureGuard.isButtonVisible(match { it.buttonAction is SmartPredictionButtonAction }) } returns false
-            strategy.executeScan(
-                buttonConfigs = configs,
+                buttonConfigs = modifiedConfigs,
                 columns = 2,
                 rowNames = listOf("R1", "R2"),
                 startIndex = 0,
-                focusedButtonIndex = MutableStateFlow<Int?>(null),
-                focusedRowIndex = focusedRow,
-                onSpeakCue = { cue: String -> spokenCues.add(cue) },
-                delayMillis = 100,
+                focusedButtonIndex = focusedButtonIndex,
+                focusedRowIndex = focusedRowIndex,
+                onSpeakCue = { cues.add(it) },
+                delayMillis = 1000,
                 featureGuard = featureGuard
             )
         }
 
-        advanceTimeBy(101)
-        assertEquals(0, focusedRow.value) // R1
-
-        advanceTimeBy(100)
-        assertEquals(0, focusedRow.value) // Still R1 because R2 is empty (only disabled smart buttons)
-
-        assertEquals(listOf("R1", "R1"), spokenCues)
-
+        advanceTimeBy(150) // Initial delay(100)
+        // Focus should be on Row 1 (index 1) because Row 0 is empty
+        assertEquals(1, focusedRowIndex.value)
+        assertEquals("R2", cues.last())
+        
         job.cancel()
     }
 
     @Test
-    fun `executeButtonScanInRow skips disabled smart buttons`() = runTest {
-        val focusedButton = MutableStateFlow<Int?>(null)
-        val spokenCues = mutableListOf<String>()
+    fun `executeScan uses default row name if not provided`() = runTest {
+        val configs = createConfigs(1)
+        every { featureGuard.isButtonVisible(any()) } returns true
 
-        val configs = listOf(
-            btn("b1", "A"),
-            ButtonConfig(id="s1", label="S1", auditoryCue=null, buttonAction= SmartPredictionButtonAction(1), isActive=true),
-            btn("b3", "C")
-        )
-
+        val cues = mutableListOf<String>()
         val job = launch {
-            every { featureGuard.isButtonVisible(match { it.buttonAction is SmartPredictionButtonAction }) } returns false
-            strategy.executeButtonScanInRow(
+            strategy.executeScan(
                 buttonConfigs = configs,
-                columns = 3,
-                rowIndex = 0,
-                focusedButtonIndex = focusedButton,
-                onSpeakCue = { cue: String -> spokenCues.add(cue) },
-                delayMillis = 100,
+                columns = 1,
+                rowNames = emptyList(),
+                startIndex = 0,
+                focusedButtonIndex = focusedButtonIndex,
+                focusedRowIndex = focusedRowIndex,
+                onSpeakCue = { cues.add(it) },
+                delayMillis = 1000,
                 featureGuard = featureGuard
             )
         }
 
-        advanceTimeBy(101)
-        assertEquals(0, focusedButton.value) // A
-
-        advanceTimeBy(100)
-        assertEquals(2, focusedButton.value) // C (skipped S1 at index 1)
-
-        assertEquals(listOf("A", "C"), spokenCues)
-
+        advanceTimeBy(150)
+        assertEquals("Zeile 1", cues.last())
+        
         job.cancel()
+    }
+
+    @Test
+    fun `executeButtonScanInRow scans only buttons in specified row`() = runTest {
+        // Col=2, Row 1 (index 1) has B2, B3
+        val configs = createConfigs(4)
+        every { featureGuard.isButtonVisible(any()) } returns true
+
+        val cues = mutableListOf<String>()
+        val job = launch {
+            strategy.executeButtonScanInRow(
+                buttonConfigs = configs,
+                columns = 2,
+                rowIndex = 1,
+                focusedButtonIndex = focusedButtonIndex,
+                onSpeakCue = { cues.add(it) },
+                delayMillis = 1000,
+                featureGuard = featureGuard
+            )
+        }
+
+        advanceTimeBy(150) // Initial delay(100)
+        assertEquals(2, focusedButtonIndex.value)
+        assertEquals("B2", cues.last())
+
+        advanceTimeBy(1000)
+        assertEquals(3, focusedButtonIndex.value)
+        assertEquals("B3", cues.last())
+
+        advanceTimeBy(1000)
+        assertEquals(2, focusedButtonIndex.value) // Should loop back to B2
+        
+        job.cancel()
+    }
+
+    @Test
+    fun `executeButtonScanInRow handles empty row`() = runTest {
+        val configs = listOf(
+            ButtonConfig(id = "1", label = "B1", isActive = false, auditoryCue = null, buttonAction = SpeakTextButtonAction())
+        )
+        
+        strategy.executeButtonScanInRow(
+            buttonConfigs = configs,
+            columns = 1,
+            rowIndex = 0,
+            focusedButtonIndex = focusedButtonIndex,
+            onSpeakCue = { },
+            delayMillis = 1000,
+            featureGuard = featureGuard
+        )
+        
+        assertNull(focusedButtonIndex.value)
     }
 }

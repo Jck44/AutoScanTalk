@@ -206,4 +206,89 @@ class ScannerEngineTest {
 
         engine.stopScanning()
     }
+
+    // --- Row-by-Row Scanning ---
+
+    @Test
+    fun `startScanning with row_by_row pattern focuses on rows`() = runTest {
+        val engine = createEngine(this)
+        val configs = createConfigs(4)
+
+        // Start row scanning
+        engine.startScanning(
+            buttonConfigs = configs,
+            startIndex = 0,
+            pattern = "row_by_row",
+            columns = 2,
+            pageId = "page1"
+        )
+        advanceTimeBy(110)
+
+        // Focus should be on Row 0 (index 0)
+        assertEquals(0, engine.focusedRowIndex.value)
+        assertNull(engine.focusedButtonIndex.value)
+
+        // Advance to Row 1
+        advanceTimeBy(100)
+        assertEquals(1, engine.focusedRowIndex.value)
+
+        engine.stopScanning()
+    }
+
+    @Test
+    fun `selectCurrentRow starts button scanning within row`() = runTest {
+        val engine = createEngine(this)
+        val configs = createConfigs(4)
+
+        // Start row scanning
+        engine.startScanning(
+            buttonConfigs = configs,
+            startIndex = 0,
+            pattern = "row_by_row",
+            columns = 2,
+            pageId = "page1"
+        )
+        advanceTimeBy(110)
+
+        // Focus is on Row 0
+        assertEquals(0, engine.focusedRowIndex.value)
+
+        // Select Row 0
+        engine.selectCurrentRow()
+        advanceTimeBy(110) // Initial delay(100) inside executeButtonScanInRow
+
+        // Focus should now be on Button 0 (index 0) in Row 0
+        assertEquals(0, engine.focusedButtonIndex.value)
+        assertEquals(0, engine.focusedRowIndex.value) // Row remains highlighted
+
+        // Advance to Button 1 in Row 0
+        advanceTimeBy(100)
+        assertEquals(1, engine.focusedButtonIndex.value)
+
+        engine.stopScanning()
+    }
+
+    // --- clear ---
+
+    @Test
+    fun `clear cancels job and resets all indices`() = runTest {
+        val engine = createEngine(this)
+        val configs = createConfigs(4)
+
+        engine.startScanning(
+            buttonConfigs = configs,
+            startIndex = 0,
+            pattern = "linear",
+            columns = 4,
+            pageId = "page1"
+        )
+        advanceTimeBy(110)
+        assertEquals(0, engine.focusedButtonIndex.value)
+
+        engine.clear()
+        runCurrent()
+
+        assertNull(engine.focusedButtonIndex.value)
+        assertNull(engine.focusedRowIndex.value)
+    }
 }

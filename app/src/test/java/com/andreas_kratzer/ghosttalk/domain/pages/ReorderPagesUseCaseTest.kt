@@ -15,10 +15,10 @@ import org.junit.Test
 
 class ReorderPagesUseCaseTest {
 
+    private lateinit var useCase: ReorderPagesUseCase
     private lateinit var pageRepository: PageRepository
     private lateinit var bookRepository: BookRepository
     private lateinit var settingsRepository: SettingsRepository
-    private lateinit var useCase: ReorderPagesUseCase
 
     @Before
     fun setup() {
@@ -28,27 +28,52 @@ class ReorderPagesUseCaseTest {
         useCase = ReorderPagesUseCase(pageRepository, bookRepository, settingsRepository)
     }
 
+    private fun createPage(id: String, order: Int): Page {
+        return Page(
+            id = id,
+            bookId = "b1",
+            name = "Page $id",
+            rows = 1,
+            columns = 1,
+            buttonConfigs = emptyList(),
+            orderIndex = order
+        )
+    }
+
     @Test
-    fun `execute reorders pages and updates indices`() = runTest {
-        val p1 = Page(id = "1", bookId = "b1", name = "P1", buttonConfigs = emptyList(), orderIndex = 0)
-        val p2 = Page(id = "2", bookId = "b1", name = "P2", buttonConfigs = emptyList(), orderIndex = 1)
-        val currentList = listOf(p1, p2)
+    fun `execute reorders pages and updates indices in DB`() = runTest {
+        val p1 = createPage("1", 0)
+        val p2 = createPage("2", 1)
+        val p3 = createPage("3", 2)
+        val currentList = listOf(p1, p2, p3)
 
-        useCase.execute(currentList, 0, 1, "b1")
+        // Move p2 to the top (index 1 to 0)
+        useCase.execute(currentList, fromIndex = 1, toIndex = 0, activeBookId = "b1")
 
-        coVerify { pageRepository.updatePage(match { it.id == "1" && it.orderIndex == 1 }) }
-        coVerify { pageRepository.updatePage(match { it.id == "2" && it.orderIndex == 0 }) }
+        // Expected order: p2 (0), p1 (1), p3 (2)
+        coVerify {
+            pageRepository.updatePage(match { it.id == "2" && it.orderIndex == 0 })
+            pageRepository.updatePage(match { it.id == "1" && it.orderIndex == 1 })
+        }
+        // p3's orderIndex did not change, so it shouldn't be updated
+        coVerify(exactly = 0) {
+            pageRepository.updatePage(match { it.id == "3" })
+        }
+        
         coVerify { bookRepository.updateLastModified("b1") }
         verify { settingsRepository.pageSortOrder = SortOrder.MANUAL.name }
     }
 
     @Test
-    fun `execute with invalid indices does nothing`() = runTest {
-        val p1 = Page(id = "1", bookId = "b1", name = "P1", buttonConfigs = emptyList())
+    fun `execute does nothing if indices are out of bounds`() = runTest {
+        val p1 = createPage("1", 0)
         val currentList = listOf(p1)
 
-        useCase.execute(currentList, 0, 5, "b1")
+        useCase.execute(currentList, fromIndex = 5, toIndex = 0, activeBookId = "b1")
 
-        coVerify(exactly = 0) { pageRepository.updatePage(any()) }
+        coVerify(exactly = 0) {
+            pageRepository.updatePage(any())
+            bookRepository.updateLastModified(any())
+        }
     }
 }

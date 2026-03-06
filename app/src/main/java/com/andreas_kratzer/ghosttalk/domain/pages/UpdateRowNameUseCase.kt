@@ -12,6 +12,8 @@ class UpdateRowNameUseCase @Inject constructor(
     suspend fun execute(pageId: String, rowIndex: Int, newName: String): Page? {
         val page = pageRepository.getPageById(pageId)
         if (page != null) {
+            if (rowIndex < 0 || rowIndex >= page.rows) return null
+            
             val updatedNames = page.rowNames.toMutableList()
             while (updatedNames.size <= rowIndex) {
                 updatedNames.add("Zeile ${updatedNames.size + 1}")

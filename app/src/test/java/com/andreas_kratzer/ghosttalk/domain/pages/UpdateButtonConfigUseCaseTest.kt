@@ -10,16 +10,15 @@ import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 
 class UpdateButtonConfigUseCaseTest {
 
+    private lateinit var useCase: UpdateButtonConfigUseCase
     private lateinit var pageRepository: PageRepository
     private lateinit var bookRepository: BookRepository
-    private lateinit var useCase: UpdateButtonConfigUseCase
 
     @Before
     fun setup() {
@@ -29,36 +28,54 @@ class UpdateButtonConfigUseCaseTest {
     }
 
     @Test
-    fun `execute updates button config and returns updated page`() = runTest {
-        val initialConfigs = listOf(null, null)
-        val initialPage = Page(id = "p1", bookId = "b1", name = "Test", buttonConfigs = initialConfigs)
-        coEvery { pageRepository.getPageById("p1") } returns initialPage
+    fun `execute updates button config and persists page`() = runTest {
+        val oldConfig = ButtonConfig(id = "b1", label = "Old", auditoryCue = null, buttonAction = SpeakTextButtonAction())
+        val page = Page(
+            id = "p1",
+            bookId = "book1",
+            name = "Page",
+            rows = 1,
+            columns = 1,
+            buttonConfigs = listOf(oldConfig)
+        )
         
-        val newConfig = ButtonConfig(id = "btn1", label = "New", auditoryCue = null, buttonAction = SpeakTextButtonAction())
+        coEvery { pageRepository.getPageById("p1") } returns page
 
+        val newConfig = oldConfig.copy(label = "New")
         val result = useCase.execute("p1", 0, newConfig)
 
-        assertNotNull(result)
         assertEquals("New", result?.buttonConfigs?.get(0)?.label)
-        coVerify { pageRepository.updatePage(match { it.buttonConfigs[0]?.label == "New" }) }
-        coVerify { bookRepository.updateLastModified("b1") }
+        coVerify {
+            pageRepository.updatePage(match { it.id == "p1" && it.buttonConfigs[0]?.label == "New" })
+            bookRepository.updateLastModified("book1")
+        }
     }
 
     @Test
-    fun `execute returns null if pageId is invalid`() = runTest {
-        coEvery { pageRepository.getPageById("invalid") } returns null
+    fun `execute returns null if page not found`() = runTest {
+        coEvery { pageRepository.getPageById("any") } returns null
 
-        val result = useCase.execute("invalid", 0, null)
+        val result = useCase.execute("any", 0, null)
 
         assertNull(result)
+        coVerify(exactly = 0) {
+            pageRepository.updatePage(any())
+        }
     }
 
     @Test
-    fun `execute returns null if index is out of bounds`() = runTest {
-        val initialPage = Page(id = "p1", bookId = "b1", name = "Test", buttonConfigs = listOf(null))
-        coEvery { pageRepository.getPageById("p1") } returns initialPage
+    fun `execute returns null if index out of bounds`() = runTest {
+        val page = Page(
+            id = "p1",
+            bookId = "book1",
+            name = "Page",
+            rows = 1,
+            columns = 1,
+            buttonConfigs = emptyList()
+        )
+        coEvery { pageRepository.getPageById("p1") } returns page
 
-        val result = useCase.execute("p1", 5, null)
+        val result = useCase.execute("p1", 0, null)
 
         assertNull(result)
     }

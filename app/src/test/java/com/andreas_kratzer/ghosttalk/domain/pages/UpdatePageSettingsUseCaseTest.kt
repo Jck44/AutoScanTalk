@@ -8,16 +8,15 @@ import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 
 class UpdatePageSettingsUseCaseTest {
 
+    private lateinit var useCase: UpdatePageSettingsUseCase
     private lateinit var pageRepository: PageRepository
     private lateinit var bookRepository: BookRepository
-    private lateinit var useCase: UpdatePageSettingsUseCase
 
     @Before
     fun setup() {
@@ -27,31 +26,47 @@ class UpdatePageSettingsUseCaseTest {
     }
 
     @Test
-    fun `execute updates settings and returns updated page`() = runTest {
-        val initialPage = Page(id = "p1", bookId = "b1", name = "Old Name", buttonConfigs = emptyList())
-        coEvery { pageRepository.getPageById("p1") } returns initialPage
-
-        val result = useCase.execute("p1", "New Name", "row_column", listOf("Row A"))
-
-        assertNotNull(result)
-        assertEquals("New Name", result?.name)
-        assertEquals("row_column", result?.scanPattern)
-        assertEquals(listOf("Row A"), result?.rowNames)
+    fun `execute updates name scanPattern and rowNames`() = runTest {
+        val page = Page(
+            id = "p1",
+            bookId = "book1",
+            name = "Old Name",
+            rows = 2,
+            columns = 1,
+            buttonConfigs = emptyList(),
+            scanPattern = "linear",
+            rowNames = listOf("OldR1", "OldR2")
+        )
         
-        coVerify { 
+        coEvery { pageRepository.getPageById("p1") } returns page
+
+        val newRowNames = listOf("NewR1", "NewR2")
+        val result = useCase.execute("p1", "New Name", "row_by_row", newRowNames)
+
+        assertEquals("New Name", result?.name)
+        assertEquals("row_by_row", result?.scanPattern)
+        assertEquals(newRowNames, result?.rowNames)
+        
+        coVerify {
             pageRepository.updatePage(match { 
-                it.name == "New Name" && it.scanPattern == "row_column" && it.rowNames == listOf("Row A")
-            }) 
+                it.id == "p1" && 
+                it.name == "New Name" && 
+                it.scanPattern == "row_by_row" && 
+                it.rowNames == newRowNames 
+            })
+            bookRepository.updateLastModified("book1")
         }
-        coVerify { bookRepository.updateLastModified("b1") }
     }
 
     @Test
-    fun `execute returns null if page does not exist`() = runTest {
-        coEvery { pageRepository.getPageById("invalid") } returns null
+    fun `execute returns null if page not found`() = runTest {
+        coEvery { pageRepository.getPageById("any") } returns null
 
-        val result = useCase.execute("invalid", "Name", null, emptyList())
+        val result = useCase.execute("any", "New", null, emptyList())
 
         assertNull(result)
+        coVerify(exactly = 0) {
+            pageRepository.updatePage(any())
+        }
     }
 }
