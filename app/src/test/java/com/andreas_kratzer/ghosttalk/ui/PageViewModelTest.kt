@@ -99,11 +99,23 @@ class PageViewModelTest {
         predictNextActionUseCase = mockk<PredictNextActionUseCase>(relaxed = true)
         checkForPredictorUseCase = mockk<com.andreas_kratzer.ghosttalk.domain.settings.CheckForPredictorUseCase>(relaxed = true)
 
-        // Mock common flows with explicit types
+        // Mock common flows with explicit types to avoid Nothing exceptions
         every { settingsRepository.activeBookIdFlow } returns MutableStateFlow<String>("b1")
         every { settingsRepository.activeBookId } returns "b1"
         every { settingsRepository.isSmartPredictionEnabledFlow } returns MutableStateFlow<Boolean>(true)
+        every { settingsRepository.defaultScanPatternFlow } returns MutableStateFlow<String>("linear")
+        every { settingsRepository.showTestButtonsFlow } returns MutableStateFlow<Boolean>(false)
+        every { settingsRepository.experimentalManualSortingFlow } returns MutableStateFlow<Boolean>(false)
+        every { settingsRepository.scanDelayFlow } returns MutableStateFlow<Long>(3000L)
+        every { settingsRepository.persistActionLogsFlow } returns MutableStateFlow<Boolean>(false)
+        every { settingsRepository.holdingTimeMillis } returns 0L
+        
         every { templateRepository.getAllTemplates() } returns MutableStateFlow<List<PageTemplate>>(emptyList())
+        every { getPagesUseCase.execute(any()) } returns MutableStateFlow<List<Page>>(emptyList())
+        
+        // Mock scannerEngine flows
+        every { scannerEngine.focusedButtonIndex } returns MutableStateFlow<Int?>(null)
+        every { scannerEngine.focusedRowIndex } returns MutableStateFlow<Int?>(null)
     }
 
     @After
@@ -142,20 +154,20 @@ class PageViewModelTest {
             updateSmartPredictionsUseCase = UpdateSmartPredictionsUseCase(settingsRepository, predictNextActionUseCase, checkForPredictorUseCase)
         )
 
-        val vm = PageViewModel(
+        return PageViewModel(
             application, settingsRepository, importExportManager, scannerEngine, googleAuthManager,
             geminiUseCaseFactory, ttsHelper, localIntentRouter, logger, buttonUsageRepository, 
             featureGuard, pageManagementDelegate, interactionDelegate, smartPredictionDelegate
         )
-        
-        return vm
     }
 
     @Test
     fun `loadPage updates currentPage flow`() = runTest {
         viewModel = createViewModel()
         val page = Page(id = "p1", bookId = "b1", name = "Test", rows = 1, columns = 1, buttonConfigs = emptyList())
+        
         viewModel.loadPage(page)
+        advanceUntilIdle()
         
         assertEquals(page, viewModel.currentPage.value)
     }
