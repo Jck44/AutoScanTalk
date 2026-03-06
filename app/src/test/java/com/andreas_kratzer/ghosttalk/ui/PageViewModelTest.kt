@@ -14,6 +14,7 @@ import com.andreas_kratzer.ghosttalk.domain.actions.ActionLogUseCase
 import com.andreas_kratzer.ghosttalk.domain.actions.ActivateButtonUseCase
 import com.andreas_kratzer.ghosttalk.domain.actions.HandleActionExecutionEventUseCase
 import com.andreas_kratzer.ghosttalk.domain.actions.PredictNextActionUseCase
+import com.andreas_kratzer.ghosttalk.domain.actions.ResolveDynamicButtonsUseCase
 import com.andreas_kratzer.ghosttalk.domain.actions.ResolveSmartPredictionUseCase
 import com.andreas_kratzer.ghosttalk.domain.actions.UpdateSmartPredictionsUseCase
 import com.andreas_kratzer.ghosttalk.domain.executors.LocalIntentRouter
@@ -88,6 +89,7 @@ class PageViewModelTest {
     private lateinit var exportPageUseCase: ExportPageUseCase
     private lateinit var predictNextActionUseCase: PredictNextActionUseCase
     private lateinit var checkForPredictorUseCase: com.andreas_kratzer.ghosttalk.domain.settings.CheckForPredictorUseCase
+    private lateinit var resolveDynamicButtonsUseCase: ResolveDynamicButtonsUseCase
 
     private lateinit var viewModel: PageViewModel
 
@@ -122,6 +124,7 @@ class PageViewModelTest {
         exportPageUseCase = mockk<ExportPageUseCase>(relaxed = true)
         predictNextActionUseCase = mockk<PredictNextActionUseCase>(relaxed = true)
         checkForPredictorUseCase = mockk<com.andreas_kratzer.ghosttalk.domain.settings.CheckForPredictorUseCase>(relaxed = true)
+        resolveDynamicButtonsUseCase = mockk<ResolveDynamicButtonsUseCase>(relaxed = true)
 
         // Mock common flows with explicit types to avoid Nothing exceptions
         every { settingsRepository.activeBookIdFlow } returns MutableStateFlow<String>("b1")
@@ -138,6 +141,7 @@ class PageViewModelTest {
         
         every { templateRepository.getAllTemplates() } returns MutableStateFlow<List<PageTemplate>>(emptyList())
         every { getPagesUseCase.execute(any()) } returns MutableStateFlow<List<Page>>(emptyList())
+        coEvery { resolveDynamicButtonsUseCase.execute(any(), any(), any()) } answers { firstArg() }
         
         // Mock scannerEngine flows
         every { scannerEngine.focusedButtonIndex } returns MutableStateFlow<Int?>(null)
@@ -181,7 +185,8 @@ class PageViewModelTest {
         return PageViewModel(
             application, settingsRepository, importExportManager, scannerEngine, googleAuthManager,
             geminiUseCaseFactory, ttsHelper, localIntentRouter, logger, buttonUsageRepository, 
-            featureGuard, pageManagementDelegate, interactionDelegate, screenManagementDelegate, smartPredictionDelegate
+            featureGuard, pageManagementDelegate, interactionDelegate, screenManagementDelegate, 
+            smartPredictionDelegate, resolveDynamicButtonsUseCase
         )
     }
 

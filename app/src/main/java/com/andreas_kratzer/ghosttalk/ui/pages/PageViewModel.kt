@@ -12,6 +12,7 @@ import com.andreas_kratzer.ghosttalk.core.pages.PageImportExportManager
 import com.andreas_kratzer.ghosttalk.core.scanning.ScannerEngine
 import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.domain.actions.ResolveDynamicButtonsUseCase
 import com.andreas_kratzer.ghosttalk.domain.genai.GeminiUseCase
 import com.andreas_kratzer.ghosttalk.domain.genai.GeminiUseCaseFactory
 import com.andreas_kratzer.ghosttalk.domain.settings.FeatureGuard
@@ -25,8 +26,11 @@ import com.andreas_kratzer.ghosttalk.ui.pages.delegates.SmartPredictionDelegate
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -47,7 +51,8 @@ class PageViewModel @Inject constructor(
     val pageManagementDelegate: PageManagementDelegate,
     val interactionDelegate: InteractionDelegate,
     val screenManagementDelegate: ScreenManagementDelegate,
-    smartPredictionDelegate: SmartPredictionDelegate
+    smartPredictionDelegate: SmartPredictionDelegate,
+    private val resolveDynamicButtonsUseCase: ResolveDynamicButtonsUseCase
 ) : AndroidViewModel(application) {
 
     private var geminiUseCase: GeminiUseCase? = null
@@ -70,6 +75,19 @@ class PageViewModel @Inject constructor(
     val defaultScanPattern = settingsRepository.defaultScanPatternFlow
     val showTestButtons = settingsRepository.showTestButtonsFlow
     val experimentalManualSorting = settingsRepository.experimentalManualSortingFlow
+
+    val resolvedPage: StateFlow<Page?> = combine(
+        currentPage,
+        isUserModeActive,
+        smartPredictions,
+        activeBookId
+    ) { page, isUserMode, predictions, bookId ->
+        if (page != null && isUserMode && bookId != null) {
+            resolveDynamicButtonsUseCase.execute(page, bookId, predictions)
+        } else {
+            page
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     val actionExecutor = ActionExecutor(
         scope = viewModelScope,

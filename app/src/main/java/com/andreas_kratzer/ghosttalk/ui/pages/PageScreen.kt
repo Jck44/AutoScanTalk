@@ -36,7 +36,7 @@ fun PageScreen(
     pageViewModel: PageViewModel,
     modifier: Modifier = Modifier
 ) {
-    val currentPage by pageViewModel.currentPage.collectAsState()
+    val currentPage by pageViewModel.resolvedPage.collectAsState()
     val focusedButtonIndex by pageViewModel.focusedButtonIndex.collectAsState()
     val focusedRowIndex by pageViewModel.focusedRowIndex.collectAsState()
     val lastActions by pageViewModel.lastActions.collectAsState()

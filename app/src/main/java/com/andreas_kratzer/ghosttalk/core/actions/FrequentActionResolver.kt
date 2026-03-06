@@ -7,6 +7,7 @@ import com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction
 import com.andreas_kratzer.ghosttalk.model.Page
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import android.util.Log
 import javax.inject.Inject
 
 /**
@@ -50,6 +51,7 @@ class FrequentActionResolver @Inject constructor(
                             buttonAction = concreteAction
                         )
                     } catch (e: Exception) {
+                        Log.e("FrequentActionResolver", "Failed to parse action JSON: ${stat.actionJson}", e)
                         null // Fallback mechanism for JSON parsing failures -> empty slot
                     }
                 } else {

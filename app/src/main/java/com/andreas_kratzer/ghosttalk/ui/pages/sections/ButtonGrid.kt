@@ -44,16 +44,11 @@ fun ButtonGrid(
             val isVisible = buttonConfig != null && pageViewModel.featureGuard.isButtonVisible(buttonConfig)
 
             if (buttonConfig != null && buttonConfig.isActive && isVisible) {
-                val overrideLabel = (buttonConfig.buttonAction as? SmartPredictionButtonAction)?.let { smartAction ->
-                    smartPredictions.getOrNull(smartAction.rank - 1)
-                }
-
                 GridButton(
                     buttonConfig = buttonConfig,
                     isFocused = isFocused,
                     isRowFocused = isRowFocused,
                     isEditorMode = false,
-                    overrideLabel = overrideLabel,
                     onClick = { pageViewModel.activateButtonAtIndex(globalIndex) }
                 )
             } else {
