@@ -153,7 +153,7 @@ fun ButtonConfigDialog(
     val notificationActionDef = initialConfig?.buttonAction as? NotificationButtonAction
     var notificationTargetApp by remember { mutableStateOf(notificationActionDef?.targetApp ?: "ALL") }
     val appAllLabel = stringResource(R.string.button_notification_target_all)
-    val notificationApps = mapOf(
+    mapOf(
         "ALL" to appAllLabel,
         "com.whatsapp" to "WhatsApp",
         "org.thoughtcrime.securesms" to "Signal",
@@ -171,7 +171,7 @@ fun ButtonConfigDialog(
             if (volumeActionDef?.isAbsolute == true) volumeAbsolutLabel else volumeRelativLabel
         )
     }
-    val volumeTypes = listOf(volumeAbsolutLabel, volumeRelativLabel)
+    listOf(volumeAbsolutLabel, volumeRelativLabel)
 
     var volumePercentInput by remember {
         mutableStateOf(

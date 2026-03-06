@@ -176,7 +176,7 @@ class PageViewModelTest {
     fun `activateButtonAtIndex navigation loads new page`() = runTest {
         viewModel = createViewModel()
 
-        val action = com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction(pageId = "p2")
+        val action = NavigateToPageButtonAction(pageId = "p2")
         val config = ButtonConfig(label = "Nav", auditoryCue = null, buttonAction = action)
         val p1 = Page(id = "p1", bookId = "b1", name = "P1", rows = 1, columns = 1, buttonConfigs = listOf(config))
         val p2 = Page(id = "p2", bookId = "b1", name = "P2", rows = 1, columns = 1, buttonConfigs = emptyList())

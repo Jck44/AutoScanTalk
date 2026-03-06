@@ -77,7 +77,7 @@ class PerformManualSyncUseCaseTest {
     fun `execute returns RecoverableAuth on UserRecoverableAuthIOException`() = runTest {
         val drive = mockk<Drive>(relaxed = true)
         val intent = mockk<Intent>(relaxed = true)
-        val recoverableException = UserRecoverableAuthException("Auth required", intent)
+        UserRecoverableAuthException("Auth required", intent)
         every { googleAuthManager.getGoogleCredential() } returns mockk()
         val ioException = mockk<UserRecoverableAuthIOException>(relaxed = true)
         every { ioException.intent } returns intent
