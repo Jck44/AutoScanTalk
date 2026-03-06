@@ -2,6 +2,7 @@ package com.andreas_kratzer.ghosttalk.core.scanning
 
 import com.andreas_kratzer.ghosttalk.domain.settings.FeatureGuard
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.ui.util.GridUtils
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -19,18 +20,18 @@ class RowByRowScanStrategy : ScanStrategy {
     ) {
         focusedButtonIndex.value = null
         
+        val totalVisibleRows = (buttonConfigs.size + columns - 1) / columns
         val activeRows = mutableListOf<Int>()
-        val totalRows = (buttonConfigs.size + columns - 1) / columns
         
-        for (r in 0 until totalRows) {
-            val startIdx = r * 6 // Mapping always assumes 6-wide
-            val endIdx = startIdx + 6
+        for (r in 0 until GridUtils.MAX_GRID_SIZE) {
+            val startIdx = r * GridUtils.MAX_GRID_SIZE
+            val endIdx = startIdx + GridUtils.MAX_GRID_SIZE
             var hasActive = false
             for (i in startIdx until endIdx) {
                 val btn = buttonConfigs.getOrNull(i)
                 if (btn != null && 
                     btn.isActive && 
-                    com.andreas_kratzer.ghosttalk.ui.util.GridUtils.isVisibleInGrid(i, rows = totalRows, columns = columns) &&
+                    GridUtils.isVisibleInGrid(i, rows = totalVisibleRows, columns = columns) &&
                     featureGuard.isButtonVisible(btn)) {
                     hasActive = true
                     break
@@ -81,13 +82,14 @@ class RowByRowScanStrategy : ScanStrategy {
         delayMillis: Long,
         featureGuard: FeatureGuard
     ) {
-        // Keep focusedRowIndex as is (to highlight the row)
+        val totalVisibleRows = (buttonConfigs.size + columns - 1) / columns
+        
         val activeButtonsInRow = buttonConfigs
             .mapIndexedNotNull { index, config ->
                 if (config != null && 
                     config.isActive && 
-                    index / 6 == rowIndex && 
-                    com.andreas_kratzer.ghosttalk.ui.util.GridUtils.isVisibleInGrid(index, rows = (buttonConfigs.size + 5) / 6, columns = columns) &&
+                    index / GridUtils.MAX_GRID_SIZE == rowIndex && 
+                    GridUtils.isVisibleInGrid(index, rows = totalVisibleRows, columns = columns) &&
                     featureGuard.isButtonVisible(config)) {
                     Pair(index, config)
                 } else null

@@ -1,6 +1,5 @@
 package com.andreas_kratzer.ghosttalk.domain.actions
 
-
 import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.Page
@@ -50,9 +49,9 @@ class ActivateButtonUseCaseTest {
     }
 
     @Test
-    fun `execute stops notifications and sets focused index`() = runTest {
+    fun `execute stops notification tts and sets focus`() = runTest {
         val button = ButtonConfig(id = "btn1", label = "Test", auditoryCue = null, buttonAction = SpeakTextButtonAction())
-        val page = Page(id = "p1", bookId = "b1", name = "P1", buttonConfigs = listOf(button))
+        val page = Page(id = "p1", bookId = "b1", name = "P1", buttonConfigs = MutableList(36) { if (it == 0) button else null }, rows = 2, columns = 2)
 
         useCase.execute(0, page, "b1", true, emptyList(), actionExecutor, scanCoordinator)
 
@@ -61,20 +60,20 @@ class ActivateButtonUseCaseTest {
     }
 
     @Test
-    fun `execute regular button executes button action`() = runTest {
+    fun `execute calls actionExecutor`() = runTest {
         val button = ButtonConfig(id = "btn1", label = "Test", auditoryCue = null, buttonAction = SpeakTextButtonAction())
-        val page = Page(id = "p1", bookId = "b1", name = "P1", buttonConfigs = listOf(button))
+        val page = Page(id = "p1", bookId = "b1", name = "P1", buttonConfigs = MutableList(36) { if (it == 0) button else null }, rows = 2, columns = 2)
 
         useCase.execute(0, page, "b1", true, emptyList(), actionExecutor, scanCoordinator)
 
-        verify { actionExecutor.executeButtonAction(button, bookId = "b1") }
+        verify { actionExecutor.executeButtonAction(button, bookId = "b1", rows = 2, columns = 2, index = 0) }
     }
 
     @Test
     fun `execute smart prediction button delegates to resolveSmartPredictionUseCase`() = runTest {
         val smartAction = SmartPredictionButtonAction(rank = 1)
         val button = ButtonConfig(id = "smart", label = "Smart", auditoryCue = null, buttonAction = smartAction)
-        val page = Page(id = "p1", bookId = "b1", name = "P1", buttonConfigs = listOf(button))
+        val page = Page(id = "p1", bookId = "b1", name = "P1", buttonConfigs = MutableList(36) { if (it == 0) button else null }, rows = 2, columns = 2)
         val predictions = listOf("pred1")
 
         useCase.execute(0, page, "b1", true, predictions, actionExecutor, scanCoordinator)

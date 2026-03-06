@@ -159,11 +159,11 @@ class ActionExecutorTest {
         every { ttsHelper.speakRouted(any(), any(), any(), any(), any(), capture(ttsCallback)) } returns Unit
 
         currentTimeMillis = 0L
-        actionExecutor.executeButtonAction(buttonConfig, bookId = "book1")
+        actionExecutor.executeButtonAction(buttonConfig, bookId = "book1", rows = 6, columns = 6, index = 10)
         runCurrent()
 
         // Verify usage was recorded
-        coVerify(exactly = 1) { buttonUsageRepository.recordUsage("book1", buttonConfig) }
+        coVerify(exactly = 1) { buttonUsageRepository.recordUsage("book1", buttonConfig, 6, 6, 10) }
     }
 
     @Test
@@ -185,7 +185,7 @@ class ActionExecutorTest {
         runCurrent()
 
         // Verify usage was NOT recorded (no bookId)
-        coVerify(exactly = 0) { buttonUsageRepository.recordUsage(any(), any()) }
+        coVerify(exactly = 0) { buttonUsageRepository.recordUsage(any(), any(), any(), any(), any()) }
     }
 
     @Test

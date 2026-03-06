@@ -32,8 +32,8 @@ class RowByRowScanStrategyTest {
     }
 
     private fun createConfigs(count: Int): List<ButtonConfig> {
-        return (0 until count).map { i ->
-            ButtonConfig(id = "$i", label = "B$i", isActive = true, auditoryCue = null, buttonAction = SpeakTextButtonAction())
+        return (0 until 36).map { i ->
+            ButtonConfig(id = "$i", label = "B$i", isActive = i < count, auditoryCue = null, buttonAction = SpeakTextButtonAction())
         }
     }
 
@@ -41,18 +41,17 @@ class RowByRowScanStrategyTest {
     fun `executeScan skips rows without active or visible buttons`() = runTest {
         // Col=2
         // Row 0: B0 (inactive), B1 (invisible) -> Row 0 skip
-        // Row 1: B2 (active), B3 (active) -> Row 1 keep
-        val configs = createConfigs(4)
+        // Row 1: B6 (active), B7 (active) -> Row 1 keep
+        
+        val configs = createConfigs(10)
         val inactiveB0 = configs[0].copy(isActive = false)
         val invisibleB1 = configs[1]
-        val activeB2 = configs[2]
-        val activeB3 = configs[3]
         
-        val modifiedConfigs = listOf(inactiveB0, invisibleB1, activeB2, activeB3)
+        val modifiedConfigs = configs.toMutableList()
+        modifiedConfigs[0] = inactiveB0
         
+        every { featureGuard.isButtonVisible(any()) } returns true
         every { featureGuard.isButtonVisible(invisibleB1) } returns false
-        every { featureGuard.isButtonVisible(activeB2) } returns true
-        every { featureGuard.isButtonVisible(activeB3) } returns true
 
         val cues = mutableListOf<String>()
         val job = launch {
@@ -70,7 +69,7 @@ class RowByRowScanStrategyTest {
         }
 
         advanceTimeBy(150) // Initial delay(100)
-        // Focus should be on Row 1 (index 1) because Row 0 is empty
+        // Focus should be on Row 1 because Row 0 is effectively empty (visible buttons 0,1 are inactive/invisible)
         assertEquals(1, focusedRowIndex.value)
         assertEquals("R2", cues.last())
         
@@ -105,8 +104,8 @@ class RowByRowScanStrategyTest {
 
     @Test
     fun `executeButtonScanInRow scans only buttons in specified row`() = runTest {
-        // Col=2, Row 1 (index 1) has B2, B3
-        val configs = createConfigs(4)
+        // Dynamic grid: Col=2, Row 1 (index 1) has Global Index 6, 7 (as Row 0 is 0-5)
+        val configs = createConfigs(10) 
         every { featureGuard.isButtonVisible(any()) } returns true
 
         val cues = mutableListOf<String>()
@@ -123,15 +122,15 @@ class RowByRowScanStrategyTest {
         }
 
         advanceTimeBy(150) // Initial delay(100)
-        assertEquals(2, focusedButtonIndex.value)
-        assertEquals("B2", cues.last())
+        assertEquals(6, focusedButtonIndex.value)
+        assertEquals("B6", cues.last())
 
         advanceTimeBy(1000)
-        assertEquals(3, focusedButtonIndex.value)
-        assertEquals("B3", cues.last())
+        assertEquals(7, focusedButtonIndex.value)
+        assertEquals("B7", cues.last())
 
         advanceTimeBy(1000)
-        assertEquals(2, focusedButtonIndex.value) // Should loop back to B2
+        assertEquals(6, focusedButtonIndex.value) // Should loop back to B6
         
         job.cancel()
     }

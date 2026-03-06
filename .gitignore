@@ -19,3 +19,4 @@ local.properties
 /app/release/app-release.aab
 /app/build_output.txt
 /build_output.txt
+/htmlReport/

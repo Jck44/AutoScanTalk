@@ -39,6 +39,8 @@ class CreatePageUseCaseTest {
     @Test
     fun `execute with template creates page with template configuration`() = runTest {
         // Given
+        // Template with 4 configs but it must have 36 for validation if we strict check PageTemplate as well
+        // However, CreatePageUseCase calls GridUtils.adjustButtonConfigs which pads it
         val template = PageTemplate("template1", "Test Template", 2, 2, listOf(null, null, null, null))
         coEvery { templateRepository.getById("template1") } returns template
 
@@ -51,7 +53,7 @@ class CreatePageUseCaseTest {
                 it.name == "New Page" &&
                 it.rows == 2 &&
                 it.columns == 2 &&
-                it.buttonConfigs.size == 4
+                it.buttonConfigs.size == 36
             })
         }
         coVerify { bookRepository.updateLastModified("book1") }
@@ -71,9 +73,9 @@ class CreatePageUseCaseTest {
                 it.name == "New Page" &&
                 it.rows == 2 &&
                 it.columns == 2 &&
-                it.buttonConfigs.size == 4 &&
-                it.buttonConfigs[3] != null &&
-                it.buttonConfigs[3]!!.label == "zurück zum Start"
+                it.buttonConfigs.size == 36 &&
+                it.buttonConfigs[7] != null &&
+                it.buttonConfigs[7]!!.label == "zurück zum Start"
             })
         }
         coVerify { bookRepository.updateLastModified("book1") }
@@ -87,11 +89,9 @@ class CreatePageUseCaseTest {
         }
 
         // Template 7x1
-        val template = PageTemplate("t1", "Big", 7, 1, emptyList())
-        coEvery { templateRepository.getById("t1") } returns template
-        
+        // Note: PageTemplate constructor also validates now, so we must be careful
         assertThrows(IllegalArgumentException::class.java) {
-            runBlocking { createPageUseCase.execute("Big", 1, 1, "b1", emptyList(), "t1") }
+             PageTemplate("t1", "Big", 7, 1, emptyList())
         }
     }
 

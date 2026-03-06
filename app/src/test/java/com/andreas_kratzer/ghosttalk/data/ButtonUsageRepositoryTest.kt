@@ -27,7 +27,7 @@ class ButtonUsageRepositoryTest {
     fun `recordUsage creates new stat when button not yet tracked`() = runTest {
         coEvery { dao.getStatForButton("book1", "btn-1") } returns null
 
-        repository.recordUsage("book1", testButton)
+        repository.recordUsage("book1", testButton, rows = 6, columns = 6, indexInPage = 0)
 
         val statSlot = slot<ButtonUsageStat>()
         coVerify { dao.upsert(capture(statSlot)) }
@@ -51,7 +51,7 @@ class ButtonUsageRepositoryTest {
         )
         coEvery { dao.getStatForButton("book1", "btn-1") } returns existing
 
-        repository.recordUsage("book1", testButton)
+        repository.recordUsage("book1", testButton, rows = 6, columns = 6, indexInPage = 0)
 
         val statSlot = slot<ButtonUsageStat>()
         coVerify { dao.upsert(capture(statSlot)) }
@@ -71,7 +71,7 @@ class ButtonUsageRepositoryTest {
         )
         coEvery { dao.getStatForButton("book1", "btn-1") } returns existing
 
-        repository.recordUsage("book1", testButton)
+        repository.recordUsage("book1", testButton, rows = 6, columns = 6, indexInPage = 0)
 
         val statSlot = slot<ButtonUsageStat>()
         coVerify { dao.upsert(capture(statSlot)) }
@@ -105,7 +105,7 @@ class ButtonUsageRepositoryTest {
     fun `recordUsage serializes action to JSON`() = runTest {
         coEvery { dao.getStatForButton("book1", "btn-1") } returns null
 
-        repository.recordUsage("book1", testButton)
+        repository.recordUsage("book1", testButton, rows = 6, columns = 6, indexInPage = 0)
 
         val statSlot = slot<ButtonUsageStat>()
         coVerify { dao.upsert(capture(statSlot)) }

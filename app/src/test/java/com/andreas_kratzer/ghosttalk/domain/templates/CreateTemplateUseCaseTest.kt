@@ -36,7 +36,7 @@ class CreateTemplateUseCaseTest {
                 it.name == "Test Template" &&
                 it.rows == 3 &&
                 it.columns == 3 &&
-                it.buttonConfigs.size == 9 &&
+                it.buttonConfigs.size == 36 &&
                 it.orderIndex == 0
             })
         }

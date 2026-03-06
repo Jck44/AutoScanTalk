@@ -1,7 +1,5 @@
 package com.andreas_kratzer.ghosttalk.core.scanning
 
-import com.andreas_kratzer.ghosttalk.core.scanning.ScannerEngine
-import com.andreas_kratzer.ghosttalk.core.scanning.ScannerFeedbackProvider
 import com.andreas_kratzer.ghosttalk.domain.settings.FeatureGuard
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
@@ -36,14 +34,17 @@ class ScannerEngineTest {
         feedbackProvider = mockk(relaxed = true)
     }
 
-    private fun createConfigs(count: Int = 4): List<ButtonConfig> {
-        return (1..count).map { i ->
+    /**
+     * Creates configs where buttons at specified global indices are active.
+     */
+    private fun createConfigs(activeIndices: List<Int>): List<ButtonConfig> {
+        return (0 until 36).map { i ->
             ButtonConfig(
-                id = "b$i",
-                label = "B$i",
+                id = "b${i + 1}",
+                label = "B${i + 1}",
                 auditoryCue = null,
                 buttonAction = SpeakTextButtonAction(),
-                isActive = true
+                isActive = i in activeIndices
             )
         }
     }
@@ -63,7 +64,8 @@ class ScannerEngineTest {
     @Test
     fun `startScanning with same params does not restart scan`() = runTest {
         val engine = createEngine(this)
-        val configs = createConfigs()
+        // Active buttons at (0,0) and (1,0) -> Global indices 0 and 6
+        val configs = createConfigs(listOf(0, 6))
 
         engine.startScanning(
             buttonConfigs = configs,
@@ -73,14 +75,9 @@ class ScannerEngineTest {
             rowNames = emptyList(),
             pageId = "page1"
         )
-        advanceTimeBy(110)
+        advanceTimeBy(110) // Focus on 0
 
-        // Record the current focused index (should be 0 after first step)
         assertEquals(0, engine.focusedButtonIndex.value)
-
-        // Advance one more step so focus is at 1
-        advanceTimeBy(100)
-        assertEquals(1, engine.focusedButtonIndex.value)
 
         // Call startScanning again with identical parameters — should be idempotent
         engine.startScanning(
@@ -92,12 +89,12 @@ class ScannerEngineTest {
             pageId = "page1"
         )
 
-        // Advance time — if the scan restarted, focus would reset to 0 instead of advancing to 2
+        // Advance time — if the scan restarted, focus would stay/reset at 0 (after delay)
+        // If it continues, it moves to 6.
         advanceTimeBy(100)
         val focus = engine.focusedButtonIndex.value
 
-        // Focus should have advanced naturally (not reset), proving no restart
-        assertEquals("Focus should advance to 2, not reset to 0", 2, focus)
+        assertEquals("Focus should advance to 6, not reset to 0", 6, focus)
 
         engine.stopScanning()
     }
@@ -107,7 +104,7 @@ class ScannerEngineTest {
     @Test
     fun `stopScanning clears focus indices`() = runTest {
         val engine = createEngine(this)
-        val configs = createConfigs()
+        val configs = createConfigs(listOf(0))
 
         engine.startScanning(
             buttonConfigs = configs,
@@ -135,7 +132,7 @@ class ScannerEngineTest {
     @Test
     fun `pauseScanning cancels job but keeps focus indices`() = runTest {
         val engine = createEngine(this)
-        val configs = createConfigs()
+        val configs = createConfigs(listOf(0))
 
         engine.startScanning(
             buttonConfigs = configs,
@@ -174,7 +171,7 @@ class ScannerEngineTest {
     @Test
     fun `startScanning with different pageId cancels old scan and starts new one`() = runTest {
         val engine = createEngine(this)
-        val configs = createConfigs(4)
+        val configs = createConfigs(listOf(0, 6))
 
         // Start first scan
         engine.startScanning(
@@ -186,10 +183,6 @@ class ScannerEngineTest {
         )
         advanceTimeBy(110)
         assertEquals(0, engine.focusedButtonIndex.value)
-
-        // Advance to button 1
-        advanceTimeBy(100)
-        assertEquals(1, engine.focusedButtonIndex.value)
 
         // Start a different scan (different pageId)
         engine.startScanning(
@@ -212,7 +205,8 @@ class ScannerEngineTest {
     @Test
     fun `startScanning with row_by_row pattern focuses on rows`() = runTest {
         val engine = createEngine(this)
-        val configs = createConfigs(4)
+        // Buttons in Row 0 and Row 1
+        val configs = createConfigs(listOf(0, 6))
 
         // Start row scanning
         engine.startScanning(
@@ -224,7 +218,7 @@ class ScannerEngineTest {
         )
         advanceTimeBy(110)
 
-        // Focus should be on Row 0 (index 0)
+        // Focus should be on Row 0
         assertEquals(0, engine.focusedRowIndex.value)
         assertNull(engine.focusedButtonIndex.value)
 
@@ -238,7 +232,8 @@ class ScannerEngineTest {
     @Test
     fun `selectCurrentRow starts button scanning within row`() = runTest {
         val engine = createEngine(this)
-        val configs = createConfigs(4)
+        // Row 0 has buttons at index 0 and 1
+        val configs = createConfigs(listOf(0, 1))
 
         // Start row scanning
         engine.startScanning(
@@ -257,11 +252,10 @@ class ScannerEngineTest {
         engine.selectCurrentRow()
         advanceTimeBy(110) // Initial delay(100) inside executeButtonScanInRow
 
-        // Focus should now be on Button 0 (index 0) in Row 0
+        // Focus should now be on Button 0 (index 0)
         assertEquals(0, engine.focusedButtonIndex.value)
-        assertEquals(0, engine.focusedRowIndex.value) // Row remains highlighted
 
-        // Advance to Button 1 in Row 0
+        // Advance to Button 1
         advanceTimeBy(100)
         assertEquals(1, engine.focusedButtonIndex.value)
 
@@ -273,7 +267,7 @@ class ScannerEngineTest {
     @Test
     fun `clear cancels job and resets all indices`() = runTest {
         val engine = createEngine(this)
-        val configs = createConfigs(4)
+        val configs = createConfigs(listOf(0))
 
         engine.startScanning(
             buttonConfigs = configs,
