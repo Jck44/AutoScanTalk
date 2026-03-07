@@ -134,6 +134,7 @@ class PageViewModel @Inject constructor(
             allPages = pageManagementDelegate.allPagesFlow,
             lastActions = lastActions,
             activeBookId = activeBookId,
+            isUserModeActive = isUserModeActive,
             onPredictionsUpdated = { _smartPredictions.value = it }
         )
 

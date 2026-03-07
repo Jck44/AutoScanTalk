@@ -16,6 +16,7 @@ class SmartPredictionDelegate @Inject constructor(
         allPages: StateFlow<List<Page>>,
         lastActions: StateFlow<List<String>>,
         activeBookId: StateFlow<String?>,
+        isUserModeActive: StateFlow<Boolean>,
         onPredictionsUpdated: (List<String>?) -> Unit
     ) {
         scope.launch {
@@ -23,7 +24,8 @@ class SmartPredictionDelegate @Inject constructor(
                 currentPage = currentPage,
                 allPages = allPages,
                 activeBookId = activeBookId,
-                history = lastActions
+                history = lastActions,
+                isUserModeActive = isUserModeActive
             ).collect { predictions ->
                 onPredictionsUpdated(predictions)
             }

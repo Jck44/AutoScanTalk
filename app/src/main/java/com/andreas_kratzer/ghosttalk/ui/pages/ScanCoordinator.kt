@@ -115,7 +115,10 @@ class ScanCoordinator(
         
         // 2. We are also waiting if predictions HAVE arrived but are NOT yet reflected in resolvedPage
         // (i.e. resolvedPage still has predictors)
-        val isWaitingForResolution = predictions != null && checkForPredictorUseCase(resPage)
+        val hasPredictorsInResolved = checkForPredictorUseCase(resPage)
+        val isWaitingForResolution = predictions != null && hasPredictorsInResolved
+        
+        Log.d("ScanCoordinator", "isWaiting: model=$isWaitingForModel (loading=$isLoading, pred=${predictions != null}), res=$isWaitingForResolution (hasPred=$hasPredictorsInResolved)")
         
         return isWaitingForModel || isWaitingForResolution
     }

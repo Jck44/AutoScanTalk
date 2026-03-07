@@ -23,17 +23,33 @@ class UpdateSmartPredictionsUseCase @Inject constructor(
         currentPage: Flow<Page?>,
         allPages: Flow<List<Page>>,
         activeBookId: Flow<String?>,
-        history: Flow<List<String>>
-    ): Flow<List<String>> {
+        history: Flow<List<String>>,
+        isUserModeActive: Flow<Boolean>
+    ): Flow<List<String>?> {
         return combine(
             currentPage,
             allPages,
             activeBookId,
             history,
+            isUserModeActive,
             settingsRepository.isSmartPredictionEnabledFlow
-        ) { page, pages, bookId, actionHistory, enabled ->
-            if (page != null && enabled && bookId != null) {
+        ) { args ->
+            @Suppress("UNCHECKED_CAST")
+            val page = args[0] as Page?
+            @Suppress("UNCHECKED_CAST")
+            val pages = args[1] as List<Page>
+            @Suppress("UNCHECKED_CAST")
+            val bookId = args[2] as String?
+            @Suppress("UNCHECKED_CAST")
+            val actionHistory = args[3] as List<String>
+            @Suppress("UNCHECKED_CAST")
+            val isUserMode = args[4] as Boolean
+            @Suppress("UNCHECKED_CAST")
+            val enabled = args[5] as Boolean
+
+            if (page != null && enabled && bookId != null && isUserMode) {
                 if (checkForPredictorUseCase(page)) {
+                    Log.d("UpdateSmartPredictionsUseCase", "Triggering prediction for page ${page.id}")
                     try {
                         _isLoading.value = true
                         return@combine predictNextActionUseCase.predict(page, pages, bookId)
@@ -45,7 +61,7 @@ class UpdateSmartPredictionsUseCase @Inject constructor(
                 }
             }
             _isLoading.value = false
-            emptyList()
+            if (!isUserMode) null else emptyList()
         }
     }
 }

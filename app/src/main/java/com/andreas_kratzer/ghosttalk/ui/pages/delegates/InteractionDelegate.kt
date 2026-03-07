@@ -84,6 +84,7 @@ class InteractionDelegate @Inject constructor(
         if (!isActive) {
             scanCoordinator.stopScanningTemporarily()
             ttsHelper.stopNotificationTTS()
+            _smartPredictions.value = null // Clear stale results on exit
         }
     }
 
