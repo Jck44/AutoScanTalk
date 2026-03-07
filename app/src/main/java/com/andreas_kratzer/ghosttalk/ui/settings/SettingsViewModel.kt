@@ -90,6 +90,7 @@ class SettingsViewModel @Inject constructor(
     val keepScreenOnUserMode = settingsRepository.keepScreenOnUserModeFlow
     val userModeScreenBehavior = settingsRepository.userModeScreenBehaviorFlow
     val geminiTimeout = settingsRepository.geminiTimeoutFlow
+    val geminiRedoPrediction = settingsRepository.geminiRedoPredictionFlow
 
     val authIntentFlow = kotlinx.coroutines.flow.merge(
         cloudSyncDelegate.authIntentFlow,
@@ -193,6 +194,7 @@ class SettingsViewModel @Inject constructor(
     fun setGeminiTimeoutInput(input: String) {
         input.toLongOrNull()?.let { settingsRepository.geminiTimeout = it }
     }
+    fun setGeminiRedoPrediction(e: Boolean) { settingsRepository.geminiRedoPrediction = e }
 
     val activeBookId: String
         get() = settingsRepository.activeBookId

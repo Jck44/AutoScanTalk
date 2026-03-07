@@ -195,6 +195,7 @@
 
     <!-- Gemini Integration -->
     <string name="settings_category_gemini">Gemini KI-Assistent</string>
+    <string name="settings_category_gemini_nano">Gemini Nano (Lokal)</string>
     <string name="settings_gemini_activate_button">Gemini Initialisieren / Testen</string>
     <string name="settings_gemini_activation_desc">Tippe auf den Button, um Gemini zu initialisieren und die notwendigen Berechtigungen abzufragen.</string>
     <string name="settings_gemini_activation_success">Gemini erfolgreich aktiviert!</string>
@@ -205,6 +206,8 @@
     <string name="settings_smart_prediction_enable">Gemini Vorhersage (Experimentell)</string>
     <string name="settings_smart_prediction_hint">Ermöglicht Buttons, die dynamisch die nächste wahrscheinliche Aktion vorhersagen.</string>
     <string name="settings_smart_prediction_disabled_warning">Das Feature \"Gemini Vorhersage\" ist aktuell in den Einstellungen deaktiviert. Dieser Button wird beim Scannen übersprungen, bis das Feature aktiviert wird.</string>
+    <string name="settings_gemini_redo_prediction">Bei Navigation auf die gleiche Seite erneut Prediction machen</string>
+    <string name="settings_gemini_redo_prediction_hint">Erzwingt eine neue KI-Vorhersage, auch wenn dieselbe Seite erneut aufgerufen wird.</string>
     <string name="settings_notification_disabled_warning">Das Feature \"Benachrichtigungen lesen\" ist aktuell in den Einstellungen deaktiviert. Dieser Button wird beim Scannen ignoriert, bis das Feature aktiviert wird.</string>
     <string name="settings_gemini_tools_title">Verfügbare Funktionen (Tools):</string>
     <string name="settings_gemini_tool_status_active">Aktiv</string>

@@ -20,11 +20,5 @@ fun ExperimentalSettingsSection(viewModel: SettingsViewModel) {
             checked = manualSorting,
             onCheckedChange = { viewModel.setExperimentalManualSorting(it) }
         )
-        
-        SettingsToggleItem(
-            label = stringResource(R.string.settings_smart_prediction_enable),
-            checked = smartEnabled,
-            onCheckedChange = { viewModel.setSmartPredictionEnabled(it) }
-        )
     }
 }

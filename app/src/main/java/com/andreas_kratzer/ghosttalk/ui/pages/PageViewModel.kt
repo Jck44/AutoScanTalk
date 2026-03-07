@@ -187,8 +187,9 @@ class PageViewModel @Inject constructor(
     fun loadPage(page: Page) {
         viewModelScope.launch {
             val isSamePage = currentPage.value?.id == page.id
+            val redoPrediction = settingsRepository.geminiRedoPrediction
             scanCoordinator.onPageChanged(isSamePage)
-            if (!isSamePage) {
+            if (!isSamePage || redoPrediction) {
                 _smartPredictions.value = null // Clear to null to indicate "waiting for results"
             }
             pageManagementDelegate.setCurrentPage(page)

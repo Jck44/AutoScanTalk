@@ -64,11 +64,6 @@ fun TestSettingsSection(viewModel: SettingsViewModel) {
             checked = volumeKeysActivate,
             onCheckedChange = { viewModel.setVolumeKeysActivate(it) }
         )
-        SettingsEditTextItem(
-            label = "Gemini Timeout (ms)",
-            value = geminiTimeout.toString(),
-            onValueChange = { newValue -> viewModel.setGeminiTimeoutInput(newValue) }
-        )
     }
 
     if (showHistoryDialog) {

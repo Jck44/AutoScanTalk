@@ -40,6 +40,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.CloudSettingsSection
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.ExperimentalSettingsSection
+import com.andreas_kratzer.ghosttalk.ui.settings.sections.GeminiNanoSettingsSection
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.GenAiSettingsSection
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.GeneralSettingsSection
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.LanguageSettingsSection
@@ -122,6 +123,11 @@ fun SettingsScreen(
             // 5. Generative AI
             GenAiSettingsSection(viewModel)
             
+            Spacer(modifier = Modifier.height(dimensions.paddingLarge))
+
+            // 5.5 Gemini Nano (Offline)
+            GeminiNanoSettingsSection(viewModel)
+
             Spacer(modifier = Modifier.height(dimensions.paddingLarge))
 
             // 6. Notifications

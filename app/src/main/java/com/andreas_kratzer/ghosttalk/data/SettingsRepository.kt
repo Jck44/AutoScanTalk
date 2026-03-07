@@ -240,6 +240,7 @@ class SettingsRepository(context: Context) {
     private val _keepScreenOnUserMode = BooleanSetting(KEY_KEEP_SCREEN_ON_USER_MODE, true)
     private val _userModeScreenBehavior = NonNullStringSetting(KEY_USER_MODE_SCREEN_BEHAVIOR, "NORMAL")
     private val _geminiTimeout = LongSetting(KEY_GEMINI_TIMEOUT, 6000L)
+    private val _geminiRedoPrediction = BooleanSetting(KEY_GEMINI_REDO_PREDICTION, false)
 
     private fun refreshFlows() {
         _ttsLanguage.refresh()
@@ -279,6 +280,7 @@ class SettingsRepository(context: Context) {
         _keepScreenOnUserMode.refresh()
         _userModeScreenBehavior.refresh()
         _geminiTimeout.refresh()
+        _geminiRedoPrediction.refresh()
     }
 
     // ── Public API: Flows ────────────────────────────────────────────────
@@ -319,6 +321,7 @@ class SettingsRepository(context: Context) {
     val keepScreenOnUserModeFlow: StateFlow<Boolean> get() = _keepScreenOnUserMode.flow
     val userModeScreenBehaviorFlow: StateFlow<String> get() = _userModeScreenBehavior.flow
     val geminiTimeoutFlow: StateFlow<Long> get() = _geminiTimeout.flow
+    val geminiRedoPredictionFlow: StateFlow<Boolean> get() = _geminiRedoPrediction.flow
 
     // ── Public API: Properties ───────────────────────────────────────────
 
@@ -474,6 +477,10 @@ class SettingsRepository(context: Context) {
         get() = _geminiTimeout.value
         set(value) { _geminiTimeout.value = value }
 
+    var geminiRedoPrediction: Boolean
+        get() = _geminiRedoPrediction.value
+        set(value) { _geminiRedoPrediction.value = value }
+
     // ── Device name cache ────────────────────────────────────────────────
 
     fun getDeviceName(persistentId: String): String? {
@@ -539,5 +546,6 @@ class SettingsRepository(context: Context) {
         private const val KEY_KEEP_SCREEN_ON_USER_MODE = "keep_screen_on_user_mode"
         private const val KEY_USER_MODE_SCREEN_BEHAVIOR = "user_mode_screen_behavior"
         private const val KEY_GEMINI_TIMEOUT = "gemini_timeout_ms"
+        private const val KEY_GEMINI_REDO_PREDICTION = "gemini_redo_prediction"
     }
 }
