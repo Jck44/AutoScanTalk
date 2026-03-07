@@ -3,6 +3,8 @@ package com.andreas_kratzer.ghosttalk.ui.pages
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -46,7 +48,10 @@ fun AddPageDialog(
             ) 
         },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(dimensions.paddingLarge)) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(dimensions.paddingLarge),
+                modifier = Modifier.verticalScroll(rememberScrollState())
+            ) {
                 
                 // Template Dropdown
                 ExposedDropdownMenuBox(

@@ -210,19 +210,19 @@ class PageImportExportManager @javax.inject.Inject constructor(
             val buttons = page.buttonConfigs.mapIndexedNotNull { globalIndex, config ->
                 if (config != null && GridUtils.isVisibleInGrid(globalIndex, page.rows, page.columns)) {
                     val importAction = when (val action = config.buttonAction) {
-                        is SpeakTextButtonAction -> com.andreas_kratzer.ghosttalk.model.importexport.ImportAction(
+                        is SpeakTextButtonAction -> ImportAction(
                             type = "SPEAK",
                             textToSpeech = config.spokenText,
                             targetPageImportId = null,
                             ttsFeedback = null
                         )
-                        is FrequentActionButtonAction -> com.andreas_kratzer.ghosttalk.model.importexport.ImportAction(
+                        is FrequentActionButtonAction -> ImportAction(
                             type = "FrequentAction",
                             textToSpeech = null,
                             targetPageImportId = action.rank.toString(),
                             ttsFeedback = null
                         )
-                        is NavigateToPageButtonAction -> com.andreas_kratzer.ghosttalk.model.importexport.ImportAction(
+                        is NavigateToPageButtonAction -> ImportAction(
                             type = "NAVIGATE",
                             textToSpeech = null,
                             targetPageImportId = action.pageId,
@@ -233,8 +233,8 @@ class PageImportExportManager @javax.inject.Inject constructor(
                     
                     // Reverse spatial mapping: global 7x7 back to local (rows x cols)
                     val localIndex = GridUtils.globalToLocalIndex(globalIndex, page.columns)
-                    
-                    com.andreas_kratzer.ghosttalk.model.importexport.ImportButton(
+
+                    ImportButton(
                         index = localIndex.toLong(),
                         label = config.label,
                         spokenText = config.spokenText,
@@ -259,19 +259,19 @@ class PageImportExportManager @javax.inject.Inject constructor(
             val buttons = template.buttonConfigs.mapIndexedNotNull { index, config ->
                 config?.let {
                     val importAction = when (val action = it.buttonAction) {
-                        is SpeakTextButtonAction -> com.andreas_kratzer.ghosttalk.model.importexport.ImportAction(
+                        is SpeakTextButtonAction -> ImportAction(
                             type = "SPEAK",
                             textToSpeech = it.spokenText,
                             targetPageImportId = null,
                             ttsFeedback = null
                         )
-                        is FrequentActionButtonAction -> com.andreas_kratzer.ghosttalk.model.importexport.ImportAction(
+                        is FrequentActionButtonAction -> ImportAction(
                             type = "FrequentAction",
                             textToSpeech = null,
                             targetPageImportId = action.rank.toString(),
                             ttsFeedback = null
                         )
-                        is NavigateToPageButtonAction -> com.andreas_kratzer.ghosttalk.model.importexport.ImportAction(
+                        is NavigateToPageButtonAction -> ImportAction(
                             type = "NAVIGATE",
                             textToSpeech = null,
                             targetPageImportId = action.pageId,
@@ -279,7 +279,7 @@ class PageImportExportManager @javax.inject.Inject constructor(
                         )
                         else -> null
                     }
-                    com.andreas_kratzer.ghosttalk.model.importexport.ImportButton(
+                    ImportButton(
                         index = index.toLong(),
                         label = it.label,
                         spokenText = it.spokenText,

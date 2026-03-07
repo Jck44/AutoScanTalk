@@ -158,6 +158,6 @@ class TextToSpeechHelperTest {
         helper.setLanguageAndVoice("unsupported-LANG")
         
         // Should still call setLanguage
-        verify { anyConstructed<TextToSpeech>().setLanguage(any()) }
+        verify { anyConstructed<TextToSpeech>().language = any() }
     }
 }

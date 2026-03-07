@@ -12,7 +12,6 @@ import com.andreas_kratzer.ghosttalk.ui.settings.SettingsViewModel
 @Composable
 fun ExperimentalSettingsSection(viewModel: SettingsViewModel) {
     val manualSorting by viewModel.experimentalManualSorting.collectAsState(false)
-    val smartEnabled by viewModel.isSmartPredictionEnabled.collectAsState(false)
 
     PreferenceCategory(stringResource(R.string.settings_category_experimental)) {
         SettingsToggleItem(

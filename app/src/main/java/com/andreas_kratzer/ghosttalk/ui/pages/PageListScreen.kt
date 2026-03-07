@@ -3,6 +3,8 @@ package com.andreas_kratzer.ghosttalk.ui.pages
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material.icons.Icons
@@ -314,7 +316,7 @@ fun PageListScreen(
                 },
                 title = { Text("Seite wird verwendet") },
                 text = { 
-                    Column {
+                    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                         Text("Die Seite \"${page.name}\" wird an folgenden Stellen zur Navigation verwendet:")
                         usagesToDelete.forEach { usage ->
                             val typePrefix = if (usage is UsageLocation.PageUsage) "Seite" else "Vorlage"

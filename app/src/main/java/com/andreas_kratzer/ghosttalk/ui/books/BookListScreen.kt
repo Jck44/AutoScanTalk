@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -124,14 +126,16 @@ fun BookListScreen(
                 onDismissRequest = { showAddDialog = false },
                 title = { Text(stringResource(R.string.book_dialog_new_title)) },
                 text = {
-                    OutlinedTextField(
-                        value = newBookName,
-                        onValueChange = { newBookName = it },
-                        label = { Text(stringResource(R.string.book_name_label)) },
-                        singleLine = true,
-                        shape = MaterialTheme.shapes.large,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                        OutlinedTextField(
+                            value = newBookName,
+                            onValueChange = { newBookName = it },
+                            label = { Text(stringResource(R.string.book_name_label)) },
+                            singleLine = true,
+                            shape = MaterialTheme.shapes.large,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 },
                 confirmButton = {
                     Button(
@@ -165,14 +169,16 @@ fun BookListScreen(
                 onDismissRequest = { bookToEdit = null },
                 title = { Text(stringResource(R.string.book_dialog_rename_title)) },
                 text = {
-                    OutlinedTextField(
-                        value = editBookName,
-                        onValueChange = { editBookName = it },
-                        label = { Text(stringResource(R.string.book_name_label)) },
-                        singleLine = true,
-                        shape = MaterialTheme.shapes.large,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                        OutlinedTextField(
+                            value = editBookName,
+                            onValueChange = { editBookName = it },
+                            label = { Text(stringResource(R.string.book_name_label)) },
+                            singleLine = true,
+                            shape = MaterialTheme.shapes.large,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 },
                 confirmButton = {
                     Button(

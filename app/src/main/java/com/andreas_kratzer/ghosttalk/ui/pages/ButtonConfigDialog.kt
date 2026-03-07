@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -207,7 +209,10 @@ fun ButtonConfigDialog(
         onDismissRequest = onDismiss,
         title = { Text(if (initialConfig == null) stringResource(R.string.button_dialog_new_title) else stringResource(R.string.button_dialog_edit_title)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(dimensions.paddingMedium)) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(dimensions.paddingMedium),
+                modifier = Modifier.verticalScroll(rememberScrollState())
+            ) {
                 // IsActive Toggle (Moved to top)
                 Row(
                     modifier = Modifier.fillMaxWidth(),

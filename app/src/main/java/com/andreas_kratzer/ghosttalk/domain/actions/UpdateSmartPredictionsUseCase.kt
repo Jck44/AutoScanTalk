@@ -40,8 +40,7 @@ class UpdateSmartPredictionsUseCase @Inject constructor(
             val pages = args[1] as List<Page>
             @Suppress("UNCHECKED_CAST")
             val bookId = args[2] as String?
-            @Suppress("UNCHECKED_CAST")
-            val actionHistory = args[3] as List<String>
+            args[3] as List<String>
             @Suppress("UNCHECKED_CAST")
             val isUserMode = args[4] as Boolean
             @Suppress("UNCHECKED_CAST")

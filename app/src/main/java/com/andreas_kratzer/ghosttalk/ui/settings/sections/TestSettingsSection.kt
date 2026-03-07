@@ -35,7 +35,6 @@ fun TestSettingsSection(viewModel: SettingsViewModel) {
     val showTestButtons by viewModel.showTestButtons.collectAsState(false)
     val showPageId by viewModel.showPageIdInLog.collectAsState(true)
     val volumeKeysActivate by viewModel.volumeKeysActivate.collectAsState(false)
-    val geminiTimeout by viewModel.geminiTimeout.collectAsState(6000L)
     val buttonHistory by viewModel.buttonHistory.collectAsState(emptyList())
     val dimensions = LocalDimensions.current
     

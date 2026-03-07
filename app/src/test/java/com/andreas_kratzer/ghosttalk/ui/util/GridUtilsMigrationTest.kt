@@ -14,15 +14,15 @@ class GridUtilsMigrationTest {
         val oldConfigs = MutableList<ButtonConfig?>(36) { null }
         
         // Button at (0, 5) -> index 5
-        val btnRow0Col5 = ButtonConfig(id = "1", label = "R0C5", spokenText = "", buttonAction = com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction(), auditoryCue = null)
+        val btnRow0Col5 = ButtonConfig(id = "1", label = "R0C5", spokenText = "", buttonAction = SpeakTextButtonAction(), auditoryCue = null)
         oldConfigs[5] = btnRow0Col5
         
         // Button at (1, 0) -> index 6
-        val btnRow1Col0 = ButtonConfig(id = "2", label = "R1C0", spokenText = "", buttonAction = com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction(), auditoryCue = null)
+        val btnRow1Col0 = ButtonConfig(id = "2", label = "R1C0", spokenText = "", buttonAction = SpeakTextButtonAction(), auditoryCue = null)
         oldConfigs[6] = btnRow1Col0
         
         // Button at (5, 5) -> index 35
-        val btnRow5Col5 = ButtonConfig(id = "3", label = "R5C5", spokenText = "", buttonAction = com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction(), auditoryCue = null)
+        val btnRow5Col5 = ButtonConfig(id = "3", label = "R5C5", spokenText = "", buttonAction = SpeakTextButtonAction(), auditoryCue = null)
         oldConfigs[35] = btnRow5Col5
         
         val newConfigs = GridUtils.migrateFrom6To7(oldConfigs)

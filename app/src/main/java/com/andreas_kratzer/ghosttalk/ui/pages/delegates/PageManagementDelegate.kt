@@ -36,7 +36,7 @@ class PageManagementDelegate @Inject constructor(
     private val importPageUseCase: ImportPageUseCase,
     private val exportPageUseCase: ExportPageUseCase,
     private val getFilteredPagesUseCase: GetFilteredPagesUseCase,
-    private val getPageUsagesUseCase: com.andreas_kratzer.ghosttalk.domain.pages.GetPageUsagesUseCase
+    private val getPageUsagesUseCase: GetPageUsagesUseCase
 ) {
     private lateinit var scope: CoroutineScope
 
