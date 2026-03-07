@@ -307,7 +307,12 @@ fun SettingsClickableItem(label: String, value: String, onClick: () -> Unit) {
 }
 
 @Composable
-fun SettingsEditTextItem(label: String, value: String, onValueChange: (String) -> Unit) {
+fun SettingsEditTextItem(
+    label: String, 
+    value: String, 
+    onValueChange: (String) -> Unit,
+    keyboardOptions: KeyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+) {
     val dimensions = LocalDimensions.current
     OutlinedTextField(
         value = value,
@@ -318,7 +323,7 @@ fun SettingsEditTextItem(label: String, value: String, onValueChange: (String) -
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = dimensions.paddingSmall),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        keyboardOptions = keyboardOptions,
         singleLine = true
     )
 }

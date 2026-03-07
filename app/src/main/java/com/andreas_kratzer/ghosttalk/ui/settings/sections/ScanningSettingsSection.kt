@@ -2,6 +2,8 @@ package com.andreas_kratzer.ghosttalk.ui.settings.sections
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
@@ -34,7 +36,11 @@ fun ScanningSettingsSection(viewModel: SettingsViewModel) {
 
     PreferenceCategory(stringResource(R.string.settings_category_scanning)) {
         SettingsToggleItem(stringResource(R.string.settings_auto_scan), autoStart) { viewModel.setAutoStartScanning(it) }
-        SettingsEditTextItem(stringResource(R.string.settings_scan_delay), scanDelay.toString()) { viewModel.setScanDelayInput(it) }
+        SettingsEditTextItem(
+            label = stringResource(R.string.settings_scan_delay), 
+            value = scanDelay.toString(),
+            onValueChange = { viewModel.setScanDelayInput(it) }
+        )
         SettingsToggleItem(stringResource(R.string.settings_restart_scan), resumeFromStart) { viewModel.setResumeScanningFromStart(it) }
         
         Box(modifier = Modifier.fillMaxWidth()) {
@@ -59,11 +65,24 @@ fun ScanningSettingsSection(viewModel: SettingsViewModel) {
 
     PreferenceCategory(stringResource(R.string.settings_category_hardware)) {
         val switchKey by viewModel.switchActivationKey.collectAsState("Space")
-        SettingsEditTextItem(stringResource(R.string.settings_switch_key), switchKey) { viewModel.setSwitchActivationKey(it) }
+        SettingsEditTextItem(
+            label = stringResource(R.string.settings_switch_key), 
+            value = switchKey,
+            onValueChange = { viewModel.setSwitchActivationKey(it) },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
+        )
     }
 
     PreferenceCategory(stringResource(R.string.settings_category_advanced)) {
-        SettingsEditTextItem(stringResource(R.string.settings_holding_time), holdingTime.toString()) { viewModel.setHoldingTimeInput(it) }
-        SettingsEditTextItem(stringResource(R.string.settings_bluetooth_delay), bluetoothDelay.toString()) { viewModel.setBluetoothDelay(it) }
+        SettingsEditTextItem(
+            label = stringResource(R.string.settings_holding_time), 
+            value = holdingTime.toString(),
+            onValueChange = { viewModel.setHoldingTimeInput(it) }
+        )
+        SettingsEditTextItem(
+            label = stringResource(R.string.settings_bluetooth_delay), 
+            value = bluetoothDelay.toString(),
+            onValueChange = { viewModel.setBluetoothDelay(it) }
+        )
     }
 }

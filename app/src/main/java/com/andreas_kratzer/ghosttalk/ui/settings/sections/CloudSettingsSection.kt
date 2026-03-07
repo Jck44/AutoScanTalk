@@ -11,6 +11,8 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -101,7 +103,8 @@ fun CloudSettingsSection(viewModel: SettingsViewModel) {
                 value = syncInterval.toString(),
                 onValueChange = { newValue ->
                     newValue.toLongOrNull()?.let { viewModel.setSyncIntervalMinutes(it) }
-                }
+                },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
 
             val lastSyncTimeValue = lastSyncTime
