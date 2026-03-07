@@ -63,8 +63,15 @@
     <string name="settings_persist_logs_hint">Keeps history after restart</string>
     <string name="settings_show_page_id_in_log">Show Page ID in History</string>
     <string name="settings_show_page_id_in_log_hint">Shows the technical ID of the page in the logs</string>
+    <string name="settings_show_button_history">Show action history</string>
+    <string name="settings_show_button_history_hint">Shows a dialog with the last 15 actions when clicked</string>
     <string name="settings_experimental_manual_sorting">Manual Sorting (Experimental)</string>
     <string name="settings_experimental_manual_sorting_hint">Enables sorting of pages and templates via Drag &amp; Drop. (In development)</string>
+    <string name="settings_category_gemini_nano">Gemini Nano (Local)</string>
+    <string name="settings_gemini_redo_prediction">Redo prediction when navigating to same page</string>
+    <string name="settings_gemini_redo_prediction_hint">Forces a new AI prediction even if the same page is accessed again.</string>
+    <string name="settings_weather_cache_timeout_label">Weather Cache Duration (Minutes)</string>
+    <string name="settings_weather_cache_timeout_description">How long weather data remains valid before being reloaded.</string>
 
     <string name="settings_category_experimental">Experimental Features</string>
 

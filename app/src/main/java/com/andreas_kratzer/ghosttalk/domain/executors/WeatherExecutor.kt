@@ -10,6 +10,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.net.URL
+import java.net.URLEncoder
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -80,9 +81,15 @@ class WeatherExecutor @Inject constructor(
         return try {
             // For coordinates (contains comma), wttr.in prefers the literal comma.
             // For names (e.g. "New York"), we need encoding.
-            val finalQuery = if (query.contains(",")) query else java.net.URLEncoder.encode(query, "UTF-8")
+            val finalQuery = if (query.contains(",")) query else withContext(
+                Dispatchers.IO
+            ) {
+                URLEncoder.encode(query, "UTF-8")
+            }
             val url = URL("https://wttr.in/$finalQuery?format=3")
-            val connection = url.openConnection() as HttpsURLConnection
+            val connection = withContext(Dispatchers.IO) {
+                url.openConnection()
+            } as HttpsURLConnection
             connection.requestMethod = "GET"
             connection.connectTimeout = 15000 // Increased to 15s
             connection.readTimeout = 15000 // Increased to 15s
@@ -103,7 +110,9 @@ class WeatherExecutor @Inject constructor(
     private suspend fun fetchOpenMeteoWeather(lat: Double, lon: Double): String? {
         return try {
             val url = URL("https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon&current_weather=true")
-            val connection = url.openConnection() as HttpsURLConnection
+            val connection = withContext(Dispatchers.IO) {
+                url.openConnection()
+            } as HttpsURLConnection
             connection.requestMethod = "GET"
             connection.connectTimeout = 10000
             connection.readTimeout = 10000

@@ -2,6 +2,7 @@ package com.andreas_kratzer.ghosttalk.data
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.core.content.edit
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -13,10 +14,10 @@ class WeatherRepository @Inject constructor(
     private val prefs: SharedPreferences = context.getSharedPreferences("weather_cache", Context.MODE_PRIVATE)
 
     fun saveWeather(weather: String, timestamp: Long) {
-        prefs.edit()
-            .putString("last_weather", weather)
-            .putLong("last_timestamp", timestamp)
-            .apply()
+        prefs.edit {
+            putString("last_weather", weather)
+                .putLong("last_timestamp", timestamp)
+        }
     }
 
     fun getLastWeather(): String? {

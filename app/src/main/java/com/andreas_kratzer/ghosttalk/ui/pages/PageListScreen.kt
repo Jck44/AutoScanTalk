@@ -76,8 +76,8 @@ fun PageListScreen(
     val experimentalSorting by pageViewModel.experimentalManualSorting.collectAsState()
     val activeBookId by pageViewModel.activeBookId.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
-    var pageToDelete by remember { mutableStateOf<Page?>(null) }
-    var usagesToDelete by remember { mutableStateOf<List<UsageLocation>>(emptyList()) }
+    val pageToDelete = remember { mutableStateOf<Page?>(null) }
+    val usagesToDelete = remember { mutableStateOf<List<UsageLocation>>(emptyList()) }
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
     val dimensions = LocalDimensions.current
@@ -286,7 +286,7 @@ fun PageListScreen(
                                 }
                                 
                                 IconButton(
-                                    onClick = { pageToDelete = page }
+                                    onClick = { pageToDelete.value = page }
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Delete,
@@ -302,10 +302,10 @@ fun PageListScreen(
         }
     }
 
-    pageToDelete?.let { page ->
-        if (usagesToDelete.isEmpty()) {
+    pageToDelete.value?.let { page ->
+        if (usagesToDelete.value.isEmpty()) {
             AlertDialog(
-                onDismissRequest = { pageToDelete = null },
+                onDismissRequest = { pageToDelete.value = null },
                 title = { Text(stringResource(R.string.page_dialog_delete_title)) },
                 text = { Text(stringResource(R.string.page_dialog_delete_confirm, page.name)) },
                 confirmButton = {
@@ -314,10 +314,10 @@ fun PageListScreen(
                             coroutineScope.launch {
                                 val usages = pageViewModel.getPageUsages(page.id)
                                 if (usages.isNotEmpty()) {
-                                    usagesToDelete = usages
+                                    usagesToDelete.value = usages
                                 } else {
                                     pageViewModel.deletePage(page)
-                                    pageToDelete = null
+                                    pageToDelete.value = null
                                 }
                             }
                         },
@@ -329,7 +329,7 @@ fun PageListScreen(
                 },
                 dismissButton = {
                     Button(
-                        onClick = { pageToDelete = null },
+                        onClick = { pageToDelete.value = null },
                         shape = MaterialTheme.shapes.medium,
                         colors = ButtonDefaults.textButtonColors()
                     ) {
@@ -340,14 +340,14 @@ fun PageListScreen(
         } else {
             AlertDialog(
                 onDismissRequest = { 
-                    pageToDelete = null
-                    usagesToDelete = emptyList()
+                    pageToDelete.value = null
+                    usagesToDelete.value = emptyList()
                 },
                 title = { Text("Seite wird verwendet") },
                 text = { 
                     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                         Text("Die Seite \"${page.name}\" wird an folgenden Stellen zur Navigation verwendet:")
-                        usagesToDelete.forEach { usage ->
+                        usagesToDelete.value.forEach { usage ->
                             val typePrefix = if (usage is UsageLocation.PageUsage) "Seite" else "Vorlage"
                             Text("• $typePrefix: ${usage.name}", modifier = Modifier.padding(start = 8.dp, top = 4.dp))
                         }
@@ -358,8 +358,8 @@ fun PageListScreen(
                     Button(
                         onClick = {
                             pageViewModel.deletePage(page, deleteUsages = true)
-                            pageToDelete = null
-                            usagesToDelete = emptyList()
+                            pageToDelete.value = null
+                            usagesToDelete.value = emptyList()
                         },
                         shape = MaterialTheme.shapes.medium,
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
@@ -370,8 +370,8 @@ fun PageListScreen(
                 dismissButton = {
                     Button(
                         onClick = { 
-                            pageToDelete = null
-                            usagesToDelete = emptyList()
+                            pageToDelete.value = null
+                            usagesToDelete.value = emptyList()
                         },
                         shape = MaterialTheme.shapes.medium,
                         colors = ButtonDefaults.textButtonColors()

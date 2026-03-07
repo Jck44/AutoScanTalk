@@ -49,7 +49,7 @@ object GridUtils {
             if (config != null) {
                 val r = oldIndex / 6
                 val c = oldIndex % 6
-                if (r < MAX_GRID_SIZE && c < MAX_GRID_SIZE) {
+                if (r < MAX_GRID_SIZE) {
                     val newIndex = getGlobalIndex(r, c)
                     newConfigs[newIndex] = config
                 }
