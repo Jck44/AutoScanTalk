@@ -136,7 +136,6 @@ dependencies {
     
     // Utils
     implementation(libs.gson)
-    implementation(libs.guava)
 
     // Cloud Sync (Google Drive & Credential Manager)
     implementation(libs.androidx.credentials)
@@ -146,7 +145,6 @@ dependencies {
     implementation(libs.google.api.services.drive)
     implementation(libs.google.http.client.gson)
     implementation(libs.play.app.update.ktx)
-    implementation(libs.google.generativeai)
     implementation(libs.google.generativeai.mlkit)
     implementation(libs.gms.play.services.auth)
     implementation(libs.gms.play.services.location)
