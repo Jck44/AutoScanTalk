@@ -100,6 +100,11 @@
     <string name="action_delete">Löschen</string>
     <string name="action_clear_delete">Leeren / Löschen</string>
     <string name="action_search">Suchen&#8230;</string>
+    <string name="error_field_required">Dieses Feld ist ein Pflichtfeld</string>
+    <string name="error_book_name_required">Bitte geben Sie einen Namen für das Buch ein.</string>
+    <string name="error_page_name_required">Bitte geben Sie einen Namen für die Seite ein.</string>
+    <string name="error_button_label_required">Bitte geben Sie eine Aufschrift für den Button ein.</string>
+
 
     <!-- Page List Screen -->
     <string name="page_list_title">Seiten verwalten</string>

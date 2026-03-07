@@ -95,6 +95,22 @@ class LocalIntentRouterTest {
     }
 
     @Test
+    fun `handleJsonIntent ignores hardcoded AI response for time`() {
+        var spokenText = ""
+        val onSpeak: (String) -> Unit = { spokenText = it }
+        
+        every { systemTimeExecutor.getCurrentTimeOutput() } returns "Es ist 20:07 Uhr."
+        
+        val method = LocalIntentRouter::class.java.getDeclaredMethod("handleJsonIntent", String::class.java, Function1::class.java)
+        method.isAccessible = true
+        // Simulate the AI returning a hardcoded response alongside the intent
+        method.invoke(router, """{"intent": "time", "query": "time", "response": "Es ist vierzehn Uhr zwei."}""", onSpeak)
+        
+        verify(exactly = 1) { systemTimeExecutor.getCurrentTimeOutput() }
+        assert(spokenText == "Es ist 20:07 Uhr.")
+    }
+
+    @Test
     fun `extractJson handles markdown and conversational text`() {
         val method = LocalIntentRouter::class.java.getDeclaredMethod("extractJson", String::class.java)
         method.isAccessible = true

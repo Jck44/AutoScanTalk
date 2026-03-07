@@ -121,6 +121,7 @@ fun BookListScreen(
 
         if (showAddDialog) {
             var newBookName by remember { mutableStateOf("") }
+            var isError by remember { mutableStateOf(false) }
 
             AlertDialog(
                 onDismissRequest = { showAddDialog = false },
@@ -129,11 +130,20 @@ fun BookListScreen(
                     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                         OutlinedTextField(
                             value = newBookName,
-                            onValueChange = { newBookName = it },
+                            onValueChange = { 
+                                newBookName = it
+                                if (it.isNotBlank()) isError = false
+                            },
                             label = { Text(stringResource(R.string.book_name_label)) },
                             singleLine = true,
                             shape = MaterialTheme.shapes.large,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
+                            isError = isError,
+                            supportingText = {
+                                if (isError) {
+                                    Text(stringResource(R.string.error_book_name_required))
+                                }
+                            }
                         )
                     }
                 },
@@ -143,8 +153,11 @@ fun BookListScreen(
                             if (newBookName.isNotBlank()) {
                                 bookViewModel.createNewBook(newBookName)
                                 showAddDialog = false
+                            } else {
+                                isError = true
                             }
                         },
+
                         shape = MaterialTheme.shapes.medium
                     ) {
                         Text(stringResource(R.string.action_create))
@@ -164,6 +177,7 @@ fun BookListScreen(
 
         bookToEdit?.let { book ->
             var editBookName by remember { mutableStateOf(book.name) }
+            var isError by remember { mutableStateOf(false) }
 
             AlertDialog(
                 onDismissRequest = { bookToEdit = null },
@@ -172,11 +186,20 @@ fun BookListScreen(
                     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                         OutlinedTextField(
                             value = editBookName,
-                            onValueChange = { editBookName = it },
+                            onValueChange = { 
+                                editBookName = it 
+                                if (it.isNotBlank()) isError = false
+                            },
                             label = { Text(stringResource(R.string.book_name_label)) },
                             singleLine = true,
                             shape = MaterialTheme.shapes.large,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
+                            isError = isError,
+                            supportingText = {
+                                if (isError) {
+                                    Text(stringResource(R.string.error_book_name_required))
+                                }
+                            }
                         )
                     }
                 },
@@ -186,8 +209,11 @@ fun BookListScreen(
                             if (editBookName.isNotBlank()) {
                                 bookViewModel.updateBookName(book, editBookName)
                                 bookToEdit = null
+                            } else {
+                                isError = true
                             }
                         },
+
                         shape = MaterialTheme.shapes.medium
                     ) {
                         Text(stringResource(R.string.action_save))

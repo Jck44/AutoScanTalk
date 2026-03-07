@@ -61,7 +61,9 @@ fun ButtonConfigDialog(
     
     // Current State
     var label by remember { mutableStateOf(initialConfig?.label ?: "") }
+    var isError by remember { mutableStateOf(false) }
     var spokenText by remember { mutableStateOf(initialConfig?.spokenText ?: "") }
+
     var ttsFeedback by remember { 
         mutableStateOf(
             (initialConfig?.auditoryCue as? AuditoryCue.TextToSpeechCue)?.text ?: ""
@@ -262,12 +264,22 @@ fun ButtonConfigDialog(
                 // Label Input
                 OutlinedTextField(
                     value = label,
-                    onValueChange = { label = it },
+                    onValueChange = { 
+                        label = it 
+                        if (it.isNotBlank()) isError = false
+                    },
                     label = { Text(stringResource(R.string.button_label_field)) },
                     singleLine = true,
                     shape = MaterialTheme.shapes.large,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = isError,
+                    supportingText = {
+                        if (isError) {
+                            Text(stringResource(R.string.error_button_label_required))
+                        }
+                    }
                 )
+
 
                 // Explicit Spoken Text Input
                 OutlinedTextField(
@@ -328,9 +340,45 @@ fun ButtonConfigDialog(
                             availablePages = availablePages,
                             templates = templates,
                             onNavigateToPage = onNavigateToPage,
-                            onCreatePage = onCreatePage,
+                            onBeforeCreatePage = {
+                                if (label.isBlank()) {
+                                    isError = true
+                                    false
+                                } else {
+                                    true
+                                }
+                            },
+                            onCreatePage = { name, rows, cols, templateId, onCreated ->
+                                onCreatePage?.invoke(name, rows, cols, templateId) { newId ->
+                                    // Update local state
+                                    navigateToPageId = newId
+                                    selectedActionType = actionTypeNavigate
+                                    
+                                    // Save the button immediately with the new page ID
+                                    val action = buildButtonAction()
+                                    val cue = if (ttsFeedback.isNotBlank()) {
+                                        AuditoryCue.TextToSpeechCue(text = ttsFeedback)
+                                    } else {
+                                        null
+                                    }
+
+                                    onSave(
+                                        ButtonConfig(
+                                            id = buttonId, 
+                                            label = label, 
+                                            spokenText = spokenText.takeIf { it.isNotBlank() },
+                                            buttonAction = action,
+                                            isActive = isActive,
+                                            playActionAsAuditoryCue = playActionAsAuditoryCue,
+                                            auditoryCue = cue
+                                        )
+                                    )
+                                    onCreated(newId)
+                                }
+                            },
                             onDismissDialog = onDismiss
                         )
+
                     }
                     actionTypeGemini, actionTypeGeminiSearch, actionTypeGeminiNano -> {
                         GeminiActionFields(
@@ -441,6 +489,8 @@ fun ButtonConfigDialog(
                                         auditoryCue = cue
                                     )
                                 )
+                            } else {
+                                isError = true
                             }
                         },
                         shape = MaterialTheme.shapes.medium,
@@ -471,6 +521,8 @@ fun ButtonConfigDialog(
                                     auditoryCue = cue
                                 )
                             )
+                        } else {
+                            isError = true
                         }
                     },
                     shape = MaterialTheme.shapes.medium

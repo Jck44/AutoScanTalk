@@ -97,6 +97,11 @@
     <string name="action_cancel">Cancel</string>
     <string name="action_delete">Delete</string>
     <string name="action_search">Search…</string>
+    <string name="error_field_required">This field is required</string>
+    <string name="error_book_name_required">Please enter a name for the book.</string>
+    <string name="error_page_name_required">Please enter a name for the page.</string>
+    <string name="error_button_label_required">Please enter a label for the button.</string>
+
 
     <!-- Page List Screen -->
     <string name="page_list_title">Manage Pages</string>

@@ -35,8 +35,10 @@ fun AddPageDialog(
     onConfirm: (name: String, rows: Int, columns: Int, templateId: String?) -> Unit
 ) {
     var name by remember { mutableStateOf("") }
+    var isError by remember { mutableStateOf(false) }
     var selectedTemplate by remember { mutableStateOf<PageTemplate?>(null) }
     var expanded by remember { mutableStateOf(false) }
+
     val dimensions = LocalDimensions.current
 
     AlertDialog(
@@ -93,12 +95,22 @@ fun AddPageDialog(
                 
                 OutlinedTextField(
                     value = name,
-                    onValueChange = { name = it },
+                    onValueChange = { 
+                        name = it 
+                        if (it.isNotBlank()) isError = false
+                    },
                     label = { Text(stringResource(R.string.page_name_field)) },
                     singleLine = true,
                     shape = MaterialTheme.shapes.large,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = isError,
+                    supportingText = {
+                        if (isError) {
+                            Text(stringResource(R.string.error_page_name_required))
+                        }
+                    }
                 )
+
             }
         },
         confirmButton = {
@@ -109,10 +121,12 @@ fun AddPageDialog(
                     val cols = selectedTemplate?.columns ?: 4
                     if (name.isNotBlank()) {
                         onConfirm(name, rows, cols, selectedTemplate?.id)
+                    } else {
+                        isError = true
                     }
                 },
-                shape = MaterialTheme.shapes.medium,
-                enabled = name.isNotBlank()
+                shape = MaterialTheme.shapes.medium
+
             ) {
                 Text(stringResource(R.string.action_create))
             }

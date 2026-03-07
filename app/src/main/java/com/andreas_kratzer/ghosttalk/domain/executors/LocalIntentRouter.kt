@@ -26,7 +26,7 @@ class LocalIntentRouter @Inject constructor(
             
             Beispiel:
             Nutzer: Wie spät ist es?
-            Antwort: {"intent": "time", "query": "time", "response": "Es ist vierzehn Uhr zwei."}
+            Antwort: {"intent": "time", "query": "time", "response": "Es ist <aktuelle_uhrzeit> Uhr."}
             
             Mögliche Intents:
             1. Zeitabfrage: {"intent": "time", "query": "time", "response": "<natürliche Antwort zur Uhrzeit>"}
@@ -91,17 +91,12 @@ class LocalIntentRouter @Inject constructor(
             val intentStr = if (json.has("intent")) json.get("intent").asString.lowercase() else ""
             when (intentStr) {
                 "time", "date" -> {
-                    val responseText = if (json.has("response")) json.get("response").asString else ""
-                    if (responseText.isNotBlank()) {
-                        onSpeak(responseText)
+                    val query = if (json.has("query")) json.get("query").asString else ""
+                    // Support both "date" intent and query="date"
+                    if (query == "date" || intentStr == "date") {
+                        onSpeak(systemTimeExecutor.getCurrentDateOutput())
                     } else {
-                        val query = if (json.has("query")) json.get("query").asString else ""
-                        // Support both "date" intent and query="date"
-                        if (query == "date" || intentStr == "date") {
-                            onSpeak(systemTimeExecutor.getCurrentDateOutput())
-                        } else {
-                            onSpeak(systemTimeExecutor.getCurrentTimeOutput())
-                        }
+                        onSpeak(systemTimeExecutor.getCurrentTimeOutput())
                     }
                 }
                 "alarm" -> {

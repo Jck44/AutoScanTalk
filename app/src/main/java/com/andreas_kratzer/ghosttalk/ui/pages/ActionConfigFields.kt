@@ -36,11 +36,14 @@ fun NavigationActionFields(
     templates: List<PageTemplate>,
     onNavigateToPage: ((String) -> Unit)?,
     onCreatePage: ((String, Int, Int, String?, (String) -> Unit) -> Unit)?,
+    onBeforeCreatePage: (() -> Boolean)? = null,
+
     onDismissDialog: () -> Unit
 ) {
     var expandedPageSelect by remember { mutableStateOf(false) }
     var pageSearchQuery by remember { mutableStateOf("") }
     val showAddPageDialogState = remember { mutableStateOf(false) }
+
     val dimensions = LocalDimensions.current
 
     val filteredPages = remember(pageSearchQuery, availablePages) {
@@ -110,10 +113,15 @@ fun NavigationActionFields(
 
         if (onCreatePage != null) {
             OutlinedButton(
-                onClick = { showAddPageDialogState.value = true },
+                onClick = { 
+                    if (onBeforeCreatePage == null || onBeforeCreatePage()) {
+                        showAddPageDialogState.value = true 
+                    }
+                },
                 shape = MaterialTheme.shapes.medium,
                 modifier = Modifier.fillMaxWidth()
             ) {
+
                 Text("Neue Ziel-Seite erstellen")
             }
         }
