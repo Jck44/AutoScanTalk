@@ -311,46 +311,7 @@ object GhosTTalkIcons {
             }
         }
 
-    val Edit: ImageVector
-        get() = materialIcon(name = "Filled.Edit") {
-            materialPath {
-                moveTo(3.0f, 17.25f)
-                verticalLineTo(21.0f)
-                horizontalLineToRelative(3.75f)
-                lineTo(17.81f, 9.94f)
-                lineToRelative(-3.75f, -3.75f)
-                lineTo(3.0f, 17.25f)
-                close()
-                moveTo(20.71f, 7.04f)
-                curveToRelative(0.39f, -0.39f, 0.39f, -1.02f, 0.0f, -1.41f)
-                lineToRelative(-2.34f, -2.34f)
-                curveToRelative(-0.39f, -0.39f, -1.02f, -0.39f, -1.41f, 0.0f)
-                lineToRelative(-1.83f, 1.83f)
-                lineToRelative(3.75f, 3.75f)
-                lineToRelative(1.83f, -1.83f)
-                close()
-            }
-        }
 
-    val Clear: ImageVector
-        get() = materialIcon(name = "Filled.Clear") {
-            materialPath {
-                moveTo(19.0f, 6.41f)
-                lineTo(17.59f, 5.0f)
-                lineTo(12.0f, 10.59f)
-                lineTo(6.41f, 5.0f)
-                lineTo(5.0f, 6.41f)
-                lineTo(10.59f, 12.0f)
-                lineTo(5.0f, 17.59f)
-                lineTo(6.41f, 19.0f)
-                lineTo(12.0f, 13.41f)
-                lineTo(17.59f, 19.0f)
-                lineTo(19.0f, 17.59f)
-                lineTo(13.41f, 12.0f)
-                lineTo(19.0f, 6.41f)
-                close()
-            }
-        }
         
     val ArrowForward: ImageVector
         get() = materialIcon(name = "AutoMirrored.Filled.ArrowForward", autoMirror = true) {

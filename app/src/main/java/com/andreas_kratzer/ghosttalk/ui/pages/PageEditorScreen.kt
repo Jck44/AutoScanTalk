@@ -268,13 +268,13 @@ fun PageEditorScreen(
             featureGuard = pageViewModel.featureGuard,
             templates = templates,
             onDismiss = {
-                showDialog = false
-                selectedButtonIndex = null
+                showDialog.value = false
+                selectedButtonIndex.value = null
             },
             onSave = { newConfig ->
                 pageViewModel.updateButtonConfig(page.id, editingIndex, newConfig)
-                showDialog = false
-                selectedButtonIndex = null
+                showDialog.value = false
+                selectedButtonIndex.value = null
             },
             onTest = { testConfig ->
                 pageViewModel.actionExecutor.executeButtonAction(testConfig)

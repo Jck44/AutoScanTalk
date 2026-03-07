@@ -62,8 +62,8 @@ fun TemplateEditorScreen(
     val template = templates.find { it.id == templateId }
     val dimensions = LocalDimensions.current
 
-    var selectedButtonIndex by remember { mutableStateOf<Int?>(null) }
-    var showDialog by remember { mutableStateOf(false) }
+    val selectedButtonIndex = remember { mutableStateOf<Int?>(null) }
+    val showDialog = remember { mutableStateOf(false) }
 
     if (template == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -248,13 +248,13 @@ fun TemplateEditorScreen(
             featureGuard = pageViewModel.featureGuard,
             templates = allTemplates,
             onDismiss = {
-                showDialog = false
-                selectedButtonIndex = null
+                showDialog.value = false
+                selectedButtonIndex.value = null
             },
             onSave = { newConfig ->
                 templateViewModel.updateButtonConfig(template, editingIndex, newConfig)
-                showDialog = false
-                selectedButtonIndex = null
+                showDialog.value = false
+                selectedButtonIndex.value = null
             },
             onTest = { testConfig ->
                 pageViewModel.actionExecutor.executeButtonAction(testConfig)
