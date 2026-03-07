@@ -10,14 +10,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.DragHandle
-import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Search
+import com.andreas_kratzer.ghosttalk.ui.theme.GhosTTalkIcons
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -82,7 +80,7 @@ fun TemplateScreen(
                     val templateSortOrder by templateViewModel.settingsRepository.templateSortOrderFlow.collectAsState("MANUAL")
                     
                     IconButton(onClick = { showSortMenu = true }) {
-                        Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = "Sortieren")
+                        Icon(GhosTTalkIcons.Sort, contentDescription = "Sortieren")
                     }
                     DropdownMenu(expanded = showSortMenu, onDismissRequest = { showSortMenu = false }) {
                         SortOrder.entries.filter { it != SortOrder.MANUAL || experimentalSorting }.forEach { order ->
@@ -158,7 +156,7 @@ fun TemplateScreen(
                     GhostTalkCard(
                         title = template.name,
                         subtitle = "Raster: ${template.rows}x${template.columns} " + if (template.isBuiltIn) "(${stringResource(R.string.template_built_in_label)})" else "(${stringResource(R.string.template_custom_label)})",
-                        icon = Icons.Default.GridView,
+                        icon = GhosTTalkIcons.GridView,
                         onClick = { onTemplateClick(template.id) },
                         modifier = if (experimentalSorting) {
                             Modifier.reorderableItem(
@@ -177,7 +175,7 @@ fun TemplateScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 if (experimentalSorting) {
                                     Icon(
-                                        imageVector = Icons.Default.DragHandle,
+                                        imageVector = GhosTTalkIcons.DragHandle,
                                         contentDescription = "Verschieben",
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                                         modifier = Modifier.padding(end = 8.dp)

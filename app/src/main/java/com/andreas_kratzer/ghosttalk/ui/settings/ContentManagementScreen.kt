@@ -6,8 +6,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.GridView
+import com.andreas_kratzer.ghosttalk.ui.theme.GhosTTalkIcons
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -55,13 +54,13 @@ fun ContentManagementScreen(
         ) {
             GhostTalkCard(
                 title = stringResource(R.string.page_list_title),
-                icon = Icons.Default.Description,
+                icon = GhosTTalkIcons.Description,
                 onClick = onNavigateToPageManager
             )
             
             GhostTalkCard(
                 title = stringResource(R.string.template_manage_title),
-                icon = Icons.Default.GridView,
+                icon = GhosTTalkIcons.GridView,
                 onClick = onNavigateToTemplateManager
             )
         }

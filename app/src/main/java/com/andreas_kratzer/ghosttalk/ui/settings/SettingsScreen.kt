@@ -21,13 +21,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.Cloud
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.RecordVoiceOver
-import androidx.compose.material.icons.filled.Science
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.SettingsAccessibility
+import com.andreas_kratzer.ghosttalk.ui.theme.GhosTTalkIcons
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -72,12 +67,12 @@ import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 
 enum class SettingsSection(val titleRes: Int, val icon: ImageVector) {
     GENERAL(R.string.settings_category_general, Icons.Default.Settings),
-    VOICE(R.string.settings_category_voice, Icons.Default.RecordVoiceOver),
-    SCANNING(R.string.settings_category_scanning, Icons.Default.SettingsAccessibility),
-    CLOUD(R.string.settings_category_cloud, Icons.Default.Cloud),
-    GEMINI(R.string.settings_category_gemini, Icons.Default.AutoAwesome),
-    NOTIFICATIONS(R.string.settings_category_notifications, Icons.Default.Notifications),
-    ADVANCED(R.string.settings_category_advanced, Icons.Default.Science)
+    VOICE(R.string.settings_category_voice, GhosTTalkIcons.RecordVoiceOver),
+    SCANNING(R.string.settings_category_scanning, GhosTTalkIcons.SettingsAccessibility),
+    CLOUD(R.string.settings_category_cloud, GhosTTalkIcons.Cloud),
+    GEMINI(R.string.settings_category_gemini, GhosTTalkIcons.AutoAwesome),
+    NOTIFICATIONS(R.string.settings_category_notifications, GhosTTalkIcons.Notifications),
+    ADVANCED(R.string.settings_category_advanced, GhosTTalkIcons.Science)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -186,7 +181,7 @@ fun SettingsMainMenuList(onSectionSelect: (SettingsSection) -> Unit) {
                     },
                     trailingContent = {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                            imageVector = GhosTTalkIcons.ArrowForward,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                             modifier = Modifier.size(20.dp)

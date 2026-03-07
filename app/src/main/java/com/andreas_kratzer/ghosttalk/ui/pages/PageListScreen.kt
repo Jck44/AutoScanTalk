@@ -15,14 +15,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.Sort
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.Search
+import com.andreas_kratzer.ghosttalk.ui.theme.GhosTTalkIcons
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -159,7 +158,7 @@ fun PageListScreen(
                     
                     IconButton(onClick = { showSortMenu = true }) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Sort,
+                            imageVector = GhosTTalkIcons.Sort,
                             contentDescription = "Sortieren"
                         )
                     }
@@ -260,7 +259,7 @@ fun PageListScreen(
                     GhostTalkCard(
                         title = page.name,
                         subtitle = stringResource(R.string.page_grid_info, page.rows, page.columns),
-                        icon = Icons.Default.Description,
+                        icon = GhosTTalkIcons.Description,
                         onClick = { onEditPage(page.id) },
                         modifier = if (experimentalSorting) {
                             Modifier.reorderableItem(
@@ -279,7 +278,7 @@ fun PageListScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 if (experimentalSorting) {
                                     Icon(
-                                        imageVector = Icons.Default.DragHandle,
+                                        imageVector = GhosTTalkIcons.DragHandle,
                                         contentDescription = "Verschieben",
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                                         modifier = Modifier.padding(end = 8.dp)
