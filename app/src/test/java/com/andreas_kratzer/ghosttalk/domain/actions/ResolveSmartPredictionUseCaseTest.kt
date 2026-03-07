@@ -48,7 +48,7 @@ class ResolveSmartPredictionUseCaseTest {
 
         coVerify { 
             actionExecutor.executeButtonAction(
-                match { it.label == "Target" && it.buttonAction is NavigateToPageButtonAction },
+                match { it.id == "p2" && it.label == "Target" && it.buttonAction is NavigateToPageButtonAction },
                 bookId = "b1",
                 rows = any(),
                 columns = any(),

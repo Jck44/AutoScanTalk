@@ -9,6 +9,7 @@ data class Dimensions(
     val paddingMedium: Dp = 8.dp,
     val paddingLarge: Dp = 16.dp,
     val paddingExtraLarge: Dp = 24.dp,
+    val paddingDoubleExtraLarge: Dp = 32.dp,
     
     val gridSpacing: Dp = 8.dp,
     val cardElevation: Dp = 2.dp,

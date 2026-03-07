@@ -35,6 +35,7 @@ class ResolveSmartPredictionUseCase @Inject constructor(
         if (targetPage != null) {
             actionExecutor.executeButtonAction(
                 ButtonConfig(
+                    id = targetPage.id,
                     label = targetPage.name,
                     auditoryCue = null,
                     buttonAction = NavigateToPageButtonAction(targetPage.id)

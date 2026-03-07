@@ -18,7 +18,7 @@ fun ButtonGrid(
     page: Page,
     focusedButtonIndex: Int?,
     focusedRowIndex: Int?,
-    smartPredictions: List<String>,
+    smartPredictions: List<String>?,
     pageViewModel: PageViewModel
 ) {
     val dimensions = LocalDimensions.current

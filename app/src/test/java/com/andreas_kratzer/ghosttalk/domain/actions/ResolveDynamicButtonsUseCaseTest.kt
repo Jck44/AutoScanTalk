@@ -39,43 +39,49 @@ class ResolveDynamicButtonsUseCaseTest {
         val bookId = "book1"
         val predictions = listOf("button2", "page2")
         
+        val frequentConfig = ButtonConfig(id = "frequent1", label = "Frequent", auditoryCue = null, buttonAction = FrequentActionButtonAction(rank = 1))
+        val smart1Config = ButtonConfig(id = "smart1", label = "Smart 1", auditoryCue = null, buttonAction = SmartPredictionButtonAction(rank = 1))
+        val smart2Config = ButtonConfig(id = "smart2", label = "Smart 2", auditoryCue = null, buttonAction = SmartPredictionButtonAction(rank = 2))
+        val normalConfig = ButtonConfig(id = "normal1", label = "Normal", auditoryCue = null, buttonAction = SpeakTextButtonAction())
+
         val initialPage = Page(
             id = "page1",
             bookId = bookId,
             name = "Page 1",
-            buttonConfigs = listOf(
-                ButtonConfig(id = "frequent1", label = "Frequent", auditoryCue = null, buttonAction = FrequentActionButtonAction(rank = 1)),
-                ButtonConfig(id = "smart1", label = "Smart 1", auditoryCue = null, buttonAction = SmartPredictionButtonAction(rank = 1)),
-                ButtonConfig(id = "smart2", label = "Smart 2", auditoryCue = null, buttonAction = SmartPredictionButtonAction(rank = 2)),
-                ButtonConfig(id = "normal1", label = "Normal", auditoryCue = null, buttonAction = SpeakTextButtonAction())
-            )
+            buttonConfigs = listOf(frequentConfig, smart1Config, smart2Config, normalConfig)
         )
 
         val resolvedFrequentConfig = ButtonConfig(id = "frequent1", label = "Resolved Frequent", auditoryCue = null, buttonAction = SpeakTextButtonAction())
         val frequentlyResolvedPage = initialPage.copy(
             buttonConfigs = listOf(
                 resolvedFrequentConfig,
-                initialPage.buttonConfigs[1],
-                initialPage.buttonConfigs[2],
-                initialPage.buttonConfigs[3]
+                smart1Config,
+                smart2Config,
+                normalConfig
             )
         )
 
         val targetPage = Page(id = "page2", bookId = bookId, name = "Target Page", buttonConfigs = emptyList())
+        val otherPage = Page(id = "page3", bookId = bookId, name = "Page 3", buttonConfigs = listOf(
+            ButtonConfig(id = "button2", label = "Button 2", auditoryCue = null, buttonAction = SpeakTextButtonAction())
+        ))
 
         coEvery { frequentActionResolver.resolve(initialPage, bookId) } returns frequentlyResolvedPage
         coEvery { pageRepository.getPageById("page2") } returns targetPage
         coEvery { pageRepository.getPageById("button2") } returns null
+        coEvery { pageRepository.getAllPages() } returns listOf(initialPage, otherPage)
 
         // When
         val result = resolveDynamicButtonsUseCase.execute(initialPage, bookId, predictions)
 
         // Then
         assertEquals("Resolved Frequent", result.buttonConfigs[0]?.label)
-        // button2 not found in page configs, and pageRepository search for button2 (not found) -> null
-        assertNull(result.buttonConfigs[1]) 
+        // button2 found in Page 3
+        assertEquals("Button 2", result.buttonConfigs[1]?.label) 
+        assertEquals("button2", result.buttonConfigs[1]?.id)
         
         assertEquals("Target Page", result.buttonConfigs[2]?.label)
+        assertEquals("page2", result.buttonConfigs[2]?.id)
         assertTrue(result.buttonConfigs[2]?.buttonAction is NavigateToPageButtonAction)
         assertEquals("Normal", result.buttonConfigs[3]?.label)
     }
@@ -86,13 +92,12 @@ class ResolveDynamicButtonsUseCaseTest {
         val bookId = "book1"
         val predictions = listOf("smart1") // Points to itself
         
+        val smart1Config = ButtonConfig(id = "smart1", label = "Smart 1", auditoryCue = null, buttonAction = SmartPredictionButtonAction(rank = 1))
         val page = Page(
             id = "page1",
             bookId = bookId,
             name = "Page 1",
-            buttonConfigs = listOf(
-                ButtonConfig(id = "smart1", label = "Smart 1", auditoryCue = null, buttonAction = SmartPredictionButtonAction(rank = 1))
-            )
+            buttonConfigs = listOf(smart1Config)
         )
 
         coEvery { frequentActionResolver.resolve(page, bookId) } returns page
@@ -101,6 +106,27 @@ class ResolveDynamicButtonsUseCaseTest {
         val result = resolveDynamicButtonsUseCase.execute(page, bookId, predictions)
 
         // Then
-        assertNull(result.buttonConfigs[0]) // Should be null due to recursion guard
+        // Recursion guard should return null (hiding the button) to unblock the scanner
+        assertNull(result.buttonConfigs[0])
+    }
+
+    @Test
+    fun `execute preserves placeholders when predictions are null`() = runTest {
+        // Given
+        val bookId = "book1"
+        val predictions: List<String>? = null
+        
+        val smartConfig = ButtonConfig(id = "smart", label = "Smart Placeholder", auditoryCue = null, buttonAction = SmartPredictionButtonAction(rank = 1))
+        val page = Page(id = "page1", bookId = bookId, name = "Page 1", buttonConfigs = listOf(smartConfig))
+
+        coEvery { frequentActionResolver.resolve(page, bookId) } returns page
+
+        // When
+        val result = resolveDynamicButtonsUseCase.execute(page, bookId, predictions)
+
+        // Then
+        // Should keep the placeholder while waiting
+        assertEquals("Smart Placeholder", result.buttonConfigs[0]?.label)
+        assertTrue(result.buttonConfigs[0]?.buttonAction is SmartPredictionButtonAction)
     }
 }

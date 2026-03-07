@@ -85,9 +85,11 @@ class SettingsViewModel @Inject constructor(
     val selectedAppLanguage = settingsRepository.appLanguageFlow
     val themeMode = settingsRepository.themeModeFlow
     val experimentalManualSorting = settingsRepository.experimentalManualSortingFlow
+    val buttonHistory = buttonUsageRepository.buttonHistory
 
     val keepScreenOnUserMode = settingsRepository.keepScreenOnUserModeFlow
     val userModeScreenBehavior = settingsRepository.userModeScreenBehaviorFlow
+    val geminiTimeout = settingsRepository.geminiTimeoutFlow
 
     val authIntentFlow = kotlinx.coroutines.flow.merge(
         cloudSyncDelegate.authIntentFlow,
@@ -188,6 +190,9 @@ class SettingsViewModel @Inject constructor(
 
     fun setKeepScreenOnUserMode(e: Boolean) { settingsRepository.keepScreenOnUserMode = e }
     fun setUserModeScreenBehavior(m: String) { settingsRepository.userModeScreenBehavior = m }
+    fun setGeminiTimeoutInput(input: String) {
+        input.toLongOrNull()?.let { settingsRepository.geminiTimeout = it }
+    }
 
     val activeBookId: String
         get() = settingsRepository.activeBookId

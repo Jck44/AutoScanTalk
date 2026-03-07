@@ -118,8 +118,4 @@ class TtsSettingsDelegate @Inject constructor(
         
         return "System-Standard (Automatisch)"
     }
-
-    fun shutdown() {
-        ttsHelper.shutdown()
-    }
 }

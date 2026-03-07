@@ -10,7 +10,7 @@ class CheckForPredictorUseCase @Inject constructor(
     operator fun invoke(page: Page?): Boolean {
         if (page == null) return false
         return page.buttonConfigs.any { 
-            it != null && featureGuard.isActionEnabled(it.buttonAction) && it.buttonAction is SmartPredictionButtonAction
+            it != null && it.isActive && featureGuard.isActionEnabled(it.buttonAction) && it.buttonAction is SmartPredictionButtonAction
         }
     }
 }

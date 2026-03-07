@@ -36,7 +36,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.CloudSettingsSection
@@ -83,7 +82,7 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.settings_title)) },
+                title = { Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.titleLarge) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -143,7 +142,7 @@ fun SettingsScreen(
             // 9. Maintenance
             MaintenanceSection(viewModel)
             
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(dimensions.paddingDoubleExtraLarge))
             val versionName = try {
                 context.packageManager.getPackageInfo(context.packageName, 0).versionName
             } catch (_: Exception) {
@@ -152,6 +151,7 @@ fun SettingsScreen(
             Text(
                 text = "Version: $versionName",
                 style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
         }
@@ -166,10 +166,10 @@ fun PreferenceCategory(title: String, content: @Composable ColumnScope.() -> Uni
             text = title,
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(bottom = dimensions.paddingMedium)
+            modifier = Modifier.padding(start = dimensions.paddingSmall, bottom = dimensions.paddingMedium)
         )
         Surface(
-            shape = MaterialTheme.shapes.medium,
+            shape = MaterialTheme.shapes.large,
             color = MaterialTheme.colorScheme.surfaceContainerLow,
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -182,10 +182,16 @@ fun PreferenceCategory(title: String, content: @Composable ColumnScope.() -> Uni
 fun SettingsToggleItem(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
     val dimensions = LocalDimensions.current
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = dimensions.paddingSmall),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = dimensions.paddingSmall),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(text = label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+        Text(
+            text = label, 
+            modifier = Modifier.weight(1f), 
+            style = MaterialTheme.typography.bodyLarge
+        )
         Switch(checked = checked, onCheckedChange = onCheckedChange)
     }
 }
@@ -194,10 +200,20 @@ fun SettingsToggleItem(label: String, checked: Boolean, onCheckedChange: (Boolea
 fun SettingsClickableItem(label: String, value: String, onClick: () -> Unit) {
     val dimensions = LocalDimensions.current
     Column(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = dimensions.paddingMedium)
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = dimensions.paddingMedium)
     ) {
-        Text(text = label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-        Text(text = value, style = MaterialTheme.typography.bodyMedium)
+        Text(
+            text = label, 
+            style = MaterialTheme.typography.labelMedium, 
+            color = MaterialTheme.colorScheme.primary
+        )
+        Text(
+            text = value, 
+            style = MaterialTheme.typography.bodyLarge
+        )
     }
 }
 
@@ -207,9 +223,12 @@ fun SettingsEditTextItem(label: String, value: String, onValueChange: (String) -
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        label = { Text(label) },
+        label = { Text(label, style = MaterialTheme.typography.bodyMedium) },
+        textStyle = MaterialTheme.typography.bodyLarge,
         shape = MaterialTheme.shapes.large,
-        modifier = Modifier.fillMaxWidth().padding(vertical = dimensions.paddingSmall),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = dimensions.paddingSmall),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         singleLine = true
     )

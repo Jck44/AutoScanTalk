@@ -90,6 +90,7 @@ class PageViewModelTest {
     private lateinit var predictNextActionUseCase: PredictNextActionUseCase
     private lateinit var checkForPredictorUseCase: com.andreas_kratzer.ghosttalk.domain.settings.CheckForPredictorUseCase
     private lateinit var resolveDynamicButtonsUseCase: ResolveDynamicButtonsUseCase
+    private lateinit var updateSmartPredictionsUseCase: UpdateSmartPredictionsUseCase
 
     private lateinit var viewModel: PageViewModel
 
@@ -125,6 +126,7 @@ class PageViewModelTest {
         predictNextActionUseCase = mockk<PredictNextActionUseCase>(relaxed = true)
         checkForPredictorUseCase = mockk<com.andreas_kratzer.ghosttalk.domain.settings.CheckForPredictorUseCase>(relaxed = true)
         resolveDynamicButtonsUseCase = mockk<ResolveDynamicButtonsUseCase>(relaxed = true)
+        updateSmartPredictionsUseCase = mockk<UpdateSmartPredictionsUseCase>(relaxed = true)
 
         // Mock common flows with explicit types to avoid Nothing exceptions
         every { settingsRepository.activeBookIdFlow } returns MutableStateFlow<String>("b1")
@@ -178,7 +180,7 @@ class PageViewModelTest {
             handleActionExecutionEventUseCase = HandleActionExecutionEventUseCase(pageRepository, settingsRepository)
         )
         val smartPredictionDelegate = SmartPredictionDelegate(
-            updateSmartPredictionsUseCase = UpdateSmartPredictionsUseCase(settingsRepository, predictNextActionUseCase, checkForPredictorUseCase)
+            updateSmartPredictionsUseCase = updateSmartPredictionsUseCase
         )
         val screenManagementDelegate = ScreenManagementDelegate(settingsRepository)
 
@@ -186,7 +188,8 @@ class PageViewModelTest {
             application, settingsRepository, importExportManager, scannerEngine, googleAuthManager,
             geminiUseCaseFactory, ttsHelper, localIntentRouter, logger, buttonUsageRepository, 
             featureGuard, pageManagementDelegate, interactionDelegate, screenManagementDelegate, 
-            smartPredictionDelegate, resolveDynamicButtonsUseCase
+            smartPredictionDelegate, resolveDynamicButtonsUseCase, updateSmartPredictionsUseCase, 
+            checkForPredictorUseCase
         )
     }
 

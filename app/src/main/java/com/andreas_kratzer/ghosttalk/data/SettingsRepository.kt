@@ -239,6 +239,7 @@ class SettingsRepository(context: Context) {
     private val _appLanguage = StringSetting(KEY_APP_LANGUAGE)
     private val _keepScreenOnUserMode = BooleanSetting(KEY_KEEP_SCREEN_ON_USER_MODE, true)
     private val _userModeScreenBehavior = NonNullStringSetting(KEY_USER_MODE_SCREEN_BEHAVIOR, "NORMAL")
+    private val _geminiTimeout = LongSetting(KEY_GEMINI_TIMEOUT, 6000L)
 
     private fun refreshFlows() {
         _ttsLanguage.refresh()
@@ -277,6 +278,7 @@ class SettingsRepository(context: Context) {
         _appLanguage.refresh()
         _keepScreenOnUserMode.refresh()
         _userModeScreenBehavior.refresh()
+        _geminiTimeout.refresh()
     }
 
     // ── Public API: Flows ────────────────────────────────────────────────
@@ -316,6 +318,7 @@ class SettingsRepository(context: Context) {
     val appLanguageFlow: StateFlow<String?> get() = _appLanguage.flow
     val keepScreenOnUserModeFlow: StateFlow<Boolean> get() = _keepScreenOnUserMode.flow
     val userModeScreenBehaviorFlow: StateFlow<String> get() = _userModeScreenBehavior.flow
+    val geminiTimeoutFlow: StateFlow<Long> get() = _geminiTimeout.flow
 
     // ── Public API: Properties ───────────────────────────────────────────
 
@@ -467,6 +470,10 @@ class SettingsRepository(context: Context) {
         get() = _userModeScreenBehavior.value
         set(value) { _userModeScreenBehavior.value = value }
 
+    var geminiTimeout: Long
+        get() = _geminiTimeout.value
+        set(value) { _geminiTimeout.value = value }
+
     // ── Device name cache ────────────────────────────────────────────────
 
     fun getDeviceName(persistentId: String): String? {
@@ -531,5 +538,6 @@ class SettingsRepository(context: Context) {
         private const val KEY_ACTIVE_BOOK_ID = "active_book_id"
         private const val KEY_KEEP_SCREEN_ON_USER_MODE = "keep_screen_on_user_mode"
         private const val KEY_USER_MODE_SCREEN_BEHAVIOR = "user_mode_screen_behavior"
+        private const val KEY_GEMINI_TIMEOUT = "gemini_timeout_ms"
     }
 }

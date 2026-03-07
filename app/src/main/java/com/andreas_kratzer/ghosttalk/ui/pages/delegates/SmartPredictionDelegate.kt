@@ -16,13 +16,14 @@ class SmartPredictionDelegate @Inject constructor(
         allPages: StateFlow<List<Page>>,
         lastActions: StateFlow<List<String>>,
         activeBookId: StateFlow<String?>,
-        onPredictionsUpdated: (List<String>) -> Unit
+        onPredictionsUpdated: (List<String>?) -> Unit
     ) {
         scope.launch {
             updateSmartPredictionsUseCase.execute(
                 currentPage = currentPage,
                 allPages = allPages,
-                activeBookId = activeBookId
+                activeBookId = activeBookId,
+                history = lastActions
             ).collect { predictions ->
                 onPredictionsUpdated(predictions)
             }

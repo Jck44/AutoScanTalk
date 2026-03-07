@@ -1,10 +1,17 @@
 package com.andreas_kratzer.ghosttalk.ui.settings.sections
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -19,7 +26,9 @@ import com.andreas_kratzer.ghosttalk.ui.settings.PreferenceCategory
 import com.andreas_kratzer.ghosttalk.ui.settings.SettingsClickableItem
 import com.andreas_kratzer.ghosttalk.ui.settings.SettingsToggleItem
 import com.andreas_kratzer.ghosttalk.ui.settings.SettingsViewModel
+import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GeneralSettingsSection(viewModel: SettingsViewModel) {
     val theme by viewModel.themeMode.collectAsState("SYSTEM")
@@ -32,7 +41,10 @@ fun GeneralSettingsSection(viewModel: SettingsViewModel) {
 
     var expandedTheme by remember { mutableStateOf(false) }
     var expandedStartPage by remember { mutableStateOf(false) }
+    var startPageSearchQuery by remember { mutableStateOf("") }
     var expandedScreenBehavior by remember { mutableStateOf(false) }
+
+    val dimensions = LocalDimensions.current
 
     PreferenceCategory(stringResource(R.string.settings_category_ui)) {
         Box(modifier = Modifier.fillMaxWidth()) {
@@ -97,26 +109,78 @@ fun GeneralSettingsSection(viewModel: SettingsViewModel) {
     }
 
     PreferenceCategory(stringResource(R.string.settings_category_general)) {
-        // Default Start Page Selector
-        Box(modifier = Modifier.fillMaxWidth()) {
-            val startPageLabel = allPages.find { it.id == defaultStartPageId }?.name 
-                ?: stringResource(R.string.settings_start_page_auto)
-            
-            SettingsClickableItem(
-                label = stringResource(R.string.settings_start_page),
-                value = startPageLabel,
-                onClick = { expandedStartPage = true }
+        // Default Start Page Selector with Filter
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)
+        ) {
+            Text(
+                text = stringResource(R.string.settings_start_page),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary
             )
-            DropdownMenu(expanded = expandedStartPage, onDismissRequest = { expandedStartPage = false }) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.settings_start_page_auto), style = MaterialTheme.typography.bodyLarge) },
-                    onClick = { viewModel.setDefaultStartPageId(null); expandedStartPage = false }
+
+            ExposedDropdownMenuBox(
+                expanded = expandedStartPage,
+                onExpandedChange = { expandedStartPage = !expandedStartPage }
+            ) {
+                val startPageLabel = allPages.find { it.id == defaultStartPageId }?.name 
+                    ?: stringResource(R.string.settings_start_page_auto)
+
+                OutlinedTextField(
+                    value = if (expandedStartPage) startPageSearchQuery else startPageLabel,
+                    onValueChange = { if (expandedStartPage) startPageSearchQuery = it },
+                    readOnly = !expandedStartPage,
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedStartPage) },
+                    colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                    shape = MaterialTheme.shapes.large,
+                    modifier = Modifier
+                        .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable)
+                        .fillMaxWidth()
                 )
-                allPages.forEach { page ->
-                    DropdownMenuItem(
-                        text = { Text(page.name, style = MaterialTheme.typography.bodyLarge) },
-                        onClick = { viewModel.setDefaultStartPageId(page.id); expandedStartPage = false }
-                    )
+
+                ExposedDropdownMenu(
+                    expanded = expandedStartPage,
+                    onDismissRequest = { 
+                        expandedStartPage = false
+                        startPageSearchQuery = ""
+                    }
+                ) {
+                    val filteredPages = remember(startPageSearchQuery, allPages) {
+                        val trimmed = startPageSearchQuery.trim()
+                        if (trimmed.isEmpty()) allPages
+                        else allPages.filter { it.name.contains(trimmed, ignoreCase = true) }
+                    }
+
+                    // Auto Option (always show when query is empty)
+                    if (startPageSearchQuery.isEmpty()) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.settings_start_page_auto), style = MaterialTheme.typography.bodyLarge) },
+                            onClick = { 
+                                viewModel.setDefaultStartPageId(null)
+                                expandedStartPage = false
+                            }
+                        )
+                    }
+
+                    filteredPages.forEach { page ->
+                        DropdownMenuItem(
+                            text = { Text(page.name, style = MaterialTheme.typography.bodyLarge) },
+                            onClick = { 
+                                viewModel.setDefaultStartPageId(page.id)
+                                startPageSearchQuery = ""
+                                expandedStartPage = false
+                            }
+                        )
+                    }
+
+                    if (filteredPages.isEmpty() && startPageSearchQuery.isNotEmpty()) {
+                        DropdownMenuItem(
+                            text = { Text("Keine Seiten gefunden", style = MaterialTheme.typography.bodyLarge) },
+                            onClick = { },
+                            enabled = false
+                        )
+                    }
                 }
             }
         }

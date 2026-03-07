@@ -23,6 +23,8 @@ import com.andreas_kratzer.ghosttalk.ui.pages.delegates.InteractionDelegate
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.PageManagementDelegate
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.ScreenManagementDelegate
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.SmartPredictionDelegate
+import com.andreas_kratzer.ghosttalk.domain.actions.UpdateSmartPredictionsUseCase
+import com.andreas_kratzer.ghosttalk.domain.settings.CheckForPredictorUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -52,7 +54,9 @@ class PageViewModel @Inject constructor(
     val interactionDelegate: InteractionDelegate,
     val screenManagementDelegate: ScreenManagementDelegate,
     smartPredictionDelegate: SmartPredictionDelegate,
-    private val resolveDynamicButtonsUseCase: ResolveDynamicButtonsUseCase
+    private val resolveDynamicButtonsUseCase: ResolveDynamicButtonsUseCase,
+    private val updateSmartPredictionsUseCase: UpdateSmartPredictionsUseCase,
+    private val checkForPredictorUseCase: CheckForPredictorUseCase
 ) : AndroidViewModel(application) {
 
     private var geminiUseCase: GeminiUseCase? = null
@@ -69,8 +73,10 @@ class PageViewModel @Inject constructor(
     val isUserModeActive = interactionDelegate.isUserModeActive
     val screenState get() = screenManagementDelegate.screenState
 
-    private val _smartPredictions = MutableStateFlow<List<String>>(emptyList())
-    val smartPredictions: StateFlow<List<String>> = _smartPredictions.asStateFlow()
+    private val _smartPredictions = MutableStateFlow<List<String>?>(null)
+    val smartPredictions: StateFlow<List<String>?> = _smartPredictions.asStateFlow()
+    
+    val isSmartPredictionLoading: StateFlow<Boolean> = updateSmartPredictionsUseCase.isLoading
 
     val defaultScanPattern = settingsRepository.defaultScanPatternFlow
     val showTestButtons = settingsRepository.showTestButtonsFlow
@@ -105,7 +111,12 @@ class PageViewModel @Inject constructor(
         settingsRepository = settingsRepository,
         actionExecutor = actionExecutor,
         currentPage = currentPage,
-        isUserModeActive = isUserModeActive
+        isUserModeActive = isUserModeActive,
+        resolvedPage = resolvedPage,
+        isSmartPredictionLoading = isSmartPredictionLoading,
+        checkForPredictorUseCase = checkForPredictorUseCase,
+        ttsHelper = ttsHelper,
+        smartPredictions = smartPredictions
     )
 
     val focusedButtonIndex = scanCoordinator.focusedButtonIndex
@@ -172,18 +183,20 @@ class PageViewModel @Inject constructor(
 
     fun updateSearchQuery(query: String) = pageManagementDelegate.updateSearchQuery(query)
     fun setActiveBookId(bookId: String?) = pageManagementDelegate.setActiveBookId(bookId)
-    
     fun loadPage(page: Page) {
         viewModelScope.launch {
             val isSamePage = currentPage.value?.id == page.id
             scanCoordinator.onPageChanged(isSamePage)
+            if (!isSamePage) {
+                _smartPredictions.value = null // Clear to null to indicate "waiting for results"
+            }
             pageManagementDelegate.setCurrentPage(page)
         }
     }
 
     fun setUserModeActive(isActive: Boolean) = interactionDelegate.setUserModeActive(isActive)
-    fun activateButtonAtIndex(index: Int) = interactionDelegate.activateButtonAtIndex(index, currentPage.value, activeBookId.value)
-    fun activateFocusedButton() = interactionDelegate.activateFocusedButton(currentPage.value, activeBookId.value)
+    fun activateButtonAtIndex(index: Int) = interactionDelegate.activateButtonAtIndex(index, resolvedPage.value, activeBookId.value)
+    fun activateFocusedButton() = interactionDelegate.activateFocusedButton(resolvedPage.value, activeBookId.value)
     fun clearActionLogs() = interactionDelegate.clearActionLogs()
 
     fun resumeScanningIfEnabled() = scanCoordinator.resumeScanningIfEnabled()

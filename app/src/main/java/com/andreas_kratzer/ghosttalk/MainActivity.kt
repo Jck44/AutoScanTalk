@@ -197,7 +197,13 @@ class MainActivity : AppCompatActivity() {
 
     @SuppressLint("RestrictedApi")
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        if (::globalPageViewModel.isInitialized && keyEventCoordinator.shouldActivate(event)) {
+        val isUserMode = if (::globalPageViewModel.isInitialized) {
+            globalPageViewModel.isUserModeActive.value
+        } else {
+            false
+        }
+
+        if (keyEventCoordinator.shouldActivate(event, isUserMode)) {
             globalPageViewModel.activateFocusedButton()
             return true
         }

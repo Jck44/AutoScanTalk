@@ -105,7 +105,7 @@ fun PageScreen(
                         page = page,
                         focusedButtonIndex = focusedButtonIndex,
                         focusedRowIndex = focusedRowIndex,
-                        smartPredictions = smartPredictions,
+                        smartPredictions = smartPredictions ?: emptyList(),
                         pageViewModel = pageViewModel
                     )
                 }
@@ -139,7 +139,7 @@ fun PageScreen(
                         page = page,
                         focusedButtonIndex = focusedButtonIndex,
                         focusedRowIndex = focusedRowIndex,
-                        smartPredictions = smartPredictions,
+                        smartPredictions = smartPredictions ?: emptyList(),
                         pageViewModel = pageViewModel
                     )
                 }

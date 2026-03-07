@@ -23,7 +23,7 @@ class ResolveDynamicButtonsUseCase @Inject constructor(
     suspend fun execute(
         page: Page,
         bookId: String,
-        smartPredictions: List<String>
+        smartPredictions: List<String>?
     ): Page {
         // Step 1: Resolve Frequent Actions
         val frequentlyResolvedPage = frequentActionResolver.resolve(page, bookId)
@@ -31,12 +31,15 @@ class ResolveDynamicButtonsUseCase @Inject constructor(
         // Step 2: Resolve Smart Predictions
         val finalConfigs = frequentlyResolvedPage.buttonConfigs.map { config ->
             val action = config?.buttonAction
-            if (action is SmartPredictionButtonAction) {
+            if (action is SmartPredictionButtonAction && config.isActive) {
+                if (smartPredictions == null) {
+                    return@map config // Keep placeholder while waiting
+                }
                 val predictionId = smartPredictions.getOrNull(action.rank - 1)
                 if (predictionId != null) {
-                    resolveSmartPrediction(predictionId, frequentlyResolvedPage)
+                    resolveSmartPrediction(predictionId, frequentlyResolvedPage, config)
                 } else {
-                    null // No prediction available for this rank
+                    null // No prediction available for this rank, deactivate/hide button
                 }
             } else {
                 config
@@ -46,7 +49,7 @@ class ResolveDynamicButtonsUseCase @Inject constructor(
         return frequentlyResolvedPage.copy(buttonConfigs = finalConfigs)
     }
 
-    private suspend fun resolveSmartPrediction(predictionId: String, currentPage: Page): ButtonConfig? {
+    private suspend fun resolveSmartPrediction(predictionId: String, currentPage: Page, originalConfig: ButtonConfig): ButtonConfig? {
         // Check if it's a button on the current page
         val matchingButton = currentPage.buttonConfigs.filterNotNull().find { it.id == predictionId }
         
@@ -58,10 +61,21 @@ class ResolveDynamicButtonsUseCase @Inject constructor(
             return matchingButton
         }
 
+        // Expanded search: Check all pages for the predicted button ID
+        val allPages = pageRepository.getAllPages()
+        for (p in allPages) {
+            val btn = p.buttonConfigs.filterNotNull().find { it.id == predictionId }
+            if (btn != null) {
+                if (isDynamic(btn.buttonAction)) return null
+                return btn
+            }
+        }
+
         // Check if it's a page navigation
         val targetPage = pageRepository.getPageById(predictionId)
         if (targetPage != null) {
             return ButtonConfig(
+                id = targetPage.id,
                 label = targetPage.name,
                 auditoryCue = AuditoryCue.TextToSpeechCue(targetPage.name),
                 buttonAction = NavigateToPageButtonAction(targetPage.id)

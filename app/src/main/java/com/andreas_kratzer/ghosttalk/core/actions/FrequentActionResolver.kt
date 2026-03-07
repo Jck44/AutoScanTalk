@@ -39,23 +39,39 @@ class FrequentActionResolver @Inject constructor(
         val topActions = buttonUsageRepository.getTopActions(bookId, maxRank)
 
         val resolved = page.buttonConfigs.map { config ->
-            if (config?.buttonAction is FrequentActionButtonAction) {
+            if (config?.buttonAction is FrequentActionButtonAction && config.isActive) {
                 val rank = config.buttonAction.rank
                 val stat = topActions.getOrNull(rank - 1)
                 
                 if (stat != null) {
-                    try {
-                        val concreteAction = gson.fromJson(stat.actionJson, ButtonAction::class.java)
-                        config.copy(
-                            label = stat.label,
-                            buttonAction = concreteAction
-                        )
-                    } catch (e: Exception) {
-                        Log.e("FrequentActionResolver", "Failed to parse action JSON: ${stat.actionJson}", e)
-                        null // Fallback mechanism for JSON parsing failures -> empty slot
+                    val matchingConfig = page.buttonConfigs.filterNotNull().find { it.id == stat.buttonConfigId }
+                    if (matchingConfig != null) {
+                        // Recursion guard: A frequent action cannot resolve to another dynamic button
+                        val isDynamic = matchingConfig.buttonAction is FrequentActionButtonAction || 
+                                      matchingConfig.buttonAction is com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
+                        
+                        if (isDynamic) {
+                            null
+                        } else {
+                            // Return the full matching config, preserving all properties (label, auditoryCue, spokenText, action)
+                            matchingConfig
+                        }
+                    } else {
+                        // Fallback: If not found on page, try to reconstruct from stat (though some properties might be missing)
+                        try {
+                            val concreteAction = gson.fromJson(stat.actionJson, ButtonAction::class.java)
+                            config.copy(
+                                id = stat.buttonConfigId,
+                                label = stat.label,
+                                buttonAction = concreteAction
+                            )
+                        } catch (e: Exception) {
+                            Log.e("FrequentActionResolver", "Failed to parse action JSON: ${stat.actionJson}", e)
+                            null
+                        }
                     }
                 } else {
-                    null // No entry for this rank in statistics -> empty slot
+                    null
                 }
             } else {
                 config

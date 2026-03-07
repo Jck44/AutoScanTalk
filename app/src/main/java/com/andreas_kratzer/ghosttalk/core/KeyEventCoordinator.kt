@@ -15,8 +15,9 @@ class KeyEventCoordinator @Inject constructor(
 ) {
     /**
      * Returns true if the given [event] matches the configured activation triggers.
+     * [isUserMode] determines if the app is currently in user mode.
      */
-    fun shouldActivate(event: KeyEvent): Boolean {
+    fun shouldActivate(event: KeyEvent, isUserMode: Boolean): Boolean {
         if (event.action != KeyEvent.ACTION_DOWN) return false
         
         val volumeActivate = settingsRepository.volumeKeysActivate
@@ -24,6 +25,12 @@ class KeyEventCoordinator @Inject constructor(
         val keyCode = event.keyCode
 
         val isVolumeKey = keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN
+
+        // Volume keys should only trigger if the setting is active AND we are in User Mode.
+        // If not in User Mode, they should perform their default system action (adjust volume).
+        if (isVolumeKey) {
+            return volumeActivate && isUserMode
+        }
 
         val isSwitchKey = when (switchKey.lowercase()) {
             "space", "leertaste" -> keyCode == KeyEvent.KEYCODE_SPACE
@@ -34,6 +41,8 @@ class KeyEventCoordinator @Inject constructor(
             }
         }
 
-        return (volumeActivate && isVolumeKey) || isSwitchKey
+        // Switch keys should also typically only trigger in user mode to avoid interfering 
+        // with text input or navigation in management views.
+        return isSwitchKey && isUserMode
     }
 }

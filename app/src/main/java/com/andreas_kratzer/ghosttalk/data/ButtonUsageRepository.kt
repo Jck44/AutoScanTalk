@@ -3,6 +3,10 @@ package com.andreas_kratzer.ghosttalk.data
 import com.andreas_kratzer.ghosttalk.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.ButtonUsageStat
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import javax.inject.Inject
@@ -14,6 +18,11 @@ import javax.inject.Inject
 class ButtonUsageRepository @Inject constructor(
     private val dao: ButtonUsageDao
 ) {
+    data class ButtonUsageEvent(val timestamp: Long, val label: String, val actionType: String)
+
+    private val _buttonHistory = MutableStateFlow<List<ButtonUsageEvent>>(emptyList())
+    val buttonHistory: StateFlow<List<ButtonUsageEvent>> = _buttonHistory.asStateFlow()
+
     private val gson: Gson = GsonBuilder()
         .registerTypeAdapter(ButtonAction::class.java, ButtonActionAdapter())
         .create()
@@ -56,6 +65,16 @@ class ButtonUsageRepository @Inject constructor(
             )
         }
         dao.upsert(stat)
+
+        // Update in-memory history
+        _buttonHistory.update { current ->
+            val newEvent = ButtonUsageEvent(
+                timestamp = System.currentTimeMillis(),
+                label = buttonConfig.label,
+                actionType = buttonConfig.buttonAction::class.simpleName ?: "Unknown"
+            )
+            (listOf(newEvent) + current).take(15)
+        }
     }
 
     /**

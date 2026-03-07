@@ -7,6 +7,9 @@ import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
 import java.time.LocalTime
 import javax.inject.Inject
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.TimeoutCancellationException
+import android.util.Log
 
 /**
  * UseCase to predict the next likely actions using Gemini Nano (on-device).
@@ -43,47 +46,44 @@ class PredictNextActionUseCase @Inject constructor(
                     it.isActive && 
                     it.label.isNotBlank() && 
                     it.buttonAction !is SmartPredictionButtonAction &&
+                    it.buttonAction !is com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction &&
                     com.andreas_kratzer.ghosttalk.ui.util.GridUtils.isVisibleInGrid(index, currentPage.rows, currentPage.columns)
                 ) {
-                    "- ${it.id}: ${it.label}"
+                    "${it.id}:${it.label}"
                 } else null
             }
+            .take(30) // Reduced from 40 to 30 for even more speed
             .joinToString("\n")
 
         val pageContext = allPages
             .filter { it.id != currentPage.id }
-            .joinToString("\n") { "- ${it.id}: Navigation zu Seite ${it.name}" }
+            .take(15) // Reduced from 20 to 15
+            .joinToString("\n") { "${it.id}:${it.name}" }
 
         val prompt = """
-            Du bist ein Assistent für eine UK-App (Unterstützte Kommunikation). 
-            Deine Aufgabe ist es, vorherzusagen, was der Nutzer als nächstes tun möchte.
-            
-            KONTEXT:
-            - Aktuelle Seite: "${currentPage.name}"
-            - Verfügbare Buttons (ID: Label):
+            UK-App Prediction. Output: 3 IDs, comma-separated.
+            Context:
+            Current Page: "${currentPage.name}"
+            Buttons:
             $buttonContext
-            
-            - Mögliche Navigationsziele (ID: Name):
+            Pages:
             $pageContext
-            
-            - Letzte Aktionen: ${history.joinToString(" -> ")}
-            - Häufigste Aktionen: ${frequentActions.joinToString(", ") { it.label }}
-            - Uhrzeit: $timeNow
-            
-            AUFGABE:
-            Nenne mir die IDs der 3 wahrscheinlichsten nächsten Aktionen oder Navigationsziele.
-            
-            WICHTIG:
-            - Antworte NUR mit einer Liste der Top 3 IDs, getrennt durch Komma.
-            - Keine Erklärungen, kein Text, NUR die IDs.
-            - Die IDs müssen EXAKT aus der obigen Liste stammen.
+            History: ${history.joinToString(">")}
+            Frequent: ${frequentActions.joinToString(",") { it.label }}
+            Time: $timeNow
+            ONLY return IDs.
         """.trimIndent()
 
         return try {
-            val response = localIntentRouter.generateRawResponse(prompt)
-            parseResponse(response)
+            withTimeout(settingsRepository.geminiTimeout) {
+                val response = localIntentRouter.generateRawResponse(prompt)
+                parseResponse(response)
+            }
+        } catch (e: TimeoutCancellationException) {
+            Log.w("PredictNextActionUseCase", "Gemini prediction timed out after ${settingsRepository.geminiTimeout}ms")
+            emptyList()
         } catch (e: Exception) {
-            android.util.Log.e("PredictNextAction", "Gemini Nano prediction failed", e)
+            Log.e("PredictNextActionUseCase", "Gemini prediction failed", e)
             emptyList()
         }
     }
@@ -91,6 +91,8 @@ class PredictNextActionUseCase @Inject constructor(
     private fun parseResponse(response: String): List<String> {
         return response.split(",")
             .map { it.trim().removeSurrounding("\"").removeSurrounding("'") }
+            // If the model returns "id: label", extract only the part before the colon
+            .map { it.split(":").first().trim() }
             .filter { it.isNotBlank() }
             .take(3)
     }

@@ -39,7 +39,7 @@ class InteractionDelegate @Inject constructor(
     private val _isUserModeActive = MutableStateFlow(false)
     val isUserModeActive: StateFlow<Boolean> = _isUserModeActive.asStateFlow()
 
-    private var _smartPredictions = MutableStateFlow<List<String>>(emptyList())
+    private var _smartPredictions = MutableStateFlow<List<String>?>(null)
 
     // Callback to PageViewModel to load a page
     private var onPageLoadRequested: (Page) -> Unit = {}
@@ -48,7 +48,7 @@ class InteractionDelegate @Inject constructor(
         scope: CoroutineScope, 
         actionExecutor: ActionExecutor,
         onPageLoadRequested: (Page) -> Unit, 
-        smartPredictions: MutableStateFlow<List<String>>
+        smartPredictions: MutableStateFlow<List<String>?>
     ) {
         this.scope = scope
         this.actionExecutor = actionExecutor
@@ -94,7 +94,7 @@ class InteractionDelegate @Inject constructor(
                 currentPage = currentPage,
                 activeBookId = activeBookId,
                 isUserModeActive = _isUserModeActive.value,
-                smartPredictions = _smartPredictions.value,
+                smartPredictions = _smartPredictions.value ?: emptyList(),
                 actionExecutor = actionExecutor,
                 scanCoordinator = scanCoordinator
             )
