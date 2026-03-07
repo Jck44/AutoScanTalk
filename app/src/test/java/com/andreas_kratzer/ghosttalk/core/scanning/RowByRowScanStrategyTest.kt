@@ -32,16 +32,17 @@ class RowByRowScanStrategyTest {
     }
 
     private fun createConfigs(count: Int): List<ButtonConfig> {
-        return (0 until 36).map { i ->
-            ButtonConfig(id = "$i", label = "B$i", isActive = i < count, auditoryCue = null, buttonAction = SpeakTextButtonAction())
+        return (0 until 49).map { i ->
+            ButtonConfig(id = "$i", label = "B$i", spokenText = "B$i", isActive = i < count, auditoryCue = null, buttonAction = SpeakTextButtonAction())
         }
     }
 
     @Test
     fun `executeScan skips rows without active or visible buttons`() = runTest {
+        // MAX_GRID_SIZE is 7
         // Col=2
         // Row 0: B0 (inactive), B1 (invisible) -> Row 0 skip
-        // Row 1: B6 (active), B7 (active) -> Row 1 keep
+        // Row 1: B7 (active), B8 (active) -> Row 1 keep
         
         val configs = createConfigs(10)
         val inactiveB0 = configs[0].copy(isActive = false)
@@ -57,7 +58,7 @@ class RowByRowScanStrategyTest {
         val job = launch {
             strategy.executeScan(
                 buttonConfigs = modifiedConfigs,
-                rows = 18,
+                rows = 7,
                 columns = 2,
                 rowNames = listOf("R1", "R2"),
                 startIndex = 0,
@@ -70,7 +71,7 @@ class RowByRowScanStrategyTest {
         }
 
         advanceTimeBy(150) // Initial delay(100)
-        // Focus should be on Row 1 because Row 0 is effectively empty (visible buttons 0,1 are inactive/invisible)
+        // Focus should be on Row 1 because Row 0 visible slots (0,1) are inactive/invisible
         assertEquals(1, focusedRowIndex.value)
         assertEquals("R2", cues.last())
         
@@ -86,7 +87,7 @@ class RowByRowScanStrategyTest {
         val job = launch {
             strategy.executeScan(
                 buttonConfigs = configs,
-                rows = 36,
+                rows = 7,
                 columns = 1,
                 rowNames = emptyList(),
                 startIndex = 0,
@@ -106,7 +107,7 @@ class RowByRowScanStrategyTest {
 
     @Test
     fun `executeButtonScanInRow scans only buttons in specified row`() = runTest {
-        // Dynamic grid: Col=2, Row 1 (index 1) has Global Index 6, 7 (as Row 0 is 0-5)
+        // Grid: Col=2, Row 1 (index 1) has Global Index 7, 8 (as Row 0 is 0-6)
         val configs = createConfigs(10) 
         every { featureGuard.isButtonVisible(any()) } returns true
 
@@ -114,7 +115,7 @@ class RowByRowScanStrategyTest {
         val job = launch {
             strategy.executeButtonScanInRow(
                 buttonConfigs = configs,
-                rows = 18,
+                rows = 7,
                 columns = 2,
                 rowIndex = 1,
                 focusedButtonIndex = focusedButtonIndex,
@@ -125,28 +126,28 @@ class RowByRowScanStrategyTest {
         }
 
         advanceTimeBy(150) // Initial delay(100)
-        assertEquals(6, focusedButtonIndex.value)
-        assertEquals("B6", cues.last())
-
-        advanceTimeBy(1000)
         assertEquals(7, focusedButtonIndex.value)
         assertEquals("B7", cues.last())
 
         advanceTimeBy(1000)
-        assertEquals(6, focusedButtonIndex.value) // Should loop back to B6
+        assertEquals(8, focusedButtonIndex.value)
+        assertEquals("B8", cues.last())
+
+        advanceTimeBy(1000)
+        assertEquals(7, focusedButtonIndex.value) // Should loop back to B7
         
         job.cancel()
     }
 
     @Test
     fun `executeButtonScanInRow handles empty row`() = runTest {
-        val configs = listOf(
-            ButtonConfig(id = "1", label = "B1", isActive = false, auditoryCue = null, buttonAction = SpeakTextButtonAction())
-        )
+        val configs = (0 until 49).map { i ->
+             ButtonConfig(id = "$i", label = "B$i", spokenText = "B$i", isActive = false, auditoryCue = null, buttonAction = SpeakTextButtonAction())
+        }
         
         strategy.executeButtonScanInRow(
             buttonConfigs = configs,
-            rows = 36,
+            rows = 7,
             columns = 1,
             rowIndex = 0,
             focusedButtonIndex = focusedButtonIndex,
@@ -158,4 +159,3 @@ class RowByRowScanStrategyTest {
         assertNull(focusedButtonIndex.value)
     }
 }
-// dummy comment

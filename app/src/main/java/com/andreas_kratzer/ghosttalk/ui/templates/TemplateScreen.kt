@@ -48,7 +48,10 @@ import com.andreas_kratzer.ghosttalk.model.SortOrder
 import com.andreas_kratzer.ghosttalk.ui.components.GhostTalkCard
 import com.andreas_kratzer.ghosttalk.ui.components.rememberReorderableState
 import com.andreas_kratzer.ghosttalk.ui.components.reorderableItem
+import androidx.compose.runtime.rememberCoroutineScope
+import com.andreas_kratzer.ghosttalk.domain.pages.UsageLocation
 import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -196,33 +199,87 @@ fun TemplateScreen(
                 }
             }
 
+            var usagesToDelete by remember { mutableStateOf<List<UsageLocation>>(emptyList()) }
+            val coroutineScope = rememberCoroutineScope()
+
             templateToDelete?.let { template ->
-                AlertDialog(
-                    onDismissRequest = { templateToDelete = null },
-                    title = { Text(stringResource(R.string.template_delete_title)) },
-                    text = { Text(stringResource(R.string.template_delete_confirm, template.name)) },
-                    confirmButton = {
-                        Button(
-                            onClick = {
-                                templateViewModel.deleteTemplate(template)
-                                templateToDelete = null
-                            },
-                            shape = MaterialTheme.shapes.medium,
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                        ) {
-                            Text("Löschen")
+                if (usagesToDelete.isEmpty()) {
+                    AlertDialog(
+                        onDismissRequest = { templateToDelete = null },
+                        title = { Text(stringResource(R.string.template_delete_title)) },
+                        text = { Text(stringResource(R.string.template_delete_confirm, template.name)) },
+                        confirmButton = {
+                            Button(
+                                onClick = {
+                                    coroutineScope.launch {
+                                        val usages = templateViewModel.getTemplateUsages(template.id)
+                                        if (usages.isNotEmpty()) {
+                                            usagesToDelete = usages
+                                        } else {
+                                            templateViewModel.deleteTemplate(template)
+                                            templateToDelete = null
+                                        }
+                                    }
+                                },
+                                shape = MaterialTheme.shapes.medium,
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                            ) {
+                                Text("Löschen")
+                            }
+                        },
+                        dismissButton = {
+                            Button(
+                                onClick = { templateToDelete = null },
+                                shape = MaterialTheme.shapes.medium,
+                                colors = ButtonDefaults.textButtonColors()
+                            ) {
+                                Text("Abbrechen")
+                            }
                         }
-                    },
-                    dismissButton = {
-                        Button(
-                            onClick = { templateToDelete = null },
-                            shape = MaterialTheme.shapes.medium,
-                            colors = ButtonDefaults.textButtonColors()
-                        ) {
-                            Text("Abbrechen")
+                    )
+                } else {
+                    AlertDialog(
+                        onDismissRequest = { 
+                            templateToDelete = null
+                            usagesToDelete = emptyList()
+                        },
+                        title = { Text("Vorlage wird verwendet") },
+                        text = { 
+                            Column {
+                                Text("Die Vorlage \"${template.name}\" wurde zur Erstellung folgender Seiten verwendet:")
+                                usagesToDelete.forEach { usage ->
+                                    Text("• Seite: ${usage.name}", modifier = Modifier.padding(start = 8.dp, top = 4.dp))
+                                }
+                                Text("\nBeim Löschen der Vorlage wird die Verknüpfung in diesen Seiten aufgehoben.", style = MaterialTheme.typography.bodySmall)
+                            }
+                        },
+                        confirmButton = {
+                            Button(
+                                onClick = {
+                                    templateViewModel.deleteTemplate(template, clearUsages = true)
+                                    templateToDelete = null
+                                    usagesToDelete = emptyList()
+                                },
+                                shape = MaterialTheme.shapes.medium,
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                            ) {
+                                Text("Trotzdem Löschen")
+                            }
+                        },
+                        dismissButton = {
+                            Button(
+                                onClick = { 
+                                    templateToDelete = null
+                                    usagesToDelete = emptyList()
+                                },
+                                shape = MaterialTheme.shapes.medium,
+                                colors = ButtonDefaults.textButtonColors()
+                            ) {
+                                Text(stringResource(R.string.action_cancel))
+                            }
                         }
-                    }
-                )
+                    )
+                }
             }
 
             if (showAddDialog) {

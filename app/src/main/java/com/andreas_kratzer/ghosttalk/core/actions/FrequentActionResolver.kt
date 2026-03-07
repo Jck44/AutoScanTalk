@@ -8,6 +8,8 @@ import com.andreas_kratzer.ghosttalk.model.Page
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import android.util.Log
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 /**
@@ -25,18 +27,24 @@ class FrequentActionResolver @Inject constructor(
      * Resolves all FrequentActionButtonAction buttons on a page.
      * Returns a new Page object with concrete ButtonConfigs.
      */
-    suspend fun resolve(page: Page, bookId: String): Page {
+    suspend fun resolve(page: Page, bookId: String): Page = withContext(Dispatchers.Default) {
         val frequentButtons = page.buttonConfigs.filterNotNull().filter {
             it.buttonAction is FrequentActionButtonAction
         }
         
-        if (frequentButtons.isEmpty()) return page
+        if (frequentButtons.isEmpty()) return@withContext page
 
         val maxRank = frequentButtons.maxOf {
             (it.buttonAction as FrequentActionButtonAction).rank
         }
         
-        val topActions = buttonUsageRepository.getTopActions(bookId, maxRank)
+        // Database call moved to IO
+        val topActions = withContext(Dispatchers.IO) {
+            buttonUsageRepository.getTopActions(bookId, maxRank)
+        }
+
+        // Create a lookup for current page buttons to avoid O(n^2)
+        val currentPageButtons = page.buttonConfigs.filterNotNull().associateBy { it.id }
 
         val resolved = page.buttonConfigs.map { config ->
             if (config?.buttonAction is FrequentActionButtonAction && config.isActive) {
@@ -44,20 +52,15 @@ class FrequentActionResolver @Inject constructor(
                 val stat = topActions.getOrNull(rank - 1)
                 
                 if (stat != null) {
-                    val matchingConfig = page.buttonConfigs.filterNotNull().find { it.id == stat.buttonConfigId }
+                    val matchingConfig = currentPageButtons[stat.buttonConfigId]
                     if (matchingConfig != null) {
-                        // Recursion guard: A frequent action cannot resolve to another dynamic button
+                        // Recursion guard
                         val isDynamic = matchingConfig.buttonAction is FrequentActionButtonAction || 
                                       matchingConfig.buttonAction is com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
                         
-                        if (isDynamic) {
-                            null
-                        } else {
-                            // Return the full matching config, preserving all properties (label, auditoryCue, spokenText, action)
-                            matchingConfig
-                        }
+                        if (isDynamic) null else matchingConfig
                     } else {
-                        // Fallback: If not found on page, try to reconstruct from stat (though some properties might be missing)
+                        // Fallback: Reconstruct from stat
                         try {
                             val concreteAction = gson.fromJson(stat.actionJson, ButtonAction::class.java)
                             config.copy(
@@ -77,6 +80,6 @@ class FrequentActionResolver @Inject constructor(
                 config
             }
         }
-        return page.copy(buttonConfigs = resolved)
+        page.copy(buttonConfigs = resolved)
     }
 }

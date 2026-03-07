@@ -132,8 +132,8 @@ fun PageEditorScreen(
                                 newColumns = page.columns
                             )
                         },
-                        valueRange = 1f..6f,
-                        steps = 4
+                        valueRange = 1f..7f,
+                        steps = 5
                     )
                 }
                 Column(modifier = Modifier.weight(1f)) {

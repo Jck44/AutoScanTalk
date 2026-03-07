@@ -3,14 +3,32 @@ package com.andreas_kratzer.ghosttalk.ui.util
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 
 object GridUtils {
-    const val MAX_GRID_SIZE = 6
+    const val MAX_GRID_SIZE = 7
     const val TOTAL_SLOTS = MAX_GRID_SIZE * MAX_GRID_SIZE
 
     /**
-     * Maps 2D grid coordinates to a 1D list index (assuming 6-wide persistent grid).
+     * Maps 2D grid coordinates to a 1D list index (assuming 7-wide persistent grid).
      */
     fun getGlobalIndex(row: Int, column: Int): Int {
         return row * MAX_GRID_SIZE + column
+    }
+
+    /**
+     * Maps a local index (from a smaller grid like 4x4) to the global 7x7 index.
+     */
+    fun localToGlobalIndex(localIndex: Int, sourceColumns: Int): Int {
+        val r = localIndex / sourceColumns
+        val c = localIndex % sourceColumns
+        return getGlobalIndex(r, c)
+    }
+
+    /**
+     * Maps a global 7x7 index back to a local index for a specific grid size.
+     */
+    fun globalToLocalIndex(globalIndex: Int, targetColumns: Int): Int {
+        val r = globalIndex / MAX_GRID_SIZE
+        val c = globalIndex % MAX_GRID_SIZE
+        return r * targetColumns + c
     }
 
     /**
@@ -23,24 +41,59 @@ object GridUtils {
     }
 
     /**
-     * Ensures the buttonConfigs list matches exactly 36 slots (6x6).
-     * This preserves button positions regardless of the current visible grid size.
+     * Migration helper to convert a 6x6 mapped button list to a 7x7 mapped list.
+     */
+    fun migrateFrom6To7(oldConfigs: List<ButtonConfig?>): List<ButtonConfig?> {
+        val newConfigs = MutableList<ButtonConfig?>(TOTAL_SLOTS) { null }
+        oldConfigs.forEachIndexed { oldIndex, config ->
+            if (config != null) {
+                val r = oldIndex / 6
+                val c = oldIndex % 6
+                if (r < MAX_GRID_SIZE && c < MAX_GRID_SIZE) {
+                    val newIndex = getGlobalIndex(r, c)
+                    newConfigs[newIndex] = config
+                }
+            }
+        }
+        return newConfigs
+    }
+
+    /**
+     * Ensures the buttonConfigs list matches exactly 49 slots (7x7).
+     * If sourceRows/sourceColumns are provided, it treats the input list as a spatially
+     * packed grid and maps it into the 7x7 storage.
      */
     fun adjustButtonConfigs(
-        configs: List<ButtonConfig?>
+        configs: List<ButtonConfig?>,
+        sourceRows: Int? = null,
+        sourceColumns: Int? = null
     ): List<ButtonConfig?> {
-        val mutableConfigs = configs.toMutableList()
-        
-        // Ensure minimum 36 slots
-        while (mutableConfigs.size < TOTAL_SLOTS) {
-            mutableConfigs.add(null)
+        // If it's the old 36-slot size and no explicit dimensions given, it's likely a 6x6 migration
+        if (configs.size == 36 && sourceColumns == null) {
+            return migrateFrom6To7(configs)
         }
         
-        // If it was somehow larger, truncate to 36
-        if (mutableConfigs.size > TOTAL_SLOTS) {
-            return mutableConfigs.take(TOTAL_SLOTS)
+        val newConfigs = MutableList<ButtonConfig?>(TOTAL_SLOTS) { null }
+        
+        if (sourceColumns != null && sourceRows != null) {
+            // Spatially map existing buttons based on their original grid positions
+            configs.forEachIndexed { index, config ->
+                if (config != null && index < sourceRows * sourceColumns) {
+                    val globalIdx = localToGlobalIndex(index, sourceColumns)
+                    if (globalIdx < TOTAL_SLOTS) {
+                        newConfigs[globalIdx] = config
+                    }
+                }
+            }
+        } else {
+            // Fallback: linear copy if no dimensions provided
+            configs.forEachIndexed { index, config ->
+                if (index < TOTAL_SLOTS) {
+                    newConfigs[index] = config
+                }
+            }
         }
         
-        return mutableConfigs
+        return newConfigs
     }
 }

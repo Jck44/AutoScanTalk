@@ -121,8 +121,8 @@ fun TemplateEditorScreen(
                         onValueChange = { newValue ->
                             templateViewModel.updateTemplate(template.copy(rows = newValue.toInt()))
                         },
-                        valueRange = 1f..6f,
-                        steps = 4
+                        valueRange = 1f..7f,
+                        steps = 5
                     )
                 }
                 Column(modifier = Modifier.weight(1f)) {
@@ -137,8 +137,8 @@ fun TemplateEditorScreen(
                         onValueChange = { newValue ->
                             templateViewModel.updateTemplate(template.copy(columns = newValue.toInt()))
                         },
-                        valueRange = 1f..6f,
-                        steps = 4
+                        valueRange = 1f..7f,
+                        steps = 5
                     )
                 }
             }
@@ -217,7 +217,7 @@ fun TemplateEditorScreen(
 
                     for (c in 0 until numCols) {
                         item {
-                            val globalIndex = r * 6 + c // Persistent 6x6 mapping
+                            val globalIndex = com.andreas_kratzer.ghosttalk.ui.util.GridUtils.getGlobalIndex(r, c)
                             val buttonConfig = template.buttonConfigs.getOrNull(globalIndex)
                             GridButton(
                                 buttonConfig = buttonConfig,

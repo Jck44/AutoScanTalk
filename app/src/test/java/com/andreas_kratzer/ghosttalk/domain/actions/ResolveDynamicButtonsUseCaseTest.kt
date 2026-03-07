@@ -1,7 +1,6 @@
 package com.andreas_kratzer.ghosttalk.domain.actions
 
 import com.andreas_kratzer.ghosttalk.core.actions.FrequentActionResolver
-import com.andreas_kratzer.ghosttalk.data.PageRepository
 import com.andreas_kratzer.ghosttalk.model.AuditoryCue
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction
@@ -23,14 +22,12 @@ import org.junit.Test
 class ResolveDynamicButtonsUseCaseTest {
 
     private lateinit var frequentActionResolver: FrequentActionResolver
-    private lateinit var pageRepository: PageRepository
     private lateinit var resolveDynamicButtonsUseCase: ResolveDynamicButtonsUseCase
 
     @Before
     fun setup() {
         frequentActionResolver = mockk()
-        pageRepository = mockk()
-        resolveDynamicButtonsUseCase = ResolveDynamicButtonsUseCase(frequentActionResolver, pageRepository)
+        resolveDynamicButtonsUseCase = ResolveDynamicButtonsUseCase(frequentActionResolver)
     }
 
     @Test
@@ -66,13 +63,12 @@ class ResolveDynamicButtonsUseCaseTest {
             ButtonConfig(id = "button2", label = "Button 2", auditoryCue = null, buttonAction = SpeakTextButtonAction())
         ))
 
+        val allPages = listOf(initialPage, otherPage, targetPage)
+
         coEvery { frequentActionResolver.resolve(initialPage, bookId) } returns frequentlyResolvedPage
-        coEvery { pageRepository.getPageById("page2") } returns targetPage
-        coEvery { pageRepository.getPageById("button2") } returns null
-        coEvery { pageRepository.getAllPages() } returns listOf(initialPage, otherPage)
 
         // When
-        val result = resolveDynamicButtonsUseCase.execute(initialPage, bookId, predictions)
+        val result = resolveDynamicButtonsUseCase.execute(initialPage, bookId, predictions, allPages)
 
         // Then
         assertEquals("Resolved Frequent", result.buttonConfigs[0]?.label)
@@ -103,7 +99,7 @@ class ResolveDynamicButtonsUseCaseTest {
         coEvery { frequentActionResolver.resolve(page, bookId) } returns page
 
         // When
-        val result = resolveDynamicButtonsUseCase.execute(page, bookId, predictions)
+        val result = resolveDynamicButtonsUseCase.execute(page, bookId, predictions, listOf(page))
 
         // Then
         // Recursion guard should return null (hiding the button) to unblock the scanner
@@ -122,7 +118,7 @@ class ResolveDynamicButtonsUseCaseTest {
         coEvery { frequentActionResolver.resolve(page, bookId) } returns page
 
         // When
-        val result = resolveDynamicButtonsUseCase.execute(page, bookId, predictions)
+        val result = resolveDynamicButtonsUseCase.execute(page, bookId, predictions, listOf(page))
 
         // Then
         // Should keep the placeholder while waiting

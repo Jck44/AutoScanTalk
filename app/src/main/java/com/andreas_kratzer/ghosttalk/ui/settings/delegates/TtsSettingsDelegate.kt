@@ -10,7 +10,9 @@ import com.andreas_kratzer.ghosttalk.domain.tts.SetTtsVoiceUseCase
 import com.andreas_kratzer.ghosttalk.domain.tts.SetTtsVolumeUseCase
 import com.andreas_kratzer.ghosttalk.model.AudioOutputDevice
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -39,19 +41,24 @@ class TtsSettingsDelegate @Inject constructor(
     private val _availableAudioDevices = MutableStateFlow<List<AudioOutputDevice>>(emptyList())
     val availableAudioDevices: StateFlow<List<AudioOutputDevice>> = _availableAudioDevices.asStateFlow()
 
+    // Dispatcher for background init, can be overridden in tests
+    var backgroundDispatcher: CoroutineDispatcher = Dispatchers.IO
+
     fun initialize(scope: CoroutineScope, onVoiceFallback: (String, String?) -> Unit) {
-        ttsHelper.setLanguageAndVoice(
-            settingsRepository.ttsLanguage ?: "default",
-            settingsRepository.ttsVoiceName
-        )
+        scope.launch(backgroundDispatcher) {
+            ttsHelper.setLanguageAndVoice(
+                settingsRepository.ttsLanguage ?: "default",
+                settingsRepository.ttsVoiceName
+            )
 
-        loadAvailableLanguages()
-        loadAvailableVoices()
-        loadAvailableAudioDevices()
+            loadAvailableLanguages()
+            loadAvailableVoices()
+            loadAvailableAudioDevices()
 
-        scope.launch {
-            audioDeviceManager.availableDevicesFlow.collect {
-                loadAvailableAudioDevices()
+            launch {
+                audioDeviceManager.availableDevicesFlow.collect {
+                    loadAvailableAudioDevices()
+                }
             }
         }
 

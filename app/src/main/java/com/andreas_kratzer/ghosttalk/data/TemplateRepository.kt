@@ -14,6 +14,10 @@ class TemplateRepository @Inject constructor(
     private val settingsRepository: SettingsRepository
 ) {
 
+    fun getAllTemplatesFlow(): Flow<List<PageTemplate>> {
+        return templateDao.getAllTemplatesFlow()
+    }
+
     fun getAllTemplates(): Flow<List<PageTemplate>> {
         return templateDao.getAllTemplatesFlow()
     }

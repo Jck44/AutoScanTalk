@@ -13,8 +13,8 @@ import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -22,9 +22,6 @@ import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class TtsSettingsDelegateTest {
-
-    private val testDispatcher = StandardTestDispatcher()
-    private val testScope = TestScope(testDispatcher)
 
     private lateinit var settingsRepository: SettingsRepository
     private lateinit var ttsHelper: TextToSpeechHelper
@@ -63,10 +60,15 @@ class TtsSettingsDelegateTest {
 
     @Test
     fun `initialize sets up tts helper and loads data`() = runTest {
+        // Use UnconfinedTestDispatcher for the background execution to avoid timing issues
+        delegate.backgroundDispatcher = UnconfinedTestDispatcher(testScheduler)
+        
         every { ttsHelper.isReady } returns true
         every { getAudioDevicesUseCase.execute() } returns listOf(mockk())
 
-        delegate.initialize(testScope) { _, _ -> }
+        // Pass backgroundScope so the infinite collect flow is cancelled when the test finishes
+        delegate.initialize(backgroundScope) { _, _ -> }
+        advanceUntilIdle()
 
         verify { ttsHelper.setLanguageAndVoice(any(), any()) }
         verify { ttsHelper.getAvailableLanguages() }
@@ -87,12 +89,12 @@ class TtsSettingsDelegateTest {
     @Test
     fun `setTtsVolumeMultiplier calls use case for tts`() {
         delegate.setTtsVolumeMultiplier(0.8f)
-        verify { setTtsVolumeUseCase.execute(0.8f, isForCues = false) }
+        verify { setTtsVolumeUseCase.execute(0.8f, isForCues = false, playFeedback = true) }
     }
 
     @Test
     fun `setCuesVolumeMultiplier calls use case for cues`() {
         delegate.setCuesVolumeMultiplier(0.5f)
-        verify { setTtsVolumeUseCase.execute(0.5f, isForCues = true) }
+        verify { setTtsVolumeUseCase.execute(0.5f, isForCues = true, playFeedback = true) }
     }
 }

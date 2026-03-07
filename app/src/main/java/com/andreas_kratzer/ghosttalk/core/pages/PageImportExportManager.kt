@@ -4,15 +4,9 @@ import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.andreas_kratzer.ghosttalk.data.PageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.data.TemplateRepository
-import com.andreas_kratzer.ghosttalk.model.AuditoryCue
-import com.andreas_kratzer.ghosttalk.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction
-import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
-import com.andreas_kratzer.ghosttalk.model.Page
-import com.andreas_kratzer.ghosttalk.model.PageTemplate
-import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
-import com.andreas_kratzer.ghosttalk.model.importexport.ImportExportData
-import com.andreas_kratzer.ghosttalk.model.importexport.ImportPage
+import com.andreas_kratzer.ghosttalk.model.*
+import com.andreas_kratzer.ghosttalk.model.importexport.*
+import com.andreas_kratzer.ghosttalk.ui.util.GridUtils
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -56,11 +50,32 @@ class PageImportExportManager @javax.inject.Inject constructor(
             // Handle Templates
             importData.templates?.forEach { importTemplate ->
                 if (!importTemplate.isBuiltIn) {
-                    val templateButtonConfigs = (0 until (importTemplate.rows * importTemplate.columns)).map { index ->
-                        val importButton = importTemplate.buttons.find { it.index.toInt() == index }
-                        if (importButton == null || (importButton.label.isBlank() && importButton.action == null)) {
-                            null
-                        } else {
+                    val maxIndex = importTemplate.buttons.maxOfOrNull { it.index }?.toInt() ?: -1
+                    var rows = importTemplate.rows
+                    var columns = importTemplate.columns
+                    
+                    if (maxIndex >= rows * columns) {
+                        if (columns < 7 && maxIndex >= rows * 7) {
+                            columns = 7
+                        } else if (columns < 7) {
+                            while (columns < 7 && rows * columns <= maxIndex) {
+                                columns++
+                            }
+                        }
+                        while (rows < 7 && rows * columns <= maxIndex) {
+                            rows++
+                        }
+                    }
+
+                    rows = rows.coerceIn(1, 7)
+                    columns = columns.coerceIn(1, 7)
+
+                    val templateButtonConfigs = MutableList<ButtonConfig?>(GridUtils.TOTAL_SLOTS) { null }
+                    importTemplate.buttons.forEach { importButton ->
+                        val localIdx = importButton.index.toInt()
+                        val globalIdx = GridUtils.localToGlobalIndex(localIdx, importTemplate.columns)
+                        
+                        if (globalIdx < GridUtils.TOTAL_SLOTS) {
                             val importAction = importButton.action
                             val action = importAction?.let { ia ->
                                 when (ia.type) {
@@ -76,15 +91,11 @@ class PageImportExportManager @javax.inject.Inject constructor(
                                     else -> null
                                 }
                             }
-                            if (importButton.label.isBlank() || action == null) {
-                                null
-                            } else {
-                                ButtonConfig(
+                            if (importButton.label.isNotBlank() && action != null) {
+                                templateButtonConfigs[globalIdx] = ButtonConfig(
                                     id = UUID.randomUUID().toString(),
                                     label = importButton.label,
-                                    spokenText = importButton.spokenText 
-                                        ?: importAction.textToSpeech 
-                                        ?: importAction.ttsFeedback,
+                                    spokenText = importButton.spokenText ?: importAction.textToSpeech ?: importAction.ttsFeedback,
                                     buttonAction = action,
                                     auditoryCue = importButton.auditoryCueText?.let { AuditoryCue.TextToSpeechCue(it) },
                                     isActive = importButton.active ?: true,
@@ -96,8 +107,8 @@ class PageImportExportManager @javax.inject.Inject constructor(
                     val pageTemplate = PageTemplate(
                         id = importTemplate.id,
                         name = importTemplate.name,
-                        rows = importTemplate.rows,
-                        columns = importTemplate.columns,
+                        rows = rows,
+                        columns = columns,
                         buttonConfigs = templateButtonConfigs,
                         isBuiltIn = false
                     )
@@ -109,12 +120,33 @@ class PageImportExportManager @javax.inject.Inject constructor(
 
             val newPages = importData.pages.map { importPage ->
                 val newPageId = pageIdMap[importPage.importId] ?: UUID.randomUUID().toString()
+                val maxIndex = importPage.buttons.maxOfOrNull { it.index }?.toInt() ?: -1
+                var rows = importPage.rows
+                var columns = importPage.columns
+
+                if (maxIndex >= rows * columns) {
+                    if (columns < 7 && maxIndex >= rows * 7) {
+                        columns = 7
+                    } else if (columns < 7) {
+                        while (columns < 7 && rows * columns <= maxIndex) {
+                            columns++
+                        }
+                    }
+                    while (rows < 7 && rows * columns <= maxIndex) {
+                        rows++
+                    }
+                }
+
+                rows = rows.coerceIn(1, 7)
+                columns = columns.coerceIn(1, 7)
                 
-                val buttonConfigs = (0 until (importPage.rows * importPage.columns)).map { index ->
-                    val importButton = importPage.buttons.find { it.index.toInt() == index }
-                    if (importButton == null || (importButton.label.isBlank() && importButton.action == null)) {
-                        null
-                    } else {
+                val buttonConfigs = MutableList<ButtonConfig?>(GridUtils.TOTAL_SLOTS) { null }
+                importPage.buttons.forEach { importButton ->
+                    val localIdx = importButton.index.toInt()
+                    // Spatial mapping: place it in the 7x7 storage at (row, col)
+                    val globalIdx = GridUtils.localToGlobalIndex(localIdx, importPage.columns)
+                    
+                    if (globalIdx < GridUtils.TOTAL_SLOTS) {
                         val importAction = importButton.action
                         val action = importAction?.let { ia ->
                             when (ia.type) {
@@ -130,16 +162,11 @@ class PageImportExportManager @javax.inject.Inject constructor(
                                 else -> null
                             }
                         }
-
-                        if (importButton.label.isBlank() || action == null) {
-                            null
-                        } else {
-                            ButtonConfig(
+                        if (importButton.label.isNotBlank() && action != null) {
+                            buttonConfigs[globalIdx] = ButtonConfig(
                                 id = UUID.randomUUID().toString(),
                                 label = importButton.label,
-                            spokenText = importButton.spokenText 
-                                ?: importAction.textToSpeech 
-                                ?: importAction.ttsFeedback,
+                                spokenText = importButton.spokenText ?: importAction.textToSpeech ?: importAction.ttsFeedback,
                                 buttonAction = action,
                                 auditoryCue = importButton.auditoryCueText?.let { AuditoryCue.TextToSpeechCue(it) },
                                 isActive = importButton.active ?: true,
@@ -153,8 +180,9 @@ class PageImportExportManager @javax.inject.Inject constructor(
                     id = newPageId,
                     bookId = bookId,
                     name = importPage.name,
-                    rows = importPage.rows,
-                    columns = importPage.columns,
+                    templateId = null,
+                    rows = rows,
+                    columns = columns,
                     scanPattern = null,
                     rowNames = emptyList(),
                     buttonConfigs = buttonConfigs
@@ -177,12 +205,14 @@ class PageImportExportManager @javax.inject.Inject constructor(
 
     suspend fun exportToJson(pages: List<Page>): String = withContext(ioDispatcher) {
         val importPages = pages.map { page ->
-            val buttons = page.buttonConfigs.mapIndexedNotNull { index, config ->
-                config?.let {
-                    val importAction = when (val action = it.buttonAction) {
+            // Use current rows/cols of the page to decide which buttons to export
+            // and how to map their indices
+            val buttons = page.buttonConfigs.mapIndexedNotNull { globalIndex, config ->
+                if (config != null && GridUtils.isVisibleInGrid(globalIndex, page.rows, page.columns)) {
+                    val importAction = when (val action = config.buttonAction) {
                         is SpeakTextButtonAction -> com.andreas_kratzer.ghosttalk.model.importexport.ImportAction(
                             type = "SPEAK",
-                            textToSpeech = it.spokenText,
+                            textToSpeech = config.spokenText,
                             targetPageImportId = null,
                             ttsFeedback = null
                         )
@@ -198,18 +228,22 @@ class PageImportExportManager @javax.inject.Inject constructor(
                             targetPageImportId = action.pageId,
                             ttsFeedback = null
                         )
-                        else -> null // Skip exporting app-specific actions for standard format
+                        else -> null
                     }
+                    
+                    // Reverse spatial mapping: global 7x7 back to local (rows x cols)
+                    val localIndex = GridUtils.globalToLocalIndex(globalIndex, page.columns)
+                    
                     com.andreas_kratzer.ghosttalk.model.importexport.ImportButton(
-                        index = index.toLong(),
-                        label = it.label,
-                        spokenText = it.spokenText,
-                        auditoryCueText = (it.auditoryCue as? AuditoryCue.TextToSpeechCue)?.text,
+                        index = localIndex.toLong(),
+                        label = config.label,
+                        spokenText = config.spokenText,
+                        auditoryCueText = (config.auditoryCue as? AuditoryCue.TextToSpeechCue)?.text,
                         action = importAction,
-                        active = it.isActive,
-                        playActionAsAuditoryCue = it.playActionAsAuditoryCue
+                        active = config.isActive,
+                        playActionAsAuditoryCue = config.playActionAsAuditoryCue
                     )
-                }
+                } else null
             }
             ImportPage(
                 importId = page.id,
@@ -220,7 +254,6 @@ class PageImportExportManager @javax.inject.Inject constructor(
             )
         }
         
-        // Export custom templates
         val allTemplates = templateRepository.getAllTemplates().first()
         val importTemplates = allTemplates.filter { !it.isBuiltIn }.map { template ->
             val buttons = template.buttonConfigs.mapIndexedNotNull { index, config ->
@@ -244,7 +277,7 @@ class PageImportExportManager @javax.inject.Inject constructor(
                             targetPageImportId = action.pageId,
                             ttsFeedback = null
                         )
-                        else -> null // Skip exporting app-specific actions for standard format
+                        else -> null
                     }
                     com.andreas_kratzer.ghosttalk.model.importexport.ImportButton(
                         index = index.toLong(),
@@ -257,7 +290,7 @@ class PageImportExportManager @javax.inject.Inject constructor(
                     )
                 }
             }
-            com.andreas_kratzer.ghosttalk.model.importexport.ImportTemplate(
+            ImportTemplate(
                 id = template.id,
                 name = template.name,
                 rows = template.rows,

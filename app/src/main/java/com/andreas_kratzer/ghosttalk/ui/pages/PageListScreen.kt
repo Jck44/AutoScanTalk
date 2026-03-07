@@ -2,46 +2,15 @@ package com.andreas_kratzer.ghosttalk.ui.pages
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Sort
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.DragHandle
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
@@ -55,12 +24,14 @@ import com.andreas_kratzer.ghosttalk.ui.components.GhostTalkCard
 import com.andreas_kratzer.ghosttalk.ui.components.rememberReorderableState
 import com.andreas_kratzer.ghosttalk.ui.components.reorderableItem
 import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
+import com.andreas_kratzer.ghosttalk.domain.pages.UsageLocation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
+import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -75,11 +46,11 @@ fun PageListScreen(
     val activeBookId by pageViewModel.activeBookId.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
     var pageToDelete by remember { mutableStateOf<Page?>(null) }
+    var usagesToDelete by remember { mutableStateOf<List<UsageLocation>>(emptyList()) }
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
     val dimensions = LocalDimensions.current
     
-    // String resources for Toasts (need to be accessed outside Composable for the launcher)
     val importSuccessMsg = stringResource(R.string.page_import_success)
     val exportSuccessMsg = stringResource(R.string.page_export_success)
     val exportErrorMsgTemplate = stringResource(R.string.page_export_error)
@@ -151,7 +122,6 @@ fun PageListScreen(
                 actions = {
                     val isLandscape = LocalConfiguration.current.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
                     
-                    // Sort Menu
                     var showSortMenu by remember { mutableStateOf(false) }
                     val pageSortOrder by pageViewModel.settingsRepository.pageSortOrderFlow.collectAsState("MANUAL")
                     
@@ -162,8 +132,7 @@ fun PageListScreen(
                         )
                     }
                     DropdownMenu(expanded = showSortMenu, onDismissRequest = { showSortMenu = false }) {
-                        val orders = SortOrder.entries
-                        orders.filter { it != SortOrder.MANUAL || experimentalSorting }.forEach { order ->
+                        SortOrder.entries.filter { it != SortOrder.MANUAL || experimentalSorting }.forEach { order ->
                             val label = when(order) {
                                 SortOrder.MANUAL -> "Manuell"
                                 SortOrder.NEWEST -> "Neueste zuerst"
@@ -300,8 +269,10 @@ fun PageListScreen(
                 }
             }
         }
+    }
 
-        pageToDelete?.let { page ->
+    pageToDelete?.let { page ->
+        if (usagesToDelete.isEmpty()) {
             AlertDialog(
                 onDismissRequest = { pageToDelete = null },
                 title = { Text(stringResource(R.string.page_dialog_delete_title)) },
@@ -309,8 +280,15 @@ fun PageListScreen(
                 confirmButton = {
                     Button(
                         onClick = {
-                            pageViewModel.deletePage(page)
-                            pageToDelete = null
+                            coroutineScope.launch {
+                                val usages = pageViewModel.getPageUsages(page.id)
+                                if (usages.isNotEmpty()) {
+                                    usagesToDelete = usages
+                                } else {
+                                    pageViewModel.deletePage(page)
+                                    pageToDelete = null
+                                }
+                            }
                         },
                         shape = MaterialTheme.shapes.medium,
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
@@ -328,20 +306,63 @@ fun PageListScreen(
                     }
                 }
             )
-        }
-
-        if (showAddDialog) {
-            AddPageDialog(
-                templates = templates,
-                onDismiss = { showAddDialog = false },
-                onConfirm = { name, rows, cols, templateId ->
-                    val targetBookId = activeBookId ?: "book-default"
-                    pageViewModel.createNewPage(name, rows, cols, targetBookId, templateId) { newId ->
-                        showAddDialog = false
-                        onEditPage(newId)
+        } else {
+            AlertDialog(
+                onDismissRequest = { 
+                    pageToDelete = null
+                    usagesToDelete = emptyList()
+                },
+                title = { Text("Seite wird verwendet") },
+                text = { 
+                    Column {
+                        Text("Die Seite \"${page.name}\" wird an folgenden Stellen zur Navigation verwendet:")
+                        usagesToDelete.forEach { usage ->
+                            val typePrefix = if (usage is UsageLocation.PageUsage) "Seite" else "Vorlage"
+                            Text("• $typePrefix: ${usage.name}", modifier = Modifier.padding(start = 8.dp, top = 4.dp))
+                        }
+                        Text("\nBeim Löschen werden auch alle Buttons entfernt, die auf diese Seite verweisen.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            pageViewModel.deletePage(page, deleteUsages = true)
+                            pageToDelete = null
+                            usagesToDelete = emptyList()
+                        },
+                        shape = MaterialTheme.shapes.medium,
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text("Alles Löschen")
+                    }
+                },
+                dismissButton = {
+                    Button(
+                        onClick = { 
+                            pageToDelete = null
+                            usagesToDelete = emptyList()
+                        },
+                        shape = MaterialTheme.shapes.medium,
+                        colors = ButtonDefaults.textButtonColors()
+                    ) {
+                        Text(stringResource(R.string.action_cancel))
                     }
                 }
             )
         }
+    }
+
+    if (showAddDialog) {
+        AddPageDialog(
+            templates = templates,
+            onDismiss = { showAddDialog = false },
+            onConfirm = { name, rows, cols, templateId ->
+                val targetBookId = activeBookId ?: "book-default"
+                pageViewModel.createNewPage(name, rows, cols, targetBookId, templateId) { newId ->
+                    showAddDialog = false
+                    onEditPage(newId)
+                }
+            }
+        )
     }
 }

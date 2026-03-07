@@ -8,6 +8,7 @@ import com.andreas_kratzer.ghosttalk.domain.templates.CreateTemplateUseCase
 import com.andreas_kratzer.ghosttalk.domain.templates.DeleteTemplateUseCase
 import com.andreas_kratzer.ghosttalk.domain.templates.ReorderTemplatesUseCase
 import com.andreas_kratzer.ghosttalk.domain.templates.UpdateButtonConfigInTemplateUseCase
+import com.andreas_kratzer.ghosttalk.domain.templates.GetTemplateUsagesUseCase
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.ui.util.filterAndSort
@@ -28,7 +29,8 @@ class TemplateViewModel @Inject constructor(
     private val createTemplateUseCase: CreateTemplateUseCase,
     private val deleteTemplateUseCase: DeleteTemplateUseCase,
     private val reorderTemplatesUseCase: ReorderTemplatesUseCase,
-    private val updateButtonConfigInTemplateUseCase: UpdateButtonConfigInTemplateUseCase
+    private val updateButtonConfigInTemplateUseCase: UpdateButtonConfigInTemplateUseCase,
+    private val getTemplateUsagesUseCase: GetTemplateUsagesUseCase
 ) : ViewModel() {
 
     val experimentalManualSorting: StateFlow<Boolean> = settingsRepository.experimentalManualSortingFlow
@@ -78,11 +80,13 @@ class TemplateViewModel @Inject constructor(
         }
     }
 
-    fun deleteTemplate(template: PageTemplate) {
+    fun deleteTemplate(template: PageTemplate, clearUsages: Boolean = false) {
         viewModelScope.launch {
-            deleteTemplateUseCase.execute(template)
+            deleteTemplateUseCase.execute(template, clearUsages)
         }
     }
+
+    suspend fun getTemplateUsages(templateId: String) = getTemplateUsagesUseCase.execute(templateId)
 
     fun reorderTemplates(fromIndex: Int, toIndex: Int) {
         viewModelScope.launch {

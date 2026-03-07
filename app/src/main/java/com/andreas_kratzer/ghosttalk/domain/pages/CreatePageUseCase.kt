@@ -37,8 +37,8 @@ class CreatePageUseCase @Inject constructor(
             rows to columns
         }
 
-        if (finalRows > 6 || finalColumns > 6) {
-            throw IllegalArgumentException("Grid size cannot exceed 6x6")
+        if (finalRows > 7 || finalColumns > 7) {
+            throw IllegalArgumentException("Grid size cannot exceed 7x7")
         }
 
         var buttonConfigs: List<ButtonConfig?>
@@ -59,11 +59,8 @@ class CreatePageUseCase @Inject constructor(
             val initialConfigs = MutableList<ButtonConfig?>(GridUtils.TOTAL_SLOTS) { null }
 
             if (homePageId != null) {
-                // Determine persistent index for "back to start"
-                // Usually we anchor it to the bottom-right of the current grid (e.g. at index rows*columns - 1)
-                // BUT to preserve it across resizes, we might want to put it at 35 or calculate based on rows/cols
-                // Here we stick to bottom-right of the INITIAL grid size
-                val persistentIndex = GridUtils.getGlobalIndex(finalRows - 1, finalColumns - 1)
+                // Place Home button at bottom-right of the requested grid (linear)
+                val persistentIndex = finalRows * finalColumns - 1
                 
                 initialConfigs[persistentIndex] = ButtonConfig(
                     id = UUID.randomUUID().toString(),
@@ -86,7 +83,7 @@ class CreatePageUseCase @Inject constructor(
             name = name,
             rows = finalRows,
             columns = finalColumns,
-            buttonConfigs = GridUtils.adjustButtonConfigs(buttonConfigs),
+            buttonConfigs = GridUtils.adjustButtonConfigs(buttonConfigs, finalRows, finalColumns),
             orderIndex = maxOrderIndex + 1,
             createdAt = System.currentTimeMillis()
         )

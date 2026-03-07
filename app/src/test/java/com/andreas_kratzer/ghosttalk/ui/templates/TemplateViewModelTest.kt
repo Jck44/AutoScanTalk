@@ -2,12 +2,10 @@ package com.andreas_kratzer.ghosttalk.ui.templates
 
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.data.TemplateRepository
-import com.andreas_kratzer.ghosttalk.domain.templates.CreateTemplateUseCase
-import com.andreas_kratzer.ghosttalk.domain.templates.DeleteTemplateUseCase
-import com.andreas_kratzer.ghosttalk.domain.templates.ReorderTemplatesUseCase
-import com.andreas_kratzer.ghosttalk.domain.templates.UpdateButtonConfigInTemplateUseCase
+import com.andreas_kratzer.ghosttalk.domain.templates.*
 import com.andreas_kratzer.ghosttalk.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.model.SortOrder
+import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
@@ -35,6 +33,7 @@ class TemplateViewModelTest {
     private lateinit var deleteTemplateUseCase: DeleteTemplateUseCase
     private lateinit var reorderTemplatesUseCase: ReorderTemplatesUseCase
     private lateinit var updateButtonConfigInTemplateUseCase: UpdateButtonConfigInTemplateUseCase
+    private lateinit var getTemplateUsagesUseCase: GetTemplateUsagesUseCase
     private lateinit var viewModel: TemplateViewModel
 
     @Before
@@ -46,6 +45,7 @@ class TemplateViewModelTest {
         deleteTemplateUseCase = mockk<DeleteTemplateUseCase>(relaxed = true)
         reorderTemplatesUseCase = mockk<ReorderTemplatesUseCase>(relaxed = true)
         updateButtonConfigInTemplateUseCase = mockk<UpdateButtonConfigInTemplateUseCase>(relaxed = true)
+        getTemplateUsagesUseCase = mockk<GetTemplateUsagesUseCase>(relaxed = true)
 
         every { settingsRepository.templateSortOrderFlow } returns MutableStateFlow(SortOrder.MANUAL.name)
         every { settingsRepository.experimentalManualSortingFlow } returns MutableStateFlow(false)
@@ -57,7 +57,8 @@ class TemplateViewModelTest {
             createTemplateUseCase,
             deleteTemplateUseCase,
             reorderTemplatesUseCase,
-            updateButtonConfigInTemplateUseCase
+            updateButtonConfigInTemplateUseCase,
+            getTemplateUsagesUseCase
         )
     }
 
@@ -103,7 +104,8 @@ class TemplateViewModelTest {
             createTemplateUseCase,
             deleteTemplateUseCase,
             reorderTemplatesUseCase,
-            updateButtonConfigInTemplateUseCase
+            updateButtonConfigInTemplateUseCase,
+            getTemplateUsagesUseCase
         )
         advanceUntilIdle()
 
@@ -129,7 +131,8 @@ class TemplateViewModelTest {
             createTemplateUseCase,
             deleteTemplateUseCase,
             reorderTemplatesUseCase,
-            updateButtonConfigInTemplateUseCase
+            updateButtonConfigInTemplateUseCase,
+            getTemplateUsagesUseCase
         )
         advanceUntilIdle()
 

@@ -4,16 +4,7 @@ import com.andreas_kratzer.ghosttalk.data.BookRepository
 import com.andreas_kratzer.ghosttalk.data.PageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.data.TemplateRepository
-import com.andreas_kratzer.ghosttalk.domain.pages.CreatePageUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.DeletePageUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.ExportPageUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.GetFilteredPagesUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.GetPagesUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.ImportPageUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.ReorderPagesUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.UpdateButtonConfigUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.UpdatePageSettingsUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.UpdateRowNameUseCase
+import com.andreas_kratzer.ghosttalk.domain.pages.*
 import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.model.SortOrder
 import io.mockk.coVerify
@@ -50,6 +41,7 @@ class PageManagementDelegateTest {
     private lateinit var importPageUseCase: ImportPageUseCase
     private lateinit var exportPageUseCase: ExportPageUseCase
     private lateinit var getFilteredPagesUseCase: GetFilteredPagesUseCase
+    private lateinit var getPageUsagesUseCase: GetPageUsagesUseCase
 
     private lateinit var delegate: PageManagementDelegate
 
@@ -70,6 +62,7 @@ class PageManagementDelegateTest {
         updateRowNameUseCase = mockk(relaxed = true)
         importPageUseCase = mockk(relaxed = true)
         exportPageUseCase = mockk(relaxed = true)
+        getPageUsagesUseCase = mockk(relaxed = true)
         getFilteredPagesUseCase = GetFilteredPagesUseCase(settingsRepository)
 
         every { settingsRepository.pageSortOrderFlow } returns MutableStateFlow(SortOrder.MANUAL.name)
@@ -88,7 +81,8 @@ class PageManagementDelegateTest {
             updateRowNameUseCase,
             importPageUseCase,
             exportPageUseCase,
-            getFilteredPagesUseCase
+            getFilteredPagesUseCase,
+            getPageUsagesUseCase
         )
     }
 
@@ -99,7 +93,7 @@ class PageManagementDelegateTest {
 
     @Test
     fun `init sets up flows and collects pages`() = runTest(testDispatcher) {
-        val pages = listOf(Page(id = "1", bookId = "book1", name = "Page 1", buttonConfigs = emptyList()))
+        val pages = listOf(Page(id = "1", bookId = "book1", name = "Page 1", rows = 1, columns = 1, buttonConfigs = emptyList()))
         val pagesFlow = MutableStateFlow(pages)
         every { getPagesUseCase.execute(any()) } returns pagesFlow
 
@@ -121,8 +115,8 @@ class PageManagementDelegateTest {
 
     @Test
     fun `filteredPages respects searchQuery`() = runTest(testDispatcher) {
-        val page1 = Page(id = "1", name = "Apple", bookId = "book1", buttonConfigs = emptyList())
-        val page2 = Page(id = "2", name = "Banana", bookId = "book1", buttonConfigs = emptyList())
+        val page1 = Page(id = "1", name = "Apple", bookId = "book1", rows = 1, columns = 1, buttonConfigs = emptyList())
+        val page2 = Page(id = "2", name = "Banana", bookId = "book1", rows = 1, columns = 1, buttonConfigs = emptyList())
         val allPagesFlow = MutableStateFlow(listOf(page1, page2))
         every { getPagesUseCase.execute(any()) } returns allPagesFlow
 
@@ -141,7 +135,7 @@ class PageManagementDelegateTest {
     fun `deletePage delegates to use case`() = runTest(testDispatcher) {
         delegate.init(backgroundScope)
         
-        val page = Page(id = "1", name = "Test", bookId = "book1", buttonConfigs = emptyList())
+        val page = Page(id = "1", name = "Test", bookId = "book1", rows = 1, columns = 1, buttonConfigs = emptyList())
         delegate.deletePage(page)
         
         coVerify { deletePageUseCase.execute(page) }

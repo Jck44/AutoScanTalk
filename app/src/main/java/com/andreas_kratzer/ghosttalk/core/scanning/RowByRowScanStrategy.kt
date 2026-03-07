@@ -23,15 +23,13 @@ class RowByRowScanStrategy : ScanStrategy {
         
         val activeRows = mutableListOf<Int>()
         
-        for (r in 0 until GridUtils.MAX_GRID_SIZE) {
-            val startIdx = r * GridUtils.MAX_GRID_SIZE
-            val endIdx = startIdx + GridUtils.MAX_GRID_SIZE
+        for (r in 0 until rows) {
             var hasActive = false
-            for (i in startIdx until endIdx) {
+            for (c in 0 until columns) {
+                val i = GridUtils.getGlobalIndex(r, c)
                 val btn = buttonConfigs.getOrNull(i)
                 if (btn != null && 
                     btn.isActive && 
-                    GridUtils.isVisibleInGrid(i, rows = rows, columns = columns) &&
                     featureGuard.isButtonVisible(btn)) {
                     hasActive = true
                     break

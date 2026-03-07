@@ -36,12 +36,14 @@ class ScannerEngineTest {
 
     /**
      * Creates configs where buttons at specified global indices are active.
+     * Uses 49 slots (7x7) as base capacity.
      */
     private fun createConfigs(activeIndices: List<Int>): List<ButtonConfig> {
-        return (0 until 36).map { i ->
+        return (0 until 49).map { i ->
             ButtonConfig(
                 id = "b${i + 1}",
                 label = "B${i + 1}",
+                spokenText = "B${i + 1}",
                 auditoryCue = null,
                 buttonAction = SpeakTextButtonAction(),
                 isActive = i in activeIndices
@@ -64,8 +66,8 @@ class ScannerEngineTest {
     @Test
     fun `startScanning with same params does not restart scan`() = runTest {
         val engine = createEngine(this)
-        // Active buttons at (0,0) and (1,0) -> Global indices 0 and 6
-        val configs = createConfigs(listOf(0, 6))
+        // Active buttons at (0,0) and (1,0) -> Global indices 0 and 7 (7x7 grid)
+        val configs = createConfigs(listOf(0, 7))
 
         engine.startScanning(
             buttonConfigs = configs,
@@ -90,11 +92,11 @@ class ScannerEngineTest {
         )
 
         // Advance time — if the scan restarted, focus would stay/reset at 0 (after delay)
-        // If it continues, it moves to 6.
+        // If it continues, it moves to 7.
         advanceTimeBy(100)
         val focus = engine.focusedButtonIndex.value
 
-        assertEquals("Focus should advance to 6, not reset to 0", 6, focus)
+        assertEquals("Focus should advance to 7, not reset to 0", 7, focus)
 
         engine.stopScanning()
     }
@@ -171,7 +173,7 @@ class ScannerEngineTest {
     @Test
     fun `startScanning with different pageId cancels old scan and starts new one`() = runTest {
         val engine = createEngine(this)
-        val configs = createConfigs(listOf(0, 6))
+        val configs = createConfigs(listOf(0, 7))
 
         // Start first scan
         engine.startScanning(
@@ -205,8 +207,8 @@ class ScannerEngineTest {
     @Test
     fun `startScanning with row_by_row pattern focuses on rows`() = runTest {
         val engine = createEngine(this)
-        // Buttons in Row 0 and Row 1
-        val configs = createConfigs(listOf(0, 6))
+        // Buttons in Row 0 and Row 1 (Index 7 in 7x7)
+        val configs = createConfigs(listOf(0, 7))
 
         // Start row scanning
         engine.startScanning(

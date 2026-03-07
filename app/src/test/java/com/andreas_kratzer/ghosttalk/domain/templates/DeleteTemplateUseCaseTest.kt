@@ -14,12 +14,14 @@ import org.junit.Test
 class DeleteTemplateUseCaseTest {
 
     private lateinit var templateRepository: TemplateRepository
+    private lateinit var pageRepository: com.andreas_kratzer.ghosttalk.data.PageRepository
     private lateinit var deleteTemplateUseCase: DeleteTemplateUseCase
 
     @Before
     fun setup() {
-        templateRepository = mockk<TemplateRepository>(relaxed = true)
-        deleteTemplateUseCase = DeleteTemplateUseCase(templateRepository)
+        templateRepository = mockk(relaxed = true)
+        pageRepository = mockk(relaxed = true)
+        deleteTemplateUseCase = DeleteTemplateUseCase(templateRepository, pageRepository)
     }
 
     @Test
@@ -37,6 +39,27 @@ class DeleteTemplateUseCaseTest {
         deleteTemplateUseCase.execute(template)
 
         // Then
+        coVerify { templateRepository.delete(template) }
+    }
+
+    @Test
+    fun `execute with clearUsages true nullifies templateId in pages`() = runTest {
+        val template = PageTemplate(id = "t1", name = "Template", rows = 1, columns = 1, buttonConfigs = emptyList())
+        val page = com.andreas_kratzer.ghosttalk.model.Page(
+            id = "p1", 
+            bookId = "b1", 
+            name = "Page", 
+            templateId = "t1",
+            rows = 1,
+            columns = 1,
+            buttonConfigs = emptyList()
+        )
+
+        io.mockk.coEvery { pageRepository.getAllPages() } returns listOf(page)
+
+        deleteTemplateUseCase.execute(template, clearUsages = true)
+
+        coVerify { pageRepository.updatePage(match { it.id == "p1" && it.templateId == null }) }
         coVerify { templateRepository.delete(template) }
     }
 }

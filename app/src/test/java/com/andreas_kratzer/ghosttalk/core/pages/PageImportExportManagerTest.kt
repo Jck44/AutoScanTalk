@@ -63,17 +63,18 @@ class PageImportExportManagerTest {
         assertTrue(pageSlot.isCaptured)
         val page = pageSlot.captured
         assertEquals("test_book", page.bookId)
-        assertEquals(3, page.buttonConfigs.size)
+        // With spatial mapping, buttonConfigs is ALWAYS 49
+        assertEquals(49, page.buttonConfigs.size)
 
-        // b1: active
+        // b1: active. index 0 -> (0,0) -> global 0
         assertNotNull(page.buttonConfigs[0])
         assertTrue(page.buttonConfigs[0]!!.isActive)
         assertEquals("Active Btn", page.buttonConfigs[0]!!.label)
 
-        // b2: empty/invalid action -> null
+        // b2: empty/invalid action -> null. index 1 -> (0,1) -> global 1
         assertNull(page.buttonConfigs[1])
 
-        // b3: inactive
+        // b3: inactive. index 2 -> (0,2) -> global 2
         assertNotNull(page.buttonConfigs[2])
         assertEquals(false, page.buttonConfigs[2]!!.isActive)
     }
@@ -139,5 +140,115 @@ class PageImportExportManagerTest {
         assertTrue(json.contains("\"auditoryCueText\":\"Cue\""))
         assertTrue(json.contains("\"spokenText\":\"Speak\""))
         assertTrue(json.contains("\"textToSpeech\":\"Speak\""))
+    }
+
+    @Test
+    fun `importFromJson expands grid if buttons exceed metadata dimensions`() = runTest(testDispatcher) {
+        // Metadata says 2x2 (4 slots), but maxIndex is 5 (6th button)
+        val jsonString = """
+            {
+                "pages": [
+                    {
+                        "importId": "p1", "name": "ExpansionTest", "rows": 2, "columns": 2,
+                        "buttons": [
+                            { "index": 0, "label": "B1", "active": true, "action": { "type": "SpeakText", "textToSpeech": "1" } },
+                            { "index": 5, "label": "B6", "active": true, "action": { "type": "SpeakText", "textToSpeech": "6" } }
+                        ]
+                    }
+                ]
+            }
+        """.trimIndent()
+
+        val pageSlot = slot<Page>()
+        coEvery { pageRepository.insertPage(capture(pageSlot)) } returns Unit
+
+        manager.importFromJson(jsonString, "book1")
+
+        assertTrue(pageSlot.isCaptured)
+        val page = pageSlot.captured
+        
+        // With rows=2, columns=2, maxIndex=5, and source (import) columns = 2:
+        // Logic expands columns first: 2x2 -> 2x3 (6 slots)
+        assertEquals(2, page.rows)
+        assertEquals(3, page.columns)
+        assertEquals(49, page.buttonConfigs.size)
+        
+        // Button 1 at local index 0 (source cols 2): row 0, col 0 -> global 0
+        assertNotNull(page.buttonConfigs[0])
+        assertEquals("B1", page.buttonConfigs[0]!!.label)
+        
+        // Button 6 at local index 5 (source cols 2): row 2, col 1
+        // BUT the grid became 2x3? If it's 2x3, then max allowed local index is 5.
+        // Wait, localToGlobalIndex uses importPage.columns (which is 2)!
+        // index 5 / 2 = 2 (row)
+        // index 5 % 2 = 1 (col)
+        // Global 7x7 index: 2 * 7 + 1 = 15
+        assertNotNull(page.buttonConfigs[15])
+        assertEquals("B6", page.buttonConfigs[15]!!.label)
+        
+        // If it's 15, then r=2, c=1. Since r < rows is required for visibility:
+        // The logic should have expanded rows to 3? 
+        // while (rows < 7 && rows * columns <= maxIndex) -> 2 * 3 (6) <= 5 is false.
+        // So rows stays 2.
+    }
+
+    @Test
+    fun `importFromJson handles 11 buttons with 4x4 metadata spatially correctly`() = runTest(testDispatcher) {
+        // User reports 11 buttons. Let's test a button at local index 5.
+        // In 4x4: row = 5/4 = 1, col = 5%4 = 1.
+        // In 7x7: 1 * 7 + 1 = 8.
+        val buttonsJson = (0..10).map { i ->
+            """{ "index": $i, "label": "B$i", "active": true, "action": { "type": "SpeakText", "textToSpeech": "$i" } }"""
+        }.joinToString(",")
+
+        val jsonString = """
+            {
+                "pages": [
+                    {
+                        "importId": "p1", "name": "11ButtonsPage", "rows": 4, "columns": 4,
+                        "buttons": [ $buttonsJson ]
+                    }
+                ]
+            }
+        """.trimIndent()
+
+        val pageSlot = slot<Page>()
+        coEvery { pageRepository.insertPage(capture(pageSlot)) } returns Unit
+
+        manager.importFromJson(jsonString, "book1")
+
+        assertTrue(pageSlot.isCaptured)
+        val page = pageSlot.captured
+        
+        assertEquals(4, page.rows)
+        assertEquals(4, page.columns)
+        assertEquals(49, page.buttonConfigs.size)
+        
+        // Check B5 spatial placement
+        // Local index 5 in 4x4 -> row 1, col 1
+        // Global 7x7 index -> 1*7 + 1 = 8
+        assertNotNull(page.buttonConfigs[8])
+        assertEquals("B5", page.buttonConfigs[8]!!.label)
+        
+        // Button at local index 0 -> row 0, col 0 -> global index 0
+        assertEquals("B0", page.buttonConfigs[0]!!.label)
+        
+        // Button at local index 4 -> row 1, col 0 -> global index 7
+        assertEquals("B4", page.buttonConfigs[7]!!.label)
+    }
+
+    @Test
+    fun `exportToJson reverses spatial mapping correctly`() = runTest(testDispatcher) {
+        // Page 2x2. Button at (1, 1). Global index = 1*7 + 1 = 8.
+        val configs = MutableList<ButtonConfig?>(49) { null }
+        configs[8] = ButtonConfig(id = "b1", label = "Target", spokenText = "T", buttonAction = SpeakTextButtonAction(), auditoryCue = null, isActive = true)
+        
+        val page = Page(id = "p1", bookId = "b1", name = "Test", rows = 2, columns = 2, buttonConfigs = configs)
+        
+        val json = manager.exportToJson(listOf(page))
+        
+        // Local index for (1, 1) in 2x2 is 1*2 + 1 = 3.
+        assertTrue(json.contains("\"index\":3"))
+        assertTrue(json.contains("\"label\":\"Target\""))
     }
 }

@@ -15,7 +15,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
 
-@ExperimentalCoroutinesApi
+@OptIn(ExperimentalCoroutinesApi::class)
 class ResolveSmartPredictionUseCaseTest {
 
     private lateinit var pageRepository: PageRepository

@@ -11,8 +11,7 @@ import com.andreas_kratzer.ghosttalk.domain.pages.GetPagesUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.ImportPageUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.ReorderPagesUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.UpdateButtonConfigUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.UpdatePageSettingsUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.UpdateRowNameUseCase
+import com.andreas_kratzer.ghosttalk.domain.pages.*
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.model.PageTemplate
@@ -36,7 +35,8 @@ class PageManagementDelegate @Inject constructor(
     private val updateRowNameUseCase: UpdateRowNameUseCase,
     private val importPageUseCase: ImportPageUseCase,
     private val exportPageUseCase: ExportPageUseCase,
-    private val getFilteredPagesUseCase: GetFilteredPagesUseCase
+    private val getFilteredPagesUseCase: GetFilteredPagesUseCase,
+    private val getPageUsagesUseCase: com.andreas_kratzer.ghosttalk.domain.pages.GetPageUsagesUseCase
 ) {
     private lateinit var scope: CoroutineScope
 
@@ -139,9 +139,9 @@ class PageManagementDelegate @Inject constructor(
         }
     }
 
-    fun deletePage(page: Page) {
+    fun deletePage(page: Page, deleteUsages: Boolean = false) {
         scope.launch {
-            deletePageUseCase.execute(page)
+            deletePageUseCase.execute(page, deleteUsages)
         }
     }
 
@@ -160,6 +160,10 @@ class PageManagementDelegate @Inject constructor(
 
     suspend fun exportToJson(): String {
         return exportPageUseCase.execute(_allPages.value)
+    }
+
+    suspend fun getPageUsages(pageId: String): List<UsageLocation> {
+        return getPageUsagesUseCase.execute(pageId)
     }
 
     suspend fun getPageById(id: String): Page? = pageRepository.getPageById(id)

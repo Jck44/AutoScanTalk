@@ -26,12 +26,14 @@ import com.andreas_kratzer.ghosttalk.ui.pages.delegates.SmartPredictionDelegate
 import com.andreas_kratzer.ghosttalk.domain.actions.UpdateSmartPredictionsUseCase
 import com.andreas_kratzer.ghosttalk.domain.settings.CheckForPredictorUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -86,14 +88,17 @@ class PageViewModel @Inject constructor(
         currentPage,
         isUserModeActive,
         smartPredictions,
-        activeBookId
-    ) { page, isUserMode, predictions, bookId ->
+        activeBookId,
+        unfilteredPages
+    ) { page, isUserMode, predictions, bookId, allPages ->
         if (page != null && isUserMode && bookId != null) {
-            resolveDynamicButtonsUseCase.execute(page, bookId, predictions)
+            resolveDynamicButtonsUseCase.execute(page, bookId, predictions, allPages)
         } else {
             page
         }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+    }
+    .flowOn(Dispatchers.Default)
+    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     val actionExecutor = ActionExecutor(
         scope = viewModelScope,
@@ -223,7 +228,8 @@ class PageViewModel @Inject constructor(
     fun updateRowName(pageId: String, rowIndex: Int, newName: String) =
         pageManagementDelegate.updateRowName(pageId, rowIndex, newName)
 
-    fun deletePage(page: Page) = pageManagementDelegate.deletePage(page)
+    fun deletePage(page: Page, deleteUsages: Boolean = false) = pageManagementDelegate.deletePage(page, deleteUsages)
+    suspend fun getPageUsages(pageId: String) = pageManagementDelegate.getPageUsages(pageId)
     fun reorderPages(fromIndex: Int, toIndex: Int) = pageManagementDelegate.reorderPages(fromIndex, toIndex)
     fun importFromJson(jsonString: String, bookId: String, onSuccess: () -> Unit, onError: (String) -> Unit) =
         pageManagementDelegate.importFromJson(jsonString, bookId, onSuccess, onError)

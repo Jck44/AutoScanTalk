@@ -37,16 +37,11 @@ class CreatePageUseCaseTest {
     }
 
     @Test
-    fun `execute with template creates page with template configuration`() = runTest {
+    fun `execute with template creates page with template rows and columns`() = runTest {
         // Given
-        // Template with 4 configs but it must have 36 for validation if we strict check PageTemplate as well
-        // However, CreatePageUseCase calls GridUtils.adjustButtonConfigs which pads it
         val template = PageTemplate(
-            id = "template1",
-            name = "Test Template",
-            rows = 2,
-            columns = 2,
-            buttonConfigs = listOf(null, null, null, null)
+            id = "template1", name = "Template", rows = 2, columns = 2,
+            buttonConfigs = List(49) { null }, isBuiltIn = false
         )
         coEvery { templateRepository.getById("template1") } returns template
 
@@ -59,7 +54,7 @@ class CreatePageUseCaseTest {
                 it.name == "New Page" &&
                 it.rows == 2 &&
                 it.columns == 2 &&
-                it.buttonConfigs.size == 36
+                it.buttonConfigs.size == 49
             })
         }
         coVerify { bookRepository.updateLastModified("book1") }
@@ -68,7 +63,8 @@ class CreatePageUseCaseTest {
     @Test
     fun `execute without template creates page with default home button`() = runTest {
         // Given
-        every { settingsRepository.defaultStartPageId } returns "home"
+        val homePageId = "home"
+        every { settingsRepository.defaultStartPageId } returns homePageId
 
         // When
         createPageUseCase.execute("New Page", 2, 2, "book1", emptyList(), null)
@@ -79,28 +75,27 @@ class CreatePageUseCaseTest {
                 it.name == "New Page" &&
                 it.rows == 2 &&
                 it.columns == 2 &&
-                it.buttonConfigs.size == 36 &&
-                it.buttonConfigs[7] != null &&
-                it.buttonConfigs[7]!!.label == "zurück zum Start"
+                // (1, 1) spatially is index 8
+                it.buttonConfigs[8] != null &&
+                it.buttonConfigs[8]!!.label == "zurück zum Start"
             })
         }
         coVerify { bookRepository.updateLastModified("book1") }
     }
 
     @Test
-    fun `execute throws error for grid larger than 6x6`() {
-        // Manual 7x6 
+    fun `execute throws error for grid larger than 7x7`() {
+        // Manual 8x6 
         assertThrows(IllegalArgumentException::class.java) {
-            runBlocking { createPageUseCase.execute("Big", 7, 6, "b1", emptyList()) }
+            runBlocking { createPageUseCase.execute("Big", 8, 6, "b1", emptyList()) }
         }
 
-        // Template 7x1
-        // Note: PageTemplate constructor also validates now, so we must be careful
+        // Template 8x1
         assertThrows(IllegalArgumentException::class.java) {
              PageTemplate(
                  id = "t1",
                  name = "Big",
-                 rows = 7,
+                 rows = 8,
                  columns = 1,
                  buttonConfigs = emptyList()
              )
@@ -111,7 +106,7 @@ class CreatePageUseCaseTest {
     fun `execute patches empty navigation actions in template with homePageId`() = runTest {
         // Given
         val navAction = NavigateToPageButtonAction(pageId = "")
-        val btnConfig = ButtonConfig(id = "b1", label = "Back", buttonAction = navAction, auditoryCue = null)
+        val btnConfig = ButtonConfig(id = "b1", label = "Back", spokenText = "", buttonAction = navAction, auditoryCue = null)
         val template = PageTemplate(
             id = "t1",
             name = "T",
@@ -139,7 +134,7 @@ class CreatePageUseCaseTest {
     fun `execute does not patch navigation actions that already have a pageId`() = runTest {
         // Given
         val navAction = NavigateToPageButtonAction(pageId = "existing-id")
-        val btnConfig = ButtonConfig(id = "b1", label = "Back", buttonAction = navAction, auditoryCue = null)
+        val btnConfig = ButtonConfig(id = "b1", label = "Back", spokenText = "", buttonAction = navAction, auditoryCue = null)
         val template = PageTemplate(
             id = "t1",
             name = "T",

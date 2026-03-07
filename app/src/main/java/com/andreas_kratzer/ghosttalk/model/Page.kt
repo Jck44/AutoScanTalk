@@ -9,6 +9,7 @@ data class Page(
     @PrimaryKey override val id: String,
     val bookId: String,
     override val name: String,
+    val templateId: String? = null,
     val rows: Int = 4,
     val columns: Int = 4,
     val scanPattern: String? = null,
@@ -18,7 +19,7 @@ data class Page(
     override val createdAt: Long = System.currentTimeMillis()
 ) : ListableItem {
     init {
-        require(rows > 0) { "Rows must be a positive number." }
-        require(columns > 0) { "Columns must be a positive number." }
+        require(rows in 1..7) { "Rows must be between 1 and 7." }
+        require(columns in 1..7) { "Columns must be between 1 and 7." }
     }
 }
