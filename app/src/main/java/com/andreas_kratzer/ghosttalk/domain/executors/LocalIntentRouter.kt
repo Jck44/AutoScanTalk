@@ -1,7 +1,6 @@
 package com.andreas_kratzer.ghosttalk.domain.executors
 
 import com.andreas_kratzer.ghosttalk.core.util.Logger
-import com.google.gson.JsonParser
 import com.google.mlkit.genai.prompt.GenerateContentRequest
 import com.google.mlkit.genai.prompt.Generation
 import com.google.mlkit.genai.prompt.TextPart
@@ -82,8 +81,9 @@ class LocalIntentRouter @Inject constructor(
         }
     }
 
-    suspend fun routeIntent(prompt: String, onSpeak: (String) -> Unit) = withContext(Dispatchers.IO) {
+    suspend fun routeIntent(onSpeak: (String) -> Unit) = withContext(Dispatchers.IO) {
         // Obsolete, replaced by executeIntent
         onSpeak("Befehl konnte nicht verarbeitet werden.")
     }
 }
+

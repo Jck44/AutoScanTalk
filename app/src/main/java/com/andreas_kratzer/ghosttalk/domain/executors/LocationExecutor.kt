@@ -14,7 +14,7 @@ import javax.inject.Singleton
 
 @Singleton
 class LocationExecutor @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val logger: com.andreas_kratzer.ghosttalk.core.util.Logger
 ) {
     private val TAG = "LocationExecutor"

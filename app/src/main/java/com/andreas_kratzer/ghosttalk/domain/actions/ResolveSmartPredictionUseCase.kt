@@ -22,7 +22,7 @@ class ResolveSmartPredictionUseCase @Inject constructor(
     ) = withContext(Dispatchers.Default) {
         // 1. Check current page
         val matchingButtonInCurrent = currentPage?.buttonConfigs?.filterNotNull()?.find { it.id == predictionId }
-        if (matchingButtonInCurrent != null && currentPage != null) {
+        if (matchingButtonInCurrent != null) {
             actionExecutor.executeButtonAction(
                 matchingButtonInCurrent, 
                 activeBookId.takeIf { isUserModeActive }, 

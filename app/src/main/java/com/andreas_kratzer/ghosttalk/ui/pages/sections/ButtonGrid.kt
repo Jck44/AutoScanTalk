@@ -11,6 +11,7 @@ import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.ui.pages.GridButton
 import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
 import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
+import com.andreas_kratzer.ghosttalk.ui.util.GridUtils
 
 @Composable
 fun ButtonGrid(
@@ -34,7 +35,7 @@ fun ButtonGrid(
         
         items(totalVisible) { visibleIndex ->
             val r = visibleIndex / cols
-            val globalIndex = com.andreas_kratzer.ghosttalk.ui.util.GridUtils.getGlobalIndex(r, visibleIndex % cols)
+            val globalIndex = GridUtils.getGlobalIndex(r, visibleIndex % cols)
             val buttonConfig = page.buttonConfigs.getOrNull(globalIndex)
 
             val isFocused = globalIndex == focusedButtonIndex

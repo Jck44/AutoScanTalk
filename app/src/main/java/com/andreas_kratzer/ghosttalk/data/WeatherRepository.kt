@@ -8,7 +8,7 @@ import javax.inject.Singleton
 
 @Singleton
 class WeatherRepository @Inject constructor(
-    @ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context
 ) {
     private val prefs: SharedPreferences = context.getSharedPreferences("weather_cache", Context.MODE_PRIVATE)
 

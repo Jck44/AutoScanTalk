@@ -5,7 +5,6 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.andreas_kratzer.ghosttalk.data.WeatherRepository
-import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -18,7 +17,7 @@ import javax.inject.Inject
 import javax.net.ssl.HttpsURLConnection
 
 class WeatherExecutor @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val repository: WeatherRepository,
     private val settingsRepository: com.andreas_kratzer.ghosttalk.data.SettingsRepository,
     private val locationExecutor: LocationExecutor,

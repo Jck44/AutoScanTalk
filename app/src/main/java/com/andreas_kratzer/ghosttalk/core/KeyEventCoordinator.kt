@@ -34,9 +34,7 @@ class KeyEventCoordinator @Inject constructor(
         val keyCode = event.keyCode
 
         // Log the key event for debugging
-        val displayLabel = event.displayLabel
-        val characters = event.characters
-        android.util.Log.d("KeyEventCoordinator", "KeyEvent: keyCode=$keyCode, label='$displayLabel', chars='$characters', action=${event.action}")
+        android.util.Log.d("KeyEventCoordinator", "KeyEvent: keyCode=$keyCode, label='${event.displayLabel}', action=${event.action}")
 
         val isVolumeKey = keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN
 

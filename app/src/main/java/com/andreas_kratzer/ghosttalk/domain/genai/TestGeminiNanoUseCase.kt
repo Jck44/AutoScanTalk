@@ -8,7 +8,7 @@ class TestGeminiNanoUseCase @Inject constructor(
 ) {
     suspend fun execute(onResponse: (String) -> Unit, onError: (Exception) -> Unit) {
         try {
-            localIntentRouter.routeIntent("Ping") { response ->
+            localIntentRouter.routeIntent { response ->
                 onResponse(response)
             }
         } catch (e: Exception) {

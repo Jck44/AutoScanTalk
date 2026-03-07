@@ -15,12 +15,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Search
+import android.content.res.Configuration
 import com.andreas_kratzer.ghosttalk.ui.theme.GhosTTalkIcons
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -151,7 +151,7 @@ fun PageListScreen(
                     }
                 },
                 actions = {
-                    val isLandscape = LocalConfiguration.current.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+                    val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
                     
                     var showSortMenu by remember { mutableStateOf(false) }
                     val pageSortOrder by pageViewModel.settingsRepository.pageSortOrderFlow.collectAsState("MANUAL")

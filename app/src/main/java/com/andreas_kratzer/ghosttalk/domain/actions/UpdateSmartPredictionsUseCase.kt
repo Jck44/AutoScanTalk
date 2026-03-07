@@ -26,22 +26,24 @@ class UpdateSmartPredictionsUseCase @Inject constructor(
         history: Flow<List<String>>,
         isUserModeActive: Flow<Boolean>
     ): Flow<List<String>?> {
-        return combine(
+        val inputFlow = combine(
             currentPage,
             allPages,
             activeBookId,
             history,
-            isUserModeActive,
+            isUserModeActive
+        ) { page, pages, bookId, hist, isUserMode ->
+            UpdateParams(page, pages, bookId, hist, isUserMode)
+        }
+
+        return combine(
+            inputFlow,
             settingsRepository.isSmartPredictionEnabledFlow
-        ) { args ->
-            val page = args[0] as Page?
-            @Suppress("UNCHECKED_CAST")
-            val pages = args[1] as List<Page>
-            val bookId = args[2] as String?
-            @Suppress("UNCHECKED_CAST")
-            val history = args[3] as List<String>
-            val isUserMode = args[4] as Boolean
-            val enabled = args[5] as Boolean
+        ) { params, enabled ->
+            val page = params.currentPage
+            val pages = params.allPages
+            val bookId = params.activeBookId
+            val isUserMode = params.isUserModeActive
 
             if (page != null && enabled && bookId != null && isUserMode) {
                 if (checkForPredictorUseCase(page)) {
@@ -60,4 +62,12 @@ class UpdateSmartPredictionsUseCase @Inject constructor(
             if (!isUserMode) null else emptyList()
         }
     }
+
+    private data class UpdateParams(
+        val currentPage: Page?,
+        val allPages: List<Page>,
+        val activeBookId: String?,
+        val history: List<String>,
+        val isUserModeActive: Boolean
+    )
 }

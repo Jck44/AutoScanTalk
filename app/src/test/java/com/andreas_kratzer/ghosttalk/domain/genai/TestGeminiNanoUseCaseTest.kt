@@ -24,8 +24,8 @@ class TestGeminiNanoUseCaseTest {
     @Test
     fun `execute success calls onResponse`() = runTest {
         val expectedResponse = "Pong"
-        coEvery { localIntentRouter.routeIntent("Ping", any()) } answers {
-            val onSpeak = secondArg<(String) -> Unit>()
+        coEvery { localIntentRouter.routeIntent(any()) } answers {
+            val onSpeak = firstArg<(String) -> Unit>()
             onSpeak(expectedResponse)
         }
 
@@ -41,7 +41,7 @@ class TestGeminiNanoUseCaseTest {
     @Test
     fun `execute failure calls onError`() = runTest {
         val exception = RuntimeException("Model error")
-        coEvery { localIntentRouter.routeIntent("Ping", any()) } throws exception
+        coEvery { localIntentRouter.routeIntent(any()) } throws exception
 
         var actualError: Exception? = null
         useCase.execute(

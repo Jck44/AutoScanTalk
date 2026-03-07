@@ -6,7 +6,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 
 class BatteryExecutor @Inject constructor(
-    @ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context
 ) {
     fun getBatteryLevel(): Int {
         val batteryManager = context.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
