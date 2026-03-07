@@ -155,8 +155,8 @@ fun PageEditorScreen(
                                 newColumns = newValue.toInt()
                             )
                         },
-                        valueRange = 1f..6f,
-                        steps = 4
+                        valueRange = 1f..7f,
+                        steps = 5
                     )
                 }
             }

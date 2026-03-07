@@ -93,4 +93,20 @@ class LocalIntentRouterTest {
         
         assert(spokenText == "Konnte das JSON nicht verarbeiten.")
     }
+
+    @Test
+    fun `extractJson handles markdown and conversational text`() {
+        val method = LocalIntentRouter::class.java.getDeclaredMethod("extractJson", String::class.java)
+        method.isAccessible = true
+        
+        val input1 = """Hier ist das JSON: {"intent": "unknown"} Viel Spaß!"""
+        val result1 = method.invoke(router, input1) as String
+        assert(result1 == """{"intent": "unknown"}""")
+        
+        val input2 = """```json
+            {"intent": "time"}
+            ```"""
+        val result2 = method.invoke(router, input2) as String
+        assert(result2.trim() == """{"intent": "time"}""")
+    }
 }

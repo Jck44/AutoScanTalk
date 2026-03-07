@@ -24,6 +24,10 @@ class LocalIntentRouter @Inject constructor(
             
             Der aktuelle Zeitstempel ist: ${systemTimeExecutor.getRawTimestampContext()}
             
+            Beispiel:
+            Nutzer: Wie spät ist es?
+            Antwort: {"intent": "time", "query": "time", "response": "Es ist vierzehn Uhr zwei."}
+            
             Mögliche Intents:
             1. Zeitabfrage: {"intent": "time", "query": "time", "response": "<natürliche Antwort zur Uhrzeit>"}
             2. Datumsabfrage: {"intent": "time", "query": "date", "response": "<natürliche Antwort zum Datum, wobei der Tag als z.B.: 'Heute ist der vierte Jänner 2025' zu formatieren sind>"}
@@ -57,13 +61,27 @@ class LocalIntentRouter @Inject constructor(
             // Log raw response for debugging
             logger.d("LocalIntentRouter", "Raw Gemini Nano response: $text")
 
-            // Clean up backticks if model generated markdown
-            val cleanJson = text.replace("```json", "").replace("```", "").trim()
-            handleJsonIntent(cleanJson, onSpeak)
+            val jsonToParse = extractJson(text)
+            handleJsonIntent(jsonToParse, onSpeak)
             
         } catch (e: Exception) {
             logger.e("LocalIntentRouter", "Intent routing failed", e)
             onSpeak("Fehler bei der lokalen Verarbeitung: ${e.message}")
+        }
+    }
+
+    private fun extractJson(text: String): String {
+        // Clean up markdown first
+        val cleanMarkdown = text.replace("```json", "").replace("```", "").trim()
+        
+        // Find first '{' and last '}'
+        val start = cleanMarkdown.indexOf('{')
+        val end = cleanMarkdown.lastIndexOf('}')
+        
+        return if (start != -1 && end != -1 && end > start) {
+            cleanMarkdown.substring(start, end + 1)
+        } else {
+            cleanMarkdown
         }
     }
 
@@ -112,8 +130,8 @@ class LocalIntentRouter @Inject constructor(
                     onSpeak("Unbekannter Intent empfangen.")
                 }
             }
-        } catch (_: Exception) {
-            logger.e("LocalIntentRouter", "JSON handling failed: $jsonString")
+        } catch (e: Exception) {
+            logger.e("LocalIntentRouter", "JSON handling failed: $jsonString. Error: ${e.message}")
             onSpeak("Konnte das JSON nicht verarbeiten.")
         }
     }
