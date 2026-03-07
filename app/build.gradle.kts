@@ -125,6 +125,7 @@ dependencies {
     
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.fragment)
     
@@ -148,6 +149,7 @@ dependencies {
     implementation(libs.google.generativeai)
     implementation(libs.google.generativeai.mlkit)
     implementation(libs.gms.play.services.auth)
+    implementation(libs.gms.play.services.location)
     
     // Hilt
     implementation(libs.hilt.android)

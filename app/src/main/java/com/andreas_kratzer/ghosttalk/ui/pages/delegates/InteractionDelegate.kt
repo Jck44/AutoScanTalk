@@ -24,7 +24,8 @@ class InteractionDelegate @Inject constructor(
     private val actionLogUseCase: ActionLogUseCase,
     private val ttsHelper: TextToSpeechHelper,
     private val activateButtonUseCase: ActivateButtonUseCase,
-    private val handleActionExecutionEventUseCase: HandleActionExecutionEventUseCase
+    private val handleActionExecutionEventUseCase: HandleActionExecutionEventUseCase,
+    private val locationExecutor: com.andreas_kratzer.ghosttalk.domain.executors.LocationExecutor
 ) {
     private lateinit var scope: CoroutineScope
     private lateinit var actionExecutor: ActionExecutor
@@ -81,7 +82,11 @@ class InteractionDelegate @Inject constructor(
 
     fun setUserModeActive(isActive: Boolean) {
         _isUserModeActive.value = isActive
-        if (!isActive) {
+        if (isActive) {
+            scope.launch {
+                locationExecutor.refreshLocation()
+            }
+        } else {
             scanCoordinator.stopScanningTemporarily()
             ttsHelper.stopNotificationTTS()
             _smartPredictions.value = null // Clear stale results on exit

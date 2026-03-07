@@ -12,27 +12,22 @@ import javax.inject.Inject
 class LocalIntentRouter @Inject constructor(
     private val systemTimeExecutor: SystemTimeExecutor,
     private val androidClockExecutor: AndroidClockExecutor,
+    private val batteryExecutor: BatteryExecutor,
+    private val weatherExecutor: WeatherExecutor,
     private val logger: Logger
 ) {
     // Note: JSON Schema constraint parsing in ML Kit Prompt API is still highly experimental.
     // For this Phase 1 integration, we instruct the model to return plain JSON via system prompt.
-    private fun getSystemInstruction(): String {
+    private fun getSystemInstruction(intent: String, context: String): String {
         return """
-            Du bist ein intelligenter Assistent für eine unterstützende Kommunikations-App (AAC). 
-            Deine Aufgabe ist es, den Text des Nutzers in einen strukturierten Intent im JSON Format zu übersetzen.
-            Antworte NUR mit validem JSON, ohne Markdown, ohne Erklärung.
+            Du bist ein intelligenter Assistent für eine AAC-App (Unterstützte Kommunikation).
+            Deine Aufgabe ist es, für den Intent "$intent" eine SEHR KURZE, FREUNDLICHE und NATÜRLICHE Antwort in deutscher Sprache zu generieren.
+            Verwende dabei die bereitgestellten Daten.
+            WICHTIG: Die Antwort muss die Informationen EXAKT und VOLLSTÄNDIG enthalten (z.B. die genaue Uhrzeit).
+            Antworte NUR mit dem Text der Sprachausgabe, ohne Erklärungen oder JSON.
             
-            Der aktuelle Zeitstempel ist: ${systemTimeExecutor.getRawTimestampContext()}
-            
-            Beispiel:
-            Nutzer: Wie spät ist es?
-            Antwort: {"intent": "time", "query": "time", "response": "Es ist <aktuelle_uhrzeit> Uhr."}
-            
-            Mögliche Intents:
-            1. Zeitabfrage: {"intent": "time", "query": "time", "response": "<natürliche Antwort zur Uhrzeit>"}
-            2. Datumsabfrage: {"intent": "time", "query": "date", "response": "<natürliche Antwort zum Datum, wobei der Tag als z.B.: 'Heute ist der vierte Jänner 2025' zu formatieren sind>"}
-            3. Wecker stellen: {"intent": "alarm", "action": "set", "hour": <0-23>, "minute": <0-59>}
-            4. Unbekannt: {"intent": "unknown"}
+            Kontext-Daten:
+            $context
         """.trimIndent()
     }
 
@@ -53,81 +48,42 @@ class LocalIntentRouter @Inject constructor(
         }
     }
 
-    suspend fun routeIntent(prompt: String, onSpeak: (String) -> Unit) = withContext(Dispatchers.IO) {
+    suspend fun executeIntent(intent: String, onSpeak: (String) -> Unit) = withContext(Dispatchers.IO) {
         try {
-            val promptText = "${getSystemInstruction()}\n\nNutzer: $prompt"
-            val text = generateRawResponse(promptText)
-            
-            // Log raw response for debugging
-            logger.d("LocalIntentRouter", "Raw Gemini Nano response: $text")
-
-            val jsonToParse = extractJson(text)
-            handleJsonIntent(jsonToParse, onSpeak)
-            
-        } catch (e: Exception) {
-            logger.e("LocalIntentRouter", "Intent routing failed", e)
-            onSpeak("Fehler bei der lokalen Verarbeitung: ${e.message}")
-        }
-    }
-
-    private fun extractJson(text: String): String {
-        // Clean up markdown first
-        val cleanMarkdown = text.replace("```json", "").replace("```", "").trim()
-        
-        // Find first '{' and last '}'
-        val start = cleanMarkdown.indexOf('{')
-        val end = cleanMarkdown.lastIndexOf('}')
-        
-        return if (start != -1 && end != -1 && end > start) {
-            cleanMarkdown.substring(start, end + 1)
-        } else {
-            cleanMarkdown
-        }
-    }
-
-    private fun handleJsonIntent(jsonString: String, onSpeak: (String) -> Unit) {
-        try {
-            val json = JsonParser.parseString(jsonString).asJsonObject
-            val intentStr = if (json.has("intent")) json.get("intent").asString.lowercase() else ""
-            when (intentStr) {
-                "time", "date" -> {
-                    val query = if (json.has("query")) json.get("query").asString else ""
-                    // Support both "date" intent and query="date"
-                    if (query == "date" || intentStr == "date") {
-                        onSpeak(systemTimeExecutor.getCurrentDateOutput())
-                    } else {
-                        onSpeak(systemTimeExecutor.getCurrentTimeOutput())
-                    }
-                }
-                "alarm" -> {
-                    val action = if (json.has("action")) json.get("action").asString else ""
-                    if (action == "set") {
-                        val hour = if (json.has("hour")) json.get("hour").asInt else -1
-                        val minute = if (json.has("minute")) json.get("minute").asInt else 0
-                        if (hour in 0..23) {
-                            val success = androidClockExecutor.setAlarm(hour, minute, "GoSTalk Wecker")
-                            if (success) {
-                                onSpeak("Wecker wurde gestellt.")
-                            } else {
-                                onSpeak("Wecker konnte nicht gestellt werden.")
-                            }
-                        } else {
-                            onSpeak("Ungültige Uhrzeit für den Wecker.")
-                        }
-                    } else {
-                        onSpeak("Wecker löschen wird noch nicht unterstützt.")
-                    }
-                }
-                "unknown" -> {
-                    onSpeak("Ich habe den Befehl nicht verstanden.")
-                }
-                else -> {
-                    onSpeak("Unbekannter Intent empfangen.")
-                }
+            val context = when (intent) {
+                "time" -> "Aktuelle Uhrzeit: ${systemTimeExecutor.getRawTimestampContext()}"
+                "date" -> "Aktuelles Datum: ${systemTimeExecutor.getCurrentDateOutput()}"
+                "battery" -> "Akkustand: ${batteryExecutor.getBatteryStatus()}"
+                "weather" -> "Wetter: ${weatherExecutor.getWeatherInfo()}"
+                "alarm" -> "Nächster Alarm: ${androidClockExecutor.getNextAlarm()}"
+                else -> ""
             }
+
+            val systemPrompt = getSystemInstruction(intent, context)
+            val naturalResponse = generateRawResponse(systemPrompt)
+            
+            if (naturalResponse.isNotBlank()) {
+                onSpeak(naturalResponse)
+            } else {
+                // Fallback if AI fails
+                val fallback = when (intent) {
+                    "time" -> systemTimeExecutor.getCurrentTimeOutput()
+                    "date" -> systemTimeExecutor.getCurrentDateOutput()
+                    "battery" -> batteryExecutor.getBatteryStatus()
+                    "alarm" -> androidClockExecutor.getNextAlarm()
+                    else -> "Ich kann diesen Befehl gerade nicht ausführen."
+                }
+                onSpeak(fallback)
+            }
+            
         } catch (e: Exception) {
-            logger.e("LocalIntentRouter", "JSON handling failed: $jsonString. Error: ${e.message}")
-            onSpeak("Konnte das JSON nicht verarbeiten.")
+            logger.e("LocalIntentRouter", "Intent execution failed", e)
+            onSpeak("Fehler bei der lokalen Verarbeitung.")
         }
+    }
+
+    suspend fun routeIntent(prompt: String, onSpeak: (String) -> Unit) = withContext(Dispatchers.IO) {
+        // Obsolete, replaced by executeIntent
+        onSpeak("Befehl konnte nicht verarbeitet werden.")
     }
 }

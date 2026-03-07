@@ -1,5 +1,9 @@
 package com.andreas_kratzer.ghosttalk.ui.pages
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -26,7 +30,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.core.content.ContextCompat
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.model.AuditoryCue
 import com.andreas_kratzer.ghosttalk.model.ButtonAction
@@ -58,6 +64,15 @@ fun ButtonConfigDialog(
     onCreatePage: ((String, Int, Int, String?, (String) -> Unit) -> Unit)? = null
 ) {
     val dimensions = LocalDimensions.current
+    val context = LocalContext.current
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val fineGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
+        val coarseGranted = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
+        // Even if only coarse is granted, it's enough for weather
+    }
     
     // Current State
     var label by remember { mutableStateOf(initialConfig?.label ?: "") }
@@ -146,7 +161,7 @@ fun ButtonConfigDialog(
     val geminiAction = initialConfig?.buttonAction as? GeminiButtonAction
     val geminiSearchAction = initialConfig?.buttonAction as? GeminiSearchButtonAction
     val geminiNanoAction = initialConfig?.buttonAction as? GeminiNanoButtonAction
-    var geminiPrompt by remember { mutableStateOf(geminiAction?.prompt ?: geminiSearchAction?.prompt ?: geminiNanoAction?.prompt ?: "") }
+    var geminiPrompt by remember { mutableStateOf(geminiAction?.prompt ?: geminiSearchAction?.prompt ?: geminiNanoAction?.intent ?: "") }
 
     // Frequent Action Details
     val frequentActionDef = initialConfig?.buttonAction as? FrequentActionButtonAction
@@ -192,7 +207,7 @@ fun ButtonConfigDialog(
             actionTypeNavigate -> NavigateToPageButtonAction(pageId = navigateToPageId, ttsMode = resolvedTtsMode)
             actionTypeGemini -> GeminiButtonAction(prompt = geminiPrompt, ttsMode = resolvedTtsMode)
             actionTypeGeminiSearch -> GeminiSearchButtonAction(prompt = geminiPrompt, ttsMode = resolvedTtsMode)
-            actionTypeGeminiNano -> GeminiNanoButtonAction(prompt = geminiPrompt, ttsMode = resolvedTtsMode)
+            actionTypeGeminiNano -> GeminiNanoButtonAction(intent = geminiPrompt, ttsMode = resolvedTtsMode)
             actionTypeFrequent -> FrequentActionButtonAction(rank = frequentRank.toIntOrNull()?.coerceAtLeast(1) ?: 1, ttsMode = resolvedTtsMode)
             actionTypeSmart -> SmartPredictionButtonAction(rank = smartRank.toIntOrNull()?.coerceAtLeast(1) ?: 1, ttsMode = resolvedTtsMode)
             actionTypeNotification -> NotificationButtonAction(targetApp = notificationTargetApp, ttsMode = resolvedTtsMode)
@@ -380,10 +395,16 @@ fun ButtonConfigDialog(
                         )
 
                     }
-                    actionTypeGemini, actionTypeGeminiSearch, actionTypeGeminiNano -> {
+                    actionTypeGemini, actionTypeGeminiSearch -> {
                         GeminiActionFields(
                             prompt = geminiPrompt,
                             onPromptChanged = { geminiPrompt = it }
+                        )
+                    }
+                    actionTypeGeminiNano -> {
+                        GeminiNanoActionFields(
+                            selectedIntent = geminiPrompt,
+                            onIntentSelected = { geminiPrompt = it }
                         )
                     }
                     actionTypeFrequent -> {
@@ -504,6 +525,21 @@ fun ButtonConfigDialog(
                     onClick = {
                         if (label.isNotBlank()) {
                             val action = buildButtonAction()
+                            
+                            // Check for weather permission if weather is selected
+                            if (action is GeminiNanoButtonAction && action.intent == "weather") {
+                                val hasFine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                                val hasCoarse = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                                if (!hasFine && !hasCoarse) {
+                                    permissionLauncher.launch(
+                                        arrayOf(
+                                            Manifest.permission.ACCESS_FINE_LOCATION,
+                                            Manifest.permission.ACCESS_COARSE_LOCATION
+                                        )
+                                    )
+                                }
+                            }
+
                             val cue = if (ttsFeedback.isNotBlank()) {
                                 AuditoryCue.TextToSpeechCue(text = ttsFeedback)
                             } else {

@@ -196,6 +196,11 @@ class SettingsViewModel @Inject constructor(
     }
     fun setGeminiRedoPrediction(e: Boolean) { settingsRepository.geminiRedoPrediction = e }
 
+    val weatherCacheTimeout = settingsRepository.weatherCacheTimeoutFlow
+    fun setWeatherCacheTimeoutInput(input: String) {
+        input.toLongOrNull()?.let { settingsRepository.weatherCacheTimeout = it }
+    }
+
     val activeBookId: String
         get() = settingsRepository.activeBookId
 

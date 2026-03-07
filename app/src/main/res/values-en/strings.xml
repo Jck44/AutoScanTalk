@@ -162,6 +162,12 @@
     <string name="button_smart_prediction_rank_label">Prediction Rank (1 = Most Likely)</string>
     <string name="button_gemini_prompt_field">Gemini Prompt (Command)</string>
     <string name="button_gemini_prompt_hint">What should Gemini do?</string>
+    <string name="button_gemini_nano_intent_label">Gemini Nano Feature</string>
+    <string name="button_gemini_nano_intent_time">Time (Precise &amp; Natural)</string>
+    <string name="button_gemini_nano_intent_date">Date (Natural)</string>
+    <string name="button_gemini_nano_intent_weather">Weather (Offline Cache)</string>
+    <string name="button_gemini_nano_intent_battery">Battery Level</string>
+    <string name="button_gemini_nano_intent_alarm">Next Alarm</string>
     <string name="button_notification_target_app">Select App</string>
     <string name="button_notification_target_all">All allowed apps</string>
     <string name="button_play_as_cue">Play as auditory cue</string>

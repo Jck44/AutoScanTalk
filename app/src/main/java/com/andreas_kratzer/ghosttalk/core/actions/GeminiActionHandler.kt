@@ -33,21 +33,23 @@ class GeminiActionHandler(
         executionId: Int,
         onFinish: (Int) -> Unit
     ) {
+        val isNanoAction = action is GeminiNanoButtonAction
+        val nanoIntent = (action as? GeminiNanoButtonAction)?.intent ?: ""
+        
         val prompt = when (action) {
             is GeminiButtonAction -> action.prompt
             is GeminiSearchButtonAction -> action.prompt
-            is GeminiNanoButtonAction -> action.prompt
+            is GeminiNanoButtonAction -> nanoIntent
             else -> return
         }
         val useGoogleSearch = action is GeminiSearchButtonAction
-        val isNanoAction = action is GeminiNanoButtonAction
         val ttsMode = when (action) {
             is GeminiButtonAction -> action.ttsMode
             is GeminiSearchButtonAction -> action.ttsMode
             is GeminiNanoButtonAction -> action.ttsMode
         }
 
-        log("Gemini ${if (useGoogleSearch) "Suche " else if (isNanoAction) "Nano " else ""}aufgerufen mit: \"$prompt\"")
+        log("Gemini ${if (useGoogleSearch) "Suche " else if (isNanoAction) "Nano ($nanoIntent) " else ""}aufgerufen.")
         
         val targetDeviceAddress = if (buttonConfig.playActionAsAuditoryCue) {
             settingsRepository.cuesAudioDeviceAddress
@@ -70,9 +72,9 @@ class GeminiActionHandler(
                         return@launch
                     }
 
-                    localIntentRouter.routeIntent(prompt) { response ->
+                    localIntentRouter.executeIntent(nanoIntent) { response ->
                         val displayResponse = if (response.length > 50) response.take(50) + "..." else response
-                        log("Gemini Nano aufgerufen mit: '$prompt' -> '$displayResponse'")
+                        log("Gemini Nano [${nanoIntent}] Antwort: '$displayResponse'")
 
                         if (tts?.isReady == true) {
                             tts.speakRouted(response, targetDeviceAddress, ttsMode) {

@@ -49,7 +49,7 @@ class GeminiActionHandlerTest {
     @Test
     fun `NanoAction should execute even if Cloud is disabled`() = scope.runTest {
         // GIVEN
-        val action = GeminiNanoButtonAction("What time is it?")
+        val action = GeminiNanoButtonAction("time")
         val config = ButtonConfig(
             id = "1", 
             label = "Time", 
@@ -68,7 +68,7 @@ class GeminiActionHandlerTest {
         
         // THEN
         val callback = slot<(String) -> Unit>()
-        coVerify { localIntentRouter.routeIntent("What time is it?", capture(callback)) }
+        coVerify { localIntentRouter.executeIntent("time", capture(callback)) }
         
         // Simulate response
         callback.captured.invoke("12:00")
@@ -105,7 +105,7 @@ class GeminiActionHandlerTest {
         runCurrent()
         
         // THEN
-        coVerify(exactly = 0) { localIntentRouter.routeIntent(any(), any()) } // Must NOT use Nano
+        coVerify(exactly = 0) { localIntentRouter.executeIntent(any(), any()) } // Must NOT use Nano
         coVerify { geminiUseCase.generateResponse("What is AI?", any()) }
         
         verify { ttsHelper.speakRouted(text = "Cloud Response", deviceAddress = any(), onDone = any()) }
@@ -114,7 +114,7 @@ class GeminiActionHandlerTest {
     @Test
     fun `NanoAction should speak error if Nano is disabled`() = scope.runTest {
         // GIVEN
-        val action = GeminiNanoButtonAction("Help")
+        val action = GeminiNanoButtonAction("battery")
         val config = ButtonConfig(
             id = "1", 
             label = "Help", 
@@ -133,7 +133,7 @@ class GeminiActionHandlerTest {
         runCurrent()
         
         // THEN
-        coVerify(exactly = 0) { localIntentRouter.routeIntent(any(), any()) }
+        coVerify(exactly = 0) { localIntentRouter.executeIntent(any(), any()) }
         verify { ttsHelper.speakRouted(text = any(), deviceAddress = any(), onDone = any()) } 
         
         ttsCallback.captured.invoke()

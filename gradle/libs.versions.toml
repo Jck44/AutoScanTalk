@@ -23,6 +23,7 @@ playAppUpdate = "2.1.0"
 generativeAi = "0.9.0"
 generativeAiMlKit = "1.0.0-beta1"
 playServicesAuth = "18.3.2"
+playServicesLocation = "21.3.0"
 mockk = "1.14.9"
 coroutines = "1.10.2"
 gson = "2.13.2"
@@ -73,11 +74,13 @@ play-app-update-ktx = { group = "com.google.android.play", name = "app-update-kt
 google-generativeai = { group = "com.google.ai.client.generativeai", name = "generativeai", version.ref = "generativeAi" }
 google-generativeai-mlkit = { group = "com.google.mlkit", name = "genai-prompt", version.ref = "generativeAiMlKit" }
 gms-play-services-auth = { group = "com.google.android.gms", name = "play-services-auth-base", version.ref = "playServicesAuth" }
+gms-play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
 
 # Utilities & Tools
 gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
 guava = { group = "com.google.guava", name = "guava", version.ref = "guava" }
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
+kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "coroutines" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
 mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
 

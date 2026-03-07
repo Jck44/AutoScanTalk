@@ -49,6 +49,7 @@ class PageViewModel @Inject constructor(
     geminiUseCaseFactory: GeminiUseCaseFactory,
     private val ttsHelper: TextToSpeechHelper,
     private val localIntentRouter: com.andreas_kratzer.ghosttalk.domain.executors.LocalIntentRouter,
+    private val weatherExecutor: com.andreas_kratzer.ghosttalk.domain.executors.WeatherExecutor,
     private val logger: Logger,
     val buttonUsageRepository: com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository,
     val featureGuard: FeatureGuard,
@@ -198,6 +199,22 @@ class PageViewModel @Inject constructor(
                 _smartPredictions.value = null // Clear to null to indicate "waiting for results"
             }
             pageManagementDelegate.setCurrentPage(page)
+            
+            // Background pre-fetch for weather if current page has a weather button
+            val hasWeatherButton = page.buttonConfigs.any { config ->
+                val action = config?.buttonAction
+                action is com.andreas_kratzer.ghosttalk.model.GeminiNanoButtonAction && 
+                        action.intent == "gemini_nano_intent_weather"
+            }
+            if (hasWeatherButton) {
+                viewModelScope.launch {
+                    try {
+                        weatherExecutor.getWeatherInfo() // This will refresh if expired
+                    } catch (e: Exception) {
+                        logger.e("PageViewModel", "Weather pre-fetch failed", e)
+                    }
+                }
+            }
         }
     }
 

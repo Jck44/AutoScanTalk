@@ -156,6 +156,64 @@ fun GeminiActionFields(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun GeminiNanoActionFields(
+    selectedIntent: String,
+    onIntentSelected: (String) -> Unit
+) {
+    val dimensions = LocalDimensions.current
+    var expanded by remember { mutableStateOf(false) }
+
+    val intentTime = "time"
+    val intentDate = "date"
+    val intentWeather = "weather"
+    val intentBattery = "battery"
+    val intentAlarm = "alarm"
+
+    val intentLabels = mapOf(
+        intentTime to stringResource(R.string.button_gemini_nano_intent_time),
+        intentDate to stringResource(R.string.button_gemini_nano_intent_date),
+        intentWeather to stringResource(R.string.button_gemini_nano_intent_weather),
+        intentBattery to stringResource(R.string.button_gemini_nano_intent_battery),
+        intentAlarm to stringResource(R.string.button_gemini_nano_intent_alarm)
+    )
+
+    val currentLabel = intentLabels[selectedIntent] ?: stringResource(R.string.button_gemini_nano_intent_time)
+
+    Column(verticalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)) {
+        Text(stringResource(R.string.button_gemini_nano_intent_label), style = MaterialTheme.typography.labelMedium)
+
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = { expanded = !expanded }
+        ) {
+            OutlinedTextField(
+                readOnly = true,
+                value = currentLabel,
+                onValueChange = { },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                shape = MaterialTheme.shapes.large,
+                modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
+            )
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                intentLabels.forEach { (intent, label) ->
+                    DropdownMenuItem(
+                        text = { Text(label) },
+                        onClick = {
+                            onIntentSelected(intent)
+                            expanded = false
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
 @Composable
 fun RankActionFields(
     rank: String,

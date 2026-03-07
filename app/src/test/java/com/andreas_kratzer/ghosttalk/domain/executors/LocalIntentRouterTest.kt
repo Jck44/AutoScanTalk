@@ -1,9 +1,8 @@
 package com.andreas_kratzer.ghosttalk.domain.executors
 
 import com.andreas_kratzer.ghosttalk.core.util.Logger
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.verify
+import io.mockk.*
+import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
 
@@ -11,6 +10,8 @@ class LocalIntentRouterTest {
 
     private lateinit var systemTimeExecutor: SystemTimeExecutor
     private lateinit var androidClockExecutor: AndroidClockExecutor
+    private lateinit var batteryExecutor: BatteryExecutor
+    private lateinit var weatherExecutor: WeatherExecutor
     private lateinit var logger: Logger
     private lateinit var router: LocalIntentRouter
 
@@ -18,111 +19,77 @@ class LocalIntentRouterTest {
     fun setup() {
         systemTimeExecutor = mockk(relaxed = true)
         androidClockExecutor = mockk(relaxed = true)
+        batteryExecutor = mockk(relaxed = true)
+        weatherExecutor = mockk(relaxed = true)
         logger = mockk(relaxed = true)
         
-        router = LocalIntentRouter(systemTimeExecutor, androidClockExecutor, logger)
+        router = spyk(LocalIntentRouter(systemTimeExecutor, androidClockExecutor, batteryExecutor, weatherExecutor, logger))
     }
 
     @Test
-    fun `handleJsonIntent parses time query correctly`() {
+    fun `executeIntent calls speak with natural response for time`() = runBlocking {
         var spokenText = ""
         val onSpeak: (String) -> Unit = { spokenText = it }
         
-        every { systemTimeExecutor.getCurrentTimeOutput() } returns "Es ist 14:00 Uhr"
+        every { systemTimeExecutor.getRawTimestampContext() } returns "14:00"
+        coEvery { router.generateRawResponse(any(), any()) } returns "Es ist jetzt zwei Uhr."
         
-        // Use reflection to test the private parsing method
-        val method = LocalIntentRouter::class.java.getDeclaredMethod("handleJsonIntent", String::class.java, Function1::class.java)
-        method.isAccessible = true
-        method.invoke(router, """{"intent": "time", "query": "time"}""", onSpeak)
+        router.executeIntent("time", onSpeak)
         
-        verify(exactly = 1) { systemTimeExecutor.getCurrentTimeOutput() }
-        assert(spokenText == "Es ist 14:00 Uhr")
+        assert(spokenText == "Es ist jetzt zwei Uhr.")
     }
 
     @Test
-    fun `handleJsonIntent parses date query correctly`() {
+    fun `executeIntent falls back to system executor if AI response is empty`() = runBlocking {
         var spokenText = ""
         val onSpeak: (String) -> Unit = { spokenText = it }
         
-        every { systemTimeExecutor.getCurrentDateOutput() } returns "Heute ist Montag"
+        every { systemTimeExecutor.getCurrentTimeOutput() } returns "14:05 Uhr"
+        coEvery { router.generateRawResponse(any(), any()) } returns ""
         
-        val method = LocalIntentRouter::class.java.getDeclaredMethod("handleJsonIntent", String::class.java, Function1::class.java)
-        method.isAccessible = true
-        method.invoke(router, """{"intent": "time", "query": "date"}""", onSpeak)
+        router.executeIntent("time", onSpeak)
         
-        verify(exactly = 1) { systemTimeExecutor.getCurrentDateOutput() }
-        assert(spokenText == "Heute ist Montag")
+        assert(spokenText == "14:05 Uhr")
     }
 
     @Test
-    fun `handleJsonIntent parses alarm set correctly`() {
+    fun `executeIntent provides battery context correctly`() = runBlocking {
         var spokenText = ""
         val onSpeak: (String) -> Unit = { spokenText = it }
         
-        every { androidClockExecutor.setAlarm(7, 30, any()) } returns true
+        every { batteryExecutor.getBatteryStatus() } returns "85 Prozent"
+        coEvery { router.generateRawResponse(any(), any()) } returns "Dein Akku ist bei 85 Prozent."
         
-        val method = LocalIntentRouter::class.java.getDeclaredMethod("handleJsonIntent", String::class.java, Function1::class.java)
-        method.isAccessible = true
-        method.invoke(router, """{"intent": "alarm", "action": "set", "hour": 7, "minute": 30}""", onSpeak)
+        router.executeIntent("battery", onSpeak)
         
-        verify(exactly = 1) { androidClockExecutor.setAlarm(7, 30, any()) }
-        assert(spokenText == "Wecker wurde gestellt.")
+        verify { batteryExecutor.getBatteryStatus() }
+        assert(spokenText == "Dein Akku ist bei 85 Prozent.")
     }
 
     @Test
-    fun `handleJsonIntent handles invalid alarm time gracefully`() {
+    fun `executeIntent provides weather context correctly`() = runBlocking {
         var spokenText = ""
         val onSpeak: (String) -> Unit = { spokenText = it }
         
-        val method = LocalIntentRouter::class.java.getDeclaredMethod("handleJsonIntent", String::class.java, Function1::class.java)
-        method.isAccessible = true
-        method.invoke(router, """{"intent": "alarm", "action": "set", "hour": 25, "minute": 0}""", onSpeak)
+        coEvery { weatherExecutor.getWeatherInfo() } returns "Sonnig, 20 Grad"
+        coEvery { router.generateRawResponse(any(), any()) } returns "In Berlin ist es sonnig bei 20 Grad."
         
-        verify(exactly = 0) { androidClockExecutor.setAlarm(any(), any(), any()) }
-        assert(spokenText == "Ungültige Uhrzeit für den Wecker.")
-    }
-    
-    @Test
-    fun `handleJsonIntent safely catches malformed JSON`() {
-        var spokenText = ""
-        val onSpeak: (String) -> Unit = { spokenText = it }
+        router.executeIntent("weather", onSpeak)
         
-        val method = LocalIntentRouter::class.java.getDeclaredMethod("handleJsonIntent", String::class.java, Function1::class.java)
-        method.isAccessible = true
-        method.invoke(router, """{not valid json}""", onSpeak)
-        
-        assert(spokenText == "Konnte das JSON nicht verarbeiten.")
+        coVerify { weatherExecutor.getWeatherInfo() }
+        assert(spokenText == "In Berlin ist es sonnig bei 20 Grad.")
     }
 
     @Test
-    fun `handleJsonIntent ignores hardcoded AI response for time`() {
+    fun `executeIntent handles weather with timestamp correctly`() = runBlocking {
         var spokenText = ""
         val onSpeak: (String) -> Unit = { spokenText = it }
         
-        every { systemTimeExecutor.getCurrentTimeOutput() } returns "Es ist 20:07 Uhr."
+        coEvery { weatherExecutor.getWeatherInfo() } returns "Bewölkt, 15 Grad (Stand vom 07.03. um 12:00 Uhr)"
+        coEvery { router.generateRawResponse(any(), any()) } returns "Laut Cache vom Mittag ist es bewölkt bei 15 Grad."
         
-        val method = LocalIntentRouter::class.java.getDeclaredMethod("handleJsonIntent", String::class.java, Function1::class.java)
-        method.isAccessible = true
-        // Simulate the AI returning a hardcoded response alongside the intent
-        method.invoke(router, """{"intent": "time", "query": "time", "response": "Es ist vierzehn Uhr zwei."}""", onSpeak)
+        router.executeIntent("weather", onSpeak)
         
-        verify(exactly = 1) { systemTimeExecutor.getCurrentTimeOutput() }
-        assert(spokenText == "Es ist 20:07 Uhr.")
-    }
-
-    @Test
-    fun `extractJson handles markdown and conversational text`() {
-        val method = LocalIntentRouter::class.java.getDeclaredMethod("extractJson", String::class.java)
-        method.isAccessible = true
-        
-        val input1 = """Hier ist das JSON: {"intent": "unknown"} Viel Spaß!"""
-        val result1 = method.invoke(router, input1) as String
-        assert(result1 == """{"intent": "unknown"}""")
-        
-        val input2 = """```json
-            {"intent": "time"}
-            ```"""
-        val result2 = method.invoke(router, input2) as String
-        assert(result2.trim() == """{"intent": "time"}""")
+        assert(spokenText == "Laut Cache vom Mittag ist es bewölkt bei 15 Grad.")
     }
 }

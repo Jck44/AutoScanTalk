@@ -241,6 +241,7 @@ class SettingsRepository(context: Context) {
     private val _userModeScreenBehavior = NonNullStringSetting(KEY_USER_MODE_SCREEN_BEHAVIOR, "NORMAL")
     private val _geminiTimeout = LongSetting(KEY_GEMINI_TIMEOUT, 6000L)
     private val _geminiRedoPrediction = BooleanSetting(KEY_GEMINI_REDO_PREDICTION, false)
+    private val _weatherCacheTimeout = LongSetting(KEY_WEATHER_CACHE_TIMEOUT, 60L)
 
     private fun refreshFlows() {
         _ttsLanguage.refresh()
@@ -281,6 +282,7 @@ class SettingsRepository(context: Context) {
         _userModeScreenBehavior.refresh()
         _geminiTimeout.refresh()
         _geminiRedoPrediction.refresh()
+        _weatherCacheTimeout.refresh()
     }
 
     // ── Public API: Flows ────────────────────────────────────────────────
@@ -322,6 +324,7 @@ class SettingsRepository(context: Context) {
     val userModeScreenBehaviorFlow: StateFlow<String> get() = _userModeScreenBehavior.flow
     val geminiTimeoutFlow: StateFlow<Long> get() = _geminiTimeout.flow
     val geminiRedoPredictionFlow: StateFlow<Boolean> get() = _geminiRedoPrediction.flow
+    val weatherCacheTimeoutFlow: StateFlow<Long> get() = _weatherCacheTimeout.flow
 
     // ── Public API: Properties ───────────────────────────────────────────
 
@@ -481,6 +484,10 @@ class SettingsRepository(context: Context) {
         get() = _geminiRedoPrediction.value
         set(value) { _geminiRedoPrediction.value = value }
 
+    var weatherCacheTimeout: Long
+        get() = _weatherCacheTimeout.value
+        set(value) { _weatherCacheTimeout.value = value }
+
     // ── Device name cache ────────────────────────────────────────────────
 
     fun getDeviceName(persistentId: String): String? {
@@ -547,5 +554,6 @@ class SettingsRepository(context: Context) {
         private const val KEY_USER_MODE_SCREEN_BEHAVIOR = "user_mode_screen_behavior"
         private const val KEY_GEMINI_TIMEOUT = "gemini_timeout_ms"
         private const val KEY_GEMINI_REDO_PREDICTION = "gemini_redo_prediction"
+        private const val KEY_WEATHER_CACHE_TIMEOUT = "weather_cache_timeout_minutes"
     }
 }

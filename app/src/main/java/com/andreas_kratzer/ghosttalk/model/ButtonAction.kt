@@ -41,10 +41,10 @@ data class GeminiSearchButtonAction(
 ) : ButtonAction()
 
 /**
- * An action that triggers a Gemini AI request on-device using Gemini Nano.
+ * An action that triggers a Gemini AI request on-device using Gemini Nano for a specific intent.
  */
 data class GeminiNanoButtonAction(
-    val prompt: String,
+    val intent: String,
     override val ttsMode: String = "NORMAL"
 ) : ButtonAction()
 

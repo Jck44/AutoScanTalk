@@ -60,7 +60,7 @@ class FeatureGuardTest {
 
     @Test
     fun `isActionEnabled respects gemini nano setting`() {
-        val action = GeminiNanoButtonAction(prompt = "Local")
+        val action = GeminiNanoButtonAction(intent = "time")
 
         every { settingsRepository.useLocalGenerativeAi } returns true
         assertTrue(featureGuard.isActionEnabled(action))

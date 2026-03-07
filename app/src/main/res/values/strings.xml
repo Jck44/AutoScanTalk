@@ -165,6 +165,12 @@
     <string name="button_smart_prediction_rank_label">Vorhersage-Rang (1 = Wahrscheinlichste)</string>
     <string name="button_gemini_prompt_field">Gemini Prompt (Befehl)</string>
     <string name="button_gemini_prompt_hint">Was soll Gemini tun?</string>
+    <string name="button_gemini_nano_intent_label">Gemini Nano Funktion</string>
+    <string name="button_gemini_nano_intent_time">Uhrzeit (Präzise &amp; Natürlich)</string>
+    <string name="button_gemini_nano_intent_date">Datum (Natürlich)</string>
+    <string name="button_gemini_nano_intent_weather">Wetter für aktuellen Standort</string>
+    <string name="button_gemini_nano_intent_battery">Akkustand</string>
+    <string name="button_gemini_nano_intent_alarm">Nächster Alarm</string>
     <string name="button_notification_target_app">App auswählen</string>
     <string name="button_notification_target_all">Alle erlaubten Apps</string>
     <string name="button_play_as_cue">Als Audio-Hinweis abspielen</string>
@@ -254,4 +260,6 @@
     <string name="template_edit_title">Vorlage: %s</string>
     <string name="template_editor_hint">Tippe auf ein Feld, um es zu belegen</string>
     <string name="template_loading">Vorlage wird geladen…</string>
+    <string name="settings_weather_cache_timeout_label">Wetter Cache Dauer (Minuten)</string>
+    <string name="settings_weather_cache_timeout_description">Wie lange Wetterdaten gültig bleiben, bevor sie neu geladen werden.</string>
 </resources>
