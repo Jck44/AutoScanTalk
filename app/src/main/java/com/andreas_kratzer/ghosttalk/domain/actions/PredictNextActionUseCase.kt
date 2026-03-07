@@ -1,15 +1,15 @@
 package com.andreas_kratzer.ghosttalk.domain.actions
 
+import android.util.Log
 import com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.domain.executors.LocalIntentRouter
 import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.withTimeout
 import java.time.LocalTime
 import javax.inject.Inject
-import kotlinx.coroutines.withTimeout
-import kotlinx.coroutines.TimeoutCancellationException
-import android.util.Log
 
 /**
  * UseCase to predict the next likely actions using Gemini Nano (on-device).

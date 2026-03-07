@@ -1,5 +1,6 @@
 package com.andreas_kratzer.ghosttalk.core.actions
 
+import android.util.Log
 import com.andreas_kratzer.ghosttalk.data.ButtonActionAdapter
 import com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.model.ButtonAction
@@ -7,7 +8,6 @@ import com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction
 import com.andreas_kratzer.ghosttalk.model.Page
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
-import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject

@@ -7,10 +7,9 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
+import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.ui.pages.GridButton
 import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
-import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 
 @Composable

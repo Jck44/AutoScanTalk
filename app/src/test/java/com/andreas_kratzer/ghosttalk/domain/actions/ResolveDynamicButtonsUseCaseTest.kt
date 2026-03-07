@@ -1,7 +1,6 @@
 package com.andreas_kratzer.ghosttalk.domain.actions
 
 import com.andreas_kratzer.ghosttalk.core.actions.FrequentActionResolver
-import com.andreas_kratzer.ghosttalk.model.AuditoryCue
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction
 import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction

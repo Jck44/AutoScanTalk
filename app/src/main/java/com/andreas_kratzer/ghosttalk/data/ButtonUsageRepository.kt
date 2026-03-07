@@ -3,12 +3,12 @@ package com.andreas_kratzer.ghosttalk.data
 import com.andreas_kratzer.ghosttalk.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.ButtonUsageStat
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
 import javax.inject.Inject
 
 /**

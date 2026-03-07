@@ -1,6 +1,5 @@
 package com.andreas_kratzer.ghosttalk.core.pages
 
-import com.andreas_kratzer.ghosttalk.core.pages.PageImportExportManager
 import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.andreas_kratzer.ghosttalk.core.util.TestLogger
 import com.andreas_kratzer.ghosttalk.data.PageRepository
