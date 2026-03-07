@@ -188,10 +188,10 @@ class SettingsRepositoryTest {
     }
 
     @Test
-    fun persistActionLogs_initializesFalse() = runBlocking {
-        every { mockPrefs.getBoolean("persist_action_logs", false) } returns false
-        assertEquals(false, repository.persistActionLogs)
-        assertEquals(false, repository.persistActionLogsFlow.first())
+    fun persistActionLogs_initializesTrue() = runBlocking {
+        every { mockPrefs.getBoolean("persist_action_logs", true) } returns true
+        assertEquals(true, repository.persistActionLogs)
+        assertEquals(true, repository.persistActionLogsFlow.first())
     }
 
     @Test
@@ -220,10 +220,10 @@ class SettingsRepositoryTest {
     }
 
     @Test
-    fun switchActivationKey_initializesSpace() = runBlocking {
-        every { mockPrefs.getString("switch_activation_key", "Space") } returns "Space"
-        assertEquals("Space", repository.switchActivationKey)
-        assertEquals("Space", repository.switchActivationKeyFlow.first())
+    fun switchActivationKey_initializesTilde3() = runBlocking {
+        every { mockPrefs.getString("switch_activation_key", "~3") } returns "~3"
+        assertEquals("~3", repository.switchActivationKey)
+        assertEquals("~3", repository.switchActivationKeyFlow.first())
     }
 
     @Test
@@ -281,10 +281,10 @@ class SettingsRepositoryTest {
     }
 
     @Test
-    fun themeMode_initializesSystem() = runBlocking {
-        every { mockPrefs.getString("theme_mode", "SYSTEM") } returns "SYSTEM"
-        assertEquals("SYSTEM", repository.themeMode)
-        assertEquals("SYSTEM", repository.themeModeFlow.first())
+    fun themeMode_initializesLight() = runBlocking {
+        every { mockPrefs.getString("theme_mode", "LIGHT") } returns "LIGHT"
+        assertEquals("LIGHT", repository.themeMode)
+        assertEquals("LIGHT", repository.themeModeFlow.first())
     }
 
     @Test
@@ -295,6 +295,27 @@ class SettingsRepositoryTest {
         assertEquals(testTheme, mockedPrefsStore["book-default_theme_mode"])
         assertEquals(testTheme, repository.themeMode)
         assertEquals(testTheme, repository.themeModeFlow.first())
+    }
+
+    @Test
+    fun holdingTimeMillis_initializes250() = runBlocking {
+        every { mockPrefs.getLong("holding_time_millis", 250L) } returns 250L
+        assertEquals(250L, repository.holdingTimeMillis)
+        assertEquals(250L, repository.holdingTimeMillisFlow.first())
+    }
+
+    @Test
+    fun bluetoothDelay_initializes100() = runBlocking {
+        every { mockPrefs.getLong("bluetooth_delay_ms", 100L) } returns 100L
+        assertEquals(100L, repository.bluetoothDelay)
+        assertEquals(100L, repository.bluetoothDelayFlow.first())
+    }
+
+    @Test
+    fun useLocalGenerativeAi_initializesTrue() = runBlocking {
+        every { mockPrefs.getBoolean("use_local_generative_ai", true) } returns true
+        assertEquals(true, repository.useLocalGenerativeAi)
+        assertEquals(true, repository.useLocalGenerativeAiFlow.first())
     }
 
     @Test

@@ -31,12 +31,17 @@ import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 @Composable
 fun AppBrandHeader(
     modifier: Modifier = Modifier,
-    isLandscape: Boolean = false
+    isLandscape: Boolean = false,
+    title: String? = null,
+    subtitle: String? = null
 ) {
     val dimensions = LocalDimensions.current
     val titleStyle = if (isLandscape) MaterialTheme.typography.displaySmall else MaterialTheme.typography.displayMedium
     val subtitleStyle = MaterialTheme.typography.titleMedium
     val logoSize = if (isLandscape) dimensions.logoSizeSmall else dimensions.logoSizeMedium
+
+    val displayTitle = title ?: stringResource(R.string.app_name)
+    val displaySubtitle = subtitle ?: stringResource(R.string.start_tagline)
 
     Row(
         modifier = modifier,
@@ -44,29 +49,35 @@ fun AppBrandHeader(
         horizontalArrangement = Arrangement.Center
     ) {
         androidx.compose.foundation.Image(
-            painter = painterResource(id = R.drawable.app_logo),
+            painter = painterResource(id = R.drawable.ic_app_logo),
             contentDescription = null,
             modifier = Modifier.size(logoSize)
         )
-        Spacer(modifier = Modifier.width(if (isLandscape) 12.dp else dimensions.paddingLarge))
-        Column {
-            Text(
-                text = stringResource(R.string.app_name),
-                style = titleStyle.copy(
-                    fontWeight = FontWeight.Bold,
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
-                            MaterialTheme.colorScheme.primary
+        if (displayTitle.isNotBlank() || displaySubtitle.isNotBlank()) {
+            Spacer(modifier = Modifier.width(if (isLandscape) 12.dp else dimensions.paddingLarge))
+            Column {
+                if (displayTitle.isNotBlank()) {
+                    Text(
+                        text = displayTitle,
+                        style = titleStyle.copy(
+                            fontWeight = FontWeight.Bold,
+                            brush = Brush.verticalGradient(
+                                colors = listOf(
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                                    MaterialTheme.colorScheme.primary
+                                )
+                            )
                         )
                     )
-                )
-            )
-            Text(
-                text = stringResource(R.string.start_tagline),
-                style = subtitleStyle,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+                }
+                if (displaySubtitle.isNotBlank()) {
+                    Text(
+                        text = displaySubtitle,
+                        style = subtitleStyle,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
         }
     }
 }

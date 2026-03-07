@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -25,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.ui.components.AppBrandHeader
 import com.andreas_kratzer.ghosttalk.ui.pages.sections.ActionLogCard
 import com.andreas_kratzer.ghosttalk.ui.pages.sections.ButtonGrid
 import com.andreas_kratzer.ghosttalk.ui.pages.sections.ControlButtons
@@ -81,10 +83,12 @@ fun PageScreen(
         topBar = {
             TopAppBar(
                 title = { 
-                    Text(
-                        text = page.name,
-                        style = MaterialTheme.typography.headlineMedium
-                    ) 
+                    AppBrandHeader(
+                        title = page.name,
+                        subtitle = "", // No tagline in user mode
+                        isLandscape = true, // Smaller version for TopAppBar
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
             )
         }

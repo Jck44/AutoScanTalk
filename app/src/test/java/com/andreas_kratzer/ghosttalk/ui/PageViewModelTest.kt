@@ -72,7 +72,9 @@ class PageViewModelTest {
     private lateinit var geminiUseCaseFactory: GeminiUseCaseFactory
     private lateinit var ttsHelper: TextToSpeechHelper
     private lateinit var localIntentRouter: LocalIntentRouter
+    private lateinit var weatherExecutor: com.andreas_kratzer.ghosttalk.domain.executors.WeatherExecutor
     private lateinit var logger: Logger
+    private lateinit var locationExecutor: com.andreas_kratzer.ghosttalk.domain.executors.LocationExecutor
     private lateinit var buttonUsageRepository: ButtonUsageRepository
     private lateinit var featureGuard: FeatureGuard
     
@@ -109,6 +111,8 @@ class PageViewModelTest {
         geminiUseCaseFactory = mockk<GeminiUseCaseFactory>(relaxed = true)
         ttsHelper = mockk<TextToSpeechHelper>(relaxed = true)
         localIntentRouter = mockk<LocalIntentRouter>(relaxed = true)
+        weatherExecutor = mockk<com.andreas_kratzer.ghosttalk.domain.executors.WeatherExecutor>(relaxed = true)
+        locationExecutor = mockk<com.andreas_kratzer.ghosttalk.domain.executors.LocationExecutor>(relaxed = true)
         logger = mockk<Logger>(relaxed = true)
         buttonUsageRepository = mockk<ButtonUsageRepository>(relaxed = true)
         featureGuard = mockk<FeatureGuard>(relaxed = true)
@@ -184,7 +188,8 @@ class PageViewModelTest {
             actionLogUseCase = actionLogUseCase,
             ttsHelper = ttsHelper,
             activateButtonUseCase = ActivateButtonUseCase(ttsHelper, ResolveSmartPredictionUseCase(pageRepository)),
-            handleActionExecutionEventUseCase = HandleActionExecutionEventUseCase(pageRepository, settingsRepository)
+            handleActionExecutionEventUseCase = HandleActionExecutionEventUseCase(pageRepository, settingsRepository),
+            locationExecutor = locationExecutor
         )
         val smartPredictionDelegate = SmartPredictionDelegate(
             updateSmartPredictionsUseCase = updateSmartPredictionsUseCase
@@ -193,7 +198,7 @@ class PageViewModelTest {
 
         return PageViewModel(
             application, settingsRepository, importExportManager, scannerEngine, googleAuthManager,
-            geminiUseCaseFactory, ttsHelper, localIntentRouter, logger, buttonUsageRepository, 
+            geminiUseCaseFactory, ttsHelper, localIntentRouter, weatherExecutor, logger, buttonUsageRepository, 
             featureGuard, pageManagementDelegate, interactionDelegate, screenManagementDelegate, 
             smartPredictionDelegate, resolveDynamicButtonsUseCase, updateSmartPredictionsUseCase, 
             checkForPredictorUseCase
