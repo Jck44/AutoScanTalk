@@ -35,7 +35,7 @@ fun AddPageDialog(
     onConfirm: (name: String, rows: Int, columns: Int, templateId: String?) -> Unit
 ) {
     var name by remember { mutableStateOf("") }
-    val isError = remember { mutableStateOf(false) }
+    var isError by remember { mutableStateOf(false) }
     var selectedTemplate by remember { mutableStateOf<PageTemplate?>(null) }
     var expanded by remember { mutableStateOf(false) }
 
@@ -97,15 +97,15 @@ fun AddPageDialog(
                     value = name,
                     onValueChange = { 
                         name = it 
-                        if (it.isNotBlank()) isError.value = false
+                        if (it.isNotBlank()) isError = false
                     },
                     label = { Text(stringResource(R.string.page_name_field)) },
                     singleLine = true,
                     shape = MaterialTheme.shapes.large,
                     modifier = Modifier.fillMaxWidth(),
-                    isError = isError.value,
+                    isError = isError,
                     supportingText = {
-                        if (isError.value) {
+                        if (isError) {
                             Text(stringResource(R.string.error_page_name_required))
                         }
                     }
@@ -122,7 +122,7 @@ fun AddPageDialog(
                     if (name.isNotBlank()) {
                         onConfirm(name, rows, cols, selectedTemplate?.id)
                     } else {
-                        isError.value = true
+                        isError = true
                     }
                 },
                 shape = MaterialTheme.shapes.medium
