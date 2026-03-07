@@ -38,6 +38,7 @@ class PredictNextActionUseCaseTest {
         
         // Default mock responses for settings frequently used
         every { settingsRepository.showPageIdInLog } returns false
+        every { settingsRepository.geminiTimeout } returns 5000L
     }
 
     @Test

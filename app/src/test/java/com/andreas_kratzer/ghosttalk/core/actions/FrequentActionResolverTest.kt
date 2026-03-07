@@ -38,8 +38,10 @@ class FrequentActionResolverTest {
         val originalPage = Page(
             id = "p1", bookId = "b1", name = "Test",
             buttonConfigs = listOf(
-                ButtonConfig(id = "slot1", label = "Top 1", buttonAction = FrequentActionButtonAction(1), auditoryCue = null),
-                ButtonConfig(id = "slot2", label = "Top 2", buttonAction = FrequentActionButtonAction(2), auditoryCue = null)
+                ButtonConfig(id = "slot1", label = "Top 1", buttonAction = FrequentActionButtonAction(1), auditoryCue = null, isActive = true),
+                ButtonConfig(id = "slot2", label = "Top 2", buttonAction = FrequentActionButtonAction(2), auditoryCue = null, isActive = true),
+                ButtonConfig(id = "orig1", label = "Yes", buttonAction = SpeakTextButtonAction("Yes"), auditoryCue = null, isActive = true),
+                ButtonConfig(id = "orig2", label = "No", buttonAction = SpeakTextButtonAction("No"), auditoryCue = null, isActive = true)
             )
         )
 
@@ -55,10 +57,10 @@ class FrequentActionResolverTest {
         val btn2 = resolvedPage.buttonConfigs[1]!!
 
         assertEquals("Yes", btn1.label)
-        assertEquals("slot1", btn1.id) // ID should remain the same
+        assertEquals("orig1", btn1.id) // It returns the matching config now
 
         assertEquals("No", btn2.label)
-        assertEquals("slot2", btn2.id)
+        assertEquals("orig2", btn2.id)
     }
 
     @Test

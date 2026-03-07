@@ -8,11 +8,12 @@ import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
-import io.mockk.*
+import io.mockk.clearMocks
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -65,19 +66,23 @@ class ScanCoordinatorTest {
 
     @Test
     fun `should stay paused when predictions are null (loading) or empty but page not yet resolved`() = runTest(testDispatcher) {
-        scanCoordinator.init()
+        isUserModeActive.value = true
+        isExecuting.value = false
+        
         val rawPage = mockk<Page>(relaxed = true) {
             every { id } returns "raw1"
             every { name } returns "Raw Page"
-            every { buttonConfigs } returns listOf(ButtonConfig(label = "Gemini", auditoryCue = null, buttonAction = SmartPredictionButtonAction(1)))
+            every { buttonConfigs } returns listOf(ButtonConfig(label = "Gemini", auditoryCue = null, buttonAction = SmartPredictionButtonAction(1), isActive = true))
         }
         
-        // Initially: on raw page, waiting for predictions
         every { checkForPredictorUseCase(rawPage) } returns true
         currentPage.value = rawPage
         resolvedPage.value = rawPage
         smartPredictions.value = null
         isSmartPredictionLoading.value = true
+
+        scanCoordinator.init()
+        testDispatcher.scheduler.advanceUntilIdle()
 
         verify { scannerEngine.pauseScanning() }
         clearMocks(scannerEngine, answers = false)
@@ -85,6 +90,7 @@ class ScanCoordinatorTest {
         // Step 1: Predictions arrive (empty list)
         smartPredictions.value = emptyList()
         isSmartPredictionLoading.value = false
+        testDispatcher.scheduler.advanceUntilIdle()
         
         // EXPECTED: It should still be paused because resolvedPage STILL has predictors (rawPage)
         verify(exactly = 0) { scannerEngine.startScanning(any(), any(), any(), any(), any(), any(), any()) }
@@ -98,7 +104,7 @@ class ScanCoordinatorTest {
         resolvedPage.value = resPage
         
         // NOW it should resume
-        verify { scannerEngine.startScanning(any(), any(), any(), any(), any(), any(), any()) }
+        verify { scannerEngine.startScanning(any(), any(), any(), any(), any(), any(), eq("res1")) }
     }
 
     @Test

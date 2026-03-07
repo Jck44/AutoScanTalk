@@ -3,7 +3,9 @@ package com.andreas_kratzer.ghosttalk.domain.actions
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.domain.settings.CheckForPredictorUseCase
 import com.andreas_kratzer.ghosttalk.model.Page
-import io.mockk.*
+import io.mockk.coEvery
+import io.mockk.every
+import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
@@ -12,7 +14,6 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -48,7 +49,7 @@ class UpdateSmartPredictionsUseCaseTest {
             useCase.isLoading.collect { loadingStates.add(it) }
         }
 
-        useCase.execute(flowOf(page), flowOf(pages), flowOf(bookId)).take(1).toList()
+        useCase.execute(flowOf(page), flowOf(pages), flowOf(bookId), flowOf(emptyList()), flowOf(true)).take(1).toList()
 
         // Should be false -> true -> false
         assertTrue(loadingStates.contains(true))
