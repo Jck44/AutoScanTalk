@@ -29,8 +29,14 @@ class TtsVoiceManager @Inject constructor() {
         
         return try {
             tts.voices?.filter { voice ->
-                voice.locale.language == targetLocale.language && voice.locale.country == targetLocale.country
-            }?.sortedBy { it.name } ?: emptyList()
+                if (targetLocale.country.isEmpty()) {
+                    // Match any voice with this language if no country is specified
+                    voice.locale.language == targetLocale.language
+                } else {
+                    // Strict match if country is specified
+                    voice.locale.language == targetLocale.language && voice.locale.country == targetLocale.country
+                }
+            }?.sortedWith(compareBy({ it.locale.country }, { it.name })) ?: emptyList()
         } catch (e: Exception) {
             Log.e("TtsVoiceManager", "Error getting voices", e)
             emptyList()

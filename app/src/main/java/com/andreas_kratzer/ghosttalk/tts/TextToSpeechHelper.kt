@@ -240,7 +240,7 @@ class TextToSpeechHelper @Inject constructor(
         }
 
         val locale = if (languageTag.isNullOrEmpty() || languageTag == "default") {
-            Locale.getDefault()
+            settingsRepository.appLanguage?.let { Locale.forLanguageTag(it) } ?: Locale.getDefault()
         } else {
             Locale.forLanguageTag(languageTag)
         }
@@ -299,7 +299,12 @@ class TextToSpeechHelper @Inject constructor(
      * Gibt eine Liste aller verfügbaren Stimmen für eine spezifizierte Sprache zurück.
      */
     fun getAvailableVoices(languageTag: String?): List<android.speech.tts.Voice> {
-        return voiceManager.getAvailableVoices(tts, languageTag)
+        val resolvedTag = if (languageTag.isNullOrEmpty() || languageTag == "default") {
+            settingsRepository.appLanguage ?: "default"
+        } else {
+            languageTag
+        }
+        return voiceManager.getAvailableVoices(tts, resolvedTag)
     }
 
     fun shutdown() {
