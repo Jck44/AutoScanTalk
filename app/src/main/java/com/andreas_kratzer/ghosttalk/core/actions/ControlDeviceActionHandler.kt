@@ -1,7 +1,15 @@
 package com.andreas_kratzer.ghosttalk.core.actions
 
+import android.app.Activity
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.media.AudioManager
+import android.os.Build
+import android.telephony.SmsManager
 import android.view.KeyEvent
 import com.andreas_kratzer.ghosttalk.core.services.NotificationReaderService
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
@@ -32,8 +40,20 @@ class ControlDeviceActionHandler(
             DeviceActionType.MEDIA_PREVIOUS -> handleMediaKey(KeyEvent.KEYCODE_MEDIA_PREVIOUS, "Vorheriges Lied", executionId, onFinish)
             DeviceActionType.MEDIA_PLAY_PAUSE -> handleMediaKey(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, "Start / Stop", executionId, onFinish)
             DeviceActionType.READ_NOTIFICATIONS -> handleReadNotifications(buttonConfig, deviceAction, executionId, onFinish)
-            else -> {
-                log("Aktion ${action.actionType} noch nicht implementiert.")
+            
+            DeviceActionType.VOLUME_NOTIFICATION -> handleVolume(AudioManager.STREAM_NOTIFICATION, deviceAction, executionId, onFinish)
+            DeviceActionType.VOLUME_ALARM -> handleVolume(AudioManager.STREAM_ALARM, deviceAction, executionId, onFinish)
+            DeviceActionType.VOLUME_MEDIA -> handleVolume(AudioManager.STREAM_MUSIC, deviceAction, executionId, onFinish)
+            DeviceActionType.VOLUME_CALL -> handleVolume(AudioManager.STREAM_VOICE_CALL, deviceAction, executionId, onFinish)
+            
+            DeviceActionType.STATUS_SILENT -> handleStatus(AudioManager.RINGER_MODE_SILENT, executionId, onFinish)
+            DeviceActionType.STATUS_VIBRATE -> handleStatus(AudioManager.RINGER_MODE_VIBRATE, executionId, onFinish)
+            DeviceActionType.STATUS_LOUD -> handleStatus(AudioManager.RINGER_MODE_NORMAL, executionId, onFinish)
+            
+            DeviceActionType.SEND_MESSAGE -> handleSendMessage(deviceAction, executionId, onFinish)
+            
+            DeviceActionType.CLEAR_NOTIFICATIONS -> {
+                log("Benachrichtigungen löschen noch nicht unterstützt.")
                 onFinish(executionId)
             }
         }
@@ -45,6 +65,110 @@ class ControlDeviceActionHandler(
         audioManager.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_UP, keyCode))
         log(description)
         onFinish(executionId)
+    }
+
+    private fun handleVolume(streamType: Int, action: ControlDeviceButtonAction, executionId: Int, onFinish: (Int) -> Unit) {
+        val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        val valueStr = action.volumeValue ?: "50"
+        
+        val maxVolume = audioManager.getStreamMaxVolume(streamType)
+        val currentVolume = audioManager.getStreamVolume(streamType)
+        
+        val isRelative = valueStr.startsWith("+") || valueStr.startsWith("-")
+        val percentage = valueStr.removePrefix("+").toIntOrNull() ?: 50
+        
+        val targetVolume = if (isRelative) {
+            val change = (maxVolume * (percentage / 100.0)).toInt()
+            (currentVolume + change).coerceIn(0, maxVolume)
+        } else {
+            (maxVolume * (percentage / 100.0)).toInt().coerceIn(0, maxVolume)
+        }
+        
+        audioManager.setStreamVolume(streamType, targetVolume, AudioManager.FLAG_SHOW_UI)
+        log("Lautstärke auf ${((targetVolume.toDouble() / maxVolume) * 100).toInt()}% gesetzt")
+        onFinish(executionId)
+    }
+
+    private fun handleStatus(ringerMode: Int, executionId: Int, onFinish: (Int) -> Unit) {
+        val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        
+        if (ringerMode == AudioManager.RINGER_MODE_SILENT && !notificationManager.isNotificationPolicyAccessGranted) {
+            log("Berechtigung für 'Nicht stören' fehlt.")
+        } else {
+            audioManager.ringerMode = ringerMode
+            val modeName = when(ringerMode) {
+                AudioManager.RINGER_MODE_SILENT -> "Lautlos"
+                AudioManager.RINGER_MODE_VIBRATE -> "Vibration"
+                else -> "Laut"
+            }
+            log("Modus auf $modeName gesetzt")
+        }
+        onFinish(executionId)
+    }
+
+    private fun handleSendMessage(action: ControlDeviceButtonAction, executionId: Int, onFinish: (Int) -> Unit) {
+        val phone = action.contactPhone
+        val message = action.messageText ?: ""
+
+        if (phone.isNullOrBlank()) {
+            log("Kein Kontakt ausgewählt.")
+            onFinish(executionId)
+            return
+        }
+
+        val sentAction = "com.andreas_kratzer.ghosttalk.SMS_SENT_${executionId}_${System.currentTimeMillis()}"
+        val sentIntent = Intent(sentAction).apply {
+            `package` = context.packageName
+        }
+        val sentPI = PendingIntent.getBroadcast(
+            context,
+            0,
+            sentIntent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_ONE_SHOT
+        )
+
+        val receiver = object : BroadcastReceiver() {
+            private var isFinished = false
+            override fun onReceive(arg0: Context?, arg1: Intent?) {
+                if (isFinished) return
+                isFinished = true
+                
+                val result = when (resultCode) {
+                    Activity.RESULT_OK -> "SMS erfolgreich versendet an $phone"
+                    SmsManager.RESULT_ERROR_GENERIC_FAILURE -> "SMS-Fehler: Allgemeiner Fehler"
+                    SmsManager.RESULT_ERROR_NO_SERVICE -> "SMS-Fehler: Kein Dienst verfügbar"
+                    SmsManager.RESULT_ERROR_NULL_PDU -> "SMS-Fehler: Null PDU"
+                    SmsManager.RESULT_ERROR_RADIO_OFF -> "SMS-Fehler: Funk aus / Flugmodus"
+                    else -> "SMS-Fehler: Code $resultCode"
+                }
+                log(result)
+                try {
+                    context.unregisterReceiver(this)
+                } catch (e: Exception) {
+                    // Ignore
+                }
+                onFinish(executionId)
+            }
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            context.registerReceiver(receiver, IntentFilter(sentAction), Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            context.registerReceiver(receiver, IntentFilter(sentAction))
+        }
+
+        try {
+            log("Sende SMS an $phone...")
+            val smsManager = context.getSystemService(SmsManager::class.java)
+            smsManager.sendTextMessage(phone, null, message, sentPI, null)
+        } catch (e: Exception) {
+            log("SMS-Sendeversuch fehlgeschlagen: ${e.message}")
+            try {
+                context.unregisterReceiver(receiver)
+            } catch (ex: Exception) {}
+            onFinish(executionId)
+        }
     }
 
     private fun handleReadNotifications(

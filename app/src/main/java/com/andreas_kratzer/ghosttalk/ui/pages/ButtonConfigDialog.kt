@@ -38,6 +38,7 @@ import com.andreas_kratzer.ghosttalk.model.AuditoryCue
 import com.andreas_kratzer.ghosttalk.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.ControlDeviceButtonAction
+import com.andreas_kratzer.ghosttalk.model.DeviceActionType
 import com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction
 import com.andreas_kratzer.ghosttalk.model.GeminiButtonAction
 import com.andreas_kratzer.ghosttalk.model.GeminiNanoButtonAction
@@ -67,10 +68,8 @@ fun ButtonConfigDialog(
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        val fineGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
-        val coarseGranted = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
-        // Even if only coarse is granted, it's enough for weather
+    ) { _ -> 
+        // Permissions handled reactively
     }
     
     // Current State
@@ -168,8 +167,12 @@ fun ButtonConfigDialog(
     // Device Control Details
     val controlActionDef = initialConfig?.buttonAction as? ControlDeviceButtonAction
     var controlActionType by remember { 
-        mutableStateOf(controlActionDef?.actionType ?: com.andreas_kratzer.ghosttalk.model.DeviceActionType.READ_NOTIFICATIONS) 
+        mutableStateOf(controlActionDef?.actionType ?: DeviceActionType.READ_NOTIFICATIONS) 
     }
+    var controlVolumeValue by remember { mutableStateOf(controlActionDef?.volumeValue ?: "50") }
+    var controlContactName by remember { mutableStateOf(controlActionDef?.contactName ?: "Kontakt wählen") }
+    var controlContactPhone by remember { mutableStateOf(controlActionDef?.contactPhone ?: "") }
+    var controlMessageText by remember { mutableStateOf(controlActionDef?.messageText ?: "") }
 
     // Helper to build the action object from current UI state
     fun buildButtonAction(): ButtonAction {
@@ -185,7 +188,14 @@ fun ButtonConfigDialog(
             actionTypeGeminiNano -> GeminiNanoButtonAction(intent = geminiPrompt, ttsMode = resolvedTtsMode)
             actionTypeFrequent -> FrequentActionButtonAction(rank = frequentRank.toIntOrNull()?.coerceAtLeast(1) ?: 1, ttsMode = resolvedTtsMode)
             actionTypeSmart -> SmartPredictionButtonAction(rank = smartRank.toIntOrNull()?.coerceAtLeast(1) ?: 1, ttsMode = resolvedTtsMode)
-            actionTypeControlDevice -> ControlDeviceButtonAction(actionType = controlActionType, ttsMode = resolvedTtsMode)
+            actionTypeControlDevice -> ControlDeviceButtonAction(
+                actionType = controlActionType,
+                volumeValue = controlVolumeValue,
+                contactName = controlContactName,
+                contactPhone = controlContactPhone,
+                messageText = controlMessageText,
+                ttsMode = resolvedTtsMode
+            )
             else -> SpeakTextButtonAction(ttsMode = resolvedTtsMode)
         }
     }
@@ -380,7 +390,16 @@ fun ButtonConfigDialog(
                     actionTypeControlDevice -> {
                         ControlDeviceActionFields(
                             selectedType = controlActionType,
-                            onTypeSelected = { controlActionType = it }
+                            onTypeSelected = { controlActionType = it },
+                            volumeValue = controlVolumeValue,
+                            onVolumeValueChange = { controlVolumeValue = it },
+                            contactName = controlContactName,
+                            onContactSelected = { name, phone ->
+                                controlContactName = name
+                                controlContactPhone = phone
+                            },
+                            messageText = controlMessageText,
+                            onMessageTextChange = { controlMessageText = it }
                         )
                     }
                 }
@@ -492,6 +511,7 @@ fun ButtonConfigDialog(
 
                             val cue = if (ttsFeedback.isNotBlank()) {
                                 AuditoryCue.TextToSpeechCue(text = ttsFeedback)
+
                             } else {
                                 null
                             }

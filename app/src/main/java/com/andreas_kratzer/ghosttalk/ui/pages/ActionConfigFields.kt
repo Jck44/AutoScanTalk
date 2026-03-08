@@ -1,9 +1,22 @@
 package com.andreas_kratzer.ghosttalk.ui.pages
 
+import android.Manifest
+import android.app.NotificationManager
+import android.content.Context
+import android.content.pm.PackageManager
+import android.provider.ContactsContract
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -15,14 +28,20 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.core.content.ContextCompat
 import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.model.DeviceActionType
 import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
@@ -237,17 +256,36 @@ fun RankActionFields(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ControlDeviceActionFields(
-    selectedType: com.andreas_kratzer.ghosttalk.model.DeviceActionType,
-    onTypeSelected: (com.andreas_kratzer.ghosttalk.model.DeviceActionType) -> Unit
+    selectedType: DeviceActionType,
+    onTypeSelected: (DeviceActionType) -> Unit,
+    volumeValue: String? = null,
+    onVolumeValueChange: (String) -> Unit = {},
+    contactName: String? = null,
+    onContactSelected: (name: String, phone: String) -> Unit = { _, _ -> },
+    messageText: String? = null,
+    onMessageTextChange: (String) -> Unit = {}
 ) {
+    val context = LocalContext.current
     val dimensions = LocalDimensions.current
-    var expanded by remember { mutableStateOf(false) }
+    var expandedType by remember { mutableStateOf(false) }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { _ -> }
 
     val types = listOf(
-        com.andreas_kratzer.ghosttalk.model.DeviceActionType.READ_NOTIFICATIONS to stringResource(R.string.button_action_notification),
-        com.andreas_kratzer.ghosttalk.model.DeviceActionType.MEDIA_PLAY_PAUSE to stringResource(R.string.button_device_control_media_play_pause),
-        com.andreas_kratzer.ghosttalk.model.DeviceActionType.MEDIA_NEXT to stringResource(R.string.button_device_control_media_next),
-        com.andreas_kratzer.ghosttalk.model.DeviceActionType.MEDIA_PREVIOUS to stringResource(R.string.button_device_control_media_previous)
+        DeviceActionType.READ_NOTIFICATIONS to stringResource(R.string.button_action_notification),
+        DeviceActionType.MEDIA_PLAY_PAUSE to stringResource(R.string.button_device_control_media_play_pause),
+        DeviceActionType.MEDIA_NEXT to stringResource(R.string.button_device_control_media_next),
+        DeviceActionType.MEDIA_PREVIOUS to stringResource(R.string.button_device_control_media_previous),
+        DeviceActionType.VOLUME_MEDIA to "Lautstärke Medien",
+        DeviceActionType.VOLUME_NOTIFICATION to "Lautstärke Benachrichtigung",
+        DeviceActionType.VOLUME_ALARM to "Lautstärke Alarm",
+        DeviceActionType.VOLUME_CALL to "Lautstärke Anruf",
+        DeviceActionType.STATUS_SILENT to "Status: Lautlos",
+        DeviceActionType.STATUS_VIBRATE to "Status: Vibration",
+        DeviceActionType.STATUS_LOUD to "Status: Laut",
+        DeviceActionType.SEND_MESSAGE to "Nachricht senden"
     )
 
     val currentLabel = types.find { it.first == selectedType }?.second ?: types.first().second
@@ -256,31 +294,211 @@ fun ControlDeviceActionFields(
         Text(stringResource(R.string.button_device_control_type_label), style = MaterialTheme.typography.labelMedium)
 
         ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { expanded = !expanded }
+            expanded = expandedType,
+            onExpandedChange = { expandedType = !expandedType }
         ) {
             OutlinedTextField(
                 readOnly = true,
                 value = currentLabel,
                 onValueChange = { },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedType) },
                 shape = MaterialTheme.shapes.large,
                 modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
             )
             ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
+                expanded = expandedType,
+                onDismissRequest = { expandedType = false }
             ) {
                 types.forEach { (type, label) ->
                     DropdownMenuItem(
                         text = { Text(label) },
                         onClick = {
                             onTypeSelected(type)
-                            expanded = false
+                            expandedType = false
+                            
+                            // Permission check for Silent mode
+                            if (type == DeviceActionType.STATUS_SILENT) {
+                                val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                                if (!nm.isNotificationPolicyAccessGranted) {
+                                    val intent = android.content.Intent(android.provider.Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)
+                                    context.startActivity(intent)
+                                }
+                            }
+
+                            // Permission check for Messaging
+                            if (type == DeviceActionType.SEND_MESSAGE) {
+                                permissionLauncher.launch(
+                                    arrayOf(Manifest.permission.SEND_SMS, Manifest.permission.READ_CONTACTS)
+                                )
+                            }
                         }
                     )
                 }
             }
         }
+
+        // Volume parameters
+        if (selectedType.name.startsWith("VOLUME_")) {
+            OutlinedTextField(
+                value = volumeValue ?: "50",
+                onValueChange = onVolumeValueChange,
+                label = { Text("Lautstärke (z.B. 50, +10, -5)") },
+                singleLine = true,
+                shape = MaterialTheme.shapes.large,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+
+        // Messaging parameters
+        if (selectedType == DeviceActionType.SEND_MESSAGE) {
+            MessagingFields(
+                contactName = contactName ?: "Kein Kontakt gewählt",
+                onContactSelected = onContactSelected,
+                messageText = messageText ?: "",
+                onMessageTextChange = onMessageTextChange
+            )
+        }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MessagingFields(
+    contactName: String,
+    onContactSelected: (String, String) -> Unit,
+    messageText: String,
+    onMessageTextChange: (String) -> Unit
+) {
+    val dimensions = LocalDimensions.current
+    var showContactPicker by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    val smsPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { _ -> }
+
+    // Proactive check
+    fun checkSmsPermission() {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
+            smsPermissionLauncher.launch(Manifest.permission.SEND_SMS)
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        checkSmsPermission()
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)) {
+        // Contact Selection
+        OutlinedButton(
+            onClick = { 
+                checkSmsPermission()
+                showContactPicker = true 
+            },
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.medium
+        ) {
+            Text(contactName)
+        }
+
+        // Message Text
+        OutlinedTextField(
+            value = messageText,
+            onValueChange = onMessageTextChange,
+            label = { Text("Nachricht") },
+            shape = MaterialTheme.shapes.large,
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+
+    if (showContactPicker) {
+        ContactPickerInApp(
+            onDismiss = { showContactPicker = false },
+            onContactSelected = { name, phone ->
+                onContactSelected(name, phone)
+                showContactPicker = false
+            }
+        )
+    }
+}
+
+data class SimpleContact(val name: String, val phone: String)
+
+@Composable
+fun ContactPickerInApp(
+    onDismiss: () -> Unit,
+    onContactSelected: (String, String) -> Unit
+) {
+    val context = LocalContext.current
+    var contacts by remember { mutableStateOf<List<SimpleContact>>(emptyList()) }
+    var searchQuery by remember { mutableStateOf("") }
+    var hasPermission by remember { mutableStateOf(
+        ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED
+    )}
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        hasPermission = isGranted
+    }
+
+    LaunchedEffect(hasPermission) {
+        if (hasPermission) {
+            contacts = loadContacts(context)
+        } else {
+            permissionLauncher.launch(Manifest.permission.READ_CONTACTS)
+        }
+    }
+
+    val filtered = contacts.filter { it.name.contains(searchQuery, ignoreCase = true) || it.phone.contains(searchQuery) }
+
+    Dialog(onDismissRequest = onDismiss) {
+        androidx.compose.material3.Surface(
+            shape = MaterialTheme.shapes.extraLarge,
+            tonalElevation = 8.dp
+        ) {
+            Column(modifier = Modifier.padding(16.dp).fillMaxWidth().heightIn(max = 500.dp)) {
+                Text("Kontakt wählen", style = MaterialTheme.typography.headlineSmall)
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    label = { Text("Suchen") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                LazyColumn(modifier = Modifier.weight(1f)) {
+                    items(filtered) { contact ->
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onContactSelected(contact.name, contact.phone) }
+                                .padding(vertical = 12.dp)
+                        ) {
+                            Text(contact.name, style = MaterialTheme.typography.bodyLarge)
+                            Text(contact.phone, style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+                OutlinedButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
+                    Text("Abbrechen")
+                }
+            }
+        }
+    }
+}
+
+private fun loadContacts(context: Context): List<SimpleContact> {
+    val list = mutableListOf<SimpleContact>()
+    val cursor = context.contentResolver.query(
+        ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+        arrayOf(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME, ContactsContract.CommonDataKinds.Phone.NUMBER),
+        null, null, null
+    )
+    cursor?.use {
+        val nameIdx = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
+        val phoneIdx = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
+        while (it.moveToNext()) {
+            list.add(SimpleContact(it.getString(nameIdx), it.getString(phoneIdx)))
+        }
+    }
+    return list.sortedBy { it.name }
 }

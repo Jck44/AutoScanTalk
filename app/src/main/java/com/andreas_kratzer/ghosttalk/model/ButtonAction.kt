@@ -69,6 +69,10 @@ data class SmartPredictionButtonAction(
  */
 data class ControlDeviceButtonAction(
     val actionType: DeviceActionType,
+    val volumeValue: String? = null,      // e.g. "50", "+10", "-5"
+    val contactName: String? = null,      // Display name
+    val contactPhone: String? = null,     // Phone number or ID
+    val messageText: String? = null,      // The message content
     override val ttsMode: String = "NORMAL"
 ) : ButtonAction()
 
@@ -77,16 +81,13 @@ enum class DeviceActionType {
     MEDIA_NEXT,
     MEDIA_PREVIOUS,
     MEDIA_PLAY_PAUSE,
-    VOLUME_NOTIFICATION, // For later
-    VOLUME_ALARM,        // For later
-    VOLUME_MEDIA,        // For later
-    VOLUME_CALL,         // For later
-    STATUS_SILENT,       // For later
-    STATUS_VIBRATE,      // For later
-    STATUS_LOUD,         // For later
-    CLEAR_NOTIFICATIONS, // For later
-    SEND_MESSAGE         // For later
+    VOLUME_NOTIFICATION,
+    VOLUME_ALARM,
+    VOLUME_MEDIA,
+    VOLUME_CALL,
+    STATUS_SILENT,
+    STATUS_VIBRATE,
+    STATUS_LOUD,
+    CLEAR_NOTIFICATIONS,
+    SEND_MESSAGE
 }
-
-// Zukünftige Aktionen könnten hier als weitere data classes hinzugefügt werden,
-// die von `Action` erben.
