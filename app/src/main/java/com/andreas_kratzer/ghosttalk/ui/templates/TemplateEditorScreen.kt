@@ -42,7 +42,6 @@ import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.ui.pages.ButtonConfigDialog
 import com.andreas_kratzer.ghosttalk.ui.pages.GridButton
 import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
-import com.andreas_kratzer.ghosttalk.ui.pages.RowNameEditor
 import com.andreas_kratzer.ghosttalk.ui.components.GridEditorContent
 import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 import kotlinx.coroutines.launch

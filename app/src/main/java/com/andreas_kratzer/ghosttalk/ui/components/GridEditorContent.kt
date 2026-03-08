@@ -1,12 +1,20 @@
 package com.andreas_kratzer.ghosttalk.ui.components
 
 import android.content.res.Configuration
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -15,12 +23,12 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -29,13 +37,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.model.GridItem
 import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.ui.pages.ButtonConfigDialog
 import com.andreas_kratzer.ghosttalk.ui.pages.GridButton
-import com.andreas_kratzer.ghosttalk.ui.pages.RowNameEditor
+import com.andreas_kratzer.ghosttalk.ui.theme.GhosTTalkIcons
 import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions
 import com.andreas_kratzer.ghosttalk.ui.util.GridUtils
@@ -59,6 +68,8 @@ fun GridEditorContent(
 
     var selectedButtonIndex by remember { mutableStateOf<Int?>(null) }
     var showDialog by remember { mutableStateOf(false) }
+    var editingRowIndex by remember { mutableStateOf<Int?>(null) }
+    var showRowEditDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -165,10 +176,9 @@ fun GridEditorContent(
             }
         }
 
-        val effectiveScanPattern = item.scanPattern ?: bookDefaultScanPattern
         val rowDefaultLabelTemplate = stringResource(R.string.page_row_label)
+        val effectiveScanPattern = item.scanPattern ?: bookDefaultScanPattern
 
-        // Button Grid for editing
         LazyVerticalGrid(
             columns = GridCells.Fixed(item.columns),
             modifier = Modifier
@@ -179,73 +189,136 @@ fun GridEditorContent(
             horizontalArrangement = Arrangement.spacedBy(dimensions.gridSpacing)
         ) {
             val totalRows = item.rows
+            val numCols = item.columns
+
             for (r in 0 until totalRows) {
                 if (effectiveScanPattern == "row_by_row") {
-                    item(span = { GridItemSpan(maxLineSpan) }) {
-                        RowNameEditor(
-                            initialName = item.rowNames.getOrNull(r) ?: rowDefaultLabelTemplate.format(r + 1),
-                            onNameChanged = { newName ->
-                                actions.updateRowName(item.id, r, newName)
+                    item(span = { GridItemSpan(numCols) }) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .border(
+                                    width = 2.dp,
+                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                                    shape = MaterialTheme.shapes.medium
+                                )
+                                .height(IntrinsicSize.Min),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .width(48.dp)
+                                    .fillMaxHeight()
+                                    .clickable {
+                                        editingRowIndex = r
+                                        showRowEditDialog = true
+                                    },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = GhosTTalkIcons.Edit,
+                                    contentDescription = stringResource(R.string.page_editor_row_name_label),
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(24.dp)
+                                )
                             }
-                        )
-                    }
-                }
 
-                val numCols = item.columns
-                for (c in 0 until numCols) {
-                    item {
-                        val globalIndex = GridUtils.getGlobalIndex(r, c)
-                        val buttonConfig = item.buttonConfigs.getOrNull(globalIndex)
-                        GridButton(
-                            buttonConfig = buttonConfig,
-                            isFocused = false,
-                            isEditorMode = true,
-                            onClick = {
-                                selectedButtonIndex = globalIndex
-                                showDialog = true
+                            Row(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(dimensions.gridSpacing)
+                            ) {
+                                for (c in 0 until numCols) {
+                                    val globalIndex = GridUtils.getGlobalIndex(r, c)
+                                    val buttonConfig = item.buttonConfigs.getOrNull(globalIndex)
+                                    Box(modifier = Modifier.weight(1f)) {
+                                        GridButton(
+                                            buttonConfig = buttonConfig,
+                                            isFocused = false,
+                                            isEditorMode = true,
+                                            onClick = {
+                                                selectedButtonIndex = globalIndex
+                                                showDialog = true
+                                            }
+                                        )
+                                    }
+                                }
                             }
-                        )
+                        }
+                    }
+                } else {
+                    for (c in 0 until numCols) {
+                        item {
+                            val globalIndex = GridUtils.getGlobalIndex(r, c)
+                            val buttonConfig = item.buttonConfigs.getOrNull(globalIndex)
+                            GridButton(
+                                buttonConfig = buttonConfig,
+                                isFocused = false,
+                                isEditorMode = true,
+                                onClick = {
+                                    selectedButtonIndex = globalIndex
+                                    showDialog = true
+                                }
+                            )
+                        }
                     }
                 }
             }
         }
-    }
 
-    if (showDialog && selectedButtonIndex != null) {
-        val editingIndex = selectedButtonIndex!!
-        val currentConfig = item.buttonConfigs.getOrNull(editingIndex)
-        val buttonId = currentConfig?.id ?: UUID.randomUUID().toString()
+        if (showRowEditDialog && editingRowIndex != null) {
+            val rowIndex = editingRowIndex!!
+            RowEditDialog(
+                initialName = item.rowNames.getOrNull(rowIndex) ?: rowDefaultLabelTemplate.format(rowIndex + 1),
+                onDismiss = {
+                    showRowEditDialog = false
+                    editingRowIndex = null
+                },
+                onSave = { newName ->
+                    actions.updateRowName(item.id, rowIndex, newName)
+                    showRowEditDialog = false
+                    editingRowIndex = null
+                }
+            )
+        }
 
-        ButtonConfigDialog(
-            initialConfig = currentConfig,
-            buttonId = buttonId,
-            availablePages = availablePages,
-            featureGuard = featureGuard,
-            templates = templates,
-            onDismiss = {
-                showDialog = false
-                selectedButtonIndex = null
-            },
-            onSave = { newConfig ->
-                actions.updateButtonConfig(item.id, editingIndex, newConfig)
-                showDialog = false
-                selectedButtonIndex = null
-            },
-            onTest = { testConfig ->
-                actions.executeButtonAction(testConfig)
-            },
-            onNavigateToPage = onEditPage,
-            onCreatePage = { name, rows, cols, templateId, onCreated ->
-                val bookId = (item as? Page)?.bookId ?: "book-default"
-                actions.createNewPage(
-                    name = name,
-                    rows = rows,
-                    columns = cols,
-                    bookId = bookId,
-                    templateId = templateId,
-                    onCreated = onCreated
-                )
-            }
-        )
+        if (showDialog && selectedButtonIndex != null) {
+            val editingIndex = selectedButtonIndex!!
+            val currentConfig = item.buttonConfigs.getOrNull(editingIndex)
+            val buttonId = currentConfig?.id ?: UUID.randomUUID().toString()
+
+            ButtonConfigDialog(
+                initialConfig = currentConfig,
+                buttonId = buttonId,
+                availablePages = availablePages,
+                featureGuard = featureGuard,
+                templates = templates,
+                onDismiss = {
+                    showDialog = false
+                    selectedButtonIndex = null
+                },
+                onSave = { newConfig ->
+                    actions.updateButtonConfig(item.id, editingIndex, newConfig)
+                    showDialog = false
+                    selectedButtonIndex = null
+                },
+                onTest = { testConfig ->
+                    actions.executeButtonAction(testConfig)
+                },
+                onNavigateToPage = onEditPage,
+                onCreatePage = { name, rows, cols, templateId, onCreated ->
+                    val bookId = (item as? Page)?.bookId ?: "book-default"
+                    actions.createNewPage(
+                        name = name,
+                        rows = rows,
+                        columns = cols,
+                        bookId = bookId,
+                        templateId = templateId,
+                        onCreated = onCreated
+                    )
+                }
+            )
+        }
     }
 }
