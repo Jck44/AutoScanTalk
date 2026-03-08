@@ -59,8 +59,8 @@ class CreatePageUseCase @Inject constructor(
             val initialConfigs = MutableList<ButtonConfig?>(GridUtils.TOTAL_SLOTS) { null }
 
             if (homePageId != null) {
-                // Place Home button at bottom-right of the requested grid (linear)
-                val persistentIndex = finalRows * finalColumns - 1
+                // Place Home button at bottom-right of the requested grid (spatial)
+                val persistentIndex = GridUtils.getGlobalIndex(finalRows - 1, finalColumns - 1)
                 
                 initialConfigs[persistentIndex] = ButtonConfig(
                     id = UUID.randomUUID().toString(),

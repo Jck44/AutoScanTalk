@@ -14,12 +14,20 @@ class MoveButtonUseCase @Inject constructor(
         if (fromIndex == toIndex) return page
         
         val newButtonConfigs = page.buttonConfigs.toMutableList()
+        // Ensure we have 49 slots
+        while (newButtonConfigs.size < com.andreas_kratzer.ghosttalk.ui.util.GridUtils.TOTAL_SLOTS) {
+            newButtonConfigs.add(null)
+        }
+        
         if (fromIndex !in newButtonConfigs.indices || toIndex !in newButtonConfigs.indices) return page
 
-        // Simple shift/swap logic. Here we use "insert before target" style like a list.
-        val config = newButtonConfigs.removeAt(fromIndex)
-        newButtonConfigs.add(toIndex, config)
-
+        // Spatial Swap instead of Shift
+        val fromConfig = newButtonConfigs[fromIndex]
+        val toConfig = newButtonConfigs[toIndex]
+        
+        newButtonConfigs[toIndex] = fromConfig
+        newButtonConfigs[fromIndex] = toConfig
+        
         val updatedPage = page.copy(buttonConfigs = newButtonConfigs)
         
         pageRepository.updatePage(updatedPage)

@@ -67,8 +67,8 @@ class ReorderableState {
         val info = gridState.layoutInfo
         
         if (isRowByRow) {
-            val draggedRow = draggedIdx / numCols
-            val draggedCol = draggedIdx % numCols
+            val draggedRow = draggedIdx / 7
+            val draggedCol = draggedIdx % 7
             val draggedItem = info.visibleItemsInfo.find { it.index == draggedRow } ?: return null
             
             // Edit handle is 48dp, padding is 8dp. 
@@ -96,9 +96,12 @@ class ReorderableState {
             val relativeX = draggedCenterX - targetRowInfo.offset.x - handleWidthPx - paddingPx
             val targetCol = (relativeX / targetColWidth).toInt().coerceIn(0, numCols - 1)
             
-            return targetRow * numCols + targetCol
+            return targetRow * 7 + targetCol
         } else {
-            return findTargetIndexForGrid(gridState)
+            val localIndex = findTargetIndexForGrid(gridState) ?: return null
+            val r = localIndex / numCols
+            val c = localIndex % numCols
+            return r * 7 + c
         }
     }
 

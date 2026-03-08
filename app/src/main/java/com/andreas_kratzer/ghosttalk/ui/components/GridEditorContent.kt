@@ -262,7 +262,7 @@ fun GridEditorContent(
                                 horizontalArrangement = Arrangement.spacedBy(dimensions.gridSpacing)
                             ) {
                                 for (c in 0 until numCols) {
-                                    val globalIndex = r * numCols + c
+                                    val globalIndex = GridUtils.getGlobalIndex(r, c)
                                     val buttonConfig = item.buttonConfigs.getOrNull(globalIndex)
                                     val isButtonTarget = buttonTargetIndex == globalIndex
                                     
@@ -308,7 +308,7 @@ fun GridEditorContent(
                     }
                 } else {
                     for (c in 0 until numCols) {
-                        val globalIndex = r * numCols + c
+                        val globalIndex = GridUtils.getGlobalIndex(r, c)
                         item {
                             val isTarget = buttonTargetIndex == globalIndex
                             val buttonConfig = item.buttonConfigs.getOrNull(globalIndex)

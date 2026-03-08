@@ -16,15 +16,23 @@ class MoveRowUseCase @Inject constructor(
         val rows = page.rows
         val cols = page.columns
         
+        val maxCols = com.andreas_kratzer.ghosttalk.ui.util.GridUtils.MAX_GRID_SIZE
         val newButtonConfigs = page.buttonConfigs.toMutableList()
-        val fromStart = fromRow * cols
-        val rowToMove = newButtonConfigs.subList(fromStart, fromStart + cols).toList()
         
-        // Remove the row
-        repeat(cols) { newButtonConfigs.removeAt(fromStart) }
+        // Ensure we have 49 slots
+        while (newButtonConfigs.size < com.andreas_kratzer.ghosttalk.ui.util.GridUtils.TOTAL_SLOTS) {
+            newButtonConfigs.add(null)
+        }
+
+        // Extract the 7-slot block for the source row
+        val fromStart = fromRow * maxCols
+        val rowToMove = newButtonConfigs.subList(fromStart, fromStart + maxCols).toList()
         
-        // Insert it at new position
-        val toStart = toRow * cols
+        // Remove the 7-slot block
+        repeat(maxCols) { newButtonConfigs.removeAt(fromStart) }
+        
+        // Insert it at new position in 7-slot chunks
+        val toStart = toRow * maxCols
         newButtonConfigs.addAll(toStart, rowToMove)
         
         // Reorder row names if exist

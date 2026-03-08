@@ -68,15 +68,21 @@ object GridUtils {
         sourceRows: Int? = null,
         sourceColumns: Int? = null
     ): List<ButtonConfig?> {
-        // If it's the old 36-slot size and no explicit dimensions given, it's likely a 6x6 migration
+        // If it's already 49, just return it (or take it to be safe)
+        if (configs.size == TOTAL_SLOTS && sourceColumns == null) {
+            return configs.take(TOTAL_SLOTS)
+        }
+
+        // If it's the old 36-slot size, migrate it
         if (configs.size == 36 && sourceColumns == null) {
             return migrateFrom6To7(configs)
         }
         
         val newConfigs = MutableList<ButtonConfig?>(TOTAL_SLOTS) { null }
         
-        if (sourceColumns != null && sourceRows != null) {
+        if (sourceColumns != null && sourceRows != null && configs.size != TOTAL_SLOTS) {
             // Spatially map existing buttons based on their original grid positions
+            // This is used when creating a page from a template that might NOT be 7x7 yet
             configs.forEachIndexed { index, config ->
                 if (config != null && index < sourceRows * sourceColumns) {
                     val globalIdx = localToGlobalIndex(index, sourceColumns)
@@ -86,7 +92,7 @@ object GridUtils {
                 }
             }
         } else {
-            // Fallback: linear copy if no dimensions provided
+            // Linear copy if no dimensions or already 7x7 logic
             configs.forEachIndexed { index, config ->
                 if (index < TOTAL_SLOTS) {
                     newConfigs[index] = config

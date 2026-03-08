@@ -112,19 +112,24 @@ class TemplateViewModel @Inject constructor(
         val current = templates.value.find { it.id == itemId } ?: return
         if (fromRow == toRow) return
         
-        val rows = current.rows
-        val cols = current.columns
+        val maxCols = com.andreas_kratzer.ghosttalk.ui.util.GridUtils.MAX_GRID_SIZE
         val newButtonConfigs = current.buttonConfigs.toMutableList()
-        val fromStart = fromRow * cols
-        val rowToMove = newButtonConfigs.subList(fromStart, fromStart + cols).toList()
         
-        repeat(cols) { newButtonConfigs.removeAt(fromStart) }
-        val toStart = toRow * cols
+        // Ensure 49 slots
+        while (newButtonConfigs.size < com.andreas_kratzer.ghosttalk.ui.util.GridUtils.TOTAL_SLOTS) {
+            newButtonConfigs.add(null)
+        }
+
+        val fromStart = fromRow * maxCols
+        val rowToMove = newButtonConfigs.subList(fromStart, fromStart + maxCols).toList()
+        repeat(maxCols) { newButtonConfigs.removeAt(fromStart) }
+        
+        val toStart = toRow * maxCols
         newButtonConfigs.addAll(toStart, rowToMove)
         
         val newRowNames = current.rowNames.toMutableList()
         if (newRowNames.isNotEmpty()) {
-            val name = if (fromRow < newRowNames.size) newRowNames.removeAt(fromRow) else "Row ${fromRow + 1}"
+            val name = if (fromRow < newRowNames.size) newRowNames.removeAt(fromRow) else "Zeile ${fromRow + 1}"
             if (toRow <= newRowNames.size) newRowNames.add(toRow, name) else newRowNames.add(name)
         }
         
@@ -136,10 +141,18 @@ class TemplateViewModel @Inject constructor(
         if (fromIndex == toIndex) return
         
         val newButtonConfigs = current.buttonConfigs.toMutableList()
+        // Ensure 49 slots
+        while (newButtonConfigs.size < com.andreas_kratzer.ghosttalk.ui.util.GridUtils.TOTAL_SLOTS) {
+            newButtonConfigs.add(null)
+        }
+        
         if (fromIndex !in newButtonConfigs.indices || toIndex !in newButtonConfigs.indices) return
         
-        val config = newButtonConfigs.removeAt(fromIndex)
-        newButtonConfigs.add(toIndex, config)
+        // Spatial Swap
+        val fromConfig = newButtonConfigs[fromIndex]
+        val toConfig = newButtonConfigs[toIndex]
+        newButtonConfigs[toIndex] = fromConfig
+        newButtonConfigs[fromIndex] = toConfig
         
         updateTemplate(current.copy(buttonConfigs = newButtonConfigs))
     }
