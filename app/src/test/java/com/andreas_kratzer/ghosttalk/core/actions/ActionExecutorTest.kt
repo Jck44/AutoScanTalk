@@ -22,9 +22,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
-import com.andreas_kratzer.ghosttalk.model.ControlDeviceButtonAction
-import com.andreas_kratzer.ghosttalk.model.DeviceActionType
-
 @OptIn(ExperimentalCoroutinesApi::class)
 class ActionExecutorTest {
     private val application = mockk<android.app.Application>(relaxed = true)
@@ -133,8 +130,8 @@ class ActionExecutorTest {
         actionExecutor.executeButtonAction(button2, bookId = "book1")
         runCurrent()
         
-        // Verifiziere: Aktion 2 wird ignoriert, da A1 noch spricht
-        assertTrue(events.any { it is ActionExecutor.ExecutionEvent.Log && it.message.contains("Sprachausgabe aktiv") })
+        // Verifiziere: Aktion 2 wird ignoriert, da A1 noch läuft
+        assertTrue(events.any { it is ActionExecutor.ExecutionEvent.Log && it.message.contains("läuft bereits") })
         assertTrue(actionExecutor.isExecuting.value)
 
         // Simulate A1 finishing

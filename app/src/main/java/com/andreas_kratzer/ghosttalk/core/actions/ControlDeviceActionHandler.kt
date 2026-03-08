@@ -9,6 +9,8 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.media.AudioManager
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.telephony.SmsManager
 import android.view.KeyEvent
 import com.andreas_kratzer.ghosttalk.core.services.NotificationReaderService
@@ -128,15 +130,17 @@ class ControlDeviceActionHandler(
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_ONE_SHOT
         )
 
+        val timeoutHandler = Handler(Looper.getMainLooper())
         val receiver = object : BroadcastReceiver() {
             private var isFinished = false
             override fun onReceive(arg0: Context?, arg1: Intent?) {
                 if (isFinished) return
                 isFinished = true
+                timeoutHandler.removeCallbacksAndMessages(null)
                 
                 val result = when (resultCode) {
                     Activity.RESULT_OK -> "SMS erfolgreich versendet an $phone"
-                    SmsManager.RESULT_ERROR_GENERIC_FAILURE -> "SMS-Fehler: Allgemeiner Fehler"
+                    SmsManager.RESULT_ERROR_GENERIC_FAILURE -> "SMS-Fehler: Allgemeiner Fehler (Prüfe Netzempfang/Guthaben)"
                     SmsManager.RESULT_ERROR_NO_SERVICE -> "SMS-Fehler: Kein Dienst verfügbar"
                     SmsManager.RESULT_ERROR_NULL_PDU -> "SMS-Fehler: Null PDU"
                     SmsManager.RESULT_ERROR_RADIO_OFF -> "SMS-Fehler: Funk aus / Flugmodus"
@@ -152,6 +156,15 @@ class ControlDeviceActionHandler(
             }
         }
 
+        // Timeout fallback if system never responds
+        timeoutHandler.postDelayed({
+            log("SMS-Timeout: Keine Rückmeldung vom System.")
+            try {
+                context.unregisterReceiver(receiver)
+            } catch (e: Exception) {}
+            onFinish(executionId)
+        }, 15000) // 15 seconds timeout for multipart messages
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             context.registerReceiver(receiver, IntentFilter(sentAction), Context.RECEIVER_NOT_EXPORTED)
         } else {
@@ -161,8 +174,21 @@ class ControlDeviceActionHandler(
         try {
             log("Sende SMS an $phone...")
             val smsManager = context.getSystemService(SmsManager::class.java)
-            smsManager.sendTextMessage(phone, null, message, sentPI, null)
+            val parts = smsManager.divideMessage(message)
+            
+            if (parts.size > 1) {
+                // For long messages, we only track the last part's success for logging
+                val sentIntents = ArrayList<PendingIntent>()
+                for (i in 0 until parts.size) {
+                    sentIntents.add(if (i == parts.size - 1) sentPI else 
+                        PendingIntent.getBroadcast(context, i + 1000, Intent("DUMMY"), PendingIntent.FLAG_IMMUTABLE))
+                }
+                smsManager.sendMultipartTextMessage(phone, null, parts, sentIntents, null)
+            } else {
+                smsManager.sendTextMessage(phone, null, message, sentPI, null)
+            }
         } catch (e: Exception) {
+            timeoutHandler.removeCallbacksAndMessages(null)
             log("SMS-Sendeversuch fehlgeschlagen: ${e.message}")
             try {
                 context.unregisterReceiver(receiver)

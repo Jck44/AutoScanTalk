@@ -401,13 +401,22 @@ fun MessagingFields(
             Text(contactName)
         }
 
-        // Message Text
+        // Message Text (Filtering Emojis)
         OutlinedTextField(
             value = messageText,
-            onValueChange = onMessageTextChange,
-            label = { Text("Nachricht") },
+            onValueChange = { newValue ->
+                // Filter out Emojis / Surrogate pairs / Non-BMP characters
+                val filtered = newValue.filter { char ->
+                    char.code <= 0xFFFF && !char.isSurrogate()
+                }
+                onMessageTextChange(filtered)
+            },
+            label = { Text("Nachricht (Emojis nicht unterstützt)") },
             shape = MaterialTheme.shapes.large,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            supportingText = {
+                Text("Emojis werden automatisch entfernt, um Sendefehler zu vermeiden.")
+            }
         )
     }
 

@@ -69,7 +69,7 @@ class ActionExecutor internal constructor(
         }
         
         if (_isExecuting.value) {
-            log("Aktion ignoriert (Sprachausgabe aktiv)")
+            log("Aktion ignoriert (Aktion läuft bereits)")
             return
         }
         
@@ -110,6 +110,7 @@ class ActionExecutor internal constructor(
     }
 
     private fun log(message: String) {
+        logger.d("ActionExecutor", "Log: $message")
         scope.launch { _events.emit(ExecutionEvent.Log(message)) }
     }
 
@@ -120,4 +121,3 @@ class ActionExecutor internal constructor(
         _isExecuting.value = executing
     }
 }
-
