@@ -7,7 +7,6 @@ import com.andreas_kratzer.ghosttalk.domain.tts.GetAudioDevicesUseCase
 import com.andreas_kratzer.ghosttalk.domain.tts.SetAudioDeviceUseCase
 import com.andreas_kratzer.ghosttalk.domain.tts.SetTtsLanguageUseCase
 import com.andreas_kratzer.ghosttalk.domain.tts.SetTtsVoiceUseCase
-import com.andreas_kratzer.ghosttalk.domain.tts.SetTtsVolumeUseCase
 import com.andreas_kratzer.ghosttalk.model.AudioOutputDevice
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
 import kotlinx.coroutines.CoroutineDispatcher
@@ -28,7 +27,6 @@ class TtsSettingsDelegate @Inject constructor(
     private val audioDeviceManager: AudioDeviceManager,
     private val setTtsLanguageUseCase: SetTtsLanguageUseCase,
     private val setTtsVoiceUseCase: SetTtsVoiceUseCase,
-    private val setTtsVolumeUseCase: SetTtsVolumeUseCase,
     private val setAudioDeviceUseCase: SetAudioDeviceUseCase,
     private val getAudioDevicesUseCase: GetAudioDevicesUseCase
 ) {
@@ -94,14 +92,6 @@ class TtsSettingsDelegate @Inject constructor(
 
     fun setTtsVoice(voiceName: String?) {
         setTtsVoiceUseCase(voiceName)
-    }
-
-    fun setTtsVolumeMultiplier(multiplier: Float, playFeedback: Boolean = true) {
-        setTtsVolumeUseCase.execute(multiplier, isForCues = false, playFeedback = playFeedback)
-    }
-    
-    fun setCuesVolumeMultiplier(multiplier: Float, playFeedback: Boolean = true) {
-        setTtsVolumeUseCase.execute(multiplier, isForCues = true, playFeedback = playFeedback)
     }
 
     fun setTtsAudioDevice(address: String?) {

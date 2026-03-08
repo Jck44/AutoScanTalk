@@ -46,35 +46,6 @@ fun CloudSettingsSection(viewModel: SettingsViewModel) {
 
     var expandedMode by remember { mutableStateOf(false) }
 
-    PreferenceCategory(stringResource(R.string.settings_category_google_account)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = userEmail ?: stringResource(R.string.settings_google_account_status_not_signed_in),
-                modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.bodyMedium
-            )
-            if (userEmail == null) {
-                Button(
-                    onClick = { viewModel.signIn(context) },
-                    shape = MaterialTheme.shapes.medium
-                ) {
-                    Text(stringResource(R.string.settings_google_account_sign_in))
-                }
-            } else {
-                OutlinedButton(
-                    onClick = { viewModel.signOut() },
-                    shape = MaterialTheme.shapes.medium
-                ) {
-                    Text(stringResource(R.string.settings_google_account_sign_out))
-                }
-            }
-        }
-    }
-
     PreferenceCategory(stringResource(R.string.settings_category_cloud)) {
         SettingsToggleItem(stringResource(R.string.settings_cloud_sync_enabled), isEnabled) { viewModel.setCloudSyncEnabled(context, it) }
         

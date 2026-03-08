@@ -5,14 +5,16 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.andreas_kratzer.ghosttalk.core.SecurityManager
 import com.andreas_kratzer.ghosttalk.data.PageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.ui.books.BookListScreen
 import com.andreas_kratzer.ghosttalk.ui.books.BookViewModel
-import com.andreas_kratzer.ghosttalk.ui.components.PinEntryDialog
+import com.andreas_kratzer.ghosttalk.ui.components.SecurityEntryDialog
 import com.andreas_kratzer.ghosttalk.ui.pages.PageEditorScreen
 import com.andreas_kratzer.ghosttalk.ui.pages.PageListScreen
 import com.andreas_kratzer.ghosttalk.ui.pages.PageScreen
@@ -43,7 +45,13 @@ fun GhosTTalkNavHost(
     var pinErrorMessage by remember { mutableStateOf<String?>(null) }
 
     val navigateWithSecurity: (String) -> Unit = { route ->
-        if (!isUnlocked && securityManager.isPinSet()) {
+        val isProtected = when {
+            route.startsWith("settings") -> securityManager.isSecurityRequiredForSettings()
+            route == "content_management" -> securityManager.isPinSet() // Always protect content management if PIN is set
+            else -> false
+        }
+        
+        if (!isUnlocked && isProtected) {
             pendingRoute = route
         } else {
             navController.navigate(route)
@@ -51,22 +59,21 @@ fun GhosTTalkNavHost(
     }
 
     if (pendingRoute != null) {
-        PinEntryDialog(
+        SecurityEntryDialog(
             onDismiss = { 
                 pendingRoute = null
-                pinErrorMessage = null
             },
-            onConfirm = { pin ->
-                if (securityManager.unlock(pin)) {
+            onConfirm = { success ->
+                if (success) {
                     val route = pendingRoute!!
                     pendingRoute = null
-                    pinErrorMessage = null
                     navController.navigate(route)
                 } else {
-                    pinErrorMessage = "Falscher PIN"
+                    pendingRoute = null
                 }
             },
-            errorMessage = pinErrorMessage
+            securityManager = securityManager,
+            isBiometricEnabled = settingsRepository.isBiometricEnabled
         )
     }
 
@@ -89,12 +96,14 @@ fun GhosTTalkNavHost(
             BookListScreen(
                 bookViewModel = bookViewModel,
                 securityManager = securityManager,
+                settingsRepository = settingsRepository,
                 onBookSelected = { selectedBookId ->
                     pageViewModel.setActiveBookId(selectedBookId)
                     settingsRepository.activeBookId = selectedBookId
                     settingsViewModel.refresh()
                     navController.navigate("start")
-                }
+                },
+                onNavigateToGlobalSettings = { navigateWithSecurity("settings?isGlobal=true") }
             )
         }
         composable("start") {
@@ -116,9 +125,10 @@ fun GhosTTalkNavHost(
                         }
                     }
                 },
-                onNavigateToSettings = { navigateWithSecurity("settings") },
+                onNavigateToSettings = { navigateWithSecurity("settings?isGlobal=false") },
                 onNavigateToContentManagement = { navigateWithSecurity("content_management") },
-                onNavigateToBooks = { navController.navigate("book_list") }
+                onNavigateToBooks = { navController.navigate("book_list") },
+                onNavigateToGlobalSettings = { navigateWithSecurity("settings?isGlobal=true") }
             )
         }
         composable("content_management") {
@@ -134,9 +144,17 @@ fun GhosTTalkNavHost(
                 modifier = Modifier.fillMaxSize()
             )
         }
-        composable("settings") {
+        composable(
+            "settings?isGlobal={isGlobal}",
+            arguments = listOf(navArgument("isGlobal") { 
+                type = NavType.BoolType
+                defaultValue = false
+            })
+        ) { backStackEntry ->
+            val isGlobal = backStackEntry.arguments?.getBoolean("isGlobal") ?: false
             SettingsScreen(
                 viewModel = settingsViewModel,
+                isGlobal = isGlobal,
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToStart = {
                     navController.navigate("start") {

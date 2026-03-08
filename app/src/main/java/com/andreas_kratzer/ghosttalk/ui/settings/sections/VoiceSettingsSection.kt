@@ -27,13 +27,11 @@ import com.andreas_kratzer.ghosttalk.util.VoiceUtils
 import java.util.Locale
 
 @Composable
-fun VoiceSettingsSection(viewModel: SettingsViewModel) {
+fun VoiceSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
     val selectedLanguage by viewModel.selectedLanguageTag.collectAsState("default")
     val availableLanguages by viewModel.availableLanguages.collectAsState()
     val selectedVoiceName by viewModel.selectedVoiceName.collectAsState(null)
     val availableVoices by viewModel.availableVoices.collectAsState()
-    val ttsVolume by viewModel.ttsVolumeMultiplier.collectAsState(1.0f)
-    val cuesVolume by viewModel.cuesVolumeMultiplier.collectAsState(1.0f)
     val availableAudioDevices by viewModel.availableAudioDevices.collectAsState()
     val selectedTtsAddress by viewModel.selectedTtsAudioDeviceAddress.collectAsState(null)
     val selectedCuesAddress by viewModel.selectedCuesAudioDeviceAddress.collectAsState(null)
@@ -51,160 +49,145 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel) {
         }
     }
 
-    PreferenceCategory(stringResource(R.string.settings_category_voice)) {
-        // Language Select
-        Box(modifier = Modifier.fillMaxWidth()) {
-            val label = if (selectedLanguage == "default" || selectedLanguage.isNullOrEmpty()) {
-                "${stringResource(R.string.settings_system_default)} (${Locale.getDefault().displayName})"
-            } else Locale.forLanguageTag(selectedLanguage!!).displayName
-            
-            SettingsClickableItem(
-                label = stringResource(R.string.settings_tts_language),
-                value = label,
-                onClick = { expandedLanguage = true }
-            )
-            DropdownMenu(expanded = expandedLanguage, onDismissRequest = { expandedLanguage = false }) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.settings_system_default), style = MaterialTheme.typography.bodyLarge) }, 
-                    onClick = {
-                        viewModel.setTtsLanguage("default")
-                        expandedLanguage = false
-                    }
+    if (!isGlobal) {
+        PreferenceCategory(stringResource(R.string.settings_category_voice)) {
+            // Language Select
+            Box(modifier = Modifier.fillMaxWidth()) {
+                val label = if (selectedLanguage == "default" || selectedLanguage.isNullOrEmpty()) {
+                    "${stringResource(R.string.settings_system_default)} (${Locale.getDefault().displayName})"
+                } else Locale.forLanguageTag(selectedLanguage!!).displayName
+                
+                SettingsClickableItem(
+                    label = stringResource(R.string.settings_tts_language),
+                    value = label,
+                    onClick = { expandedLanguage = true }
                 )
-                availableLanguages.forEach { locale ->
+                DropdownMenu(expanded = expandedLanguage, onDismissRequest = { expandedLanguage = false }) {
                     DropdownMenuItem(
-                        text = { Text(locale.displayName, style = MaterialTheme.typography.bodyLarge) }, 
+                        text = { Text(stringResource(R.string.settings_system_default), style = MaterialTheme.typography.bodyLarge) }, 
                         onClick = {
-                            viewModel.setTtsLanguage(locale.toLanguageTag())
+                            viewModel.setTtsLanguage("default")
                             expandedLanguage = false
                         }
                     )
+                    availableLanguages.forEach { locale ->
+                        DropdownMenuItem(
+                            text = { Text(locale.displayName, style = MaterialTheme.typography.bodyLarge) }, 
+                            onClick = {
+                                viewModel.setTtsLanguage(locale.toLanguageTag())
+                                expandedLanguage = false
+                            }
+                        )
+                    }
                 }
             }
-        }
 
-        // Voice Select
-        Box(modifier = Modifier.fillMaxWidth()) {
-            val voiceLabel = if (selectedVoiceName.isNullOrEmpty()) {
-                stringResource(R.string.settings_voice_default)
-            } else VoiceUtils.formatVoiceName(selectedVoiceName!!)
-            
-            SettingsClickableItem(
-                label = stringResource(R.string.settings_select_voice),
-                value = voiceLabel,
-                onClick = { expandedVoice = true }
-            )
-            DropdownMenu(expanded = expandedVoice, onDismissRequest = { expandedVoice = false }) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.settings_voice_default), style = MaterialTheme.typography.bodyLarge) }, 
-                    onClick = {
-                        viewModel.setTtsVoice(null)
-                        expandedVoice = false
-                    }
-                )
-                availableVoices.forEach { voice ->
-                    val hint = if (voice.isNetworkConnectionRequired) {
-                        stringResource(R.string.settings_voice_network_hint)
+            // Voice Select
+            Box(modifier = Modifier.fillMaxWidth()) {
+                val context = androidx.compose.ui.platform.LocalContext.current
+                val voiceLabel = if (selectedVoiceName.isNullOrEmpty()) {
+                    stringResource(R.string.settings_voice_default)
+                } else {
+                    // Try to find the actual Voice object to get better formatting
+                    val currentVoice = availableVoices.find { it.name == selectedVoiceName }
+                    if (currentVoice != null) {
+                        VoiceUtils.formatVoiceDisplay(context, currentVoice, availableVoices.indexOf(currentVoice))
                     } else {
-                        stringResource(R.string.settings_voice_local_hint)
+                        VoiceUtils.formatVoiceName(selectedVoiceName!!)
                     }
+                }
+                
+                SettingsClickableItem(
+                    label = stringResource(R.string.settings_select_voice),
+                    value = voiceLabel,
+                    onClick = { expandedVoice = true }
+                )
+                DropdownMenu(expanded = expandedVoice, onDismissRequest = { expandedVoice = false }) {
                     DropdownMenuItem(
-                        text = { Text(VoiceUtils.formatVoiceName(voice.name) + hint, style = MaterialTheme.typography.bodyLarge) },
+                        text = { Text(stringResource(R.string.settings_voice_default), style = MaterialTheme.typography.bodyLarge) }, 
                         onClick = {
-                            viewModel.setTtsVoice(voice.name)
+                            viewModel.setTtsVoice(null)
                             expandedVoice = false
                         }
                     )
+                    availableVoices.forEachIndexed { index, voice ->
+                        DropdownMenuItem(
+                            text = { 
+                                Text(
+                                    text = VoiceUtils.formatVoiceDisplay(context, voice, index),
+                                    style = MaterialTheme.typography.bodyLarge
+                                ) 
+                            },
+                            onClick = {
+                                viewModel.setTtsVoice(voice.name)
+                                expandedVoice = false
+                            }
+                        )
+                    }
                 }
             }
-        }
 
-        // TTS Audio Device Select
-        Box(modifier = Modifier.fillMaxWidth()) {
-            SettingsClickableItem(
-                label = stringResource(R.string.settings_audio_tts),
-                value = viewModel.getResolvedDeviceName(selectedTtsAddress),
-                onClick = { expandedTtsDevice = true }
-            )
-            DropdownMenu(expanded = expandedTtsDevice, onDismissRequest = { expandedTtsDevice = false }) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.settings_audio_default), style = MaterialTheme.typography.bodyLarge) }, 
-                    onClick = {
-                        viewModel.setTtsAudioDevice(null)
-                        expandedTtsDevice = false
-                    }
+            // (Sliders removed)
+        }
+    }
+
+    if (isGlobal) {
+        PreferenceCategory(stringResource(R.string.settings_category_audio_hardware)) {
+            // TTS Audio Device Select
+            Box(modifier = Modifier.fillMaxWidth()) {
+                SettingsClickableItem(
+                    label = stringResource(R.string.settings_audio_tts),
+                    value = viewModel.getResolvedDeviceName(selectedTtsAddress),
+                    onClick = { expandedTtsDevice = true }
                 )
-                availableAudioDevices.forEach { device ->
+                DropdownMenu(expanded = expandedTtsDevice, onDismissRequest = { expandedTtsDevice = false }) {
                     DropdownMenuItem(
-                        text = { Text(device.name, style = MaterialTheme.typography.bodyLarge) }, 
+                        text = { Text(stringResource(R.string.settings_audio_default), style = MaterialTheme.typography.bodyLarge) }, 
                         onClick = {
-                            viewModel.setTtsAudioDevice(device.address)
+                            viewModel.setTtsAudioDevice(null)
                             expandedTtsDevice = false
                         }
                     )
+                    availableAudioDevices.forEach { device ->
+                        DropdownMenuItem(
+                            text = { Text(device.name, style = MaterialTheme.typography.bodyLarge) }, 
+                            onClick = {
+                                viewModel.setTtsAudioDevice(device.address)
+                                expandedTtsDevice = false
+                            }
+                        )
+                    }
                 }
             }
-        }
 
-        // Cues Audio Device Select
-        Box(modifier = Modifier.fillMaxWidth()) {
-            SettingsClickableItem(
-                label = stringResource(R.string.settings_audio_cues),
-                value = viewModel.getResolvedDeviceName(selectedCuesAddress),
-                onClick = { expandedCuesDevice = true }
-            )
-            DropdownMenu(expanded = expandedCuesDevice, onDismissRequest = { expandedCuesDevice = false }) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.settings_audio_default), style = MaterialTheme.typography.bodyLarge) }, 
-                    onClick = {
-                        viewModel.setCuesAudioDevice(null)
-                        expandedCuesDevice = false
-                    }
+            // Cues Audio Device Select
+            Box(modifier = Modifier.fillMaxWidth()) {
+                SettingsClickableItem(
+                    label = stringResource(R.string.settings_audio_cues),
+                    value = viewModel.getResolvedDeviceName(selectedCuesAddress),
+                    onClick = { expandedCuesDevice = true }
                 )
-                availableAudioDevices.forEach { device ->
+                DropdownMenu(expanded = expandedCuesDevice, onDismissRequest = { expandedCuesDevice = false }) {
                     DropdownMenuItem(
-                        text = { Text(device.name, style = MaterialTheme.typography.bodyLarge) }, 
+                        text = { Text(stringResource(R.string.settings_audio_default), style = MaterialTheme.typography.bodyLarge) }, 
                         onClick = {
-                            viewModel.setCuesAudioDevice(device.address)
+                            viewModel.setCuesAudioDevice(null)
                             expandedCuesDevice = false
                         }
                     )
+                    availableAudioDevices.forEach { device ->
+                        DropdownMenuItem(
+                            text = { Text(device.name, style = MaterialTheme.typography.bodyLarge) }, 
+                            onClick = {
+                                viewModel.setCuesAudioDevice(device.address)
+                                expandedCuesDevice = false
+                            }
+                        )
+                    }
                 }
             }
         }
-
-        // Sliders
-        VolumeSlider(
-            label = stringResource(R.string.settings_tts_volume, (ttsVolume * 100).toInt()),
-            value = ttsVolume,
-            onValueChange = { viewModel.setTtsVolumeMultiplier(it, playFeedback = false) },
-            onValueChangeFinished = { viewModel.setTtsVolumeMultiplier(ttsVolume, playFeedback = true) }
-        )
-        VolumeSlider(
-            label = stringResource(R.string.settings_cues_volume, (cuesVolume * 100).toInt()),
-            value = cuesVolume,
-            onValueChange = { viewModel.setCuesVolumeMultiplier(it, playFeedback = false) },
-            onValueChangeFinished = { viewModel.setCuesVolumeMultiplier(cuesVolume, playFeedback = true) }
-        )
     }
 }
 
-@Composable
-private fun VolumeSlider(
-    label: String,
-    value: Float,
-    onValueChange: (Float) -> Unit,
-    onValueChangeFinished: () -> Unit
-) {
-    val dimensions = LocalDimensions.current
-    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = dimensions.paddingMedium)) {
-        Text(text = label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-        Slider(
-            value = value,
-            onValueChange = onValueChange,
-            onValueChangeFinished = onValueChangeFinished,
-            valueRange = 0f..1f,
-            steps = 9
-        )
-    }
-}
+// VolumeSlider removed

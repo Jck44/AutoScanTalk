@@ -24,7 +24,7 @@ import com.andreas_kratzer.ghosttalk.ui.settings.SettingsToggleItem
 import com.andreas_kratzer.ghosttalk.ui.settings.SettingsViewModel
 
 @Composable
-fun ScanningSettingsSection(viewModel: SettingsViewModel) {
+fun ScanningSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
     val autoStart by viewModel.autoStartScanning.collectAsState(true)
     val scanDelay by viewModel.scanDelayMillis.collectAsState(1000L)
     val resumeFromStart by viewModel.resumeScanningFromStart.collectAsState(true)
@@ -42,7 +42,17 @@ fun ScanningSettingsSection(viewModel: SettingsViewModel) {
             onValueChange = { viewModel.setScanDelayInput(it) }
         )
         SettingsToggleItem(stringResource(R.string.settings_restart_scan), resumeFromStart) { viewModel.setResumeScanningFromStart(it) }
-        
+    }
+
+    PreferenceCategory(stringResource(R.string.settings_category_hardware)) {
+        val switchKey by viewModel.switchActivationKey.collectAsState("Space")
+        SettingsEditTextItem(
+            label = stringResource(R.string.settings_switch_key), 
+            value = switchKey,
+            onValueChange = { viewModel.setSwitchActivationKey(it) },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
+        )
+
         Box(modifier = Modifier.fillMaxWidth()) {
             val patternLabel = when (scanPattern) {
                 "linear" -> stringResource(R.string.settings_pattern_linear)
@@ -61,16 +71,6 @@ fun ScanningSettingsSection(viewModel: SettingsViewModel) {
                 )
             }
         }
-    }
-
-    PreferenceCategory(stringResource(R.string.settings_category_hardware)) {
-        val switchKey by viewModel.switchActivationKey.collectAsState("Space")
-        SettingsEditTextItem(
-            label = stringResource(R.string.settings_switch_key), 
-            value = switchKey,
-            onValueChange = { viewModel.setSwitchActivationKey(it) },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
-        )
     }
 
     PreferenceCategory(stringResource(R.string.settings_category_advanced)) {

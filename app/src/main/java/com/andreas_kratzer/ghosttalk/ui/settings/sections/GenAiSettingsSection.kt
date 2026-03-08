@@ -26,7 +26,7 @@ import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun GenAiSettingsSection(viewModel: SettingsViewModel) {
+fun GenAiSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
     val isEnabled by viewModel.isGeminiEnabled.collectAsState(false)
     val useLocal by viewModel.useLocalGenerativeAi.collectAsState(false)
     val toolStatus by viewModel.geminiToolStatus.collectAsState(emptyMap())
@@ -74,6 +74,12 @@ fun GenAiSettingsSection(viewModel: SettingsViewModel) {
         )
 
         if (useLocal) {
+            SettingsEditTextItem(
+                label = "Gemini Timeout (ms)",
+                value = geminiTimeout.toString(),
+                onValueChange = { newValue -> viewModel.setGeminiTimeoutInput(newValue) }
+            )
+            
             Spacer(modifier = Modifier.height(dimensions.paddingMedium))
             
             SettingsToggleItem(
@@ -86,12 +92,6 @@ fun GenAiSettingsSection(viewModel: SettingsViewModel) {
                 label = stringResource(R.string.settings_gemini_redo_prediction),
                 checked = redoPrediction,
                 onCheckedChange = { viewModel.setGeminiRedoPrediction(it) }
-            )
-
-            SettingsEditTextItem(
-                label = "Gemini Timeout (ms)",
-                value = geminiTimeout.toString(),
-                onValueChange = { newValue -> viewModel.setGeminiTimeoutInput(newValue) }
             )
         }
 

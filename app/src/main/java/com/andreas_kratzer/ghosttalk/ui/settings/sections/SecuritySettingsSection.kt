@@ -20,6 +20,12 @@ fun SecuritySettingsSection(
     onSecurityPinTimeoutChange: (Long) -> Unit,
     isPinRequiredForDeletion: Boolean,
     onPinRequiredForDeletionChange: (Boolean) -> Unit,
+    isBiometricEnabled: Boolean,
+    onBiometricEnabledChange: (Boolean) -> Unit,
+    isSecurityRequiredForEdit: Boolean,
+    onSecurityRequiredForEditChange: (Boolean) -> Unit,
+    isSecurityRequiredForSettings: Boolean,
+    onSecurityRequiredForSettingsChange: (Boolean) -> Unit,
     onLockClicked: () -> Unit
 ) {
     var showPinDialog by remember { mutableStateOf(false) }
@@ -71,6 +77,22 @@ fun SecuritySettingsSection(
             )
         }
 
+        val hasPin = !securityPin.isNullOrEmpty()
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(stringResource(R.string.settings_security_biometric_enabled), modifier = Modifier.weight(1f))
+            Switch(
+                checked = isBiometricEnabled,
+                onCheckedChange = onBiometricEnabledChange,
+                enabled = hasPin
+            )
+        }
+
         Spacer(modifier = Modifier.height(16.dp))
 
         Row(
@@ -100,11 +122,39 @@ fun SecuritySettingsSection(
             Switch(
                 checked = isPinRequiredForDeletion,
                 onCheckedChange = onPinRequiredForDeletionChange,
-                enabled = !securityPin.isNullOrEmpty()
+                enabled = hasPin
             )
         }
 
-        if (!securityPin.isNullOrEmpty()) {
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(stringResource(R.string.settings_security_require_for_edit), modifier = Modifier.weight(1f))
+            Switch(
+                checked = isSecurityRequiredForEdit,
+                onCheckedChange = onSecurityRequiredForEditChange,
+                enabled = hasPin
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(stringResource(R.string.settings_security_require_for_settings), modifier = Modifier.weight(1f))
+            Switch(
+                checked = isSecurityRequiredForSettings,
+                onCheckedChange = onSecurityRequiredForSettingsChange,
+                enabled = hasPin
+            )
+        }
+
+        if (hasPin) {
             Spacer(modifier = Modifier.height(16.dp))
             Button(
                 onClick = onLockClicked,

@@ -182,7 +182,7 @@ class SettingsRepositoryTest {
         repository.actionLogsStorage = "temp-storage"
         repository.actionLogsStorage = null
 
-        assertNull(mockedPrefsStore["book-default_action_logs_storage"])
+        assertNull(mockedPrefsStore["action_logs_storage"])
         assertNull(repository.actionLogsStorage)
         assertNull(repository.actionLogsStorageFlow.first())
     }
@@ -198,7 +198,7 @@ class SettingsRepositoryTest {
     fun persistActionLogs_savesAndEmitsValue() = runBlocking {
         repository.persistActionLogs = true
 
-        assertEquals("true", mockedPrefsStore["book-default_persist_action_logs"])
+        assertEquals("true", mockedPrefsStore["persist_action_logs"])
         assertEquals(true, repository.persistActionLogs)
         assertEquals(true, repository.persistActionLogsFlow.first())
     }
@@ -214,7 +214,7 @@ class SettingsRepositoryTest {
         val testStorage = "[\"action1\"]"
         repository.actionLogsStorage = testStorage
 
-        assertEquals(testStorage, mockedPrefsStore["book-default_action_logs_storage"])
+        assertEquals(testStorage, mockedPrefsStore["action_logs_storage"])
         assertEquals(testStorage, repository.actionLogsStorage)
         assertEquals(testStorage, repository.actionLogsStorageFlow.first())
     }
@@ -276,7 +276,8 @@ class SettingsRepositoryTest {
     fun syncMode_savesAndEmitsValue() = runBlocking {
         val testMode = "BACKUP_ONLY"
         repository.syncMode = testMode
-
+        
+        assertEquals(testMode, mockedPrefsStore["book-default_sync_mode"])
         assertEquals(testMode, repository.syncMode)
     }
 
@@ -292,16 +293,15 @@ class SettingsRepositoryTest {
         val testTheme = "DARK"
         repository.themeMode = testTheme
 
-        assertEquals(testTheme, mockedPrefsStore["book-default_theme_mode"])
+        assertEquals(testTheme, mockedPrefsStore["theme_mode"])
         assertEquals(testTheme, repository.themeMode)
         assertEquals(testTheme, repository.themeModeFlow.first())
     }
 
     @Test
-    fun holdingTimeMillis_initializes250() = runBlocking {
-        every { mockPrefs.getLong("holding_time_millis", 250L) } returns 250L
-        assertEquals(250L, repository.holdingTimeMillis)
-        assertEquals(250L, repository.holdingTimeMillisFlow.first())
+    fun holdingTimeMillis_savesAndEmitsValue() = runBlocking {
+        repository.holdingTimeMillis = 500L
+        assertEquals("500", mockedPrefsStore["book-default_holding_time_millis"])
     }
 
     @Test
@@ -316,6 +316,12 @@ class SettingsRepositoryTest {
         every { mockPrefs.getBoolean("use_local_generative_ai", true) } returns true
         assertEquals(true, repository.useLocalGenerativeAi)
         assertEquals(true, repository.useLocalGenerativeAiFlow.first())
+    }
+
+    @Test
+    fun useLocalGenerativeAi_savesAndEmitsValue() = runBlocking {
+        repository.useLocalGenerativeAi = false
+        assertEquals("false", mockedPrefsStore["book-default_use_local_generative_ai"])
     }
 
     @Test

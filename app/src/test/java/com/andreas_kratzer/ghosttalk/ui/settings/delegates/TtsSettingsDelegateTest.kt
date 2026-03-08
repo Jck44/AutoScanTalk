@@ -6,7 +6,6 @@ import com.andreas_kratzer.ghosttalk.domain.tts.GetAudioDevicesUseCase
 import com.andreas_kratzer.ghosttalk.domain.tts.SetAudioDeviceUseCase
 import com.andreas_kratzer.ghosttalk.domain.tts.SetTtsLanguageUseCase
 import com.andreas_kratzer.ghosttalk.domain.tts.SetTtsVoiceUseCase
-import com.andreas_kratzer.ghosttalk.domain.tts.SetTtsVolumeUseCase
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
 import io.mockk.every
 import io.mockk.mockk
@@ -28,7 +27,6 @@ class TtsSettingsDelegateTest {
     private lateinit var audioDeviceManager: AudioDeviceManager
     private lateinit var setTtsLanguageUseCase: SetTtsLanguageUseCase
     private lateinit var setTtsVoiceUseCase: SetTtsVoiceUseCase
-    private lateinit var setTtsVolumeUseCase: SetTtsVolumeUseCase
     private lateinit var setAudioDeviceUseCase: SetAudioDeviceUseCase
     private lateinit var getAudioDevicesUseCase: GetAudioDevicesUseCase
     private lateinit var delegate: TtsSettingsDelegate
@@ -42,7 +40,6 @@ class TtsSettingsDelegateTest {
         }
         setTtsLanguageUseCase = mockk(relaxed = true)
         setTtsVoiceUseCase = mockk(relaxed = true)
-        setTtsVolumeUseCase = mockk(relaxed = true)
         setAudioDeviceUseCase = mockk(relaxed = true)
         getAudioDevicesUseCase = mockk(relaxed = true)
 
@@ -52,7 +49,6 @@ class TtsSettingsDelegateTest {
             audioDeviceManager,
             setTtsLanguageUseCase,
             setTtsVoiceUseCase,
-            setTtsVolumeUseCase,
             setAudioDeviceUseCase,
             getAudioDevicesUseCase
         )
@@ -84,17 +80,5 @@ class TtsSettingsDelegateTest {
         delegate.setTtsLanguage("de-DE")
         verify { setTtsLanguageUseCase.invoke("de-DE") }
         verify { ttsHelper.getAvailableVoices(any()) } 
-    }
-
-    @Test
-    fun `setTtsVolumeMultiplier calls use case for tts`() {
-        delegate.setTtsVolumeMultiplier(0.8f)
-        verify { setTtsVolumeUseCase.execute(0.8f, isForCues = false, playFeedback = true) }
-    }
-
-    @Test
-    fun `setCuesVolumeMultiplier calls use case for cues`() {
-        delegate.setCuesVolumeMultiplier(0.5f)
-        verify { setTtsVolumeUseCase.execute(0.5f, isForCues = true, playFeedback = true) }
     }
 }

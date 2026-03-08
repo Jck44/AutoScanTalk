@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -39,8 +40,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.SecurityManager
+import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.model.Book
 import com.andreas_kratzer.ghosttalk.ui.components.AppBrandHeader
+import com.andreas_kratzer.ghosttalk.ui.components.SecurityEntryDialog
 import com.andreas_kratzer.ghosttalk.ui.components.GhostTalkCard
 import com.andreas_kratzer.ghosttalk.ui.components.PinEntryDialog
 import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
@@ -53,15 +56,18 @@ import java.util.Locale
 fun BookListScreen(
     bookViewModel: BookViewModel,
     securityManager: SecurityManager,
-    onBookSelected: (String) -> Unit
+    settingsRepository: SettingsRepository,
+    onBookSelected: (String) -> Unit,
+    onNavigateToGlobalSettings: () -> Unit
 ) {
     val allBooks by bookViewModel.allBooks.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
-    var bookToEdit by remember { mutableStateOf<Book?>(null) }
     var bookToDelete by remember { mutableStateOf<Book?>(null) }
+    var bookToEdit by remember { mutableStateOf<Book?>(null) }
     
-    var showPinDialogForDelete by remember { mutableStateOf(false) }
-    var pinErrorMessage by remember { mutableStateOf<String?>(null) }
+    var showSecurityDialogForDelete by remember { mutableStateOf(false) }
+    var showSecurityDialogForEdit by remember { mutableStateOf(false) }
+    val isUnlocked by securityManager.isUnlocked.collectAsState()
     
     val dimensions = LocalDimensions.current
 
@@ -73,6 +79,14 @@ fun BookListScreen(
                         isLandscape = true, // Smaller version for TopAppBar
                         modifier = Modifier.fillMaxWidth()
                     )
+                },
+                actions = {
+                    IconButton(onClick = onNavigateToGlobalSettings) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = stringResource(R.string.settings_title)
+                        )
+                    }
                 }
             )
         },
@@ -104,7 +118,15 @@ fun BookListScreen(
                     onClick = { onBookSelected(book.id) },
                     trailingAction = {
                         Row {
-                            IconButton(onClick = { bookToEdit = book }) {
+                            IconButton(
+                                onClick = { 
+                                    if (!isUnlocked && securityManager.isSecurityRequiredForEdit()) {
+                                        showSecurityDialogForEdit = true
+                                    } else {
+                                        bookToEdit = book
+                                    }
+                                }
+                            ) {
                                 Icon(
                                     imageVector = Icons.Default.Edit,
                                     contentDescription = stringResource(R.string.book_rename_description),
@@ -113,9 +135,9 @@ fun BookListScreen(
                             }
                             IconButton(
                                 onClick = { 
-                                    if (!securityManager.isBookUnlocked(book.id) && securityManager.isPinSet(book.id) && securityManager.isPinRequiredForDeletion(book.id)) {
+                                    if (!isUnlocked && securityManager.isSecurityRequiredForDeletion()) {
                                         bookToDelete = book
-                                        showPinDialogForDelete = true
+                                        showSecurityDialogForDelete = true
                                     } else {
                                         bookToDelete = book 
                                     }
@@ -133,23 +155,43 @@ fun BookListScreen(
             }
         }
 
-        if (showPinDialogForDelete) {
-            PinEntryDialog(
+        if (showSecurityDialogForDelete) {
+            SecurityEntryDialog(
                 onDismiss = { 
-                    showPinDialogForDelete = false
+                    showSecurityDialogForDelete = false
                     bookToDelete = null
-                    pinErrorMessage = null
                 },
-                onConfirm = { pin ->
-                    if (securityManager.unlock(pin, bookToDelete?.id)) {
-                        showPinDialogForDelete = false
-                        pinErrorMessage = null
-                        // bookToDelete is already set, the delete confirmation dialog will show
+                onConfirm = { success ->
+                    if (success) {
+                        showSecurityDialogForDelete = false
+                        // The confirmation dialog for deletion will now show because bookToDelete is set
                     } else {
-                        pinErrorMessage = "Falscher PIN"
+                        bookToDelete = null
+                        showSecurityDialogForDelete = false
                     }
                 },
-                errorMessage = pinErrorMessage
+                securityManager = securityManager,
+                isBiometricEnabled = settingsRepository.isBiometricEnabled
+            )
+        }
+
+        if (showSecurityDialogForEdit) {
+            SecurityEntryDialog(
+                onDismiss = { 
+                    showSecurityDialogForEdit = false
+                    bookToEdit = null
+                },
+                onConfirm = { success ->
+                    if (success) {
+                        showSecurityDialogForEdit = false
+                        // bookToEdit is already set from the IconButton click
+                    } else {
+                        bookToEdit = null
+                        showSecurityDialogForEdit = false
+                    }
+                },
+                securityManager = securityManager,
+                isBiometricEnabled = settingsRepository.isBiometricEnabled
             )
         }
 
@@ -267,7 +309,7 @@ fun BookListScreen(
 
         bookToDelete?.let { book ->
             // Only show delete confirmation if not currently showing PIN dialog
-            if (!showPinDialogForDelete) {
+            if (!showSecurityDialogForDelete) {
                 AlertDialog(
                     onDismissRequest = { bookToDelete = null },
                     title = { Text(stringResource(R.string.book_dialog_delete_title)) },

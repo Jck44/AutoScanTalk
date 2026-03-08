@@ -42,7 +42,8 @@
     <string name="settings_category_audio">Audio Output</string>
     <string name="settings_audio_tts">Output: Speak Out Loud</string>
     <string name="settings_audio_cues">Output: Feedback</string>
-    <string name="settings_audio_default">System Default (Automatic)</string>
+    <string name="settings_audio_default">System-Default (Automatic)</string>
+    <string name="settings_category_audio_hardware">Audio Hardware</string>
 
     <string name="settings_category_scanning">Scanning &amp; Operation</string>
     <string name="settings_auto_scan">Auto-Scan on Start</string>

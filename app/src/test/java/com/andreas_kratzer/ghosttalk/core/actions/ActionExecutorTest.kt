@@ -38,8 +38,6 @@ class ActionExecutorTest {
     fun setup() {
         // Mock SettingsRepository values
         every { settingsRepository.holdingTimeMillis } returns 1000L
-        every { settingsRepository.ttsVolumeMultiplier } returns 1.0f
-        every { settingsRepository.cuesVolumeMultiplier } returns 1.0f
         every { ttsHelper.isReady } returns true
     }
 

@@ -64,15 +64,15 @@ import com.andreas_kratzer.ghosttalk.ui.settings.sections.TestSettingsSection
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.VoiceSettingsSection
 import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 
-enum class SettingsSection(val titleRes: Int, val icon: ImageVector) {
-    GENERAL(R.string.settings_category_general, Icons.Default.Settings),
-    VOICE(R.string.settings_category_voice, GhosTTalkIcons.RecordVoiceOver),
-    SCANNING(R.string.settings_category_scanning, GhosTTalkIcons.SettingsAccessibility),
-    SECURITY(R.string.settings_category_security, GhosTTalkIcons.Security),
-    CLOUD(R.string.settings_category_cloud, GhosTTalkIcons.Cloud),
-    GEMINI(R.string.settings_category_gemini, GhosTTalkIcons.AutoAwesome),
-    NOTIFICATIONS(R.string.settings_category_notifications, GhosTTalkIcons.Notifications),
-    ADVANCED(R.string.settings_category_advanced, GhosTTalkIcons.Science)
+enum class SettingsSection(val titleRes: Int, val icon: ImageVector, val isGlobal: Boolean, val isScoped: Boolean) {
+    GENERAL(R.string.settings_category_general, Icons.Default.Settings, isGlobal = true, isScoped = true),
+    VOICE(R.string.settings_category_voice, GhosTTalkIcons.RecordVoiceOver, isGlobal = true, isScoped = true),
+    SCANNING(R.string.settings_category_scanning, GhosTTalkIcons.SettingsAccessibility, isGlobal = false, isScoped = true),
+    SECURITY(R.string.settings_category_security, GhosTTalkIcons.Security, isGlobal = true, isScoped = false),
+    CLOUD(R.string.settings_category_cloud, GhosTTalkIcons.Cloud, isGlobal = false, isScoped = true),
+    GEMINI(R.string.settings_category_gemini, GhosTTalkIcons.AutoAwesome, isGlobal = false, isScoped = true),
+    NOTIFICATIONS(R.string.settings_category_notifications, GhosTTalkIcons.Notifications, isGlobal = true, isScoped = false),
+    ADVANCED(R.string.settings_category_advanced, GhosTTalkIcons.Science, isGlobal = true, isScoped = true)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -80,6 +80,7 @@ enum class SettingsSection(val titleRes: Int, val icon: ImageVector) {
 fun SettingsScreen(
     onNavigateBack: () -> Unit,
     onNavigateToStart: () -> Unit = {},
+    isGlobal: Boolean = false,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
@@ -140,7 +141,10 @@ fun SettingsScreen(
         ) {
             if (selectedSection == null) {
                 // Main Menu
-                SettingsMainMenuList(onSectionSelect = { selectedSection = it })
+                SettingsMainMenuList(
+                    isGlobal = isGlobal,
+                    onSectionSelect = { selectedSection = it }
+                )
                 
                 Spacer(modifier = Modifier.height(dimensions.paddingDoubleExtraLarge))
                 VersionInfo()
@@ -149,6 +153,7 @@ fun SettingsScreen(
                 SubmenuContent(
                     selectedSection!!, 
                     viewModel,
+                    isGlobal = isGlobal,
                     onLockClicked = {
                         viewModel.lock()
                         onNavigateToStart()
@@ -161,10 +166,13 @@ fun SettingsScreen(
 }
 
 @Composable
-fun SettingsMainMenuList(onSectionSelect: (SettingsSection) -> Unit) {
+fun SettingsMainMenuList(
+    isGlobal: Boolean,
+    onSectionSelect: (SettingsSection) -> Unit
+) {
     val dimensions = LocalDimensions.current
     Column(verticalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)) {
-        SettingsSection.entries.forEach { section ->
+        SettingsSection.entries.filter { if (isGlobal) it.isGlobal else it.isScoped }.forEach { section ->
             Surface(
                 onClick = { onSectionSelect(section) },
                 shape = MaterialTheme.shapes.large,
@@ -206,23 +214,30 @@ fun SettingsMainMenuList(onSectionSelect: (SettingsSection) -> Unit) {
 fun SubmenuContent(
     section: SettingsSection, 
     viewModel: SettingsViewModel,
+    isGlobal: Boolean,
     onLockClicked: () -> Unit = {}
 ) {
     when (section) {
         SettingsSection.GENERAL -> {
-            LanguageSettingsSection(viewModel)
-            GeneralSettingsSection(viewModel)
+            if (isGlobal) {
+                LanguageSettingsSection(viewModel)
+            }
+            GeneralSettingsSection(viewModel, isGlobal = isGlobal)
         }
         SettingsSection.VOICE -> {
-            VoiceSettingsSection(viewModel)
+            VoiceSettingsSection(viewModel, isGlobal = isGlobal)
         }
         SettingsSection.SCANNING -> {
-            ScanningSettingsSection(viewModel)
+            ScanningSettingsSection(viewModel, isGlobal = isGlobal)
         }
         SettingsSection.SECURITY -> {
             val pin by viewModel.securityPin.collectAsState(null)
             val timeout by viewModel.securityPinTimeoutMinutes.collectAsState(30L)
             val reqDeletion by viewModel.isPinRequiredForDeletion.collectAsState(false)
+            val biometricEnabled by viewModel.isBiometricEnabled.collectAsState(false)
+            val reqEdit by viewModel.isSecurityRequiredForEdit.collectAsState(false)
+            val reqSettings by viewModel.isSecurityRequiredForSettings.collectAsState(false)
+            
             SecuritySettingsSection(
                 securityPin = pin,
                 onSecurityPinChange = viewModel::setSecurityPin,
@@ -230,6 +245,12 @@ fun SubmenuContent(
                 onSecurityPinTimeoutChange = viewModel::setSecurityPinTimeoutMinutes,
                 isPinRequiredForDeletion = reqDeletion,
                 onPinRequiredForDeletionChange = viewModel::setPinRequiredForDeletion,
+                isBiometricEnabled = biometricEnabled,
+                onBiometricEnabledChange = viewModel::setBiometricEnabled,
+                isSecurityRequiredForEdit = reqEdit,
+                onSecurityRequiredForEditChange = viewModel::setSecurityRequiredForEdit,
+                isSecurityRequiredForSettings = reqSettings,
+                onSecurityRequiredForSettingsChange = viewModel::setSecurityRequiredForSettings,
                 onLockClicked = onLockClicked
             )
         }
@@ -237,15 +258,19 @@ fun SubmenuContent(
             CloudSettingsSection(viewModel)
         }
         SettingsSection.GEMINI -> {
-            GenAiSettingsSection(viewModel)
+            GenAiSettingsSection(viewModel, isGlobal = isGlobal)
         }
         SettingsSection.NOTIFICATIONS -> {
             NotificationSettingsSection(viewModel)
         }
         SettingsSection.ADVANCED -> {
-            ExperimentalSettingsSection(viewModel)
-            TestSettingsSection(viewModel)
-            MaintenanceSection(viewModel)
+            if (isGlobal) {
+                ExperimentalSettingsSection(viewModel) // Weather timeout is here and global
+            }
+            TestSettingsSection(viewModel, isGlobal = isGlobal)
+            if (!isGlobal) {
+                MaintenanceSection(viewModel)
+            }
         }
     }
 }

@@ -34,7 +34,8 @@ fun StartScreen(
     onNavigateToUserMode: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onNavigateToContentManagement: () -> Unit,
-    onNavigateToBooks: () -> Unit
+    onNavigateToBooks: () -> Unit,
+    onNavigateToGlobalSettings: () -> Unit
 ) {
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE

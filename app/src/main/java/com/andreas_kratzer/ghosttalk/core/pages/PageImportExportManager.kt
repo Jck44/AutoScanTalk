@@ -45,11 +45,35 @@ class PageImportExportManager @javax.inject.Inject constructor(
                 return@withContext Result.failure(Exception("Ungültiges JSON-Format. Seiten fehlen."))
             }
 
-            // Sync holding time if present
+            // Sync settings if present
             importData.holdingTimeSeconds?.let { seconds ->
                 settingsRepository.holdingTimeMillis = (seconds * 1000).toLong()
-                logger.d("PageImportExportManager", "Updated holdingTimeMillis to ${settingsRepository.holdingTimeMillis}")
             }
+            importData.autoStartScanning?.let { settingsRepository.autoStartScanning = it }
+            importData.scanDelayMillis?.let { settingsRepository.scanDelayMillis = it }
+            importData.resumeScanningFromStart?.let { settingsRepository.resumeScanningFromStart = it }
+            importData.switchActivationKey?.let { settingsRepository.switchActivationKey = it }
+            importData.volumeKeysActivate?.let { settingsRepository.volumeKeysActivate = it }
+            importData.defaultScanPattern?.let { settingsRepository.defaultScanPattern = it }
+            
+            importData.isSmartPredictionEnabled?.let { settingsRepository.isSmartPredictionEnabled = it }
+            importData.geminiRedoPrediction?.let { settingsRepository.geminiRedoPrediction = it }
+            importData.geminiTimeout?.let { settingsRepository.geminiTimeout = it }
+            importData.isGeminiEnabled?.let { settingsRepository.isGeminiEnabled = it }
+            importData.useLocalGenerativeAi?.let { settingsRepository.useLocalGenerativeAi = it }
+
+            importData.isCloudSyncEnabled?.let { settingsRepository.isCloudSyncEnabled = it }
+            importData.syncIntervalMinutes?.let { settingsRepository.syncIntervalMinutes = it }
+            importData.syncMode?.let { settingsRepository.syncMode = it }
+
+            importData.ttsLanguage?.let { settingsRepository.ttsLanguage = it }
+            importData.ttsVoiceName?.let { settingsRepository.ttsVoiceName = it }
+            importData.pageSortOrder?.let { settingsRepository.pageSortOrder = it }
+            importData.templateSortOrder?.let { settingsRepository.templateSortOrder = it }
+            importData.smartPredictionDelay?.let { settingsRepository.smartPredictionDelayMillis = it }
+            importData.keepScreenOnUserMode?.let { settingsRepository.keepScreenOnUserMode = it }
+            importData.userModeScreenBehavior?.let { settingsRepository.userModeScreenBehavior = it }
+            importData.defaultStartPageId?.let { settingsRepository.defaultStartPageId = it }
 
             // Map UUIDs for incoming pages first, so templates with Navigation actions can reference them
             val pageIdMap = mutableMapOf<String, String>()
@@ -314,6 +338,28 @@ class PageImportExportManager @javax.inject.Inject constructor(
             ghosttalk_import_version = "1.0",
             appName = "GhosTTalk (Export)",
             holdingTimeSeconds = settingsRepository.holdingTimeMillis / 1000f,
+            autoStartScanning = settingsRepository.autoStartScanning,
+            scanDelayMillis = settingsRepository.scanDelayMillis,
+            resumeScanningFromStart = settingsRepository.resumeScanningFromStart,
+            switchActivationKey = settingsRepository.switchActivationKey,
+            volumeKeysActivate = settingsRepository.volumeKeysActivate,
+            defaultScanPattern = settingsRepository.defaultScanPattern,
+            isSmartPredictionEnabled = settingsRepository.isSmartPredictionEnabled,
+            geminiRedoPrediction = settingsRepository.geminiRedoPrediction,
+            geminiTimeout = settingsRepository.geminiTimeout,
+            isGeminiEnabled = settingsRepository.isGeminiEnabled,
+            useLocalGenerativeAi = settingsRepository.useLocalGenerativeAi,
+            isCloudSyncEnabled = settingsRepository.isCloudSyncEnabled,
+            syncIntervalMinutes = settingsRepository.syncIntervalMinutes,
+            syncMode = settingsRepository.syncMode,
+            ttsLanguage = settingsRepository.ttsLanguage,
+            ttsVoiceName = settingsRepository.ttsVoiceName,
+            pageSortOrder = settingsRepository.pageSortOrder,
+            templateSortOrder = settingsRepository.templateSortOrder,
+            smartPredictionDelay = settingsRepository.smartPredictionDelayMillis,
+            keepScreenOnUserMode = settingsRepository.keepScreenOnUserMode,
+            userModeScreenBehavior = settingsRepository.userModeScreenBehavior,
+            defaultStartPageId = settingsRepository.defaultStartPageId,
             templates = importTemplates,
             pages = importPages
         )

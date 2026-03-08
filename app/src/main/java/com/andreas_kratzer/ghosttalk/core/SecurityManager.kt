@@ -1,5 +1,8 @@
 package com.andreas_kratzer.ghosttalk.core
 
+import androidx.biometric.BiometricPrompt
+import androidx.core.content.ContextCompat
+import androidx.fragment.app.FragmentActivity
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -16,34 +19,62 @@ import javax.inject.Singleton
 class SecurityManager @Inject constructor(
     private val settingsRepository: SettingsRepository
 ) {
-    private val _unlockedBookIds = MutableStateFlow<Set<String>>(emptySet())
-    val unlockedBookIds: StateFlow<Set<String>> = _unlockedBookIds.asStateFlow()
+    private val _isUnlocked = MutableStateFlow(false)
+    val isUnlocked: StateFlow<Boolean> = _isUnlocked.asStateFlow()
 
     private val scope = CoroutineScope(Dispatchers.Main)
 
     /**
-     * A flow that emits true if the currently active book is unlocked.
+     * A flow that emits true if the app is currently unlocked.
      */
-    val isUnlocked: StateFlow<Boolean> = combine(
-        _unlockedBookIds,
-        settingsRepository.activeBookIdFlow
-    ) { unlockedIds, activeId ->
-        unlockedIds.contains(activeId)
-    }.stateIn(scope, SharingStarted.Eagerly, false)
+    val isGlobalUnlocked: StateFlow<Boolean> = _isUnlocked.asStateFlow()
 
     private var lastActivityTime: Long = 0
 
-    fun isBookUnlocked(bookId: String? = null): Boolean {
-        val id = bookId ?: settingsRepository.activeBookId
-        return _unlockedBookIds.value.contains(id)
+    fun isUnlocked(): Boolean {
+        return _isUnlocked.value
     }
 
-    fun unlock(pin: String, bookId: String? = null): Boolean {
-        val targetId = bookId ?: settingsRepository.activeBookId
-        val correctPin = settingsRepository.getSecurityPinForBook(targetId)
+    fun authenticateBiometric(
+        activity: FragmentActivity,
+        title: String = "Sicherheits-Check",
+        subtitle: String = "Fingerabdruck zum Entsperren verwenden",
+        onResult: (Boolean) -> Unit
+    ) {
+        val executor = ContextCompat.getMainExecutor(activity)
+        val biometricPrompt = BiometricPrompt(activity, executor,
+            object : BiometricPrompt.AuthenticationCallback() {
+                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                    super.onAuthenticationSucceeded(result)
+                    setUnlocked(true)
+                    onResult(true)
+                }
+
+                override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                    super.onAuthenticationError(errorCode, errString)
+                    onResult(false)
+                }
+
+                override fun onAuthenticationFailed() {
+                    super.onAuthenticationFailed()
+                    onResult(false)
+                }
+            })
+
+        val promptInfo = BiometricPrompt.PromptInfo.Builder()
+            .setTitle(title)
+            .setSubtitle(subtitle)
+            .setNegativeButtonText("Abbrechen")
+            .build()
+
+        biometricPrompt.authenticate(promptInfo)
+    }
+
+    fun unlock(pin: String): Boolean {
+        val correctPin = settingsRepository.securityPin
         
         return if (!correctPin.isNullOrEmpty() && pin == correctPin) {
-            _unlockedBookIds.value += targetId
+            _isUnlocked.value = true
             updateActivity()
             true
         } else {
@@ -51,8 +82,13 @@ class SecurityManager @Inject constructor(
         }
     }
 
+    fun setUnlocked(unlocked: Boolean) {
+        if (unlocked) updateActivity()
+        _isUnlocked.value = unlocked
+    }
+
     fun lock() {
-        _unlockedBookIds.value = emptySet()
+        _isUnlocked.value = false
     }
 
     fun updateActivity() {
@@ -60,7 +96,7 @@ class SecurityManager @Inject constructor(
     }
 
     fun checkTimeout() {
-        if (_unlockedBookIds.value.isEmpty()) return
+        if (!_isUnlocked.value) return
         
         val timeoutMinutes = settingsRepository.securityPinTimeoutMinutes
         if (timeoutMinutes <= 0) return
@@ -72,19 +108,19 @@ class SecurityManager @Inject constructor(
         }
     }
 
-    fun isPinSet(bookId: String? = null): Boolean {
-        val pin = if (bookId != null) {
-            settingsRepository.getSecurityPinForBook(bookId)
-        } else {
-            settingsRepository.securityPin
-        }
-        return !pin.isNullOrEmpty()
+    fun isPinSet(): Boolean {
+        return !settingsRepository.securityPin.isNullOrEmpty()
     }
     
-    fun isPinRequiredForDeletion(bookId: String? = null): Boolean {
-        // Deletion protection requires BOTH:
-        // 1. The global setting is enabled
-        // 2. The specific book has a PIN set (either scoped or via global fallback)
-        return settingsRepository.isPinRequiredForDeletion && isPinSet(bookId)
+    fun isSecurityRequiredForDeletion(): Boolean {
+        return settingsRepository.isPinRequiredForDeletion && isPinSet()
+    }
+
+    fun isSecurityRequiredForEdit(): Boolean {
+        return settingsRepository.isSecurityRequiredForEdit && isPinSet()
+    }
+
+    fun isSecurityRequiredForSettings(): Boolean {
+        return settingsRepository.isSecurityRequiredForSettings && isPinSet()
     }
 }

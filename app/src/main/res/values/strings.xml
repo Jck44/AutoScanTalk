@@ -32,6 +32,13 @@
     <string name="settings_voice_default">Standard</string>
     <string name="settings_voice_network_hint"> (HQ/Online)</string>
     <string name="settings_voice_local_hint"> (Lokal)</string>
+    <string name="voice_format_pattern">Stimme %1$d (%2$s)</string>
+    <string name="voice_gender_male">Männlich</string>
+    <string name="voice_gender_female">Weiblich</string>
+    <string name="voice_quality_high">Hohe Qualität</string>
+    <string name="voice_quality_very_high">Sehr hohe Qualität</string>
+    <string name="voice_quality_normal">Normale Qualität</string>
+    <string name="voice_quality_low">Geringe Qualität</string>
     <string name="settings_tts_mode">Sprach-Modus</string>
     <string name="settings_tts_mode_normal">Normal</string>
     <string name="settings_tts_mode_whisper">Flüstern</string>
@@ -43,6 +50,7 @@
     <string name="settings_audio_tts">Ausgabe: Laut Sprechen</string>
     <string name="settings_audio_cues">Ausgabe: Audio-Hinweis</string>
     <string name="settings_audio_default">System-Standard (Automatisch)</string>
+    <string name="settings_category_audio_hardware">Audio-Hardware</string>
     
     <string name="settings_category_scanning">Scannen &amp; Bedienung</string>
     <string name="settings_auto_scan">Auto-Scan beim Start</string>
@@ -82,12 +90,17 @@
     <string name="settings_security_pin_change">PIN ändern</string>
     <string name="settings_security_pin_timeout">PIN Timeout (Minuten)</string>
     <string name="settings_security_pin_required_for_deletion">PIN-Abfrage beim Löschen von Büchern</string>
-    <string name="settings_security_lock_now">Jetzt sperren</string>
+    <string name="settings_security_lock_now">Sofort Sperren</string>
     <string name="settings_security_pin_active">Aktiviert</string>
     <string name="settings_security_pin_inactive">Deaktiviert</string>
     <string name="security_pin_wrong">Falscher PIN</string>
+    <string name="security_pin_title">Sicherheits-Check</string>
+    <string name="security_use_biometric">Mit Fingerabdruck entsperren</string>
+    <string name="settings_security_biometric_enabled">Fingerabdruck zum Entsperren nutzen</string>
+    <string name="settings_security_require_for_edit">Buch-Bearbeitung schützen</string>
+    <string name="settings_security_require_for_settings">Zugriff auf Einstellungen schützen</string>
     <string name="security_pin_enter">PIN eingeben</string>
-    <string name="security_pin_new">Neuen PIN setzen</string>
+    <string name="security_pin_new">Neuen PIN festlegen</string>
 
     <!-- Start Screen -->
     <string name="start_tagline">Unterstützte Kommunikation</string>

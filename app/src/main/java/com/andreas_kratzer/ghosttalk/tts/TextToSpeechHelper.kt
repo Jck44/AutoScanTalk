@@ -174,22 +174,11 @@ class TextToSpeechHelper @Inject constructor(
             directCallbacks.clear()
         }
         
-        // Get dynamic settings
-        val baseVolume = if (isForCues) {
-            settingsRepository.cuesVolumeMultiplier
-        } else {
-            settingsRepository.ttsVolumeMultiplier
-        }
+        // Volume modifiers removed
         
         val safeTtsMode = ttsMode ?: "NORMAL"
         
-        // Dynamically adjust volume multiplier array based on mode
-        val modeVolumeModifier = when (safeTtsMode) {
-            "WHISPER" -> 0.4f
-            "SHOUT" -> 1.0f
-            else -> 0.7f // Normal is 70%
-        }
-        val volumeMultiplier = baseVolume * modeVolumeModifier
+        // modeVolumeModifier removed
         
         // Generate SSML if needed
         val finalSpeakText = if (safeTtsMode != "NORMAL") {
@@ -209,10 +198,7 @@ class TextToSpeechHelper @Inject constructor(
             if (onDone != null) {
                 directCallbacks[utteranceId] = onDone
             }
-            val bundle = android.os.Bundle().apply {
-                putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, volumeMultiplier)
-            }
-            tts?.speak(finalSpeakText, queueMode, bundle, utteranceId)
+            tts?.speak(finalSpeakText, queueMode, null, utteranceId)
             return
         }
 
@@ -223,7 +209,6 @@ class TextToSpeechHelper @Inject constructor(
 
         val params = android.os.Bundle().apply {
             putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, utteranceId)
-            putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, volumeMultiplier)
         }
         tts?.synthesizeToFile(finalSpeakText, params, cacheFile, utteranceId)
     }

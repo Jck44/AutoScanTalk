@@ -48,8 +48,6 @@ class SettingsViewModel @Inject constructor(
     
     val selectedLanguageTag = settingsRepository.ttsLanguageFlow
     val selectedVoiceName = settingsRepository.ttsVoiceNameFlow
-    val ttsVolumeMultiplier = settingsRepository.ttsVolumeMultiplierFlow
-    val cuesVolumeMultiplier = settingsRepository.cuesVolumeMultiplierFlow
     
     val autoStartScanning = settingsRepository.autoStartScanningFlow
     val scanDelayMillis = settingsRepository.scanDelayFlow
@@ -96,6 +94,9 @@ class SettingsViewModel @Inject constructor(
     val securityPin = settingsRepository.securityPinFlow
     val securityPinTimeoutMinutes = settingsRepository.securityPinTimeoutMinutesFlow
     val isPinRequiredForDeletion = settingsRepository.isPinRequiredForDeletionFlow
+    val isBiometricEnabled = settingsRepository.isBiometricEnabledFlow
+    val isSecurityRequiredForEdit = settingsRepository.isSecurityRequiredForEditFlow
+    val isSecurityRequiredForSettings = settingsRepository.isSecurityRequiredForSettingsFlow
 
     val authIntentFlow = kotlinx.coroutines.flow.merge(
         cloudSyncDelegate.authIntentFlow,
@@ -133,8 +134,6 @@ class SettingsViewModel @Inject constructor(
 
     fun setTtsLanguage(tag: String) = ttsDelegate.setTtsLanguage(tag)
     fun setTtsVoice(name: String?) = ttsDelegate.setTtsVoice(name)
-    fun setTtsVolumeMultiplier(m: Float, playFeedback: Boolean = true) = ttsDelegate.setTtsVolumeMultiplier(m, playFeedback)
-    fun setCuesVolumeMultiplier(m: Float, playFeedback: Boolean = true) = ttsDelegate.setCuesVolumeMultiplier(m, playFeedback)
     fun setTtsAudioDevice(addr: String?) = ttsDelegate.setTtsAudioDevice(addr)
     fun setCuesAudioDevice(addr: String?) = ttsDelegate.setCuesAudioDevice(addr)
     fun getResolvedDeviceName(addr: String?) = ttsDelegate.getResolvedDeviceName(addr)
@@ -238,6 +237,18 @@ class SettingsViewModel @Inject constructor(
 
     fun setPinRequiredForDeletion(required: Boolean) {
         settingsRepository.isPinRequiredForDeletion = required
+    }
+
+    fun setBiometricEnabled(enabled: Boolean) {
+        settingsRepository.isBiometricEnabled = enabled
+    }
+
+    fun setSecurityRequiredForEdit(required: Boolean) {
+        settingsRepository.isSecurityRequiredForEdit = required
+    }
+
+    fun setSecurityRequiredForSettings(required: Boolean) {
+        settingsRepository.isSecurityRequiredForSettings = required
     }
 
     fun lock() {

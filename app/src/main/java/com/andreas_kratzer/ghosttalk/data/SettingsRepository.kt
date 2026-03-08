@@ -207,41 +207,60 @@ class SettingsRepository(context: Context) {
     private val _scanDelay = LongSetting(KEY_SCAN_DELAY_MILLIS, 3000L)
     private val _resumeScanningFromStart = BooleanSetting(KEY_RESUME_SCANNING_FROM_START, true)
     private val _defaultStartPageId = StringSetting(KEY_DEFAULT_START_PAGE_ID)
-    private val _ttsAudioDeviceAddress = StringSetting(KEY_TTS_AUDIO_DEVICE)
-    private val _cuesAudioDeviceAddress = StringSetting(KEY_CUES_AUDIO_DEVICE)
+    private val _ttsAudioDeviceAddress = StringSetting(KEY_TTS_AUDIO_DEVICE, isScoped = false)
+    private val _cuesAudioDeviceAddress = StringSetting(KEY_CUES_AUDIO_DEVICE, isScoped = false)
     private val _holdingTimeMillis = LongSetting(KEY_HOLDING_TIME_MILLIS, 250L)
-    private val _persistActionLogs = BooleanSetting(KEY_PERSIST_ACTION_LOGS, true)
-    private val _actionLogsStorage = StringSetting(KEY_ACTION_LOGS_STORAGE)
+    private val _persistActionLogs = BooleanSetting(KEY_PERSIST_ACTION_LOGS, true, isScoped = false)
+    private val _actionLogsStorage = StringSetting(KEY_ACTION_LOGS_STORAGE, isScoped = false)
     private val _switchActivationKey = NonNullStringSetting(KEY_SWITCH_ACTIVATION_KEY, "~3")
     private val _volumeKeysActivate = BooleanSetting(KEY_VOLUME_KEYS_ACTIVATE, false)
-    private val _showTestButtons = BooleanSetting(KEY_SHOW_TEST_BUTTONS, false)
+    private val _showTestButtons = BooleanSetting(KEY_SHOW_TEST_BUTTONS, false, isScoped = false)
     private val _defaultScanPattern = NonNullStringSetting(KEY_DEFAULT_SCAN_PATTERN, "linear")
-    private val _themeMode = NonNullStringSetting(KEY_THEME_MODE, "LIGHT")
+    private val _themeMode = NonNullStringSetting(KEY_THEME_MODE, "LIGHT", isScoped = false)
     private val _pageSortOrder = NonNullStringSetting(KEY_PAGE_SORT_ORDER, "MANUAL")
     private val _templateSortOrder = NonNullStringSetting(KEY_TEMPLATE_SORT_ORDER, "MANUAL")
     private val _lastSuccessfulSyncTime = LongSetting(KEY_LAST_SYNC_TIME, 0L)
     private val _smartPredictionDelay = LongSetting(KEY_SMART_PREDICTION_DELAY, 2000L)
     private val _isSmartPredictionEnabled = BooleanSetting(KEY_SMART_PREDICTION_ENABLED, false)
-    private val _bluetoothDelay = LongSetting(KEY_BLUETOOTH_DELAY, 100L)
-    private val _ttsVolume = FloatSetting(KEY_TTS_VOLUME_MULTIPLIER, 1.0f, coerce = { it.coerceIn(0.0f, 1.0f) })
-    private val _cuesVolume = FloatSetting(KEY_CUES_VOLUME_MULTIPLIER, 1.0f, coerce = { it.coerceIn(0.0f, 1.0f) })
+    private val _geminiRedoPrediction = BooleanSetting(KEY_GEMINI_REDO_PREDICTION, false)
+    private val _geminiTimeout = LongSetting(KEY_GEMINI_TIMEOUT, 6000L)
+    private val _bluetoothDelay = LongSetting(KEY_BLUETOOTH_DELAY, 100L, isScoped = false)
     private val _isCloudSyncEnabled = BooleanSetting(KEY_CLOUD_SYNC_ENABLED, false)
     private val _syncIntervalMinutes = LongSetting(KEY_SYNC_INTERVAL_MINUTES, 15L)
     private val _syncMode = NonNullStringSetting(KEY_SYNC_MODE, "TWO_WAY")
     private val _isGeminiEnabled = BooleanSetting(KEY_GEMINI_ENABLED, false)
     private val _useLocalGenerativeAi = BooleanSetting(KEY_USE_LOCAL_GENERATIVE_AI, true)
-    private val _showPageIdInLog = BooleanSetting(KEY_SHOW_PAGE_ID_IN_LOG, false)
-    private val _isNotificationReadingEnabled = BooleanSetting(KEY_NOTIFICATION_READING_ENABLED, false)
-    private val _monitoredNotificationApps = StringSetSetting(KEY_MONITORED_NOTIFICATION_APPS)
-    private val _appLanguage = StringSetting(KEY_APP_LANGUAGE)
+    private val _showPageIdInLog = BooleanSetting(KEY_SHOW_PAGE_ID_IN_LOG, false, isScoped = false)
+    private val _isNotificationReadingEnabled = BooleanSetting(KEY_NOTIFICATION_READING_ENABLED, false, isScoped = false)
+    private val _monitoredNotificationApps = StringSetSetting(KEY_MONITORED_NOTIFICATION_APPS, isScoped = false)
+    private val _appLanguage = StringSetting(KEY_APP_LANGUAGE, isScoped = false)
     private val _keepScreenOnUserMode = BooleanSetting(KEY_KEEP_SCREEN_ON_USER_MODE, true)
     private val _userModeScreenBehavior = NonNullStringSetting(KEY_USER_MODE_SCREEN_BEHAVIOR, "NORMAL")
-    private val _geminiTimeout = LongSetting(KEY_GEMINI_TIMEOUT, 6000L)
-    private val _geminiRedoPrediction = BooleanSetting(KEY_GEMINI_REDO_PREDICTION, false)
-    private val _weatherCacheTimeout = LongSetting(KEY_WEATHER_CACHE_TIMEOUT, 60L)
-    private val _securityPin = StringSetting(KEY_SECURITY_PIN, "")
+    private val _weatherCacheTimeout = LongSetting(KEY_WEATHER_CACHE_TIMEOUT, 60L, isScoped = false)
+    private val _securityPin = StringSetting(KEY_SECURITY_PIN, "", isScoped = false)
     private val _securityPinTimeoutMinutes = LongSetting(KEY_SECURITY_PIN_TIMEOUT_MINUTES, 30L, isScoped = false)
     private val _isPinRequiredForDeletion = BooleanSetting(KEY_IS_PIN_REQUIRED_FOR_DELETION, false, isScoped = false)
+
+    private val _isBiometricEnabled = BooleanSetting(KEY_BIOMETRIC_ENABLED, false, isScoped = false)
+    private val _isSecurityRequiredForEdit = BooleanSetting(KEY_SECURITY_REQUIRED_FOR_EDIT, false, isScoped = false)
+    private val _isSecurityRequiredForSettings = BooleanSetting(KEY_SECURITY_REQUIRED_FOR_SETTINGS, false, isScoped = false)
+
+    init {
+        cleanupLegacyBookPins()
+    }
+
+    private fun cleanupLegacyBookPins() {
+        val allPrefs = prefs.all
+        val editor = prefs.edit()
+        var changed = false
+        allPrefs.keys.forEach { key ->
+            if (key.endsWith("_$KEY_SECURITY_PIN") && key != KEY_SECURITY_PIN) {
+                editor.remove(key)
+                changed = true
+            }
+        }
+        if (changed) editor.apply()
+    }
 
     private fun refreshFlows() {
         _ttsLanguage.refresh()
@@ -265,9 +284,9 @@ class SettingsRepository(context: Context) {
         _lastSuccessfulSyncTime.refresh()
         _smartPredictionDelay.refresh()
         _isSmartPredictionEnabled.refresh()
+        _geminiRedoPrediction.refresh()
+        _geminiTimeout.refresh()
         _bluetoothDelay.refresh()
-        _ttsVolume.refresh()
-        _cuesVolume.refresh()
         _isCloudSyncEnabled.refresh()
         _syncIntervalMinutes.refresh()
         _syncMode.refresh()
@@ -278,13 +297,14 @@ class SettingsRepository(context: Context) {
         _monitoredNotificationApps.refresh()
         _appLanguage.refresh()
         _keepScreenOnUserMode.refresh()
-        _userModeCodeBehavior.refresh()
-        _geminiTimeout.refresh()
-        _geminiRedoPrediction.refresh()
+        _userModeScreenBehavior.refresh()
         _weatherCacheTimeout.refresh()
         _securityPin.refresh()
         _securityPinTimeoutMinutes.refresh()
         _isPinRequiredForDeletion.refresh()
+        _isBiometricEnabled.refresh()
+        _isSecurityRequiredForEdit.refresh()
+        _isSecurityRequiredForSettings.refresh()
     }
 
     private val _userModeCodeBehavior = NonNullStringSetting(KEY_USER_MODE_SCREEN_BEHAVIOR, "NORMAL")
@@ -312,8 +332,6 @@ class SettingsRepository(context: Context) {
     val lastSuccessfulSyncTimeFlow: StateFlow<Long> get() = _lastSuccessfulSyncTime.flow
     val isSmartPredictionEnabledFlow: StateFlow<Boolean> get() = _isSmartPredictionEnabled.flow
     val bluetoothDelayFlow: StateFlow<Long> get() = _bluetoothDelay.flow
-    val ttsVolumeMultiplierFlow: StateFlow<Float> get() = _ttsVolume.flow
-    val cuesVolumeMultiplierFlow: StateFlow<Float> get() = _cuesVolume.flow
     val isCloudSyncEnabledFlow: StateFlow<Boolean> get() = _isCloudSyncEnabled.flow
     val syncIntervalMinutesFlow: StateFlow<Long> get() = _syncIntervalMinutes.flow
     val syncModeFlow: StateFlow<String> get() = _syncMode.flow
@@ -331,6 +349,9 @@ class SettingsRepository(context: Context) {
     val securityPinFlow: StateFlow<String?> get() = _securityPin.flow
     val securityPinTimeoutMinutesFlow: StateFlow<Long> get() = _securityPinTimeoutMinutes.flow
     val isPinRequiredForDeletionFlow: StateFlow<Boolean> get() = _isPinRequiredForDeletion.flow
+    val isBiometricEnabledFlow: StateFlow<Boolean> get() = _isBiometricEnabled.flow
+    val isSecurityRequiredForEditFlow: StateFlow<Boolean> get() = _isSecurityRequiredForEdit.flow
+    val isSecurityRequiredForSettingsFlow: StateFlow<Boolean> get() = _isSecurityRequiredForSettings.flow
 
     // ── Public API: Properties ───────────────────────────────────────────
 
@@ -423,13 +444,6 @@ class SettingsRepository(context: Context) {
         get() = _bluetoothDelay.value
         set(value) { _bluetoothDelay.value = value }
 
-    var ttsVolumeMultiplier: Float
-        get() = _ttsVolume.value
-        set(value) { _ttsVolume.value = value }
-
-    var cuesVolumeMultiplier: Float
-        get() = _cuesVolume.value
-        set(value) { _cuesVolume.value = value }
 
     var isCloudSyncEnabled: Boolean
         get() = _isCloudSyncEnabled.value
@@ -502,6 +516,18 @@ class SettingsRepository(context: Context) {
     var isPinRequiredForDeletion: Boolean
         get() = _isPinRequiredForDeletion.value
         set(value) { _isPinRequiredForDeletion.value = value }
+
+    var isBiometricEnabled: Boolean
+        get() = _isBiometricEnabled.value
+        set(value) { _isBiometricEnabled.value = value }
+
+    var isSecurityRequiredForEdit: Boolean
+        get() = _isSecurityRequiredForEdit.value
+        set(value) { _isSecurityRequiredForEdit.value = value }
+
+    var isSecurityRequiredForSettings: Boolean
+        get() = _isSecurityRequiredForSettings.value
+        set(value) { _isSecurityRequiredForSettings.value = value }
 
     // ── Book-specific helpers ─────────────────────────────────────────────
 
@@ -576,8 +602,6 @@ class SettingsRepository(context: Context) {
         private const val KEY_NOTIFICATION_READING_ENABLED = "notification_reading_enabled"
         private const val KEY_MONITORED_NOTIFICATION_APPS = "monitored_notification_apps"
         private const val KEY_BLUETOOTH_DELAY = "bluetooth_delay_ms"
-        private const val KEY_TTS_VOLUME_MULTIPLIER = "tts_volume_multiplier"
-        private const val KEY_CUES_VOLUME_MULTIPLIER = "cues_volume_multiplier"
         private const val KEY_ACTIVE_BOOK_ID = "active_book_id"
         private const val KEY_KEEP_SCREEN_ON_USER_MODE = "keep_screen_on_user_mode"
         private const val KEY_USER_MODE_SCREEN_BEHAVIOR = "user_mode_screen_behavior"
@@ -587,5 +611,8 @@ class SettingsRepository(context: Context) {
         private const val KEY_SECURITY_PIN = "security_pin"
         private const val KEY_SECURITY_PIN_TIMEOUT_MINUTES = "security_pin_timeout_minutes"
         private const val KEY_IS_PIN_REQUIRED_FOR_DELETION = "is_pin_required_for_deletion"
+        private const val KEY_BIOMETRIC_ENABLED = "biometric_enabled"
+        private const val KEY_SECURITY_REQUIRED_FOR_EDIT = "security_required_for_edit"
+        private const val KEY_SECURITY_REQUIRED_FOR_SETTINGS = "security_required_for_settings"
     }
 }

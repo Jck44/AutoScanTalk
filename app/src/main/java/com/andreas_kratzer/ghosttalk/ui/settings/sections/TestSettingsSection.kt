@@ -29,7 +29,7 @@ import java.util.Date
 import java.util.Locale
 
 @Composable
-fun TestSettingsSection(viewModel: SettingsViewModel) {
+fun TestSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
     val showTestButtons by viewModel.showTestButtons.collectAsState(false)
     val showPageId by viewModel.showPageIdInLog.collectAsState(true)
     val volumeKeysActivate by viewModel.volumeKeysActivate.collectAsState(false)
@@ -38,29 +38,36 @@ fun TestSettingsSection(viewModel: SettingsViewModel) {
     
     var showHistoryDialog by remember { mutableStateOf(false) }
 
-    PreferenceCategory(stringResource(R.string.settings_category_test)) {
-        SettingsToggleItem(
-            label = stringResource(R.string.settings_show_test_buttons),
-            checked = showTestButtons,
-            onCheckedChange = { viewModel.setShowTestButtons(it) }
-        )
-        SettingsToggleItem(
-            label = stringResource(R.string.settings_show_page_id_in_log),
-            checked = showPageId,
-            onCheckedChange = { viewModel.setShowPageIdInLog(it) }
-        )
-        Button(
-            onClick = { showHistoryDialog = true },
-            shape = MaterialTheme.shapes.medium,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(stringResource(R.string.settings_show_button_history))
+    if (isGlobal) {
+        PreferenceCategory(stringResource(R.string.settings_category_test)) {
+            SettingsToggleItem(
+                label = stringResource(R.string.settings_show_test_buttons),
+                checked = showTestButtons,
+                onCheckedChange = { viewModel.setShowTestButtons(it) }
+            )
+            SettingsToggleItem(
+                label = stringResource(R.string.settings_show_page_id_in_log),
+                checked = showPageId,
+                onCheckedChange = { viewModel.setShowPageIdInLog(it) }
+            )
+            SettingsToggleItem(
+                label = stringResource(R.string.settings_volume_keys_trigger),
+                checked = volumeKeysActivate,
+                onCheckedChange = { viewModel.setVolumeKeysActivate(it) }
+            )
         }
-        SettingsToggleItem(
-            label = stringResource(R.string.settings_volume_keys_trigger),
-            checked = volumeKeysActivate,
-            onCheckedChange = { viewModel.setVolumeKeysActivate(it) }
-        )
+    }
+
+    if (!isGlobal) {
+        PreferenceCategory(stringResource(R.string.settings_category_test)) {
+            Button(
+                onClick = { showHistoryDialog = true },
+                shape = MaterialTheme.shapes.medium,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(R.string.settings_show_button_history))
+            }
+        }
     }
 
     if (showHistoryDialog) {
