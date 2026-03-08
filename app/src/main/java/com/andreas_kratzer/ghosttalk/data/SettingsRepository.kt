@@ -87,121 +87,119 @@ class SettingsRepository(context: Context) {
         prefs.edit().putStringSet(getScopedKey(key), value).apply()
     }
 
-    // ── ObservableSetting: eliminates per-setting boilerplate ─────────────
-    //
-    // Each ObservableSetting encapsulates:
-    //   - A MutableStateFlow that emits the current value
-    //   - A public StateFlow for observing
-    //   - read()/write() methods for SharedPreferences
-    //   - refresh() to re-read when activeBookId changes
-    //
-    // This replaces the old pattern of 8+ lines per setting.
+    // ── ObservableSetting classes with optional scoping ───────────────────
 
     private inner class StringSetting(
         private val key: String,
-        private val default: String? = null
+        private val default: String? = null,
+        private val isScoped: Boolean = true
     ) {
-        private val _flow = MutableStateFlow(getStringScoped(key, default))
+        private val _flow = MutableStateFlow(if (isScoped) getStringScoped(key, default) else prefs.getString(key, default))
         val flow: StateFlow<String?> = _flow.asStateFlow()
 
         var value: String?
-            get() = getStringScoped(key, default)
+            get() = if (isScoped) getStringScoped(key, default) else prefs.getString(key, default)
             set(v) {
-                putStringScoped(key, v)
+                if (isScoped) putStringScoped(key, v) else prefs.edit().putString(key, v).apply()
                 _flow.value = v
             }
 
-        fun refresh() { _flow.value = value }
+        fun refresh() { if (isScoped) _flow.value = value }
     }
 
     private inner class NonNullStringSetting(
         private val key: String,
-        private val default: String
+        private val default: String,
+        private val isScoped: Boolean = true
     ) {
-        private val _flow = MutableStateFlow(getStringScoped(key, default) ?: default)
+        private val _flow = MutableStateFlow((if (isScoped) getStringScoped(key, default) else prefs.getString(key, default)) ?: default)
         val flow: StateFlow<String> = _flow.asStateFlow()
 
         var value: String
-            get() = getStringScoped(key, default) ?: default
+            get() = (if (isScoped) getStringScoped(key, default) else prefs.getString(key, default)) ?: default
             set(v) {
-                putStringScoped(key, v)
+                if (isScoped) putStringScoped(key, v) else prefs.edit().putString(key, v).apply()
                 _flow.value = v
             }
 
-        fun refresh() { _flow.value = value }
+        fun refresh() { if (isScoped) _flow.value = value }
     }
 
     private inner class BooleanSetting(
         private val key: String,
-        private val default: Boolean
+        private val default: Boolean,
+        private val isScoped: Boolean = true
     ) {
-        private val _flow = MutableStateFlow(getBooleanScoped(key, default))
+        private val _flow = MutableStateFlow(if (isScoped) getBooleanScoped(key, default) else prefs.getBoolean(key, default))
         val flow: StateFlow<Boolean> = _flow.asStateFlow()
 
         var value: Boolean
-            get() = getBooleanScoped(key, default)
+            get() = if (isScoped) getBooleanScoped(key, default) else prefs.getBoolean(key, default)
             set(v) {
-                putBooleanScoped(key, v)
+                if (isScoped) putBooleanScoped(key, v) else prefs.edit().putBoolean(key, v).apply()
                 _flow.value = v
             }
 
-        fun refresh() { _flow.value = value }
+        fun refresh() { if (isScoped) _flow.value = value }
     }
 
     private inner class LongSetting(
         private val key: String,
-        private val default: Long
+        private val default: Long,
+        private val isScoped: Boolean = true
     ) {
-        private val _flow = MutableStateFlow(getLongScoped(key, default))
+        private val _flow = MutableStateFlow(if (isScoped) getLongScoped(key, default) else prefs.getLong(key, default))
         val flow: StateFlow<Long> = _flow.asStateFlow()
 
         var value: Long
-            get() = getLongScoped(key, default)
+            get() = if (isScoped) getLongScoped(key, default) else prefs.getLong(key, default)
             set(v) {
-                putLongScoped(key, v)
+                if (isScoped) putLongScoped(key, v) else prefs.edit().putLong(key, v).apply()
                 _flow.value = v
             }
 
-        fun refresh() { _flow.value = value }
+        fun refresh() { if (isScoped) _flow.value = value }
     }
 
     private inner class FloatSetting(
         private val key: String,
         private val default: Float,
+        private val isScoped: Boolean = true,
         private val coerce: ((Float) -> Float)? = null
     ) {
-        private val _flow = MutableStateFlow(getFloatScoped(key, default))
+        private val _flow = MutableStateFlow(if (isScoped) getFloatScoped(key, default) else prefs.getFloat(key, default))
         val flow: StateFlow<Float> = _flow.asStateFlow()
 
         var value: Float
-            get() = getFloatScoped(key, default)
+            get() = if (isScoped) getFloatScoped(key, default) else prefs.getFloat(key, default)
             set(v) {
                 val coerced = coerce?.invoke(v) ?: v
-                putFloatScoped(key, coerced)
+                if (isScoped) putFloatScoped(key, coerced) else prefs.edit().putFloat(key, coerced).apply()
                 _flow.value = coerced
             }
 
-        fun refresh() { _flow.value = value }
+        fun refresh() { if (isScoped) _flow.value = value }
     }
 
     private inner class StringSetSetting(
         private val key: String,
-        private val default: Set<String> = emptySet()
+        private val default: Set<String> = emptySet(),
+        private val isScoped: Boolean = true
     ) {
-        private val _flow = MutableStateFlow(getStringSetScoped(key, default) ?: default)
+        private val _flow = MutableStateFlow((if (isScoped) getStringSetScoped(key, default) else prefs.getStringSet(key, default)) ?: default)
         val flow: StateFlow<Set<String>> = _flow.asStateFlow()
 
         var value: Set<String>
-            get() = getStringSetScoped(key, default) ?: default
+            get() = (if (isScoped) getStringSetScoped(key, default) else prefs.getStringSet(key, default)) ?: default
             set(v) {
-                putStringSetScoped(key, v)
+                if (isScoped) putStringSetScoped(key, v) else prefs.edit().putStringSet(key, v).apply()
                 _flow.value = v
             }
 
-        fun refresh() { _flow.value = value }
+        fun refresh() { if (isScoped) _flow.value = value }
     }
 
-    // ── Observable settings (have a StateFlow for UI observation) ─────────
+    // ── Observable settings ───────────────────────────────────────────────
 
     private val _ttsLanguage = StringSetting(KEY_TTS_LANGUAGE)
     private val _ttsVoiceName = StringSetting(KEY_TTS_VOICE_NAME)
@@ -225,8 +223,8 @@ class SettingsRepository(context: Context) {
     private val _smartPredictionDelay = LongSetting(KEY_SMART_PREDICTION_DELAY, 2000L)
     private val _isSmartPredictionEnabled = BooleanSetting(KEY_SMART_PREDICTION_ENABLED, false)
     private val _bluetoothDelay = LongSetting(KEY_BLUETOOTH_DELAY, 100L)
-    private val _ttsVolume = FloatSetting(KEY_TTS_VOLUME_MULTIPLIER, 1.0f) { it.coerceIn(0.0f, 1.0f) }
-    private val _cuesVolume = FloatSetting(KEY_CUES_VOLUME_MULTIPLIER, 1.0f) { it.coerceIn(0.0f, 1.0f) }
+    private val _ttsVolume = FloatSetting(KEY_TTS_VOLUME_MULTIPLIER, 1.0f, coerce = { it.coerceIn(0.0f, 1.0f) })
+    private val _cuesVolume = FloatSetting(KEY_CUES_VOLUME_MULTIPLIER, 1.0f, coerce = { it.coerceIn(0.0f, 1.0f) })
     private val _isCloudSyncEnabled = BooleanSetting(KEY_CLOUD_SYNC_ENABLED, false)
     private val _syncIntervalMinutes = LongSetting(KEY_SYNC_INTERVAL_MINUTES, 15L)
     private val _syncMode = NonNullStringSetting(KEY_SYNC_MODE, "TWO_WAY")
@@ -241,6 +239,9 @@ class SettingsRepository(context: Context) {
     private val _geminiTimeout = LongSetting(KEY_GEMINI_TIMEOUT, 6000L)
     private val _geminiRedoPrediction = BooleanSetting(KEY_GEMINI_REDO_PREDICTION, false)
     private val _weatherCacheTimeout = LongSetting(KEY_WEATHER_CACHE_TIMEOUT, 60L)
+    private val _securityPin = StringSetting(KEY_SECURITY_PIN, "")
+    private val _securityPinTimeoutMinutes = LongSetting(KEY_SECURITY_PIN_TIMEOUT_MINUTES, 30L, isScoped = false)
+    private val _isPinRequiredForDeletion = BooleanSetting(KEY_IS_PIN_REQUIRED_FOR_DELETION, false, isScoped = false)
 
     private fun refreshFlows() {
         _ttsLanguage.refresh()
@@ -277,11 +278,16 @@ class SettingsRepository(context: Context) {
         _monitoredNotificationApps.refresh()
         _appLanguage.refresh()
         _keepScreenOnUserMode.refresh()
-        _userModeScreenBehavior.refresh()
+        _userModeCodeBehavior.refresh()
         _geminiTimeout.refresh()
         _geminiRedoPrediction.refresh()
         _weatherCacheTimeout.refresh()
+        _securityPin.refresh()
+        _securityPinTimeoutMinutes.refresh()
+        _isPinRequiredForDeletion.refresh()
     }
+
+    private val _userModeCodeBehavior = NonNullStringSetting(KEY_USER_MODE_SCREEN_BEHAVIOR, "NORMAL")
 
     // ── Public API: Flows ────────────────────────────────────────────────
 
@@ -318,10 +324,13 @@ class SettingsRepository(context: Context) {
     val monitoredNotificationAppsFlow: StateFlow<Set<String>> get() = _monitoredNotificationApps.flow
     val appLanguageFlow: StateFlow<String?> get() = _appLanguage.flow
     val keepScreenOnUserModeFlow: StateFlow<Boolean> get() = _keepScreenOnUserMode.flow
-    val userModeScreenBehaviorFlow: StateFlow<String> get() = _userModeScreenBehavior.flow
+    val userModeScreenBehaviorFlow: StateFlow<String> get() = _userModeCodeBehavior.flow
     val geminiTimeoutFlow: StateFlow<Long> get() = _geminiTimeout.flow
     val geminiRedoPredictionFlow: StateFlow<Boolean> get() = _geminiRedoPrediction.flow
     val weatherCacheTimeoutFlow: StateFlow<Long> get() = _weatherCacheTimeout.flow
+    val securityPinFlow: StateFlow<String?> get() = _securityPin.flow
+    val securityPinTimeoutMinutesFlow: StateFlow<Long> get() = _securityPinTimeoutMinutes.flow
+    val isPinRequiredForDeletionFlow: StateFlow<Boolean> get() = _isPinRequiredForDeletion.flow
 
     // ── Public API: Properties ───────────────────────────────────────────
 
@@ -467,8 +476,8 @@ class SettingsRepository(context: Context) {
         set(value) { _keepScreenOnUserMode.value = value }
 
     var userModeScreenBehavior: String
-        get() = _userModeScreenBehavior.value
-        set(value) { _userModeScreenBehavior.value = value }
+        get() = _userModeCodeBehavior.value
+        set(value) { _userModeCodeBehavior.value = value }
 
     var geminiTimeout: Long
         get() = _geminiTimeout.value
@@ -481,6 +490,33 @@ class SettingsRepository(context: Context) {
     var weatherCacheTimeout: Long
         get() = _weatherCacheTimeout.value
         set(value) { _weatherCacheTimeout.value = value }
+
+    var securityPin: String?
+        get() = _securityPin.value
+        set(value) { _securityPin.value = value }
+
+    var securityPinTimeoutMinutes: Long
+        get() = _securityPinTimeoutMinutes.value
+        set(value) { _securityPinTimeoutMinutes.value = value }
+
+    var isPinRequiredForDeletion: Boolean
+        get() = _isPinRequiredForDeletion.value
+        set(value) { _isPinRequiredForDeletion.value = value }
+
+    // ── Book-specific helpers ─────────────────────────────────────────────
+
+    fun getSecurityPinForBook(bookId: String): String? {
+        val scopedKey = "${bookId}_$KEY_SECURITY_PIN"
+        if (prefs.contains(scopedKey)) {
+            return prefs.getString(scopedKey, "")
+        }
+        return prefs.getString(KEY_SECURITY_PIN, "")
+    }
+
+    fun isPinRequiredForDeletionForBook(bookId: String): Boolean {
+        // This is now a global setting
+        return isPinRequiredForDeletion
+    }
 
     // ── Device name cache ────────────────────────────────────────────────
 
@@ -548,5 +584,8 @@ class SettingsRepository(context: Context) {
         private const val KEY_GEMINI_TIMEOUT = "gemini_timeout_ms"
         private const val KEY_GEMINI_REDO_PREDICTION = "gemini_redo_prediction"
         private const val KEY_WEATHER_CACHE_TIMEOUT = "weather_cache_timeout_minutes"
+        private const val KEY_SECURITY_PIN = "security_pin"
+        private const val KEY_SECURITY_PIN_TIMEOUT_MINUTES = "security_pin_timeout_minutes"
+        private const val KEY_IS_PIN_REQUIRED_FOR_DELETION = "is_pin_required_for_deletion"
     }
 }

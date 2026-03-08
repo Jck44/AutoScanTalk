@@ -1,17 +1,18 @@
 package com.andreas_kratzer.ghosttalk.ui.main
 
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.andreas_kratzer.ghosttalk.core.SecurityManager
 import com.andreas_kratzer.ghosttalk.data.PageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.ui.books.BookListScreen
 import com.andreas_kratzer.ghosttalk.ui.books.BookViewModel
+import com.andreas_kratzer.ghosttalk.ui.components.PinEntryDialog
 import com.andreas_kratzer.ghosttalk.ui.pages.PageEditorScreen
 import com.andreas_kratzer.ghosttalk.ui.pages.PageListScreen
 import com.andreas_kratzer.ghosttalk.ui.pages.PageScreen
@@ -34,8 +35,41 @@ fun GhosTTalkNavHost(
     pageViewModel: PageViewModel,
     settingsViewModel: SettingsViewModel,
     settingsRepository: SettingsRepository,
-    pageRepository: PageRepository
+    pageRepository: PageRepository,
+    securityManager: SecurityManager
 ) {
+    val isUnlocked by securityManager.isUnlocked.collectAsState()
+    var pendingRoute by remember { mutableStateOf<String?>(null) }
+    var pinErrorMessage by remember { mutableStateOf<String?>(null) }
+
+    val navigateWithSecurity: (String) -> Unit = { route ->
+        if (!isUnlocked && securityManager.isPinSet()) {
+            pendingRoute = route
+        } else {
+            navController.navigate(route)
+        }
+    }
+
+    if (pendingRoute != null) {
+        PinEntryDialog(
+            onDismiss = { 
+                pendingRoute = null
+                pinErrorMessage = null
+            },
+            onConfirm = { pin ->
+                if (securityManager.unlock(pin)) {
+                    val route = pendingRoute!!
+                    pendingRoute = null
+                    pinErrorMessage = null
+                    navController.navigate(route)
+                } else {
+                    pinErrorMessage = "Falscher PIN"
+                }
+            },
+            errorMessage = pinErrorMessage
+        )
+    }
+
     // Handle auto-navigation
     LaunchedEffect(Unit) {
         bookViewModel.autoOpenBookEvent.collect { selectedBookId ->
@@ -54,6 +88,7 @@ fun GhosTTalkNavHost(
         composable("book_list") {
             BookListScreen(
                 bookViewModel = bookViewModel,
+                securityManager = securityManager,
                 onBookSelected = { selectedBookId ->
                     pageViewModel.setActiveBookId(selectedBookId)
                     settingsRepository.activeBookId = selectedBookId
@@ -81,8 +116,8 @@ fun GhosTTalkNavHost(
                         }
                     }
                 },
-                onNavigateToSettings = { navController.navigate("settings") },
-                onNavigateToContentManagement = { navController.navigate("content_management") },
+                onNavigateToSettings = { navigateWithSecurity("settings") },
+                onNavigateToContentManagement = { navigateWithSecurity("content_management") },
                 onNavigateToBooks = { navController.navigate("book_list") }
             )
         }
@@ -102,7 +137,12 @@ fun GhosTTalkNavHost(
         composable("settings") {
             SettingsScreen(
                 viewModel = settingsViewModel,
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToStart = {
+                    navController.navigate("start") {
+                        popUpTo("start") { inclusive = true }
+                    }
+                }
             )
         }
         composable("templates") {

@@ -75,7 +75,20 @@
     <string name="settings_clear_usage_stats">Nutzungsstatistiken leeren</string>
     <string name="settings_category_advanced">Erweiterte Einstellungen</string>
     <string name="settings_bluetooth_delay">Bluetooth-Verzögerung (ms)</string>
-    
+
+    <string name="settings_category_security">Sicherheit &amp; PIN</string>
+    <string name="settings_security_pin_label">PIN Schutz</string>
+    <string name="settings_security_pin_set">PIN setzen</string>
+    <string name="settings_security_pin_change">PIN ändern</string>
+    <string name="settings_security_pin_timeout">PIN Timeout (Minuten)</string>
+    <string name="settings_security_pin_required_for_deletion">PIN-Abfrage beim Löschen von Büchern</string>
+    <string name="settings_security_lock_now">Jetzt sperren</string>
+    <string name="settings_security_pin_active">Aktiviert</string>
+    <string name="settings_security_pin_inactive">Deaktiviert</string>
+    <string name="security_pin_wrong">Falscher PIN</string>
+    <string name="security_pin_enter">PIN eingeben</string>
+    <string name="security_pin_new">Neuen PIN setzen</string>
+
     <!-- Start Screen -->
     <string name="start_tagline">Unterstützte Kommunikation</string>
     <string name="start_user_mode">Nutzer Modus</string>
@@ -119,7 +132,7 @@
     <string name="page_scan_pattern_override">Scan Muster (Überschreiben)</string>
     <string name="page_pattern_default">Standard (Buch)</string>
     <string name="page_row_announcement_config">Zeilen-Ansage konfigurieren:</string>
-    <string name="page_row_label">Zeile %d</string>
+    <string name="page_row_label">Zeilenname</string>
     
     <string name="page_dialog_new_title">Neue Seite erstellen</string>
     <string name="page_name_field">Seitenname</string>

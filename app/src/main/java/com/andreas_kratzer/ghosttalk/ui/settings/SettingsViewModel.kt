@@ -5,6 +5,7 @@ import android.content.Context
 import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.andreas_kratzer.ghosttalk.core.SecurityManager
 import com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.domain.pages.GetPagesUseCase
@@ -27,6 +28,7 @@ class SettingsViewModel @Inject constructor(
     application: Application,
     private val settingsRepository: SettingsRepository,
     private val buttonUsageRepository: ButtonUsageRepository,
+    private val securityManager: SecurityManager,
     getPagesUseCase: GetPagesUseCase,
     val ttsDelegate: TtsSettingsDelegate,
     val scanningDelegate: ScanningSettingsDelegate,
@@ -90,6 +92,10 @@ class SettingsViewModel @Inject constructor(
     val userModeScreenBehavior = settingsRepository.userModeScreenBehaviorFlow
     val geminiTimeout = settingsRepository.geminiTimeoutFlow
     val geminiRedoPrediction = settingsRepository.geminiRedoPredictionFlow
+
+    val securityPin = settingsRepository.securityPinFlow
+    val securityPinTimeoutMinutes = settingsRepository.securityPinTimeoutMinutesFlow
+    val isPinRequiredForDeletion = settingsRepository.isPinRequiredForDeletionFlow
 
     val authIntentFlow = kotlinx.coroutines.flow.merge(
         cloudSyncDelegate.authIntentFlow,
@@ -221,6 +227,22 @@ class SettingsViewModel @Inject constructor(
         input.toLongOrNull()?.let { settingsRepository.geminiTimeout = it }
     }
     fun setGeminiRedoPrediction(e: Boolean) { settingsRepository.geminiRedoPrediction = e }
+
+    fun setSecurityPin(pin: String) {
+        settingsRepository.securityPin = pin
+    }
+
+    fun setSecurityPinTimeoutMinutes(minutes: Long) {
+        settingsRepository.securityPinTimeoutMinutes = minutes
+    }
+
+    fun setPinRequiredForDeletion(required: Boolean) {
+        settingsRepository.isPinRequiredForDeletion = required
+    }
+
+    fun lock() {
+        securityManager.lock()
+    }
 
     val weatherCacheTimeout = settingsRepository.weatherCacheTimeoutFlow
     fun setWeatherCacheTimeoutInput(input: String) {

@@ -38,9 +38,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.core.SecurityManager
 import com.andreas_kratzer.ghosttalk.model.Book
 import com.andreas_kratzer.ghosttalk.ui.components.AppBrandHeader
 import com.andreas_kratzer.ghosttalk.ui.components.GhostTalkCard
+import com.andreas_kratzer.ghosttalk.ui.components.PinEntryDialog
 import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -50,12 +52,17 @@ import java.util.Locale
 @Composable
 fun BookListScreen(
     bookViewModel: BookViewModel,
+    securityManager: SecurityManager,
     onBookSelected: (String) -> Unit
 ) {
     val allBooks by bookViewModel.allBooks.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
     var bookToEdit by remember { mutableStateOf<Book?>(null) }
     var bookToDelete by remember { mutableStateOf<Book?>(null) }
+    
+    var showPinDialogForDelete by remember { mutableStateOf(false) }
+    var pinErrorMessage by remember { mutableStateOf<String?>(null) }
+    
     val dimensions = LocalDimensions.current
 
     Scaffold(
@@ -105,7 +112,14 @@ fun BookListScreen(
                                 )
                             }
                             IconButton(
-                                onClick = { bookToDelete = book }
+                                onClick = { 
+                                    if (!securityManager.isBookUnlocked(book.id) && securityManager.isPinSet(book.id) && securityManager.isPinRequiredForDeletion(book.id)) {
+                                        bookToDelete = book
+                                        showPinDialogForDelete = true
+                                    } else {
+                                        bookToDelete = book 
+                                    }
+                                }
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Delete,
@@ -117,6 +131,26 @@ fun BookListScreen(
                     }
                 )
             }
+        }
+
+        if (showPinDialogForDelete) {
+            PinEntryDialog(
+                onDismiss = { 
+                    showPinDialogForDelete = false
+                    bookToDelete = null
+                    pinErrorMessage = null
+                },
+                onConfirm = { pin ->
+                    if (securityManager.unlock(pin, bookToDelete?.id)) {
+                        showPinDialogForDelete = false
+                        pinErrorMessage = null
+                        // bookToDelete is already set, the delete confirmation dialog will show
+                    } else {
+                        pinErrorMessage = "Falscher PIN"
+                    }
+                },
+                errorMessage = pinErrorMessage
+            )
         }
 
         if (showAddDialog) {
@@ -232,32 +266,35 @@ fun BookListScreen(
         }
 
         bookToDelete?.let { book ->
-            AlertDialog(
-                onDismissRequest = { bookToDelete = null },
-                title = { Text(stringResource(R.string.book_dialog_delete_title)) },
-                text = { Text(stringResource(R.string.book_dialog_delete_confirm, book.name)) },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            bookViewModel.deleteBook(book)
-                            bookToDelete = null
-                        },
-                        shape = MaterialTheme.shapes.medium,
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                    ) {
-                        Text(stringResource(R.string.action_delete))
+            // Only show delete confirmation if not currently showing PIN dialog
+            if (!showPinDialogForDelete) {
+                AlertDialog(
+                    onDismissRequest = { bookToDelete = null },
+                    title = { Text(stringResource(R.string.book_dialog_delete_title)) },
+                    text = { Text(stringResource(R.string.book_dialog_delete_confirm, book.name)) },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                bookViewModel.deleteBook(book)
+                                bookToDelete = null
+                            },
+                            shape = MaterialTheme.shapes.medium,
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                        ) {
+                            Text(stringResource(R.string.action_delete))
+                        }
+                    },
+                    dismissButton = {
+                        Button(
+                            onClick = { bookToDelete = null },
+                            shape = MaterialTheme.shapes.medium,
+                            colors = ButtonDefaults.textButtonColors()
+                        ) {
+                            Text(stringResource(R.string.action_cancel))
+                        }
                     }
-                },
-                dismissButton = {
-                    Button(
-                        onClick = { bookToDelete = null },
-                        shape = MaterialTheme.shapes.medium,
-                        colors = ButtonDefaults.textButtonColors()
-                    ) {
-                        Text(stringResource(R.string.action_cancel))
-                    }
-                }
-            )
+                )
+            }
         }
     }
 }

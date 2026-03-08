@@ -59,6 +59,7 @@ import com.andreas_kratzer.ghosttalk.ui.settings.sections.LanguageSettingsSectio
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.MaintenanceSection
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.NotificationSettingsSection
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.ScanningSettingsSection
+import com.andreas_kratzer.ghosttalk.ui.settings.sections.SecuritySettingsSection
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.TestSettingsSection
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.VoiceSettingsSection
 import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
@@ -67,6 +68,7 @@ enum class SettingsSection(val titleRes: Int, val icon: ImageVector) {
     GENERAL(R.string.settings_category_general, Icons.Default.Settings),
     VOICE(R.string.settings_category_voice, GhosTTalkIcons.RecordVoiceOver),
     SCANNING(R.string.settings_category_scanning, GhosTTalkIcons.SettingsAccessibility),
+    SECURITY(R.string.settings_category_security, GhosTTalkIcons.Security),
     CLOUD(R.string.settings_category_cloud, GhosTTalkIcons.Cloud),
     GEMINI(R.string.settings_category_gemini, GhosTTalkIcons.AutoAwesome),
     NOTIFICATIONS(R.string.settings_category_notifications, GhosTTalkIcons.Notifications),
@@ -77,6 +79,7 @@ enum class SettingsSection(val titleRes: Int, val icon: ImageVector) {
 @Composable
 fun SettingsScreen(
     onNavigateBack: () -> Unit,
+    onNavigateToStart: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
@@ -143,7 +146,14 @@ fun SettingsScreen(
                 VersionInfo()
             } else {
                 // Submenu Content
-                SubmenuContent(selectedSection!!, viewModel)
+                SubmenuContent(
+                    selectedSection!!, 
+                    viewModel,
+                    onLockClicked = {
+                        viewModel.lock()
+                        onNavigateToStart()
+                    }
+                )
                 Spacer(modifier = Modifier.height(dimensions.paddingDoubleExtraLarge))
             }
         }
@@ -193,7 +203,11 @@ fun SettingsMainMenuList(onSectionSelect: (SettingsSection) -> Unit) {
 }
 
 @Composable
-fun SubmenuContent(section: SettingsSection, viewModel: SettingsViewModel) {
+fun SubmenuContent(
+    section: SettingsSection, 
+    viewModel: SettingsViewModel,
+    onLockClicked: () -> Unit = {}
+) {
     when (section) {
         SettingsSection.GENERAL -> {
             LanguageSettingsSection(viewModel)
@@ -204,6 +218,20 @@ fun SubmenuContent(section: SettingsSection, viewModel: SettingsViewModel) {
         }
         SettingsSection.SCANNING -> {
             ScanningSettingsSection(viewModel)
+        }
+        SettingsSection.SECURITY -> {
+            val pin by viewModel.securityPin.collectAsState(null)
+            val timeout by viewModel.securityPinTimeoutMinutes.collectAsState(30L)
+            val reqDeletion by viewModel.isPinRequiredForDeletion.collectAsState(false)
+            SecuritySettingsSection(
+                securityPin = pin,
+                onSecurityPinChange = viewModel::setSecurityPin,
+                securityPinTimeoutMinutes = timeout,
+                onSecurityPinTimeoutChange = viewModel::setSecurityPinTimeoutMinutes,
+                isPinRequiredForDeletion = reqDeletion,
+                onPinRequiredForDeletionChange = viewModel::setPinRequiredForDeletion,
+                onLockClicked = onLockClicked
+            )
         }
         SettingsSection.CLOUD -> {
             CloudSettingsSection(viewModel)

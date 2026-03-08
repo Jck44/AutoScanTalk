@@ -1,6 +1,10 @@
 package com.andreas_kratzer.ghosttalk
 
 import android.annotation.SuppressLint
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.os.Bundle
 import android.util.Log
 import android.view.KeyEvent
@@ -34,6 +38,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.compose.rememberNavController
 import com.andreas_kratzer.ghosttalk.core.KeyEventCoordinator
+import com.andreas_kratzer.ghosttalk.core.SecurityManager
 import com.andreas_kratzer.ghosttalk.core.UpdateManager
 import com.andreas_kratzer.ghosttalk.data.PageRepository
 import com.andreas_kratzer.ghosttalk.data.SampleDataInitializer
@@ -44,6 +49,7 @@ import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
 import com.andreas_kratzer.ghosttalk.ui.settings.SettingsViewModel
 import com.andreas_kratzer.ghosttalk.ui.theme.GhosTTalkTheme
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -55,6 +61,7 @@ class MainActivity : AppCompatActivity() {
     @Inject lateinit var bookRepository: com.andreas_kratzer.ghosttalk.data.BookRepository
     @Inject lateinit var sampleDataInitializer: SampleDataInitializer
     @Inject lateinit var keyEventCoordinator: KeyEventCoordinator
+    @Inject lateinit var securityManager: SecurityManager
 
     private val bookViewModel: BookViewModel by viewModels()
     private val pageViewModel: PageViewModel by viewModels()
@@ -62,6 +69,14 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var globalPageViewModel: PageViewModel
     private lateinit var updateManager: UpdateManager
+
+    private val screenOffReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == Intent.ACTION_SCREEN_OFF) {
+                securityManager.lock()
+            }
+        }
+    }
 
     private val updateLauncher = registerForActivityResult(
         ActivityResultContracts.StartIntentSenderForResult()
@@ -87,6 +102,7 @@ class MainActivity : AppCompatActivity() {
         updateManager = UpdateManager(this)
         updateManager.checkForUpdates(updateLauncher)
 
+        registerReceiver(screenOffReceiver, IntentFilter(Intent.ACTION_SCREEN_OFF))
 
         globalPageViewModel = pageViewModel
 
@@ -137,6 +153,16 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // Timeout check loop
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                while (true) {
+                    securityManager.checkTimeout()
+                    delay(60000) // Check every minute
+                }
+            }
+        }
+
 
         setContent {
             val themeMode by settingsViewModel.themeMode.collectAsState()
@@ -156,7 +182,8 @@ class MainActivity : AppCompatActivity() {
                             pageViewModel = pageViewModel,
                             settingsViewModel = settingsViewModel,
                             settingsRepository = settingsRepository,
-                            pageRepository = pageRepository
+                            pageRepository = pageRepository,
+                            securityManager = securityManager
                         )
 
                         // The "Black Mode" overlay. 
@@ -195,8 +222,18 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        try {
+            unregisterReceiver(screenOffReceiver)
+        } catch (e: Exception) {
+            // Ignore
+        }
+    }
+
     @SuppressLint("RestrictedApi")
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        securityManager.updateActivity()
         val isUserMode = if (::globalPageViewModel.isInitialized) {
             globalPageViewModel.isUserModeActive.value
         } else {
@@ -208,5 +245,10 @@ class MainActivity : AppCompatActivity() {
             return true
         }
         return super.dispatchKeyEvent(event)
+    }
+
+    override fun onUserInteraction() {
+        super.onUserInteraction()
+        securityManager.updateActivity()
     }
 }

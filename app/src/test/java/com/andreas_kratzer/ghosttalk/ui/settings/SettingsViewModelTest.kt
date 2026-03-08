@@ -1,6 +1,7 @@
 package com.andreas_kratzer.ghosttalk.ui.settings
 
 import android.app.Application
+import com.andreas_kratzer.ghosttalk.core.SecurityManager
 import com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.domain.pages.GetPagesUseCase
@@ -33,6 +34,7 @@ class SettingsViewModelTest {
     private lateinit var application: Application
     private lateinit var settingsRepository: SettingsRepository
     private lateinit var buttonUsageRepository: ButtonUsageRepository
+    private lateinit var securityManager: SecurityManager
     private lateinit var getPagesUseCase: GetPagesUseCase
     
     private lateinit var ttsDelegate: TtsSettingsDelegate
@@ -50,6 +52,7 @@ class SettingsViewModelTest {
         application = mockk(relaxed = true)
         settingsRepository = mockk(relaxed = true)
         buttonUsageRepository = mockk(relaxed = true)
+        securityManager = mockk(relaxed = true)
         getPagesUseCase = mockk(relaxed = true)
         
         ttsDelegate = mockk(relaxed = true)
@@ -73,6 +76,7 @@ class SettingsViewModelTest {
             application = application,
             settingsRepository = settingsRepository,
             buttonUsageRepository = buttonUsageRepository,
+            securityManager = securityManager,
             getPagesUseCase = getPagesUseCase,
             ttsDelegate = ttsDelegate,
             scanningDelegate = scanningDelegate,
