@@ -85,13 +85,22 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
             // Voice Select
             Box(modifier = Modifier.fillMaxWidth()) {
                 val context = androidx.compose.ui.platform.LocalContext.current
+                
+                // Group voices by base name to give them the same number
+                val voiceGroups = remember(availableVoices) {
+                    availableVoices.map { it.name }
+                        .distinctBy { VoiceUtils.formatVoiceName(it) }
+                        .map { VoiceUtils.formatVoiceName(it) }
+                }
+
                 val voiceLabel = if (selectedVoiceName.isNullOrEmpty()) {
                     stringResource(R.string.settings_voice_default)
                 } else {
-                    // Try to find the actual Voice object to get better formatting
                     val currentVoice = availableVoices.find { it.name == selectedVoiceName }
                     if (currentVoice != null) {
-                        VoiceUtils.formatVoiceDisplay(context, currentVoice, availableVoices.indexOf(currentVoice))
+                        val baseName = VoiceUtils.formatVoiceName(currentVoice.name)
+                        val groupIndex = voiceGroups.indexOf(baseName)
+                        VoiceUtils.formatVoiceDisplay(context, currentVoice, if (groupIndex >= 0) groupIndex else 0)
                     } else {
                         VoiceUtils.formatVoiceName(selectedVoiceName!!)
                     }
@@ -110,11 +119,13 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                             expandedVoice = false
                         }
                     )
-                    availableVoices.forEachIndexed { index, voice ->
+                    availableVoices.forEach { voice ->
+                        val baseName = VoiceUtils.formatVoiceName(voice.name)
+                        val groupIndex = voiceGroups.indexOf(baseName)
                         DropdownMenuItem(
                             text = { 
                                 Text(
-                                    text = VoiceUtils.formatVoiceDisplay(context, voice, index),
+                                    text = VoiceUtils.formatVoiceDisplay(context, voice, if (groupIndex >= 0) groupIndex else 0),
                                     style = MaterialTheme.typography.bodyLarge
                                 ) 
                             },
@@ -129,9 +140,7 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
 
             // (Sliders removed)
         }
-    }
 
-    if (isGlobal) {
         PreferenceCategory(stringResource(R.string.settings_category_audio_hardware)) {
             // TTS Audio Device Select
             Box(modifier = Modifier.fillMaxWidth()) {
@@ -187,6 +196,10 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                 }
             }
         }
+    }
+
+    if (isGlobal) {
+        // Global hardware settings moved to book-bound section
     }
 }
 

@@ -27,8 +27,9 @@ object VoiceUtils {
 
     /**
      * Formats a Voice object into a beautiful display name like "Stimme 1 (Weiblich, Hohe Qualität)".
+     * @param voiceIndex The index of the voice group (same base names get same index)
      */
-    fun formatVoiceDisplay(context: Context, voice: Voice, index: Int): String {
+    fun formatVoiceDisplay(context: Context, voice: Voice, voiceIndex: Int): String {
         val traits = mutableListOf<String>()
         
         // Quality
@@ -55,14 +56,12 @@ object VoiceUtils {
         // Network hint
         if (voice.isNetworkConnectionRequired) {
             traits.add("Online")
+        } else {
+            traits.add(context.getString(R.string.settings_voice_local_hint).trim().removePrefix("(").removeSuffix(")"))
         }
 
         val traitsCombined = traits.joinToString(", ")
         
-        return if (traitsCombined.isNotEmpty()) {
-            context.getString(R.string.voice_format_pattern, index + 1, traitsCombined)
-        } else {
-            context.getString(R.string.voice_format_pattern, index + 1, formatVoiceName(voice.name))
-        }
+        return context.getString(R.string.voice_format_pattern, voiceIndex + 1, traitsCombined)
     }
 }
