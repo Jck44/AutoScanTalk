@@ -84,8 +84,38 @@ fun GhosTTalkNavHost(
                 pageViewModel.setActiveBookId(selectedBookId)
                 settingsRepository.activeBookId = selectedBookId
                 settingsViewModel.refresh()
-                navController.navigate("start") {
-                    popUpTo("book_list") { inclusive = true }
+                
+                val behavior = settingsRepository.startupBehavior
+                if (behavior == "USER_MODE") {
+                    // Navigate directly to user mode
+                    val startId = settingsRepository.defaultStartPageId
+                    CoroutineScope(Dispatchers.IO).launch {
+                        val startPage = if (startId != null) {
+                            pageRepository.getPageById(startId)
+                        } else null
+
+                        val finalPage = startPage ?: pageRepository.getPagesForBook(selectedBookId).firstOrNull()
+                        
+                        if (finalPage != null) {
+                            withContext(Dispatchers.Main) {
+                                pageViewModel.loadPage(finalPage)
+                                navController.navigate("main") {
+                                    popUpTo("book_list") { inclusive = true }
+                                }
+                            }
+                        } else {
+                            // Fallback to start screen if no pages
+                            withContext(Dispatchers.Main) {
+                                navController.navigate("start") {
+                                    popUpTo("book_list") { inclusive = true }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    navController.navigate("start") {
+                        popUpTo("book_list") { inclusive = true }
+                    }
                 }
             }
         }
@@ -107,7 +137,11 @@ fun GhosTTalkNavHost(
             )
         }
         composable("start") {
+            val activeBookId by pageViewModel.activeBookId.collectAsState()
+            val allBooks by bookViewModel.allBooks.collectAsState()
+            val activeBook = allBooks.find { it.id == activeBookId }
             StartScreen(
+                bookName = activeBook?.name ?: "GhostTalk",
                 onNavigateToUserMode = {
                     val startId = settingsRepository.defaultStartPageId
                     CoroutineScope(Dispatchers.IO).launch {
@@ -115,7 +149,7 @@ fun GhosTTalkNavHost(
                             pageRepository.getPageById(startId)
                         } else null
 
-                        val finalPage = startPage ?: pageRepository.getPagesForBook(pageViewModel.activeBookId.value ?: "book-default").firstOrNull()
+                        val finalPage = startPage ?: pageRepository.getPagesForBook(activeBookId ?: "book-default").firstOrNull()
                         
                         if (finalPage != null) {
                             withContext(Dispatchers.Main) {

@@ -97,6 +97,7 @@ class SettingsViewModel @Inject constructor(
     val isBiometricEnabled = settingsRepository.isBiometricEnabledFlow
     val isSecurityRequiredForEdit = settingsRepository.isSecurityRequiredForEditFlow
     val isSecurityRequiredForSettings = settingsRepository.isSecurityRequiredForSettingsFlow
+    val startupBehavior = settingsRepository.startupBehaviorFlow
 
     val authIntentFlow = kotlinx.coroutines.flow.merge(
         cloudSyncDelegate.authIntentFlow,
@@ -249,6 +250,10 @@ class SettingsViewModel @Inject constructor(
 
     fun setSecurityRequiredForSettings(required: Boolean) {
         settingsRepository.isSecurityRequiredForSettings = required
+    }
+
+    fun setStartupBehavior(behavior: String) {
+        settingsRepository.startupBehavior = behavior
     }
 
     fun lock() {

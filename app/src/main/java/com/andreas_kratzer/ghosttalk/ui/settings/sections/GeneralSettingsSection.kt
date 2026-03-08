@@ -43,11 +43,13 @@ fun GeneralSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
     
     val keepScreenOn by viewModel.keepScreenOnUserMode.collectAsState(true)
     val screenBehavior by viewModel.userModeScreenBehavior.collectAsState("NORMAL")
+    val startupBehavior by viewModel.startupBehavior.collectAsState("BOOK_SELECTION")
 
     var expandedTheme by remember { mutableStateOf(false) }
     var expandedStartPage by remember { mutableStateOf(false) }
     var startPageSearchQuery by remember { mutableStateOf("") }
     var expandedScreenBehavior by remember { mutableStateOf(false) }
+    var expandedStartupBehavior by remember { mutableStateOf(false) }
 
     val dimensions = LocalDimensions.current
 
@@ -114,6 +116,40 @@ fun GeneralSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                 checked = persistLogs,
                 onCheckedChange = { viewModel.setPersistActionLogs(it) }
             )
+        }
+
+        PreferenceCategory(stringResource(R.string.settings_category_general)) {
+            Box(modifier = Modifier.fillMaxWidth()) {
+                val startupLabel = when (startupBehavior) {
+                    "SELECTED_BOOK" -> stringResource(R.string.settings_startup_behavior_last_book)
+                    "USER_MODE" -> stringResource(R.string.settings_startup_behavior_user_mode)
+                    else -> stringResource(R.string.settings_startup_behavior_book_list)
+                }
+
+                SettingsClickableItem(
+                    label = stringResource(R.string.settings_startup_behavior),
+                    value = startupLabel,
+                    onClick = { expandedStartupBehavior = true }
+                )
+
+                DropdownMenu(
+                    expanded = expandedStartupBehavior,
+                    onDismissRequest = { expandedStartupBehavior = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.settings_startup_behavior_book_list), style = MaterialTheme.typography.bodyLarge) },
+                        onClick = { viewModel.setStartupBehavior("BOOK_SELECTION"); expandedStartupBehavior = false }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.settings_startup_behavior_last_book), style = MaterialTheme.typography.bodyLarge) },
+                        onClick = { viewModel.setStartupBehavior("SELECTED_BOOK"); expandedStartupBehavior = false }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.settings_startup_behavior_user_mode), style = MaterialTheme.typography.bodyLarge) },
+                        onClick = { viewModel.setStartupBehavior("USER_MODE"); expandedStartupBehavior = false }
+                    )
+                }
+            }
         }
     }
 

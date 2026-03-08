@@ -3,28 +3,38 @@ package com.andreas_kratzer.ghosttalk.ui.main
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import com.andreas_kratzer.ghosttalk.R
-import com.andreas_kratzer.ghosttalk.ui.components.AppBrandHeader
 import com.andreas_kratzer.ghosttalk.ui.components.GhostTalkCard
 import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 
@@ -35,7 +45,8 @@ fun StartScreen(
     onNavigateToSettings: () -> Unit,
     onNavigateToContentManagement: () -> Unit,
     onNavigateToBooks: () -> Unit,
-    onNavigateToGlobalSettings: () -> Unit
+    onNavigateToGlobalSettings: () -> Unit,
+    bookName: String
 ) {
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
@@ -46,10 +57,22 @@ fun StartScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    AppBrandHeader(
-                        isLandscape = true, // Unified: always use the smaller title in the top bar
-                        modifier = Modifier.fillMaxWidth()
+                    Text(
+                        text = bookName,
+                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
                     )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateToBooks) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.start_back_to_books))
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onNavigateToGlobalSettings) {
+                        Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.settings_title))
+                    }
                 }
             )
         }
@@ -58,12 +81,11 @@ fun StartScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(dimensions.paddingExtraLarge),
+                .padding(dimensions.paddingExtraLarge)
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top // Changed from Center to Top for unified look
+            verticalArrangement = Arrangement.Top
         ) {
-            Spacer(modifier = Modifier.height(if (isLandscape) dimensions.paddingLarge else dimensions.paddingExtraLarge))
-            
             @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
@@ -100,17 +122,6 @@ fun StartScreen(
                     iconColor = MaterialTheme.colorScheme.secondary
                 )
             }
-
-            Spacer(modifier = Modifier.height(if (isLandscape) dimensions.paddingLarge else dimensions.paddingExtraLarge))
-
-            GhostTalkCard(
-                title = stringResource(R.string.start_back_to_books),
-                icon = Icons.AutoMirrored.Filled.ArrowBack,
-                onClick = onNavigateToBooks,
-                modifier = Modifier.fillMaxWidth(),
-                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                iconColor = MaterialTheme.colorScheme.onSurfaceVariant
-            )
         }
     }
 }

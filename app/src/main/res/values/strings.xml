@@ -102,17 +102,22 @@
     <string name="security_pin_enter">PIN eingeben</string>
     <string name="security_pin_new">Neuen PIN festlegen</string>
 
-    <!-- Start Screen -->
     <string name="start_tagline">Unterstützte Kommunikation</string>
     <string name="start_user_mode">Nutzer Modus</string>
     <string name="start_manage_content">Inhalte verwalten</string>
     <string name="start_back_to_books">Zurück zu den Büchern</string>
+    
+    <string name="settings_startup_behavior">App öffnen in:</string>
+    <string name="settings_startup_behavior_book_list">Buchauswahl</string>
+    <string name="settings_startup_behavior_last_book">Zuletzt gewähltes Buch</string>
+    <string name="settings_startup_behavior_user_mode">Nutzer Modus (gewähltes Buch)</string>
 
     <!-- Book List Screen -->
     <string name="book_add_description">Neues Buch hinzufügen</string>
     <string name="book_last_modified_label">Zuletzt bearbeitet: %s</string>
     <string name="book_rename_description">Buch umbenennen</string>
     <string name="book_delete_description">Buch löschen</string>
+    <string name="book_favorite_description">Favorit festlegen</string>
     <string name="book_dialog_new_title">Neues Buch erstellen</string>
     <string name="book_dialog_rename_title">Buch umbenennen</string>
     <string name="book_dialog_delete_title">Buch löschen?</string>

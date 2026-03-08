@@ -244,6 +244,8 @@ class SettingsRepository(context: Context) {
     private val _isBiometricEnabled = BooleanSetting(KEY_BIOMETRIC_ENABLED, false, isScoped = false)
     private val _isSecurityRequiredForEdit = BooleanSetting(KEY_SECURITY_REQUIRED_FOR_EDIT, false, isScoped = false)
     private val _isSecurityRequiredForSettings = BooleanSetting(KEY_SECURITY_REQUIRED_FOR_SETTINGS, false, isScoped = false)
+    private val _startupBehavior = NonNullStringSetting(KEY_STARTUP_BEHAVIOR, "BOOK_SELECTION", isScoped = false)
+    private val _favoriteBookId = StringSetting(KEY_FAVORITE_BOOK_ID, isScoped = false)
 
     init {
         cleanupLegacyBookPins()
@@ -305,6 +307,8 @@ class SettingsRepository(context: Context) {
         _isBiometricEnabled.refresh()
         _isSecurityRequiredForEdit.refresh()
         _isSecurityRequiredForSettings.refresh()
+        _startupBehavior.refresh()
+        _favoriteBookId.refresh()
     }
 
     private val _userModeCodeBehavior = NonNullStringSetting(KEY_USER_MODE_SCREEN_BEHAVIOR, "NORMAL")
@@ -352,6 +356,8 @@ class SettingsRepository(context: Context) {
     val isBiometricEnabledFlow: StateFlow<Boolean> get() = _isBiometricEnabled.flow
     val isSecurityRequiredForEditFlow: StateFlow<Boolean> get() = _isSecurityRequiredForEdit.flow
     val isSecurityRequiredForSettingsFlow: StateFlow<Boolean> get() = _isSecurityRequiredForSettings.flow
+    val startupBehaviorFlow: StateFlow<String> get() = _startupBehavior.flow
+    val favoriteBookIdFlow: StateFlow<String?> get() = _favoriteBookId.flow
 
     // ── Public API: Properties ───────────────────────────────────────────
 
@@ -529,6 +535,14 @@ class SettingsRepository(context: Context) {
         get() = _isSecurityRequiredForSettings.value
         set(value) { _isSecurityRequiredForSettings.value = value }
 
+    var startupBehavior: String
+        get() = _startupBehavior.value
+        set(value) { _startupBehavior.value = value }
+
+    var favoriteBookId: String?
+        get() = _favoriteBookId.value
+        set(value) { _favoriteBookId.value = value }
+
     // ── Book-specific helpers ─────────────────────────────────────────────
 
     fun getSecurityPinForBook(bookId: String): String? {
@@ -614,5 +628,7 @@ class SettingsRepository(context: Context) {
         private const val KEY_BIOMETRIC_ENABLED = "biometric_enabled"
         private const val KEY_SECURITY_REQUIRED_FOR_EDIT = "security_required_for_edit"
         private const val KEY_SECURITY_REQUIRED_FOR_SETTINGS = "security_required_for_settings"
+        private const val KEY_STARTUP_BEHAVIOR = "startup_behavior"
+        private const val KEY_FAVORITE_BOOK_ID = "favorite_book_id"
     }
 }

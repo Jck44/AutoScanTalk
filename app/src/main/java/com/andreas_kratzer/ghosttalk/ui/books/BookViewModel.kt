@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.andreas_kratzer.ghosttalk.data.BookRepository
+import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.model.Book
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -20,8 +21,11 @@ import javax.inject.Inject
 @HiltViewModel
 class BookViewModel @Inject constructor(
     application: Application,
-    private val bookRepository: BookRepository
+    private val bookRepository: BookRepository,
+    val settingsRepository: SettingsRepository
 ) : AndroidViewModel(application) {
+
+    val favoriteBookId = settingsRepository.favoriteBookIdFlow
 
     private val _allBooks = MutableStateFlow<List<Book>>(emptyList())
     val allBooks: StateFlow<List<Book>> = _allBooks.asStateFlow()
@@ -39,9 +43,37 @@ class BookViewModel @Inject constructor(
         viewModelScope.launch {
             bookRepository.getAllBooks().collect { books ->
                 _allBooks.value = books
-                if (!hasAutoOpened && books.size == 1) {
-                    hasAutoOpened = true
-                    _autoOpenBookEvent.emit(books[0].id)
+                
+                if (books.isEmpty()) {
+                    hasAutoOpened = true // Don't auto-open if nothing exists
+                    return@collect
+                }
+
+                // Ensure a favorite is set if none exists
+                if (settingsRepository.favoriteBookId == null || books.none { it.id == settingsRepository.favoriteBookId }) {
+                    settingsRepository.favoriteBookId = books.firstOrNull()?.id
+                }
+
+                if (!hasAutoOpened) {
+                    val behavior = settingsRepository.startupBehavior
+                    val favoriteId = settingsRepository.favoriteBookId
+
+                    when (behavior) {
+                        "SELECTED_BOOK", "USER_MODE" -> {
+                            if (favoriteId != null && books.any { it.id == favoriteId }) {
+                                hasAutoOpened = true
+                                _autoOpenBookEvent.emit(favoriteId)
+                            } else if (books.size == 1) {
+                                // Fallback for single book if behavior is not BOOK_SELECTION
+                                hasAutoOpened = true
+                                _autoOpenBookEvent.emit(books[0].id)
+                            }
+                        }
+                        "BOOK_SELECTION" -> {
+                            hasAutoOpened = true
+                            // Stay on book selection
+                        }
+                    }
                 }
             }
         }

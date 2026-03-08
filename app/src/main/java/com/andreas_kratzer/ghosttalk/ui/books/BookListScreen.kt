@@ -16,7 +16,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Star
+import com.andreas_kratzer.ghosttalk.ui.theme.GhosTTalkIcons
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -111,43 +114,77 @@ fun BookListScreen(
         ) {
             items(allBooks) { book ->
                 val dateFormat = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
+                val favoriteId by bookViewModel.favoriteBookId.collectAsState()
+                val isFavorite = favoriteId == book.id
+                
+                var showMenu by remember { mutableStateOf(false) }
+
                 GhostTalkCard(
                     title = book.name,
                     subtitle = stringResource(R.string.book_last_modified_label, dateFormat.format(Date(book.updatedAt))),
-                    icon = Icons.Default.Edit, 
+                    icon = null, // Removed left icon as requested
                     onClick = { onBookSelected(book.id) },
                     trailingAction = {
-                        Row {
+                        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                             IconButton(
                                 onClick = { 
-                                    if (!isUnlocked && securityManager.isSecurityRequiredForEdit()) {
-                                        showSecurityDialogForEdit = true
-                                    } else {
-                                        bookToEdit = book
-                                    }
+                                    bookViewModel.settingsRepository.favoriteBookId = if (isFavorite) null else book.id
                                 }
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Edit,
-                                    contentDescription = stringResource(R.string.book_rename_description),
-                                    tint = MaterialTheme.colorScheme.primary
+                                    imageVector = if (isFavorite) Icons.Default.Star else GhosTTalkIcons.StarBorder,
+                                    contentDescription = stringResource(R.string.book_favorite_description),
+                                    tint = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
-                            IconButton(
-                                onClick = { 
-                                    if (!isUnlocked && securityManager.isSecurityRequiredForDeletion()) {
-                                        bookToDelete = book
-                                        showSecurityDialogForDelete = true
-                                    } else {
-                                        bookToDelete = book 
-                                    }
+                            
+                            androidx.compose.foundation.layout.Box {
+                                IconButton(onClick = { showMenu = true }) {
+                                    Icon(
+                                        imageVector = Icons.Default.MoreVert,
+                                        contentDescription = stringResource(R.string.action_more)
+                                    )
                                 }
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = stringResource(R.string.book_delete_description),
-                                    tint = MaterialTheme.colorScheme.error
-                                )
+                                
+                                androidx.compose.material3.DropdownMenu(
+                                    expanded = showMenu,
+                                    onDismissRequest = { showMenu = false }
+                                ) {
+                                    androidx.compose.material3.DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.book_rename_description)) },
+                                        onClick = {
+                                            showMenu = false
+                                            if (!isUnlocked && securityManager.isSecurityRequiredForEdit()) {
+                                                bookToEdit = book
+                                                showSecurityDialogForEdit = true
+                                            } else {
+                                                bookToEdit = book
+                                            }
+                                        },
+                                        leadingIcon = {
+                                            Icon(Icons.Default.Edit, contentDescription = null)
+                                        }
+                                    )
+                                    androidx.compose.material3.DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.book_delete_description)) },
+                                        onClick = {
+                                            showMenu = false
+                                            if (!isUnlocked && securityManager.isSecurityRequiredForDeletion()) {
+                                                bookToDelete = book
+                                                showSecurityDialogForDelete = true
+                                            } else {
+                                                bookToDelete = book 
+                                            }
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = Icons.Default.Delete, 
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.error
+                                            )
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
