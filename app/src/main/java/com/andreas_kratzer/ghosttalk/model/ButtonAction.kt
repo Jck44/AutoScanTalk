@@ -64,23 +64,29 @@ data class SmartPredictionButtonAction(
     override val ttsMode: String = "NORMAL"
 ) : ButtonAction()
 
+/**
+ * An action to control device functions (Media, Volume, System Status, etc.)
+ */
+data class ControlDeviceButtonAction(
+    val actionType: DeviceActionType,
+    override val ttsMode: String = "NORMAL"
+) : ButtonAction()
+
+enum class DeviceActionType {
+    READ_NOTIFICATIONS,
+    MEDIA_NEXT,
+    MEDIA_PREVIOUS,
+    MEDIA_PLAY_PAUSE,
+    VOLUME_NOTIFICATION, // For later
+    VOLUME_ALARM,        // For later
+    VOLUME_MEDIA,        // For later
+    VOLUME_CALL,         // For later
+    STATUS_SILENT,       // For later
+    STATUS_VIBRATE,      // For later
+    STATUS_LOUD,         // For later
+    CLEAR_NOTIFICATIONS, // For later
+    SEND_MESSAGE         // For later
+}
+
 // Zukünftige Aktionen könnten hier als weitere data classes hinzugefügt werden,
 // die von `Action` erben.
-
-/**
- * An action that reads out notifications from a specified app (or all allowed apps).
- */
-data class NotificationButtonAction(
-    val targetApp: String = "ALL", // "ALL", "com.whatsapp", "org.thoughtcrime.securesms", etc.
-    override val ttsMode: String = "NORMAL"
-) : ButtonAction()
-
-/**
- * An action to change the volume multiplier directly via a button click.
- */
-data class ChangeVolumeButtonAction(
-    val isAbsolute: Boolean,
-    val amount: Float,
-    val isForCues: Boolean = false,
-    override val ttsMode: String = "NORMAL"
-) : ButtonAction()

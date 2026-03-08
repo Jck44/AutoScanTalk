@@ -10,16 +10,17 @@ class SpeechActionHandler(
     private val settingsRepository: SettingsRepository,
     private val ttsHelper: TextToSpeechHelper?,
     private val log: (String) -> Unit
-) : ActionHandler<SpeakTextButtonAction> {
+) : ActionHandler {
 
     override fun canHandle(action: ButtonAction): Boolean = action is SpeakTextButtonAction
 
     override fun handle(
         buttonConfig: ButtonConfig,
-        action: SpeakTextButtonAction,
+        action: ButtonAction,
         executionId: Int,
         onFinish: (Int) -> Unit
     ) {
+        val speakAction = action as SpeakTextButtonAction
         val textToSpeak = buttonConfig.spokenText?.takeIf { it.isNotBlank() }
             ?: buttonConfig.label
             

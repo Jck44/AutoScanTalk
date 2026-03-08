@@ -53,7 +53,6 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.CloudSettingsSection
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.ExperimentalSettingsSection
-import com.andreas_kratzer.ghosttalk.ui.settings.sections.GeminiNanoSettingsSection
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.GenAiSettingsSection
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.GeneralSettingsSection
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.LanguageSettingsSection
@@ -211,7 +210,6 @@ fun SubmenuContent(section: SettingsSection, viewModel: SettingsViewModel) {
         }
         SettingsSection.GEMINI -> {
             GenAiSettingsSection(viewModel)
-            GeminiNanoSettingsSection(viewModel)
         }
         SettingsSection.NOTIFICATIONS -> {
             NotificationSettingsSection(viewModel)
@@ -262,7 +260,12 @@ fun PreferenceCategory(title: String, content: @Composable ColumnScope.() -> Uni
 }
 
 @Composable
-fun SettingsToggleItem(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+fun SettingsToggleItem(
+    label: String, 
+    checked: Boolean, 
+    enabled: Boolean = true,
+    onCheckedChange: (Boolean) -> Unit
+) {
     val dimensions = LocalDimensions.current
     Row(
         modifier = Modifier
@@ -273,9 +276,10 @@ fun SettingsToggleItem(label: String, checked: Boolean, onCheckedChange: (Boolea
         Text(
             text = label, 
             modifier = Modifier.weight(1f), 
-            style = MaterialTheme.typography.bodyLarge
+            style = MaterialTheme.typography.bodyLarge,
+            color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
         )
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
+        Switch(checked = checked, onCheckedChange = onCheckedChange, enabled = enabled)
     }
 }
 

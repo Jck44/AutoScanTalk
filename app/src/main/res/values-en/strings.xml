@@ -163,6 +163,11 @@
     <string name="button_action_notification">Notification (Auditory Cue)</string>
     <string name="button_action_volume_tts">Adjust Volume (TTS)</string>
     <string name="button_action_volume_cues">Adjust Volume (Feedback)</string>
+    <string name="button_action_control_device">Device Control</string>
+    <string name="button_device_control_type_label">Select Action</string>
+    <string name="button_device_control_media_next">Next Track</string>
+    <string name="button_device_control_media_previous">Previous Track</string>
+    <string name="button_device_control_media_play_pause">Play / Pause</string>
     <string name="settings_gemini_nano_disabled_warning">Gemini Nano is disabled in settings. This action will not be executed.</string>
     <string name="button_no_page_selected">No page selected</string>
     <string name="button_target_page_label">Target Page</string>

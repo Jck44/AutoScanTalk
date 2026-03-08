@@ -159,6 +159,11 @@
     <string name="button_action_notification">Benachrichtigung (Audio-Hinweis)</string>
     <string name="button_action_volume_tts">Lautstärke anpassen (TTS)</string>
     <string name="button_action_volume_cues">Lautstärke anpassen (Hinweise)</string>
+    <string name="button_action_control_device">Geräte steuern</string>
+    <string name="button_device_control_type_label">Aktion wählen</string>
+    <string name="button_device_control_media_next">Nächstes Lied / Weiter</string>
+    <string name="button_device_control_media_previous">Vorheriges Lied / Zurück</string>
+    <string name="button_device_control_media_play_pause">Start / Stop</string>
     <string name="settings_gemini_nano_disabled_warning">Gemini Nano ist in den Einstellungen deaktiviert. Diese Aktion wird nicht ausgeführt.</string>
     <string name="button_no_page_selected">Keine Seite ausgewählt</string>
     <string name="button_target_page_label">Ziel-Seite</string>
@@ -225,6 +230,8 @@
     <string name="settings_gemini_tool_status_requires_auth">Anmeldung erforderlich</string>
     <string name="settings_gemini_tool_status_failed">Nicht verfügbar</string>
     <string name="settings_gemini_tool_status_pending">Ausstehend…</string>
+    <string name="settings_gemini_nano_deactivated_title">Gemini Nano deaktiviert</string>
+    <string name="settings_gemini_nano_deactivated_message">Das lokale KI-Modell wurde nicht gefunden oder konnte nicht verifiziert werden. Gemini Nano wurde daher deaktiviert. Du kannst es in den Einstellungen erneut aktivieren und das Modell herunterladen.</string>
     <string name="settings_gemini_tool_google_search">Google Suche (Grounding)</string>
 
     <!-- Notifications -->

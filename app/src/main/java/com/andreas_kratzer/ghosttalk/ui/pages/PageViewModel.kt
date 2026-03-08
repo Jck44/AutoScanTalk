@@ -102,6 +102,7 @@ class PageViewModel @Inject constructor(
     .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     val actionExecutor = ActionExecutor(
+        application = application,
         scope = viewModelScope,
         settingsRepository = settingsRepository,
         logger = logger,

@@ -109,6 +109,9 @@ class SettingsViewModel @Inject constructor(
             Toast.makeText(application, message, Toast.LENGTH_LONG).show()
         }
         genAiDelegate.updateGeminiToolStatus()
+        viewModelScope.launch {
+            genAiDelegate.performGeminiNanoIntegrityCheck()
+        }
     }
 
     // --- Delegation Methods (UI Actions) ---
@@ -118,6 +121,9 @@ class SettingsViewModel @Inject constructor(
         ttsDelegate.loadAvailableVoices()
         ttsDelegate.loadAvailableAudioDevices()
         genAiDelegate.updateGeminiToolStatus()
+        viewModelScope.launch {
+            genAiDelegate.performGeminiNanoIntegrityCheck()
+        }
     }
 
     fun setTtsLanguage(tag: String) = ttsDelegate.setTtsLanguage(tag)
@@ -152,13 +158,35 @@ class SettingsViewModel @Inject constructor(
     fun setSyncIntervalMinutes(minutes: Long) { settingsRepository.syncIntervalMinutes = minutes }
 
     fun setGeminiEnabled(ctx: Context, e: Boolean) {
-        genAiDelegate.setGeminiEnabled(ctx, e, viewModelScope)
+        genAiDelegate.setGeminiCloudEnabled(ctx, e, viewModelScope)
     }
+    
+    fun setGeminiNanoEnabled(ctx: Context, e: Boolean) {
+        genAiDelegate.setGeminiNanoEnabled(ctx, e, viewModelScope)
+    }
+
     fun activateGemini(ctx: Context) = genAiDelegate.activateGemini(ctx, viewModelScope)
     fun testGeminiNano(ctx: Context) = genAiDelegate.testGeminiNano(ctx, viewModelScope)
+    
+    val isDownloadDialogVisible = genAiDelegate.isDownloadDialogVisible
+    val downloadProgress = genAiDelegate.downloadProgress
+    val downloadStatusMessage = genAiDelegate.downloadStatusMessage
+    val isDownloading = genAiDelegate.isDownloading
+    val nanoFeatureStatus = genAiDelegate.nanoFeatureStatus
+
+    fun startGeminiDownload() = genAiDelegate.startGeminiDownload(viewModelScope)
+    fun dismissDownloadDialog() = genAiDelegate.dismissDownloadDialog()
+
+    val isDeactivationDialogVisible = genAiDelegate.isDeactivationDialogVisible
+    fun dismissDeactivationDialog() = genAiDelegate.dismissDeactivationDialog()
+
     fun setUseLocalGenerativeAi(e: Boolean, ctx: Context? = null) {
-        settingsRepository.useLocalGenerativeAi = e
-        if (e && ctx != null) testGeminiNano(ctx)
+        if (e && ctx != null) {
+            genAiDelegate.setGeminiNanoEnabled(ctx, e, viewModelScope)
+        } else {
+            settingsRepository.useLocalGenerativeAi = e
+            if (e && ctx != null) testGeminiNano(ctx)
+        }
     }
 
     fun setPersistActionLogs(e: Boolean) { settingsRepository.persistActionLogs = e }

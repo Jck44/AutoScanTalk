@@ -14,16 +14,17 @@ class NavigationActionHandler(
     private val ttsHelper: TextToSpeechHelper?,
     private val emitEvent: suspend (ActionExecutor.ExecutionEvent) -> Unit,
     private val log: (String) -> Unit
-) : ActionHandler<NavigateToPageButtonAction> {
+) : ActionHandler {
 
     override fun canHandle(action: ButtonAction): Boolean = action is NavigateToPageButtonAction
 
     override fun handle(
         buttonConfig: ButtonConfig,
-        action: NavigateToPageButtonAction,
+        action: ButtonAction,
         executionId: Int,
         onFinish: (Int) -> Unit
     ) {
+        val navAction = action as NavigateToPageButtonAction
         val feedback = buttonConfig.spokenText?.takeIf { it.isNotBlank() }
         
         val performNavigation = {

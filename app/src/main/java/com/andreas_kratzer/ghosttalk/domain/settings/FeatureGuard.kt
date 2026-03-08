@@ -6,7 +6,8 @@ import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.GeminiButtonAction
 import com.andreas_kratzer.ghosttalk.model.GeminiNanoButtonAction
 import com.andreas_kratzer.ghosttalk.model.GeminiSearchButtonAction
-import com.andreas_kratzer.ghosttalk.model.NotificationButtonAction
+import com.andreas_kratzer.ghosttalk.model.ControlDeviceButtonAction
+import com.andreas_kratzer.ghosttalk.model.DeviceActionType
 import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -28,7 +29,13 @@ class FeatureGuard @Inject constructor(
             is GeminiButtonAction -> settingsRepository.isGeminiEnabled
             is GeminiSearchButtonAction -> settingsRepository.isGeminiEnabled
             is GeminiNanoButtonAction -> settingsRepository.useLocalGenerativeAi
-            is NotificationButtonAction -> settingsRepository.isNotificationReadingEnabled
+            is ControlDeviceButtonAction -> {
+                if (action.actionType == DeviceActionType.READ_NOTIFICATIONS) {
+                    settingsRepository.isNotificationReadingEnabled
+                } else {
+                    true
+                }
+            }
             else -> true
         }
     }

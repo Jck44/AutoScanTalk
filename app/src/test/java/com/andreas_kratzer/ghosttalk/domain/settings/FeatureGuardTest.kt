@@ -6,7 +6,8 @@ import com.andreas_kratzer.ghosttalk.model.GeminiButtonAction
 import com.andreas_kratzer.ghosttalk.model.GeminiNanoButtonAction
 import com.andreas_kratzer.ghosttalk.model.GeminiSearchButtonAction
 import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
-import com.andreas_kratzer.ghosttalk.model.NotificationButtonAction
+import com.andreas_kratzer.ghosttalk.model.ControlDeviceButtonAction
+import com.andreas_kratzer.ghosttalk.model.DeviceActionType
 import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
 import io.mockk.every
@@ -70,14 +71,20 @@ class FeatureGuardTest {
     }
 
     @Test
-    fun `isActionEnabled respects notification reading setting`() {
-        val action = NotificationButtonAction()
+    fun `isActionEnabled respects notification reading setting for ControlDeviceButtonAction`() {
+        val action = ControlDeviceButtonAction(DeviceActionType.READ_NOTIFICATIONS)
 
         every { settingsRepository.isNotificationReadingEnabled } returns true
         assertTrue(featureGuard.isActionEnabled(action))
 
         every { settingsRepository.isNotificationReadingEnabled } returns false
         assertFalse(featureGuard.isActionEnabled(action))
+    }
+
+    @Test
+    fun `isActionEnabled returns true for media control actions`() {
+        val action = ControlDeviceButtonAction(DeviceActionType.MEDIA_NEXT)
+        assertTrue(featureGuard.isActionEnabled(action))
     }
 
     @Test

@@ -6,16 +6,17 @@ import com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction
 
 class FrequentActionHandler(
     private val log: (String) -> Unit
-) : ActionHandler<FrequentActionButtonAction> {
+) : ActionHandler {
 
     override fun canHandle(action: ButtonAction): Boolean = action is FrequentActionButtonAction
 
     override fun handle(
         buttonConfig: ButtonConfig,
-        action: FrequentActionButtonAction,
+        action: ButtonAction,
         executionId: Int,
         onFinish: (Int) -> Unit
     ) {
+        // action as FrequentActionButtonAction
         log("Häufigste Aktion (unaufgelöst) ignoriert")
         onFinish(executionId)
     }

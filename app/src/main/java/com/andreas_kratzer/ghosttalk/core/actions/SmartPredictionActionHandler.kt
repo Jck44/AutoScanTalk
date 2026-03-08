@@ -6,17 +6,18 @@ import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
 
 class SmartPredictionActionHandler(
     private val log: (String) -> Unit
-) : ActionHandler<SmartPredictionButtonAction> {
+) : ActionHandler {
 
     override fun canHandle(action: ButtonAction): Boolean = action is SmartPredictionButtonAction
 
     override fun handle(
         buttonConfig: ButtonConfig,
-        action: SmartPredictionButtonAction,
+        action: ButtonAction,
         executionId: Int,
         onFinish: (Int) -> Unit
     ) {
-        log("Smart Prediction button clicked (Rank: ${action.rank}). Actual execution handled in ViewModel.")
+        val smartAction = action as SmartPredictionButtonAction
+        log("Smart Prediction button clicked (Rank: ${smartAction.rank}). Actual execution handled in ViewModel.")
         onFinish(executionId)
     }
 }

@@ -1,23 +1,55 @@
 package com.andreas_kratzer.ghosttalk.core.actions
 
+import android.content.Context
+import android.media.AudioManager
+import android.view.KeyEvent
 import com.andreas_kratzer.ghosttalk.core.services.NotificationReaderService
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.model.NotificationButtonAction
+import com.andreas_kratzer.ghosttalk.model.ControlDeviceButtonAction
+import com.andreas_kratzer.ghosttalk.model.DeviceActionType
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
 
-class NotificationActionHandler(
+class ControlDeviceActionHandler(
+    private val context: Context,
     private val settingsRepository: SettingsRepository,
     private val ttsHelper: TextToSpeechHelper?,
     private val log: (String) -> Unit
-) : ActionHandler<NotificationButtonAction> {
+) : ActionHandler {
 
-    override fun canHandle(action: ButtonAction): Boolean = action is NotificationButtonAction
+    override fun canHandle(action: ButtonAction): Boolean = action is ControlDeviceButtonAction
 
     override fun handle(
         buttonConfig: ButtonConfig,
-        action: NotificationButtonAction,
+        action: ButtonAction,
+        executionId: Int,
+        onFinish: (Int) -> Unit
+    ) {
+        val deviceAction = action as ControlDeviceButtonAction
+        when (deviceAction.actionType) {
+            DeviceActionType.MEDIA_NEXT -> handleMediaKey(KeyEvent.KEYCODE_MEDIA_NEXT, "Nächstes Lied", executionId, onFinish)
+            DeviceActionType.MEDIA_PREVIOUS -> handleMediaKey(KeyEvent.KEYCODE_MEDIA_PREVIOUS, "Vorheriges Lied", executionId, onFinish)
+            DeviceActionType.MEDIA_PLAY_PAUSE -> handleMediaKey(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, "Start / Stop", executionId, onFinish)
+            DeviceActionType.READ_NOTIFICATIONS -> handleReadNotifications(buttonConfig, deviceAction, executionId, onFinish)
+            else -> {
+                log("Aktion ${action.actionType} noch nicht implementiert.")
+                onFinish(executionId)
+            }
+        }
+    }
+
+    private fun handleMediaKey(keyCode: Int, description: String, executionId: Int, onFinish: (Int) -> Unit) {
+        val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        audioManager.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, keyCode))
+        audioManager.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_UP, keyCode))
+        log(description)
+        onFinish(executionId)
+    }
+
+    private fun handleReadNotifications(
+        buttonConfig: ButtonConfig,
+        action: ControlDeviceButtonAction,
         executionId: Int,
         onFinish: (Int) -> Unit
     ) {
@@ -61,9 +93,7 @@ class NotificationActionHandler(
         val allowedApps = settingsRepository.monitoredNotificationApps
         val filtered = activeNotifs.filter { sbn ->
             val pkg = sbn.packageName
-            val isAllowed = allowedApps.contains(pkg)
-            val matchesTarget = action.targetApp == "ALL" || pkg == action.targetApp
-            isAllowed && matchesTarget
+            allowedApps.contains(pkg)
         }
 
         if (filtered.isEmpty()) {

@@ -37,13 +37,12 @@ import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.model.AuditoryCue
 import com.andreas_kratzer.ghosttalk.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.model.ChangeVolumeButtonAction
+import com.andreas_kratzer.ghosttalk.model.ControlDeviceButtonAction
 import com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction
 import com.andreas_kratzer.ghosttalk.model.GeminiButtonAction
 import com.andreas_kratzer.ghosttalk.model.GeminiNanoButtonAction
 import com.andreas_kratzer.ghosttalk.model.GeminiSearchButtonAction
 import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
-import com.andreas_kratzer.ghosttalk.model.NotificationButtonAction
 import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
@@ -95,14 +94,11 @@ fun ButtonConfigDialog(
     val actionTypeGeminiNano = stringResource(R.string.button_action_gemini_nano)
     val actionTypeFrequent = stringResource(R.string.button_action_frequent_action)
     val actionTypeSmart = stringResource(R.string.button_action_smart_prediction)
-    val actionTypeNotification = stringResource(R.string.button_action_notification)
-    val actionTypeVolumeTts = stringResource(R.string.button_action_volume_tts)
-    val actionTypeVolumeCues = stringResource(R.string.button_action_volume_cues)
+    val actionTypeControlDevice = stringResource(R.string.button_action_control_device)
 
-    val actionTypes = remember(featureGuard, actionTypeNotification) {
+    val actionTypes = remember(featureGuard, actionTypeControlDevice) {
         val base = mutableListOf(
-            actionTypeSpeak, actionTypeNavigate, actionTypeFrequent,
-            actionTypeVolumeTts, actionTypeVolumeCues
+            actionTypeSpeak, actionTypeNavigate, actionTypeFrequent, actionTypeControlDevice
         )
         if (featureGuard.isActionEnabled(GeminiButtonAction(""))) {
             base.add(actionTypeGemini)
@@ -114,21 +110,19 @@ fun ButtonConfigDialog(
         if (featureGuard.isActionEnabled(SmartPredictionButtonAction())) {
             base.add(actionTypeSmart)
         }
-        base.add(actionTypeNotification)
         base.toList()
     }
     
     var selectedActionType by remember {
         mutableStateOf(
-            when (val action = initialConfig?.buttonAction) {
+            when (initialConfig?.buttonAction) {
                 is NavigateToPageButtonAction -> actionTypeNavigate
                 is GeminiButtonAction -> actionTypeGemini
                 is GeminiSearchButtonAction -> actionTypeGeminiSearch
                 is GeminiNanoButtonAction -> actionTypeGeminiNano
                 is FrequentActionButtonAction -> actionTypeFrequent
                 is SmartPredictionButtonAction -> actionTypeSmart
-                is NotificationButtonAction -> actionTypeNotification
-                is ChangeVolumeButtonAction -> if (action.isForCues) actionTypeVolumeCues else actionTypeVolumeTts
+                is ControlDeviceButtonAction -> actionTypeControlDevice
                 else -> actionTypeSpeak
             }
         )
@@ -171,29 +165,10 @@ fun ButtonConfigDialog(
     val smartActionDef = initialConfig?.buttonAction as? SmartPredictionButtonAction
     var smartRank by remember { mutableStateOf((smartActionDef?.rank ?: 1).toString()) }
 
-    // Notification Details
-    val notificationActionDef = initialConfig?.buttonAction as? NotificationButtonAction
-    var notificationTargetApp by remember { mutableStateOf(notificationActionDef?.targetApp ?: "ALL") }
-
-    // Volume Details
-    val volumeActionDef = initialConfig?.buttonAction as? ChangeVolumeButtonAction
-    val volumeAbsolutLabel = "Absolut"
-    val volumeRelativLabel = "Relativ"
-
-    var selectedVolumeType by remember {
-        mutableStateOf(
-            if (volumeActionDef?.isAbsolute == true) volumeAbsolutLabel else volumeRelativLabel
-        )
-    }
-
-    var volumePercentInput by remember {
-        mutableStateOf(
-            if (volumeActionDef != null) {
-                (volumeActionDef.amount * 100).toInt().toString()
-            } else {
-                "10" // Default 10%
-            }
-        )
+    // Device Control Details
+    val controlActionDef = initialConfig?.buttonAction as? ControlDeviceButtonAction
+    var controlActionType by remember { 
+        mutableStateOf(controlActionDef?.actionType ?: com.andreas_kratzer.ghosttalk.model.DeviceActionType.READ_NOTIFICATIONS) 
     }
 
     // Helper to build the action object from current UI state
@@ -210,14 +185,7 @@ fun ButtonConfigDialog(
             actionTypeGeminiNano -> GeminiNanoButtonAction(intent = geminiPrompt, ttsMode = resolvedTtsMode)
             actionTypeFrequent -> FrequentActionButtonAction(rank = frequentRank.toIntOrNull()?.coerceAtLeast(1) ?: 1, ttsMode = resolvedTtsMode)
             actionTypeSmart -> SmartPredictionButtonAction(rank = smartRank.toIntOrNull()?.coerceAtLeast(1) ?: 1, ttsMode = resolvedTtsMode)
-            actionTypeNotification -> NotificationButtonAction(targetApp = notificationTargetApp, ttsMode = resolvedTtsMode)
-            actionTypeVolumeTts, actionTypeVolumeCues -> {
-                val isAbsoluteAmount = selectedVolumeType == volumeAbsolutLabel
-                val parseAmount = volumePercentInput.toFloatOrNull() ?: 10f
-                val volAmount = parseAmount / 100.0f
-                val isForCuesAmount = selectedActionType == actionTypeVolumeCues
-                ChangeVolumeButtonAction(isAbsolute = isAbsoluteAmount, amount = volAmount, isForCues = isForCuesAmount, ttsMode = resolvedTtsMode)
-            }
+            actionTypeControlDevice -> ControlDeviceButtonAction(actionType = controlActionType, ttsMode = resolvedTtsMode)
             else -> SpeakTextButtonAction(ttsMode = resolvedTtsMode)
         }
     }
@@ -254,16 +222,6 @@ fun ButtonConfigDialog(
                     )
                 }
                 
-                if (!featureGuard.isActionEnabled(NotificationButtonAction()) && initialConfig?.buttonAction is NotificationButtonAction) {
-                    Text(
-                        text = stringResource(R.string.settings_notification_disabled_warning),
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = dimensions.paddingMedium)
-                    )
-                }
 
                 if (!featureGuard.isActionEnabled(GeminiNanoButtonAction("")) && initialConfig?.buttonAction is GeminiNanoButtonAction) {
                     Text(
@@ -419,18 +377,10 @@ fun ButtonConfigDialog(
                             onRankChanged = { smartRank = it }
                         )
                     }
-                    actionTypeNotification -> {
-                        NotificationActionFields(
-                            targetApp = notificationTargetApp,
-                            onTargetAppChanged = { notificationTargetApp = it }
-                        )
-                    }
-                    actionTypeVolumeTts, actionTypeVolumeCues -> {
-                        VolumeActionFields(
-                            selectedVolumeType = selectedVolumeType,
-                            onVolumeTypeChanged = { selectedVolumeType = it },
-                            volumePercentInput = volumePercentInput,
-                            onVolumePercentChanged = { volumePercentInput = it }
+                    actionTypeControlDevice -> {
+                        ControlDeviceActionFields(
+                            selectedType = controlActionType,
+                            onTypeSelected = { controlActionType = it }
                         )
                     }
                 }
@@ -441,7 +391,7 @@ fun ButtonConfigDialog(
                     selectedActionType == actionTypeGeminiSearch ||
                     selectedActionType == actionTypeGeminiNano ||
                     selectedActionType == actionTypeSmart || 
-                    selectedActionType == actionTypeNotification) {
+                    selectedActionType == actionTypeControlDevice) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,

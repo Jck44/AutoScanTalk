@@ -236,110 +236,51 @@ fun RankActionFields(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NotificationActionFields(
-    targetApp: String,
-    onTargetAppChanged: (String) -> Unit
+fun ControlDeviceActionFields(
+    selectedType: com.andreas_kratzer.ghosttalk.model.DeviceActionType,
+    onTypeSelected: (com.andreas_kratzer.ghosttalk.model.DeviceActionType) -> Unit
 ) {
-    val appAllLabel = stringResource(R.string.button_notification_target_all)
-    val notificationApps = mapOf(
-        "ALL" to appAllLabel,
-        "com.whatsapp" to "WhatsApp",
-        "org.thoughtcrime.securesms" to "Signal",
-        "org.telegram.messenger" to "Telegram",
-        "com.google.android.apps.messaging" to "SMS (Messages)"
-    )
-    var expandedNotificationApp by remember { mutableStateOf(false) }
-
-    ExposedDropdownMenuBox(
-        expanded = expandedNotificationApp,
-        onExpandedChange = { expandedNotificationApp = !expandedNotificationApp }
-    ) {
-        OutlinedTextField(
-            readOnly = true,
-            value = notificationApps[targetApp] ?: "Unbekannt",
-            onValueChange = { },
-            label = { Text(stringResource(R.string.button_notification_target_app)) },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedNotificationApp) },
-            shape = MaterialTheme.shapes.large,
-            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
-        )
-        ExposedDropdownMenu(
-            expanded = expandedNotificationApp,
-            onDismissRequest = { expandedNotificationApp = false }
-        ) {
-            notificationApps.forEach { (appId, appName) ->
-                DropdownMenuItem(
-                    text = { Text(appName, style = MaterialTheme.typography.bodyLarge) },
-                    onClick = {
-                        onTargetAppChanged(appId)
-                        expandedNotificationApp = false
-                    }
-                )
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun VolumeActionFields(
-    selectedVolumeType: String,
-    onVolumeTypeChanged: (String) -> Unit,
-    volumePercentInput: String,
-    onVolumePercentChanged: (String) -> Unit
-) {
-    val volumeAbsolutLabel = "Absolut"
-    val volumeRelativLabel = "Relativ"
-    val volumeTypes = listOf(volumeAbsolutLabel, volumeRelativLabel)
-    var expandedVolumeType by remember { mutableStateOf(false) }
     val dimensions = LocalDimensions.current
+    var expanded by remember { mutableStateOf(false) }
 
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium)
-    ) {
+    val types = listOf(
+        com.andreas_kratzer.ghosttalk.model.DeviceActionType.READ_NOTIFICATIONS to stringResource(R.string.button_action_notification),
+        com.andreas_kratzer.ghosttalk.model.DeviceActionType.MEDIA_PLAY_PAUSE to stringResource(R.string.button_device_control_media_play_pause),
+        com.andreas_kratzer.ghosttalk.model.DeviceActionType.MEDIA_NEXT to stringResource(R.string.button_device_control_media_next),
+        com.andreas_kratzer.ghosttalk.model.DeviceActionType.MEDIA_PREVIOUS to stringResource(R.string.button_device_control_media_previous)
+    )
+
+    val currentLabel = types.find { it.first == selectedType }?.second ?: types.first().second
+
+    Column(verticalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)) {
+        Text(stringResource(R.string.button_device_control_type_label), style = MaterialTheme.typography.labelMedium)
+
         ExposedDropdownMenuBox(
-            expanded = expandedVolumeType,
-            onExpandedChange = { expandedVolumeType = !expandedVolumeType },
-            modifier = Modifier.weight(1f)
+            expanded = expanded,
+            onExpandedChange = { expanded = !expanded }
         ) {
             OutlinedTextField(
                 readOnly = true,
-                value = selectedVolumeType,
+                value = currentLabel,
                 onValueChange = { },
-                label = { Text("Art") },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedVolumeType) },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 shape = MaterialTheme.shapes.large,
                 modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
             )
             ExposedDropdownMenu(
-                expanded = expandedVolumeType,
-                onDismissRequest = { expandedVolumeType = false }
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
             ) {
-                volumeTypes.forEach { typeLabel ->
+                types.forEach { (type, label) ->
                     DropdownMenuItem(
-                        text = { Text(typeLabel, style = MaterialTheme.typography.bodyLarge) },
+                        text = { Text(label) },
                         onClick = {
-                            onVolumeTypeChanged(typeLabel)
-                            expandedVolumeType = false
+                            onTypeSelected(type)
+                            expanded = false
                         }
                     )
                 }
             }
         }
-
-        OutlinedTextField(
-            value = volumePercentInput,
-            onValueChange = { newValue ->
-                if (newValue.isEmpty() || newValue.all { it.isDigit() || it == '-' }) {
-                    onVolumePercentChanged(newValue)
-                }
-            },
-            label = { Text("Wert (%)") },
-            singleLine = true,
-            shape = MaterialTheme.shapes.large,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier.weight(1f)
-        )
     }
 }

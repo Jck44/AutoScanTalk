@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class ActionExecutor internal constructor(
+    private val application: android.app.Application,
     private val scope: CoroutineScope,
     private val settingsRepository: SettingsRepository,
     private val logger: Logger,
@@ -42,12 +43,11 @@ class ActionExecutor internal constructor(
     private var lastExecutionTime = -1L
     private var activeExecutionId = 0
 
-    internal var handlers: List<ActionHandler<out ButtonAction>> = listOf(
+    internal var handlers: List<ActionHandler> = listOf(
         SpeechActionHandler(settingsRepository, ttsHelper, ::log),
         NavigationActionHandler(scope, settingsRepository, ttsHelper, ::emitEvent, ::log),
-        VolumeActionHandler(settingsRepository, ttsHelper, ::log),
+        ControlDeviceActionHandler(application, settingsRepository, ttsHelper, ::log),
         GeminiActionHandler(scope, settingsRepository, geminiUseCase, localIntentRouter, ttsHelper, ::emitEvent, ::log),
-        NotificationActionHandler(settingsRepository, ttsHelper, ::log),
         FrequentActionHandler(::log),
         SmartPredictionActionHandler(::log)
     )
@@ -90,8 +90,7 @@ class ActionExecutor internal constructor(
         val handler = handlers.find { it.canHandle(action) }
         
         if (handler != null) {
-            @Suppress("UNCHECKED_CAST")
-            (handler as ActionHandler<ButtonAction>).handle(
+            handler.handle(
                 buttonConfig,
                 action,
                 currentExecutionId,

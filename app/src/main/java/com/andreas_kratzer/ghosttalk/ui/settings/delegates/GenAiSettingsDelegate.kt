@@ -42,11 +42,65 @@ class GenAiSettingsDelegate @Inject constructor(
     private val _authIntentFlow = MutableSharedFlow<android.content.Intent>()
     val authIntentFlow = _authIntentFlow.asSharedFlow()
 
+    // Download Dialog State
+    private val _isDownloadDialogVisible = MutableStateFlow(false)
+    val isDownloadDialogVisible: StateFlow<Boolean> = _isDownloadDialogVisible.asStateFlow()
+
+    private val _downloadProgress = MutableStateFlow(0f)
+    val downloadProgress: StateFlow<Float> = _downloadProgress.asStateFlow()
+
+    private val _downloadStatusMessage = MutableStateFlow("")
+    val downloadStatusMessage: StateFlow<String> = _downloadStatusMessage.asStateFlow()
+
+    private val _isDownloading = MutableStateFlow(false)
+    val isDownloading: StateFlow<Boolean> = _isDownloading.asStateFlow()
+
+    private var downloadJob: kotlinx.coroutines.Job? = null
+    private var totalBytesToDownload: Long = 0
+
+    // Deactivation Dialog State
+    private val _isDeactivationDialogVisible = MutableStateFlow(false)
+    val isDeactivationDialogVisible: StateFlow<Boolean> = _isDeactivationDialogVisible.asStateFlow()
+
+    // Nano Feature Status State (com.google.mlkit.genai.common.FeatureStatus)
+    private val _nanoFeatureStatus = MutableStateFlow<Int?>(null)
+    val nanoFeatureStatus: StateFlow<Int?> = _nanoFeatureStatus.asStateFlow()
+
     fun updateGeminiToolStatus() {
         _geminiToolStatus.value = getGeminiToolStatusUseCase()
     }
 
-    fun setGeminiEnabled(context: Context, enabled: Boolean, scope: CoroutineScope) {
+    suspend fun performGeminiNanoIntegrityCheck() {
+        if (settingsRepository.useLocalGenerativeAi) {
+            try {
+                val model = com.google.mlkit.genai.prompt.Generation.getClient()
+                val status = model.checkStatus()
+                _nanoFeatureStatus.value = status
+                if (status != com.google.mlkit.genai.common.FeatureStatus.AVAILABLE) {
+                    settingsRepository.useLocalGenerativeAi = false
+                    _isDeactivationDialogVisible.value = true
+                }
+            } catch (e: Exception) {
+                _nanoFeatureStatus.value = com.google.mlkit.genai.common.FeatureStatus.UNAVAILABLE
+                settingsRepository.useLocalGenerativeAi = false
+                _isDeactivationDialogVisible.value = true
+            }
+        } else {
+            // Even if not active, update status to handle UI state
+            try {
+                val model = com.google.mlkit.genai.prompt.Generation.getClient()
+                _nanoFeatureStatus.value = model.checkStatus()
+            } catch (e: Exception) {
+                _nanoFeatureStatus.value = com.google.mlkit.genai.common.FeatureStatus.UNAVAILABLE
+            }
+        }
+    }
+
+    fun dismissDeactivationDialog() {
+        _isDeactivationDialogVisible.value = false
+    }
+
+    fun setGeminiCloudEnabled(context: Context, enabled: Boolean, scope: CoroutineScope) {
         if (enabled && googleAuthManager.userEmail.value == null) {
             val activity = findActivity(context) ?: return
             scope.launch {
@@ -60,6 +114,108 @@ class GenAiSettingsDelegate @Inject constructor(
             settingsRepository.isGeminiEnabled = enabled
             updateGeminiToolStatus()
         }
+    }
+
+    fun setGeminiNanoEnabled(context: Context, enabled: Boolean, scope: CoroutineScope) {
+        if (enabled) {
+            scope.launch {
+                try {
+                    val model = com.google.mlkit.genai.prompt.Generation.getClient()
+                    val status = model.checkStatus()
+                    _nanoFeatureStatus.value = status
+                    when (status) {
+                        com.google.mlkit.genai.common.FeatureStatus.AVAILABLE -> {
+                            settingsRepository.useLocalGenerativeAi = true
+                            updateGeminiToolStatus()
+                        }
+                        com.google.mlkit.genai.common.FeatureStatus.DOWNLOADABLE -> {
+                            showDownloadDialog()
+                        }
+                        com.google.mlkit.genai.common.FeatureStatus.UNAVAILABLE -> {
+                            scope.launch(Dispatchers.Main) {
+                                Toast.makeText(application, "Gemini Nano wird auf diesem Gerät nicht unterstützt.", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                        com.google.mlkit.genai.common.FeatureStatus.DOWNLOADING -> {
+                            showDownloadDialog() // Progress will be shown if already downloading
+                        }
+                    }
+                } catch (e: Exception) {
+                    _nanoFeatureStatus.value = com.google.mlkit.genai.common.FeatureStatus.UNAVAILABLE
+                    scope.launch(Dispatchers.Main) {
+                        Toast.makeText(application, "Gemini Nano Status konnte nicht geprüft werden.", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        } else {
+            settingsRepository.useLocalGenerativeAi = false
+            updateGeminiToolStatus()
+        }
+    }
+
+    fun showDownloadDialog() {
+        _isDownloadDialogVisible.value = true
+        _downloadProgress.value = 0f
+        _downloadStatusMessage.value = "Modell-Download erforderlich (ca. 1-2 GB)"
+    }
+
+    fun dismissDownloadDialog() {
+        _isDownloadDialogVisible.value = false
+        if (_isDownloading.value) {
+            cancelGeminiDownload()
+        }
+    }
+
+    fun startGeminiDownload(scope: CoroutineScope) {
+        downloadJob?.cancel()
+        downloadJob = scope.launch(Dispatchers.IO) {
+            _isDownloading.value = true
+            _downloadStatusMessage.value = "Download wird gestartet..."
+            
+            try {
+                val model = com.google.mlkit.genai.prompt.Generation.getClient()
+                model.download().collect { status ->
+                    when (status) {
+                        is com.google.mlkit.genai.common.DownloadStatus.DownloadStarted -> {
+                            _downloadStatusMessage.value = "Herunterladen..."
+                            totalBytesToDownload = status.bytesToDownload
+                        }
+                        is com.google.mlkit.genai.common.DownloadStatus.DownloadProgress -> {
+                            val progress = if (totalBytesToDownload > 0) {
+                                status.totalBytesDownloaded.toFloat() / totalBytesToDownload
+                            } else 0f
+                            _downloadProgress.value = progress
+                        }
+                        is com.google.mlkit.genai.common.DownloadStatus.DownloadCompleted -> {
+                            _downloadStatusMessage.value = "Download abgeschlossen!"
+                            _downloadProgress.value = 1f
+                            _isDownloading.value = false
+                            settingsRepository.isGeminiEnabled = true
+                            settingsRepository.useLocalGenerativeAi = true
+                            updateGeminiToolStatus()
+                            scope.launch(Dispatchers.Main) {
+                                _isDownloadDialogVisible.value = false
+                            }
+                        }
+                        is com.google.mlkit.genai.common.DownloadStatus.DownloadFailed -> {
+                            _downloadStatusMessage.value = "Download fehlgeschlagen: ${status.e.message}"
+                            _isDownloading.value = false
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                _downloadStatusMessage.value = "Fehler: ${e.message}"
+                _isDownloading.value = false
+            }
+        }
+    }
+
+    fun cancelGeminiDownload() {
+        downloadJob?.cancel()
+        downloadJob = null
+        _isDownloading.value = false
+        _isDownloadDialogVisible.value = false
+        settingsRepository.useLocalGenerativeAi = false
     }
 
     fun activateGemini(context: Context, scope: CoroutineScope) {

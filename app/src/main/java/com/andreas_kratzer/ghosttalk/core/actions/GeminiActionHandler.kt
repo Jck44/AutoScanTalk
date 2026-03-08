@@ -22,7 +22,7 @@ class GeminiActionHandler(
     private val ttsHelper: TextToSpeechHelper?,
     private val emitEvent: suspend (ActionExecutor.ExecutionEvent) -> Unit,
     private val log: (String) -> Unit
-) : ActionHandler<ButtonAction> { // Handles both GeminiButtonAction and GeminiSearchButtonAction
+) : ActionHandler { // Handles both GeminiButtonAction and GeminiSearchButtonAction
 
     override fun canHandle(action: ButtonAction): Boolean = 
         action is GeminiButtonAction || action is GeminiSearchButtonAction || action is GeminiNanoButtonAction

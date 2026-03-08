@@ -22,8 +22,12 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
+import com.andreas_kratzer.ghosttalk.model.ControlDeviceButtonAction
+import com.andreas_kratzer.ghosttalk.model.DeviceActionType
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class ActionExecutorTest {
+    private val application = mockk<android.app.Application>(relaxed = true)
     private val settingsRepository = mockk<SettingsRepository>(relaxed = true)
     private val ttsHelper = mockk<TextToSpeechHelper>(relaxed = true)
     private val geminiUseCase = mockk<com.andreas_kratzer.ghosttalk.domain.genai.GeminiUseCase>(relaxed = true)
@@ -43,14 +47,15 @@ class ActionExecutorTest {
     }
 
     private fun createExecutor(scope: kotlinx.coroutines.CoroutineScope) = ActionExecutor(
-        scope = scope,
-        settingsRepository = settingsRepository,
-        ttsHelper = ttsHelper,
-        geminiUseCase = geminiUseCase,
-        buttonUsageRepository = buttonUsageRepository,
-        logger = logger,
-        timeProvider = timeProvider,
-        localIntentRouter = mockk(relaxed = true)
+        application,
+        scope,
+        settingsRepository,
+        logger,
+        geminiUseCase,
+        ttsHelper,
+        mockk(relaxed = true), // localIntentRouter
+        buttonUsageRepository,
+        timeProvider
     )
 
     @Test
@@ -215,44 +220,6 @@ class ActionExecutorTest {
         verify { ttsHelper.speakRouted("Wait 45s", any(), any(), any(), any(), any()) }
     }
 
-    @Test
-    fun testChangeVolumeButtonActionRelative() = runTest {
-        val actionExecutor = createExecutor(this)
-        val buttonConfig = ButtonConfig(
-            id = "v1",
-            label = "VolUp",
-            auditoryCue = null,
-            isActive = true,
-            buttonAction = com.andreas_kratzer.ghosttalk.model.ChangeVolumeButtonAction(isAbsolute = false, amount = 0.2f, isForCues = false)
-        )
-
-        currentTimeMillis = 0L
-        actionExecutor.executeButtonAction(buttonConfig)
-        runCurrent()
-
-        // 1.0 + 0.2 = 1.2 => capped at 1.0
-        verify { settingsRepository.ttsVolumeMultiplier = 1.0f }
-        verify(exactly = 0) { settingsRepository.cuesVolumeMultiplier = any() }
-    }
-
-    @Test
-    fun testChangeVolumeButtonActionAbsolute() = runTest {
-        val actionExecutor = createExecutor(this)
-        val buttonConfig = ButtonConfig(
-            id = "v1",
-            label = "VolMax",
-            auditoryCue = null,
-            isActive = true,
-            buttonAction = com.andreas_kratzer.ghosttalk.model.ChangeVolumeButtonAction(isAbsolute = true, amount = 3.0f, isForCues = true)
-        )
-
-        currentTimeMillis = 0L
-        actionExecutor.executeButtonAction(buttonConfig)
-        runCurrent()
-
-        verify { settingsRepository.cuesVolumeMultiplier = 1.0f }
-        verify(exactly = 0) { settingsRepository.ttsVolumeMultiplier = any() }
-    }
 
     @Test
     fun testFinishExecution_staleId_doesNotUnlockExecuting() = runTest {
