@@ -31,7 +31,7 @@ class TemplateViewModel @Inject constructor(
     private val reorderTemplatesUseCase: ReorderTemplatesUseCase,
     private val updateButtonConfigInTemplateUseCase: UpdateButtonConfigInTemplateUseCase,
     private val getTemplateUsagesUseCase: GetTemplateUsagesUseCase
-) : ViewModel() {
+) : ViewModel(), com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions {
 
     val experimentalManualSorting: StateFlow<Boolean> = settingsRepository.experimentalManualSortingFlow
 
@@ -78,6 +78,53 @@ class TemplateViewModel @Inject constructor(
         viewModelScope.launch {
             templateRepository.insert(template)
         }
+    }
+
+    override fun updateGridSettings(
+        itemId: String,
+        newName: String,
+        newScanPattern: String?,
+        newRowNames: List<String>,
+        newRows: Int?,
+        newColumns: Int?
+    ) {
+        val current = templates.value.find { it.id == itemId } ?: return
+        updateTemplate(current.copy(
+            name = newName,
+            scanPattern = newScanPattern,
+            rowNames = newRowNames,
+            rows = newRows ?: current.rows,
+            columns = newColumns ?: current.columns
+        ))
+    }
+
+    override fun updateButtonConfig(itemId: String, index: Int, newConfig: ButtonConfig?) {
+        val current = templates.value.find { it.id == itemId } ?: return
+        updateButtonConfig(current, index, newConfig)
+    }
+
+    override fun updateRowName(itemId: String, rowIndex: Int, newName: String) {
+        val current = templates.value.find { it.id == itemId } ?: return
+        val updatedNames = current.rowNames.toMutableList()
+        while (updatedNames.size <= rowIndex) updatedNames.add("Row ${updatedNames.size + 1}")
+        updatedNames[rowIndex] = newName
+        updateTemplate(current.copy(rowNames = updatedNames))
+    }
+
+    override fun createNewPage(
+        name: String,
+        rows: Int,
+        columns: Int,
+        bookId: String,
+        templateId: String?,
+        onCreated: (String) -> Unit
+    ) {
+        // Not directly supported by TemplateViewModel, but interface requires it.
+        // In the UI, PageViewModel is passed to handle this.
+    }
+
+    override fun executeButtonAction(config: ButtonConfig) {
+        // Not directly supported by TemplateViewModel
     }
 
     fun deleteTemplate(template: PageTemplate, clearUsages: Boolean = false) {

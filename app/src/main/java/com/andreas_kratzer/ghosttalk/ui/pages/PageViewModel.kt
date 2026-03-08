@@ -60,7 +60,7 @@ class PageViewModel @Inject constructor(
     private val resolveDynamicButtonsUseCase: ResolveDynamicButtonsUseCase,
     private val updateSmartPredictionsUseCase: UpdateSmartPredictionsUseCase,
     private val checkForPredictorUseCase: CheckForPredictorUseCase
-) : AndroidViewModel(application) {
+) : AndroidViewModel(application), com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions {
 
     private var geminiUseCase: GeminiUseCase? = null
 
@@ -228,11 +228,35 @@ class PageViewModel @Inject constructor(
     fun startScanning(startIndex: Int = 0) = scanCoordinator.startScanning(startIndex)
     fun stopScanning() = scanCoordinator.stopScanning()
 
-    fun createNewPage(name: String, rows: Int, columns: Int, bookId: String, templateId: String? = null, onCreated: (String) -> Unit) =
-        pageManagementDelegate.createNewPage(name, rows, columns, bookId, templateId, onCreated)
+    override fun updateButtonConfig(itemId: String, index: Int, newConfig: com.andreas_kratzer.ghosttalk.model.ButtonConfig?) {
+        pageManagementDelegate.updateButtonConfig(itemId, index, newConfig)
+    }
 
-    fun updateButtonConfig(pageId: String, index: Int, newConfig: ButtonConfig?) =
-        pageManagementDelegate.updateButtonConfig(pageId, index, newConfig)
+    override fun updateGridSettings(
+        itemId: String,
+        newName: String,
+        newScanPattern: String?,
+        newRowNames: List<String>,
+        newRows: Int?,
+        newColumns: Int?
+    ) {
+        updatePageSettings(itemId, newName, newScanPattern, newRowNames, newRows, newColumns)
+    }
+
+    override fun executeButtonAction(config: com.andreas_kratzer.ghosttalk.model.ButtonConfig) {
+        actionExecutor.executeButtonAction(config)
+    }
+
+    override fun createNewPage(
+        name: String,
+        rows: Int,
+        columns: Int,
+        bookId: String,
+        templateId: String?,
+        onCreated: (String) -> Unit
+    ) {
+        pageManagementDelegate.createNewPage(name, rows, columns, bookId, templateId, onCreated)
+    }
 
     fun updatePageSettings(
         pageId: String, 
@@ -243,8 +267,9 @@ class PageViewModel @Inject constructor(
         newColumns: Int? = null
     ) = pageManagementDelegate.updatePageSettings(pageId, newName, newScanPattern, newRowNames, newRows, newColumns)
 
-    fun updateRowName(pageId: String, rowIndex: Int, newName: String) =
-        pageManagementDelegate.updateRowName(pageId, rowIndex, newName)
+    override fun updateRowName(itemId: String, rowIndex: Int, newName: String) {
+        pageManagementDelegate.updateRowName(itemId, rowIndex, newName)
+    }
 
     fun deletePage(page: Page, deleteUsages: Boolean = false) = pageManagementDelegate.deletePage(page, deleteUsages)
     suspend fun getPageUsages(pageId: String) = pageManagementDelegate.getPageUsages(pageId)

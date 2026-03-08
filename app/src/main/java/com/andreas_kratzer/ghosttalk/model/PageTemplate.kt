@@ -8,15 +8,15 @@ import com.andreas_kratzer.ghosttalk.ui.util.ListableItem
 data class PageTemplate(
     @PrimaryKey override val id: String,
     override val name: String,
-    val rows: Int,
-    val columns: Int,
-    val scanPattern: String? = null,
-    val rowNames: List<String> = emptyList(),
-    val buttonConfigs: List<ButtonConfig?>,
+    override val rows: Int,
+    override val columns: Int,
+    override val scanPattern: String? = null,
+    override val rowNames: List<String> = emptyList(),
+    override val buttonConfigs: List<ButtonConfig?>,
     val isBuiltIn: Boolean = false,
     override val orderIndex: Int = 0,
     override val createdAt: Long = System.currentTimeMillis()
-) : ListableItem {
+) : GridItem {
     init {
         require(rows in 1..7) { "Rows must be between 1 and 7." }
         require(columns in 1..7) { "Columns must be between 1 and 7." }

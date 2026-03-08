@@ -42,6 +42,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.ui.components.GridEditorContent
 import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.ui.util.GridUtils
 import java.util.UUID
@@ -99,197 +100,17 @@ fun PageEditorScreen(
             )
         }
     ) { paddingValues ->
-        val configuration = LocalConfiguration.current
-        val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-
-        Column(
-            modifier = Modifier
-                .padding(paddingValues)
-                .padding(if (isLandscape) dimensions.paddingMedium else dimensions.paddingLarge)
-        ) {
-            // Grid Size Controls
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(bottom = dimensions.paddingLarge),
-                horizontalArrangement = Arrangement.spacedBy(dimensions.paddingExtraLarge),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    val rowsLabel = stringResource(R.string.page_rows_field) + ": ${page.rows}"
-                    Text(
-                        text = rowsLabel,
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Slider(
-                        value = page.rows.toFloat(),
-                        onValueChange = { newValue ->
-                            pageViewModel.updatePageSettings(
-                                pageId = page.id,
-                                newName = page.name,
-                                newScanPattern = page.scanPattern,
-                                newRowNames = page.rowNames,
-                                newRows = newValue.toInt(),
-                                newColumns = page.columns
-                            )
-                        },
-                        valueRange = 1f..7f,
-                        steps = 5
-                    )
-                }
-                Column(modifier = Modifier.weight(1f)) {
-                    val colsLabel = stringResource(R.string.page_cols_field) + ": ${page.columns}"
-                    Text(
-                        text = colsLabel,
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Slider(
-                        value = page.columns.toFloat(),
-                        onValueChange = { newValue ->
-                            pageViewModel.updatePageSettings(
-                                pageId = page.id,
-                                newName = page.name,
-                                newScanPattern = page.scanPattern,
-                                newRowNames = page.rowNames,
-                                newRows = page.rows,
-                                newColumns = newValue.toInt()
-                            )
-                        },
-                        valueRange = 1f..7f,
-                        steps = 5
-                    )
-                }
-            }
-
-            // Scan Pattern Dropdown (Material 3 Expressive Style)
-            var expandedPattern by remember { mutableStateOf(false) }
-            val options = listOf(
-                null to stringResource(R.string.page_pattern_default),
-                "linear" to stringResource(R.string.settings_pattern_linear),
-                "row_by_row" to stringResource(R.string.settings_pattern_row_by_row)
-            )
-            val currentPatternLabel = options.find { it.first == page.scanPattern }?.second ?: stringResource(R.string.page_pattern_default)
-
-            ExposedDropdownMenuBox(
-                expanded = expandedPattern,
-                onExpandedChange = { expandedPattern = !expandedPattern },
-                modifier = Modifier.fillMaxWidth().padding(bottom = dimensions.paddingLarge)
-            ) {
-                OutlinedTextField(
-                    value = currentPatternLabel,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text(stringResource(R.string.page_scan_pattern_override)) },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedPattern) },
-                    colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
-                    shape = MaterialTheme.shapes.large,
-                    modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
-                )
-                ExposedDropdownMenu(
-                    expanded = expandedPattern,
-                    onDismissRequest = { expandedPattern = false }
-                ) {
-                    options.forEach { (pattern, label) ->
-                        DropdownMenuItem(
-                            text = { Text(label, style = MaterialTheme.typography.bodyLarge) },
-                            onClick = {
-                                pageViewModel.updatePageSettings(
-                                    pageId = page.id,
-                                    newName = page.name,
-                                    newScanPattern = pattern,
-                                    newRowNames = page.rowNames
-                                )
-                                expandedPattern = false
-                            },
-                            contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
-                        )
-                    }
-                }
-            }
-
-            val effectiveScanPattern = page.scanPattern ?: bookDefaultScanPattern
-            val rowDefaultLabelTemplate = stringResource(R.string.page_row_label)
-
-            // Button Grid for editing
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(page.columns),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                contentPadding = PaddingValues(dimensions.paddingMedium),
-                verticalArrangement = Arrangement.spacedBy(dimensions.gridSpacing),
-                horizontalArrangement = Arrangement.spacedBy(dimensions.gridSpacing)
-            ) {
-                val totalRows = page.rows
-                for (r in 0 until totalRows) {
-                    if (effectiveScanPattern == "row_by_row") {
-                        item(span = { GridItemSpan(maxLineSpan) }) {
-                            RowNameEditor(
-                                initialName = page.rowNames.getOrNull(r) ?: rowDefaultLabelTemplate.format(r + 1),
-                                onNameChanged = { newName ->
-                                    pageViewModel.updateRowName(page.id, r, newName)
-                                }
-                            )
-                        }
-                    }
-
-                    val numCols = page.columns
-                    
-                    for (c in 0 until numCols) {
-                        item {
-                            val globalIndex = GridUtils.getGlobalIndex(r, c)
-                            val buttonConfig = page.buttonConfigs.getOrNull(globalIndex)
-                            GridButton(
-                                buttonConfig = buttonConfig,
-                                isFocused = false,
-                                isEditorMode = true,
-                                onClick = {
-                                    selectedButtonIndex = globalIndex
-                                    showDialog = true
-                                }
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    if (showDialog && selectedButtonIndex != null) {
-        val editingIndex = selectedButtonIndex!!
-        val currentConfig = page.buttonConfigs.getOrNull(editingIndex)
-        val buttonId = currentConfig?.id ?: UUID.randomUUID().toString()
         val templates by pageViewModel.templates.collectAsState()
-
-        ButtonConfigDialog(
-            initialConfig = currentConfig,
-            buttonId = buttonId,
+        
+        GridEditorContent(
+            item = page,
+            actions = pageViewModel,
             availablePages = unfilteredPages,
-            featureGuard = pageViewModel.featureGuard,
             templates = templates,
-            onDismiss = {
-                showDialog = false
-                selectedButtonIndex = null
-            },
-            onSave = { newConfig ->
-                pageViewModel.updateButtonConfig(page.id, editingIndex, newConfig)
-                showDialog = false
-                selectedButtonIndex = null
-            },
-            onTest = { testConfig ->
-                pageViewModel.actionExecutor.executeButtonAction(testConfig)
-            },
-            onNavigateToPage = onEditPage,
-            onCreatePage = { name, rows, cols, templateId, onCreated ->
-                pageViewModel.createNewPage(
-                    name = name,
-                    rows = rows,
-                    columns = cols,
-                    bookId = page.bookId,
-                    templateId = templateId,
-                    onCreated = onCreated
-                )
-            }
+            featureGuard = pageViewModel.featureGuard,
+            bookDefaultScanPattern = bookDefaultScanPattern,
+            paddingValues = paddingValues,
+            onEditPage = onEditPage
         )
     }
 }
