@@ -26,10 +26,11 @@ import com.andreas_kratzer.ghosttalk.domain.pages.GetFilteredPagesUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.GetPageUsagesUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.GetPagesUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.ImportPageUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.ReorderPagesUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.UpdateButtonConfigUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.UpdatePageSettingsUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.UpdateRowNameUseCase
+import com.andreas_kratzer.ghosttalk.domain.pages.MoveRowUseCase
+import com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonUseCase
 import com.andreas_kratzer.ghosttalk.domain.settings.FeatureGuard
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
@@ -82,10 +83,11 @@ class PageViewModelTest {
     private lateinit var getPagesUseCase: GetPagesUseCase
     private lateinit var createPageUseCase: CreatePageUseCase
     private lateinit var deletePageUseCase: DeletePageUseCase
-    private lateinit var reorderPagesUseCase: ReorderPagesUseCase
     private lateinit var updateButtonConfigUseCase: UpdateButtonConfigUseCase
     private lateinit var updatePageSettingsUseCase: UpdatePageSettingsUseCase
     private lateinit var updateRowNameUseCase: UpdateRowNameUseCase
+    private lateinit var moveRowUseCase: MoveRowUseCase
+    private lateinit var moveButtonUseCase: MoveButtonUseCase
     private lateinit var importPageUseCase: ImportPageUseCase
     private lateinit var exportPageUseCase: ExportPageUseCase
     private lateinit var predictNextActionUseCase: PredictNextActionUseCase
@@ -121,10 +123,11 @@ class PageViewModelTest {
         getPagesUseCase = mockk<GetPagesUseCase>(relaxed = true)
         createPageUseCase = mockk<CreatePageUseCase>(relaxed = true)
         deletePageUseCase = mockk<DeletePageUseCase>(relaxed = true)
-        reorderPagesUseCase = mockk<ReorderPagesUseCase>(relaxed = true)
         updateButtonConfigUseCase = mockk<UpdateButtonConfigUseCase>(relaxed = true)
         updatePageSettingsUseCase = mockk<UpdatePageSettingsUseCase>(relaxed = true)
         updateRowNameUseCase = mockk<UpdateRowNameUseCase>(relaxed = true)
+        moveRowUseCase = mockk<MoveRowUseCase>(relaxed = true)
+        moveButtonUseCase = mockk<MoveButtonUseCase>(relaxed = true)
         importPageUseCase = mockk<ImportPageUseCase>(relaxed = true)
         exportPageUseCase = mockk<ExportPageUseCase>(relaxed = true)
         predictNextActionUseCase = mockk<PredictNextActionUseCase>(relaxed = true)
@@ -140,7 +143,6 @@ class PageViewModelTest {
         every { settingsRepository.isSmartPredictionEnabled } returns true
         every { settingsRepository.defaultScanPatternFlow } returns MutableStateFlow<String>("linear")
         every { settingsRepository.showTestButtonsFlow } returns MutableStateFlow<Boolean>(false)
-        every { settingsRepository.experimentalManualSortingFlow } returns MutableStateFlow<Boolean>(false)
         every { settingsRepository.scanDelayFlow } returns MutableStateFlow<Long>(3000L)
         every { settingsRepository.persistActionLogsFlow } returns MutableStateFlow<Boolean>(false)
         every { settingsRepository.keepScreenOnUserModeFlow } returns MutableStateFlow<Boolean>(false)
@@ -174,10 +176,11 @@ class PageViewModelTest {
             getPagesUseCase = getPagesUseCase,
             createPageUseCase = createPageUseCase,
             deletePageUseCase = deletePageUseCase,
-            reorderPagesUseCase = reorderPagesUseCase,
             updateButtonConfigUseCase = updateButtonConfigUseCase,
             updatePageSettingsUseCase = updatePageSettingsUseCase,
             updateRowNameUseCase = updateRowNameUseCase,
+            moveRowUseCase = moveRowUseCase,
+            moveButtonUseCase = moveButtonUseCase,
             importPageUseCase = importPageUseCase,
             exportPageUseCase = exportPageUseCase,
             getFilteredPagesUseCase = GetFilteredPagesUseCase(settingsRepository),

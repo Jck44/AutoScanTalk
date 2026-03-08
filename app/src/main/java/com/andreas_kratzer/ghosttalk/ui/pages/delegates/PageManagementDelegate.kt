@@ -10,10 +10,11 @@ import com.andreas_kratzer.ghosttalk.domain.pages.GetFilteredPagesUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.GetPageUsagesUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.GetPagesUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.ImportPageUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.ReorderPagesUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.UpdateButtonConfigUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.UpdatePageSettingsUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.UpdateRowNameUseCase
+import com.andreas_kratzer.ghosttalk.domain.pages.MoveRowUseCase
+import com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.UsageLocation
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.Page
@@ -32,10 +33,11 @@ class PageManagementDelegate @Inject constructor(
     private val getPagesUseCase: GetPagesUseCase,
     private val createPageUseCase: CreatePageUseCase,
     private val deletePageUseCase: DeletePageUseCase,
-    private val reorderPagesUseCase: ReorderPagesUseCase,
     private val updateButtonConfigUseCase: UpdateButtonConfigUseCase,
     private val updatePageSettingsUseCase: UpdatePageSettingsUseCase,
     private val updateRowNameUseCase: UpdateRowNameUseCase,
+    private val moveRowUseCase: MoveRowUseCase,
+    private val moveButtonUseCase: MoveButtonUseCase,
     private val importPageUseCase: ImportPageUseCase,
     private val exportPageUseCase: ExportPageUseCase,
     private val getFilteredPagesUseCase: GetFilteredPagesUseCase,
@@ -142,17 +144,30 @@ class PageManagementDelegate @Inject constructor(
         }
     }
 
+    fun moveRow(pageId: String, fromRow: Int, toRow: Int) {
+        scope.launch {
+            val updatedPage = moveRowUseCase.execute(pageId, fromRow, toRow)
+            if (updatedPage != null && _currentPage.value?.id == pageId) {
+                _currentPage.value = updatedPage
+            }
+        }
+    }
+
+    fun moveButton(pageId: String, fromIndex: Int, toIndex: Int) {
+        scope.launch {
+            val updatedPage = moveButtonUseCase.execute(pageId, fromIndex, toIndex)
+            if (updatedPage != null && _currentPage.value?.id == pageId) {
+                _currentPage.value = updatedPage
+            }
+        }
+    }
+
     fun deletePage(page: Page, deleteUsages: Boolean = false) {
         scope.launch {
             deletePageUseCase.execute(page, deleteUsages)
         }
     }
 
-    fun reorderPages(fromIndex: Int, toIndex: Int) {
-        scope.launch {
-            reorderPagesUseCase.execute(_allPages.value, fromIndex, toIndex, _activeBookId.value)
-        }
-    }
 
     fun importFromJson(jsonString: String, bookId: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
         scope.launch {

@@ -9,9 +9,6 @@ import javax.inject.Singleton
 class ExperimentalSettingsDelegate @Inject constructor(
     private val toggleExperimentalFeatureUseCase: ToggleExperimentalFeatureUseCase
 ) {
-    fun setExperimentalManualSorting(enabled: Boolean) {
-        toggleExperimentalFeatureUseCase(ExperimentalFeature.MANUAL_SORTING, enabled)
-    }
 
     fun setSmartPredictionEnabled(enabled: Boolean) {
         toggleExperimentalFeatureUseCase(ExperimentalFeature.SMART_PREDICTION, enabled)

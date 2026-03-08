@@ -73,7 +73,6 @@ fun PageListScreen(
 ) {
     val allPages by pageViewModel.filteredPages.collectAsState()
     val templates by pageViewModel.templates.collectAsState()
-    val experimentalSorting by pageViewModel.experimentalManualSorting.collectAsState()
     val activeBookId by pageViewModel.activeBookId.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
     val pageToDelete = remember { mutableStateOf<Page?>(null) }
@@ -135,7 +134,6 @@ fun PageListScreen(
         }
     }
 
-    val reorderState = rememberReorderableState()
     val gridState = androidx.compose.foundation.lazy.grid.rememberLazyGridState()
 
     Scaffold(
@@ -163,7 +161,7 @@ fun PageListScreen(
                         )
                     }
                     DropdownMenu(expanded = showSortMenu, onDismissRequest = { showSortMenu = false }) {
-                        SortOrder.entries.filter { it != SortOrder.MANUAL || experimentalSorting }.forEach { order ->
+                        SortOrder.entries.filter { it != SortOrder.MANUAL }.forEach { order ->
                             val label = when(order) {
                                 SortOrder.MANUAL -> "Manuell"
                                 SortOrder.NEWEST -> "Neueste zuerst"
@@ -261,29 +259,9 @@ fun PageListScreen(
                         subtitle = stringResource(R.string.page_grid_info, page.rows, page.columns),
                         icon = GhosTTalkIcons.Description,
                         onClick = { onEditPage(page.id) },
-                        modifier = if (experimentalSorting) {
-                            Modifier.reorderableItem(
-                                state = reorderState,
-                                index = index,
-                                onDrag = {
-                                    reorderState.findTargetIndexForGrid(gridState)?.let { targetIndex ->
-                                        pageViewModel.reorderPages(index, targetIndex)
-                                    }
-                                }
-                            )
-                        } else {
-                            Modifier
-                        },
+                        modifier = Modifier,
                         trailingAction = {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                if (experimentalSorting) {
-                                    Icon(
-                                        imageVector = GhosTTalkIcons.DragHandle,
-                                        contentDescription = "Verschieben",
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                                        modifier = Modifier.padding(end = 8.dp)
-                                    )
-                                }
                                 
                                 IconButton(
                                     onClick = { pageToDelete.value = page }

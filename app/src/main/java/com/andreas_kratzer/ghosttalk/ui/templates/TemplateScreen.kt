@@ -59,10 +59,8 @@ fun TemplateScreen(
     onTemplateClick: (String) -> Unit
 ) {
     val templates by templateViewModel.templates.collectAsState()
-    val experimentalSorting by templateViewModel.experimentalManualSorting.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
     var templateToDelete by remember { mutableStateOf<PageTemplate?>(null) }
-    val reorderState = rememberReorderableState()
     val listState = androidx.compose.foundation.lazy.rememberLazyListState()
     val dimensions = LocalDimensions.current
 
@@ -83,7 +81,7 @@ fun TemplateScreen(
                         Icon(GhosTTalkIcons.Sort, contentDescription = "Sortieren")
                     }
                     DropdownMenu(expanded = showSortMenu, onDismissRequest = { showSortMenu = false }) {
-                        SortOrder.entries.filter { it != SortOrder.MANUAL || experimentalSorting }.forEach { order ->
+                        SortOrder.entries.filter { it != SortOrder.MANUAL }.forEach { order ->
                             val label = when(order) {
                                 SortOrder.MANUAL -> "Manuell"
                                 SortOrder.NEWEST -> "Neueste zuerst"
@@ -158,29 +156,9 @@ fun TemplateScreen(
                         subtitle = "Raster: ${template.rows}x${template.columns} " + if (template.isBuiltIn) "(${stringResource(R.string.template_built_in_label)})" else "(${stringResource(R.string.template_custom_label)})",
                         icon = GhosTTalkIcons.GridView,
                         onClick = { onTemplateClick(template.id) },
-                        modifier = if (experimentalSorting) {
-                            Modifier.reorderableItem(
-                                state = reorderState,
-                                index = index,
-                                onDrag = {
-                                    reorderState.findTargetIndexForList(listState)?.let { targetIndex ->
-                                        templateViewModel.reorderTemplates(index, targetIndex)
-                                    }
-                                }
-                            )
-                        } else {
-                            Modifier
-                        },
+                        modifier = Modifier,
                         trailingAction = {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                if (experimentalSorting) {
-                                    Icon(
-                                        imageVector = GhosTTalkIcons.DragHandle,
-                                        contentDescription = "Verschieben",
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                                        modifier = Modifier.padding(end = 8.dp)
-                                    )
-                                }
                                 
                                 IconButton(
                                     onClick = { templateToDelete = template }

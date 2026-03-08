@@ -84,7 +84,6 @@ class SettingsViewModel @Inject constructor(
     
     val selectedAppLanguage = settingsRepository.appLanguageFlow
     val themeMode = settingsRepository.themeModeFlow
-    val experimentalManualSorting = settingsRepository.experimentalManualSortingFlow
     val buttonHistory = buttonUsageRepository.buttonHistory
 
     val keepScreenOnUserMode = settingsRepository.keepScreenOnUserModeFlow
@@ -194,7 +193,6 @@ class SettingsViewModel @Inject constructor(
     fun setVolumeKeysActivate(e: Boolean) { settingsRepository.volumeKeysActivate = e }
     fun setShowTestButtons(e: Boolean) { settingsRepository.showTestButtons = e }
     fun setShowPageIdInLog(e: Boolean) { settingsRepository.showPageIdInLog = e }
-    fun setExperimentalManualSorting(e: Boolean) = experimentalDelegate.setExperimentalManualSorting(e)
     fun setSmartPredictionEnabled(e: Boolean) = experimentalDelegate.setSmartPredictionEnabled(e)
     fun setDefaultStartPageId(id: String?) { settingsRepository.defaultStartPageId = id }
 

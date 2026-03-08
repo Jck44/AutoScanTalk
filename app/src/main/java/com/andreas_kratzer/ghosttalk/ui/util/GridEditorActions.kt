@@ -13,6 +13,8 @@ interface GridEditorActions {
     )
     fun updateButtonConfig(itemId: String, index: Int, newConfig: ButtonConfig?)
     fun updateRowName(itemId: String, rowIndex: Int, newName: String)
+    fun moveRow(itemId: String, fromRow: Int, toRow: Int)
+    fun moveButton(itemId: String, fromIndex: Int, toIndex: Int)
     
     // For ButtonConfigDialog
     fun createNewPage(name: String, rows: Int, columns: Int, bookId: String, templateId: String? = null, onCreated: (String) -> Unit)

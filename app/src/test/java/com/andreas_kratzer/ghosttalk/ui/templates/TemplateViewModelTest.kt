@@ -5,7 +5,6 @@ import com.andreas_kratzer.ghosttalk.data.TemplateRepository
 import com.andreas_kratzer.ghosttalk.domain.templates.CreateTemplateUseCase
 import com.andreas_kratzer.ghosttalk.domain.templates.DeleteTemplateUseCase
 import com.andreas_kratzer.ghosttalk.domain.templates.GetTemplateUsagesUseCase
-import com.andreas_kratzer.ghosttalk.domain.templates.ReorderTemplatesUseCase
 import com.andreas_kratzer.ghosttalk.domain.templates.UpdateButtonConfigInTemplateUseCase
 import com.andreas_kratzer.ghosttalk.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.model.SortOrder
@@ -34,7 +33,6 @@ class TemplateViewModelTest {
     private lateinit var settingsRepository: SettingsRepository
     private lateinit var createTemplateUseCase: CreateTemplateUseCase
     private lateinit var deleteTemplateUseCase: DeleteTemplateUseCase
-    private lateinit var reorderTemplatesUseCase: ReorderTemplatesUseCase
     private lateinit var updateButtonConfigInTemplateUseCase: UpdateButtonConfigInTemplateUseCase
     private lateinit var getTemplateUsagesUseCase: GetTemplateUsagesUseCase
     private lateinit var viewModel: TemplateViewModel
@@ -46,12 +44,10 @@ class TemplateViewModelTest {
         settingsRepository = mockk(relaxed = true)
         createTemplateUseCase = mockk<CreateTemplateUseCase>(relaxed = true)
         deleteTemplateUseCase = mockk<DeleteTemplateUseCase>(relaxed = true)
-        reorderTemplatesUseCase = mockk<ReorderTemplatesUseCase>(relaxed = true)
         updateButtonConfigInTemplateUseCase = mockk<UpdateButtonConfigInTemplateUseCase>(relaxed = true)
         getTemplateUsagesUseCase = mockk<GetTemplateUsagesUseCase>(relaxed = true)
 
-        every { settingsRepository.templateSortOrderFlow } returns MutableStateFlow(SortOrder.MANUAL.name)
-        every { settingsRepository.experimentalManualSortingFlow } returns MutableStateFlow(false)
+        every { settingsRepository.templateSortOrderFlow } returns MutableStateFlow(SortOrder.A_Z.name)
         every { templateRepository.getAllTemplates() } returns flowOf(emptyList())
 
         viewModel = TemplateViewModel(
@@ -59,7 +55,6 @@ class TemplateViewModelTest {
             settingsRepository,
             createTemplateUseCase,
             deleteTemplateUseCase,
-            reorderTemplatesUseCase,
             updateButtonConfigInTemplateUseCase,
             getTemplateUsagesUseCase
         )
@@ -106,7 +101,6 @@ class TemplateViewModelTest {
             settingsRepository,
             createTemplateUseCase,
             deleteTemplateUseCase,
-            reorderTemplatesUseCase,
             updateButtonConfigInTemplateUseCase,
             getTemplateUsagesUseCase
         )
@@ -121,27 +115,4 @@ class TemplateViewModelTest {
         assertEquals("Apple", viewModel.templates.value.first().name)
     }
 
-    @Test
-    fun `reorderTemplates calls use case`() = runTest {
-        val t1 = PageTemplate(id = "1", name = "T1", rows = 1, columns = 1, buttonConfigs = emptyList(), orderIndex = 0)
-        val t2 = PageTemplate(id = "2", name = "T2", rows = 1, columns = 1, buttonConfigs = emptyList(), orderIndex = 1)
-        val templates = listOf(t1, t2)
-        every { templateRepository.getAllTemplates() } returns flowOf(templates)
-
-        viewModel = TemplateViewModel(
-            templateRepository,
-            settingsRepository,
-            createTemplateUseCase,
-            deleteTemplateUseCase,
-            reorderTemplatesUseCase,
-            updateButtonConfigInTemplateUseCase,
-            getTemplateUsagesUseCase
-        )
-        advanceUntilIdle()
-
-        viewModel.reorderTemplates(0, 1)
-        advanceUntilIdle()
-
-        coVerify { reorderTemplatesUseCase.execute(match { it.size == 2 }, 0, 1) }
-    }
 }

@@ -60,6 +60,49 @@ class ReorderableState {
     }
 
     /**
+     * Finds the index of the button (global index) even if it's nested in a row-item.
+     */
+    fun findTargetButtonIndex(gridState: LazyGridState, numCols: Int, isRowByRow: Boolean, density: Float = 1f): Int? {
+        val draggedIdx = draggedIndex ?: return null
+        val info = gridState.layoutInfo
+        
+        if (isRowByRow) {
+            val draggedRow = draggedIdx / numCols
+            val draggedCol = draggedIdx % numCols
+            val draggedItem = info.visibleItemsInfo.find { it.index == draggedRow } ?: return null
+            
+            // Edit handle is 48dp, padding is 8dp. 
+            val handleWidthPx = 48 * density
+            val paddingPx = 8 * density
+            
+            // Calculate row content width (excluding handle and padding)
+            val rowContentWidth = draggedItem.size.width - handleWidthPx - (paddingPx * 2)
+            val colWidth = rowContentWidth / numCols
+            
+            // Calculate center of dragged button in global coordinates
+            val draggedCenterX = draggedItem.offset.x + handleWidthPx + paddingPx + 
+                                (draggedCol * colWidth) + (colWidth / 2) + dragOffset.x
+            val draggedCenterY = draggedItem.offset.y + draggedItem.size.height / 2 + dragOffset.y
+
+            // Find target row
+            val targetRowInfo = info.visibleItemsInfo.find { item ->
+                draggedCenterY in item.offset.y.toFloat()..(item.offset.y + item.size.height).toFloat()
+            } ?: return null
+            
+            val targetRow = targetRowInfo.index
+            val targetRowContentWidth = targetRowInfo.size.width - handleWidthPx - (paddingPx * 2)
+            val targetColWidth = targetRowContentWidth / numCols
+            
+            val relativeX = draggedCenterX - targetRowInfo.offset.x - handleWidthPx - paddingPx
+            val targetCol = (relativeX / targetColWidth).toInt().coerceIn(0, numCols - 1)
+            
+            return targetRow * numCols + targetCol
+        } else {
+            return findTargetIndexForGrid(gridState)
+        }
+    }
+
+    /**
      * Finds the index of the item that the dragged item is currently hovering over for LazyColumn.
      */
     fun findTargetIndexForList(listState: LazyListState): Int? {
@@ -86,27 +129,43 @@ fun rememberReorderableState(): ReorderableState {
 }
 
 /**
- * Custom modifier to handle drag and drop logic for a specific item.
+ * Handles the visual transformation of a reorderable item.
  */
-fun Modifier.reorderableItem(
+fun Modifier.reorderableItemVisuals(
+    state: ReorderableState,
+    index: Int
+): Modifier = this.graphicsLayer {
+    if (state.draggedIndex == index) {
+        translationX = state.dragOffset.x
+        translationY = state.dragOffset.y
+        scaleX = 1.05f
+        scaleY = 1.05f
+        alpha = 0.9f
+    }
+}.zIndex(if (state.draggedIndex == index) 1f else 0f)
+
+/**
+ * Handles the drag gesture for a specific index.
+ */
+fun Modifier.dragHandle(
     state: ReorderableState,
     index: Int,
     onDragStart: () -> Unit = {},
-    onDragEnd: () -> Unit = {},
+    onDragEnd: (Int?) -> Unit = {},
     onDrag: () -> Unit = {}
-): Modifier = this.pointerInput(Unit) {
+): Modifier = this.pointerInput(index) {
     detectDragGesturesAfterLongPress(
         onDragStart = {
             state.onDragStart(index)
             onDragStart()
         },
         onDragEnd = {
+            onDragEnd(state.draggedIndex)
             state.onDragEnd()
-            onDragEnd()
         },
         onDragCancel = {
             state.onDragEnd()
-            onDragEnd()
+            onDragEnd(null)
         },
         onDrag = { change, dragAmount ->
             change.consume()
@@ -115,13 +174,22 @@ fun Modifier.reorderableItem(
         }
     )
 }
-.graphicsLayer {
-    if (state.draggedIndex == index) {
-        translationX = state.dragOffset.x
-        translationY = state.dragOffset.y
-        scaleX = 1.05f
-        scaleY = 1.05f
-        alpha = 0.9f
-    }
-}
-.zIndex(if (state.draggedIndex == index) 1f else 0f)
+
+/**
+ * Compatibility wrapper for reorderableItem.
+ */
+fun Modifier.reorderableItem(
+    state: ReorderableState,
+    index: Int,
+    onDragStart: () -> Unit = {},
+    onDragEnd: () -> Unit = {},
+    onDrag: () -> Unit = {}
+): Modifier = this
+    .reorderableItemVisuals(state, index)
+    .dragHandle(
+        state = state,
+        index = index,
+        onDragStart = onDragStart,
+        onDragEnd = { _ -> onDragEnd() },
+        onDrag = onDrag
+    )

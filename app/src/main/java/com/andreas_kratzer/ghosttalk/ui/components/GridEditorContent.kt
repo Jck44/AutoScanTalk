@@ -1,6 +1,7 @@
 package com.andreas_kratzer.ghosttalk.ui.components
 
 import android.content.res.Configuration
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
@@ -35,7 +37,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
@@ -65,11 +69,16 @@ fun GridEditorContent(
     val dimensions = LocalDimensions.current
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+    val density = LocalDensity.current.density
 
     var selectedButtonIndex by remember { mutableStateOf<Int?>(null) }
     var showDialog by remember { mutableStateOf(false) }
     var editingRowIndex by remember { mutableStateOf<Int?>(null) }
     var showRowEditDialog by remember { mutableStateOf(false) }
+
+    val gridState = rememberLazyGridState()
+    val rowReorderState = rememberReorderableState()
+    val buttonReorderState = rememberReorderableState()
 
     Column(
         modifier = Modifier
@@ -179,8 +188,12 @@ fun GridEditorContent(
         val rowDefaultLabelTemplate = stringResource(R.string.page_row_label)
         val effectiveScanPattern = item.scanPattern ?: bookDefaultScanPattern
 
+        val rowTargetIndex = rowReorderState.findTargetIndexForGrid(gridState)
+        val buttonTargetIndex = buttonReorderState.findTargetButtonIndex(gridState, item.columns, effectiveScanPattern == "row_by_row", density)
+
         LazyVerticalGrid(
             columns = GridCells.Fixed(item.columns),
+            state = gridState,
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f),
@@ -194,12 +207,19 @@ fun GridEditorContent(
             for (r in 0 until totalRows) {
                 if (effectiveScanPattern == "row_by_row") {
                     item(span = { GridItemSpan(numCols) }) {
+                        val isRowTarget = rowTargetIndex == r
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .reorderableItemVisuals(rowReorderState, r)
+                                .background(
+                                    if (isRowTarget) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                                    else Color.Transparent
+                                )
                                 .border(
-                                    width = 2.dp,
-                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                                    width = if (isRowTarget) 3.dp else 2.dp,
+                                    color = if (isRowTarget) MaterialTheme.colorScheme.primary 
+                                            else MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
                                     shape = MaterialTheme.shapes.medium
                                 )
                                 .height(IntrinsicSize.Min),
@@ -209,6 +229,18 @@ fun GridEditorContent(
                                 modifier = Modifier
                                     .width(48.dp)
                                     .fillMaxHeight()
+                                    .dragHandle(
+                                        state = rowReorderState,
+                                        index = r,
+                                        onDragEnd = { fromIdx ->
+                                            if (fromIdx != null) {
+                                                val to = rowReorderState.findTargetIndexForGrid(gridState)
+                                                if (to != null && to != fromIdx) {
+                                                    actions.moveRow(item.id, fromIdx, to)
+                                                }
+                                            }
+                                        }
+                                    )
                                     .clickable {
                                         editingRowIndex = r
                                         showRowEditDialog = true
@@ -230,9 +262,36 @@ fun GridEditorContent(
                                 horizontalArrangement = Arrangement.spacedBy(dimensions.gridSpacing)
                             ) {
                                 for (c in 0 until numCols) {
-                                    val globalIndex = GridUtils.getGlobalIndex(r, c)
+                                    val globalIndex = r * numCols + c
                                     val buttonConfig = item.buttonConfigs.getOrNull(globalIndex)
-                                    Box(modifier = Modifier.weight(1f)) {
+                                    val isButtonTarget = buttonTargetIndex == globalIndex
+                                    
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .reorderableItemVisuals(buttonReorderState, globalIndex)
+                                            .dragHandle(
+                                                state = buttonReorderState,
+                                                index = globalIndex,
+                                                onDragEnd = { fromIdx ->
+                                                    if (fromIdx != null) {
+                                                        val to = buttonReorderState.findTargetButtonIndex(gridState, numCols, true, density)
+                                                        if (to != null && to != fromIdx) {
+                                                            actions.moveButton(item.id, fromIdx, to)
+                                                        }
+                                                    }
+                                                }
+                                            )
+                                            .background(
+                                                if (isButtonTarget) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                                                else Color.Transparent
+                                            )
+                                            .border(
+                                                width = if (isButtonTarget) 2.dp else 0.dp,
+                                                color = if (isButtonTarget) MaterialTheme.colorScheme.primary else Color.Transparent,
+                                                shape = MaterialTheme.shapes.medium
+                                            )
+                                    ) {
                                         GridButton(
                                             buttonConfig = buttonConfig,
                                             isFocused = false,
@@ -249,18 +308,45 @@ fun GridEditorContent(
                     }
                 } else {
                     for (c in 0 until numCols) {
+                        val globalIndex = r * numCols + c
                         item {
-                            val globalIndex = GridUtils.getGlobalIndex(r, c)
+                            val isTarget = buttonTargetIndex == globalIndex
                             val buttonConfig = item.buttonConfigs.getOrNull(globalIndex)
-                            GridButton(
-                                buttonConfig = buttonConfig,
-                                isFocused = false,
-                                isEditorMode = true,
-                                onClick = {
-                                    selectedButtonIndex = globalIndex
-                                    showDialog = true
-                                }
-                            )
+                            Box(
+                                modifier = Modifier
+                                    .reorderableItemVisuals(buttonReorderState, globalIndex)
+                                    .dragHandle(
+                                        state = buttonReorderState,
+                                        index = globalIndex,
+                                        onDragEnd = { fromIdx ->
+                                            if (fromIdx != null) {
+                                                val to = buttonReorderState.findTargetButtonIndex(gridState, numCols, false, density)
+                                                if (to != null && to != fromIdx) {
+                                                    actions.moveButton(item.id, fromIdx, to)
+                                                }
+                                            }
+                                        }
+                                    )
+                                    .background(
+                                        if (isTarget) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                                        else Color.Transparent
+                                    )
+                                    .border(
+                                        width = if (isTarget) 3.dp else 0.dp,
+                                        color = if (isTarget) MaterialTheme.colorScheme.primary else Color.Transparent,
+                                        shape = MaterialTheme.shapes.medium
+                                    )
+                            ) {
+                                GridButton(
+                                    buttonConfig = buttonConfig,
+                                    isFocused = false,
+                                    isEditorMode = true,
+                                    onClick = {
+                                        selectedButtonIndex = globalIndex
+                                        showDialog = true
+                                    }
+                                )
+                            }
                         }
                     }
                 }

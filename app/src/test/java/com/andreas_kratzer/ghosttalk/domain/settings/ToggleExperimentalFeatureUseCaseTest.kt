@@ -18,14 +18,6 @@ class ToggleExperimentalFeatureUseCaseTest {
         useCase = ToggleExperimentalFeatureUseCase(settingsRepository)
     }
 
-    @Test
-    fun `invoke with MANUAL_SORTING updates experimentalManualSorting`() {
-        useCase(ExperimentalFeature.MANUAL_SORTING, true)
-        verify { settingsRepository.experimentalManualSorting = true }
-
-        useCase(ExperimentalFeature.MANUAL_SORTING, false)
-        verify { settingsRepository.experimentalManualSorting = false }
-    }
 
     @Test
     fun `invoke with SMART_PREDICTION updates isSmartPredictionEnabled`() {

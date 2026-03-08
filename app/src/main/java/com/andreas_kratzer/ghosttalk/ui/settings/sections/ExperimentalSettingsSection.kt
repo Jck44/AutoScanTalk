@@ -12,14 +12,7 @@ import com.andreas_kratzer.ghosttalk.ui.settings.SettingsViewModel
 
 @Composable
 fun ExperimentalSettingsSection(viewModel: SettingsViewModel) {
-    val manualSorting by viewModel.experimentalManualSorting.collectAsState(false)
-
     PreferenceCategory(stringResource(R.string.settings_category_experimental)) {
-        SettingsToggleItem(
-            label = stringResource(R.string.settings_experimental_manual_sorting),
-            checked = manualSorting,
-            onCheckedChange = { viewModel.setExperimentalManualSorting(it) }
-        )
 
         val weatherTimeout by viewModel.weatherCacheTimeout.collectAsState(60L)
         SettingsEditTextItem(

@@ -83,7 +83,6 @@ class PageViewModel @Inject constructor(
 
     val defaultScanPattern = settingsRepository.defaultScanPatternFlow
     val showTestButtons = settingsRepository.showTestButtonsFlow
-    val experimentalManualSorting = settingsRepository.experimentalManualSortingFlow
 
     val resolvedPage: StateFlow<Page?> = combine(
         currentPage,
@@ -271,9 +270,16 @@ class PageViewModel @Inject constructor(
         pageManagementDelegate.updateRowName(itemId, rowIndex, newName)
     }
 
+    override fun moveRow(itemId: String, fromRow: Int, toRow: Int) {
+        pageManagementDelegate.moveRow(itemId, fromRow, toRow)
+    }
+
+    override fun moveButton(itemId: String, fromIndex: Int, toIndex: Int) {
+        pageManagementDelegate.moveButton(itemId, fromIndex, toIndex)
+    }
+
     fun deletePage(page: Page, deleteUsages: Boolean = false) = pageManagementDelegate.deletePage(page, deleteUsages)
     suspend fun getPageUsages(pageId: String) = pageManagementDelegate.getPageUsages(pageId)
-    fun reorderPages(fromIndex: Int, toIndex: Int) = pageManagementDelegate.reorderPages(fromIndex, toIndex)
     fun importFromJson(jsonString: String, bookId: String, onSuccess: () -> Unit, onError: (String) -> Unit) =
         pageManagementDelegate.importFromJson(jsonString, bookId, onSuccess, onError)
 

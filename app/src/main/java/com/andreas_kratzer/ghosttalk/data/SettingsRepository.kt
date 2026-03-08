@@ -222,7 +222,6 @@ class SettingsRepository(context: Context) {
     private val _pageSortOrder = NonNullStringSetting(KEY_PAGE_SORT_ORDER, "MANUAL")
     private val _templateSortOrder = NonNullStringSetting(KEY_TEMPLATE_SORT_ORDER, "MANUAL")
     private val _lastSuccessfulSyncTime = LongSetting(KEY_LAST_SYNC_TIME, 0L)
-    private val _experimentalManualSorting = BooleanSetting(KEY_EXPERIMENTAL_MANUAL_SORTING, false)
     private val _smartPredictionDelay = LongSetting(KEY_SMART_PREDICTION_DELAY, 2000L)
     private val _isSmartPredictionEnabled = BooleanSetting(KEY_SMART_PREDICTION_ENABLED, false)
     private val _bluetoothDelay = LongSetting(KEY_BLUETOOTH_DELAY, 100L)
@@ -263,7 +262,6 @@ class SettingsRepository(context: Context) {
         _pageSortOrder.refresh()
         _templateSortOrder.refresh()
         _lastSuccessfulSyncTime.refresh()
-        _experimentalManualSorting.refresh()
         _smartPredictionDelay.refresh()
         _isSmartPredictionEnabled.refresh()
         _bluetoothDelay.refresh()
@@ -306,7 +304,6 @@ class SettingsRepository(context: Context) {
     val pageSortOrderFlow: StateFlow<String> get() = _pageSortOrder.flow
     val templateSortOrderFlow: StateFlow<String> get() = _templateSortOrder.flow
     val lastSuccessfulSyncTimeFlow: StateFlow<Long> get() = _lastSuccessfulSyncTime.flow
-    val experimentalManualSortingFlow: StateFlow<Boolean> get() = _experimentalManualSorting.flow
     val isSmartPredictionEnabledFlow: StateFlow<Boolean> get() = _isSmartPredictionEnabled.flow
     val bluetoothDelayFlow: StateFlow<Long> get() = _bluetoothDelay.flow
     val ttsVolumeMultiplierFlow: StateFlow<Float> get() = _ttsVolume.flow
@@ -404,9 +401,6 @@ class SettingsRepository(context: Context) {
         get() = _lastSuccessfulSyncTime.value
         set(value) { _lastSuccessfulSyncTime.value = value }
 
-    var experimentalManualSorting: Boolean
-        get() = _experimentalManualSorting.value
-        set(value) { _experimentalManualSorting.value = value }
 
     var smartPredictionDelayMillis: Long
         get() = _smartPredictionDelay.value
@@ -541,7 +535,6 @@ class SettingsRepository(context: Context) {
         private const val KEY_TEMPLATE_SORT_ORDER = "template_sort_order"
         private const val KEY_LAST_SYNC_TIME = "last_sync_time"
         private const val KEY_SHOW_PAGE_ID_IN_LOG = "show_page_id_in_log"
-        private const val KEY_EXPERIMENTAL_MANUAL_SORTING = "experimental_manual_sorting"
         private const val KEY_SMART_PREDICTION_DELAY = "smart_prediction_delay"
         private const val KEY_SMART_PREDICTION_ENABLED = "smart_prediction_enabled"
         private const val KEY_NOTIFICATION_READING_ENABLED = "notification_reading_enabled"

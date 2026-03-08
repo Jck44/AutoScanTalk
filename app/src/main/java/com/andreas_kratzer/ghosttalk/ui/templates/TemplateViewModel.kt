@@ -7,7 +7,6 @@ import com.andreas_kratzer.ghosttalk.data.TemplateRepository
 import com.andreas_kratzer.ghosttalk.domain.templates.CreateTemplateUseCase
 import com.andreas_kratzer.ghosttalk.domain.templates.DeleteTemplateUseCase
 import com.andreas_kratzer.ghosttalk.domain.templates.GetTemplateUsagesUseCase
-import com.andreas_kratzer.ghosttalk.domain.templates.ReorderTemplatesUseCase
 import com.andreas_kratzer.ghosttalk.domain.templates.UpdateButtonConfigInTemplateUseCase
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.PageTemplate
@@ -28,12 +27,10 @@ class TemplateViewModel @Inject constructor(
     val settingsRepository: SettingsRepository,
     private val createTemplateUseCase: CreateTemplateUseCase,
     private val deleteTemplateUseCase: DeleteTemplateUseCase,
-    private val reorderTemplatesUseCase: ReorderTemplatesUseCase,
     private val updateButtonConfigInTemplateUseCase: UpdateButtonConfigInTemplateUseCase,
     private val getTemplateUsagesUseCase: GetTemplateUsagesUseCase
 ) : ViewModel(), com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions {
 
-    val experimentalManualSorting: StateFlow<Boolean> = settingsRepository.experimentalManualSortingFlow
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
@@ -111,6 +108,42 @@ class TemplateViewModel @Inject constructor(
         updateTemplate(current.copy(rowNames = updatedNames))
     }
 
+    override fun moveRow(itemId: String, fromRow: Int, toRow: Int) {
+        val current = templates.value.find { it.id == itemId } ?: return
+        if (fromRow == toRow) return
+        
+        val rows = current.rows
+        val cols = current.columns
+        val newButtonConfigs = current.buttonConfigs.toMutableList()
+        val fromStart = fromRow * cols
+        val rowToMove = newButtonConfigs.subList(fromStart, fromStart + cols).toList()
+        
+        repeat(cols) { newButtonConfigs.removeAt(fromStart) }
+        val toStart = toRow * cols
+        newButtonConfigs.addAll(toStart, rowToMove)
+        
+        val newRowNames = current.rowNames.toMutableList()
+        if (newRowNames.isNotEmpty()) {
+            val name = if (fromRow < newRowNames.size) newRowNames.removeAt(fromRow) else "Row ${fromRow + 1}"
+            if (toRow <= newRowNames.size) newRowNames.add(toRow, name) else newRowNames.add(name)
+        }
+        
+        updateTemplate(current.copy(buttonConfigs = newButtonConfigs, rowNames = newRowNames))
+    }
+
+    override fun moveButton(itemId: String, fromIndex: Int, toIndex: Int) {
+        val current = templates.value.find { it.id == itemId } ?: return
+        if (fromIndex == toIndex) return
+        
+        val newButtonConfigs = current.buttonConfigs.toMutableList()
+        if (fromIndex !in newButtonConfigs.indices || toIndex !in newButtonConfigs.indices) return
+        
+        val config = newButtonConfigs.removeAt(fromIndex)
+        newButtonConfigs.add(toIndex, config)
+        
+        updateTemplate(current.copy(buttonConfigs = newButtonConfigs))
+    }
+
     override fun createNewPage(
         name: String,
         rows: Int,
@@ -135,9 +168,4 @@ class TemplateViewModel @Inject constructor(
 
     suspend fun getTemplateUsages(templateId: String) = getTemplateUsagesUseCase.execute(templateId)
 
-    fun reorderTemplates(fromIndex: Int, toIndex: Int) {
-        viewModelScope.launch {
-            reorderTemplatesUseCase.execute(templates.value, fromIndex, toIndex)
-        }
-    }
 }
