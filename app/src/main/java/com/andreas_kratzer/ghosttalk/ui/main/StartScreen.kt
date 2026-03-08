@@ -1,6 +1,7 @@
 package com.andreas_kratzer.ghosttalk.ui.main
 
 import android.content.res.Configuration
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -52,6 +53,10 @@ fun StartScreen(
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     val dimensions = LocalDimensions.current
     val vSpacing = if (isLandscape) dimensions.paddingLarge else dimensions.paddingExtraLarge
+
+    BackHandler {
+        onNavigateToBooks()
+    }
 
     Scaffold(
         topBar = {

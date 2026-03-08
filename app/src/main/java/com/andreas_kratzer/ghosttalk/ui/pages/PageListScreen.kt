@@ -1,5 +1,6 @@
 package com.andreas_kratzer.ghosttalk.ui.pages
 
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -135,6 +136,10 @@ fun PageListScreen(
     }
 
     val gridState = androidx.compose.foundation.lazy.grid.rememberLazyGridState()
+
+    BackHandler {
+        onNavigateBack()
+    }
 
     Scaffold(
         topBar = {

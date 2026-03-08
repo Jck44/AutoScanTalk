@@ -128,7 +128,9 @@ fun BookListScreen(
                         Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                             IconButton(
                                 onClick = { 
-                                    bookViewModel.settingsRepository.favoriteBookId = if (isFavorite) null else book.id
+                                    if (!isFavorite || allBooks.size > 1) {
+                                        bookViewModel.settingsRepository.favoriteBookId = if (isFavorite) null else book.id
+                                    }
                                 }
                             ) {
                                 Icon(

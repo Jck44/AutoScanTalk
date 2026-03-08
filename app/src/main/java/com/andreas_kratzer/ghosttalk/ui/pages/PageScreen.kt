@@ -1,6 +1,7 @@
 package com.andreas_kratzer.ghosttalk.ui.pages
 
 import android.content.res.Configuration
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,7 +13,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -35,6 +40,7 @@ import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 @Composable
 fun PageScreen(
     pageViewModel: PageViewModel,
+    onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val currentPage by pageViewModel.resolvedPage.collectAsState()
@@ -78,6 +84,10 @@ fun PageScreen(
         }
     }
 
+    BackHandler {
+        onNavigateBack()
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -88,6 +98,14 @@ fun PageScreen(
                         isLandscape = true, // Smaller version for TopAppBar
                         modifier = Modifier.fillMaxWidth()
                     )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.back_button_content_description)
+                        )
+                    }
                 }
             )
         }

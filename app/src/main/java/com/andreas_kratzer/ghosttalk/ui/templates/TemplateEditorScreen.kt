@@ -1,6 +1,7 @@
 package com.andreas_kratzer.ghosttalk.ui.templates
 
 import android.content.res.Configuration
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -70,6 +71,10 @@ fun TemplateEditorScreen(
             Text(stringResource(R.string.template_loading))
         }
         return
+    }
+
+    BackHandler {
+        onNavigateBack()
     }
 
     Scaffold(

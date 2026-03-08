@@ -1,5 +1,6 @@
 package com.andreas_kratzer.ghosttalk.ui.templates
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -63,6 +64,10 @@ fun TemplateScreen(
     var templateToDelete by remember { mutableStateOf<PageTemplate?>(null) }
     val listState = androidx.compose.foundation.lazy.rememberLazyListState()
     val dimensions = LocalDimensions.current
+
+    BackHandler {
+        onNavigateBack()
+    }
 
     Scaffold(
         topBar = {

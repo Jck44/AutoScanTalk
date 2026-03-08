@@ -175,6 +175,7 @@ fun GhosTTalkNavHost(
         composable("main") {
             PageScreen(
                 pageViewModel = pageViewModel,
+                onNavigateBack = { navController.navigate("start") },
                 modifier = Modifier.fillMaxSize()
             )
         }

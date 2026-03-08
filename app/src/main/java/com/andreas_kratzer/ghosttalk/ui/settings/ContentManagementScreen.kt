@@ -1,5 +1,6 @@
 package com.andreas_kratzer.ghosttalk.ui.settings
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -29,6 +30,11 @@ fun ContentManagementScreen(
     onNavigateBack: () -> Unit
 ) {
     val dimensions = LocalDimensions.current
+
+    BackHandler {
+        onNavigateBack()
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(

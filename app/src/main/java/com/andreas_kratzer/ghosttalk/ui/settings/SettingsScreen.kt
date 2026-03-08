@@ -66,7 +66,7 @@ import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 
 enum class SettingsSection(val titleRes: Int, val icon: ImageVector, val isGlobal: Boolean, val isScoped: Boolean) {
     GENERAL(R.string.settings_category_general, Icons.Default.Settings, isGlobal = true, isScoped = true),
-    VOICE(R.string.settings_category_voice, GhosTTalkIcons.RecordVoiceOver, isGlobal = true, isScoped = true),
+    VOICE(R.string.settings_category_voice, GhosTTalkIcons.RecordVoiceOver, isGlobal = false, isScoped = true),
     SCANNING(R.string.settings_category_scanning, GhosTTalkIcons.SettingsAccessibility, isGlobal = false, isScoped = true),
     SECURITY(R.string.settings_category_security, GhosTTalkIcons.Security, isGlobal = true, isScoped = false),
     CLOUD(R.string.settings_category_cloud, GhosTTalkIcons.Cloud, isGlobal = false, isScoped = true),
@@ -108,8 +108,12 @@ fun SettingsScreen(
         signInError?.let { Toast.makeText(context, it, Toast.LENGTH_LONG).show() }
     }
 
-    BackHandler(enabled = selectedSection != null) {
-        selectedSection = null
+    BackHandler {
+        if (selectedSection == null) {
+            onNavigateBack()
+        } else {
+            selectedSection = null
+        }
     }
 
     Scaffold(
