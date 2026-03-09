@@ -67,7 +67,7 @@ class ActionExecutorTest {
         )
 
         val ttsCallback = slot<() -> Unit>()
-        every { ttsHelper.speakRouted(any(), any(), any(), any(), any(), capture(ttsCallback)) } returns Unit
+        every { ttsHelper.speakRouted(any(), any(), any(), any(), capture(ttsCallback)) } returns Unit
 
         val events = mutableListOf<ActionExecutor.ExecutionEvent>()
         val eventsJob = launch {
@@ -81,7 +81,7 @@ class ActionExecutorTest {
 
         // Verifiziere: isExecuting ist true
         assertTrue("Sollte ausführen", actionExecutor.isExecuting.value)
-        verify(exactly = 1) { ttsHelper.speakRouted("Hello", any(), any(), any(), any(), any()) }
+        verify(exactly = 1) { ttsHelper.speakRouted("Hello", any(), any(), any(), any()) }
 
         // 310ms: Nutzer drückt nochmal -> Haltezeit (1000ms) ist noch aktiv
         currentTimeMillis = 310L
@@ -109,7 +109,7 @@ class ActionExecutorTest {
         val button2 = ButtonConfig(id = "2", label = "B2", spokenText = "A2", auditoryCue = null, isActive = true, buttonAction = SpeakTextButtonAction())
 
         val ttsCallback1 = slot<() -> Unit>()
-        every { ttsHelper.speakRouted("A1", any(), any(), any(), any(), capture(ttsCallback1)) } returns Unit
+        every { ttsHelper.speakRouted("A1", any(), any(), any(), capture(ttsCallback1)) } returns Unit
 
         val events = mutableListOf<ActionExecutor.ExecutionEvent>()
         val eventsJob = launch {
@@ -156,7 +156,7 @@ class ActionExecutorTest {
         )
 
         val ttsCallback = slot<() -> Unit>()
-        every { ttsHelper.speakRouted(any(), any(), any(), any(), any(), capture(ttsCallback)) } returns Unit
+        every { ttsHelper.speakRouted(any(), any(), any(), any(), capture(ttsCallback)) } returns Unit
 
         currentTimeMillis = 0L
         actionExecutor.executeButtonAction(buttonConfig, bookId = "book1", rows = 6, columns = 6, index = 10)
@@ -178,7 +178,7 @@ class ActionExecutorTest {
             buttonAction = SpeakTextButtonAction()
         )
 
-        every { ttsHelper.speakRouted(any(), any(), any(), any(), any(), any()) } returns Unit
+        every { ttsHelper.speakRouted(any(), any(), any(), any(), any()) } returns Unit
 
         currentTimeMillis = 0L
         actionExecutor.executeButtonAction(buttonConfig) // No bookId
@@ -213,7 +213,7 @@ class ActionExecutorTest {
         actionExecutor.executeButtonAction(buttonConfig)
         runCurrent()
 
-        verify { ttsHelper.speakRouted("Wait 45s", any(), any(), any(), any(), any()) }
+        verify { ttsHelper.speakRouted("Wait 45s", any(), any(), any(), any()) }
     }
 
 
@@ -225,8 +225,8 @@ class ActionExecutorTest {
 
         val ttsCallback1 = slot<() -> Unit>()
         val ttsCallback2 = slot<() -> Unit>()
-        every { ttsHelper.speakRouted("A1", any(), any(), any(), any(), capture(ttsCallback1)) } returns Unit
-        every { ttsHelper.speakRouted("A2", any(), any(), any(), any(), capture(ttsCallback2)) } returns Unit
+        every { ttsHelper.speakRouted("A1", any(), any(), any(), capture(ttsCallback1)) } returns Unit
+        every { ttsHelper.speakRouted("A2", any(), any(), any(), capture(ttsCallback2)) } returns Unit
 
         // Execute button 1
         currentTimeMillis = 0L
@@ -269,7 +269,7 @@ class ActionExecutorTest {
         )
 
         val ttsCallback = slot<() -> Unit>()
-        every { ttsHelper.speakRouted(any(), any(), any(), any(), any(), capture(ttsCallback)) } returns Unit
+        every { ttsHelper.speakRouted(any(), any(), any(), any(), capture(ttsCallback)) } returns Unit
 
         // First press at T=0
         currentTimeMillis = 0L
@@ -289,7 +289,7 @@ class ActionExecutorTest {
         runCurrent()
 
         // Verify: action was executed again (2 total calls)
-        verify(exactly = 2) { ttsHelper.speakRouted("Hello", any(), any(), any(), any(), any()) }
+        verify(exactly = 2) { ttsHelper.speakRouted("Hello", any(), any(), any(), any()) }
         assertTrue(actionExecutor.isExecuting.value)
 
         // Cleanup
@@ -306,7 +306,7 @@ class ActionExecutorTest {
         currentTimeMillis = 200L
         actionExecutor.executeButtonAction(button)
         runCurrent()
-        verify(exactly = 1) { ttsHelper.speakRouted(any(), any(), any(), any(), any(), any()) }
+        verify(exactly = 1) { ttsHelper.speakRouted(any(), any(), any(), any(), any()) }
 
         // Second press at T=300 (holding time 1000ms active)
         currentTimeMillis = 300L
@@ -314,7 +314,7 @@ class ActionExecutorTest {
         runCurrent()
         
         // Still only 1 execution
-        verify(exactly = 1) { ttsHelper.speakRouted(any(), any(), any(), any(), any(), any()) }
+        verify(exactly = 1) { ttsHelper.speakRouted(any(), any(), any(), any(), any()) }
     }
 
     @Test
@@ -331,7 +331,7 @@ class ActionExecutorTest {
         runCurrent()
         
         // No execution should happen
-        verify(exactly = 0) { ttsHelper.speakRouted(any(), any(), any(), any(), any(), any()) }
+        verify(exactly = 0) { ttsHelper.speakRouted(any(), any(), any(), any(), any()) }
     }
 
     @Test

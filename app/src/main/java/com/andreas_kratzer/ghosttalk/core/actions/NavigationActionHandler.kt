@@ -38,7 +38,6 @@ class NavigationActionHandler(
             ttsHelper.speakRouted(
                 text = feedback,
                 deviceAddress = settingsRepository.cuesAudioDeviceAddress,
-                ttsMode = action.ttsMode,
                 queueMode = android.speech.tts.TextToSpeech.QUEUE_FLUSH,
                 isForCues = true,
                 onDone = { performNavigation() }

@@ -143,14 +143,13 @@ class TextToSpeechHelper @Inject constructor(
     // Support for direct callbacks
     private val directCallbacks = ConcurrentHashMap<String, () -> Unit>()
 
-    fun speak(text: String, queueMode: Int = TextToSpeech.QUEUE_FLUSH, ttsMode: String? = "NORMAL", onDone: (() -> Unit)? = null) {
-        speakRouted(text, null, ttsMode, queueMode, false, onDone)
+    fun speak(text: String, queueMode: Int = TextToSpeech.QUEUE_FLUSH, onDone: (() -> Unit)? = null) {
+        speakRouted(text, null, queueMode, false, onDone)
     }
 
     fun speakRouted(
         text: String, 
         deviceAddress: String?, 
-        ttsMode: String? = "NORMAL",
         queueMode: Int = TextToSpeech.QUEUE_FLUSH,
         isForCues: Boolean = false,
         onDone: (() -> Unit)? = null
@@ -176,22 +175,7 @@ class TextToSpeechHelper @Inject constructor(
         
         // Volume modifiers removed
         
-        val safeTtsMode = ttsMode ?: "NORMAL"
-        
-        // modeVolumeModifier removed
-        
-        // Generate SSML if needed
-        val finalSpeakText = if (safeTtsMode != "NORMAL") {
-            val volumeAttr = when (safeTtsMode) {
-                "WHISPER" -> "soft"
-                "SHOUT" -> "loud"
-                else -> "default"
-            }
-            // A basic SSML wrapper. Some engines require exact formatting.
-            "<speak><prosody volume=\"$volumeAttr\">$text</prosody></speak>"
-        } else {
-            text
-        }
+        val finalSpeakText = text
 
         if (deviceAddress == null) {
             val utteranceId = "direct_${System.currentTimeMillis()}_${text.hashCode()}"

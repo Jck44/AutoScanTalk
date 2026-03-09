@@ -28,7 +28,7 @@ class UpdateButtonConfigInTemplateUseCaseTest {
         // Given
         val initialConfigs = listOf(
             null, 
-            ButtonConfig(id = "btn1", label = "Old", auditoryCue = null, buttonAction = SpeakTextButtonAction(""))
+            ButtonConfig(id = "btn1", label = "Old", auditoryCue = null, buttonAction = SpeakTextButtonAction())
         )
         val template = PageTemplate(
             id = "id",
@@ -37,7 +37,7 @@ class UpdateButtonConfigInTemplateUseCaseTest {
             columns = 2,
             buttonConfigs = initialConfigs
         )
-        val newConfig = ButtonConfig(id = "btn2", label = "New", auditoryCue = null, buttonAction = SpeakTextButtonAction("New"))
+        val newConfig = ButtonConfig(id = "btn2", label = "New", auditoryCue = null, buttonAction = SpeakTextButtonAction())
 
         // When
         updateButtonConfigInTemplateUseCase.execute(template, 0, newConfig)

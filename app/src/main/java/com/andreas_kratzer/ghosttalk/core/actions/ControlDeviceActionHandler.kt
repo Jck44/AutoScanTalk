@@ -215,7 +215,7 @@ class ControlDeviceActionHandler(
             val msg = "Vorlesen von Benachrichtigungen nicht aktiv oder Berechtigung fehlt."
             log(msg)
             if (tts?.isReady == true) {
-                tts.speakRouted(msg, targetDeviceAddress, action.ttsMode) {
+                tts.speakRouted(msg, targetDeviceAddress) {
                     onFinish(executionId)
                 }
             } else onFinish(executionId)
@@ -233,7 +233,7 @@ class ControlDeviceActionHandler(
             val msg = "Keine Benachrichtigungen vorhanden."
             log(msg)
             if (tts?.isReady == true) {
-                tts.speakRouted(msg, targetDeviceAddress, action.ttsMode) {
+                tts.speakRouted(msg, targetDeviceAddress) {
                     onFinish(executionId)
                 }
             } else onFinish(executionId)
@@ -250,7 +250,7 @@ class ControlDeviceActionHandler(
             val msg = "Keine passenden Benachrichtigungen gefunden."
             log(msg)
             if (tts?.isReady == true) {
-                tts.speakRouted(msg, targetDeviceAddress, action.ttsMode) {
+                tts.speakRouted(msg, targetDeviceAddress) {
                     onFinish(executionId)
                 }
             } else onFinish(executionId)
@@ -268,7 +268,7 @@ class ControlDeviceActionHandler(
             val msg = "Benachrichtigungen enthalten keinen Text."
             log(msg)
             if (tts?.isReady == true) {
-                tts.speakRouted(msg, targetDeviceAddress, action.ttsMode) {
+                tts.speakRouted(msg, targetDeviceAddress) {
                     onFinish(executionId)
                 }
             } else onFinish(executionId)
@@ -280,7 +280,7 @@ class ControlDeviceActionHandler(
         
         tts?.isReadingNotification = true
         if (tts?.isReady == true) {
-            tts.speakRouted(combinedMessage, targetDeviceAddress, action.ttsMode) {
+            tts.speakRouted(combinedMessage, targetDeviceAddress) {
                 tts.isReadingNotification = false
                 onFinish(executionId)
             }
@@ -338,7 +338,7 @@ class ControlDeviceActionHandler(
         }
         
         if (ttsHelper?.isReady == true) {
-            ttsHelper.speakRouted(ssml, targetDeviceAddress, action.ttsMode) {
+            ttsHelper.speakRouted(ssml, targetDeviceAddress) {
                 onFinish(executionId)
             }
         } else {

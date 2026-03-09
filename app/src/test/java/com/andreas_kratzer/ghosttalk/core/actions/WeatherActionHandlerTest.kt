@@ -62,7 +62,7 @@ class WeatherActionHandlerTest {
         
         coEvery { weatherExecutor.getWeatherInfo() } returns "Regen, 15.0 °C"
         val onDoneSlot = slot<() -> Unit>()
-        every { ttsHelper.speakRouted(any(), any(), any(), any(), any(), capture(onDoneSlot)) } answers {
+        every { ttsHelper.speakRouted(any(), any(), any(), any(), capture(onDoneSlot)) } answers {
             onDoneSlot.captured.invoke()
         }
         every { ttsHelper.isReady } returns true
@@ -72,7 +72,7 @@ class WeatherActionHandlerTest {
         handler.handle(config, action, 1, onFinish)
         
         verify { log("Wetterdaten werden abgerufen...") }
-        verify { ttsHelper.speakRouted(match { it.contains("Das aktuelle Wetter: Regen bei 15 Grad") }, any(), any(), any(), any(), any()) }
+        verify { ttsHelper.speakRouted(match { it.contains("Das aktuelle Wetter: Regen bei 15 Grad") }, any(), any(), any(), any()) }
         verify { onFinish(1) }
     }
 }

@@ -29,7 +29,6 @@ class CoreLogicTest {
     @Test
     fun testSpeakAction_Initialization() = runTest {
         val action = SpeakTextButtonAction()
-        assertEquals("NORMAL", action.ttsMode)
     }
 
     @Test

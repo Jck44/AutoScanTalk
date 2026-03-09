@@ -77,7 +77,7 @@ class WeatherActionHandler(
         }
         
         if (ttsHelper?.isReady == true) {
-            ttsHelper.speakRouted(ssml, targetDeviceAddress, action.ttsMode) {
+            ttsHelper.speakRouted(ssml, targetDeviceAddress) {
                 onFinish(executionId)
             }
         } else {

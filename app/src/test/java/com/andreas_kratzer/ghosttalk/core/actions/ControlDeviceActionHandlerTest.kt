@@ -105,7 +105,7 @@ class ControlDeviceActionHandlerTest {
 
         val onFinish = mockk<(Int) -> Unit>(relaxed = true)
         val onCompleteSlot = slot<() -> Unit>()
-        every { ttsHelper.speakRouted("Von Test Sender: Hello World", any(), any(), any(), any(), capture(onCompleteSlot)) } returns Unit
+        every { ttsHelper.speakRouted("Von Test Sender: Hello World", any(), any(), any(), capture(onCompleteSlot)) } returns Unit
 
         handler.handle(config, action, 1, onFinish)
         
@@ -130,13 +130,13 @@ class ControlDeviceActionHandlerTest {
         
         val onFinish = mockk<(Int) -> Unit>(relaxed = true)
         val onDoneSlot = slot<() -> Unit>()
-        every { ttsHelper.speakRouted(any(), any(), any(), any(), any(), capture(onDoneSlot)) } answers {
+        every { ttsHelper.speakRouted(any(), any(), any(), any(), capture(onDoneSlot)) } answers {
             onDoneSlot.captured.invoke()
         }
         
         handler.handle(config, action, 1, onFinish)
         
-        verify { ttsHelper.speakRouted(match { it.contains("Battery SSML") }, any(), any(), any<Int>(), any<Boolean>(), any()) }
+        verify { ttsHelper.speakRouted(match { it.contains("Battery SSML") }, any(), any<Int>(), any<Boolean>(), any()) }
         verify { onFinish(1) }
     }
 
@@ -149,13 +149,13 @@ class ControlDeviceActionHandlerTest {
         
         val onFinish = mockk<(Int) -> Unit>(relaxed = true)
         val onDoneSlot = slot<() -> Unit>()
-        every { ttsHelper.speakRouted(any(), any(), any(), any(), any(), capture(onDoneSlot)) } answers {
+        every { ttsHelper.speakRouted(any(), any(), any(), any(), capture(onDoneSlot)) } answers {
             onDoneSlot.captured.invoke()
         }
         
         handler.handle(config, action, 1, onFinish)
         
-        verify { ttsHelper.speakRouted(match { it.contains("Time SSML") }, any(), any(), any<Int>(), any<Boolean>(), any()) }
+        verify { ttsHelper.speakRouted(match { it.contains("Time SSML") }, any(), any<Int>(), any<Boolean>(), any()) }
         verify { onFinish(1) }
     }
 
@@ -168,13 +168,13 @@ class ControlDeviceActionHandlerTest {
         
         val onFinish = mockk<(Int) -> Unit>(relaxed = true)
         val onDoneSlot = slot<() -> Unit>()
-        every { ttsHelper.speakRouted(any(), any(), any(), any(), any(), capture(onDoneSlot)) } answers {
+        every { ttsHelper.speakRouted(any(), any(), any(), any(), capture(onDoneSlot)) } answers {
             onDoneSlot.captured.invoke()
         }
         
         handler.handle(config, action, 1, onFinish)
         
-        verify { ttsHelper.speakRouted(match { it.contains("Date SSML") }, any(), any(), any<Int>(), any<Boolean>(), any()) }
+        verify { ttsHelper.speakRouted(match { it.contains("Date SSML") }, any(), any<Int>(), any<Boolean>(), any()) }
         verify { onFinish(1) }
     }
 }

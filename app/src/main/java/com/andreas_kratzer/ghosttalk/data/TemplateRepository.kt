@@ -71,13 +71,13 @@ class TemplateRepository @Inject constructor(
             yesNoButtons[0] = ButtonConfig(
                 id = UUID.randomUUID().toString(),
                 label = "Ja",
-                buttonAction = SpeakTextButtonAction("Ja"),
+                buttonAction = SpeakTextButtonAction(),
                 auditoryCue = null
             )
             yesNoButtons[1] = ButtonConfig(
                 id = UUID.randomUUID().toString(),
                 label = "Nein",
-                buttonAction = SpeakTextButtonAction("Nein"),
+                buttonAction = SpeakTextButtonAction(),
                 auditoryCue = null
             )
             yesNoButtons[15] = ButtonConfig(

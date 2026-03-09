@@ -41,10 +41,6 @@
     <string name="voice_quality_very_high">Sehr hohe Qualität</string>
     <string name="voice_quality_normal">Normale Qualität</string>
     <string name="voice_quality_low">Geringe Qualität</string>
-    <string name="settings_tts_mode">Sprach-Modus</string>
-    <string name="settings_tts_mode_normal">Normal</string>
-    <string name="settings_tts_mode_whisper">Flüstern</string>
-    <string name="settings_tts_mode_shout">Schreien</string>
     <string name="settings_tts_volume">Sprach-Lautstärke (TTS): %1$d%%</string>
     <string name="settings_cues_volume">Hinweis-Lautstärke (Audio): %1$d%%</string>
     

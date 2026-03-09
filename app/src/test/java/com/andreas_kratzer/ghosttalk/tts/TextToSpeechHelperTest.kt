@@ -107,35 +107,6 @@ class TextToSpeechHelperTest {
         verify { anyConstructed<TextToSpeech>().speak("Hello", any(), any<Bundle>(), any()) }
     }
 
-    @Test
-    fun `speak with WHISPER mode wraps text in SSML`() {
-        helper.onInit(TextToSpeech.SUCCESS)
-        helper.speakRouted("Hello", null, ttsMode = "WHISPER")
-        
-        verify { 
-            anyConstructed<TextToSpeech>().speak(
-                match { it.contains("<speak>") && it.contains("soft") },
-                any(),
-                any(),
-                any()
-            ) 
-        }
-    }
-
-    @Test
-    fun `speak with SHOUT mode wraps text in SSML`() {
-        helper.onInit(TextToSpeech.SUCCESS)
-        helper.speakRouted("Hello", null, ttsMode = "SHOUT")
-        
-        verify { 
-            anyConstructed<TextToSpeech>().speak(
-                match { it.contains("<speak>") && it.contains("loud") },
-                any(),
-                any(),
-                any()
-            ) 
-        }
-    }
 
     @Test
     fun `stopNotificationTTS stops only if reading notification`() {

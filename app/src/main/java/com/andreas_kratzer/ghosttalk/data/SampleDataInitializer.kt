@@ -45,19 +45,19 @@ class SampleDataInitializer @Inject constructor(
                 ButtonConfig(
                     id = "p2_btn0",
                     label = "Aktion 1",
-                    buttonAction = SpeakTextButtonAction("Zweite Seite Aktion 1"),
+                    buttonAction = SpeakTextButtonAction(),
                     auditoryCue = AuditoryCue.TextToSpeechCue("Hinweis Aktion 1")
                 ),
                 ButtonConfig(
                     id = "p2_btn1",
                     label = "Aktion 2",
-                    buttonAction = SpeakTextButtonAction("Zweite Seite Aktion 2"),
+                    buttonAction = SpeakTextButtonAction(),
                     auditoryCue = AuditoryCue.TextToSpeechCue("Hinweis Aktion 2")
                 ),
                 ButtonConfig(
                     id = "p2_btn2",
                     label = "Aktion 3",
-                    buttonAction = SpeakTextButtonAction("Zweite Seite Aktion 3"),
+                    buttonAction = SpeakTextButtonAction(),
                     auditoryCue = AuditoryCue.TextToSpeechCue("Hinweis Aktion 3")
                 ),
                 ButtonConfig(
@@ -89,7 +89,7 @@ class SampleDataInitializer @Inject constructor(
                     else -> ButtonConfig(
                         id = "btn$index",
                         label = "Button ${index + 1}",
-                        buttonAction = SpeakTextButtonAction("Aktion für Button ${index + 1}"),
+                        buttonAction = SpeakTextButtonAction(),
                         auditoryCue = AuditoryCue.TextToSpeechCue("Hinweis Button ${index + 1}")
                     )
                 }

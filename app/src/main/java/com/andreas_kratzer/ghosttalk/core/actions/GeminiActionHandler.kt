@@ -43,11 +43,6 @@ class GeminiActionHandler(
             else -> return
         }
         val useGoogleSearch = action is GeminiSearchButtonAction
-        val ttsMode = when (action) {
-            is GeminiButtonAction -> action.ttsMode
-            is GeminiSearchButtonAction -> action.ttsMode
-            is GeminiNanoButtonAction -> action.ttsMode
-        }
 
         log("Gemini ${if (useGoogleSearch) "Suche " else if (isNanoAction) "Nano ($nanoIntent) " else ""}aufgerufen.")
         
@@ -65,7 +60,7 @@ class GeminiActionHandler(
                         val errorMsg = tts?.context?.getString(R.string.error_gemini_disabled) 
                             ?: "Gemini Nano in Einstellungen aktivieren"
                         if (tts != null) {
-                            tts.speakRouted(errorMsg, targetDeviceAddress, ttsMode) {
+                            tts.speakRouted(errorMsg, targetDeviceAddress) {
                                 onFinish(executionId)
                             }
                         } else { onFinish(executionId) }
@@ -77,7 +72,7 @@ class GeminiActionHandler(
                         log("Gemini Nano [${nanoIntent}] Antwort: '$displayResponse'")
 
                         if (tts?.isReady == true) {
-                            tts.speakRouted(response, targetDeviceAddress, ttsMode) {
+                            tts.speakRouted(response, targetDeviceAddress) {
                                 onFinish(executionId)
                             }
                         } else {
@@ -92,7 +87,7 @@ class GeminiActionHandler(
                     val errorMsg = tts?.context?.getString(R.string.error_gemini_disabled) 
                         ?: "Gemini in Einstellungen prüfen"
                     if (tts != null) {
-                        tts.speakRouted(errorMsg, targetDeviceAddress, ttsMode) {
+                        tts.speakRouted(errorMsg, targetDeviceAddress) {
                             onFinish(executionId)
                         }
                     } else { onFinish(executionId) }
@@ -103,7 +98,7 @@ class GeminiActionHandler(
                     ?: "Fehler: Gemini Integration nicht verfügbar."
                 
                 if (tts?.isReady == true) {
-                    tts.speakRouted(response, targetDeviceAddress, ttsMode) {
+                    tts.speakRouted(response, targetDeviceAddress) {
                         onFinish(executionId)
                     }
                 } else {
@@ -130,7 +125,7 @@ class GeminiActionHandler(
                     
                     log(quotaMsg)
                     if (tts?.isReady == true) {
-                        tts.speakRouted(quotaMsg, settingsRepository.ttsAudioDeviceAddress, ttsMode) {
+                        tts.speakRouted(quotaMsg, settingsRepository.ttsAudioDeviceAddress) {
                             onFinish(executionId)
                         }
                     } else {

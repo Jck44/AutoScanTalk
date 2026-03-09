@@ -75,7 +75,7 @@ class NavigationActionHandlerTest {
 
         every { ttsHelper.isReady } returns true
         val onCompleteSlot = slot<() -> Unit>()
-        every { ttsHelper.speakRouted(any(), any(), any(), any(), any(), capture(onCompleteSlot)) } returns Unit
+        every { ttsHelper.speakRouted(any(), any(), any(), any(), capture(onCompleteSlot)) } returns Unit
 
         handler.handle(config, action, 1, onFinish)
         runCurrent()

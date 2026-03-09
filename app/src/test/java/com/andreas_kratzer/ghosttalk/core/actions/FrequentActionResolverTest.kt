@@ -24,7 +24,7 @@ class FrequentActionResolverTest {
         val originalPage = Page(
             id = "p1", bookId = "b1", name = "Test", rows = 1, columns = 1,
             buttonConfigs = listOf(
-                ButtonConfig(label = "Static", buttonAction = SpeakTextButtonAction("Static"), auditoryCue = null, isActive = true)
+                ButtonConfig(label = "Static", buttonAction = SpeakTextButtonAction(), auditoryCue = null, isActive = true)
             )
         )
 
@@ -40,8 +40,8 @@ class FrequentActionResolverTest {
             buttonConfigs = listOf(
                 ButtonConfig(id = "slot1", label = "Top 1", buttonAction = FrequentActionButtonAction(1), auditoryCue = null, isActive = true),
                 ButtonConfig(id = "slot2", label = "Top 2", buttonAction = FrequentActionButtonAction(2), auditoryCue = null, isActive = true),
-                ButtonConfig(id = "orig1", label = "Yes", buttonAction = SpeakTextButtonAction("Yes"), auditoryCue = null, isActive = true),
-                ButtonConfig(id = "orig2", label = "No", buttonAction = SpeakTextButtonAction("No"), auditoryCue = null, isActive = true)
+                ButtonConfig(id = "orig1", label = "Yes", buttonAction = SpeakTextButtonAction(), auditoryCue = null, isActive = true),
+                ButtonConfig(id = "orig2", label = "No", buttonAction = SpeakTextButtonAction(), auditoryCue = null, isActive = true)
             )
         )
 

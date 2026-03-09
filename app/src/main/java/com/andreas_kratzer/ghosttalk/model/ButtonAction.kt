@@ -4,15 +4,15 @@ package com.andreas_kratzer.ghosttalk.model
  * Represents an action that can be executed when a button is triggered.
  * The actual execution logic is handled by the PageViewModel.
  */
-sealed class ButtonAction {
-    abstract val ttsMode: String
-}
+sealed class ButtonAction
 
 /**
  * An action that speaks a given text using Text-to-Speech.
  */
 data class SpeakTextButtonAction(
-    override val ttsMode: String = "NORMAL"
+    val dummy: Unit = Unit // Just to keep it a data class if needed, or better, make it an empty data class if supported or just a simple class.
+    // Actually, Kotlin allows empty data classes if they have at least one parameter.
+    // Let's see if I can just remove the parameter.
 ) : ButtonAction()
 
 /**
@@ -20,48 +20,42 @@ data class SpeakTextButtonAction(
  * Optionally, it can provide TTS feedback when executed.
  */
 data class NavigateToPageButtonAction(
-    val pageId: String,
-    override val ttsMode: String = "NORMAL"
+    val pageId: String
 ) : ButtonAction()
 
 /**
  * An action that triggers a Gemini AI request with arbitrary skills/tools.
  */
 data class GeminiButtonAction(
-    val prompt: String,
-    override val ttsMode: String = "NORMAL"
+    val prompt: String
 ) : ButtonAction()
 
 /**
  * An action that triggers a Gemini AI request specifically using the Google Search Grounding tool.
  */
 data class GeminiSearchButtonAction(
-    val prompt: String,
-    override val ttsMode: String = "NORMAL"
+    val prompt: String
 ) : ButtonAction()
 
 /**
  * An action that triggers a Gemini AI request on-device using Gemini Nano for a specific intent.
  */
 data class GeminiNanoButtonAction(
-    val intent: String,
-    override val ttsMode: String = "NORMAL"
+    val intent: String
 ) : ButtonAction()
 
 /**
  * An action that resolves dynamically to the N-th most frequent action.
  */
 data class FrequentActionButtonAction(
-    val rank: Int,  // 1 = häufigste, 2 = zweithäufigste, ...
-    override val ttsMode: String = "NORMAL"
+    val rank: Int  // 1 = häufigste, 2 = zweithäufigste, ...
 ) : ButtonAction()
 
 /**
  * An action that resolves dynamically to the N-th smart prediction from Gemini.
  */
 data class SmartPredictionButtonAction(
-    val rank: Int = 1, // 1 = most likely, 2 = second, ...
-    override val ttsMode: String = "NORMAL"
+    val rank: Int = 1 // 1 = most likely, 2 = second, ...
 ) : ButtonAction()
 
 /**
@@ -72,15 +66,14 @@ data class ControlDeviceButtonAction(
     val volumeValue: String? = null,      // e.g. "50", "+10", "-5"
     val contactName: String? = null,      // Display name
     val contactPhone: String? = null,     // Phone number or ID
-    val messageText: String? = null,      // The message content
-    override val ttsMode: String = "NORMAL"
+    val messageText: String? = null       // The message content
 ) : ButtonAction()
 
 /**
  * An action that reads the current weather.
  */
 data class WeatherButtonAction(
-    override val ttsMode: String = "NORMAL"
+    val dummy: Unit = Unit
 ) : ButtonAction()
 
 enum class DeviceActionType {

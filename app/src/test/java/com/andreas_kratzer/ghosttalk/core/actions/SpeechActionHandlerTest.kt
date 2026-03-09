@@ -45,7 +45,7 @@ class SpeechActionHandlerTest {
 
         handler.handle(config, action, 1) {}
 
-        verify { ttsHelper.speakRouted("Spoken", any(), any(), any(), any(), any()) }
+        verify { ttsHelper.speakRouted("Spoken", any(), any(), any(), any()) }
     }
 
     @Test
@@ -62,7 +62,7 @@ class SpeechActionHandlerTest {
 
         handler.handle(config, action, 1) {}
 
-        verify { ttsHelper.speakRouted("Label", any(), any(), any(), any(), any()) }
+        verify { ttsHelper.speakRouted("Label", any(), any(), any(), any()) }
     }
 
     @Test
@@ -80,7 +80,7 @@ class SpeechActionHandlerTest {
 
         handler.handle(config, action, 1) {}
 
-        verify { ttsHelper.speakRouted(any(), "cues-addr", any(), any(), any(), any()) }
+        verify { ttsHelper.speakRouted(any(), "cues-addr", any(), any(), any()) }
     }
 
     @Test
@@ -98,7 +98,7 @@ class SpeechActionHandlerTest {
 
         handler.handle(config, action, 1) {}
 
-        verify { ttsHelper.speakRouted(any(), "tts-addr", any(), any(), any(), any()) }
+        verify { ttsHelper.speakRouted(any(), "tts-addr", any(), any(), any()) }
     }
 
     @Test
@@ -122,7 +122,7 @@ class SpeechActionHandlerTest {
         every { ttsHelper.isReady } returns true
         
         val onCompleteSlot = slot<() -> Unit>()
-        every { ttsHelper.speakRouted(any(), any(), any(), any(), any(), capture(onCompleteSlot)) } returns Unit
+        every { ttsHelper.speakRouted(any(), any(), any(), any(), capture(onCompleteSlot)) } returns Unit
         
         val finishCallback = mockk<(Int) -> Unit>(relaxed = true)
 

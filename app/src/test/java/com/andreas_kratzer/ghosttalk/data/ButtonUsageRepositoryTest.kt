@@ -20,7 +20,7 @@ class ButtonUsageRepositoryTest {
         id = "btn-1",
         label = "Ja",
         auditoryCue = null,
-        buttonAction = SpeakTextButtonAction("Ja")
+        buttonAction = SpeakTextButtonAction()
     )
 
     @Test

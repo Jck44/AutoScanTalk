@@ -35,7 +35,6 @@ class SpeechActionHandler(
             tts.speakRouted(
                 text = textToSpeak,
                 deviceAddress = targetDeviceAddress,
-                ttsMode = action.ttsMode,
                 queueMode = android.speech.tts.TextToSpeech.QUEUE_FLUSH,
                 isForCues = buttonConfig.playActionAsAuditoryCue,
                 onDone = { onFinish(executionId) }

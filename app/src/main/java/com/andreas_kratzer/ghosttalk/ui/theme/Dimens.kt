@@ -26,7 +26,7 @@ data class Dimensions(
     val buttonFontSize: TextUnit = 14.sp,
     val buttonAspectRatio: Float = 1.0f,
     val baseMaxButtonWidth: Dp = 180.dp,
-    val minButtonWidth: Dp = 55.dp
+    val minButtonWidth: Dp = 45.dp
 )
 
 val LocalDimensions = compositionLocalOf { Dimensions() }

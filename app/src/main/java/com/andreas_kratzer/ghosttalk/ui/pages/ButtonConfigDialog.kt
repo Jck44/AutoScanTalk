@@ -133,22 +133,6 @@ fun ButtonConfigDialog(
     }
     var expandedActionType by remember { mutableStateOf(false) }
 
-    // TTS Mode Details (Global for all button actions)
-    val ttsModeNormalLabel = stringResource(R.string.settings_tts_mode_normal)
-    val ttsModeWhisperLabel = stringResource(R.string.settings_tts_mode_whisper)
-    val ttsModeShoutLabel = stringResource(R.string.settings_tts_mode_shout)
-
-    var selectedButtonTtsMode by remember { 
-        mutableStateOf(
-            when (initialConfig?.buttonAction?.ttsMode) {
-                "WHISPER" -> ttsModeWhisperLabel
-                "SHOUT" -> ttsModeShoutLabel
-                else -> ttsModeNormalLabel
-            }
-        ) 
-    }
-    var expandedButtonTtsMode by remember { mutableStateOf(false) }
-    val buttonTtsModes = listOf(ttsModeNormalLabel, ttsModeWhisperLabel, ttsModeShoutLabel)
 
 
     // Navigation Details
@@ -187,28 +171,22 @@ fun ButtonConfigDialog(
 
     // Helper to build the action object from current UI state
     fun buildButtonAction(): ButtonAction {
-        val resolvedTtsMode = when (selectedButtonTtsMode) {
-            ttsModeWhisperLabel -> "WHISPER"
-            ttsModeShoutLabel -> "SHOUT"
-            else -> "NORMAL"
-        }
         return when (selectedActionType) {
-            actionTypeNavigate -> NavigateToPageButtonAction(pageId = navigateToPageId, ttsMode = resolvedTtsMode)
-            actionTypeGemini -> GeminiButtonAction(prompt = geminiPrompt, ttsMode = resolvedTtsMode)
-            actionTypeGeminiSearch -> GeminiSearchButtonAction(prompt = geminiPrompt, ttsMode = resolvedTtsMode)
-            actionTypeGeminiNano -> GeminiNanoButtonAction(intent = geminiPrompt, ttsMode = resolvedTtsMode)
-            actionTypeFrequent -> FrequentActionButtonAction(rank = frequentRank.toIntOrNull()?.coerceAtLeast(1) ?: 1, ttsMode = resolvedTtsMode)
-            actionTypeSmart -> SmartPredictionButtonAction(rank = smartRank.toIntOrNull()?.coerceAtLeast(1) ?: 1, ttsMode = resolvedTtsMode)
-            actionTypeWeather -> com.andreas_kratzer.ghosttalk.model.WeatherButtonAction(ttsMode = resolvedTtsMode)
+            actionTypeNavigate -> NavigateToPageButtonAction(pageId = navigateToPageId)
+            actionTypeGemini -> GeminiButtonAction(prompt = geminiPrompt)
+            actionTypeGeminiSearch -> GeminiSearchButtonAction(prompt = geminiPrompt)
+            actionTypeGeminiNano -> GeminiNanoButtonAction(intent = geminiPrompt)
+            actionTypeFrequent -> FrequentActionButtonAction(rank = frequentRank.toIntOrNull()?.coerceAtLeast(1) ?: 1)
+            actionTypeSmart -> SmartPredictionButtonAction(rank = smartRank.toIntOrNull()?.coerceAtLeast(1) ?: 1)
+            actionTypeWeather -> com.andreas_kratzer.ghosttalk.model.WeatherButtonAction()
             actionTypeControlDevice -> ControlDeviceButtonAction(
                 actionType = controlActionType,
                 volumeValue = controlVolumeValue,
                 contactName = controlContactName,
                 contactPhone = controlContactPhone,
-                messageText = controlMessageText,
-                ttsMode = resolvedTtsMode
+                messageText = controlMessageText
             )
-            else -> SpeakTextButtonAction(ttsMode = resolvedTtsMode)
+            else -> SpeakTextButtonAction()
         }
     }
 
@@ -456,35 +434,6 @@ fun ButtonConfigDialog(
                         )
                     }
 
-                    // TTS Mode Dropdown
-                    ExposedDropdownMenuBox(
-                        expanded = expandedButtonTtsMode,
-                        onExpandedChange = { expandedButtonTtsMode = !expandedButtonTtsMode }
-                    ) {
-                        OutlinedTextField(
-                            readOnly = true,
-                            value = selectedButtonTtsMode,
-                            onValueChange = { },
-                            label = { Text(stringResource(R.string.settings_tts_mode)) },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedButtonTtsMode) },
-                            shape = MaterialTheme.shapes.large,
-                            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
-                        )
-                        ExposedDropdownMenu(
-                            expanded = expandedButtonTtsMode,
-                            onDismissRequest = { expandedButtonTtsMode = false }
-                        ) {
-                            buttonTtsModes.forEach { modeLabel ->
-                                DropdownMenuItem(
-                                    text = { Text(modeLabel) },
-                                    onClick = {
-                                        selectedButtonTtsMode = modeLabel
-                                        expandedButtonTtsMode = false
-                                    }
-                                )
-                            }
-                        }
-                    }
                 }
             }
         },
