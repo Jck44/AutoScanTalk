@@ -7,8 +7,11 @@ import com.andreas_kratzer.ghosttalk.domain.executors.WeatherExecutor
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.WeatherButtonAction
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
-import io.mockk.*
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+import io.mockk.coEvery
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.slot
+import io.mockk.verify
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest

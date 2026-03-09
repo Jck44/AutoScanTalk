@@ -8,7 +8,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.media.AudioManager
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.telephony.SmsManager
@@ -154,7 +153,7 @@ class ControlDeviceActionHandler(
                 log(result)
                 try {
                     context.unregisterReceiver(this)
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     // Ignore
                 }
                 onFinish(executionId)
@@ -166,15 +165,11 @@ class ControlDeviceActionHandler(
             log("SMS-Timeout: Keine Rückmeldung vom System.")
             try {
                 context.unregisterReceiver(receiver)
-            } catch (e: Exception) {}
+            } catch (_: Exception) {}
             onFinish(executionId)
         }, 15000) // 15 seconds timeout for multipart messages
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            context.registerReceiver(receiver, IntentFilter(sentAction), Context.RECEIVER_NOT_EXPORTED)
-        } else {
-            context.registerReceiver(receiver, IntentFilter(sentAction))
-        }
+        context.registerReceiver(receiver, IntentFilter(sentAction), Context.RECEIVER_NOT_EXPORTED)
 
         try {
             log("Sende SMS an $phone...")
@@ -197,7 +192,7 @@ class ControlDeviceActionHandler(
             log("SMS-Sendeversuch fehlgeschlagen: ${e.message}")
             try {
                 context.unregisterReceiver(receiver)
-            } catch (ex: Exception) {}
+            } catch (_: Exception) {}
             onFinish(executionId)
         }
     }

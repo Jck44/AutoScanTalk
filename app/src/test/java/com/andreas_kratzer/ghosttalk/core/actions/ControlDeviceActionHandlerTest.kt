@@ -2,15 +2,21 @@ package com.andreas_kratzer.ghosttalk.core.actions
 
 import android.content.Context
 import android.media.AudioManager
-import android.view.KeyEvent
+import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.services.NotificationReaderService
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.model.ControlDeviceButtonAction
 import com.andreas_kratzer.ghosttalk.model.DeviceActionType
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
-import io.mockk.*
+import io.mockk.Runs
+import io.mockk.every
+import io.mockk.just
+import io.mockk.mockk
+import io.mockk.mockkObject
+import io.mockk.slot
+import io.mockk.unmockkObject
+import io.mockk.verify
 import org.junit.After
 import org.junit.Before
 import org.junit.Test

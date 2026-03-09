@@ -228,7 +228,7 @@ class PageViewModel @Inject constructor(
     fun startScanning(startIndex: Int = 0) = scanCoordinator.startScanning(startIndex)
     fun stopScanning() = scanCoordinator.stopScanning()
 
-    override fun updateButtonConfig(itemId: String, index: Int, newConfig: com.andreas_kratzer.ghosttalk.model.ButtonConfig?) {
+    override fun updateButtonConfig(itemId: String, index: Int, newConfig: ButtonConfig?) {
         pageManagementDelegate.updateButtonConfig(itemId, index, newConfig)
     }
 
@@ -245,7 +245,7 @@ class PageViewModel @Inject constructor(
 
     override val isExecuting: StateFlow<Boolean> = actionExecutor.isExecuting
 
-    override fun executeButtonAction(config: com.andreas_kratzer.ghosttalk.model.ButtonConfig) {
+    override fun executeButtonAction(config: ButtonConfig) {
         actionExecutor.executeButtonAction(config)
     }
 
