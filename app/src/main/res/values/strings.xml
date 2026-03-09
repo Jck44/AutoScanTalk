@@ -154,7 +154,7 @@
     <string name="page_scan_pattern_override">Scan Muster (Überschreiben)</string>
     <string name="page_pattern_default">Standard (Buch)</string>
     <string name="page_row_announcement_config">Zeilen-Ansage konfigurieren:</string>
-    <string name="page_row_label">Zeilenname</string>
+    <string name="page_row_label">Zeile %d</string>
     
     <string name="page_dialog_new_title">Neue Seite erstellen</string>
     <string name="page_name_field">Seitenname</string>

@@ -34,6 +34,13 @@
     <string name="settings_voice_default">Default</string>
     <string name="settings_voice_network_hint"> (HQ/Online)</string>
     <string name="settings_voice_local_hint"> (Local)</string>
+    <string name="voice_format_pattern">Voice %1$d (%2$s)</string>
+    <string name="voice_gender_male">Male</string>
+    <string name="voice_gender_female">Female</string>
+    <string name="voice_quality_high">High quality</string>
+    <string name="voice_quality_very_high">Very high quality</string>
+    <string name="voice_quality_normal">Normal quality</string>
+    <string name="voice_quality_low">Low quality</string>
     <string name="settings_tts_mode">Speech Mode</string>
     <string name="settings_tts_mode_normal">Normal</string>
     <string name="settings_tts_mode_whisper">Whisper</string>
@@ -93,9 +100,14 @@
     <string name="settings_security_lock_now">Lock now</string>
     <string name="settings_security_pin_active">Enabled</string>
     <string name="settings_security_pin_inactive">Disabled</string>
-    <string name="security_pin_wrong">Incorrect PIN</string>
     <string name="security_pin_enter">Enter PIN</string>
     <string name="security_pin_new">Set new PIN</string>
+    <string name="security_pin_wrong">Incorrect PIN</string>
+    <string name="security_pin_title">Security Check</string>
+    <string name="security_use_biometric">Unlock with fingerprint</string>
+    <string name="settings_security_biometric_enabled">Use fingerprint to unlock</string>
+    <string name="settings_security_require_for_edit">Protect book editing</string>
+    <string name="settings_security_require_for_settings">Protect access to settings</string>
 
     <!-- Start Screen -->
     <string name="start_tagline">Augmentative and Alternative Communication</string>
@@ -118,6 +130,7 @@
     <string name="book_dialog_delete_title">Delete Book?</string>
     <string name="book_dialog_delete_confirm">Do you really want to permanently delete the book \"%s\"? All pages within it will be lost.</string>
     <string name="book_name_label">Name of the book</string>
+    <string name="book_favorite_description">Set favorite</string>
 
     <!-- Shared Actions -->
     <string name="action_create">Create</string>
@@ -129,6 +142,8 @@
     <string name="error_book_name_required">Please enter a name for the book.</string>
     <string name="error_page_name_required">Please enter a name for the page.</string>
     <string name="error_button_label_required">Please enter a label for the button.</string>
+    <string name="button_test_started">Test started</string>
+    <string name="button_test_finished">Test finished</string>
 
 
     <!-- Page List Screen -->
@@ -184,11 +199,16 @@
     <string name="button_action_notification">Notification (Auditory Cue)</string>
     <string name="button_action_volume_tts">Adjust Volume (TTS)</string>
     <string name="button_action_volume_cues">Adjust Volume (Feedback)</string>
+    <string name="button_action_weather">Read weather</string>
     <string name="button_action_control_device">Device Functions</string>
     <string name="button_device_control_type_label">Select Action</string>
     <string name="button_device_control_media_next">Next Track</string>
     <string name="button_device_control_media_previous">Previous Track</string>
     <string name="button_device_control_media_play_pause">Play / Pause</string>
+    <string name="button_device_control_battery">Read battery level</string>
+    <string name="button_device_control_weather">Read weather</string>
+    <string name="button_device_control_date">Read date</string>
+    <string name="button_device_control_time">Read time</string>
     <string name="settings_gemini_nano_disabled_warning">Gemini Nano is disabled in settings. This action will not be executed.</string>
     <string name="button_no_page_selected">No page selected</string>
     <string name="button_target_page_label">Target Page</string>
@@ -253,6 +273,8 @@
     <string name="settings_gemini_tool_status_requires_auth">Sign-in required</string>
     <string name="settings_gemini_tool_status_failed">Not available</string>
     <string name="settings_gemini_tool_status_pending">Pending…</string>
+    <string name="settings_gemini_nano_deactivated_title">Gemini Nano deactivated</string>
+    <string name="settings_gemini_nano_deactivated_message">The local AI model was not found or could not be verified. Gemini Nano has therefore been deactivated. You can re-enable it in the settings and download the model.</string>
     <string name="settings_gemini_tool_google_search">Google Search (Grounding)</string>
     <string name="settings_gemini_tool_drive">Google Drive Search</string>
     <string name="settings_gemini_tool_calendar">Google Calendar</string>
