@@ -18,6 +18,10 @@ class ResolveDynamicButtonsUseCase @Inject constructor(
     private val frequentActionResolver: FrequentActionResolver
 ) {
 
+    private var lastAllPagesRef: List<Page>? = null
+    private var cachedButtonLookup: Map<String, ButtonConfig>? = null
+    private var cachedPageLookup: Map<String, Page>? = null
+
     suspend fun execute(
         page: Page,
         bookId: String,
@@ -32,16 +36,20 @@ class ResolveDynamicButtonsUseCase @Inject constructor(
             return page
         }
 
-        // Create lookup maps for performance
-        val buttonLookup = allPages.flatMap { it.buttonConfigs }.filterNotNull().associateBy { it.id }
-        val pageLookup = allPages.associateBy { it.id }
+        // Step 1: Create/Get lookup maps for performance
+        // Memoization: Only rebuild if the list reference changed
+        if (lastAllPagesRef !== allPages || cachedButtonLookup == null || cachedPageLookup == null) {
+            cachedButtonLookup = allPages.flatMap { it.buttonConfigs }.filterNotNull().associateBy { it.id }
+            cachedPageLookup = allPages.associateBy { it.id }
+            lastAllPagesRef = allPages
+        }
+        val buttonLookup = cachedButtonLookup!!
+        val pageLookup = cachedPageLookup!!
 
-        // Step 1: Resolve Frequent Actions
-        // Note: FrequentActionResolver might still use DB internally if not refactored, 
-        // but we start with Smart Predictions here.
+        // Step 2: Resolve Frequent Actions
         val frequentlyResolvedPage = frequentActionResolver.resolve(page, bookId)
 
-        // Step 2: Resolve Smart Predictions
+        // Step 3: Resolve Smart Predictions
         var changed = frequentlyResolvedPage !== page
         val finalConfigs = frequentlyResolvedPage.buttonConfigs.map { config ->
             val action = config?.buttonAction
