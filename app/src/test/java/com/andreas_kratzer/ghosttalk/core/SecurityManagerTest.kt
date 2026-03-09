@@ -70,17 +70,44 @@ class SecurityManagerTest {
     }
 
     @Test
-    fun `checkTimeout locks when timeout reached`() {
-        val pin = "1234"
-        every { settingsRepository.securityPin } returns pin
-        every { settingsRepository.securityPinTimeoutMinutes } returns 1L
-        
-        securityManager.unlock(pin)
-        assertTrue(securityManager.isUnlocked.value)
-        
-        // Mocking time passing would be better with a clock, but we can simulate by not updating activity
-        // For testing purposes, we can manually check logic if we had a clock dependency.
-        // Since we use System.currentTimeMillis() directly, we can't easily test without waiting.
-        // But we can verify the method exists and handles basic state.
+    fun `isSecurityRequiredForDeletion returns true only if enabled and pin set`() {
+        every { settingsRepository.isPinRequiredForDeletion } returns true
+        every { settingsRepository.securityPin } returns "1234"
+        assertTrue(securityManager.isSecurityRequiredForDeletion())
+
+        every { settingsRepository.isPinRequiredForDeletion } returns false
+        assertFalse(securityManager.isSecurityRequiredForDeletion())
+
+        every { settingsRepository.isPinRequiredForDeletion } returns true
+        every { settingsRepository.securityPin } returns ""
+        assertFalse(securityManager.isSecurityRequiredForDeletion())
+    }
+
+    @Test
+    fun `isSecurityRequiredForEdit returns true only if enabled and pin set`() {
+        every { settingsRepository.isSecurityRequiredForEdit } returns true
+        every { settingsRepository.securityPin } returns "1234"
+        assertTrue(securityManager.isSecurityRequiredForEdit())
+
+        every { settingsRepository.isSecurityRequiredForEdit } returns false
+        assertFalse(securityManager.isSecurityRequiredForEdit())
+
+        every { settingsRepository.isSecurityRequiredForEdit } returns true
+        every { settingsRepository.securityPin } returns ""
+        assertFalse(securityManager.isSecurityRequiredForEdit())
+    }
+
+    @Test
+    fun `isSecurityRequiredForSettings returns true only if enabled and pin set`() {
+        every { settingsRepository.isSecurityRequiredForSettings } returns true
+        every { settingsRepository.securityPin } returns "1234"
+        assertTrue(securityManager.isSecurityRequiredForSettings())
+
+        every { settingsRepository.isSecurityRequiredForSettings } returns false
+        assertFalse(securityManager.isSecurityRequiredForSettings())
+
+        every { settingsRepository.isSecurityRequiredForSettings } returns true
+        every { settingsRepository.securityPin } returns ""
+        assertFalse(securityManager.isSecurityRequiredForSettings())
     }
 }

@@ -122,7 +122,7 @@ fun SettingsScreen(
                 title = { 
                     Text(
                         text = if (selectedSection == null) 
-                            stringResource(R.string.settings_title) 
+                            stringResource(if (isGlobal) R.string.settings_title_global else R.string.settings_title_book) 
                         else 
                             stringResource(selectedSection!!.titleRes), 
                         style = MaterialTheme.typography.titleLarge

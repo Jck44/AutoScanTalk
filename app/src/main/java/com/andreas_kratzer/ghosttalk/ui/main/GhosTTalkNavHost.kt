@@ -47,7 +47,11 @@ fun GhosTTalkNavHost(
     val navigateWithSecurity: (String) -> Unit = { route ->
         val isProtected = when {
             route.startsWith("settings") -> securityManager.isSecurityRequiredForSettings()
-            route == "content_management" -> securityManager.isPinSet() // Always protect content management if PIN is set
+            route == "content_management" || 
+            route == "page_list" || 
+            route == "templates" || 
+            route.startsWith("page_editor") || 
+            route.startsWith("template_editor") -> securityManager.isSecurityRequiredForEdit()
             else -> false
         }
         
@@ -161,8 +165,7 @@ fun GhosTTalkNavHost(
                 },
                 onNavigateToSettings = { navigateWithSecurity("settings?isGlobal=false") },
                 onNavigateToContentManagement = { navigateWithSecurity("content_management") },
-                onNavigateToBooks = { navController.navigate("book_list") },
-                onNavigateToGlobalSettings = { navigateWithSecurity("settings?isGlobal=true") }
+                onNavigateToBooks = { navController.navigate("book_list") }
             )
         }
         composable("content_management") {

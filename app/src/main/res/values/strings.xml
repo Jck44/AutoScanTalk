@@ -1,6 +1,8 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">GhostTalk</string>
     <string name="settings_title">Einstellungen</string>
+    <string name="settings_title_global">App Einstellungen</string>
+    <string name="settings_title_book">Buch Einstellungen</string>
     <string name="back_button_content_description">Zurück</string>
     
     <!-- Settings Screen Labels -->
@@ -109,7 +111,7 @@
     
     <string name="settings_startup_behavior">App öffnen in:</string>
     <string name="settings_startup_behavior_book_list">Buchauswahl</string>
-    <string name="settings_startup_behavior_last_book">Zuletzt gewähltes Buch</string>
+    <string name="settings_startup_behavior_last_book">Ausgewähltes Buch</string>
     <string name="settings_startup_behavior_user_mode">Nutzer Modus (gewähltes Buch)</string>
 
     <!-- Book List Screen -->

@@ -46,7 +46,6 @@ fun StartScreen(
     onNavigateToSettings: () -> Unit,
     onNavigateToContentManagement: () -> Unit,
     onNavigateToBooks: () -> Unit,
-    onNavigateToGlobalSettings: () -> Unit,
     bookName: String
 ) {
     val configuration = LocalConfiguration.current
@@ -72,11 +71,6 @@ fun StartScreen(
                 navigationIcon = {
                     IconButton(onClick = onNavigateToBooks) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.start_back_to_books))
-                    }
-                },
-                actions = {
-                    IconButton(onClick = onNavigateToGlobalSettings) {
-                        Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.settings_title))
                     }
                 }
             )
@@ -119,7 +113,7 @@ fun StartScreen(
                 )
                 
                 GhostTalkCard(
-                    title = stringResource(R.string.settings_title),
+                    title = stringResource(R.string.settings_title_book),
                     icon = Icons.Filled.Settings,
                     onClick = onNavigateToSettings,
                     modifier = cardModifier,

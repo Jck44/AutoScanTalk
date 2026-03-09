@@ -87,7 +87,7 @@ fun BookListScreen(
                     IconButton(onClick = onNavigateToGlobalSettings) {
                         Icon(
                             imageVector = Icons.Default.Settings,
-                            contentDescription = stringResource(R.string.settings_title)
+                            contentDescription = stringResource(R.string.settings_title_global)
                         )
                     }
                 }
