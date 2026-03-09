@@ -13,10 +13,13 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
@@ -35,7 +38,7 @@ fun GridButton(
     
     Card(
         modifier = Modifier
-            .aspectRatio(1f)
+            .aspectRatio(dimensions.buttonAspectRatio)
             .clickable(onClick = onClick)
             .alpha(if (isEditorMode && !isActive) 0.5f else 1f),
         shape = MaterialTheme.shapes.medium,
@@ -63,9 +66,14 @@ fun GridButton(
             modifier = Modifier.fillMaxSize().padding(dimensions.paddingMedium)
         ) {
             if (buttonConfig != null) {
-                AutoSizeText(
+                Text(
                     text = overrideLabel ?: buttonConfig.label,
-                    color = if (isEditorMode) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                    color = if (isEditorMode) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = dimensions.buttonFontSize,
+                    textAlign = TextAlign.Center,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.titleLarge.copy(fontSize = dimensions.buttonFontSize)
                 )
             } else if (isEditorMode) {
                 Icon(

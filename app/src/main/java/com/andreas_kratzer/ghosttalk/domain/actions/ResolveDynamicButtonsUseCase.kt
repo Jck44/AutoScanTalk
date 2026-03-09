@@ -24,6 +24,14 @@ class ResolveDynamicButtonsUseCase @Inject constructor(
         smartPredictions: List<String>?,
         allPages: List<Page>
     ): Page {
+        // Step 0: Check if any dynamic resolution is needed at all
+        val hasDynamicButtons = page.buttonConfigs.any { config ->
+            config?.isActive == true && isDynamic(config.buttonAction)
+        }
+        if (!hasDynamicButtons) {
+            return page
+        }
+
         // Create lookup maps for performance
         val buttonLookup = allPages.flatMap { it.buttonConfigs }.filterNotNull().associateBy { it.id }
         val pageLookup = allPages.associateBy { it.id }
@@ -34,6 +42,7 @@ class ResolveDynamicButtonsUseCase @Inject constructor(
         val frequentlyResolvedPage = frequentActionResolver.resolve(page, bookId)
 
         // Step 2: Resolve Smart Predictions
+        var changed = frequentlyResolvedPage !== page
         val finalConfigs = frequentlyResolvedPage.buttonConfigs.map { config ->
             val action = config?.buttonAction
             if (action is SmartPredictionButtonAction && config.isActive) {
@@ -41,17 +50,19 @@ class ResolveDynamicButtonsUseCase @Inject constructor(
                     return@map config // Keep placeholder while waiting
                 }
                 val predictionId = smartPredictions.getOrNull(action.rank - 1)
-                if (predictionId != null) {
+                val resolved = if (predictionId != null) {
                     resolveSmartPrediction(predictionId, frequentlyResolvedPage, config, buttonLookup, pageLookup)
                 } else {
                     null // No prediction available for this rank, deactivate/hide button
                 }
+                if (resolved !== config) changed = true
+                resolved
             } else {
                 config
             }
         }
 
-        return frequentlyResolvedPage.copy(buttonConfigs = finalConfigs)
+        return if (changed) frequentlyResolvedPage.copy(buttonConfigs = finalConfigs) else frequentlyResolvedPage
     }
 
     private fun resolveSmartPrediction(

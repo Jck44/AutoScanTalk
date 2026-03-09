@@ -98,7 +98,7 @@ class PageViewModel @Inject constructor(
         }
     }
     .flowOn(Dispatchers.Default)
-    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), currentPage.value)
 
     val actionExecutor = ActionExecutor(
         application = application,
@@ -197,7 +197,10 @@ class PageViewModel @Inject constructor(
             val redoPrediction = settingsRepository.geminiRedoPrediction
             scanCoordinator.onPageChanged(isSamePage)
             if (!isSamePage || redoPrediction) {
-                _smartPredictions.value = null // Clear to null to indicate "waiting for results"
+                // Avoid redundant emission if predictions are already null
+                if (_smartPredictions.value != null) {
+                    _smartPredictions.value = null // Clear to null to indicate "waiting for results"
+                }
             }
             pageManagementDelegate.setCurrentPage(page)
             

@@ -1,6 +1,8 @@
 package com.andreas_kratzer.ghosttalk.ui.theme
 
+import android.content.res.Configuration
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
@@ -10,8 +12,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 
 private val DarkColorScheme = darkColorScheme(
@@ -65,6 +70,18 @@ fun GhosTTalkTheme(
     dynamicColor: Boolean = false, // Set to false by default for consistency with expressive design
     content: @Composable () -> Unit
 ) {
+    val configuration = LocalConfiguration.current
+    val screenWidth = configuration.screenWidthDp
+    val screenHeight = configuration.screenHeightDp
+    
+    // Base font size on the smaller dimension to keep it stable across orientations
+    val minDimension = minOf(screenWidth, screenHeight)
+    val buttonFontSize = (minDimension / 30).sp 
+    
+    // Use wider buttons in landscape to save vertical space
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+    val buttonAspectRatio = if (isLandscape) 1.6f else 1.0f
+
     val darkTheme = when (themeMode) {
         "LIGHT" -> false
         "DARK" -> true
@@ -91,8 +108,13 @@ fun GhosTTalkTheme(
         }
     }
 
+    val dimensions = Dimensions()
+
     CompositionLocalProvider(
-        LocalDimensions provides Dimensions()
+        LocalDimensions provides dimensions.copy(
+            buttonFontSize = buttonFontSize,
+            buttonAspectRatio = buttonAspectRatio
+        )
     ) {
         MaterialTheme(
             colorScheme = colorScheme,

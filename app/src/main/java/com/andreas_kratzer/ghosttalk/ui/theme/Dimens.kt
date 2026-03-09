@@ -2,7 +2,9 @@ package com.andreas_kratzer.ghosttalk.ui.theme
 
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 data class Dimensions(
     val paddingSmall: Dp = 4.dp,
@@ -19,7 +21,12 @@ data class Dimensions(
     val iconSizeMedium: Dp = 32.dp,
     val iconSizeLarge: Dp = 40.dp,
     val logoSizeSmall: Dp = 48.dp,
-    val logoSizeMedium: Dp = 64.dp
+    val logoSizeMedium: Dp = 64.dp,
+    
+    val buttonFontSize: TextUnit = 14.sp,
+    val buttonAspectRatio: Float = 1.0f,
+    val baseMaxButtonWidth: Dp = 180.dp,
+    val minButtonWidth: Dp = 140.dp
 )
 
 val LocalDimensions = compositionLocalOf { Dimensions() }

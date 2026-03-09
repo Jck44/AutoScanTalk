@@ -46,12 +46,13 @@ class FrequentActionResolver @Inject constructor(
         // Create a lookup for current page buttons to avoid O(n^2)
         val currentPageButtons = page.buttonConfigs.filterNotNull().associateBy { it.id }
 
+        var changed = false
         val resolved = page.buttonConfigs.map { config ->
             if (config?.buttonAction is FrequentActionButtonAction && config.isActive) {
                 val rank = config.buttonAction.rank
                 val stat = topActions.getOrNull(rank - 1)
                 
-                if (stat != null) {
+                val resolvedConfig = if (stat != null) {
                     val matchingConfig = currentPageButtons[stat.buttonConfigId]
                     if (matchingConfig != null) {
                         // Recursion guard
@@ -76,10 +77,13 @@ class FrequentActionResolver @Inject constructor(
                 } else {
                     null
                 }
+                
+                if (resolvedConfig !== config) changed = true
+                resolvedConfig
             } else {
                 config
             }
         }
-        page.copy(buttonConfigs = resolved)
+        if (changed) page.copy(buttonConfigs = resolved) else page
     }
 }
