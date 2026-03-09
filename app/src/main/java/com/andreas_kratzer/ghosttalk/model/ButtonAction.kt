@@ -76,6 +76,13 @@ data class ControlDeviceButtonAction(
     override val ttsMode: String = "NORMAL"
 ) : ButtonAction()
 
+/**
+ * An action that reads the current weather.
+ */
+data class WeatherButtonAction(
+    override val ttsMode: String = "NORMAL"
+) : ButtonAction()
+
 enum class DeviceActionType {
     READ_NOTIFICATIONS,
     MEDIA_NEXT,
@@ -89,5 +96,8 @@ enum class DeviceActionType {
     STATUS_VIBRATE,
     STATUS_LOUD,
     CLEAR_NOTIFICATIONS,
-    SEND_MESSAGE
+    SEND_MESSAGE,
+    READ_BATTERY,
+    READ_TIME,
+    READ_DATE
 }

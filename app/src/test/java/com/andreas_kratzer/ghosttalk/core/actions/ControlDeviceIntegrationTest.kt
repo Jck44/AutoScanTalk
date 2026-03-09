@@ -43,6 +43,7 @@ class ControlDeviceIntegrationTest {
             geminiUseCase = null,
             ttsHelper = ttsHelper,
             localIntentRouter = mockk(relaxed = true),
+            weatherExecutor = mockk(relaxed = true),
             buttonUsageRepository = null
         )
 

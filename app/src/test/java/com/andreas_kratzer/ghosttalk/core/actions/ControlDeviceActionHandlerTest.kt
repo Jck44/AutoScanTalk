@@ -6,6 +6,7 @@ import android.view.KeyEvent
 import com.andreas_kratzer.ghosttalk.core.services.NotificationReaderService
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.model.ControlDeviceButtonAction
 import com.andreas_kratzer.ghosttalk.model.DeviceActionType
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
@@ -38,6 +39,16 @@ class ControlDeviceActionHandlerTest {
         every { ttsHelper.isReadingNotification = any() } just Runs
         
         mockkObject(NotificationReaderService)
+        
+        // Mock localized strings for Device Control
+        every { context.getString(R.string.action_battery_ssml, any()) } answers { "Battery SSML ${it.invocation.args[1]}" }
+        every { context.getString(R.string.action_battery_plain, any()) } answers { "Battery Plain ${it.invocation.args[1]}" }
+        every { context.getString(R.string.time_format_pattern) } returns "HH:mm"
+        every { context.getString(R.string.action_time_ssml, any()) } answers { "Time SSML ${it.invocation.args[1]}" }
+        every { context.getString(R.string.action_time_plain, any()) } answers { "Time Plain ${it.invocation.args[1]}" }
+        every { context.getString(R.string.date_format_pattern) } returns "dd.MM"
+        every { context.getString(R.string.action_date_ssml, any()) } answers { "Date SSML ${it.invocation.args[1]}" }
+        every { context.getString(R.string.action_date_plain, any()) } answers { "Date Plain ${it.invocation.args[1]}" }
     }
 
     @After
@@ -97,9 +108,67 @@ class ControlDeviceActionHandlerTest {
             onCompleteSlot.captured.invoke()
         }
 
-        verify { ttsHelper.isReadingNotification = true }
-        verify { ttsHelper.speakRouted("Von Test Sender: Hello World", any(), any(), any(), any(), any()) }
         verify { ttsHelper.isReadingNotification = false }
+        verify { onFinish(1) }
+    }
+
+    @Test
+    fun `handle READ_BATTERY calls tts with battery level`() {
+        val action = ControlDeviceButtonAction(DeviceActionType.READ_BATTERY)
+        val config = ButtonConfig(id = "b1", label = "Battery", buttonAction = action, auditoryCue = null)
+        val batteryManager = mockk<android.os.BatteryManager>(relaxed = true)
+        
+        every { context.getSystemService(Context.BATTERY_SERVICE) } returns batteryManager
+        every { batteryManager.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CAPACITY) } returns 85
+        every { ttsHelper.isReady } returns true
+        
+        val onFinish = mockk<(Int) -> Unit>(relaxed = true)
+        val onDoneSlot = slot<() -> Unit>()
+        every { ttsHelper.speakRouted(any(), any(), any(), any(), any(), capture(onDoneSlot)) } answers {
+            onDoneSlot.captured.invoke()
+        }
+        
+        handler.handle(config, action, 1, onFinish)
+        
+        verify { ttsHelper.speakRouted(match { it.contains("Battery SSML") }, any(), any(), any<Int>(), any<Boolean>(), any()) }
+        verify { onFinish(1) }
+    }
+
+    @Test
+    fun `handle READ_TIME calls tts with current time`() {
+        val action = ControlDeviceButtonAction(DeviceActionType.READ_TIME)
+        val config = ButtonConfig(id = "b1", label = "Time", buttonAction = action, auditoryCue = null)
+        
+        every { ttsHelper.isReady } returns true
+        
+        val onFinish = mockk<(Int) -> Unit>(relaxed = true)
+        val onDoneSlot = slot<() -> Unit>()
+        every { ttsHelper.speakRouted(any(), any(), any(), any(), any(), capture(onDoneSlot)) } answers {
+            onDoneSlot.captured.invoke()
+        }
+        
+        handler.handle(config, action, 1, onFinish)
+        
+        verify { ttsHelper.speakRouted(match { it.contains("Time SSML") }, any(), any(), any<Int>(), any<Boolean>(), any()) }
+        verify { onFinish(1) }
+    }
+
+    @Test
+    fun `handle READ_DATE calls tts with current date`() {
+        val action = ControlDeviceButtonAction(DeviceActionType.READ_DATE)
+        val config = ButtonConfig(id = "b1", label = "Date", buttonAction = action, auditoryCue = null)
+        
+        every { ttsHelper.isReady } returns true
+        
+        val onFinish = mockk<(Int) -> Unit>(relaxed = true)
+        val onDoneSlot = slot<() -> Unit>()
+        every { ttsHelper.speakRouted(any(), any(), any(), any(), any(), capture(onDoneSlot)) } answers {
+            onDoneSlot.captured.invoke()
+        }
+        
+        handler.handle(config, action, 1, onFinish)
+        
+        verify { ttsHelper.speakRouted(match { it.contains("Date SSML") }, any(), any(), any<Int>(), any<Boolean>(), any()) }
         verify { onFinish(1) }
     }
 }

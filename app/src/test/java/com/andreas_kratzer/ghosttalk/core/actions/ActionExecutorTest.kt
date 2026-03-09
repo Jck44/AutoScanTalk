@@ -49,6 +49,7 @@ class ActionExecutorTest {
         geminiUseCase,
         ttsHelper,
         mockk(relaxed = true), // localIntentRouter
+        mockk(relaxed = true), // weatherExecutor
         buttonUsageRepository,
         timeProvider
     )

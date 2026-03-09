@@ -192,11 +192,16 @@
     <string name="button_action_notification">Benachrichtigung (Audio-Hinweis)</string>
     <string name="button_action_volume_tts">Lautstärke anpassen (TTS)</string>
     <string name="button_action_volume_cues">Lautstärke anpassen (Hinweise)</string>
-    <string name="button_action_control_device">Geräte steuern</string>
+    <string name="button_action_control_device">Gerätefunktionen</string>
+    <string name="button_action_weather">Wetter vorlesen</string>
     <string name="button_device_control_type_label">Aktion wählen</string>
     <string name="button_device_control_media_next">Nächstes Lied / Weiter</string>
     <string name="button_device_control_media_previous">Vorheriges Lied / Zurück</string>
     <string name="button_device_control_media_play_pause">Start / Stop</string>
+    <string name="button_device_control_battery">Akkustand vorlesen</string>
+    <string name="button_device_control_weather">Wetter vorlesen</string>
+    <string name="button_device_control_date">Datum vorlesen</string>
+    <string name="button_device_control_time">Uhrzeit vorlesen</string>
     <string name="settings_gemini_nano_disabled_warning">Gemini Nano ist in den Einstellungen deaktiviert. Diese Aktion wird nicht ausgeführt.</string>
     <string name="button_no_page_selected">Keine Seite ausgewählt</string>
     <string name="button_target_page_label">Ziel-Seite</string>
@@ -302,4 +307,34 @@
     <string name="template_loading">Vorlage wird geladen…</string>
     <string name="settings_weather_cache_timeout_label">Wetter Cache Dauer (Minuten)</string>
     <string name="settings_weather_cache_timeout_description">Wie lange Wetterdaten gültig bleiben, bevor sie neu geladen werden.</string>
+    
+    <!-- Action Localizations -->
+    <string name="action_battery_ssml">&lt;speak&gt;Der Akkustand beträgt &lt;say-as interpret-as=\"cardinal\"&gt;%1$d&lt;/say-as&gt; Prozent.&lt;/speak&gt;</string>
+    <string name="action_battery_plain">Der Akkustand beträgt %1$d Prozent.</string>
+    <string name="action_time_ssml">&lt;speak&gt;Es ist &lt;say-as interpret-as=\"time\" format=\"hm24\"&gt;%1$s&lt;/say-as&gt;&lt;/speak&gt;</string>
+    <string name="action_time_plain">Es ist %1$s Uhr.</string>
+    <string name="action_date_ssml">&lt;speak&gt;Heute ist der &lt;say-as interpret-as=\"date\" format=\"dm\"&gt;%1$s&lt;/say-as&gt;&lt;/speak&gt;</string>
+    <string name="action_date_plain">Heute ist der %1$s</string>
+    <string name="action_weather_fetching">Wetterdaten werden abgerufen…</string>
+    <string name="action_weather_format">Das aktuelle Wetter: %1$s bei %2$s Grad</string>
+    <string name="action_weather_error">Fehler beim Abrufen des Wetters: %1$s</string>
+    <string name="date_format_pattern">dd.MM</string>
+    <string name="time_format_pattern">HH:mm</string>
+    <string name="contact_picker_title">Kontakt wählen</string>
+    <string name="contact_picker_search">Suchen</string>
+    <string name="contact_picker_cancel">Abbrechen</string>
+    <string name="action_send_message">Nachricht senden</string>
+    <string name="volume_media">Lautstärke Medien</string>
+    <string name="volume_notification">Lautstärke Benachrichtigung</string>
+    <string name="volume_alarm">Lautstärke Alarm</string>
+    <string name="volume_call">Lautstärke Anruf</string>
+    <string name="status_silent">Status: Lautlos</string>
+    <string name="status_vibrate">Status: Vibration</string>
+    <string name="status_loud">Status: Laut</string>
+    <string name="message_emojis_not_supported">Nachricht (Emojis nicht unterstützt)</string>
+    <string name="message_emojis_hint">Emojis werden automatisch entfernt, um Sendefehler zu vermeiden.</string>
+    <string name="volume_label">Lautstärke (z.B. 50, +10, -5)</string>
+    <string name="page_manage_target">Ziel-Seite verwalten</string>
+    <string name="page_create_new_target">Neue Ziel-Seite erstellen</string>
+    <string name="page_none_found">Keine Seiten gefunden</string>
 </resources>

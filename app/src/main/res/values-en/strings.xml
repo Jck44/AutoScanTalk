@@ -184,7 +184,7 @@
     <string name="button_action_notification">Notification (Auditory Cue)</string>
     <string name="button_action_volume_tts">Adjust Volume (TTS)</string>
     <string name="button_action_volume_cues">Adjust Volume (Feedback)</string>
-    <string name="button_action_control_device">Device Control</string>
+    <string name="button_action_control_device">Device Functions</string>
     <string name="button_device_control_type_label">Select Action</string>
     <string name="button_device_control_media_next">Next Track</string>
     <string name="button_device_control_media_previous">Previous Track</string>
@@ -288,4 +288,34 @@
     <string name="template_edit_title">Template: %s</string>
     <string name="template_editor_hint">Tap a field to assign it</string>
     <string name="template_loading">Loading template…</string>
+    
+    <!-- Action Localizations -->
+    <string name="action_battery_ssml">&lt;speak&gt;The battery level is &lt;say-as interpret-as=\"cardinal\"&gt;%1$d&lt;/say-as&gt; percent.&lt;/speak&gt;</string>
+    <string name="action_battery_plain">The battery level is %1$d percent.</string>
+    <string name="action_time_ssml">&lt;speak&gt;It is &lt;say-as interpret-as=\"time\" format=\"hm12\"&gt;%1$s&lt;/say-as&gt;&lt;/speak&gt;</string>
+    <string name="action_time_plain">It is %1$s.</string>
+    <string name="action_date_ssml">&lt;speak&gt;Today is &lt;say-as interpret-as=\"date\" format=\"dm\"&gt;%1$s&lt;/say-as&gt;&lt;/speak&gt;</string>
+    <string name="action_date_plain">Today is %1$s</string>
+    <string name="action_weather_fetching">Fetching weather data…</string>
+    <string name="action_weather_format">Current weather: %1$s at %2$s degrees</string>
+    <string name="action_weather_error">Error fetching weather: %1$s</string>
+    <string name="date_format_pattern">MM/dd</string>
+    <string name="time_format_pattern">h:mm a</string>
+    <string name="contact_picker_title">Select Contact</string>
+    <string name="contact_picker_search">Search</string>
+    <string name="contact_picker_cancel">Cancel</string>
+    <string name="action_send_message">Send Message</string>
+    <string name="volume_media">Media Volume</string>
+    <string name="volume_notification">Notification Volume</string>
+    <string name="volume_alarm">Alarm Volume</string>
+    <string name="volume_call">Call Volume</string>
+    <string name="status_silent">Status: Silent</string>
+    <string name="status_vibrate">Status: Vibrate</string>
+    <string name="status_loud">Status: Loud</string>
+    <string name="message_emojis_not_supported">Message (Emojis not supported)</string>
+    <string name="message_emojis_hint">Emojis are automatically removed to avoid sending errors.</string>
+    <string name="volume_label">Volume (e.g., 50, +10, -5)</string>
+    <string name="page_manage_target">Manage Target Page</string>
+    <string name="page_create_new_target">Create New Target Page</string>
+    <string name="page_none_found">No pages found</string>
 </resources>

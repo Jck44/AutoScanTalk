@@ -23,7 +23,8 @@ class ActionExecutor internal constructor(
     private val logger: Logger,
     var geminiUseCase: GeminiUseCase?,
     var ttsHelper: TextToSpeechHelper?,
-    localIntentRouter: com.andreas_kratzer.ghosttalk.domain.executors.LocalIntentRouter,
+    private val localIntentRouter: com.andreas_kratzer.ghosttalk.domain.executors.LocalIntentRouter,
+    private val weatherExecutor: com.andreas_kratzer.ghosttalk.domain.executors.WeatherExecutor,
     private val buttonUsageRepository: ButtonUsageRepository? = null,
     private val timeProvider: () -> Long = { System.currentTimeMillis() }
 ) {
@@ -47,6 +48,7 @@ class ActionExecutor internal constructor(
         SpeechActionHandler(settingsRepository, ttsHelper, ::log),
         NavigationActionHandler(scope, settingsRepository, ttsHelper, ::emitEvent, ::log),
         ControlDeviceActionHandler(application, settingsRepository, ttsHelper, ::log),
+        WeatherActionHandler(application, settingsRepository, ttsHelper, weatherExecutor, scope, ::log),
         GeminiActionHandler(scope, settingsRepository, geminiUseCase, localIntentRouter, ttsHelper, ::emitEvent, ::log),
         FrequentActionHandler(::log),
         SmartPredictionActionHandler(::log)

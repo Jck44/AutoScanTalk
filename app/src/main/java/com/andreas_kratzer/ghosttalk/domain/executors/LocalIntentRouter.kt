@@ -9,10 +9,7 @@ import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 class LocalIntentRouter @Inject constructor(
-    private val systemTimeExecutor: SystemTimeExecutor,
     private val androidClockExecutor: AndroidClockExecutor,
-    private val batteryExecutor: BatteryExecutor,
-    private val weatherExecutor: WeatherExecutor,
     private val logger: Logger
 ) {
     // Note: JSON Schema constraint parsing in ML Kit Prompt API is still highly experimental.
@@ -50,10 +47,6 @@ class LocalIntentRouter @Inject constructor(
     suspend fun executeIntent(intent: String, onSpeak: (String) -> Unit) = withContext(Dispatchers.IO) {
         try {
             val context = when (intent) {
-                "time" -> "Aktuelle Uhrzeit: ${systemTimeExecutor.getRawTimestampContext()}"
-                "date" -> "Aktuelles Datum: ${systemTimeExecutor.getCurrentDateOutput()}"
-                "battery" -> "Akkustand: ${batteryExecutor.getBatteryStatus()}"
-                "weather" -> "Wetter: ${weatherExecutor.getWeatherInfo()}"
                 "alarm" -> "Nächster Alarm: ${androidClockExecutor.getNextAlarm()}"
                 else -> ""
             }
@@ -66,9 +59,6 @@ class LocalIntentRouter @Inject constructor(
             } else {
                 // Fallback if AI fails
                 val fallback = when (intent) {
-                    "time" -> systemTimeExecutor.getCurrentTimeOutput()
-                    "date" -> systemTimeExecutor.getCurrentDateOutput()
-                    "battery" -> batteryExecutor.getBatteryStatus()
                     "alarm" -> androidClockExecutor.getNextAlarm()
                     else -> "Ich kann diesen Befehl gerade nicht ausführen."
                 }

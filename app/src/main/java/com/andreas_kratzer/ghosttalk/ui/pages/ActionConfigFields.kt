@@ -109,7 +109,7 @@ fun NavigationActionFields(
                 }
                 if (filteredPages.isEmpty()) {
                     DropdownMenuItem(
-                        text = { Text("Keine Seiten gefunden", style = MaterialTheme.typography.bodyLarge) },
+                        text = { Text(stringResource(R.string.page_none_found), style = MaterialTheme.typography.bodyLarge) },
                         onClick = { },
                         enabled = false
                     )
@@ -126,7 +126,7 @@ fun NavigationActionFields(
                 shape = MaterialTheme.shapes.medium,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Ziel-Seite verwalten")
+                Text(stringResource(R.string.page_manage_target))
             }
         }
 
@@ -141,7 +141,7 @@ fun NavigationActionFields(
                 modifier = Modifier.fillMaxWidth()
             ) {
 
-                Text("Neue Ziel-Seite erstellen")
+                Text(stringResource(R.string.page_create_new_target))
             }
         }
     }
@@ -184,21 +184,13 @@ fun GeminiNanoActionFields(
     val dimensions = LocalDimensions.current
     var expanded by remember { mutableStateOf(false) }
 
-    val intentTime = "time"
-    val intentDate = "date"
-    val intentWeather = "weather"
-    val intentBattery = "battery"
     val intentAlarm = "alarm"
 
     val intentLabels = mapOf(
-        intentTime to stringResource(R.string.button_gemini_nano_intent_time),
-        intentDate to stringResource(R.string.button_gemini_nano_intent_date),
-        intentWeather to stringResource(R.string.button_gemini_nano_intent_weather),
-        intentBattery to stringResource(R.string.button_gemini_nano_intent_battery),
         intentAlarm to stringResource(R.string.button_gemini_nano_intent_alarm)
     )
 
-    val currentLabel = intentLabels[selectedIntent] ?: stringResource(R.string.button_gemini_nano_intent_time)
+    val currentLabel = intentLabels[selectedIntent] ?: stringResource(R.string.button_gemini_nano_intent_alarm)
 
     Column(verticalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)) {
         Text(stringResource(R.string.button_gemini_nano_intent_label), style = MaterialTheme.typography.labelMedium)
@@ -278,14 +270,17 @@ fun ControlDeviceActionFields(
         DeviceActionType.MEDIA_PLAY_PAUSE to stringResource(R.string.button_device_control_media_play_pause),
         DeviceActionType.MEDIA_NEXT to stringResource(R.string.button_device_control_media_next),
         DeviceActionType.MEDIA_PREVIOUS to stringResource(R.string.button_device_control_media_previous),
-        DeviceActionType.VOLUME_MEDIA to "Lautstärke Medien",
-        DeviceActionType.VOLUME_NOTIFICATION to "Lautstärke Benachrichtigung",
-        DeviceActionType.VOLUME_ALARM to "Lautstärke Alarm",
-        DeviceActionType.VOLUME_CALL to "Lautstärke Anruf",
-        DeviceActionType.STATUS_SILENT to "Status: Lautlos",
-        DeviceActionType.STATUS_VIBRATE to "Status: Vibration",
-        DeviceActionType.STATUS_LOUD to "Status: Laut",
-        DeviceActionType.SEND_MESSAGE to "Nachricht senden"
+        DeviceActionType.VOLUME_MEDIA to stringResource(R.string.volume_media),
+        DeviceActionType.VOLUME_NOTIFICATION to stringResource(R.string.volume_notification),
+        DeviceActionType.VOLUME_ALARM to stringResource(R.string.volume_alarm),
+        DeviceActionType.VOLUME_CALL to stringResource(R.string.volume_call),
+        DeviceActionType.STATUS_SILENT to stringResource(R.string.status_silent),
+        DeviceActionType.STATUS_VIBRATE to stringResource(R.string.status_vibrate),
+        DeviceActionType.STATUS_LOUD to stringResource(R.string.status_loud),
+        DeviceActionType.SEND_MESSAGE to stringResource(R.string.action_send_message),
+        DeviceActionType.READ_BATTERY to stringResource(R.string.button_device_control_battery),
+        DeviceActionType.READ_DATE to stringResource(R.string.button_device_control_date),
+        DeviceActionType.READ_TIME to stringResource(R.string.button_device_control_time)
     )
 
     val currentLabel = types.find { it.first == selectedType }?.second ?: types.first().second
@@ -342,7 +337,7 @@ fun ControlDeviceActionFields(
             OutlinedTextField(
                 value = volumeValue ?: "50",
                 onValueChange = onVolumeValueChange,
-                label = { Text("Lautstärke (z.B. 50, +10, -5)") },
+                label = { Text(stringResource(R.string.volume_label)) },
                 singleLine = true,
                 shape = MaterialTheme.shapes.large,
                 modifier = Modifier.fillMaxWidth()
@@ -352,7 +347,7 @@ fun ControlDeviceActionFields(
         // Messaging parameters
         if (selectedType == DeviceActionType.SEND_MESSAGE) {
             MessagingFields(
-                contactName = contactName ?: "Kein Kontakt gewählt",
+                contactName = contactName ?: stringResource(R.string.contact_picker_title),
                 onContactSelected = onContactSelected,
                 messageText = messageText ?: "",
                 onMessageTextChange = onMessageTextChange
@@ -411,11 +406,11 @@ fun MessagingFields(
                 }
                 onMessageTextChange(filtered)
             },
-            label = { Text("Nachricht (Emojis nicht unterstützt)") },
+            label = { Text(stringResource(R.string.message_emojis_not_supported)) },
             shape = MaterialTheme.shapes.large,
             modifier = Modifier.fillMaxWidth(),
             supportingText = {
-                Text("Emojis werden automatisch entfernt, um Sendefehler zu vermeiden.")
+                Text(stringResource(R.string.message_emojis_hint))
             }
         )
     }
@@ -467,11 +462,11 @@ fun ContactPickerInApp(
             tonalElevation = 8.dp
         ) {
             Column(modifier = Modifier.padding(16.dp).fillMaxWidth().heightIn(max = 500.dp)) {
-                Text("Kontakt wählen", style = MaterialTheme.typography.headlineSmall)
+                Text(stringResource(R.string.contact_picker_title), style = MaterialTheme.typography.headlineSmall)
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    label = { Text("Suchen") },
+                    label = { Text(stringResource(R.string.contact_picker_search)) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 LazyColumn(modifier = Modifier.weight(1f)) {
@@ -488,7 +483,7 @@ fun ContactPickerInApp(
                     }
                 }
                 OutlinedButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
-                    Text("Abbrechen")
+                    Text(stringResource(R.string.contact_picker_cancel))
                 }
             }
         }

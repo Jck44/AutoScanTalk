@@ -11,6 +11,7 @@ import com.andreas_kratzer.ghosttalk.model.GeminiSearchButtonAction
 import com.andreas_kratzer.ghosttalk.model.ControlDeviceButtonAction
 import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
+import com.andreas_kratzer.ghosttalk.model.WeatherButtonAction
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonDeserializationContext
@@ -59,6 +60,10 @@ class ButtonActionAdapter : JsonSerializer<ButtonAction>, JsonDeserializer<Butto
                 jsonObject.addProperty("type", "ControlDeviceButtonAction")
                 jsonObject.add("data", context.serialize(src))
             }
+            is WeatherButtonAction -> {
+                jsonObject.addProperty("type", "WeatherButtonAction")
+                jsonObject.add("data", context.serialize(src))
+            }
         }
         return jsonObject
     }
@@ -76,6 +81,7 @@ class ButtonActionAdapter : JsonSerializer<ButtonAction>, JsonDeserializer<Butto
             "GeminiSearchButtonAction" -> context.deserialize(data, GeminiSearchButtonAction::class.java)
             "GeminiNanoButtonAction" -> context.deserialize(data, GeminiNanoButtonAction::class.java)
             "ControlDeviceButtonAction" -> context.deserialize(data, ControlDeviceButtonAction::class.java)
+            "WeatherButtonAction" -> context.deserialize(data, WeatherButtonAction::class.java)
             else -> throw JsonParseException("Unknown ButtonAction type: $type")
         }
     }

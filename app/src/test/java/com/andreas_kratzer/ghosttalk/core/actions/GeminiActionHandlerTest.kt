@@ -49,10 +49,10 @@ class GeminiActionHandlerTest {
     @Test
     fun `NanoAction should execute even if Cloud is disabled`() = scope.runTest {
         // GIVEN
-        val action = GeminiNanoButtonAction("time")
+        val action = GeminiNanoButtonAction("alarm")
         val config = ButtonConfig(
             id = "1", 
-            label = "Time", 
+            label = "Alarm", 
             auditoryCue = null,
             buttonAction = action
         )
@@ -68,7 +68,7 @@ class GeminiActionHandlerTest {
         
         // THEN
         val callback = slot<(String) -> Unit>()
-        coVerify { localIntentRouter.executeIntent("time", capture(callback)) }
+        coVerify { localIntentRouter.executeIntent("alarm", capture(callback)) }
         
         // Simulate response
         callback.captured.invoke("12:00")
@@ -114,10 +114,10 @@ class GeminiActionHandlerTest {
     @Test
     fun `NanoAction should speak error if Nano is disabled`() = scope.runTest {
         // GIVEN
-        val action = GeminiNanoButtonAction("battery")
+        val action = GeminiNanoButtonAction("alarm")
         val config = ButtonConfig(
             id = "1", 
-            label = "Help", 
+            label = "Alarm", 
             auditoryCue = null,
             buttonAction = action
         )

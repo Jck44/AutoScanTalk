@@ -94,10 +94,11 @@ fun ButtonConfigDialog(
     val actionTypeFrequent = stringResource(R.string.button_action_frequent_action)
     val actionTypeSmart = stringResource(R.string.button_action_smart_prediction)
     val actionTypeControlDevice = stringResource(R.string.button_action_control_device)
+    val actionTypeWeather = stringResource(R.string.button_action_weather)
 
-    val actionTypes = remember(featureGuard, actionTypeControlDevice) {
+    val actionTypes = remember(featureGuard, actionTypeControlDevice, actionTypeWeather) {
         val base = mutableListOf(
-            actionTypeSpeak, actionTypeNavigate, actionTypeFrequent, actionTypeControlDevice
+            actionTypeSpeak, actionTypeNavigate, actionTypeFrequent, actionTypeControlDevice, actionTypeWeather
         )
         if (featureGuard.isActionEnabled(GeminiButtonAction(""))) {
             base.add(actionTypeGemini)
@@ -122,6 +123,7 @@ fun ButtonConfigDialog(
                 is FrequentActionButtonAction -> actionTypeFrequent
                 is SmartPredictionButtonAction -> actionTypeSmart
                 is ControlDeviceButtonAction -> actionTypeControlDevice
+                is com.andreas_kratzer.ghosttalk.model.WeatherButtonAction -> actionTypeWeather
                 else -> actionTypeSpeak
             }
         )
@@ -170,7 +172,8 @@ fun ButtonConfigDialog(
         mutableStateOf(controlActionDef?.actionType ?: DeviceActionType.READ_NOTIFICATIONS) 
     }
     var controlVolumeValue by remember { mutableStateOf(controlActionDef?.volumeValue ?: "50") }
-    var controlContactName by remember { mutableStateOf(controlActionDef?.contactName ?: "Kontakt wählen") }
+    val contactPickerTitle = stringResource(R.string.contact_picker_title)
+    var controlContactName by remember { mutableStateOf(controlActionDef?.contactName ?: contactPickerTitle) }
     var controlContactPhone by remember { mutableStateOf(controlActionDef?.contactPhone ?: "") }
     var controlMessageText by remember { mutableStateOf(controlActionDef?.messageText ?: "") }
 
@@ -188,6 +191,7 @@ fun ButtonConfigDialog(
             actionTypeGeminiNano -> GeminiNanoButtonAction(intent = geminiPrompt, ttsMode = resolvedTtsMode)
             actionTypeFrequent -> FrequentActionButtonAction(rank = frequentRank.toIntOrNull()?.coerceAtLeast(1) ?: 1, ttsMode = resolvedTtsMode)
             actionTypeSmart -> SmartPredictionButtonAction(rank = smartRank.toIntOrNull()?.coerceAtLeast(1) ?: 1, ttsMode = resolvedTtsMode)
+            actionTypeWeather -> com.andreas_kratzer.ghosttalk.model.WeatherButtonAction(ttsMode = resolvedTtsMode)
             actionTypeControlDevice -> ControlDeviceButtonAction(
                 actionType = controlActionType,
                 volumeValue = controlVolumeValue,
@@ -387,6 +391,9 @@ fun ButtonConfigDialog(
                             onRankChanged = { smartRank = it }
                         )
                     }
+                    actionTypeWeather -> {
+                         // No additional fields for simple weather action
+                    }
                     actionTypeControlDevice -> {
                         ControlDeviceActionFields(
                             selectedType = controlActionType,
@@ -410,6 +417,7 @@ fun ButtonConfigDialog(
                     selectedActionType == actionTypeGeminiSearch ||
                     selectedActionType == actionTypeGeminiNano ||
                     selectedActionType == actionTypeSmart || 
+                    selectedActionType == actionTypeWeather || 
                     selectedActionType == actionTypeControlDevice) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),

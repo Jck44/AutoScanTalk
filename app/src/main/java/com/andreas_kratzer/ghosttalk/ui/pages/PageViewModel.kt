@@ -108,6 +108,7 @@ class PageViewModel @Inject constructor(
         ttsHelper = ttsHelper,
         geminiUseCase = null,
         localIntentRouter = localIntentRouter,
+        weatherExecutor = weatherExecutor,
         buttonUsageRepository = buttonUsageRepository
     )
 

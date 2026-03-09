@@ -13,6 +13,7 @@ import android.os.Handler
 import android.os.Looper
 import android.telephony.SmsManager
 import android.view.KeyEvent
+import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.services.NotificationReaderService
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.model.ButtonAction
@@ -54,6 +55,10 @@ class ControlDeviceActionHandler(
             
             DeviceActionType.SEND_MESSAGE -> handleSendMessage(deviceAction, executionId, onFinish)
             
+            DeviceActionType.READ_BATTERY -> handleReadBattery(buttonConfig, deviceAction, executionId, onFinish)
+            DeviceActionType.READ_TIME -> handleReadTime(buttonConfig, deviceAction, executionId, onFinish)
+            DeviceActionType.READ_DATE -> handleReadDate(buttonConfig, deviceAction, executionId, onFinish)
+
             DeviceActionType.CLEAR_NOTIFICATIONS -> {
                 log("Benachrichtigungen löschen noch nicht unterstützt.")
                 onFinish(executionId)
@@ -286,6 +291,62 @@ class ControlDeviceActionHandler(
             }
         } else {
             tts?.isReadingNotification = false
+            onFinish(executionId)
+        }
+    }
+
+    private fun handleReadBattery(config: ButtonConfig, action: ControlDeviceButtonAction, executionId: Int, onFinish: (Int) -> Unit) {
+        val bm = context.getSystemService(Context.BATTERY_SERVICE) as android.os.BatteryManager
+        val percentage = bm.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CAPACITY)
+        
+        val ssml = context.getString(R.string.action_battery_ssml, percentage)
+        val plain = context.getString(R.string.action_battery_plain, percentage)
+        
+        speakRoutedWithLogging(ssml, plain, config, action, executionId, onFinish)
+    }
+
+    private fun handleReadTime(config: ButtonConfig, action: ControlDeviceButtonAction, executionId: Int, onFinish: (Int) -> Unit) {
+        val pattern = context.getString(R.string.time_format_pattern)
+        val sdf = java.text.SimpleDateFormat(pattern, java.util.Locale.getDefault())
+        val time = sdf.format(java.util.Date())
+        
+        val ssml = context.getString(R.string.action_time_ssml, time)
+        val plain = context.getString(R.string.action_time_plain, time)
+        
+        speakRoutedWithLogging(ssml, plain, config, action, executionId, onFinish)
+    }
+
+    private fun handleReadDate(config: ButtonConfig, action: ControlDeviceButtonAction, executionId: Int, onFinish: (Int) -> Unit) {
+        val pattern = context.getString(R.string.date_format_pattern)
+        val sdf = java.text.SimpleDateFormat(pattern, java.util.Locale.getDefault())
+        val date = sdf.format(java.util.Date())
+        
+        val ssml = context.getString(R.string.action_date_ssml, date)
+        val plain = context.getString(R.string.action_date_plain, date)
+        
+        speakRoutedWithLogging(ssml, plain, config, action, executionId, onFinish)
+    }
+
+    private fun speakRoutedWithLogging(
+        ssml: String,
+        plainText: String,
+        config: ButtonConfig,
+        action: ControlDeviceButtonAction,
+        executionId: Int,
+        onFinish: (Int) -> Unit
+    ) {
+        log(plainText)
+        val targetDeviceAddress = if (config.playActionAsAuditoryCue) {
+            settingsRepository.cuesAudioDeviceAddress
+        } else {
+            settingsRepository.ttsAudioDeviceAddress
+        }
+        
+        if (ttsHelper?.isReady == true) {
+            ttsHelper.speakRouted(ssml, targetDeviceAddress, action.ttsMode) {
+                onFinish(executionId)
+            }
+        } else {
             onFinish(executionId)
         }
     }
