@@ -15,7 +15,7 @@ sealed class AuditoryCue {
      */
     @Serializable
     @SerialName("TextToSpeechCue")
-    data class TextToSpeechCue(val text: String) : AuditoryCue()
+    data class TextToSpeechCue(val text: String = "") : AuditoryCue()
 
     /**
      * Future placeholder: An auditory cue from a recorded audio file.
