@@ -17,12 +17,14 @@ import com.andreas_kratzer.ghosttalk.model.importexport.ImportExportData
 import com.andreas_kratzer.ghosttalk.model.importexport.ImportPage
 import com.andreas_kratzer.ghosttalk.model.importexport.ImportTemplate
 import com.andreas_kratzer.ghosttalk.ui.util.GridUtils
-import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import java.util.UUID
+
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.encodeToString
 
 class PageImportExportManager @javax.inject.Inject constructor(
     private val pageRepository: PageRepository,
@@ -31,14 +33,17 @@ class PageImportExportManager @javax.inject.Inject constructor(
     private val logger: Logger,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) {
-    private val gson = Gson()
+    private val json = Json {
+        ignoreUnknownKeys = true
+        encodeDefaults = true
+    }
 
     suspend fun importFromJson(jsonString: String, bookId: String): Result<Int> = importBookFromJson(jsonString, bookId)
 
     suspend fun importBookFromJson(jsonString: String, bookId: String): Result<Int> = withContext(ioDispatcher) {
         try {
             logger.d("PageImportExportManager", "Starting import mapping parsing for book $bookId...")
-            val importData = gson.fromJson(jsonString, ImportExportData::class.java)
+            val importData = json.decodeFromString<ImportExportData>(jsonString)
 
             if (importData.pages.isEmpty()) {
                 logger.e("PageImportExportManager", "Parsed JSON was invalid or missing 'pages'")
@@ -363,6 +368,6 @@ class PageImportExportManager @javax.inject.Inject constructor(
             templates = importTemplates,
             pages = importPages
         )
-        gson.toJson(exportData)
+        json.encodeToString(exportData)
     }
 }

@@ -13,7 +13,9 @@ import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.model.PageTemplate
 import java.util.UUID
 
-@Database(entities = [Page::class, Book::class, ButtonUsageStat::class, PageTemplate::class], version = 10, exportSchema = false)
+import com.andreas_kratzer.ghosttalk.data.entities.ButtonEntity
+
+@Database(entities = [Page::class, Book::class, ButtonUsageStat::class, PageTemplate::class, ButtonEntity::class], version = 11, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
 
@@ -21,6 +23,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun bookDao(): BookDao
     abstract fun buttonUsageDao(): ButtonUsageDao
     abstract fun templateDao(): TemplateDao
+    abstract fun buttonDao(): ButtonDao
 
     companion object {
         @Volatile
@@ -124,6 +127,55 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_10_11: Migration = object : Migration(10, 11) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // 1. Create the new buttons table
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `buttons` (
+                        `id` TEXT NOT NULL, 
+                        `pageId` TEXT NOT NULL, 
+                        `globalIndex` INTEGER NOT NULL, 
+                        `label` TEXT NOT NULL, 
+                        `spokenText` TEXT, 
+                        `auditoryCue` TEXT, 
+                        `buttonAction` TEXT NOT NULL, 
+                        `isActive` INTEGER NOT NULL, 
+                        `playActionAsAuditoryCue` INTEGER NOT NULL, 
+                        PRIMARY KEY(`id`), 
+                        FOREIGN KEY(`pageId`) REFERENCES `pages`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE 
+                    )
+                """)
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_buttons_pageId` ON `buttons` (`pageId`)")
+
+                // 2. Create a temporary table for pages without the buttonConfigs column
+                db.execSQL("""
+                    CREATE TABLE `pages_new` (
+                        `id` TEXT NOT NULL, 
+                        `bookId` TEXT NOT NULL, 
+                        `name` TEXT NOT NULL, 
+                        `templateId` TEXT, 
+                        `rows` INTEGER NOT NULL, 
+                        `columns` INTEGER NOT NULL, 
+                        `scanPattern` TEXT, 
+                        `rowNames` TEXT NOT NULL, 
+                        `orderIndex` INTEGER NOT NULL, 
+                        `createdAt` INTEGER NOT NULL, 
+                        PRIMARY KEY(`id`)
+                    )
+                """)
+                
+                // Copy data from old pages to new pages
+                db.execSQL("""
+                    INSERT INTO `pages_new` (id, bookId, name, templateId, `rows`, `columns`, scanPattern, rowNames, orderIndex, createdAt)
+                    SELECT id, bookId, name, templateId, `rows`, `columns`, scanPattern, rowNames, orderIndex, createdAt FROM pages
+                """)
+                
+                // Drop old table and rename new one
+                db.execSQL("DROP TABLE pages")
+                db.execSQL("ALTER TABLE pages_new RENAME TO pages")
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -140,7 +192,8 @@ abstract class AppDatabase : RoomDatabase() {
                     MIGRATION_6_7,
                     MIGRATION_7_8,
                     MIGRATION_8_9,
-                    MIGRATION_9_10
+                    MIGRATION_9_10,
+                    MIGRATION_10_11
                 )
                 .fallbackToDestructiveMigration(true)
                 .build()

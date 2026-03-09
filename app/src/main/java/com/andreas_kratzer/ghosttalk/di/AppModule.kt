@@ -11,6 +11,7 @@ import com.andreas_kratzer.ghosttalk.data.PageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.data.TemplateDao
 import com.andreas_kratzer.ghosttalk.data.TemplateRepository
+import com.andreas_kratzer.ghosttalk.data.ButtonDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -39,9 +40,14 @@ object AppModule {
     }
 
     @Provides
+    fun provideButtonDao(database: AppDatabase): ButtonDao {
+        return database.buttonDao()
+    }
+
+    @Provides
     @Singleton
-    fun providePageRepository(pageDao: PageDao): PageRepository {
-        return PageRepository(pageDao)
+    fun providePageRepository(pageDao: PageDao, buttonDao: ButtonDao): PageRepository {
+        return PageRepository(pageDao, buttonDao)
     }
 
     @Provides

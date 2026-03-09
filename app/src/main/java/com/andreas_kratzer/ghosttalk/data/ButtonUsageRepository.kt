@@ -3,13 +3,14 @@ package com.andreas_kratzer.ghosttalk.data
 import com.andreas_kratzer.ghosttalk.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.ButtonUsageStat
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import javax.inject.Inject
+
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.encodeToString
 
 /**
  * Repository for tracking button usage statistics per book.
@@ -18,14 +19,15 @@ import javax.inject.Inject
 class ButtonUsageRepository @Inject constructor(
     private val dao: ButtonUsageDao
 ) {
+    private val json = Json {
+        ignoreUnknownKeys = true
+        encodeDefaults = true
+    }
+
     data class ButtonUsageEvent(val timestamp: Long, val label: String, val actionType: String)
 
     private val _buttonHistory = MutableStateFlow<List<ButtonUsageEvent>>(emptyList())
     val buttonHistory: StateFlow<List<ButtonUsageEvent>> = _buttonHistory.asStateFlow()
-
-    private val gson: Gson = GsonBuilder()
-        .registerTypeAdapter(ButtonAction::class.java, ButtonActionAdapter())
-        .create()
 
     /**
      * Records a button press. Increments the usage counter or creates a new entry.
@@ -50,7 +52,7 @@ class ButtonUsageRepository @Inject constructor(
         val stat = if (existing != null) {
             existing.copy(
                 label = buttonConfig.label,
-                actionJson = gson.toJson(buttonConfig.buttonAction, ButtonAction::class.java),
+                actionJson = json.encodeToString(buttonConfig.buttonAction),
                 usageCount = existing.usageCount + 1,
                 lastUsedAt = System.currentTimeMillis()
             )
@@ -59,7 +61,7 @@ class ButtonUsageRepository @Inject constructor(
                 bookId = bookId,
                 buttonConfigId = buttonConfig.id,
                 label = buttonConfig.label,
-                actionJson = gson.toJson(buttonConfig.buttonAction, ButtonAction::class.java),
+                actionJson = json.encodeToString(buttonConfig.buttonAction),
                 usageCount = 1,
                 lastUsedAt = System.currentTimeMillis()
             )

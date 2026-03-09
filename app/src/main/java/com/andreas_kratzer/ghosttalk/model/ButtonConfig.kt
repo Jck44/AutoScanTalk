@@ -1,6 +1,7 @@
 package com.andreas_kratzer.ghosttalk.model
 
 import java.util.UUID
+import kotlinx.serialization.Serializable
 
 /**
  * Configuration for a single button in the grid.
@@ -10,6 +11,7 @@ import java.util.UUID
  * @param auditoryCue The auditory cue to be played when the button is focused.
  * @param buttonAction The action to be executed when the button is triggered.
  */
+@Serializable
 data class ButtonConfig(
     val id: String = UUID.randomUUID().toString(),
     val label: String,

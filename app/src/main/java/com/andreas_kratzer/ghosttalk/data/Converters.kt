@@ -12,135 +12,61 @@ import com.andreas_kratzer.ghosttalk.model.ControlDeviceButtonAction
 import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.model.WeatherButtonAction
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
-import com.google.gson.JsonDeserializationContext
-import com.google.gson.JsonDeserializer
-import com.google.gson.JsonElement
-import com.google.gson.JsonObject
-import com.google.gson.JsonParseException
-import com.google.gson.JsonSerializationContext
-import com.google.gson.JsonSerializer
-import com.google.gson.reflect.TypeToken
-import java.lang.reflect.Type
-
-class ButtonActionAdapter : JsonSerializer<ButtonAction>, JsonDeserializer<ButtonAction> {
-    override fun serialize(src: ButtonAction, typeOfSrc: Type?, context: JsonSerializationContext): JsonElement {
-        val jsonObject = JsonObject()
-        when (src) {
-            is SpeakTextButtonAction -> {
-                jsonObject.addProperty("type", "SpeakTextButtonAction")
-                jsonObject.add("data", context.serialize(src))
-            }
-            is NavigateToPageButtonAction -> {
-                jsonObject.addProperty("type", "NavigateToPageButtonAction")
-                jsonObject.add("data", context.serialize(src))
-            }
-            is GeminiButtonAction -> {
-                jsonObject.addProperty("type", "GeminiButtonAction")
-                jsonObject.add("data", context.serialize(src))
-            }
-            is FrequentActionButtonAction -> {
-                jsonObject.addProperty("type", "FrequentActionButtonAction")
-                jsonObject.add("data", context.serialize(src))
-            }
-            is com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction -> {
-                jsonObject.addProperty("type", "SmartPredictionButtonAction")
-                jsonObject.add("data", context.serialize(src))
-            }
-            is GeminiNanoButtonAction -> {
-                jsonObject.addProperty("type", "GeminiNanoButtonAction")
-                jsonObject.add("data", context.serialize(src))
-            }
-            is GeminiSearchButtonAction -> {
-                jsonObject.addProperty("type", "GeminiSearchButtonAction")
-                jsonObject.add("data", context.serialize(src))
-            }
-            is ControlDeviceButtonAction -> {
-                jsonObject.addProperty("type", "ControlDeviceButtonAction")
-                jsonObject.add("data", context.serialize(src))
-            }
-            is WeatherButtonAction -> {
-                jsonObject.addProperty("type", "WeatherButtonAction")
-                jsonObject.add("data", context.serialize(src))
-            }
-        }
-        return jsonObject
-    }
-
-    override fun deserialize(json: JsonElement, typeOfT: Type?, context: JsonDeserializationContext): ButtonAction {
-        val jsonObject = json.asJsonObject
-        val type = jsonObject.get("type").asString
-        val data = jsonObject.get("data")
-        return when (type) {
-            "SpeakTextButtonAction" -> context.deserialize(data, SpeakTextButtonAction::class.java)
-            "NavigateToPageButtonAction" -> context.deserialize(data, NavigateToPageButtonAction::class.java)
-            "GeminiButtonAction" -> context.deserialize(data, GeminiButtonAction::class.java)
-            "FrequentActionButtonAction" -> context.deserialize(data, FrequentActionButtonAction::class.java)
-            "SmartPredictionButtonAction" -> context.deserialize(data, com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction::class.java)
-            "GeminiSearchButtonAction" -> context.deserialize(data, GeminiSearchButtonAction::class.java)
-            "GeminiNanoButtonAction" -> context.deserialize(data, GeminiNanoButtonAction::class.java)
-            "ControlDeviceButtonAction" -> context.deserialize(data, ControlDeviceButtonAction::class.java)
-            "WeatherButtonAction" -> context.deserialize(data, WeatherButtonAction::class.java)
-            else -> throw JsonParseException("Unknown ButtonAction type: $type")
-        }
-    }
-}
-
-class AuditoryCueAdapter : JsonSerializer<AuditoryCue>, JsonDeserializer<AuditoryCue> {
-    override fun serialize(src: AuditoryCue, typeOfSrc: Type?, context: JsonSerializationContext): JsonElement {
-        val jsonObject = JsonObject()
-        when (src) {
-            is AuditoryCue.TextToSpeechCue -> {
-                jsonObject.addProperty("type", "TextToSpeechCue")
-                jsonObject.add("data", context.serialize(src))
-            }
-        }
-        return jsonObject
-    }
-
-    override fun deserialize(json: JsonElement, typeOfT: Type?, context: JsonDeserializationContext): AuditoryCue {
-        val jsonObject = json.asJsonObject
-        val type = jsonObject.get("type").asString
-        val data = jsonObject.get("data")
-        return when (type) {
-            "TextToSpeechCue" -> context.deserialize(data, AuditoryCue.TextToSpeechCue::class.java)
-            else -> throw JsonParseException("Unknown AuditoryCue type: $type")
-        }
-    }
-}
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.decodeFromString
 
 class Converters {
-    private val gson: Gson = GsonBuilder()
-        .registerTypeAdapter(ButtonAction::class.java, ButtonActionAdapter())
-        .registerTypeAdapter(AuditoryCue::class.java, AuditoryCueAdapter())
-        .create()
-
-    @TypeConverter
-    fun fromButtonConfigList(buttonConfigs: List<ButtonConfig?>?): String? {
-        if (buttonConfigs == null) return null
-        val type = object : TypeToken<List<ButtonConfig?>>() {}.type
-        return gson.toJson(buttonConfigs, type)
+    private val json = Json {
+        ignoreUnknownKeys = true
+        encodeDefaults = true
     }
 
     @TypeConverter
-    fun toButtonConfigList(buttonConfigsString: String?): List<ButtonConfig?>? {
-        if (buttonConfigsString == null) return null
-        val type = object : TypeToken<List<ButtonConfig?>>() {}.type
-        return gson.fromJson(buttonConfigsString, type)
+    fun fromButtonAction(action: ButtonAction?): String? {
+        if (action == null) return null
+        return json.encodeToString(action)
+    }
+
+    @TypeConverter
+    fun toButtonAction(actionString: String?): ButtonAction? {
+        if (actionString == null) return null
+        return json.decodeFromString<ButtonAction>(actionString)
+    }
+
+    @TypeConverter
+    fun fromAuditoryCue(cue: AuditoryCue?): String? {
+        if (cue == null) return null
+        return json.encodeToString(cue)
+    }
+
+    @TypeConverter
+    fun toAuditoryCue(cueString: String?): AuditoryCue? {
+        if (cueString == null) return null
+        return json.decodeFromString<AuditoryCue>(cueString)
     }
 
     @TypeConverter
     fun fromStringList(strings: List<String>?): String? {
         if (strings == null) return null
-        val type = object : TypeToken<List<String>>() {}.type
-        return gson.toJson(strings, type)
+        return json.encodeToString(strings)
     }
 
     @TypeConverter
     fun toStringList(stringsString: String?): List<String>? {
         if (stringsString == null) return null
-        val type = object : TypeToken<List<String>>() {}.type
-        return gson.fromJson(stringsString, type)
+        return json.decodeFromString<List<String>>(stringsString)
+    }
+
+    @TypeConverter
+    fun fromButtonConfigList(buttonConfigs: List<ButtonConfig?>?): String? {
+        if (buttonConfigs == null) return null
+        return json.encodeToString(buttonConfigs)
+    }
+
+    @TypeConverter
+    fun toButtonConfigList(buttonConfigsString: String?): List<ButtonConfig?>? {
+        if (buttonConfigsString == null) return null
+        return json.decodeFromString<List<ButtonConfig?>>(buttonConfigsString)
     }
 }

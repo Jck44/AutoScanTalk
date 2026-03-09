@@ -12,7 +12,6 @@ import kotlin.system.measureTimeMillis
 
 class PerformanceBenchmark {
 
-    @Ignore("Manual performance benchmark, run explicitly when needed")
     @Test
     fun benchmarkLargeDataset() {
         // Timestamp: 2026-03-09T18:45:00

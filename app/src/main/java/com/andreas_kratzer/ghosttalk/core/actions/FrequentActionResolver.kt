@@ -1,16 +1,15 @@
 package com.andreas_kratzer.ghosttalk.core.actions
 
 import android.util.Log
-import com.andreas_kratzer.ghosttalk.data.ButtonActionAdapter
 import com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction
 import com.andreas_kratzer.ghosttalk.model.Page
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
+
+import kotlinx.serialization.json.Json
 
 /**
  * Resolves [FrequentActionButtonAction]s dynamically at runtime into their concrete actions
@@ -19,9 +18,10 @@ import javax.inject.Inject
 class FrequentActionResolver @Inject constructor(
     private val buttonUsageRepository: ButtonUsageRepository
 ) {
-    private val gson: Gson = GsonBuilder()
-        .registerTypeAdapter(ButtonAction::class.java, ButtonActionAdapter())
-        .create()
+    private val json = Json {
+        ignoreUnknownKeys = true
+        encodeDefaults = true
+    }
 
     /**
      * Resolves all FrequentActionButtonAction buttons on a page.
@@ -63,7 +63,7 @@ class FrequentActionResolver @Inject constructor(
                     } else {
                         // Fallback: Reconstruct from stat
                         try {
-                            val concreteAction = gson.fromJson(stat.actionJson, ButtonAction::class.java)
+                            val concreteAction = json.decodeFromString<ButtonAction>(stat.actionJson)
                             config.copy(
                                 id = stat.buttonConfigId,
                                 label = stat.label,

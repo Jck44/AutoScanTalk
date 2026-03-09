@@ -1,5 +1,8 @@
 package com.andreas_kratzer.ghosttalk.model.importexport
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class ImportExportData(
     val ghosttalk_import_version: String?,
     val appName: String?,
@@ -30,6 +33,7 @@ data class ImportExportData(
     val pages: List<ImportPage>
 )
 
+@Serializable
 data class ImportTemplate(
     val id: String,
     val name: String,
@@ -39,6 +43,7 @@ data class ImportTemplate(
     val buttons: List<ImportButton>
 )
 
+@Serializable
 data class ImportPage(
     val importId: String,
     val name: String,
@@ -47,6 +52,7 @@ data class ImportPage(
     val buttons: List<ImportButton>
 )
 
+@Serializable
 data class ImportButton(
     val index: Long,
     val label: String,
@@ -57,6 +63,7 @@ data class ImportButton(
     val action: ImportAction?
 )
 
+@Serializable
 data class ImportAction(
     val type: String, // "SPEAK" or "NAVIGATE"
     val textToSpeech: String?,

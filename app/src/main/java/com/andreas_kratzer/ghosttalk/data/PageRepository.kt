@@ -1,9 +1,14 @@
 package com.andreas_kratzer.ghosttalk.data
 
+import androidx.room.Transaction
+import com.andreas_kratzer.ghosttalk.data.entities.toButtonEntities
 import com.andreas_kratzer.ghosttalk.model.Page
 import kotlinx.coroutines.flow.Flow
 
-class PageRepository(private val pageDao: PageDao) {
+class PageRepository(
+    private val pageDao: PageDao,
+    private val buttonDao: ButtonDao
+) {
 
     fun getAllPagesFlow(): Flow<List<Page>> {
         return pageDao.getAllPagesFlow()
@@ -26,18 +31,24 @@ class PageRepository(private val pageDao: PageDao) {
     }
 
     suspend fun insertPage(page: Page) {
-        pageDao.insertPage(page)
+        pageDao.insertPageEntity(page)
+        buttonDao.insertButtons(page.toButtonEntities())
     }
 
     suspend fun updatePage(page: Page) {
-        pageDao.updatePage(page)
+        pageDao.updatePageEntity(page)
+        // Refresh buttons: delete old and insert new
+        buttonDao.deleteButtonsForPage(page.id)
+        buttonDao.insertButtons(page.toButtonEntities())
     }
 
     suspend fun movePages(fromPage: Page, toPage: Page) {
-        pageDao.moveButton(fromPage, toPage)
+        updatePage(fromPage)
+        updatePage(toPage)
     }
 
     suspend fun deletePage(page: Page) {
-        pageDao.deletePage(page)
+        // buttons will be deleted via CASCADE FK
+        pageDao.deletePageEntity(page)
     }
 }

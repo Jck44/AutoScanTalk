@@ -16,11 +16,12 @@ import org.junit.Test
 class PageRepositoryTest {
 
     private val mockPageDao = mockk<PageDao>(relaxed = true)
+    private val mockButtonDao = mockk<ButtonDao>(relaxed = true)
     private lateinit var pageRepository: PageRepository
 
     @Before
     fun setup() {
-        pageRepository = PageRepository(mockPageDao)
+        pageRepository = PageRepository(mockPageDao, mockButtonDao)
     }
 
     @Test
@@ -72,23 +73,23 @@ class PageRepositoryTest {
     }
 
     @Test
-    fun `insertPage calls dao insertPage`() = runTest {
+    fun `insertPage calls dao insertPageEntity`() = runTest {
         val page = Page(id = "1", name = "Page 1", bookId = "book1", buttonConfigs = emptyList())
         pageRepository.insertPage(page)
-        coVerify { mockPageDao.insertPage(page) }
+        coVerify { mockPageDao.insertPageEntity(page) }
     }
 
     @Test
-    fun `updatePage calls dao updatePage`() = runTest {
+    fun `updatePage calls dao updatePageEntity`() = runTest {
         val page = Page(id = "1", name = "Page 1", bookId = "book1", buttonConfigs = emptyList())
         pageRepository.updatePage(page)
-        coVerify { mockPageDao.updatePage(page) }
+        coVerify { mockPageDao.updatePageEntity(page) }
     }
 
     @Test
-    fun `deletePage calls dao deletePage`() = runTest {
+    fun `deletePage calls dao deletePageEntity`() = runTest {
         val page = Page(id = "1", name = "Page 1", bookId = "book1", buttonConfigs = emptyList())
         pageRepository.deletePage(page)
-        coVerify { mockPageDao.deletePage(page) }
+        coVerify { mockPageDao.deletePageEntity(page) }
     }
 }

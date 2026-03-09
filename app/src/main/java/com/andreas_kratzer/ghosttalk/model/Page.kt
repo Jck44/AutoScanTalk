@@ -4,6 +4,9 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.andreas_kratzer.ghosttalk.ui.util.ListableItem
 
+import androidx.room.Ignore
+import com.andreas_kratzer.ghosttalk.ui.util.GridUtils
+
 @Entity(tableName = "pages")
 data class Page(
     @PrimaryKey override val id: String,
@@ -14,10 +17,25 @@ data class Page(
     override val columns: Int = 4,
     override val scanPattern: String? = null,
     override val rowNames: List<String> = emptyList(),
-    override val buttonConfigs: List<ButtonConfig?>, // Represents the grid, null for an empty/deactivated button
+    @Ignore override val buttonConfigs: List<ButtonConfig?> = emptyList(),
     override val orderIndex: Int = 0,
     override val createdAt: Long = System.currentTimeMillis()
 ) : GridItem {
+    
+    // Primary constructor with buttonConfigs ignored
+    constructor(
+        id: String,
+        bookId: String,
+        name: String,
+        templateId: String?,
+        rows: Int,
+        columns: Int,
+        scanPattern: String?,
+        rowNames: List<String>,
+        orderIndex: Int,
+        createdAt: Long
+    ) : this(id, bookId, name, templateId, rows, columns, scanPattern, rowNames, emptyList(), orderIndex, createdAt)
+
     init {
         require(rows in 1..7) { "Rows must be between 1 and 7." }
         require(columns in 1..7) { "Columns must be between 1 and 7." }

@@ -4,7 +4,10 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.andreas_kratzer.ghosttalk.ui.util.ListableItem
 
+import kotlinx.serialization.Serializable
+
 @Entity(tableName = "templates")
+@Serializable
 data class PageTemplate(
     @PrimaryKey override val id: String,
     override val name: String,

@@ -55,15 +55,31 @@ fun ButtonGrid(
             val cols = page.columns
             val totalVisible = rows * cols
             
-            items(totalVisible) { visibleIndex ->
+            items(
+                count = totalVisible,
+                key = { visibleIndex -> 
+                    val r = visibleIndex / cols
+                    val c = visibleIndex % cols
+                    "${page.id}_${GridUtils.getGlobalIndex(r, c)}"
+                }
+            ) { visibleIndex ->
                 val r = visibleIndex / cols
-                val globalIndex = GridUtils.getGlobalIndex(r, visibleIndex % cols)
-                val buttonConfig = page.buttonConfigs.getOrNull(globalIndex)
+                val c = visibleIndex % cols
+                
+                // Use derivedStateOf or remember for these values to avoid unnecessary recompositions
+                val globalIndex = androidx.compose.runtime.remember(r, c) { 
+                    GridUtils.getGlobalIndex(r, c) 
+                }
+                val buttonConfig = androidx.compose.runtime.remember(page.buttonConfigs, globalIndex) {
+                    page.buttonConfigs.getOrNull(globalIndex)
+                }
 
-                val isFocused = globalIndex == focusedButtonIndex
+                val isFocused = focusedButtonIndex == globalIndex
                 val isRowFocused = focusedRowIndex != null && r == focusedRowIndex
 
-                val isVisible = buttonConfig != null && pageViewModel.featureGuard.isButtonVisible(buttonConfig)
+                val isVisible = androidx.compose.runtime.remember(buttonConfig, pageViewModel.featureGuard) {
+                    buttonConfig != null && pageViewModel.featureGuard.isButtonVisible(buttonConfig)
+                }
 
                 if (buttonConfig != null && buttonConfig.isActive && isVisible) {
                     GridButton(

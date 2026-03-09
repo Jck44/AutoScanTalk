@@ -5,6 +5,7 @@ import com.andreas_kratzer.ghosttalk.model.Book
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.model.Page
+import com.andreas_kratzer.ghosttalk.data.PageRepository
 import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -14,7 +15,7 @@ import javax.inject.Singleton
 @Singleton
 class SampleDataInitializer @Inject constructor(
     private val bookRepository: BookRepository,
-    private val pageDao: PageDao
+    private val pageRepository: PageRepository
 ) {
     suspend fun initializeIfNeeded(defaultBookId: String): String = withContext(Dispatchers.IO) {
         val allBooks = bookRepository.getAllBooksList()
@@ -22,10 +23,10 @@ class SampleDataInitializer @Inject constructor(
             android.util.Log.d("SampleDataInitializer", "No books found, creating default book and sample data.")
             bookRepository.insertBook(Book(id = defaultBookId, name = "Standardbuch"))
             
-            if (pageDao.getAllPages().isEmpty()) {
+            if (pageRepository.getAllPages().isEmpty()) {
                 val (samplePage, secondPage) = createSampleData(defaultBookId)
-                pageDao.insertPage(samplePage)
-                pageDao.insertPage(secondPage)
+                pageRepository.insertPage(samplePage)
+                pageRepository.insertPage(secondPage)
             }
             return@withContext defaultBookId
         } else {
