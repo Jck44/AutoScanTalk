@@ -68,5 +68,6 @@ data class ImportAction(
     val type: String = "SPEAK", // "SPEAK" or "NAVIGATE"
     val textToSpeech: String? = null,
     val targetPageImportId: String? = null,
+    val targetPageId: String? = null, // Legacy alias
     val ttsFeedback: String? = null
 )

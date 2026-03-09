@@ -124,7 +124,8 @@ class PageImportExportManager @javax.inject.Inject constructor(
                                         FrequentActionButtonAction(rank)
                                     }
                                     "NavigateToPage", "NAVIGATE" -> {
-                                        val targetId = pageIdMap[ia.targetPageImportId] ?: ia.targetPageImportId ?: ""
+                                        val sourceId = ia.targetPageImportId ?: ia.targetPageId ?: ""
+                                        val targetId = pageIdMap[sourceId] ?: sourceId
                                         NavigateToPageButtonAction(targetId)
                                     }
                                     else -> null
@@ -195,7 +196,8 @@ class PageImportExportManager @javax.inject.Inject constructor(
                                     FrequentActionButtonAction(rank)
                                 }
                                 "NavigateToPage", "NAVIGATE" -> {
-                                    val targetId = pageIdMap[ia.targetPageImportId] ?: ia.targetPageImportId ?: ""
+                                    val sourceId = ia.targetPageImportId ?: ia.targetPageId ?: ""
+                                    val targetId = pageIdMap[sourceId] ?: sourceId
                                     NavigateToPageButtonAction(targetId)
                                 }
                                 else -> null

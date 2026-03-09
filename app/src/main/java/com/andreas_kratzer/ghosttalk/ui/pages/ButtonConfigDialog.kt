@@ -193,6 +193,9 @@ fun ButtonConfigDialog(
     val testStartedToast = stringResource(R.string.button_test_started)
     val testFinishedToast = stringResource(R.string.button_test_finished)
 
+    val moveSuccessToast = stringResource(R.string.button_move_success)
+    val moveErrorFull = stringResource(R.string.button_move_error_full)
+
     // Since LaunchedEffect(isTesting) will also trigger on initial composition (false), 
     // and we only want to show "Finished" when it transitions from true to false, 
     // we need to track the previous state.
@@ -559,11 +562,11 @@ fun ButtonConfigDialog(
                             showHiddenPrompt = result
                         }
                         is com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.Success -> {
-                            android.widget.Toast.makeText(context, context.getString(R.string.button_move_success), android.widget.Toast.LENGTH_SHORT).show()
+                            android.widget.Toast.makeText(context, moveSuccessToast, android.widget.Toast.LENGTH_SHORT).show()
                             onDismiss()
                         }
                         is com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.TargetFull -> {
-                            moveError = context.getString(R.string.button_move_error_full)
+                            moveError = moveErrorFull
                         }
                         else -> { /* Error handled generally */ }
                     }
@@ -584,7 +587,7 @@ fun ButtonConfigDialog(
                 showHiddenPrompt = null
                 onMoveToPage?.invoke(targetId, true) { result ->
                     if (result is com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.Success) {
-                        android.widget.Toast.makeText(context, context.getString(R.string.button_move_success), android.widget.Toast.LENGTH_SHORT).show()
+                        android.widget.Toast.makeText(context, moveSuccessToast, android.widget.Toast.LENGTH_SHORT).show()
                         onDismiss()
                     }
                 }
