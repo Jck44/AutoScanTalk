@@ -30,43 +30,43 @@ data class ImportExportData(
     val userModeScreenBehavior: String? = null,
     val defaultStartPageId: String? = null,
     val templates: List<ImportTemplate>? = null,
-    val pages: List<ImportPage>
+    val pages: List<ImportPage> = emptyList()
 )
 
 @Serializable
 data class ImportTemplate(
-    val id: String,
-    val name: String,
-    val rows: Int,
-    val columns: Int,
-    val isBuiltIn: Boolean,
-    val buttons: List<ImportButton>
+    val id: String = "",
+    val name: String = "",
+    val rows: Int = 4,
+    val columns: Int = 4,
+    val isBuiltIn: Boolean = false,
+    val buttons: List<ImportButton> = emptyList()
 )
 
 @Serializable
 data class ImportPage(
-    val importId: String,
-    val name: String,
-    val rows: Int,
-    val columns: Int,
-    val buttons: List<ImportButton>
+    val importId: String = "",
+    val name: String = "",
+    val rows: Int = 4,
+    val columns: Int = 4,
+    val buttons: List<ImportButton> = emptyList()
 )
 
 @Serializable
 data class ImportButton(
-    val index: Long,
-    val label: String,
-    val auditoryCueText: String?,
+    val index: Long = 0,
+    val label: String = "",
+    val auditoryCueText: String? = null,
     val spokenText: String? = null,
     val active: Boolean? = true,
     val playActionAsAuditoryCue: Boolean? = false,
-    val action: ImportAction?
+    val action: ImportAction? = null
 )
 
 @Serializable
 data class ImportAction(
-    val type: String, // "SPEAK" or "NAVIGATE"
-    val textToSpeech: String?,
-    val targetPageImportId: String?,
-    val ttsFeedback: String?
+    val type: String = "SPEAK", // "SPEAK" or "NAVIGATE"
+    val textToSpeech: String? = null,
+    val targetPageImportId: String? = null,
+    val ttsFeedback: String? = null
 )

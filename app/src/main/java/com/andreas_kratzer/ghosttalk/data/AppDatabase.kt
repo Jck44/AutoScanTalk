@@ -12,6 +12,8 @@ import com.andreas_kratzer.ghosttalk.model.ButtonUsageStat
 import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.model.PageTemplate
 import java.util.UUID
+import kotlinx.serialization.json.Json
+import android.util.Log
 
 import com.andreas_kratzer.ghosttalk.data.entities.ButtonEntity
 
@@ -147,7 +149,52 @@ abstract class AppDatabase : RoomDatabase() {
                 """)
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_buttons_pageId` ON `buttons` (`pageId`)")
 
-                // 2. Create a temporary table for pages without the buttonConfigs column
+                // 2. Migrate existing buttonConfigs from JSON to the new buttons table
+                val json = Json {
+                    ignoreUnknownKeys = true
+                    encodeDefaults = true
+                }
+
+                val cursor = db.query("SELECT id, buttonConfigs FROM pages")
+                try {
+                    while (cursor.moveToNext()) {
+                        val pageId = cursor.getString(0)
+                        val buttonConfigsJson = cursor.getString(1)
+                        if (buttonConfigsJson != null) {
+                            try {
+                                val buttonConfigs = json.decodeFromString<List<com.andreas_kratzer.ghosttalk.model.ButtonConfig?>>(buttonConfigsJson)
+                                buttonConfigs.forEachIndexed { index, config ->
+                                    if (config != null) {
+                                        val auditoryCueJson = config.auditoryCue?.let { json.encodeToString<com.andreas_kratzer.ghosttalk.model.AuditoryCue>(it) }
+                                        val buttonActionJson = json.encodeToString<com.andreas_kratzer.ghosttalk.model.ButtonAction>(config.buttonAction)
+                                        
+                                        db.execSQL(
+                                            "INSERT INTO `buttons` (id, pageId, globalIndex, label, spokenText, auditoryCue, buttonAction, isActive, playActionAsAuditoryCue) " +
+                                            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                                            arrayOf<Any?>(
+                                                config.id,
+                                                pageId,
+                                                index,
+                                                config.label,
+                                                config.spokenText,
+                                                auditoryCueJson,
+                                                buttonActionJson,
+                                                if (config.isActive) 1 else 0,
+                                                if (config.playActionAsAuditoryCue) 1 else 0
+                                            )
+                                        )
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                Log.e("AppDatabase", "Failed to migrate buttonConfigs for page $pageId", e)
+                            }
+                        }
+                    }
+                } finally {
+                    cursor.close()
+                }
+
+                // 3. Create a temporary table for pages without the buttonConfigs column
                 db.execSQL("""
                     CREATE TABLE `pages_new` (
                         `id` TEXT NOT NULL, 
@@ -195,7 +242,6 @@ abstract class AppDatabase : RoomDatabase() {
                     MIGRATION_9_10,
                     MIGRATION_10_11
                 )
-                .fallbackToDestructiveMigration(true)
                 .build()
                 INSTANCE = instance
                 instance

@@ -3,19 +3,20 @@ package com.andreas_kratzer.ghosttalk.model
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.andreas_kratzer.ghosttalk.ui.util.ListableItem
+import java.util.UUID
 
 import kotlinx.serialization.Serializable
 
 @Entity(tableName = "templates")
 @Serializable
 data class PageTemplate(
-    @PrimaryKey override val id: String,
-    override val name: String,
-    override val rows: Int,
-    override val columns: Int,
+    @PrimaryKey override val id: String = UUID.randomUUID().toString(),
+    override val name: String = "",
+    override val rows: Int = 4,
+    override val columns: Int = 4,
     override val scanPattern: String? = null,
     override val rowNames: List<String> = emptyList(),
-    override val buttonConfigs: List<ButtonConfig?>,
+    override val buttonConfigs: List<ButtonConfig?> = emptyList(),
     val isBuiltIn: Boolean = false,
     override val orderIndex: Int = 0,
     override val createdAt: Long = System.currentTimeMillis()

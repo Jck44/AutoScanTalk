@@ -14,10 +14,10 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class ButtonConfig(
     val id: String = UUID.randomUUID().toString(),
-    val label: String,
+    val label: String = "",
     val spokenText: String? = null,
-    val auditoryCue: AuditoryCue?,
+    val auditoryCue: AuditoryCue? = null,
     val isActive: Boolean = true,
     val playActionAsAuditoryCue: Boolean = false,
-    val buttonAction: ButtonAction
+    val buttonAction: ButtonAction = SpeakTextButtonAction()
 )
