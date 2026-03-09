@@ -39,6 +39,7 @@ class PageManagementDelegateTest {
     private lateinit var updateRowNameUseCase: UpdateRowNameUseCase
     private lateinit var moveRowUseCase: MoveRowUseCase
     private lateinit var moveButtonUseCase: MoveButtonUseCase
+    private lateinit var moveButtonToPageUseCase: MoveButtonToPageUseCase
     private lateinit var importPageUseCase: ImportPageUseCase
     private lateinit var exportPageUseCase: ExportPageUseCase
     private lateinit var getFilteredPagesUseCase: GetFilteredPagesUseCase
@@ -62,6 +63,7 @@ class PageManagementDelegateTest {
         updateRowNameUseCase = mockk(relaxed = true)
         moveRowUseCase = mockk(relaxed = true)
         moveButtonUseCase = mockk(relaxed = true)
+        moveButtonToPageUseCase = mockk(relaxed = true)
         importPageUseCase = mockk(relaxed = true)
         exportPageUseCase = mockk(relaxed = true)
         getPageUsagesUseCase = mockk(relaxed = true)
@@ -82,6 +84,7 @@ class PageManagementDelegateTest {
             updateRowNameUseCase,
             moveRowUseCase,
             moveButtonUseCase,
+            moveButtonToPageUseCase,
             importPageUseCase,
             exportPageUseCase,
             getFilteredPagesUseCase,

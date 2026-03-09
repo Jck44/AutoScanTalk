@@ -145,6 +145,7 @@
     <string name="page_list_title">Seiten verwalten</string>
     <string name="page_add_description">Neue Seite hinzufügen</string>
     <string name="page_grid_info" tools:ignore="PluralsCandidate">Raster: %1$d Zeilen x %2$d Spalten</string>
+    <string name="search_hint">Suchen…</string>
     <string name="page_rename_description">Seite umbenennen</string>
     <string name="page_delete_description">Seite löschen</string>
     <string name="page_dialog_delete_title">Seite löschen?</string>
@@ -337,4 +338,15 @@
     <string name="page_manage_target">Ziel-Seite verwalten</string>
     <string name="page_create_new_target">Neue Ziel-Seite erstellen</string>
     <string name="page_none_found">Keine Seiten gefunden</string>
+
+    <!-- Move Button Feature -->
+    <string name="button_action_move">Verschieben</string>
+    <string name="button_move_target_title">Ziel-Seite wählen</string>
+    <string name="button_move_hidden_prompt_title">Platz im ausgeblendeten Bereich</string>
+    <string name="button_move_hidden_prompt_message">Auf der Zielseite ist Platz, aber dieser befindet sich in einem aktuell ausgeblendeten Bereich (%1$s). Soll eine Zeile/Spalte hinzugefügt werden, um den Button sichtbar zu machen?</string>
+    <string name="button_move_hidden_prompt_add_row">Zeile hinzufügen</string>
+    <string name="button_move_hidden_prompt_add_col">Spalte hinzufügen</string>
+    <string name="button_move_hidden_prompt_add_both">Zeile &amp; Spalte hinzufügen</string>
+    <string name="button_move_error_full">Verschieben fehlgeschlagen: Die Zielseite ist bereits komplett belegt (49 Buttons).</string>
+    <string name="button_move_success">Button erfolgreich verschoben.</string>
 </resources>

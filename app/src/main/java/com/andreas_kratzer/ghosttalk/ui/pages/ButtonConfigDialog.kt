@@ -53,6 +53,7 @@ import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 @Composable
 fun ButtonConfigDialog(
     initialConfig: ButtonConfig?,
+    currentPageId: String,
     availablePages: List<Page>,
     buttonId: String,
     featureGuard: com.andreas_kratzer.ghosttalk.domain.settings.FeatureGuard,
@@ -62,7 +63,8 @@ fun ButtonConfigDialog(
     onSave: (ButtonConfig?) -> Unit,
     onTest: ((ButtonConfig) -> Unit)? = null,
     onNavigateToPage: ((String) -> Unit)? = null,
-    onCreatePage: ((String, Int, Int, String?, (String) -> Unit) -> Unit)? = null
+    onCreatePage: ((String, Int, Int, String?, (String) -> Unit) -> Unit)? = null,
+    onMoveToPage: ((String, Boolean, (com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult) -> Unit) -> Unit)? = null
 ) {
     val dimensions = LocalDimensions.current
     val context = LocalContext.current
@@ -177,6 +179,11 @@ fun ButtonConfigDialog(
     var controlContactName by remember { mutableStateOf(controlActionDef?.contactName ?: contactPickerTitle) }
     var controlContactPhone by remember { mutableStateOf(controlActionDef?.contactPhone ?: "") }
     var controlMessageText by remember { mutableStateOf(controlActionDef?.messageText ?: "") }
+
+    // Move logic state
+    var showTargetSelector by remember { mutableStateOf(false) }
+    var showHiddenPrompt by remember { mutableStateOf<com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.NeedsConfirmation?>(null) }
+    var moveError by remember { mutableStateOf<String?>(null) }
 
     // Helper to build the action object from current UI state
     fun buildButtonAction(): ButtonAction {
@@ -566,14 +573,87 @@ fun ButtonConfigDialog(
             }
         },
         dismissButton = {
-            Button(
-                enabled = !isTesting,
-                onClick = { onSave(null) },
-                shape = MaterialTheme.shapes.medium,
-                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-            ) {
-                Text(stringResource(R.string.action_clear_delete))
+            Row(horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium)) {
+                // Move Button (Only for Pages, not Templates)
+                if (initialConfig != null && onMoveToPage != null) { 
+                    Button(
+                        enabled = !isTesting,
+                        onClick = { showTargetSelector = true },
+                        shape = MaterialTheme.shapes.medium,
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary)
+                    ) {
+                        Text(stringResource(R.string.button_action_move))
+                    }
+                }
+
+                Button(
+                    enabled = !isTesting,
+                    onClick = { onSave(null) },
+                    shape = MaterialTheme.shapes.medium,
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text(stringResource(R.string.action_clear_delete))
+                }
             }
         }
     )
+
+    // Dialogs for Move
+    if (showTargetSelector) {
+        TargetPageSelectionDialog(
+            availablePages = availablePages.filter { it.id != currentPageId },
+            onPageSelected = { targetPage ->
+                showTargetSelector = false
+                onMoveToPage?.invoke(targetPage.id, false) { result ->
+                    when (result) {
+                        is com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.NeedsConfirmation -> {
+                            showHiddenPrompt = result
+                        }
+                        is com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.Success -> {
+                            android.widget.Toast.makeText(context, context.getString(R.string.button_move_success), android.widget.Toast.LENGTH_SHORT).show()
+                            onDismiss()
+                        }
+                        is com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.TargetFull -> {
+                            moveError = context.getString(R.string.button_move_error_full)
+                        }
+                        else -> { /* Error handled generally */ }
+                    }
+                }
+            },
+            onDismiss = { showTargetSelector = false }
+        )
+    }
+
+    if (showHiddenPrompt != null) {
+        val promptData = showHiddenPrompt!!
+        MoveHiddenPromptDialog(
+            targetPageName = promptData.targetPage.name,
+            requiredRows = if (promptData.requiredRows > promptData.targetPage.rows) promptData.requiredRows else 0,
+            requiredCols = if (promptData.requiredCols > promptData.targetPage.columns) promptData.requiredCols else 0,
+            onConfirm = {
+                val targetId = promptData.targetPage.id
+                showHiddenPrompt = null
+                onMoveToPage?.invoke(targetId, true) { result ->
+                    if (result is com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.Success) {
+                        android.widget.Toast.makeText(context, context.getString(R.string.button_move_success), android.widget.Toast.LENGTH_SHORT).show()
+                        onDismiss()
+                    }
+                }
+            },
+            onDismiss = { showHiddenPrompt = null }
+        )
+    }
+
+    if (moveError != null) {
+        AlertDialog(
+            onDismissRequest = { moveError = null },
+            title = { Text(stringResource(R.string.button_move_error_full)) },
+            text = { Text(moveError!!) },
+            confirmButton = {
+                Button(onClick = { moveError = null }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            }
+        )
+    }
 }

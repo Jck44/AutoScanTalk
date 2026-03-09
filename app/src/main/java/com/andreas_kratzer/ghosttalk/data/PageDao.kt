@@ -31,6 +31,12 @@ interface PageDao {
     @androidx.room.Update
     suspend fun updatePage(page: Page)
 
+    @androidx.room.Transaction
+    suspend fun moveButton(fromPage: Page, toPage: Page) {
+        updatePage(fromPage)
+        updatePage(toPage)
+    }
+
     @Delete
     suspend fun deletePage(page: Page)
 }

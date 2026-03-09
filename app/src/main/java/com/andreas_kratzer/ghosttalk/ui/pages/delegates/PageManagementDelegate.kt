@@ -15,6 +15,7 @@ import com.andreas_kratzer.ghosttalk.domain.pages.UpdatePageSettingsUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.UpdateRowNameUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.MoveRowUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonUseCase
+import com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.UsageLocation
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.Page
@@ -38,6 +39,7 @@ class PageManagementDelegate @Inject constructor(
     private val updateRowNameUseCase: UpdateRowNameUseCase,
     private val moveRowUseCase: MoveRowUseCase,
     private val moveButtonUseCase: MoveButtonUseCase,
+    private val moveButtonToPageUseCase: MoveButtonToPageUseCase,
     private val importPageUseCase: ImportPageUseCase,
     private val exportPageUseCase: ExportPageUseCase,
     private val getFilteredPagesUseCase: GetFilteredPagesUseCase,
@@ -159,6 +161,26 @@ class PageManagementDelegate @Inject constructor(
             if (updatedPage != null && _currentPage.value?.id == pageId) {
                 _currentPage.value = updatedPage
             }
+        }
+    }
+
+    fun moveButtonToPage(
+        fromPageId: String,
+        fromIndex: Int,
+        toPageId: String,
+        forceMove: Boolean = false,
+        onResult: (MoveButtonToPageUseCase.MoveResult) -> Unit
+    ) {
+        scope.launch {
+            val result = moveButtonToPageUseCase.execute(fromPageId, fromIndex, toPageId, forceMove)
+            if (result is MoveButtonToPageUseCase.MoveResult.Success) {
+                if (_currentPage.value?.id == fromPageId) {
+                    _currentPage.value = result.fromPage
+                } else if (_currentPage.value?.id == toPageId) {
+                    _currentPage.value = result.toPage
+                }
+            }
+            onResult(result)
         }
     }
 

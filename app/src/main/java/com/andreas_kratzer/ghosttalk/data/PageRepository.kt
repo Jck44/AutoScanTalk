@@ -33,6 +33,10 @@ class PageRepository(private val pageDao: PageDao) {
         pageDao.updatePage(page)
     }
 
+    suspend fun movePages(fromPage: Page, toPage: Page) {
+        pageDao.moveButton(fromPage, toPage)
+    }
+
     suspend fun deletePage(page: Page) {
         pageDao.deletePage(page)
     }

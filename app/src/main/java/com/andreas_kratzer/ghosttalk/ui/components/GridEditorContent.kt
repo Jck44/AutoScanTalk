@@ -378,6 +378,7 @@ fun GridEditorContent(
 
             ButtonConfigDialog(
                 initialConfig = currentConfig,
+                currentPageId = item.id,
                 buttonId = buttonId,
                 availablePages = availablePages,
                 featureGuard = featureGuard,
@@ -406,6 +407,9 @@ fun GridEditorContent(
                         templateId = templateId,
                         onCreated = onCreated
                     )
+                },
+                onMoveToPage = { targetId, forceMove, onResult ->
+                    actions.moveButtonToPage(item.id, editingIndex, targetId, forceMove, onResult)
                 }
             )
         }

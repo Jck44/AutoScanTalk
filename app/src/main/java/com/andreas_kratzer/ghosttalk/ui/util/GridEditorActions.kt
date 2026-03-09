@@ -21,4 +21,11 @@ interface GridEditorActions {
     val isExecuting: StateFlow<Boolean>
     fun createNewPage(name: String, rows: Int, columns: Int, bookId: String, templateId: String? = null, onCreated: (String) -> Unit)
     fun executeButtonAction(config: ButtonConfig)
+    fun moveButtonToPage(
+        fromPageId: String,
+        fromIndex: Int,
+        toPageId: String,
+        forceMove: Boolean = false,
+        onResult: (com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult) -> Unit
+    )
 }
