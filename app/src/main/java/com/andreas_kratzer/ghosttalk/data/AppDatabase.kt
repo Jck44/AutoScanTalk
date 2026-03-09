@@ -11,6 +11,13 @@ import com.andreas_kratzer.ghosttalk.model.Book
 import com.andreas_kratzer.ghosttalk.model.ButtonUsageStat
 import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.model.PageTemplate
+import com.andreas_kratzer.ghosttalk.model.ButtonAction
+import com.andreas_kratzer.ghosttalk.model.AuditoryCue
+import com.andreas_kratzer.ghosttalk.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
+import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
+import com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction
+import com.andreas_kratzer.ghosttalk.model.GeminiButtonAction
 import java.util.UUID
 import kotlinx.serialization.json.*
 import kotlinx.serialization.encodeToString
@@ -150,22 +157,62 @@ abstract class AppDatabase : RoomDatabase() {
                 """)
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_buttons_pageId` ON `buttons` (`pageId`)")
 
-                // 2. Migrate existing buttonConfigs from JSON to the new buttons table
                 val json = Json {
                     ignoreUnknownKeys = true
                     encodeDefaults = true
                 }
 
-                val cursor = db.query("SELECT id, buttonConfigs FROM pages")
+                /**
+                 * Helper to extract data from legacy Gson JSON which might be wrapped in {"type": "...", "data": {...}}
+                 */
+                fun extractLegacyObject(element: JsonElement?): JsonObject? {
+                    val obj = element as? JsonObject ?: return null
+                    return if (obj.containsKey("type") && obj.containsKey("data")) {
+                        obj["data"] as? JsonObject
+                    } else {
+                        obj
+                    }
+                }
+
+                fun migrateAction(actionElement: JsonElement?): ButtonAction {
+                    val actionObj = extractLegacyObject(actionElement)
+                    if (actionObj == null || actionObj.isEmpty()) return SpeakTextButtonAction()
+                    
+                    return if (actionObj.containsKey("pageId") || actionObj.containsKey("targetPageId")) {
+                        val targetId = actionObj["pageId"]?.jsonPrimitive?.content 
+                            ?: actionObj["targetPageId"]?.jsonPrimitive?.content 
+                            ?: ""
+                        NavigateToPageButtonAction(targetId)
+                    } else if (actionObj.containsKey("rank")) {
+                        val rank = actionObj["rank"]?.jsonPrimitive?.int ?: 1
+                        FrequentActionButtonAction(rank)
+                    } else if (actionObj.containsKey("prompt")) {
+                        GeminiButtonAction(prompt = actionObj["prompt"]?.jsonPrimitive?.content ?: "")
+                    } else {
+                        SpeakTextButtonAction()
+                    }
+                }
+
+                fun migrateCue(cueElement: JsonElement?): AuditoryCue? {
+                    val cueObj = extractLegacyObject(cueElement)
+                    if (cueObj == null || cueObj.isEmpty()) return null
+                    
+                    return if (cueObj.containsKey("text")) {
+                        AuditoryCue.TextToSpeechCue(text = cueObj["text"]?.jsonPrimitive?.content ?: "")
+                    } else {
+                        null
+                    }
+                }
+
+                // 2. Migrate Pages to Buttons table
+                val pageCursor = db.query("SELECT id, buttonConfigs FROM pages")
                 try {
-                    while (cursor.moveToNext()) {
-                        val pageId = cursor.getString(0)
-                        val buttonConfigsJson = cursor.getString(1)
+                    while (pageCursor.moveToNext()) {
+                        val pageId = pageCursor.getString(0)
+                        val buttonConfigsJson = pageCursor.getString(1)
                         if (!buttonConfigsJson.isNullOrBlank()) {
                             try {
-                                val jsonElement = json.parseToJsonElement(buttonConfigsJson)
-                                val jsonArray = jsonElement.jsonArray
-                                
+                                val jsonArray = json.parseToJsonElement(buttonConfigsJson).jsonArray
                                 jsonArray.forEachIndexed { index, configElement ->
                                     val configObj = configElement as? JsonObject
                                     if (configObj != null && configObj.isNotEmpty()) {
@@ -175,59 +222,16 @@ abstract class AppDatabase : RoomDatabase() {
                                         val isActive = configObj["isActive"]?.jsonPrimitive?.boolean ?: true
                                         val playActionAsAuditoryCue = configObj["playActionAsAuditoryCue"]?.jsonPrimitive?.boolean ?: false
                                         
-                                        // Detect AuditoryCue type manually (Gson legacy compat)
-                                        val cueObj = configObj["auditoryCue"] as? JsonObject
-                                        val auditoryCue = if (cueObj != null) {
-                                            if (cueObj.containsKey("text")) {
-                                                com.andreas_kratzer.ghosttalk.model.AuditoryCue.TextToSpeechCue(
-                                                    text = cueObj["text"]?.jsonPrimitive?.content ?: ""
-                                                )
-                                            } else {
-                                                null
-                                            }
-                                        } else {
-                                            null
-                                        }
+                                        val action = migrateAction(configObj["buttonAction"])
+                                        val auditoryCue = migrateCue(configObj["auditoryCue"])
 
-                                        // Detect ButtonAction type manually (Gson legacy compat)
-                                        val actionObj = configObj["buttonAction"] as? JsonObject
-                                        val action: com.andreas_kratzer.ghosttalk.model.ButtonAction = if (actionObj != null) {
-                                            if (actionObj.containsKey("pageId") || actionObj.containsKey("targetPageId")) {
-                                                val targetId = actionObj["pageId"]?.jsonPrimitive?.content 
-                                                    ?: actionObj["targetPageId"]?.jsonPrimitive?.content 
-                                                    ?: ""
-                                                com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction(targetId)
-                                            } else if (actionObj.containsKey("rank")) {
-                                                val rank = actionObj["rank"]?.jsonPrimitive?.int ?: 1
-                                                com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction(rank)
-                                            } else if (actionObj.containsKey("prompt")) {
-                                                com.andreas_kratzer.ghosttalk.model.GeminiButtonAction(
-                                                    prompt = actionObj["prompt"]?.jsonPrimitive?.content ?: ""
-                                                )
-                                            } else {
-                                                com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction()
-                                            }
-                                        } else {
-                                            com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction()
-                                        }
-
-                                        val auditoryCueJson = auditoryCue?.let { json.encodeToString<com.andreas_kratzer.ghosttalk.model.AuditoryCue>(it) }
-                                        val buttonActionJson = json.encodeToString<com.andreas_kratzer.ghosttalk.model.ButtonAction>(action)
+                                        val auditoryCueJson = auditoryCue?.let { json.encodeToString<AuditoryCue>(it) }
+                                        val buttonActionJson = json.encodeToString<ButtonAction>(action)
                                         
                                         db.execSQL(
                                             "INSERT INTO `buttons` (id, pageId, globalIndex, label, spokenText, auditoryCue, buttonAction, isActive, playActionAsAuditoryCue) " +
                                             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                                            arrayOf<Any?>(
-                                                id,
-                                                pageId,
-                                                index,
-                                                label,
-                                                spokenText,
-                                                auditoryCueJson,
-                                                buttonActionJson,
-                                                if (isActive) 1 else 0,
-                                                if (playActionAsAuditoryCue) 1 else 0
-                                            )
+                                            arrayOf<Any?>(id, pageId, index, label, spokenText, auditoryCueJson, buttonActionJson, if (isActive) 1 else 0, if (playActionAsAuditoryCue) 1 else 0)
                                         )
                                     }
                                 }
@@ -237,36 +241,77 @@ abstract class AppDatabase : RoomDatabase() {
                         }
                     }
                 } finally {
-                    cursor.close()
+                    pageCursor.close()
                 }
 
-                // 3. Create a temporary table for pages without the buttonConfigs column, 
-                // but preserve the original JSON in legacy_buttonConfigs as a safety backup.
-                // TODO 2026-04-09: Check if legacy_buttonConfigs can be removed after successful migration period.
+                // 3. Migrate Templates (JSON to JSON migration)
+                val templateCursor = db.query("SELECT id, buttonConfigs FROM templates")
+                try {
+                    while (templateCursor.moveToNext()) {
+                        val templateId = templateCursor.getString(0)
+                        val configsJson = templateCursor.getString(1)
+                        if (!configsJson.isNullOrBlank()) {
+                            try {
+                                val oldArray = json.parseToJsonElement(configsJson).jsonArray
+                                val newConfigs = oldArray.map { configElement ->
+                                    val configObj = configElement as? JsonObject
+                                    if (configObj == null || configObj.isEmpty()) return@map null
+                                    
+                                    ButtonConfig(
+                                        id = configObj["id"]?.jsonPrimitive?.content ?: UUID.randomUUID().toString(),
+                                        label = configObj["label"]?.jsonPrimitive?.content ?: "",
+                                        spokenText = configObj["spokenText"]?.jsonPrimitive?.content,
+                                        isActive = configObj["isActive"]?.jsonPrimitive?.boolean ?: true,
+                                        playActionAsAuditoryCue = configObj["playActionAsAuditoryCue"]?.jsonPrimitive?.boolean ?: false,
+                                        buttonAction = migrateAction(configObj["buttonAction"]),
+                                        auditoryCue = migrateCue(configObj["auditoryCue"])
+                                    )
+                                }
+                                val newConfigsJson = json.encodeToString<List<ButtonConfig?>>(newConfigs)
+                                db.execSQL("UPDATE templates SET buttonConfigs = ? WHERE id = ?", arrayOf(newConfigsJson, templateId))
+                            } catch (e: Exception) {
+                                Log.e("AppDatabase", "Failed to migrate templates for id $templateId", e)
+                            }
+                        }
+                    }
+                } finally {
+                    templateCursor.close()
+                }
+
+                // 4. Migrate Button Usage Stats (actionJson migration)
+                val statsCursor = db.query("SELECT bookId, buttonConfigId, actionJson FROM button_usage_stats")
+                try {
+                    while (statsCursor.moveToNext()) {
+                        val bookId = statsCursor.getString(0)
+                        val configId = statsCursor.getString(1)
+                        val oldActionJson = statsCursor.getString(2)
+                        if (!oldActionJson.isNullOrBlank()) {
+                            try {
+                                val action = migrateAction(json.parseToJsonElement(oldActionJson))
+                                val newActionJson = json.encodeToString<ButtonAction>(action)
+                                db.execSQL("UPDATE button_usage_stats SET actionJson = ? WHERE bookId = ? AND buttonConfigId = ?", arrayOf(newActionJson, bookId, configId))
+                            } catch (e: Exception) {
+                                Log.e("AppDatabase", "Failed to migrate usage stat for $configId", e)
+                            }
+                        }
+                    }
+                } finally {
+                    statsCursor.close()
+                }
+
+                // 5. Finalize Pages Table (Preserve legacy JSON as backup)
                 db.execSQL("""
                     CREATE TABLE `pages_new` (
-                        `id` TEXT NOT NULL, 
-                        `bookId` TEXT NOT NULL, 
-                        `name` TEXT NOT NULL, 
-                        `templateId` TEXT, 
-                        `rows` INTEGER NOT NULL, 
-                        `columns` INTEGER NOT NULL, 
-                        `scanPattern` TEXT, 
-                        `rowNames` TEXT NOT NULL, 
-                        `orderIndex` INTEGER NOT NULL, 
-                        `createdAt` INTEGER NOT NULL, 
-                        `legacy_buttonConfigs` TEXT, 
-                        PRIMARY KEY(`id`)
+                        `id` TEXT NOT NULL, `bookId` TEXT NOT NULL, `name` TEXT NOT NULL, `templateId` TEXT, 
+                        `rows` INTEGER NOT NULL, `columns` INTEGER NOT NULL, `scanPattern` TEXT, 
+                        `rowNames` TEXT NOT NULL, `orderIndex` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, 
+                        `legacy_buttonConfigs` TEXT, PRIMARY KEY(`id`)
                     )
                 """)
-                
-                // Copy data from old pages to new pages including the JSON blob
                 db.execSQL("""
                     INSERT INTO `pages_new` (id, bookId, name, templateId, `rows`, `columns`, scanPattern, rowNames, orderIndex, createdAt, legacy_buttonConfigs)
                     SELECT id, bookId, name, templateId, `rows`, `columns`, scanPattern, rowNames, orderIndex, createdAt, buttonConfigs FROM pages
                 """)
-                
-                // Drop old table and rename new one
                 db.execSQL("DROP TABLE pages")
                 db.execSQL("ALTER TABLE pages_new RENAME TO pages")
             }
