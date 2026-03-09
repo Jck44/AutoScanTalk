@@ -87,9 +87,11 @@
     <string name="settings_bluetooth_delay">Bluetooth-Verzögerung (ms)</string>
 
     <string name="settings_category_security">Sicherheit &amp; PIN</string>
+    <string name="settings_security_require_pin">PIN Schutz für Einstellungen / Bearbeitung</string>
     <string name="settings_security_pin_label">PIN Schutz</string>
     <string name="settings_security_pin_set">PIN setzen</string>
     <string name="settings_security_pin_change">PIN ändern</string>
+    <string name="settings_security_set_pin_title">Sicherheits-PIN festlegen</string>
     <string name="settings_security_pin_timeout">PIN Timeout (Minuten)</string>
     <string name="settings_security_pin_required_for_deletion">PIN-Abfrage beim Löschen von Büchern</string>
     <string name="settings_security_lock_now">Sofort Sperren</string>
@@ -103,6 +105,9 @@
     <string name="settings_security_require_for_settings">Zugriff auf Einstellungen schützen</string>
     <string name="security_pin_enter">PIN eingeben</string>
     <string name="security_pin_new">Neuen PIN festlegen</string>
+
+    <string name="settings_category_button_history">Aktionsverlauf</string>
+    <string name="settings_history_empty">Noch keine Aktionen aufgezeichnet.</string>
 
     <string name="start_tagline">Unterstützte Kommunikation</string>
     <string name="start_user_mode">Nutzer Modus</string>

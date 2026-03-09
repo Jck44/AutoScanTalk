@@ -35,6 +35,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
@@ -45,6 +46,7 @@ import com.andreas_kratzer.ghosttalk.ui.pages.GridButton
 import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
 import com.andreas_kratzer.ghosttalk.ui.components.GridEditorContent
 import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.UUID
 
@@ -81,11 +83,18 @@ fun TemplateEditorScreen(
         topBar = {
             TopAppBar(
                 title = { 
+                    var localName by remember(template.name) { mutableStateOf(template.name) }
+                    
+                    LaunchedEffect(localName) {
+                        if (localName != template.name) {
+                            delay(500)
+                            templateViewModel.updateTemplate(template.copy(name = localName))
+                        }
+                    }
+
                     OutlinedTextField(
-                        value = template.name,
-                        onValueChange = { newName ->
-                            templateViewModel.updateTemplate(template.copy(name = newName))
-                        },
+                        value = localName,
+                        onValueChange = { localName = it },
                         label = { Text(stringResource(R.string.template_name_label)) },
                         singleLine = true,
                         shape = MaterialTheme.shapes.large,

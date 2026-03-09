@@ -22,12 +22,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.ui.components.GridEditorContent
 import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,18 +59,25 @@ fun PageEditorScreen(
         topBar = {
             TopAppBar(
                 title = { 
-                    OutlinedTextField(
-                        value = page.name,
-                        onValueChange = { newName ->
+                    var localName by remember(page.name) { mutableStateOf(page.name) }
+                    
+                    LaunchedEffect(localName) {
+                        if (localName != page.name) {
+                            delay(500)
                             pageViewModel.updatePageSettings(
                                 pageId = page.id,
-                                newName = newName,
+                                newName = localName,
                                 newScanPattern = page.scanPattern,
                                 newRowNames = page.rowNames,
                                 newRows = page.rows,
                                 newColumns = page.columns
                             )
-                        },
+                        }
+                    }
+
+                    OutlinedTextField(
+                        value = localName,
+                        onValueChange = { localName = it },
                         label = { Text(stringResource(R.string.page_name_label)) },
                         singleLine = true,
                         shape = MaterialTheme.shapes.large,

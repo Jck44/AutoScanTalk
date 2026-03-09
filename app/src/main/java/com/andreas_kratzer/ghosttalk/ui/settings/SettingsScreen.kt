@@ -16,17 +16,20 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Settings
-import com.andreas_kratzer.ghosttalk.ui.theme.GhosTTalkIcons
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -43,6 +46,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -66,7 +70,9 @@ import com.andreas_kratzer.ghosttalk.ui.settings.sections.ScanningSettingsSectio
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.SecuritySettingsSection
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.TestSettingsSection
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.VoiceSettingsSection
+import com.andreas_kratzer.ghosttalk.ui.theme.GhosTTalkIcons
 import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
+import kotlinx.coroutines.delay
 
 enum class SettingsSection(val titleRes: Int, val icon: ImageVector, val isGlobal: Boolean, val isScoped: Boolean) {
     GENERAL(R.string.settings_category_general, Icons.Default.Settings, isGlobal = true, isScoped = true),
@@ -88,7 +94,6 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
-    val scrollState = rememberScrollState()
     val dimensions = LocalDimensions.current
     
     var selectedSection by rememberSaveable { mutableStateOf<SettingsSection?>(null) }
@@ -214,7 +219,7 @@ fun SettingsScreen(
                         onNavigateToStart()
                     }
                 )
-                Spacer(modifier = Modifier.height(dimensions.paddingDoubleExtraLarge))
+                Spacer(modifier = Modifier.height(dimensions.paddingDoubleExtraLarge * 2)) // Increased for tablets
             }
         }
     }
@@ -262,7 +267,9 @@ fun SubmenuContent(
                 onSecurityRequiredForEditChange = viewModel::setSecurityRequiredForEdit,
                 isSecurityRequiredForSettings = reqSettings,
                 onSecurityRequiredForSettingsChange = viewModel::setSecurityRequiredForSettings,
-                onLockClicked = onLockClicked
+                onLockClicked = onLockClicked,
+                isPinRequired = !pin.isNullOrEmpty(),
+                onPinRequiredChange = { /* Placeholder */ }
             )
         }
         SettingsSection.CLOUD -> {
@@ -304,9 +311,12 @@ fun VersionInfo() {
 }
 
 @Composable
-fun PreferenceCategory(title: String, content: @Composable ColumnScope.() -> Unit) {
+fun PreferenceCategory(
+    title: String,
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit) {
     val dimensions = LocalDimensions.current
-    Column(modifier = Modifier.padding(vertical = dimensions.paddingMedium)) {
+    Column(modifier = modifier.padding(vertical = dimensions.paddingMedium)) {
         Text(
             text = title,
             style = MaterialTheme.typography.titleSmall,
@@ -376,9 +386,18 @@ fun SettingsEditTextItem(
     keyboardOptions: KeyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
 ) {
     val dimensions = LocalDimensions.current
+    var localValue by remember(value) { mutableStateOf(value) }
+    
+    LaunchedEffect(localValue) {
+        if (localValue != value) {
+            delay(500) // Debounce period
+            onValueChange(localValue)
+        }
+    }
+
     OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
+        value = localValue,
+        onValueChange = { newValue -> localValue = newValue },
         label = { Text(label, style = MaterialTheme.typography.bodyMedium) },
         textStyle = MaterialTheme.typography.bodyLarge,
         shape = MaterialTheme.shapes.large,
@@ -388,4 +407,60 @@ fun SettingsEditTextItem(
         keyboardOptions = keyboardOptions,
         singleLine = true
     )
+}
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SettingsDropdownItem(
+    label: String,
+    selectedOption: String,
+    options: List<Pair<String, () -> Unit>>,
+    modifier: Modifier = Modifier
+) {
+    val dimensions = LocalDimensions.current
+    var expanded by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = dimensions.paddingSmall)
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(bottom = dimensions.paddingSmall)
+        )
+
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = { expanded = !expanded }
+        ) {
+            OutlinedTextField(
+                value = selectedOption,
+                onValueChange = {},
+                readOnly = true,
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                shape = MaterialTheme.shapes.large,
+                modifier = Modifier
+                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                    .fillMaxWidth()
+            )
+
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                options.forEach { (optionLabel, onClick) ->
+                    DropdownMenuItem(
+                        text = { Text(optionLabel, style = MaterialTheme.typography.bodyLarge) },
+                        onClick = {
+                            onClick()
+                            expanded = false
+                        }
+                    )
+                }
+            }
+        }
+    }
 }

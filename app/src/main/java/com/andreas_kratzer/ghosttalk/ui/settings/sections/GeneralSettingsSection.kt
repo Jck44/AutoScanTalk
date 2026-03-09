@@ -1,16 +1,19 @@
 package com.andreas_kratzer.ghosttalk.ui.settings.sections
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -19,21 +22,18 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.ui.settings.PreferenceCategory
-import com.andreas_kratzer.ghosttalk.ui.settings.SettingsClickableItem
 import com.andreas_kratzer.ghosttalk.ui.settings.SettingsToggleItem
 import com.andreas_kratzer.ghosttalk.ui.settings.SettingsViewModel
 import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
-import androidx.compose.foundation.layout.Row
-import androidx.compose.ui.Alignment
-import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.ui.platform.LocalContext
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun GeneralSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
     val theme by viewModel.themeMode.collectAsState("SYSTEM")
@@ -44,224 +44,214 @@ fun GeneralSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
     val keepScreenOn by viewModel.keepScreenOnUserMode.collectAsState(true)
     val screenBehavior by viewModel.userModeScreenBehavior.collectAsState("NORMAL")
     val startupBehavior by viewModel.startupBehavior.collectAsState("BOOK_SELECTION")
+    val userEmail by viewModel.userEmail.collectAsState(null)
 
-    var expandedTheme by remember { mutableStateOf(false) }
     var expandedStartPage by remember { mutableStateOf(false) }
     var startPageSearchQuery by remember { mutableStateOf("") }
-    var expandedScreenBehavior by remember { mutableStateOf(false) }
-    var expandedStartupBehavior by remember { mutableStateOf(false) }
 
     val dimensions = LocalDimensions.current
+    val context = LocalContext.current
 
-    if (isGlobal) {
-        val userEmail by viewModel.userEmail.collectAsState(null)
-        val context = LocalContext.current
+    FlowRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium),
+        verticalArrangement = Arrangement.spacedBy(dimensions.paddingMedium),
+        maxItemsInEachRow = 2
+    ) {
+        if (isGlobal) {
+            val categoryTitle = stringResource(R.string.settings_category_google_account)
+            val accountStatusNotSignedIn = stringResource(R.string.settings_google_account_status_not_signed_in)
+            val signInText = stringResource(R.string.settings_google_account_sign_in)
+            val signOutText = stringResource(R.string.settings_google_account_sign_out)
 
-        PreferenceCategory(stringResource(R.string.settings_category_google_account)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = userEmail ?: stringResource(R.string.settings_google_account_status_not_signed_in),
-                    modifier = Modifier.weight(1f),
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                if (userEmail == null) {
-                    Button(
-                        onClick = { viewModel.signIn(context) },
-                        shape = MaterialTheme.shapes.medium
-                    ) {
-                        Text(stringResource(R.string.settings_google_account_sign_in))
-                    }
-                } else {
-                    OutlinedButton(
-                        onClick = { viewModel.signOut() },
-                        shape = MaterialTheme.shapes.medium
-                    ) {
-                        Text(stringResource(R.string.settings_google_account_sign_out))
+            PreferenceCategory(categoryTitle, modifier = Modifier.weight(1f)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = userEmail ?: accountStatusNotSignedIn,
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    if (userEmail == null) {
+                        Button(
+                            onClick = { viewModel.signIn(context) },
+                            shape = MaterialTheme.shapes.medium
+                        ) {
+                            Text(signInText)
+                        }
+                    } else {
+                        OutlinedButton(
+                            onClick = { viewModel.signOut() },
+                            shape = MaterialTheme.shapes.medium
+                        ) {
+                            Text(signOutText)
+                        }
                     }
                 }
             }
-        }
 
-        PreferenceCategory(stringResource(R.string.settings_category_ui)) {
-            Box(modifier = Modifier.fillMaxWidth()) {
+            val categoryUi = stringResource(R.string.settings_category_ui)
+            val themeModeLabel = stringResource(R.string.settings_theme_mode)
+            val themeSystem = stringResource(R.string.settings_theme_system)
+            val themeLight = stringResource(R.string.settings_theme_light)
+            val themeDark = stringResource(R.string.settings_theme_dark)
+            val persistLogsLabel = stringResource(R.string.settings_persist_logs)
+
+            PreferenceCategory(categoryUi, modifier = Modifier.weight(1f)) {
                 val themeLabel = when (theme) {
-                    "LIGHT" -> stringResource(R.string.settings_theme_light)
-                    "DARK" -> stringResource(R.string.settings_theme_dark)
-                    else -> stringResource(R.string.settings_theme_system)
+                    "LIGHT" -> themeLight
+                    "DARK" -> themeDark
+                    else -> themeSystem
                 }
                 
-                SettingsClickableItem(stringResource(R.string.settings_theme_mode), themeLabel) { expandedTheme = true }
-                DropdownMenu(expanded = expandedTheme, onDismissRequest = { expandedTheme = false }) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.settings_theme_system), style = MaterialTheme.typography.bodyLarge) },
-                        onClick = { viewModel.setThemeMode("SYSTEM"); expandedTheme = false }
+                com.andreas_kratzer.ghosttalk.ui.settings.SettingsDropdownItem(
+                    label = themeModeLabel,
+                    selectedOption = themeLabel,
+                    options = listOf(
+                        themeSystem to { viewModel.setThemeMode("SYSTEM") },
+                        themeLight to { viewModel.setThemeMode("LIGHT") },
+                        themeDark to { viewModel.setThemeMode("DARK") }
                     )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.settings_theme_light), style = MaterialTheme.typography.bodyLarge) },
-                        onClick = { viewModel.setThemeMode("LIGHT"); expandedTheme = false }
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.settings_theme_dark), style = MaterialTheme.typography.bodyLarge) },
-                        onClick = { viewModel.setThemeMode("DARK"); expandedTheme = false }
-                    )
-                }
+                )
+
+                SettingsToggleItem(
+                    label = persistLogsLabel,
+                    checked = persistLogs,
+                    onCheckedChange = { viewModel.setPersistActionLogs(it) }
+                )
             }
 
-            SettingsToggleItem(
-                label = stringResource(R.string.settings_persist_logs),
-                checked = persistLogs,
-                onCheckedChange = { viewModel.setPersistActionLogs(it) }
-            )
-        }
+            val categoryGeneral = stringResource(R.string.settings_category_general)
+            val startupBehaviorLabel = stringResource(R.string.settings_startup_behavior)
+            val startupBookList = stringResource(R.string.settings_startup_behavior_book_list)
+            val startupLastBook = stringResource(R.string.settings_startup_behavior_last_book)
+            val startupUserMode = stringResource(R.string.settings_startup_behavior_user_mode)
 
-        PreferenceCategory(stringResource(R.string.settings_category_general)) {
-            Box(modifier = Modifier.fillMaxWidth()) {
+            PreferenceCategory(categoryGeneral, modifier = Modifier.weight(1f)) {
                 val startupLabel = when (startupBehavior) {
-                    "SELECTED_BOOK" -> stringResource(R.string.settings_startup_behavior_last_book)
-                    "USER_MODE" -> stringResource(R.string.settings_startup_behavior_user_mode)
-                    else -> stringResource(R.string.settings_startup_behavior_book_list)
+                    "SELECTED_BOOK" -> startupLastBook
+                    "USER_MODE" -> startupUserMode
+                    else -> startupBookList
                 }
 
-                SettingsClickableItem(
-                    label = stringResource(R.string.settings_startup_behavior),
-                    value = startupLabel,
-                    onClick = { expandedStartupBehavior = true }
+                com.andreas_kratzer.ghosttalk.ui.settings.SettingsDropdownItem(
+                    label = startupBehaviorLabel,
+                    selectedOption = startupLabel,
+                    options = listOf(
+                        startupBookList to { viewModel.setStartupBehavior("BOOK_SELECTION") },
+                        startupLastBook to { viewModel.setStartupBehavior("SELECTED_BOOK") },
+                        startupUserMode to { viewModel.setStartupBehavior("USER_MODE") }
+                    )
                 )
-
-                DropdownMenu(
-                    expanded = expandedStartupBehavior,
-                    onDismissRequest = { expandedStartupBehavior = false }
-                ) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.settings_startup_behavior_book_list), style = MaterialTheme.typography.bodyLarge) },
-                        onClick = { viewModel.setStartupBehavior("BOOK_SELECTION"); expandedStartupBehavior = false }
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.settings_startup_behavior_last_book), style = MaterialTheme.typography.bodyLarge) },
-                        onClick = { viewModel.setStartupBehavior("SELECTED_BOOK"); expandedStartupBehavior = false }
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.settings_startup_behavior_user_mode), style = MaterialTheme.typography.bodyLarge) },
-                        onClick = { viewModel.setStartupBehavior("USER_MODE"); expandedStartupBehavior = false }
-                    )
-                }
             }
         }
-    }
 
-    if (!isGlobal) {
-        PreferenceCategory(stringResource(R.string.settings_category_general)) {
-            SettingsToggleItem(
-                label = stringResource(R.string.settings_keep_screen_on),
-                checked = keepScreenOn,
-                onCheckedChange = { viewModel.setKeepScreenOnUserMode(it) }
-            )
+        if (!isGlobal) {
+            val categoryGeneral = stringResource(R.string.settings_category_general)
+            val keepScreenOnLabel = stringResource(R.string.settings_keep_screen_on)
+            val screenBehaviorLabel = stringResource(R.string.settings_screen_behavior)
+            val screenNormal = stringResource(R.string.settings_screen_behavior_normal)
+            val screenDimmed = stringResource(R.string.settings_screen_behavior_dimmed)
+            val screenBlack = stringResource(R.string.settings_screen_behavior_black)
+            val startPageLabel = stringResource(R.string.settings_start_page)
+            val startPageAuto = stringResource(R.string.settings_start_page_auto)
 
-            if (keepScreenOn) {
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    val behaviorLabel = when (screenBehavior) {
-                        "DIMMED" -> stringResource(R.string.settings_screen_behavior_dimmed)
-                        "BLACK" -> stringResource(R.string.settings_screen_behavior_black)
-                        else -> stringResource(R.string.settings_screen_behavior_normal)
-                    }
-
-                    SettingsClickableItem(
-                        label = stringResource(R.string.settings_screen_behavior),
-                        value = behaviorLabel,
-                        onClick = { expandedScreenBehavior = true }
-                    )
-                    DropdownMenu(expanded = expandedScreenBehavior, onDismissRequest = { expandedScreenBehavior = false }) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.settings_screen_behavior_normal), style = MaterialTheme.typography.bodyLarge) },
-                            onClick = { viewModel.setUserModeScreenBehavior("NORMAL"); expandedScreenBehavior = false }
-                        )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.settings_screen_behavior_dimmed), style = MaterialTheme.typography.bodyLarge) },
-                            onClick = { viewModel.setUserModeScreenBehavior("DIMMED"); expandedScreenBehavior = false }
-                        )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.settings_screen_behavior_black), style = MaterialTheme.typography.bodyLarge) },
-                            onClick = { viewModel.setUserModeScreenBehavior("BLACK"); expandedScreenBehavior = false }
-                        )
-                    }
-                }
-            }
-
-            // Default Start Page Selector with Filter
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)
-            ) {
-                Text(
-                    text = stringResource(R.string.settings_start_page),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary
+            PreferenceCategory(categoryGeneral, modifier = Modifier.weight(1f)) {
+                SettingsToggleItem(
+                    label = keepScreenOnLabel,
+                    checked = keepScreenOn,
+                    onCheckedChange = { viewModel.setKeepScreenOnUserMode(it) }
                 )
 
-                ExposedDropdownMenuBox(
-                    expanded = expandedStartPage,
-                    onExpandedChange = { expandedStartPage = !expandedStartPage }
-                ) {
-                    val startPageLabel = allPages.find { it.id == defaultStartPageId }?.name 
-                        ?: stringResource(R.string.settings_start_page_auto)
+                if (keepScreenOn) {
+                    val behaviorLabel = when (screenBehavior) {
+                        "DIMMED" -> screenDimmed
+                        "BLACK" -> screenBlack
+                        else -> screenNormal
+                    }
 
-                    OutlinedTextField(
-                        value = if (expandedStartPage) startPageSearchQuery else startPageLabel,
-                        onValueChange = { if (expandedStartPage) startPageSearchQuery = it },
-                        readOnly = !expandedStartPage,
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedStartPage) },
-                        colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
-                        shape = MaterialTheme.shapes.large,
-                        modifier = Modifier
-                            .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable)
-                            .fillMaxWidth()
+                    com.andreas_kratzer.ghosttalk.ui.settings.SettingsDropdownItem(
+                        label = screenBehaviorLabel,
+                        selectedOption = behaviorLabel,
+                        options = listOf(
+                            screenNormal to { viewModel.setUserModeScreenBehavior("NORMAL") },
+                            screenDimmed to { viewModel.setUserModeScreenBehavior("DIMMED") },
+                            screenBlack to { viewModel.setUserModeScreenBehavior("BLACK") }
+                        )
+                    )
+                }
+
+                // Default Start Page Selector with Filter
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)
+                ) {
+                    Text(
+                        text = startPageLabel,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
                     )
 
-                    ExposedDropdownMenu(
+                    ExposedDropdownMenuBox(
                         expanded = expandedStartPage,
-                        onDismissRequest = { 
-                            expandedStartPage = false
-                            startPageSearchQuery = ""
-                        }
+                        onExpandedChange = { expandedStartPage = !expandedStartPage }
                     ) {
-                        val filteredPages = remember(startPageSearchQuery, allPages) {
-                            val trimmed = startPageSearchQuery.trim()
-                            if (trimmed.isEmpty()) allPages
-                            else allPages.filter { it.name.contains(trimmed, ignoreCase = true) }
-                        }
+                        val startPageName = allPages.find { it.id == defaultStartPageId }?.name 
+                            ?: startPageAuto
 
-                        // Auto Option (always show when query is empty)
-                        if (startPageSearchQuery.isEmpty()) {
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.settings_start_page_auto), style = MaterialTheme.typography.bodyLarge) },
-                                onClick = { 
-                                    viewModel.setDefaultStartPageId(null)
-                                    expandedStartPage = false
-                                }
-                            )
-                        }
+                        OutlinedTextField(
+                            value = if (expandedStartPage) startPageSearchQuery else startPageName,
+                            onValueChange = { if (expandedStartPage) startPageSearchQuery = it },
+                            readOnly = !expandedStartPage,
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedStartPage) },
+                            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                            shape = MaterialTheme.shapes.large,
+                            modifier = Modifier
+                                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable)
+                                .fillMaxWidth()
+                        )
 
-                        filteredPages.forEach { page ->
-                            DropdownMenuItem(
-                                text = { Text(page.name, style = MaterialTheme.typography.bodyLarge) },
-                                onClick = { 
-                                    viewModel.setDefaultStartPageId(page.id)
-                                    startPageSearchQuery = ""
-                                    expandedStartPage = false
-                                }
-                            )
-                        }
+                        ExposedDropdownMenu(
+                            expanded = expandedStartPage,
+                            onDismissRequest = { 
+                                expandedStartPage = false
+                                startPageSearchQuery = ""
+                            }
+                        ) {
+                            val filteredPages = allPages.filter { it.name.contains(startPageSearchQuery, ignoreCase = true) }
 
-                        if (filteredPages.isEmpty() && startPageSearchQuery.isNotEmpty()) {
-                            DropdownMenuItem(
-                                text = { Text("Keine Seiten gefunden", style = MaterialTheme.typography.bodyLarge) },
-                                onClick = { },
-                                enabled = false
-                            )
+                            // Auto Option (always show when query is empty)
+                            if (startPageSearchQuery.isEmpty()) {
+                                DropdownMenuItem(
+                                    text = { Text(startPageAuto, style = MaterialTheme.typography.bodyLarge) },
+                                    onClick = { 
+                                        viewModel.setDefaultStartPageId(null)
+                                        expandedStartPage = false
+                                    }
+                                )
+                            }
+
+                            filteredPages.forEach { page ->
+                                DropdownMenuItem(
+                                    text = { Text(page.name, style = MaterialTheme.typography.bodyLarge) },
+                                    onClick = { 
+                                        viewModel.setDefaultStartPageId(page.id)
+                                        startPageSearchQuery = ""
+                                        expandedStartPage = false
+                                    }
+                                )
+                            }
+
+                            if (filteredPages.isEmpty() && startPageSearchQuery.isNotEmpty()) {
+                                DropdownMenuItem(
+                                    text = { Text("Keine Seiten gefunden", style = MaterialTheme.typography.bodyLarge) },
+                                    onClick = { },
+                                    enabled = false
+                                )
+                            }
                         }
                     }
                 }

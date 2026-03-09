@@ -2,6 +2,8 @@ package com.andreas_kratzer.ghosttalk.ui.settings.sections
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -18,7 +20,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -33,6 +34,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun CloudSettingsSection(viewModel: SettingsViewModel) {
     val isEnabled by viewModel.isCloudSyncEnabled.collectAsState(false)
@@ -46,70 +48,77 @@ fun CloudSettingsSection(viewModel: SettingsViewModel) {
 
     var expandedMode by remember { mutableStateOf(false) }
 
-    PreferenceCategory(stringResource(R.string.settings_category_cloud)) {
-        SettingsToggleItem(stringResource(R.string.settings_cloud_sync_enabled), isEnabled) { viewModel.setCloudSyncEnabled(context, it) }
-        
-        Box(modifier = Modifier.fillMaxWidth()) {
-            val modeLabel = when (syncMode) {
-                "BACKUP_ONLY" -> stringResource(R.string.settings_cloud_sync_mode_backup)
-                "RESTORE_ONLY" -> stringResource(R.string.settings_cloud_sync_mode_restore)
-                else -> stringResource(R.string.settings_cloud_sync_mode_two_way)
-            }
-            SettingsClickableItem(stringResource(R.string.settings_cloud_sync_mode), modeLabel) { expandedMode = true }
-            DropdownMenu(expanded = expandedMode, onDismissRequest = { expandedMode = false }) {
-                listOf("TWO_WAY", "BACKUP_ONLY", "RESTORE_ONLY").forEach { mode ->
-                    val itemLabel = when (mode) {
-                        "BACKUP_ONLY" -> stringResource(R.string.settings_cloud_sync_mode_backup)
-                        "RESTORE_ONLY" -> stringResource(R.string.settings_cloud_sync_mode_restore)
-                        else -> stringResource(R.string.settings_cloud_sync_mode_two_way)
+    FlowRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium),
+        verticalArrangement = Arrangement.spacedBy(dimensions.paddingMedium),
+        maxItemsInEachRow = 2
+    ) {
+        PreferenceCategory(stringResource(R.string.settings_category_cloud), modifier = Modifier.weight(1f)) {
+            SettingsToggleItem(stringResource(R.string.settings_cloud_sync_enabled), isEnabled) { viewModel.setCloudSyncEnabled(context, it) }
+            
+            Box(modifier = Modifier.fillMaxWidth()) {
+                val modeLabel = when (syncMode) {
+                    "BACKUP_ONLY" -> stringResource(R.string.settings_cloud_sync_mode_backup)
+                    "RESTORE_ONLY" -> stringResource(R.string.settings_cloud_sync_mode_restore)
+                    else -> stringResource(R.string.settings_cloud_sync_mode_two_way)
+                }
+                SettingsClickableItem(stringResource(R.string.settings_cloud_sync_mode), modeLabel) { expandedMode = true }
+                DropdownMenu(expanded = expandedMode, onDismissRequest = { expandedMode = false }) {
+                    listOf("TWO_WAY", "BACKUP_ONLY", "RESTORE_ONLY").forEach { mode ->
+                        val itemLabel = when (mode) {
+                            "BACKUP_ONLY" -> stringResource(R.string.settings_cloud_sync_mode_backup)
+                            "RESTORE_ONLY" -> stringResource(R.string.settings_cloud_sync_mode_restore)
+                            else -> stringResource(R.string.settings_cloud_sync_mode_two_way)
+                        }
+                        DropdownMenuItem(text = { Text(itemLabel) }, onClick = { viewModel.setSyncMode(mode); expandedMode = false })
                     }
-                    DropdownMenuItem(text = { Text(itemLabel) }, onClick = { viewModel.setSyncMode(mode); expandedMode = false })
                 }
             }
-        }
 
-        if (isEnabled) {
-            com.andreas_kratzer.ghosttalk.ui.settings.SettingsEditTextItem(
-                label = "Sync-Intervall (Minuten)",
-                value = syncInterval.toString(),
-                onValueChange = { newValue ->
-                    newValue.toLongOrNull()?.let { viewModel.setSyncIntervalMinutes(it) }
-                },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-            )
+            if (isEnabled) {
+                com.andreas_kratzer.ghosttalk.ui.settings.SettingsEditTextItem(
+                    label = "Sync-Intervall (Minuten)",
+                    value = syncInterval.toString(),
+                    onValueChange = { newValue ->
+                        newValue.toLongOrNull()?.let { viewModel.setSyncIntervalMinutes(it) }
+                    },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
 
-            val lastSyncTimeValue = lastSyncTime
-            val lastSyncText = if (lastSyncTimeValue > 0) {
-                val sdf = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
-                sdf.format(Date(lastSyncTimeValue))
-            } else {
-                "Nie"
+                val lastSyncTimeValue = lastSyncTime
+                val lastSyncText = if (lastSyncTimeValue > 0) {
+                    val sdf = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
+                    sdf.format(Date(lastSyncTimeValue))
+                } else {
+                    "Nie"
+                }
+                Text(
+                    text = "Letzter Sync: $lastSyncText",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(vertical = dimensions.paddingSmall)
+                )
             }
-            Text(
-                text = "Letzter Sync: $lastSyncText",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(vertical = dimensions.paddingSmall)
-            )
-        }
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium),
-            modifier = Modifier.padding(top = dimensions.paddingMedium)
-        ) {
-            Button(
-                onClick = { viewModel.syncNow() },
-                enabled = !isSyncing && userEmail != null,
-                shape = MaterialTheme.shapes.medium
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium),
+                modifier = Modifier.padding(top = dimensions.paddingMedium)
             ) {
-                Text(stringResource(R.string.action_search).replace("…", ""))
-            }
-            OutlinedButton(
-                onClick = { viewModel.backupNow() },
-                enabled = !isSyncing && userEmail != null,
-                shape = MaterialTheme.shapes.medium
-            ) {
-                Text(stringResource(R.string.settings_cloud_backup_now))
+                Button(
+                    onClick = { viewModel.syncNow() },
+                    enabled = !isSyncing && userEmail != null,
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Text(stringResource(R.string.action_search).replace("…", ""))
+                }
+                OutlinedButton(
+                    onClick = { viewModel.backupNow() },
+                    enabled = !isSyncing && userEmail != null,
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Text(stringResource(R.string.settings_cloud_backup_now))
+                }
             }
         }
     }

@@ -1,28 +1,24 @@
 package com.andreas_kratzer.ghosttalk.ui.settings.sections
 
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.ui.settings.PreferenceCategory
-import com.andreas_kratzer.ghosttalk.ui.settings.SettingsClickableItem
 import com.andreas_kratzer.ghosttalk.ui.settings.SettingsEditTextItem
 import com.andreas_kratzer.ghosttalk.ui.settings.SettingsToggleItem
 import com.andreas_kratzer.ghosttalk.ui.settings.SettingsViewModel
+import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ScanningSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
     val autoStart by viewModel.autoStartScanning.collectAsState(true)
@@ -32,57 +28,60 @@ fun ScanningSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
     val holdingTime by viewModel.holdingTimeMillis.collectAsState(0L)
     val bluetoothDelay by viewModel.bluetoothDelay.collectAsState(1500L)
 
-    var expandedPattern by remember { mutableStateOf(false) }
+    val dimensions = LocalDimensions.current
 
-    PreferenceCategory(stringResource(R.string.settings_category_scanning)) {
-        SettingsToggleItem(stringResource(R.string.settings_auto_scan), autoStart) { viewModel.setAutoStartScanning(it) }
-        SettingsEditTextItem(
-            label = stringResource(R.string.settings_scan_delay), 
-            value = scanDelay.toString(),
-            onValueChange = { viewModel.setScanDelayInput(it) }
-        )
-        SettingsToggleItem(stringResource(R.string.settings_restart_scan), resumeFromStart) { viewModel.setResumeScanningFromStart(it) }
-    }
+    FlowRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium),
+        verticalArrangement = Arrangement.spacedBy(dimensions.paddingMedium),
+        maxItemsInEachRow = 2
+    ) {
+        PreferenceCategory(stringResource(R.string.settings_category_scanning), modifier = Modifier.weight(1f)) {
+            SettingsToggleItem(stringResource(R.string.settings_auto_scan), autoStart) { viewModel.setAutoStartScanning(it) }
+            SettingsEditTextItem(
+                label = stringResource(R.string.settings_scan_delay), 
+                value = scanDelay.toString(),
+                onValueChange = { viewModel.setScanDelayInput(it) }
+            )
+            SettingsToggleItem(stringResource(R.string.settings_restart_scan), resumeFromStart) { viewModel.setResumeScanningFromStart(it) }
+        }
 
-    PreferenceCategory(stringResource(R.string.settings_category_hardware)) {
-        val switchKey by viewModel.switchActivationKey.collectAsState("Space")
-        SettingsEditTextItem(
-            label = stringResource(R.string.settings_switch_key), 
-            value = switchKey,
-            onValueChange = { viewModel.setSwitchActivationKey(it) },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
-        )
+        PreferenceCategory(stringResource(R.string.settings_category_hardware), modifier = Modifier.weight(1f)) {
+            val switchKey by viewModel.switchActivationKey.collectAsState("Space")
+            SettingsEditTextItem(
+                label = stringResource(R.string.settings_switch_key), 
+                value = switchKey,
+                onValueChange = { viewModel.setSwitchActivationKey(it) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
+            )
 
-        Box(modifier = Modifier.fillMaxWidth()) {
             val patternLabel = when (scanPattern) {
                 "linear" -> stringResource(R.string.settings_pattern_linear)
                 "row_column" -> stringResource(R.string.settings_pattern_row_by_row)
                 else -> scanPattern
             }
-            SettingsClickableItem(stringResource(R.string.settings_scan_pattern), patternLabel) { expandedPattern = true }
-            DropdownMenu(expanded = expandedPattern, onDismissRequest = { expandedPattern = false }) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.settings_pattern_linear), style = MaterialTheme.typography.bodyLarge) },
-                    onClick = { viewModel.setDefaultScanPattern("linear"); expandedPattern = false }
+            
+            com.andreas_kratzer.ghosttalk.ui.settings.SettingsDropdownItem(
+                label = stringResource(R.string.settings_scan_pattern),
+                selectedOption = patternLabel,
+                options = listOf(
+                    stringResource(R.string.settings_pattern_linear) to { viewModel.setDefaultScanPattern("linear") },
+                    stringResource(R.string.settings_pattern_row_by_row) to { viewModel.setDefaultScanPattern("row_column") }
                 )
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.settings_pattern_row_by_row), style = MaterialTheme.typography.bodyLarge) },
-                    onClick = { viewModel.setDefaultScanPattern("row_column"); expandedPattern = false }
-                )
-            }
+            )
         }
-    }
 
-    PreferenceCategory(stringResource(R.string.settings_category_advanced)) {
-        SettingsEditTextItem(
-            label = stringResource(R.string.settings_holding_time), 
-            value = holdingTime.toString(),
-            onValueChange = { viewModel.setHoldingTimeInput(it) }
-        )
-        SettingsEditTextItem(
-            label = stringResource(R.string.settings_bluetooth_delay), 
-            value = bluetoothDelay.toString(),
-            onValueChange = { viewModel.setBluetoothDelay(it) }
-        )
+        PreferenceCategory(stringResource(R.string.settings_category_advanced), modifier = Modifier.weight(1f)) {
+            SettingsEditTextItem(
+                label = stringResource(R.string.settings_holding_time), 
+                value = holdingTime.toString(),
+                onValueChange = { viewModel.setHoldingTimeInput(it) }
+            )
+            SettingsEditTextItem(
+                label = stringResource(R.string.settings_bluetooth_delay), 
+                value = bluetoothDelay.toString(),
+                onValueChange = { viewModel.setBluetoothDelay(it) }
+            )
+        }
     }
 }
