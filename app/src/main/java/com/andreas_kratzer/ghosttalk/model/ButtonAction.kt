@@ -26,7 +26,7 @@ data class SpeakTextButtonAction(
 @Serializable
 @SerialName("NavigateToPageButtonAction")
 data class NavigateToPageButtonAction(
-    val pageId: String
+    val pageId: String = ""
 ) : ButtonAction()
 
 /**
@@ -35,7 +35,7 @@ data class NavigateToPageButtonAction(
 @Serializable
 @SerialName("GeminiButtonAction")
 data class GeminiButtonAction(
-    val prompt: String
+    val prompt: String = ""
 ) : ButtonAction()
 
 /**
@@ -44,7 +44,7 @@ data class GeminiButtonAction(
 @Serializable
 @SerialName("GeminiSearchButtonAction")
 data class GeminiSearchButtonAction(
-    val prompt: String
+    val prompt: String = ""
 ) : ButtonAction()
 
 /**
@@ -53,7 +53,7 @@ data class GeminiSearchButtonAction(
 @Serializable
 @SerialName("GeminiNanoButtonAction")
 data class GeminiNanoButtonAction(
-    val intent: String
+    val intent: String = ""
 ) : ButtonAction()
 
 /**
@@ -62,7 +62,7 @@ data class GeminiNanoButtonAction(
 @Serializable
 @SerialName("FrequentActionButtonAction")
 data class FrequentActionButtonAction(
-    val rank: Int  // 1 = häufigste, 2 = zweithäufigste, ...
+    val rank: Int = 1 // 1 = häufigste, 2 = zweithäufigste, ...
 ) : ButtonAction()
 
 /**
@@ -80,7 +80,7 @@ data class SmartPredictionButtonAction(
 @Serializable
 @SerialName("ControlDeviceButtonAction")
 data class ControlDeviceButtonAction(
-    val actionType: DeviceActionType,
+    val actionType: DeviceActionType = DeviceActionType.READ_TIME,
     val volumeValue: String? = null,      // e.g. "50", "+10", "-5"
     val contactName: String? = null,      // Display name
     val contactPhone: String? = null,     // Phone number or ID
