@@ -8,7 +8,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -145,13 +146,14 @@ fun TemplateScreen(
                 singleLine = true
             )
 
-            LazyColumn(
-                state = listState,
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(minSize = 300.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
                     .padding(horizontal = dimensions.paddingLarge),
                 verticalArrangement = Arrangement.spacedBy(dimensions.gridSpacing),
+                horizontalArrangement = Arrangement.spacedBy(dimensions.gridSpacing),
                 contentPadding = PaddingValues(vertical = dimensions.paddingMedium)
             ) {
                 items(templates.size, key = { index -> templates[index].id }) { index ->

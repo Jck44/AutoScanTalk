@@ -8,6 +8,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,6 +18,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -136,24 +140,71 @@ fun SettingsScreen(
             )
         }
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .padding(padding)
-                .fillMaxSize()
-                .verticalScroll(scrollState)
-                .padding(horizontal = dimensions.paddingLarge, vertical = dimensions.paddingMedium)
-        ) {
-            if (selectedSection == null) {
-                // Main Menu
-                SettingsMainMenuList(
-                    isGlobal = isGlobal,
-                    onSectionSelect = { selectedSection = it }
-                )
+        if (selectedSection == null) {
+            // Main Menu as Adaptive Grid
+            val sections = SettingsSection.entries.filter { if (isGlobal) it.isGlobal else it.isScoped }
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(minSize = 300.dp),
+                modifier = Modifier
+                    .padding(padding)
+                    .fillMaxSize()
+                    .padding(horizontal = dimensions.paddingLarge, vertical = dimensions.paddingMedium),
+                verticalArrangement = Arrangement.spacedBy(dimensions.paddingSmall),
+                horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium),
+                contentPadding = PaddingValues(bottom = dimensions.paddingDoubleExtraLarge)
+            ) {
+                items(sections) { section ->
+                    Surface(
+                        onClick = { selectedSection = section },
+                        shape = MaterialTheme.shapes.large,
+                        color = MaterialTheme.colorScheme.surfaceContainerLow,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        ListItem(
+                            headlineContent = { 
+                                Text(
+                                    text = stringResource(section.titleRes),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Medium
+                                ) 
+                            },
+                            leadingContent = {
+                                Icon(
+                                    imageVector = section.icon,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            },
+                            trailingContent = {
+                                Icon(
+                                    imageVector = GhosTTalkIcons.ArrowForward,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            },
+                            colors = ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent)
+                        )
+                    }
+                }
                 
-                Spacer(modifier = Modifier.height(dimensions.paddingDoubleExtraLarge))
-                VersionInfo()
-            } else {
-                // Submenu Content
+                item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
+                    Column {
+                        Spacer(modifier = Modifier.height(dimensions.paddingDoubleExtraLarge))
+                        VersionInfo()
+                    }
+                }
+            }
+        } else {
+            // Submenu Content as Scrollable Column
+            Column(
+                modifier = Modifier
+                    .padding(padding)
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = dimensions.paddingLarge, vertical = dimensions.paddingMedium)
+            ) {
                 SubmenuContent(
                     selectedSection!!, 
                     viewModel,
@@ -169,50 +220,6 @@ fun SettingsScreen(
     }
 }
 
-@Composable
-fun SettingsMainMenuList(
-    isGlobal: Boolean,
-    onSectionSelect: (SettingsSection) -> Unit
-) {
-    val dimensions = LocalDimensions.current
-    Column(verticalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)) {
-        SettingsSection.entries.filter { if (isGlobal) it.isGlobal else it.isScoped }.forEach { section ->
-            Surface(
-                onClick = { onSectionSelect(section) },
-                shape = MaterialTheme.shapes.large,
-                color = MaterialTheme.colorScheme.surfaceContainerLow,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                ListItem(
-                    headlineContent = { 
-                        Text(
-                            text = stringResource(section.titleRes),
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Medium
-                        ) 
-                    },
-                    leadingContent = {
-                        Icon(
-                            imageVector = section.icon,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    },
-                    trailingContent = {
-                        Icon(
-                            imageVector = GhosTTalkIcons.ArrowForward,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                            modifier = Modifier.size(20.dp)
-                        )
-                    },
-                    colors = ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent)
-                )
-            }
-        }
-    }
-}
 
 @Composable
 fun SubmenuContent(
