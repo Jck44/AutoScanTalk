@@ -321,8 +321,6 @@
     <string name="date_format_pattern">dd.MM</string>
     <string name="time_format_pattern">HH:mm</string>
     <string name="contact_picker_title">Kontakt wählen</string>
-    <string name="contact_picker_search">Suchen</string>
-    <string name="contact_picker_cancel">Abbrechen</string>
     <string name="action_send_message">Nachricht senden</string>
     <string name="volume_media">Lautstärke Medien</string>
     <string name="volume_notification">Lautstärke Benachrichtigung</string>

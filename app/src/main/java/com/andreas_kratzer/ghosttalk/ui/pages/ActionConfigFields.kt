@@ -7,16 +7,11 @@ import android.content.pm.PackageManager
 import android.provider.ContactsContract
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -37,8 +32,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.model.DeviceActionType
@@ -365,8 +358,40 @@ fun MessagingFields(
     onMessageTextChange: (String) -> Unit
 ) {
     val dimensions = LocalDimensions.current
-    var showContactPicker by remember { mutableStateOf(false) }
     val context = LocalContext.current
+
+    val contactLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickContact()
+    ) { uri ->
+        uri?.let {
+            val projection = arrayOf(
+                ContactsContract.Contacts._ID,
+                ContactsContract.Contacts.DISPLAY_NAME_PRIMARY
+            )
+            context.contentResolver.query(it, projection, null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val id = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts._ID))
+                    val name = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME_PRIMARY))
+                    
+                    // Now get the first phone number for this contact
+                    context.contentResolver.query(
+                        ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                        arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER),
+                        "${ContactsContract.CommonDataKinds.Phone.CONTACT_ID} = ?",
+                        arrayOf(id),
+                        null
+                    )?.use { phoneCursor ->
+                        if (phoneCursor.moveToFirst()) {
+                            val phone = phoneCursor.getString(phoneCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER))
+                            onContactSelected(name, phone)
+                        } else {
+                            onContactSelected(name, "")
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     val smsPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -388,7 +413,7 @@ fun MessagingFields(
         OutlinedButton(
             onClick = { 
                 checkSmsPermission()
-                showContactPicker = true 
+                contactLauncher.launch(null)
             },
             modifier = Modifier.fillMaxWidth(),
             shape = MaterialTheme.shapes.medium
@@ -414,95 +439,4 @@ fun MessagingFields(
             }
         )
     }
-
-    if (showContactPicker) {
-        ContactPickerInApp(
-            onDismiss = { showContactPicker = false },
-            onContactSelected = { name, phone ->
-                onContactSelected(name, phone)
-                showContactPicker = false
-            }
-        )
-    }
-}
-
-data class SimpleContact(val name: String, val phone: String)
-
-@Composable
-fun ContactPickerInApp(
-    onDismiss: () -> Unit,
-    onContactSelected: (String, String) -> Unit
-) {
-    val context = LocalContext.current
-    var contacts by remember { mutableStateOf<List<SimpleContact>>(emptyList()) }
-    var searchQuery by remember { mutableStateOf("") }
-    var hasPermission by remember { mutableStateOf(
-        ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED
-    )}
-
-    val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        hasPermission = isGranted
-    }
-
-    LaunchedEffect(hasPermission) {
-        if (hasPermission) {
-            contacts = loadContacts(context)
-        } else {
-            permissionLauncher.launch(Manifest.permission.READ_CONTACTS)
-        }
-    }
-
-    val filtered = contacts.filter { it.name.contains(searchQuery, ignoreCase = true) || it.phone.contains(searchQuery) }
-
-    Dialog(onDismissRequest = onDismiss) {
-        androidx.compose.material3.Surface(
-            shape = MaterialTheme.shapes.extraLarge,
-            tonalElevation = 8.dp
-        ) {
-            Column(modifier = Modifier.padding(16.dp).fillMaxWidth().heightIn(max = 500.dp)) {
-                Text(stringResource(R.string.contact_picker_title), style = MaterialTheme.typography.headlineSmall)
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    label = { Text(stringResource(R.string.contact_picker_search)) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                LazyColumn(modifier = Modifier.weight(1f)) {
-                    items(filtered) { contact ->
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { onContactSelected(contact.name, contact.phone) }
-                                .padding(vertical = 12.dp)
-                        ) {
-                            Text(contact.name, style = MaterialTheme.typography.bodyLarge)
-                            Text(contact.phone, style = MaterialTheme.typography.bodySmall)
-                        }
-                    }
-                }
-                OutlinedButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.contact_picker_cancel))
-                }
-            }
-        }
-    }
-}
-
-private fun loadContacts(context: Context): List<SimpleContact> {
-    val list = mutableListOf<SimpleContact>()
-    val cursor = context.contentResolver.query(
-        ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-        arrayOf(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME, ContactsContract.CommonDataKinds.Phone.NUMBER),
-        null, null, null
-    )
-    cursor?.use {
-        val nameIdx = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
-        val phoneIdx = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
-        while (it.moveToNext()) {
-            list.add(SimpleContact(it.getString(nameIdx), it.getString(phoneIdx)))
-        }
-    }
-    return list.sortedBy { it.name }
 }
