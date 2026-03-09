@@ -3,7 +3,10 @@ package com.andreas_kratzer.ghosttalk.ui.settings.sections
 import android.content.Intent
 import android.provider.Settings
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -26,6 +29,7 @@ import com.andreas_kratzer.ghosttalk.ui.settings.PreferenceCategory
 import com.andreas_kratzer.ghosttalk.ui.settings.SettingsViewModel
 import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun NotificationSettingsSection(viewModel: SettingsViewModel) {
     val isEnabled by viewModel.isNotificationReadingEnabled.collectAsState(false)
@@ -37,62 +41,69 @@ fun NotificationSettingsSection(viewModel: SettingsViewModel) {
     val enabledListeners = NotificationManagerCompat.getEnabledListenerPackages(context)
     val hasPermission = enabledListeners.contains(packageName)
 
-    PreferenceCategory(stringResource(R.string.settings_category_notifications)) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.clickable { 
-                if (hasPermission) {
-                    viewModel.setNotificationReadingEnabled(!isEnabled)
-                } else {
-                    context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
-                }
-            }.padding(vertical = dimensions.paddingSmall)
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(R.string.settings_notifications_enable),
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Text(
-                    text = stringResource(R.string.settings_notifications_enable_desc),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            if (hasPermission) {
-                Switch(checked = isEnabled, onCheckedChange = { viewModel.setNotificationReadingEnabled(it) })
-            } else {
-                TextButton(
-                    onClick = { context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) },
-                    shape = MaterialTheme.shapes.medium
-                ) {
-                    Text(stringResource(R.string.settings_notifications_permission_button))
-                }
-            }
-        }
-
-        if (isEnabled && hasPermission) {
-            HorizontalDivider(modifier = Modifier.padding(vertical = dimensions.paddingMedium))
-            val apps = listOf(
-                "com.whatsapp" to "WhatsApp",
-                "org.thoughtcrime.securesms" to "Signal",
-                "org.telegram.messenger" to "Telegram",
-                "com.google.android.apps.messaging" to "Messages"
-            )
-
-            apps.forEach { (pkg, name) ->
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth().clickable {
-                        viewModel.toggleMonitoredNotificationApp(pkg, !monitoredApps.contains(pkg))
-                    }.padding(vertical = dimensions.paddingSmall)
-                ) {
+    FlowRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium),
+        verticalArrangement = Arrangement.spacedBy(dimensions.paddingMedium),
+        maxItemsInEachRow = 2
+    ) {
+        PreferenceCategory(stringResource(R.string.settings_category_notifications), modifier = Modifier.weight(1f)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.clickable { 
+                    if (hasPermission) {
+                        viewModel.setNotificationReadingEnabled(!isEnabled)
+                    } else {
+                        context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                    }
+                }.padding(vertical = dimensions.paddingSmall)
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = name, 
-                        modifier = Modifier.weight(1f),
+                        text = stringResource(R.string.settings_notifications_enable),
                         style = MaterialTheme.typography.bodyMedium
                     )
-                    Checkbox(checked = monitoredApps.contains(pkg), onCheckedChange = { viewModel.toggleMonitoredNotificationApp(pkg, it) })
+                    Text(
+                        text = stringResource(R.string.settings_notifications_enable_desc),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                if (hasPermission) {
+                    Switch(checked = isEnabled, onCheckedChange = { viewModel.setNotificationReadingEnabled(it) })
+                } else {
+                    TextButton(
+                        onClick = { context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) },
+                        shape = MaterialTheme.shapes.medium
+                    ) {
+                        Text(stringResource(R.string.settings_notifications_permission_button))
+                    }
+                }
+            }
+
+            if (isEnabled && hasPermission) {
+                HorizontalDivider(modifier = Modifier.padding(vertical = dimensions.paddingMedium))
+                val apps = listOf(
+                    "com.whatsapp" to "WhatsApp",
+                    "org.thoughtcrime.securesms" to "Signal",
+                    "org.telegram.messenger" to "Telegram",
+                    "com.google.android.apps.messaging" to "Messages"
+                )
+
+                apps.forEach { (pkg, name) ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth().clickable {
+                            viewModel.toggleMonitoredNotificationApp(pkg, !monitoredApps.contains(pkg))
+                        }.padding(vertical = dimensions.paddingSmall)
+                    ) {
+                        Text(
+                            text = name, 
+                            modifier = Modifier.weight(1f),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Checkbox(checked = monitoredApps.contains(pkg), onCheckedChange = { viewModel.toggleMonitoredNotificationApp(pkg, it) })
+                    }
                 }
             }
         }

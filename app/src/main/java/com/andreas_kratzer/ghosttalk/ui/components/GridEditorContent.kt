@@ -4,10 +4,11 @@ import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -22,7 +23,6 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
@@ -38,7 +38,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -46,6 +45,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.model.GridItem
 import com.andreas_kratzer.ghosttalk.model.Page
@@ -58,7 +58,7 @@ import com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions
 import com.andreas_kratzer.ghosttalk.ui.util.GridUtils
 import java.util.UUID
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun GridEditorContent(
     item: GridItem,
@@ -90,13 +90,17 @@ fun GridEditorContent(
             .padding(if (isLandscape) dimensions.paddingMedium else dimensions.paddingLarge),
         horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
     ) {
-        // Grid Size Controls
-        Row(
+        // Adaptive Controls (Rows, Columns, Scan Pattern)
+        FlowRow(
             modifier = Modifier.fillMaxWidth().padding(bottom = dimensions.paddingLarge),
             horizontalArrangement = Arrangement.spacedBy(dimensions.paddingExtraLarge),
-            verticalAlignment = Alignment.CenterVertically
+            verticalArrangement = Arrangement.spacedBy(dimensions.paddingMedium),
+            maxItemsInEachRow = 3
         ) {
-            Column(modifier = Modifier.weight(1f)) {
+            val controlModifier = Modifier.weight(1f).widthIn(min = 250.dp)
+
+            // Rows Slider
+            Column(modifier = controlModifier) {
                 val rowsLabel = stringResource(R.string.page_rows_field) + ": ${item.rows}"
                 Text(
                     text = rowsLabel,
@@ -119,7 +123,9 @@ fun GridEditorContent(
                     steps = 5
                 )
             }
-            Column(modifier = Modifier.weight(1f)) {
+
+            // Columns Slider
+            Column(modifier = controlModifier) {
                 val colsLabel = stringResource(R.string.page_cols_field) + ": ${item.columns}"
                 Text(
                     text = colsLabel,
@@ -142,50 +148,50 @@ fun GridEditorContent(
                     steps = 5
                 )
             }
-        }
 
-        // Scan Pattern Dropdown
-        var expandedPattern by remember { mutableStateOf(false) }
-        val options = listOf(
-            null to stringResource(R.string.page_pattern_default),
-            "linear" to stringResource(R.string.settings_pattern_linear),
-            "row_by_row" to stringResource(R.string.settings_pattern_row_by_row)
-        )
-        val currentPatternLabel = options.find { it.first == item.scanPattern }?.second ?: stringResource(R.string.page_pattern_default)
-
-        ExposedDropdownMenuBox(
-            expanded = expandedPattern,
-            onExpandedChange = { expandedPattern = !expandedPattern },
-            modifier = Modifier.fillMaxWidth().padding(bottom = dimensions.paddingLarge)
-        ) {
-            OutlinedTextField(
-                value = currentPatternLabel,
-                onValueChange = {},
-                readOnly = true,
-                label = { Text(stringResource(R.string.page_scan_pattern_override)) },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedPattern) },
-                colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
-                shape = MaterialTheme.shapes.large,
-                modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
+            // Scan Pattern Dropdown
+            var expandedPattern by remember { mutableStateOf(false) }
+            val options = listOf(
+                null to stringResource(R.string.page_pattern_default),
+                "linear" to stringResource(R.string.settings_pattern_linear),
+                "row_by_row" to stringResource(R.string.settings_pattern_row_by_row)
             )
-            ExposedDropdownMenu(
+            val currentPatternLabel = options.find { it.first == item.scanPattern }?.second ?: stringResource(R.string.page_pattern_default)
+
+            ExposedDropdownMenuBox(
                 expanded = expandedPattern,
-                onDismissRequest = { expandedPattern = false }
+                onExpandedChange = { expandedPattern = !expandedPattern },
+                modifier = controlModifier
             ) {
-                options.forEach { (pattern, label) ->
-                    DropdownMenuItem(
-                        text = { Text(label, style = MaterialTheme.typography.bodyLarge) },
-                        onClick = {
-                            actions.updateGridSettings(
-                                itemId = item.id,
-                                newName = item.name,
-                                newScanPattern = pattern,
-                                newRowNames = item.rowNames
-                            )
-                            expandedPattern = false
-                        },
-                        contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
-                    )
+                OutlinedTextField(
+                    value = currentPatternLabel,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text(stringResource(R.string.page_scan_pattern_override)) },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedPattern) },
+                    colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                    shape = MaterialTheme.shapes.large,
+                    modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
+                )
+                ExposedDropdownMenu(
+                    expanded = expandedPattern,
+                    onDismissRequest = { expandedPattern = false }
+                ) {
+                    options.forEach { (pattern, label) ->
+                        DropdownMenuItem(
+                            text = { Text(label, style = MaterialTheme.typography.bodyLarge) },
+                            onClick = {
+                                actions.updateGridSettings(
+                                    itemId = item.id,
+                                    newName = item.name,
+                                    newScanPattern = pattern,
+                                    newRowNames = item.rowNames
+                                )
+                                expandedPattern = false
+                            },
+                            contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                        )
+                    }
                 }
             }
         }
@@ -196,7 +202,10 @@ fun GridEditorContent(
         val rowTargetIndex = rowReorderState.findTargetIndexForGrid(gridState)
         val buttonTargetIndex = buttonReorderState.findTargetButtonIndex(gridState, item.columns, effectiveScanPattern == "row_by_row", density)
 
-        val totalMinWidth = dimensions.minButtonWidth * item.columns + (dimensions.gridSpacing * (item.columns - 1))
+        val configuration = LocalConfiguration.current
+        val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        val minButtonWidth = if( isLandscape) (dimensions.minButtonWidth.value * 1.8).dp else dimensions.minButtonWidth
+        val totalMinWidth = minButtonWidth * item.columns + (dimensions.gridSpacing * (item.columns - 1))
 
         LazyVerticalGrid(
             columns = GridCells.Fixed(item.columns),

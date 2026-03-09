@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -17,6 +18,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -28,6 +30,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.core.SecurityManager
+import com.andreas_kratzer.ghosttalk.ui.components.SecurityEntryDialog
 import com.andreas_kratzer.ghosttalk.ui.settings.PreferenceCategory
 import com.andreas_kratzer.ghosttalk.ui.settings.SettingsClickableItem
 import com.andreas_kratzer.ghosttalk.ui.settings.SettingsToggleItem
@@ -39,6 +43,7 @@ import kotlinx.coroutines.delay
 fun SecuritySettingsSection(
     securityPin: String?,
     onSecurityPinChange: (String) -> Unit,
+    onClearSecurityPin: () -> Unit,
     securityPinTimeoutMinutes: Long,
     onSecurityPinTimeoutChange: (Long) -> Unit,
     isPinRequiredForDeletion: Boolean,
@@ -51,9 +56,11 @@ fun SecuritySettingsSection(
     onSecurityRequiredForSettingsChange: (Boolean) -> Unit,
     onLockClicked: () -> Unit,
     isPinRequired: Boolean,
-    onPinRequiredChange: (Boolean) -> Unit
+    onPinRequiredChange: (Boolean) -> Unit,
+    securityManager: SecurityManager
 ) {
-    var showPinDialog by remember { mutableStateOf(false) }
+    var showSetPinDialog by remember { mutableStateOf(false) }
+    var showConfirmClearDialog by remember { mutableStateOf(false) }
 
     val hasPin = !securityPin.isNullOrEmpty()
     val dimensions = LocalDimensions.current
@@ -68,22 +75,49 @@ fun SecuritySettingsSection(
             SettingsToggleItem(
                 label = stringResource(R.string.settings_security_require_pin),
                 checked = isPinRequired,
-                onCheckedChange = { onPinRequiredChange(it) }
+                onCheckedChange = { 
+                    if (!it) {
+                        if (hasPin) {
+                            showConfirmClearDialog = true
+                        } else {
+                            onClearSecurityPin()
+                        }
+                    } else {
+                        showSetPinDialog = true
+                    }
+                }
             )
 
             if (isPinRequired) {
-                SettingsClickableItem(
-                    label = stringResource(R.string.settings_security_pin_label),
-                    value = if (securityPin.isNullOrEmpty())
-                        stringResource(R.string.settings_security_pin_inactive)
-                    else
-                        "**** (${stringResource(R.string.settings_security_pin_active)})",
-                    onClick = { showPinDialog = true }
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(modifier = Modifier.weight(1f)) {
+                        SettingsClickableItem(
+                            label = stringResource(R.string.settings_security_pin_label),
+                            value = if (securityPin.isNullOrEmpty())
+                                stringResource(R.string.settings_security_pin_inactive)
+                            else
+                                "**** (${stringResource(R.string.settings_security_pin_active)})",
+                            onClick = { showSetPinDialog = true }
+                        )
+                    }
+                    if (hasPin) {
+                        TextButton(
+                            onClick = { showConfirmClearDialog = true },
+                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                        ) {
+                            Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.padding(end = 4.dp).width(18.dp))
+                            Text(stringResource(R.string.action_delete))
+                        }
+                    }
+                }
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth().padding(vertical = dimensions.paddingSmall)
                 ) {
                     Text(
                         text = stringResource(R.string.settings_security_pin_timeout),
@@ -154,14 +188,28 @@ fun SecuritySettingsSection(
         }
     }
 
-    if (showPinDialog) {
+    if (showSetPinDialog) {
         com.andreas_kratzer.ghosttalk.ui.components.PinEntryDialog(
             title = stringResource(R.string.settings_security_set_pin_title),
-            onDismiss = { showPinDialog = false },
+            onDismiss = { showSetPinDialog = false },
             onConfirm = { pin ->
                 onSecurityPinChange(pin)
-                showPinDialog = false
+                showSetPinDialog = false
             }
+        )
+    }
+
+    if (showConfirmClearDialog) {
+        SecurityEntryDialog(
+            onDismiss = { showConfirmClearDialog = false },
+            onConfirm = { success ->
+                if (success) {
+                    onClearSecurityPin()
+                    showConfirmClearDialog = false
+                }
+            },
+            securityManager = securityManager,
+            isBiometricEnabled = isBiometricEnabled
         )
     }
 }

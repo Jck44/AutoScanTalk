@@ -257,6 +257,7 @@ fun SubmenuContent(
             SecuritySettingsSection(
                 securityPin = pin,
                 onSecurityPinChange = viewModel::setSecurityPin,
+                onClearSecurityPin = viewModel::clearSecurityPin,
                 securityPinTimeoutMinutes = timeout,
                 onSecurityPinTimeoutChange = viewModel::setSecurityPinTimeoutMinutes,
                 isPinRequiredForDeletion = reqDeletion,
@@ -269,7 +270,8 @@ fun SubmenuContent(
                 onSecurityRequiredForSettingsChange = viewModel::setSecurityRequiredForSettings,
                 onLockClicked = onLockClicked,
                 isPinRequired = !pin.isNullOrEmpty(),
-                onPinRequiredChange = { /* Placeholder */ }
+                onPinRequiredChange = { /* Handled within SecuritySettingsSection via onClearSecurityPin and onSecurityPinChange */ },
+                securityManager = viewModel.securityManager
             )
         }
         SettingsSection.CLOUD -> {

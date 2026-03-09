@@ -112,6 +112,11 @@ class SecurityManager @Inject constructor(
         return !settingsRepository.securityPin.isNullOrEmpty()
     }
     
+    fun clearPin() {
+        settingsRepository.securityPin = ""
+        lock()
+    }
+
     fun isSecurityRequiredForDeletion(): Boolean {
         return settingsRepository.isPinRequiredForDeletion && isPinSet()
     }

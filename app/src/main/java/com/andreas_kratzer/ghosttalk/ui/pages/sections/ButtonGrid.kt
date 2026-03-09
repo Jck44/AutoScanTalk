@@ -1,8 +1,8 @@
 package com.andreas_kratzer.ghosttalk.ui.pages.sections
 
+import android.content.res.Configuration
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,6 +13,8 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.ui.pages.GridButton
 import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
@@ -34,7 +36,10 @@ fun ButtonGrid(
             .horizontalScroll(rememberScrollState()),
         contentAlignment = androidx.compose.ui.Alignment.TopCenter
     ) {
-        val totalMinWidth = dimensions.minButtonWidth * page.columns + (dimensions.gridSpacing * (page.columns - 1))
+        val configuration = LocalConfiguration.current
+        val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        val minButtonWidth = if( isLandscape) (dimensions.minButtonWidth.value * 1.8).dp else dimensions.minButtonWidth
+        val totalMinWidth = minButtonWidth * page.columns + (dimensions.gridSpacing * (page.columns - 1))
         
         LazyVerticalGrid(
             columns = GridCells.Fixed(page.columns),

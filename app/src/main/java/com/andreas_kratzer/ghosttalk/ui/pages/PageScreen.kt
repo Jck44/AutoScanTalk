@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -117,7 +118,8 @@ fun PageScreen(
             Row(
                 modifier = modifier
                     .padding(paddingValues)
-                    .padding(dimensions.paddingLarge)
+                    .padding(horizontal = dimensions.paddingLarge)
+                    .padding(bottom = dimensions.paddingLarge)
                     .fillMaxSize(),
                 horizontalArrangement = Arrangement.spacedBy(dimensions.paddingLarge)
             ) {
@@ -134,7 +136,9 @@ fun PageScreen(
                 Column(
                     modifier = Modifier
                         .weight(0.3f)
-                        .verticalScroll(rememberScrollState())
+                        .fillMaxHeight()
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.Bottom
                 ) {
                     if (showTestButtons) {
                         ControlButtons(
@@ -145,14 +149,18 @@ fun PageScreen(
                         )
                         Spacer(modifier = Modifier.height(dimensions.paddingLarge))
                     }
-                    ActionLogCard(lastActions) { pageViewModel.clearActionLogs() }
+                    ActionLogCard(
+                        lastActions = lastActions,
+                        onClearLogs = { pageViewModel.clearActionLogs() }
+                    )
                 }
             }
         } else {
             Column(
                 modifier = modifier
                     .padding(paddingValues)
-                    .padding(dimensions.paddingLarge)
+                    .padding(horizontal = dimensions.paddingLarge)
+                    .padding(bottom = dimensions.paddingLarge)
                     .fillMaxSize()
             ) {
                 Box(modifier = Modifier.weight(1f)) {
@@ -174,7 +182,10 @@ fun PageScreen(
                     )
                     Spacer(modifier = Modifier.height(dimensions.paddingLarge))
                 }
-                ActionLogCard(lastActions) { pageViewModel.clearActionLogs() }
+                ActionLogCard(
+                    lastActions = lastActions,
+                    onClearLogs = { pageViewModel.clearActionLogs() }
+                )
             }
         }
     }

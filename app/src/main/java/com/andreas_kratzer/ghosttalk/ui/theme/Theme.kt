@@ -2,7 +2,6 @@ package com.andreas_kratzer.ghosttalk.ui.theme
 
 import android.content.res.Configuration
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
@@ -15,7 +14,6 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 
@@ -76,7 +74,7 @@ fun GhosTTalkTheme(
     
     // Base font size on the smaller dimension to keep it stable across orientations
     val minDimension = minOf(screenWidth, screenHeight)
-    val buttonFontSize = (minDimension / 30).sp 
+    val buttonFontSize = (minDimension / 40).sp
     
     // Use wider buttons in landscape to save vertical space
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE

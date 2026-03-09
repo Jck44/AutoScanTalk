@@ -28,7 +28,7 @@ class SettingsViewModel @Inject constructor(
     application: Application,
     private val settingsRepository: SettingsRepository,
     private val buttonUsageRepository: ButtonUsageRepository,
-    private val securityManager: SecurityManager,
+    val securityManager: SecurityManager,
     getPagesUseCase: GetPagesUseCase,
     val ttsDelegate: TtsSettingsDelegate,
     val scanningDelegate: ScanningSettingsDelegate,
@@ -230,6 +230,10 @@ class SettingsViewModel @Inject constructor(
 
     fun setSecurityPin(pin: String) {
         settingsRepository.securityPin = pin
+    }
+
+    fun clearSecurityPin() {
+        securityManager.clearPin()
     }
 
     fun setSecurityPinTimeoutMinutes(minutes: Long) {
