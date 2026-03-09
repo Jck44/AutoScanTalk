@@ -57,6 +57,7 @@ fun ButtonConfigDialog(
     buttonId: String,
     featureGuard: com.andreas_kratzer.ghosttalk.domain.settings.FeatureGuard,
     templates: List<com.andreas_kratzer.ghosttalk.model.PageTemplate>,
+    isTesting: Boolean = false,
     onDismiss: () -> Unit,
     onSave: (ButtonConfig?) -> Unit,
     onTest: ((ButtonConfig) -> Unit)? = null,
@@ -201,6 +202,23 @@ fun ButtonConfigDialog(
                 ttsMode = resolvedTtsMode
             )
             else -> SpeakTextButtonAction(ttsMode = resolvedTtsMode)
+        }
+    }
+
+    val testStartedToast = stringResource(R.string.button_test_started)
+    val testFinishedToast = stringResource(R.string.button_test_finished)
+
+    // Since LaunchedEffect(isTesting) will also trigger on initial composition (false), 
+    // and we only want to show "Finished" when it transitions from true to false, 
+    // we need to track the previous state.
+    var wasTesting by remember { mutableStateOf(false) }
+    androidx.compose.runtime.LaunchedEffect(isTesting) {
+        if (isTesting) {
+            android.widget.Toast.makeText(context, testStartedToast, android.widget.Toast.LENGTH_SHORT).show()
+            wasTesting = true
+        } else if (wasTesting) {
+            android.widget.Toast.makeText(context, testFinishedToast, android.widget.Toast.LENGTH_SHORT).show()
+            wasTesting = false
         }
     }
 
@@ -467,6 +485,7 @@ fun ButtonConfigDialog(
             Row(horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium)) {
                 if (onTest != null) {
                     Button(
+                        enabled = !isTesting,
                         onClick = {
                             if (label.isNotBlank()) {
                                 val action = buildButtonAction()
@@ -499,6 +518,7 @@ fun ButtonConfigDialog(
                 }
                 
                 Button(
+                    enabled = !isTesting,
                     onClick = {
                         if (label.isNotBlank()) {
                             val action = buildButtonAction()
@@ -547,6 +567,7 @@ fun ButtonConfigDialog(
         },
         dismissButton = {
             Button(
+                enabled = !isTesting,
                 onClick = { onSave(null) },
                 shape = MaterialTheme.shapes.medium,
                 colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)

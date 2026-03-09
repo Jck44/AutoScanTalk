@@ -35,6 +35,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -373,6 +374,7 @@ fun GridEditorContent(
             val editingIndex = selectedButtonIndex!!
             val currentConfig = item.buttonConfigs.getOrNull(editingIndex)
             val buttonId = currentConfig?.id ?: UUID.randomUUID().toString()
+            val isExecuting by actions.isExecuting.collectAsStateWithLifecycle()
 
             ButtonConfigDialog(
                 initialConfig = currentConfig,
@@ -380,6 +382,7 @@ fun GridEditorContent(
                 availablePages = availablePages,
                 featureGuard = featureGuard,
                 templates = templates,
+                isTesting = isExecuting,
                 onDismiss = {
                     showDialog = false
                     selectedButtonIndex = null

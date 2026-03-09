@@ -137,6 +137,8 @@
     <string name="error_book_name_required">Bitte geben Sie einen Namen für das Buch ein.</string>
     <string name="error_page_name_required">Bitte geben Sie einen Namen für die Seite ein.</string>
     <string name="error_button_label_required">Bitte geben Sie eine Aufschrift für den Button ein.</string>
+    <string name="button_test_started">Test gestartet</string>
+    <string name="button_test_finished">Test beendet</string>
 
 
     <!-- Page List Screen -->

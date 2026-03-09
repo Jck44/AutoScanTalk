@@ -243,6 +243,8 @@ class PageViewModel @Inject constructor(
         updatePageSettings(itemId, newName, newScanPattern, newRowNames, newRows, newColumns)
     }
 
+    override val isExecuting: StateFlow<Boolean> = actionExecutor.isExecuting
+
     override fun executeButtonAction(config: com.andreas_kratzer.ghosttalk.model.ButtonConfig) {
         actionExecutor.executeButtonAction(config)
     }

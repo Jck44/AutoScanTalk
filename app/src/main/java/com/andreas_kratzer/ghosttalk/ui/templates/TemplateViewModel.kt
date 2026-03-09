@@ -13,8 +13,8 @@ import com.andreas_kratzer.ghosttalk.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.ui.util.filterAndSort
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
@@ -168,6 +168,8 @@ class TemplateViewModel @Inject constructor(
         // Not directly supported by TemplateViewModel, but interface requires it.
         // In the UI, PageViewModel is passed to handle this.
     }
+
+    override val isExecuting: StateFlow<Boolean> = MutableStateFlow(false)
 
     override fun executeButtonAction(config: ButtonConfig) {
         // Not directly supported by TemplateViewModel
