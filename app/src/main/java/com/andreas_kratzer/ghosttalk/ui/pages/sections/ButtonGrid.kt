@@ -35,22 +35,32 @@ fun ButtonGrid(
         val configuration = LocalConfiguration.current
         val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
         
-        // Calculate available space from constraints
-        val availableWidth = maxWidth - (dimensions.paddingMedium * 2)
-        val availableHeight = maxHeight - (dimensions.paddingMedium * 2)
+        // Calculate available space from constraints with a small safety margin for rounding
+        val availableWidth = maxWidth - (dimensions.paddingMedium * 2) - 1.dp
+        val availableHeight = maxHeight - (dimensions.paddingMedium * 2) - 1.dp
         
-        // Calculate size to fit columns
+        // Calculate size to fit columns and rows independently
         val buttonWidthToFit = (availableWidth - (dimensions.gridSpacing * (page.columns - 1))) / page.columns
-        // Calculate size to fit rows
         val buttonHeightToFit = (availableHeight - (dimensions.gridSpacing * (page.rows - 1))) / page.rows
         
-        // Optimal size is the minimum of both to ensure it fits in the available area
-        // We cap the maximum size (e.g. 140dp) so small grids don't over-expand
-        val maxButtonSize = 140.dp
-        val optimalSize = minOf(buttonWidthToFit, buttonHeightToFit).coerceIn(dimensions.minButtonWidth, maxButtonSize)
+        // Use a larger max size for tablets (180dp)
+        val maxButtonSize = 180.dp
         
-        val totalWidth = (optimalSize * page.columns) + (dimensions.gridSpacing * (page.columns - 1))
-        val totalHeight = (optimalSize * page.rows) + (dimensions.gridSpacing * (page.rows - 1))
+        // Calculate optimal width and height
+        var optimalWidth = buttonWidthToFit.coerceIn(dimensions.minButtonWidth, maxButtonSize)
+        var optimalHeight = buttonHeightToFit.coerceIn(dimensions.minButtonWidth, maxButtonSize)
+        
+        // Cap aspect ratio to prevent extreme stretching (max 1.5:1 or 1:1.5)
+        val maxRatio = 1.5f
+        if (optimalWidth > optimalHeight * maxRatio) {
+            optimalWidth = optimalHeight * maxRatio
+        } else if (optimalHeight > optimalWidth * maxRatio) {
+            optimalHeight = optimalWidth * maxRatio
+        }
+        
+        // Total size must include the contentPadding of the LazyVerticalGrid
+        val totalWidth = (optimalWidth * page.columns) + (dimensions.gridSpacing * (page.columns - 1)) + (dimensions.paddingMedium * 2)
+        val totalHeight = (optimalHeight * page.rows) + (dimensions.gridSpacing * (page.rows - 1)) + (dimensions.paddingMedium * 2)
 
         LazyVerticalGrid(
             columns = GridCells.Fixed(page.columns),
@@ -98,10 +108,13 @@ fun ButtonGrid(
                         isFocused = isFocused,
                         isRowFocused = isRowFocused,
                         isEditorMode = false,
-                        onClick = { pageViewModel.activateButtonAtIndex(globalIndex) }
+                        onClick = { pageViewModel.activateButtonAtIndex(globalIndex) },
+                        modifier = Modifier.width(optimalWidth).height(optimalHeight)
                     )
                 } else {
-                    androidx.compose.foundation.layout.Spacer(modifier = Modifier.fillMaxSize())
+                    androidx.compose.foundation.layout.Spacer(
+                        modifier = Modifier.width(optimalWidth).height(optimalHeight)
+                    )
                 }
             }
         }

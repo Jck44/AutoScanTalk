@@ -31,14 +31,14 @@ fun GridButton(
     isRowFocused: Boolean = false,
     isEditorMode: Boolean = false,
     overrideLabel: String? = null,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
     val dimensions = LocalDimensions.current
     val isActive = buttonConfig?.isActive ?: true
     
     Card(
-        modifier = Modifier
-            .aspectRatio(dimensions.buttonAspectRatio)
+        modifier = modifier
             .clickable(onClick = onClick)
             .alpha(if (isEditorMode && !isActive) 0.5f else 1f),
         shape = MaterialTheme.shapes.medium,

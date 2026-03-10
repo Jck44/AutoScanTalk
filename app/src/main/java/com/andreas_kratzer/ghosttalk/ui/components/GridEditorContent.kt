@@ -6,6 +6,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -45,6 +46,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -77,6 +79,7 @@ fun GridEditorContent(
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     val density = LocalDensity.current.density
+    val focusManager = LocalFocusManager.current
 
     var selectedButtonIndex by remember { mutableStateOf<Int?>(null) }
     var showDialog by remember { mutableStateOf(false) }
@@ -107,7 +110,7 @@ fun GridEditorContent(
 
             LaunchedEffect(localRows, localCols) {
                 if (localRows != item.rows || localCols != item.columns) {
-                    delay(100)
+                    delay(50)
                     actions.updateGridSettings(
                         itemId = item.id,
                         newName = item.name,
@@ -193,6 +196,7 @@ fun GridEditorContent(
                                     newScanPattern = pattern,
                                     newRowNames = item.rowNames
                                 )
+                                focusManager.clearFocus()
                                 expandedPattern = false
                             },
                             contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
@@ -208,22 +212,49 @@ fun GridEditorContent(
         val rowTargetIndex = rowReorderState.findTargetIndexForGrid(gridState)
         val buttonTargetIndex = buttonReorderState.findTargetButtonIndex(gridState, item.columns, effectiveScanPattern == "row_by_row", density)
 
-        val configuration = LocalConfiguration.current
-        val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-        val minButtonWidth = if( isLandscape) (dimensions.minButtonWidth.value * 1.8).dp else dimensions.minButtonWidth
-        val totalMinWidth = minButtonWidth * item.columns + (dimensions.gridSpacing * (item.columns - 1))
-
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(item.columns),
-            state = gridState,
-            modifier = Modifier
-                .widthIn(max = dimensions.baseMaxButtonWidth * item.columns)
-                .width(totalMinWidth)
-                .weight(1f),
-            contentPadding = PaddingValues(dimensions.paddingMedium),
-            verticalArrangement = Arrangement.spacedBy(dimensions.gridSpacing),
-            horizontalArrangement = Arrangement.spacedBy(dimensions.gridSpacing)
+        BoxWithConstraints(
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+            contentAlignment = Alignment.TopCenter
         ) {
+            val isRowByRow = effectiveScanPattern == "row_by_row"
+            
+            // Subtract extra width if row handles are present (approx 48dp handle + padding/borders)
+            val rowHandleWidth = if (isRowByRow) 64.dp else 0.dp
+            
+            // Subtract a small safety margin (2dp) to prevent sub-pixel rounding issues causing scrollbars
+            val availableWidth = maxWidth - (dimensions.paddingMedium * 2) - 2.dp - rowHandleWidth
+            val availableHeight = maxHeight - (dimensions.paddingMedium * 2) - 2.dp
+
+            val buttonWidthToFit = (availableWidth - (dimensions.gridSpacing * (item.columns - 1))) / item.columns
+            // When in row-by-row mode, each row has a Row wrapper with its own padding/border (approx 16dp total height offset per row)
+            val heightOffsetPerRow = if (isRowByRow) 16.dp else 0.dp
+            val buttonHeightToFit = ((availableHeight - (dimensions.gridSpacing * (item.rows - 1))) / item.rows) - heightOffsetPerRow
+
+            val maxButtonSize = 180.dp
+            var optimalWidth = buttonWidthToFit.coerceIn(dimensions.minButtonWidth, maxButtonSize)
+            var optimalHeight = buttonHeightToFit.coerceIn(dimensions.minButtonWidth, maxButtonSize)
+
+            val maxRatio = 1.5f
+            if (optimalWidth > optimalHeight * maxRatio) {
+                optimalWidth = optimalHeight * maxRatio
+            } else if (optimalHeight > optimalWidth * maxRatio) {
+                optimalHeight = optimalWidth * maxRatio
+            }
+
+            // The container width and height must include the contentPadding and row handles
+            val totalWidth = (optimalWidth * item.columns) + (dimensions.gridSpacing * (item.columns - 1)) + (dimensions.paddingMedium * 2) + rowHandleWidth
+            val totalHeight = ((optimalHeight + heightOffsetPerRow) * item.rows) + (dimensions.gridSpacing * (item.rows - 1)) + (dimensions.paddingMedium * 2)
+
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(item.columns),
+                state = gridState,
+                modifier = Modifier
+                    .width(totalWidth)
+                    .height(totalHeight),
+                contentPadding = PaddingValues(dimensions.paddingMedium),
+                verticalArrangement = Arrangement.spacedBy(dimensions.gridSpacing),
+                horizontalArrangement = Arrangement.spacedBy(dimensions.gridSpacing)
+            ) {
             val totalRows = item.rows
             val numCols = item.columns
 
@@ -322,7 +353,8 @@ fun GridEditorContent(
                                             onClick = {
                                                 selectedButtonIndex = globalIndex
                                                 showDialog = true
-                                            }
+                                            },
+                                            modifier = Modifier.width(optimalWidth).height(optimalHeight)
                                         )
                                     }
                                 }
@@ -367,7 +399,8 @@ fun GridEditorContent(
                                     onClick = {
                                         selectedButtonIndex = globalIndex
                                         showDialog = true
-                                    }
+                                    },
+                                    modifier = Modifier.width(optimalWidth).height(optimalHeight)
                                 )
                             }
                         }
@@ -375,8 +408,9 @@ fun GridEditorContent(
                 }
             }
         }
+    }
 
-        val currentRowIndex = editingRowIndex
+    val currentRowIndex = editingRowIndex
         if (showRowEditDialog && currentRowIndex != null) {
             RowEditDialog(
                 initialName = item.rowNames.getOrNull(currentRowIndex) ?: rowDefaultLabelTemplate.format(currentRowIndex + 1),
