@@ -1,7 +1,7 @@
 package com.andreas_kratzer.ghosttalk.model
 
-import java.util.UUID
 import kotlinx.serialization.Serializable
+import java.util.UUID
 
 /**
  * Configuration for a single button in the grid.

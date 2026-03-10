@@ -2,10 +2,8 @@ package com.andreas_kratzer.ghosttalk.model
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.andreas_kratzer.ghosttalk.ui.util.ListableItem
-import java.util.UUID
-
 import kotlinx.serialization.Serializable
+import java.util.UUID
 
 @Entity(tableName = "templates")
 @Serializable

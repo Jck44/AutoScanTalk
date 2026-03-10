@@ -6,7 +6,6 @@ import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
-import org.junit.Ignore
 import org.junit.Test
 import kotlin.system.measureTimeMillis
 

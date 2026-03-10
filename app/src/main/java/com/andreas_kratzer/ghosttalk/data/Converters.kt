@@ -4,17 +4,7 @@ import androidx.room.TypeConverter
 import com.andreas_kratzer.ghosttalk.model.AuditoryCue
 import com.andreas_kratzer.ghosttalk.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction
-import com.andreas_kratzer.ghosttalk.model.GeminiButtonAction
-import com.andreas_kratzer.ghosttalk.model.GeminiNanoButtonAction
-import com.andreas_kratzer.ghosttalk.model.GeminiSearchButtonAction
-import com.andreas_kratzer.ghosttalk.model.ControlDeviceButtonAction
-import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
-import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
-import com.andreas_kratzer.ghosttalk.model.WeatherButtonAction
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.decodeFromString
 
 class Converters {
     private val json = Json {

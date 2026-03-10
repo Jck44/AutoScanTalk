@@ -1,9 +1,6 @@
 package com.andreas_kratzer.ghosttalk.ui.settings
 
 import android.content.res.Configuration
-import androidx.compose.ui.platform.LocalConfiguration
-import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
-
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -11,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import com.andreas_kratzer.ghosttalk.ui.theme.GhosTTalkIcons
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -21,10 +17,12 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.ui.components.GhostTalkCard
+import com.andreas_kratzer.ghosttalk.ui.theme.GhosTTalkIcons
 import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 
 @OptIn(ExperimentalMaterial3Api::class)

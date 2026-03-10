@@ -6,7 +6,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.res.stringResource
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.ui.settings.PreferenceCategory
-import com.andreas_kratzer.ghosttalk.ui.settings.SettingsToggleItem
 import com.andreas_kratzer.ghosttalk.ui.settings.SettingsEditTextItem
 import com.andreas_kratzer.ghosttalk.ui.settings.SettingsViewModel
 

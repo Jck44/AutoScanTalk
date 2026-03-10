@@ -1,7 +1,7 @@
 package com.andreas_kratzer.ghosttalk.model
 
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
 /**
  * Represents an auditory cue that is associated with a button

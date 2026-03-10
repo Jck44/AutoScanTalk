@@ -1,11 +1,8 @@
 package com.andreas_kratzer.ghosttalk.model
 
 import androidx.room.Entity
-import androidx.room.PrimaryKey
-import com.andreas_kratzer.ghosttalk.ui.util.ListableItem
-
 import androidx.room.Ignore
-import com.andreas_kratzer.ghosttalk.ui.util.GridUtils
+import androidx.room.PrimaryKey
 
 @Entity(tableName = "pages")
 data class Page(

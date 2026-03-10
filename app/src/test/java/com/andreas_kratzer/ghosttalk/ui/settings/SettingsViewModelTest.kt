@@ -2,6 +2,7 @@ package com.andreas_kratzer.ghosttalk.ui.settings
 
 import android.app.Application
 import com.andreas_kratzer.ghosttalk.core.SecurityManager
+import com.andreas_kratzer.ghosttalk.core.pages.PageImportExportManager
 import com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.domain.pages.GetPagesUseCase
@@ -10,7 +11,6 @@ import com.andreas_kratzer.ghosttalk.ui.settings.delegates.ExperimentalSettingsD
 import com.andreas_kratzer.ghosttalk.ui.settings.delegates.GenAiSettingsDelegate
 import com.andreas_kratzer.ghosttalk.ui.settings.delegates.ScanningSettingsDelegate
 import com.andreas_kratzer.ghosttalk.ui.settings.delegates.TtsSettingsDelegate
-import com.andreas_kratzer.ghosttalk.core.pages.PageImportExportManager
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify

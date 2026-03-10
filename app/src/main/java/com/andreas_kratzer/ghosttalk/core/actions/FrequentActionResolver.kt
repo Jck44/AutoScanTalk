@@ -7,9 +7,8 @@ import com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction
 import com.andreas_kratzer.ghosttalk.model.Page
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import javax.inject.Inject
-
 import kotlinx.serialization.json.Json
+import javax.inject.Inject
 
 /**
  * Resolves [FrequentActionButtonAction]s dynamically at runtime into their concrete actions

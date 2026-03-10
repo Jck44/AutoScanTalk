@@ -1,7 +1,10 @@
 package com.andreas_kratzer.ghosttalk.domain.executors
 
 import com.andreas_kratzer.ghosttalk.core.util.Logger
-import io.mockk.*
+import io.mockk.coEvery
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.spyk
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test

@@ -1,29 +1,33 @@
 package com.andreas_kratzer.ghosttalk.data
 
 import android.content.Context
+import android.util.Log
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
-import com.andreas_kratzer.ghosttalk.model.Book
-import com.andreas_kratzer.ghosttalk.model.ButtonUsageStat
-import com.andreas_kratzer.ghosttalk.model.Page
-import com.andreas_kratzer.ghosttalk.model.PageTemplate
-import com.andreas_kratzer.ghosttalk.model.ButtonAction
+import com.andreas_kratzer.ghosttalk.data.entities.ButtonEntity
 import com.andreas_kratzer.ghosttalk.model.AuditoryCue
+import com.andreas_kratzer.ghosttalk.model.Book
+import com.andreas_kratzer.ghosttalk.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
-import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
+import com.andreas_kratzer.ghosttalk.model.ButtonUsageStat
 import com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction
 import com.andreas_kratzer.ghosttalk.model.GeminiButtonAction
+import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
+import com.andreas_kratzer.ghosttalk.model.Page
+import com.andreas_kratzer.ghosttalk.model.PageTemplate
+import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.boolean
+import kotlinx.serialization.json.int
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonPrimitive
 import java.util.UUID
-import kotlinx.serialization.json.*
-import kotlinx.serialization.encodeToString
-import android.util.Log
-
-import com.andreas_kratzer.ghosttalk.data.entities.ButtonEntity
 
 @Database(entities = [Page::class, Book::class, ButtonUsageStat::class, PageTemplate::class, ButtonEntity::class], version = 11, exportSchema = false)
 @TypeConverters(Converters::class)

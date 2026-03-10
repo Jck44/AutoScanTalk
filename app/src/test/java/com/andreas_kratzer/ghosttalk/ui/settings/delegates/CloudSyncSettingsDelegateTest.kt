@@ -2,6 +2,7 @@ package com.andreas_kratzer.ghosttalk.ui.settings.delegates
 
 import android.app.Activity
 import android.app.Application
+import android.widget.Toast
 import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
 import com.andreas_kratzer.ghosttalk.domain.auth.CloudSyncUseCase
 import com.andreas_kratzer.ghosttalk.domain.auth.PerformManualSyncUseCase
@@ -14,16 +15,14 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkStatic
-import io.mockk.verify
-import android.widget.Toast
 import io.mockk.unmockkStatic
-import org.junit.After
+import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 

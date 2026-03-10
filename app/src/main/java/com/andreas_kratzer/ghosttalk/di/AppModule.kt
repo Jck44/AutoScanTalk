@@ -4,6 +4,7 @@ import android.content.Context
 import com.andreas_kratzer.ghosttalk.data.AppDatabase
 import com.andreas_kratzer.ghosttalk.data.BookDao
 import com.andreas_kratzer.ghosttalk.data.BookRepository
+import com.andreas_kratzer.ghosttalk.data.ButtonDao
 import com.andreas_kratzer.ghosttalk.data.ButtonUsageDao
 import com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.data.PageDao
@@ -11,7 +12,6 @@ import com.andreas_kratzer.ghosttalk.data.PageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.data.TemplateDao
 import com.andreas_kratzer.ghosttalk.data.TemplateRepository
-import com.andreas_kratzer.ghosttalk.data.ButtonDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

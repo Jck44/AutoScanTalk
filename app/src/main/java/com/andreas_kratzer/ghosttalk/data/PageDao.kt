@@ -5,11 +5,10 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import com.andreas_kratzer.ghosttalk.model.Page
-import kotlinx.coroutines.flow.Flow
-
 import androidx.room.Transaction
 import com.andreas_kratzer.ghosttalk.data.entities.PageWithButtons
+import com.andreas_kratzer.ghosttalk.model.Page
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 @Dao

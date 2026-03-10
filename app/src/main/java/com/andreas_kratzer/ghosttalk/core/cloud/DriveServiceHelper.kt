@@ -9,7 +9,6 @@ import com.google.api.services.drive.model.FileList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.FileOutputStream
-import java.io.IOException
 
 class DriveServiceHelper(private val driveService: Drive) {
 

@@ -6,7 +6,6 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.andreas_kratzer.ghosttalk.model.AuditoryCue
 import com.andreas_kratzer.ghosttalk.model.ButtonAction
-import com.andreas_kratzer.ghosttalk.model.Page
 
 @Entity(
     tableName = "buttons",

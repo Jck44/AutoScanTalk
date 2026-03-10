@@ -29,7 +29,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -55,6 +54,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -62,12 +62,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.CloudSettingsSection
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.io.BufferedReader
-import java.io.InputStreamReader
-import java.io.OutputStreamWriter
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.ExperimentalSettingsSection
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.GenAiSettingsSection
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.GeneralSettingsSection
@@ -80,7 +74,13 @@ import com.andreas_kratzer.ghosttalk.ui.settings.sections.TestSettingsSection
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.VoiceSettingsSection
 import com.andreas_kratzer.ghosttalk.ui.theme.GhosTTalkIcons
 import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import java.io.OutputStreamWriter
 
 enum class SettingsSection(val titleRes: Int, val icon: ImageVector, val isGlobal: Boolean, val isScoped: Boolean) {
     GENERAL(R.string.settings_category_general, Icons.Default.Settings, isGlobal = true, isScoped = true),

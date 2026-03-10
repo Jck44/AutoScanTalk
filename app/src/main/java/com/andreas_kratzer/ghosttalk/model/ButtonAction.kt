@@ -1,7 +1,7 @@
 package com.andreas_kratzer.ghosttalk.model
 
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
 /**
  * Represents an action that can be executed when a button is triggered.

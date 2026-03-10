@@ -1,16 +1,13 @@
 package com.andreas_kratzer.ghosttalk.data
 
-import com.andreas_kratzer.ghosttalk.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.ButtonUsageStat
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import javax.inject.Inject
-
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.encodeToString
+import javax.inject.Inject
 
 /**
  * Repository for tracking button usage statistics per book.

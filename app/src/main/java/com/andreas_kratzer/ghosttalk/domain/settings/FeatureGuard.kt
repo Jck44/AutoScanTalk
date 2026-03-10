@@ -3,11 +3,11 @@ package com.andreas_kratzer.ghosttalk.domain.settings
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.model.ControlDeviceButtonAction
+import com.andreas_kratzer.ghosttalk.model.DeviceActionType
 import com.andreas_kratzer.ghosttalk.model.GeminiButtonAction
 import com.andreas_kratzer.ghosttalk.model.GeminiNanoButtonAction
 import com.andreas_kratzer.ghosttalk.model.GeminiSearchButtonAction
-import com.andreas_kratzer.ghosttalk.model.ControlDeviceButtonAction
-import com.andreas_kratzer.ghosttalk.model.DeviceActionType
 import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
 import javax.inject.Inject
 import javax.inject.Singleton

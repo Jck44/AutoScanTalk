@@ -1,5 +1,6 @@
 package com.andreas_kratzer.ghosttalk.ui.pages
 
+import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -22,8 +23,6 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
-import android.content.res.Configuration
-import com.andreas_kratzer.ghosttalk.ui.theme.GhosTTalkIcons
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -56,8 +55,7 @@ import com.andreas_kratzer.ghosttalk.domain.pages.UsageLocation
 import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.model.SortOrder
 import com.andreas_kratzer.ghosttalk.ui.components.GhostTalkCard
-import com.andreas_kratzer.ghosttalk.ui.components.rememberReorderableState
-import com.andreas_kratzer.ghosttalk.ui.components.reorderableItem
+import com.andreas_kratzer.ghosttalk.ui.theme.GhosTTalkIcons
 import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
