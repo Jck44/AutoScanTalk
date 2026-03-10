@@ -85,7 +85,7 @@ abstract class BaseSettingsRepository(
         var value: String?
             get() = if (isScoped) getStringScoped(key, default) else prefs.getString(key, default)
             set(v) {
-                if (isScoped) putStringScoped(key, v) else prefs.edit().putString(key, v).apply()
+                if (isScoped) putStringScoped(key, v) else prefs.edit { putString(key, v) }
                 _flow.value = v
             }
 
@@ -103,7 +103,7 @@ abstract class BaseSettingsRepository(
         var value: String
             get() = (if (isScoped) getStringScoped(key, default) else prefs.getString(key, default)) ?: default
             set(v) {
-                if (isScoped) putStringScoped(key, v) else prefs.edit().putString(key, v).apply()
+                if (isScoped) putStringScoped(key, v) else prefs.edit { putString(key, v) }
                 _flow.value = v
             }
 
@@ -121,7 +121,7 @@ abstract class BaseSettingsRepository(
         var value: Boolean
             get() = if (isScoped) getBooleanScoped(key, default) else prefs.getBoolean(key, default)
             set(v) {
-                if (isScoped) putBooleanScoped(key, v) else prefs.edit().putBoolean(key, v).apply()
+                if (isScoped) putBooleanScoped(key, v) else prefs.edit { putBoolean(key, v) }
                 _flow.value = v
             }
 
@@ -139,7 +139,7 @@ abstract class BaseSettingsRepository(
         var value: Long
             get() = if (isScoped) getLongScoped(key, default) else prefs.getLong(key, default)
             set(v) {
-                if (isScoped) putLongScoped(key, v) else prefs.edit().putLong(key, v).apply()
+                if (isScoped) putLongScoped(key, v) else prefs.edit { putLong(key, v) }
                 _flow.value = v
             }
 
@@ -159,7 +159,12 @@ abstract class BaseSettingsRepository(
             get() = if (isScoped) getFloatScoped(key, default) else prefs.getFloat(key, default)
             set(v) {
                 val coerced = coerce?.invoke(v) ?: v
-                if (isScoped) putFloatScoped(key, coerced) else prefs.edit().putFloat(key, coerced).apply()
+                if (isScoped) putFloatScoped(key, coerced) else prefs.edit {
+                    putFloat(
+                        key,
+                        coerced
+                    )
+                }
                 _flow.value = coerced
             }
 
@@ -177,7 +182,7 @@ abstract class BaseSettingsRepository(
         var value: Set<String>
             get() = (if (isScoped) getStringSetScoped(key, default) else prefs.getStringSet(key, default)) ?: default
             set(v) {
-                if (isScoped) putStringSetScoped(key, v) else prefs.edit().putStringSet(key, v).apply()
+                if (isScoped) putStringSetScoped(key, v) else prefs.edit { putStringSet(key, v) }
                 _flow.value = v
             }
 
