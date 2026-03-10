@@ -31,7 +31,7 @@
 -keep,allowobfuscation,allowoptimization @kotlinx.serialization.Serializable class * {
     <fields>;
 }
--keepclassmembers class * {
+-keepclassmembers class com.andreas_kratzer.ghosttalk.** {
     @kotlinx.serialization.SerialName <fields>;
 }
 # Keep the serializer object for @Serializable classes

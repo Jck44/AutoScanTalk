@@ -14,10 +14,6 @@ class TemplateRepository @Inject constructor(
     private val settingsRepository: SettingsRepository
 ) {
 
-    fun getAllTemplatesFlow(): Flow<List<PageTemplate>> {
-        return templateDao.getAllTemplatesFlow()
-    }
-
     fun getAllTemplates(): Flow<List<PageTemplate>> {
         return templateDao.getAllTemplatesFlow()
     }
@@ -105,10 +101,10 @@ class TemplateRepository @Inject constructor(
 
     suspend fun duplicateTemplate(templateId: String, duplicateSuffix: String): String? {
         val original = getById(templateId) ?: return null
-        val newId = java.util.UUID.randomUUID().toString()
+        val newId = UUID.randomUUID().toString()
         
         val newButtonConfigs = original.buttonConfigs.map { config ->
-            config?.copy(id = java.util.UUID.randomUUID().toString())
+            config?.copy(id = UUID.randomUUID().toString())
         }
         
         val newTemplate = original.copy(

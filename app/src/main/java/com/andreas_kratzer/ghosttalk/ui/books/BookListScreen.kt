@@ -2,6 +2,7 @@ package com.andreas_kratzer.ghosttalk.ui.books
 
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -65,7 +66,6 @@ fun BookListScreen(
     onBookSelected: (String) -> Unit,
     onNavigateToGlobalSettings: () -> Unit
 ) {
-    val context = LocalContext.current
     val allBooks by bookViewModel.allBooks.collectAsState()
     
     var showAddDialog by remember { mutableStateOf(false) }
@@ -106,16 +106,18 @@ fun BookListScreen(
             }
         }
     ) { paddingValues ->
-        val configuration = LocalConfiguration.current
-        val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-        val dynamicCardHeight = (configuration.screenHeightDp * if (isLandscape) 0.18f else 0.12f).dp.coerceIn(90.dp, 140.dp)
+        BoxWithConstraints(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(paddingValues)
+            .padding(horizontal = dimensions.paddingLarge)
+    ) {
+        val isLandscape = maxWidth > maxHeight
+        val dynamicCardHeight = (maxHeight * if (isLandscape) 0.18f else 0.12f).coerceIn(90.dp, 140.dp)
 
         LazyVerticalGrid(
             columns = GridCells.Adaptive(minSize = 300.dp),
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = dimensions.paddingLarge),
+            modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(dimensions.gridSpacing),
             horizontalArrangement = Arrangement.spacedBy(dimensions.gridSpacing),
             contentPadding = PaddingValues(vertical = dimensions.paddingMedium)
@@ -385,6 +387,7 @@ fun BookListScreen(
                     }
                 )
             }
+        }
         }
     }
 }

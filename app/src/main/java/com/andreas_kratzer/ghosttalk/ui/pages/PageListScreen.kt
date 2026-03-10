@@ -5,6 +5,7 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -111,29 +112,6 @@ fun PageListScreen(
         }
     }
 
-    val exportLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("application/json")
-    ) { uri ->
-        uri?.let {
-            coroutineScope.launch {
-                try {
-                    val jsonContent = pageViewModel.exportToJson()
-                    withContext(Dispatchers.IO) {
-                        context.contentResolver.openOutputStream(it)?.use { outputStream ->
-                            val writer = OutputStreamWriter(outputStream)
-                            writer.write(jsonContent)
-                            writer.close()
-                        }
-                    }
-                    android.widget.Toast.makeText(context, exportSuccessMsg, android.widget.Toast.LENGTH_SHORT).show()
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                    android.widget.Toast.makeText(context, exportErrorMsgTemplate.format(e.message), android.widget.Toast.LENGTH_LONG).show()
-                }
-            }
-        }
-    }
-
     val gridState = androidx.compose.foundation.lazy.grid.rememberLazyGridState()
 
     BackHandler {
@@ -213,7 +191,13 @@ fun PageListScreen(
             }
         }
     ) { paddingValues ->
-        val dynamicCardHeight = (LocalConfiguration.current.screenHeightDp * if (LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE) 0.18f else 0.12f).dp.coerceIn(90.dp, 140.dp)
+        BoxWithConstraints(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(paddingValues)
+    ) {
+        val isLandscape = maxWidth > maxHeight
+        val dynamicCardHeight = (maxHeight * if (isLandscape) 0.18f else 0.12f).coerceIn(90.dp, 140.dp)
 
         Column(
             modifier = Modifier
@@ -403,5 +387,6 @@ fun PageListScreen(
                 }
             }
         )
+        }
     }
 }

@@ -27,7 +27,6 @@ data class RemoteBackupInfo(
 
 class CloudSyncUseCase @Inject constructor(
     @param:ApplicationContext private val context: Context,
-    private val settingsRepository: SettingsRepository,
     private val bookRepository: com.andreas_kratzer.ghosttalk.data.BookRepository,
     private val importExportManager: PageImportExportManager,
     private val logger: Logger
@@ -94,7 +93,7 @@ class CloudSyncUseCase @Inject constructor(
         val localLastModified = book.updatedAt // Use database timestamp, not file system
         logger.d(TAG, "Local updatedAt: $localLastModified")
 
-        var success = true
+        var success: Boolean
 
         if (remoteFile == null) {
             logger.d(TAG, "Step 4a: Remote file does not exist.")

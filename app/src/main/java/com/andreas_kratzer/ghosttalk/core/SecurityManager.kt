@@ -23,18 +23,7 @@ class SecurityManager @Inject constructor(
     private val _isUnlocked = MutableStateFlow(false)
     val isUnlocked: StateFlow<Boolean> = _isUnlocked.asStateFlow()
 
-    private val scope = CoroutineScope(Dispatchers.Main)
-
-    /**
-     * A flow that emits true if the app is currently unlocked.
-     */
-    val isGlobalUnlocked: StateFlow<Boolean> = _isUnlocked.asStateFlow()
-
     private var lastActivityTime: Long = 0
-
-    fun isUnlocked(): Boolean {
-        return _isUnlocked.value
-    }
 
     fun authenticateBiometric(
         activity: FragmentActivity,
@@ -116,20 +105,6 @@ class SecurityManager @Inject constructor(
         return Base64.encodeToString(salt, Base64.DEFAULT).trim()
     }
 
-    fun updatePin(newPin: String) {
-        if (newPin.isEmpty()) {
-            settingsRepository.securityPin = ""
-            settingsRepository.securityPinHash = ""
-            settingsRepository.securityPinSalt = ""
-        } else {
-            val salt = generateSalt()
-            val hash = hashPin(newPin, salt)
-            settingsRepository.securityPinHash = hash
-            settingsRepository.securityPinSalt = salt
-            // Clear legacy pin
-            settingsRepository.securityPin = ""
-        }
-    }
 
     fun setUnlocked(unlocked: Boolean) {
         if (unlocked) updateActivity()

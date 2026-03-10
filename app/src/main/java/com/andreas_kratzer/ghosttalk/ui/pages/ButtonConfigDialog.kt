@@ -582,7 +582,6 @@ fun ButtonConfigDialog(
     if (showHiddenPrompt != null) {
         val promptData = showHiddenPrompt!!
         MoveHiddenPromptDialog(
-            targetPageName = promptData.targetPage.name,
             requiredRows = if (promptData.requiredRows > promptData.targetPage.rows) promptData.requiredRows else 0,
             requiredCols = if (promptData.requiredCols > promptData.targetPage.columns) promptData.requiredCols else 0,
             onConfirm = {

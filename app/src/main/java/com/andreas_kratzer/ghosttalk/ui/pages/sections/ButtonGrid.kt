@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
@@ -24,17 +25,13 @@ fun ButtonGrid(
     page: Page,
     focusedButtonIndex: Int?,
     focusedRowIndex: Int?,
-    smartPredictions: List<String>?,
     pageViewModel: PageViewModel
 ) {
     val dimensions = LocalDimensions.current
     BoxWithConstraints(
         modifier = Modifier.fillMaxSize(),
-        contentAlignment = androidx.compose.ui.Alignment.TopCenter
+        contentAlignment = Alignment.TopCenter
     ) {
-        val configuration = LocalConfiguration.current
-        val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-        
         // Calculate available space from constraints with a small safety margin for rounding
         val availableWidth = maxWidth - (dimensions.paddingMedium * 2) - 1.dp
         val availableHeight = maxHeight - (dimensions.paddingMedium * 2) - 1.dp

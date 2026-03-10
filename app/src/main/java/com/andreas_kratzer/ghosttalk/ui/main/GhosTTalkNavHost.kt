@@ -48,7 +48,6 @@ fun GhosTTalkNavHost(
 ) {
     val isUnlocked by securityManager.isUnlocked.collectAsState()
     var pendingRoute by remember { mutableStateOf<String?>(null) }
-    var pinErrorMessage by remember { mutableStateOf<String?>(null) }
 
     val navigateWithSecurity: (String) -> Unit = { route ->
         val isProtected = when {

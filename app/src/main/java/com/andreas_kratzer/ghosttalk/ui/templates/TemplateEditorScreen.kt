@@ -48,9 +48,6 @@ fun TemplateEditorScreen(
     val template = templates.find { it.id == templateId }
     val dimensions = LocalDimensions.current
 
-    var selectedButtonIndex by remember { mutableStateOf<Int?>(null) }
-    var showDialog by remember { mutableStateOf(false) }
-
     if (template == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text(stringResource(R.string.template_loading))

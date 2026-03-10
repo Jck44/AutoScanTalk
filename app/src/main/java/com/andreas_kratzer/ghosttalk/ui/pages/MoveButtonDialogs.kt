@@ -90,13 +90,11 @@ fun TargetPageSelectionDialog(
 
 @Composable
 fun MoveHiddenPromptDialog(
-    targetPageName: String,
     requiredRows: Int,
     requiredCols: Int,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    val dimensions = LocalDimensions.current
     
     val info = when {
         requiredRows > 0 && requiredCols > 0 -> stringResource(R.string.button_move_hidden_prompt_add_both)

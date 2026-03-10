@@ -53,9 +53,6 @@ fun CloudSettingsSection(
     val availableBackups by viewModel.availableBackups.collectAsState()
     val showBackupSelectionDialog by viewModel.showBackupSelectionDialog.collectAsState()
     
-    // We use a local state to track if the dialog was triggered by "Import" (Global) or "Restore" (Scoped)
-    var showImportSelectionDialog by remember { mutableStateOf(false) }
-
     val dimensions = LocalDimensions.current
     val dateFormat = remember { SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()) }
 

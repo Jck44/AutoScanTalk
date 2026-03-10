@@ -80,6 +80,7 @@ fun GridEditorContent(
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     val density = LocalDensity.current.density
     val focusManager = LocalFocusManager.current
+    val isExecuting by actions.isExecuting.collectAsStateWithLifecycle()
 
     var selectedButtonIndex by remember { mutableStateOf<Int?>(null) }
     var showDialog by remember { mutableStateOf(false) }
@@ -94,7 +95,7 @@ fun GridEditorContent(
         modifier = Modifier
             .padding(paddingValues)
             .padding(if (isLandscape) dimensions.paddingMedium else dimensions.paddingLarge),
-        horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // Adaptive Controls (Rows, Columns, Scan Pattern)
         FlowRow(
@@ -411,9 +412,9 @@ fun GridEditorContent(
     }
 
     val currentRowIndex = editingRowIndex
-        if (showRowEditDialog && currentRowIndex != null) {
-            RowEditDialog(
-                initialName = item.rowNames.getOrNull(currentRowIndex) ?: rowDefaultLabelTemplate.format(currentRowIndex + 1),
+    if (showRowEditDialog && currentRowIndex != null) {
+        RowEditDialog(
+            initialName = item.rowNames.getOrNull(currentRowIndex) ?: rowDefaultLabelTemplate.format(currentRowIndex + 1),
                 onDismiss = {
                     showRowEditDialog = false
                     editingRowIndex = null
@@ -426,17 +427,15 @@ fun GridEditorContent(
             )
         }
 
-        val currentEditingIndex = selectedButtonIndex
-        if (showDialog && currentEditingIndex != null) {
-            val currentConfig = item.buttonConfigs.getOrNull(currentEditingIndex)
-            val buttonId = currentConfig?.id ?: UUID.randomUUID().toString()
-            val isExecuting by actions.isExecuting.collectAsStateWithLifecycle()
-
-            ButtonConfigDialog(
-                initialConfig = currentConfig,
-                currentPageId = item.id,
-                buttonId = buttonId,
-                availablePages = availablePages,
+    val currentEditingIndex = selectedButtonIndex
+    if (showDialog && currentEditingIndex != null) {
+        val buttonConfig = item.buttonConfigs.getOrNull(currentEditingIndex)
+        val buttonId = "page_button_${item.id}_${currentEditingIndex}"
+        ButtonConfigDialog(
+            initialConfig = buttonConfig ?: com.andreas_kratzer.ghosttalk.model.ButtonConfig(),
+            currentPageId = item.id,
+            buttonId = buttonId,
+            availablePages = availablePages,
                 featureGuard = featureGuard,
                 templates = templates,
                 isTesting = isExecuting,

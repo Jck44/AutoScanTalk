@@ -3,6 +3,7 @@ package com.andreas_kratzer.ghosttalk.ui.main
 import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
@@ -80,14 +81,20 @@ fun StartScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
         ) {
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(dimensions.paddingLarge, Alignment.CenterHorizontally),
-                verticalArrangement = Arrangement.spacedBy(vSpacing),
-                maxItemsInEachRow = if (isLandscape) 3 else 1
+            BoxWithConstraints(
+                modifier = Modifier.fillMaxWidth()
             ) {
-                val cardModifier = if (isLandscape) Modifier.weight(1f) else Modifier.fillMaxWidth()
-                val dynamicCardHeight = (configuration.screenHeightDp * if (isLandscape) 0.2f else 0.12f).dp.coerceIn(90.dp, 140.dp)
+                val isLandscape = maxWidth > maxHeight
+                val vSpacing = dimensions.paddingLarge
+                val dynamicCardHeight = (maxHeight * if (isLandscape) 0.2f else 0.12f).coerceIn(90.dp, 140.dp)
+                
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(dimensions.paddingLarge, Alignment.CenterHorizontally),
+                    verticalArrangement = Arrangement.spacedBy(vSpacing),
+                    maxItemsInEachRow = if (isLandscape) 3 else 1
+                ) {
+                    val cardModifier = if (isLandscape) Modifier.weight(1f) else Modifier.fillMaxWidth()
 
                 GhostTalkCard(
                     title = stringResource(R.string.start_user_mode),
@@ -121,4 +128,5 @@ fun StartScreen(
             }
         }
     }
+}
 }

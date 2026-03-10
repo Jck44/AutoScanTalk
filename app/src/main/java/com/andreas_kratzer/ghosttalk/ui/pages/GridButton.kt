@@ -26,11 +26,11 @@ import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 @Composable
 fun GridButton(
     buttonConfig: ButtonConfig?,
+    modifier: Modifier = Modifier,
     isFocused: Boolean = false,
     isRowFocused: Boolean = false,
     isEditorMode: Boolean = false,
     overrideLabel: String? = null,
-    modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
     val dimensions = LocalDimensions.current

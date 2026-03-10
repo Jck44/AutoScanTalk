@@ -3,6 +3,7 @@ package com.andreas_kratzer.ghosttalk.ui.settings
 import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -53,18 +54,20 @@ fun ContentManagementScreen(
             )
         }
     ) { paddingValues ->
-        val configuration = LocalConfiguration.current
-        val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-        val dynamicCardHeight = (configuration.screenHeightDp * if (isLandscape) 0.18f else 0.12f).dp.coerceIn(90.dp, 140.dp)
-
-        Column(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(dimensions.paddingLarge),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(dimensions.paddingLarge)
+                .padding(dimensions.paddingLarge)
         ) {
+            val isLandscape = maxWidth > maxHeight
+            val dynamicCardHeight = (maxHeight * if (isLandscape) 0.18f else 0.12f).coerceIn(90.dp, 140.dp)
+
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(dimensions.paddingLarge)
+            ) {
             GhostTalkCard(
                 title = stringResource(R.string.page_list_title),
                 icon = GhosTTalkIcons.Description,
@@ -80,4 +83,5 @@ fun ContentManagementScreen(
             )
         }
     }
+}
 }
