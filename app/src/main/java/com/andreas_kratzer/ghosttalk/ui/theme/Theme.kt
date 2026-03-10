@@ -16,6 +16,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.DpSize
 
 private val DarkColorScheme = darkColorScheme(
     primary = PrimaryDark,
@@ -61,6 +64,7 @@ private val LightColorScheme = lightColorScheme(
     surfaceContainerHighest = SurfaceContainerHighestLight,
 )
 
+
 @Composable
 fun GhosTTalkTheme(
     themeMode: String = "SYSTEM",
@@ -69,17 +73,7 @@ fun GhosTTalkTheme(
     content: @Composable () -> Unit
 ) {
     val configuration = LocalConfiguration.current
-    val screenWidth = configuration.screenWidthDp
-    val screenHeight = configuration.screenHeightDp
     
-    // Base font size on the smaller dimension to keep it stable across orientations
-    val minDimension = minOf(screenWidth, screenHeight)
-    val buttonFontSize = (minDimension / 40).sp
-    
-    // Use wider buttons in landscape to save vertical space
-    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-    val buttonAspectRatio = if (isLandscape) 1.6f else 1.0f
-
     val darkTheme = when (themeMode) {
         "LIGHT" -> false
         "DARK" -> true
@@ -106,19 +100,32 @@ fun GhosTTalkTheme(
         }
     }
 
-    val dimensions = Dimensions()
+    BoxWithConstraints {
+        val screenWidth = maxWidth
+        val screenHeight = maxHeight
+        
+        // Base font size on the smaller dimension to keep it stable across orientations
+        val minDimension = minOf(screenWidth, screenHeight)
+        val buttonFontSize = (minDimension.value / 40).sp
+        
+        // Use wider buttons in landscape to save vertical space
+        val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        val buttonAspectRatio = if (isLandscape) 1.6f else 1.0f
 
-    CompositionLocalProvider(
-        LocalDimensions provides dimensions.copy(
-            buttonFontSize = buttonFontSize,
-            buttonAspectRatio = buttonAspectRatio
-        )
-    ) {
-        MaterialTheme(
-            colorScheme = colorScheme,
-            typography = Typography,
-            shapes = Shapes,
-            content = content
-        )
+        val dimensions = Dimensions()
+
+        CompositionLocalProvider(
+            LocalDimensions provides dimensions.copy(
+                buttonFontSize = buttonFontSize,
+                buttonAspectRatio = buttonAspectRatio
+            )
+        ) {
+            MaterialTheme(
+                colorScheme = colorScheme,
+                typography = Typography,
+                shapes = Shapes,
+                content = content
+            )
+        }
     }
 }

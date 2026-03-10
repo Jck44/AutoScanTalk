@@ -6,20 +6,14 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
 import android.widget.Toast
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
 import com.andreas_kratzer.ghosttalk.domain.auth.PerformManualSyncUseCase
+import com.andreas_kratzer.ghosttalk.domain.auth.RemoteBackupInfo
 import com.andreas_kratzer.ghosttalk.domain.auth.SetCloudSyncEnabledUseCase
 import com.andreas_kratzer.ghosttalk.domain.auth.SignInUseCase
 import com.andreas_kratzer.ghosttalk.domain.auth.SignOutUseCase
-import com.andreas_kratzer.ghosttalk.domain.auth.RemoteBackupInfo
 import com.andreas_kratzer.ghosttalk.domain.auth.SyncMode
-import com.google.api.services.drive.Drive
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -107,9 +101,6 @@ class CloudSyncSettingsDelegate @Inject constructor(
                 is PerformManualSyncUseCase.Result.Error -> {
                     val errorMsg = application.getString(R.string.settings_cloud_sync_error, result.message)
                     Toast.makeText(application, errorMsg, Toast.LENGTH_LONG).show()
-                }
-                else -> {
-                    // NoMatchingBackupFound is no longer expected here as it's handled as an Error
                 }
             }
             _isSyncing.value = false

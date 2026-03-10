@@ -1,6 +1,5 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">GhostTalk</string>
-    <string name="settings_title">Einstellungen</string>
     <string name="settings_title_global">App Einstellungen</string>
     <string name="settings_title_book">Buch Einstellungen</string>
     <string name="back_button_content_description">Zurück</string>
@@ -13,9 +12,6 @@
     <string name="settings_pattern_linear">Button für Button</string>
     <string name="settings_pattern_row_by_row">Zeilenweise</string>
     <string name="settings_app_language">App-Sprache (Menüs &amp; UI)</string>
-    <string name="settings_app_language_system">System-Standard</string>
-    <string name="settings_app_language_de">Deutsch</string>
-    <string name="settings_app_language_en">Englisch</string>
     <string name="settings_theme_mode">App-Design (Hell/Dunkel)</string>
     <string name="settings_theme_system">System-Standard</string>
     <string name="settings_theme_light">Hell</string>
@@ -32,7 +28,6 @@
     <string name="settings_system_default">System-Standard</string>
     <string name="settings_select_voice">Stimme wählen</string>
     <string name="settings_voice_default">Standard</string>
-    <string name="settings_voice_network_hint"> (HQ/Online)</string>
     <string name="settings_voice_local_hint"> (Lokal)</string>
     <string name="voice_format_pattern">Stimme %1$d (%2$s)</string>
     <string name="voice_gender_male">Männlich</string>
@@ -41,10 +36,7 @@
     <string name="voice_quality_very_high">Sehr hohe Qualität</string>
     <string name="voice_quality_normal">Normale Qualität</string>
     <string name="voice_quality_low">Geringe Qualität</string>
-    <string name="settings_tts_volume">Sprach-Lautstärke (TTS): %1$d%%</string>
-    <string name="settings_cues_volume">Hinweis-Lautstärke (Audio): %1$d%%</string>
     
-    <string name="settings_category_audio">Audio-Ausgabe</string>
     <string name="settings_audio_tts">Ausgabe: Laut Sprechen</string>
     <string name="settings_audio_cues">Ausgabe: Audio-Hinweis</string>
     <string name="settings_audio_default">System-Standard (Automatisch)</string>
@@ -53,26 +45,17 @@
     <string name="settings_category_scanning">Scannen &amp; Bedienung</string>
     <string name="settings_auto_scan">Auto-Scan beim Start</string>
     <string name="settings_restart_scan">Scan nach Aktion neu starten</string>
-    <string name="settings_restart_scan_hint">Aus = Weiter beim letzten Fokus</string>
     <string name="settings_scan_delay">Scangeschwindigkeit (ms)</string>
     <string name="settings_holding_time">Haltezeit / Doppelklick-Schutz (ms)</string>
     
     <string name="settings_category_hardware">Hardware &amp; Schalter</string>
     <string name="settings_switch_key">Taste für externen Taster (z.B. Space)</string>
     <string name="settings_volume_keys_trigger">Lautstärke-Tasten als Auslöser</string>
-    <string name="settings_volume_keys_hint">Nutzt Volume +/- zum Bestätigen</string>
     
-    <string name="settings_category_system">System</string>
     <string name="settings_category_test">Test-Einstellungen</string>
     <string name="settings_show_test_buttons">Test-Buttons auf Seite anzeigen</string>
     <string name="settings_persist_logs">Aktionen persistent protokollieren</string>
-    <string name="settings_persist_logs_hint">Behält Verlauf auch nach Neustart</string>
     <string name="settings_show_page_id_in_log">Page ID im Verlauf anzeigen</string>
-    <string name="settings_show_page_id_in_log_hint">Zeigt die technische ID der Seite in den Protokollen an</string>
-    <string name="settings_show_button_history">Aktionsverlauf anzeigen</string>
-    <string name="settings_show_button_history_hint">Zeigt bei Klick einen Dialog mit den letzten 15 Aktionen</string>
-    <string name="settings_experimental_manual_sorting">Manuelle Sortierung (Experimentell)</string>
-    <string name="settings_experimental_manual_sorting_hint">Ermöglicht das Sortieren von Seiten und Vorlagen via Drag &amp; Drop. (In Entwicklung)</string>
 
     <string name="settings_category_experimental">Experimentelle Features</string>
 
@@ -88,22 +71,17 @@
     <string name="settings_category_security">Sicherheit &amp; PIN</string>
     <string name="settings_security_require_pin">PIN Schutz für Einstellungen / Bearbeitung</string>
     <string name="settings_security_pin_label">PIN Schutz</string>
-    <string name="settings_security_pin_set">PIN setzen</string>
-    <string name="settings_security_pin_change">PIN ändern</string>
     <string name="settings_security_set_pin_title">Sicherheits-PIN festlegen</string>
     <string name="settings_security_pin_timeout">PIN Timeout (Minuten)</string>
     <string name="settings_security_pin_required_for_deletion">PIN-Abfrage beim Löschen von Büchern</string>
     <string name="settings_security_lock_now">Sofort Sperren</string>
     <string name="settings_security_pin_active">Aktiviert</string>
     <string name="settings_security_pin_inactive">Deaktiviert</string>
-    <string name="security_pin_wrong">Falscher PIN</string>
     <string name="security_pin_title">Sicherheits-Check</string>
     <string name="security_use_biometric">Mit Fingerabdruck entsperren</string>
     <string name="settings_security_biometric_enabled">Fingerabdruck zum Entsperren nutzen</string>
     <string name="settings_security_require_for_edit">Buch-Bearbeitung schützen</string>
     <string name="settings_security_require_for_settings">Zugriff auf Einstellungen schützen</string>
-    <string name="security_pin_enter">PIN eingeben</string>
-    <string name="security_pin_new">Neuen PIN festlegen</string>
 
     <string name="settings_category_button_history">Aktionsverlauf</string>
     <string name="settings_history_empty">Noch keine Aktionen aufgezeichnet.</string>
@@ -129,7 +107,6 @@
     <string name="book_dialog_delete_title">Buch löschen?</string>
     <string name="book_dialog_delete_confirm">Möchtest du das Buch \"%s\" wirklich unwiderruflich löschen? Alle darin enthaltenen Seiten gehen verloren.</string>
     <string name="book_name_label">Name des Buches</string>
-    <string name="book_import_cloud_description">Bestehendes Buch aus Cloud laden</string>
     <string name="book_import_cloud_success">Buch erfolgreich aus der Cloud geladen.</string>
     <string name="book_import_cloud_error">Fehler beim Laden aus der Cloud: %s</string>
     
@@ -140,7 +117,6 @@
     <string name="action_delete">Löschen</string>
     <string name="action_clear_delete">Leeren / Löschen</string>
     <string name="action_search">Suchen&#8230;</string>
-    <string name="error_field_required">Dieses Feld ist ein Pflichtfeld</string>
     <string name="error_book_name_required">Bitte geben Sie einen Namen für das Buch ein.</string>
     <string name="error_page_name_required">Bitte geben Sie einen Namen für die Seite ein.</string>
     <string name="error_button_label_required">Bitte geben Sie eine Aufschrift für den Button ein.</string>
@@ -153,15 +129,11 @@
     <string name="page_add_description">Neue Seite hinzufügen</string>
     <string name="page_grid_info" tools:ignore="PluralsCandidate">Raster: %1$d Zeilen x %2$d Spalten</string>
     <string name="search_hint">Suchen…</string>
-    <string name="page_rename_description">Seite umbenennen</string>
-    <string name="page_delete_description">Seite löschen</string>
     <string name="page_dialog_delete_title">Seite löschen?</string>
     <string name="page_dialog_delete_confirm">Möchtest du die Seite \"%s\" wirklich löschen?</string>
-    <string name="page_dialog_settings_title">Seiteneinstellungen</string>
     <string name="page_name_label">Name der Seite</string>
     <string name="page_scan_pattern_override">Scan Muster (Überschreiben)</string>
     <string name="page_pattern_default">Standard (Buch)</string>
-    <string name="page_row_announcement_config">Zeilen-Ansage konfigurieren:</string>
     <string name="page_row_label">Zeile %d</string>
     
     <string name="page_dialog_new_title">Neue Seite erstellen</string>
@@ -172,15 +144,10 @@
     <string name="page_import_success">Import erfolgreich!</string>
     <string name="page_export_success">Export erfolgreich!</string>
     <string name="page_export_error">Fehler beim Export: %s</string>
-    
-    <string name="action_export_json">Export JSON (Sicherung)</string>
-    <string name="action_import_json">Import JSON (Wiederherstellung)</string>
     <string name="action_import_json_migration">Import JSON (GoTalkNow Migration)</string>
     <string name="action_more">Mehr</string>
 
     <!-- Page Editor Screen -->
-    <string name="page_editor_title">Editor: %s</string>
-    <string name="page_editor_hint">Tippe auf ein Feld, um den Button zu konfigurieren.</string>
     <string name="page_editor_row_name_label">Zeilenname</string>
     <string name="page_editor_loading">Seite nicht gefunden oder wird geladen…</string>
 
@@ -201,8 +168,6 @@
     <string name="button_action_frequent_action">Häufigste Aktion</string>
     <string name="button_action_smart_prediction">Gemini Vorhersage</string>
     <string name="button_action_notification">Benachrichtigung (Audio-Hinweis)</string>
-    <string name="button_action_volume_tts">Lautstärke anpassen (TTS)</string>
-    <string name="button_action_volume_cues">Lautstärke anpassen (Hinweise)</string>
     <string name="button_action_control_device">Gerätefunktionen</string>
     <string name="button_action_weather">Wetter vorlesen</string>
     <string name="button_device_control_type_label">Aktion wählen</string>
@@ -210,7 +175,6 @@
     <string name="button_device_control_media_previous">Vorheriges Lied / Zurück</string>
     <string name="button_device_control_media_play_pause">Start / Stop</string>
     <string name="button_device_control_battery">Akkustand vorlesen</string>
-    <string name="button_device_control_weather">Wetter vorlesen</string>
     <string name="button_device_control_date">Datum vorlesen</string>
     <string name="button_device_control_time">Uhrzeit vorlesen</string>
     <string name="settings_gemini_nano_disabled_warning">Gemini Nano ist in den Einstellungen deaktiviert. Diese Aktion wird nicht ausgeführt.</string>
@@ -220,13 +184,7 @@
     <string name="button_gemini_prompt_field">Gemini Prompt (Befehl)</string>
     <string name="button_gemini_prompt_hint">Was soll Gemini tun?</string>
     <string name="button_gemini_nano_intent_label">Gemini Nano Funktion</string>
-    <string name="button_gemini_nano_intent_time">Uhrzeit (Präzise &amp; Natürlich)</string>
-    <string name="button_gemini_nano_intent_date">Datum (Natürlich)</string>
-    <string name="button_gemini_nano_intent_weather">Wetter für aktuellen Standort</string>
-    <string name="button_gemini_nano_intent_battery">Akkustand</string>
     <string name="button_gemini_nano_intent_alarm">Nächster Alarm</string>
-    <string name="button_notification_target_app">App auswählen</string>
-    <string name="button_notification_target_all">Alle erlaubten Apps</string>
     <string name="button_play_as_cue">Als Audio-Hinweis abspielen</string>
 
     <!-- Page Screen -->
@@ -240,8 +198,6 @@
 
     <!-- Google Account & Services -->
     <string name="settings_category_google_account">Google Konto &amp; Dienste</string>
-    <string name="settings_google_account_desc">Dieses Konto wird für die Cloud-Sicherung, den Google Kalender/Tasks und die Gemini-KI genutzt.</string>
-    <string name="settings_google_account_status_signed_in_as">Angemeldet als %s</string>
     <string name="settings_google_account_status_not_signed_in">Nicht angemeldet</string>
     <string name="settings_google_account_sign_in">Anmelden</string>
     <string name="settings_google_account_sign_out">Abmelden</string>
@@ -249,9 +205,8 @@
     <!-- Cloud Sync -->
     <string name="settings_category_cloud">Google Drive Sync</string>
     <string name="settings_cloud_sync_enabled">Automatischer Sync</string>
-    <string name="settings_cloud_sync_desc">Sichert das aktuelle Buch automatisch im Hintergrund auf Google Drive. Das Minimum des Android-Systems für Hintergrunddienste beträgt 15 Minuten. Bei Konflikten können Dateien überschrieben werden.</string>
-    <string name="settings_cloud_sync_interval">Sync-Intervall (Minuten)</string>
     <string name="settings_cloud_sync_mode">Sync-Modus</string>
+    <string name="settings_cloud_sync_interval">Sync-Intervall (Minuten)</string>
     <string name="settings_cloud_sync_mode_two_way">2-Wege (Sichern &amp; Wiederherstellen)</string>
     <string name="settings_cloud_sync_mode_backup">1-Weg (Nur Sicherung zu Google Drive)</string>
     <string name="settings_cloud_sync_mode_restore">1-Weg (Nur Wiederherstellung von Google Drive)</string>
@@ -298,24 +253,12 @@
     <string name="settings_gemini_tool_status_pending">Ausstehend…</string>
     <string name="settings_gemini_nano_deactivated_title">Gemini Nano deaktiviert</string>
     <string name="settings_gemini_nano_deactivated_message">Das lokale KI-Modell wurde nicht gefunden oder konnte nicht verifiziert werden. Gemini Nano wurde daher deaktiviert. Du kannst es in den Einstellungen erneut aktivieren und das Modell herunterladen.</string>
-    <string name="settings_gemini_tool_google_search">Google Suche (Grounding)</string>
 
     <!-- Notifications -->
     <string name="settings_category_notifications">Benachrichtigungen (Audio-Hinweis)</string>
     <string name="settings_notifications_enable">Benachrichtigungen vorlesen</string>
     <string name="settings_notifications_enable_desc">Ermöglicht das automatische Vorlesen von Benachrichtigungen ausgewählter Apps als Audio-Hinweis.</string>
     <string name="settings_notifications_permission_button">Berechtigung erteilen</string>
-    <string name="settings_notifications_apps">Überwachte Apps</string>
-    <string name="settings_notifications_app_whatsapp">WhatsApp</string>
-    <string name="settings_notifications_app_signal">Signal</string>
-    <string name="settings_notifications_app_telegram">Telegram</string>
-    <string name="settings_notifications_app_sms">System SMS</string>
-    <string name="settings_gemini_tool_drive">Google Drive Suche</string>
-    <string name="settings_gemini_tool_calendar">Google Kalender</string>
-    <string name="settings_gemini_tool_tasks">Google Tasks</string>
-    <string name="settings_gemini_tool_wikipedia">Wikipedia Suche</string>
-    <string name="settings_gemini_tool_weather">Wetter Informationen</string>
-    <string name="settings_gemini_tool_spotify">Spotify Steuerung</string>
     <string name="error_gemini_disabled">Gemini in Einstellungen prüfen</string>
     <string name="error_gemini_quota_reached" tools:ignore="PluralsCandidate">Gemini-Limit erreicht. Bitte %d Sekunden warten.</string>
 
@@ -330,11 +273,8 @@
     <string name="template_delete_title">Vorlage löschen</string>
     <string name="template_delete_confirm">Möchten Sie die Vorlage \"%s\" wirklich löschen?</string>
     <string name="template_create_new">Neue Vorlage erstellen</string>
-    <string name="template_edit_title">Vorlage: %s</string>
-    <string name="template_editor_hint">Tippe auf ein Feld, um es zu belegen</string>
     <string name="template_loading">Vorlage wird geladen…</string>
     <string name="settings_weather_cache_timeout_label">Wetter Cache Dauer (Minuten)</string>
-    <string name="settings_weather_cache_timeout_description">Wie lange Wetterdaten gültig bleiben, bevor sie neu geladen werden.</string>
     
     <!-- Action Localizations -->
     <string name="action_battery_ssml">&lt;speak&gt;Der Akkustand beträgt &lt;say-as interpret-as=\"cardinal\"&gt;%1$d&lt;/say-as&gt; Prozent.&lt;/speak&gt;</string>

@@ -1,6 +1,5 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">GhostTalk</string>
-    <string name="settings_title">Settings</string>
     <string name="settings_title_global">App Settings</string>
     <string name="settings_title_book">Book Settings</string>
     <string name="back_button_content_description">Back</string>
@@ -13,9 +12,6 @@
     <string name="settings_pattern_linear">Button by Button</string>
     <string name="settings_pattern_row_by_row">Row by Row</string>
     <string name="settings_app_language">App Language (Menus &amp; UI)</string>
-    <string name="settings_app_language_system">System Default</string>
-    <string name="settings_app_language_de">German</string>
-    <string name="settings_app_language_en">English</string>
     <string name="settings_theme_mode">App Theme (Light/Dark)</string>
     <string name="settings_theme_system">System Default</string>
     <string name="settings_theme_light">Light</string>
@@ -32,7 +28,6 @@
     <string name="settings_system_default">System Default</string>
     <string name="settings_select_voice">Select Voice</string>
     <string name="settings_voice_default">Default</string>
-    <string name="settings_voice_network_hint"> (HQ/Online)</string>
     <string name="settings_voice_local_hint"> (Local)</string>
     <string name="voice_format_pattern">Voice %1$d (%2$s)</string>
     <string name="voice_gender_male">Male</string>
@@ -41,10 +36,7 @@
     <string name="voice_quality_very_high">Very high quality</string>
     <string name="voice_quality_normal">Normal quality</string>
     <string name="voice_quality_low">Low quality</string>
-    <string name="settings_tts_volume">Speech Volume (TTS): %1$d%%</string>
-    <string name="settings_cues_volume">Feedback Volume (Audio): %1$d%%</string>
 
-    <string name="settings_category_audio">Audio Output</string>
     <string name="settings_audio_tts">Output: Speak Out Loud</string>
     <string name="settings_audio_cues">Output: Feedback</string>
     <string name="settings_audio_default">System-Default (Automatic)</string>
@@ -53,54 +45,42 @@
     <string name="settings_category_scanning">Scanning &amp; Operation</string>
     <string name="settings_auto_scan">Auto-Scan on Start</string>
     <string name="settings_restart_scan">Restart Scan After Action</string>
-    <string name="settings_restart_scan_hint">Off = Continue at last focus</string>
     <string name="settings_scan_delay">Scan Speed (ms)</string>
     <string name="settings_holding_time">Holding Time / Debounce (ms)</string>
 
     <string name="settings_category_hardware">Hardware &amp; Switches</string>
     <string name="settings_switch_key">External Switch Key (e.g., Space)</string>
     <string name="settings_volume_keys_trigger">Volume Keys as Trigger</string>
-    <string name="settings_volume_keys_hint">Uses Volume +/- to confirm</string>
 
-    <string name="settings_category_system">System</string>
     <string name="settings_category_test">Test Settings</string>
     <string name="settings_show_test_buttons">Show Test Buttons on Page</string>
     <string name="settings_persist_logs">Persist Action Logs</string>
-    <string name="settings_persist_logs_hint">Keeps history after restart</string>
     <string name="settings_show_page_id_in_log">Show Page ID in History</string>
-    <string name="settings_show_page_id_in_log_hint">Shows the technical ID of the page in the logs</string>
-    <string name="settings_show_button_history">Show action history</string>
-    <string name="settings_show_button_history_hint">Shows a dialog with the last 15 actions when clicked</string>
-    <string name="settings_experimental_manual_sorting">Manual Sorting (Experimental)</string>
-    <string name="settings_experimental_manual_sorting_hint">Enables sorting of pages and templates via Drag &amp; Drop. (In development)</string>
     <string name="settings_category_gemini_nano">Gemini Nano (Local)</string>
     <string name="settings_gemini_redo_prediction">Redo prediction when navigating to same page</string>
     <string name="settings_gemini_redo_prediction_hint">Forces a new AI prediction even if the same page is accessed again.</string>
     <string name="settings_weather_cache_timeout_label">Weather Cache Duration (Minutes)</string>
-    <string name="settings_weather_cache_timeout_description">How long weather data remains valid before being reloaded.</string>
 
     <string name="settings_category_experimental">Experimental Features</string>
 
     <string name="settings_category_ui">User Interface</string>
     <string name="settings_category_maintenance">Maintenance</string>
     <string name="settings_clear_usage_stats">Clear usage statistics</string>
+    <string name="settings_category_local_backup">Local Backup</string>
+    <string name="settings_local_backup_create">Create Backup</string>
+    <string name="settings_local_backup_restore">Restore Backup</string>
     <string name="settings_category_advanced">Advanced Settings</string>
     <string name="settings_bluetooth_delay">Bluetooth Delay (ms)</string>
 
     <string name="settings_category_security">Security &amp; PIN</string>
     <string name="settings_security_require_pin">PIN protection for settings / editing</string>
     <string name="settings_security_pin_label">PIN Protection</string>
-    <string name="settings_security_pin_set">Set PIN</string>
-    <string name="settings_security_pin_change">Change PIN</string>
     <string name="settings_security_set_pin_title">Set Security PIN</string>
     <string name="settings_security_pin_timeout">PIN Timeout (Minutes)</string>
     <string name="settings_security_pin_required_for_deletion">PIN challenge when deleting books</string>
     <string name="settings_security_lock_now">Lock now</string>
     <string name="settings_security_pin_active">Enabled</string>
     <string name="settings_security_pin_inactive">Disabled</string>
-    <string name="security_pin_enter">Enter PIN</string>
-    <string name="security_pin_new">Set new PIN</string>
-    <string name="security_pin_wrong">Incorrect PIN</string>
     <string name="security_pin_title">Security Check</string>
     <string name="security_use_biometric">Unlock with fingerprint</string>
     <string name="settings_security_biometric_enabled">Use fingerprint to unlock</string>
@@ -130,7 +110,6 @@
     <string name="book_dialog_delete_title">Delete Book?</string>
     <string name="book_dialog_delete_confirm">Do you really want to permanently delete the book \"%s\"? All pages within it will be lost.</string>
     <string name="book_name_label">Name of the book</string>
-    <string name="book_import_cloud_description">Load existing book from cloud</string>
     <string name="book_import_cloud_success">Book successfully loaded from cloud.</string>
     <string name="book_import_cloud_error">Error loading from cloud: %s</string>
     <string name="book_favorite_description">Set favorite</string>
@@ -141,7 +120,6 @@
     <string name="action_cancel">Cancel</string>
     <string name="action_delete">Delete</string>
     <string name="action_search">Search…</string>
-    <string name="error_field_required">This field is required</string>
     <string name="error_book_name_required">Please enter a name for the book.</string>
     <string name="error_page_name_required">Please enter a name for the page.</string>
     <string name="error_button_label_required">Please enter a label for the button.</string>
@@ -154,15 +132,11 @@
     <string name="page_add_description">Add new page</string>
     <string name="page_grid_info" tools:ignore="PluralsCandidate">Grid: %1$d Rows x %2$d Columns</string>
     <string name="search_hint">Search…</string>
-    <string name="page_rename_description">Rename page</string>
-    <string name="page_delete_description">Delete page</string>
     <string name="page_dialog_delete_title">Delete Page?</string>
     <string name="page_dialog_delete_confirm">Do you really want to delete the page \"%s\"?</string>
-    <string name="page_dialog_settings_title">Page Settings</string>
     <string name="page_name_label">Name of the page</string>
     <string name="page_scan_pattern_override">Scan Pattern (Override)</string>
     <string name="page_pattern_default">Default (Book)</string>
-    <string name="page_row_announcement_config">Configure Row Announcements:</string>
     <string name="page_row_label">Row %d</string>
 
     <string name="page_dialog_new_title">Create New Page</string>
@@ -174,13 +148,10 @@
     <string name="page_export_success">Export successful!</string>
     <string name="page_export_error">Export error: %s</string>
 
-    <string name="action_export_json">Export JSON</string>
-    <string name="action_import_json">Import JSON</string>
+    <string name="action_import_json_migration">Import JSON (GoTalkNow Migration)</string>
     <string name="action_more">More</string>
 
     <!-- Page Editor Screen -->
-    <string name="page_editor_title">Editor: %s</string>
-    <string name="page_editor_hint">Tap a field to configure the button.</string>
     <string name="page_editor_row_name_label">Row Name</string>
     <string name="page_editor_loading">Page not found or loading…</string>
 
@@ -201,8 +172,6 @@
     <string name="button_action_frequent_action">Frequent Action</string>
     <string name="button_action_smart_prediction">Gemini Prediction</string>
     <string name="button_action_notification">Notification (Auditory Cue)</string>
-    <string name="button_action_volume_tts">Adjust Volume (TTS)</string>
-    <string name="button_action_volume_cues">Adjust Volume (Feedback)</string>
     <string name="button_action_weather">Read weather</string>
     <string name="button_action_control_device">Device Functions</string>
     <string name="button_device_control_type_label">Select Action</string>
@@ -210,7 +179,6 @@
     <string name="button_device_control_media_previous">Previous Track</string>
     <string name="button_device_control_media_play_pause">Play / Pause</string>
     <string name="button_device_control_battery">Read battery level</string>
-    <string name="button_device_control_weather">Read weather</string>
     <string name="button_device_control_date">Read date</string>
     <string name="button_device_control_time">Read time</string>
     <string name="settings_gemini_nano_disabled_warning">Gemini Nano is disabled in settings. This action will not be executed.</string>
@@ -220,13 +188,7 @@
     <string name="button_gemini_prompt_field">Gemini Prompt (Command)</string>
     <string name="button_gemini_prompt_hint">What should Gemini do?</string>
     <string name="button_gemini_nano_intent_label">Gemini Nano Feature</string>
-    <string name="button_gemini_nano_intent_time">Time (Precise &amp; Natural)</string>
-    <string name="button_gemini_nano_intent_date">Date (Natural)</string>
-    <string name="button_gemini_nano_intent_weather">Weather (Offline Cache)</string>
-    <string name="button_gemini_nano_intent_battery">Battery Level</string>
     <string name="button_gemini_nano_intent_alarm">Next Alarm</string>
-    <string name="button_notification_target_app">Select App</string>
-    <string name="button_notification_target_all">All allowed apps</string>
     <string name="button_play_as_cue">Play as auditory cue</string>
     <string name="action_clear_delete">Clear / Delete</string>
 
@@ -241,8 +203,6 @@
 
     <!-- Google Account & Services -->
     <string name="settings_category_google_account">Google Account &amp; Services</string>
-    <string name="settings_google_account_desc">This account is used for Cloud Backup, Google Calendar/Tasks, and Gemini AI.</string>
-    <string name="settings_google_account_status_signed_in_as">Signed in as %s</string>
     <string name="settings_google_account_status_not_signed_in">Not signed in</string>
     <string name="settings_google_account_sign_in">Sign In</string>
     <string name="settings_google_account_sign_out">Sign Out</string>
@@ -250,15 +210,14 @@
     <!-- Cloud Sync -->
     <string name="settings_category_cloud">Google Drive Sync</string>
     <string name="settings_cloud_sync_enabled">Automatic Sync</string>
-    <string name="settings_cloud_sync_desc">Automatically backs up the current book in the background to Google Drive. The Android system minimum for background services is 15 minutes. Wait times apply. Files may be overwritten based on mode.</string>
-    <string name="settings_cloud_sync_interval">Sync Interval (Minutes)</string>
     <string name="settings_cloud_sync_mode">Sync Mode</string>
+    <string name="settings_cloud_sync_interval">Sync interval (minutes)</string>
     <string name="settings_cloud_sync_mode_two_way">2-Way (Backup &amp; Restore)</string>
     <string name="settings_cloud_sync_mode_backup">1-Way (Backup to Google Drive only)</string>
     <string name="settings_cloud_sync_mode_restore">1-Way (Restore from Google Drive only)</string>
     <string name="settings_cloud_sync_now">Synchronize</string>
     <string name="settings_cloud_backup_now">Backup now</string>
-    <string name="settings_cloud_restore_now">Restore</string>
+    <string name="settings_cloud_restore_now">Restore now</string>
     <string name="settings_cloud_sync_started">Cloud synchronization started…</string>
     <string name="settings_cloud_sync_success">Synchronization completed successfully.</string>
     <string name="settings_cloud_backup_success">Backup created successfully.</string>
@@ -267,6 +226,14 @@
     <string name="settings_cloud_backup_selection_title">Select Backup</string>
     <string name="settings_cloud_backup_selection_description">No matching backup found for this book. Please select a backup from the list below:</string>
     <string name="settings_cloud_backup_date_format">Backup date: %1$s</string>
+    <string name="settings_category_cloud_import">Cloud Import</string>
+    <string name="settings_cloud_import_as_new">Import from Cloud</string>
+    <string name="settings_cloud_import_explanation">Load an existing backup from your cloud as a book into your app. Existing books will be preserved.</string>
+    <string name="settings_category_cloud_account">Cloud Account</string>
+    <string name="settings_cloud_signed_in_as">Signed in as %s</string>
+    <string name="settings_cloud_sign_out">Sign Out</string>
+    <string name="settings_cloud_sign_in">Sign In</string>
+    <string name="settings_cloud_last_sync">Last Sync: %s</string>
 
     <!-- Gemini Integration -->
     <string name="settings_category_gemini">Gemini AI Assistant</string>
@@ -288,13 +255,6 @@
     <string name="settings_gemini_tool_status_pending">Pending…</string>
     <string name="settings_gemini_nano_deactivated_title">Gemini Nano deactivated</string>
     <string name="settings_gemini_nano_deactivated_message">The local AI model was not found or could not be verified. Gemini Nano has therefore been deactivated. You can re-enable it in the settings and download the model.</string>
-    <string name="settings_gemini_tool_google_search">Google Search (Grounding)</string>
-    <string name="settings_gemini_tool_drive">Google Drive Search</string>
-    <string name="settings_gemini_tool_calendar">Google Calendar</string>
-    <string name="settings_gemini_tool_tasks">Google Tasks</string>
-    <string name="settings_gemini_tool_wikipedia">Wikipedia Search</string>
-    <string name="settings_gemini_tool_weather">Weather Information</string>
-    <string name="settings_gemini_tool_spotify">Spotify Control</string>
     <string name="error_gemini_disabled">Check Gemini in Settings</string>
     <string name="error_gemini_quota_reached" tools:ignore="PluralsCandidate">Gemini limit reached. Please wait %d seconds.</string>
 
@@ -303,11 +263,6 @@
     <string name="settings_notifications_enable">Read notifications aloud</string>
     <string name="settings_notifications_enable_desc">Allows automatic reading of notifications from selected apps as an auditory signal.</string>
     <string name="settings_notifications_permission_button">Grant Permission</string>
-    <string name="settings_notifications_apps">Monitored Apps</string>
-    <string name="settings_notifications_app_whatsapp">WhatsApp</string>
-    <string name="settings_notifications_app_signal">Signal</string>
-    <string name="settings_notifications_app_telegram">Telegram</string>
-    <string name="settings_notifications_app_sms">System SMS</string>
 
     <!-- Shared -->
     <string name="error_page_not_found">Page not found</string>
@@ -320,8 +275,6 @@
     <string name="template_delete_title">Delete Template</string>
     <string name="template_delete_confirm">Do you really want to delete the template \"%s\"?</string>
     <string name="template_create_new">Create New Template</string>
-    <string name="template_edit_title">Template: %s</string>
-    <string name="template_editor_hint">Tap a field to assign it</string>
     <string name="template_loading">Loading template…</string>
     
     <!-- Action Localizations -->
