@@ -55,4 +55,28 @@ class PageRepository(
     suspend fun deletePagesForBook(bookId: String) {
         pageDao.deletePagesForBook(bookId)
     }
+
+    @Transaction
+    suspend fun duplicatePage(pageId: String, duplicateSuffix: String): String? {
+        val original = pageDao.getPageWithButtonsById(pageId) ?: return null
+        val newPageId = java.util.UUID.randomUUID().toString()
+        
+        val newPage = original.page.copy(
+            id = newPageId,
+            name = "${original.page.name}${duplicateSuffix}",
+            createdAt = System.currentTimeMillis()
+        )
+        
+        val newButtons = original.buttons.map { entity ->
+            entity.copy(
+                id = java.util.UUID.randomUUID().toString(),
+                pageId = newPageId
+            )
+        }
+        
+        pageDao.insertPageEntity(newPage)
+        buttonDao.insertButtons(newButtons)
+        
+        return newPageId
+    }
 }

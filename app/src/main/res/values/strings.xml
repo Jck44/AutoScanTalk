@@ -374,4 +374,6 @@
     <string name="button_move_hidden_prompt_add_both">Zeile &amp; Spalte hinzufügen</string>
     <string name="button_move_error_full">Verschieben fehlgeschlagen: Die Zielseite ist bereits komplett belegt (49 Buttons).</string>
     <string name="button_move_success">Button erfolgreich verschoben.</string>
+    <string name="action_duplicate">Duplizieren</string>
+    <string name="duplicate_suffix">-Duplikat</string>
 </resources>

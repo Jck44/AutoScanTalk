@@ -362,4 +362,6 @@
     <string name="button_move_hidden_prompt_add_both">Add row &amp; column</string>
     <string name="button_move_error_full">Move failed: The target page is already full (49 buttons).</string>
     <string name="button_move_success">Button moved successfully.</string>
+    <string name="action_duplicate">Duplicate</string>
+    <string name="duplicate_suffix">-Duplicate</string>
 </resources>

@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import com.andreas_kratzer.ghosttalk.ui.theme.GhosTTalkIcons
 import androidx.compose.material3.AlertDialog
@@ -166,14 +167,44 @@ fun TemplateScreen(
                         modifier = Modifier,
                         trailingAction = {
                             Row(verticalAlignment = Alignment.CenterVertically) {
+                                var showMenu by remember { mutableStateOf(false) }
                                 
-                                IconButton(
-                                    onClick = { templateToDelete = template }
-                                ) {
+                                IconButton(onClick = { showMenu = true }) {
                                     Icon(
-                                        imageVector = Icons.Default.Delete,
-                                        contentDescription = stringResource(R.string.action_delete),
-                                        tint = MaterialTheme.colorScheme.error
+                                        imageVector = Icons.Default.MoreVert,
+                                        contentDescription = stringResource(R.string.action_more)
+                                    )
+                                }
+
+                                val duplicateSuffix = stringResource(R.string.duplicate_suffix)
+
+                                DropdownMenu(
+                                    expanded = showMenu,
+                                    onDismissRequest = { showMenu = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.action_duplicate)) },
+                                        onClick = {
+                                            showMenu = false
+                                            templateViewModel.duplicateTemplate(template.id, duplicateSuffix) { newId ->
+                                                if (newId != null) {
+                                                    onTemplateClick(newId)
+                                                }
+                                            }
+                                        },
+                                        leadingIcon = {
+                                            Icon(GhosTTalkIcons.Copy, contentDescription = null)
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.action_delete)) },
+                                        onClick = {
+                                            showMenu = false
+                                            templateToDelete = template
+                                        },
+                                        leadingIcon = {
+                                            Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+                                        }
                                     )
                                 }
                             }

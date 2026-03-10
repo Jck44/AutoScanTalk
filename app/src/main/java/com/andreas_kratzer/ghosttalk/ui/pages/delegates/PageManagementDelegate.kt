@@ -28,7 +28,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 class PageManagementDelegate @Inject constructor(
-    private val pageRepository: PageRepository,
+    val pageRepository: PageRepository,
     private val bookRepository: BookRepository,
     private val templateRepository: TemplateRepository,
     private val getPagesUseCase: GetPagesUseCase,

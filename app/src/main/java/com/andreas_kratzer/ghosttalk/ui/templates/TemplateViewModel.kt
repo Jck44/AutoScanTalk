@@ -193,4 +193,11 @@ class TemplateViewModel @Inject constructor(
 
     suspend fun getTemplateUsages(templateId: String) = getTemplateUsagesUseCase.execute(templateId)
 
+    fun duplicateTemplate(templateId: String, suffix: String, onResult: (String?) -> Unit) {
+        viewModelScope.launch {
+            val newId = templateRepository.duplicateTemplate(templateId, suffix)
+            onResult(newId)
+        }
+    }
+
 }

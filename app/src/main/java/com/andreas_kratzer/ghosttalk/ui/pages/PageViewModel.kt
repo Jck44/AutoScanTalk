@@ -301,6 +301,13 @@ class PageViewModel @Inject constructor(
     fun importFromJson(jsonString: String, bookId: String, regenerateIds: Boolean? = true, onSuccess: () -> Unit, onError: (String) -> Unit) =
         pageManagementDelegate.importFromJson(jsonString, bookId, regenerateIds, restoreSyncSettings = true, onSuccess, onError)
 
+    fun duplicatePage(pageId: String, suffix: String, onResult: (String?) -> Unit) {
+        viewModelScope.launch {
+            val newId = pageManagementDelegate.pageRepository.duplicatePage(pageId, suffix)
+            onResult(newId)
+        }
+    }
+
     suspend fun exportToJson(): String = pageManagementDelegate.exportToJson()
 
     override fun onCleared() {

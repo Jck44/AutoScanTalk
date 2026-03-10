@@ -102,4 +102,24 @@ class TemplateRepository @Inject constructor(
         
         settingsRepository.initialTemplatesCreated = true
     }
+
+    suspend fun duplicateTemplate(templateId: String, duplicateSuffix: String): String? {
+        val original = getById(templateId) ?: return null
+        val newId = java.util.UUID.randomUUID().toString()
+        
+        val newButtonConfigs = original.buttonConfigs.map { config ->
+            config?.copy(id = java.util.UUID.randomUUID().toString())
+        }
+        
+        val newTemplate = original.copy(
+            id = newId,
+            name = "${original.name}${duplicateSuffix}",
+            buttonConfigs = newButtonConfigs,
+            isBuiltIn = false,
+            createdAt = System.currentTimeMillis()
+        )
+        
+        insert(newTemplate)
+        return newId
+    }
 }
