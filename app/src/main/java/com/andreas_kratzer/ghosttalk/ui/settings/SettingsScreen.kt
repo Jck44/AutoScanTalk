@@ -29,6 +29,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -489,6 +490,7 @@ fun SettingsDropdownItem(
 ) {
     val dimensions = LocalDimensions.current
     var expanded by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
 
     Column(
         modifier = modifier
@@ -527,6 +529,7 @@ fun SettingsDropdownItem(
                         text = { Text(optionLabel, style = MaterialTheme.typography.bodyLarge) },
                         onClick = {
                             onClick()
+                            focusManager.clearFocus()
                             expanded = false
                         }
                     )

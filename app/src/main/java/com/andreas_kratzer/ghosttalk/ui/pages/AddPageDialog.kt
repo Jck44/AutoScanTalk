@@ -22,6 +22,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.model.PageTemplate
@@ -40,6 +41,7 @@ fun AddPageDialog(
     var expanded by remember { mutableStateOf(false) }
 
     val dimensions = LocalDimensions.current
+    val focusManager = LocalFocusManager.current
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -78,6 +80,7 @@ fun AddPageDialog(
                             text = { Text("Leere Seite (Kein Template)", style = MaterialTheme.typography.bodyLarge) },
                             onClick = {
                                 selectedTemplate = null
+                                focusManager.clearFocus()
                                 expanded = false
                             }
                         )
@@ -86,6 +89,7 @@ fun AddPageDialog(
                                 text = { Text(template.name, style = MaterialTheme.typography.bodyLarge) },
                                 onClick = {
                                     selectedTemplate = template
+                                    focusManager.clearFocus()
                                     expanded = false
                                 }
                             )

@@ -27,6 +27,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
@@ -55,6 +56,7 @@ fun NavigationActionFields(
     val showAddPageDialogState = remember { mutableStateOf(false) }
 
     val dimensions = LocalDimensions.current
+    val focusManager = LocalFocusManager.current
 
     val filteredPages = remember(pageSearchQuery, availablePages) {
         val trimmedQuery = pageSearchQuery.trim()
@@ -93,6 +95,7 @@ fun NavigationActionFields(
                         text = { Text(pageOption.name, style = MaterialTheme.typography.bodyLarge) },
                         onClick = {
                             onPageSelected(pageOption.id)
+                            focusManager.clearFocus()
                             expandedPageSelect = false
                             pageSearchQuery = ""
                         }
