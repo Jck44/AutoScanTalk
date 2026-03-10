@@ -42,6 +42,10 @@ class PageRepository(
         buttonDao.insertButtons(page.toButtonEntities())
     }
 
+    suspend fun updatePageSettingsOnly(page: Page) {
+        pageDao.updatePageEntity(page)
+    }
+
     suspend fun movePages(fromPage: Page, toPage: Page) {
         updatePage(fromPage)
         updatePage(toPage)

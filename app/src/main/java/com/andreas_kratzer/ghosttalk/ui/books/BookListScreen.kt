@@ -1,5 +1,9 @@
 package com.andreas_kratzer.ghosttalk.ui.books
 
+import android.content.res.Configuration
+import androidx.compose.ui.platform.LocalConfiguration
+import java.text.SimpleDateFormat
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -56,7 +60,6 @@ import androidx.compose.ui.platform.LocalContext
 import android.widget.Toast
 import com.andreas_kratzer.ghosttalk.ui.settings.dialogs.BackupSelectionDialog
 import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
-import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
@@ -110,6 +113,10 @@ fun BookListScreen(
             }
         }
     ) { paddingValues ->
+        val configuration = LocalConfiguration.current
+        val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        val dynamicCardHeight = (configuration.screenHeightDp * if (isLandscape) 0.18f else 0.12f).dp.coerceIn(90.dp, 140.dp)
+
         LazyVerticalGrid(
             columns = GridCells.Adaptive(minSize = 300.dp),
             modifier = Modifier
@@ -132,6 +139,7 @@ fun BookListScreen(
                     subtitle = stringResource(R.string.book_last_modified_label, dateFormat.format(Date(book.updatedAt))),
                     icon = null, // Removed left icon as requested
                     onClick = { onBookSelected(book.id) },
+                    height = dynamicCardHeight,
                     trailingAction = {
                         Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                             IconButton(

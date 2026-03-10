@@ -13,7 +13,7 @@ class DeleteTemplateUseCase @Inject constructor(
         if (clearUsages) {
             val pages = pageRepository.getAllPages().filter { it.templateId == template.id }
             pages.forEach { page ->
-                pageRepository.updatePage(page.copy(templateId = null))
+                pageRepository.updatePageSettingsOnly(page.copy(templateId = null))
             }
         }
         templateRepository.delete(template)

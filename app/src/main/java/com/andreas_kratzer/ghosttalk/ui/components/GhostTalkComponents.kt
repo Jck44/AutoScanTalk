@@ -92,6 +92,7 @@ fun GhostTalkCard(
     containerColor: Color = MaterialTheme.colorScheme.surfaceContainerLow,
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
     iconColor: Color = MaterialTheme.colorScheme.primary,
+    height: androidx.compose.ui.unit.Dp? = null,
     trailingAction: (@Composable () -> Unit)? = null
 ) {
     val dimensions = LocalDimensions.current
@@ -99,7 +100,7 @@ fun GhostTalkCard(
         onClick = onClick,
         modifier = modifier
             .fillMaxWidth()
-            .height(dimensions.cardHeight),
+            .height(height ?: dimensions.cardHeight),
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
             containerColor = containerColor,

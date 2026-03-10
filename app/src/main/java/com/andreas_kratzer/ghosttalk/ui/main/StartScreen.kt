@@ -35,6 +35,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.ui.components.GhostTalkCard
 import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
@@ -85,7 +86,6 @@ fun StartScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
         ) {
-            @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(dimensions.paddingLarge, Alignment.CenterHorizontally),
@@ -93,6 +93,7 @@ fun StartScreen(
                 maxItemsInEachRow = if (isLandscape) 3 else 1
             ) {
                 val cardModifier = if (isLandscape) Modifier.weight(1f) else Modifier.fillMaxWidth()
+                val dynamicCardHeight = (configuration.screenHeightDp * if (isLandscape) 0.2f else 0.12f).dp.coerceIn(90.dp, 140.dp)
 
                 GhostTalkCard(
                     title = stringResource(R.string.start_user_mode),
@@ -100,7 +101,8 @@ fun StartScreen(
                     onClick = onNavigateToUserMode,
                     modifier = cardModifier,
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    iconColor = MaterialTheme.colorScheme.primary
+                    iconColor = MaterialTheme.colorScheme.primary,
+                    height = dynamicCardHeight
                 )
                 
                 GhostTalkCard(
@@ -109,7 +111,8 @@ fun StartScreen(
                     onClick = onNavigateToContentManagement,
                     modifier = cardModifier,
                     containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                    iconColor = MaterialTheme.colorScheme.tertiary
+                    iconColor = MaterialTheme.colorScheme.tertiary,
+                    height = dynamicCardHeight
                 )
                 
                 GhostTalkCard(
@@ -118,7 +121,8 @@ fun StartScreen(
                     onClick = onNavigateToSettings,
                     modifier = cardModifier,
                     containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    iconColor = MaterialTheme.colorScheme.secondary
+                    iconColor = MaterialTheme.colorScheme.secondary,
+                    height = dynamicCardHeight
                 )
             }
         }

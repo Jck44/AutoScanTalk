@@ -215,6 +215,8 @@ fun PageListScreen(
             }
         }
     ) { paddingValues ->
+        val dynamicCardHeight = (LocalConfiguration.current.screenHeightDp * if (LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE) 0.18f else 0.12f).dp.coerceIn(90.dp, 140.dp)
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -258,6 +260,7 @@ fun PageListScreen(
                         subtitle = stringResource(R.string.page_grid_info, page.rows, page.columns),
                         icon = GhosTTalkIcons.Description,
                         onClick = { onEditPage(page.id) },
+                        height = dynamicCardHeight,
                         modifier = Modifier,
                         trailingAction = {
                             Row(verticalAlignment = Alignment.CenterVertically) {

@@ -1,5 +1,9 @@
 package com.andreas_kratzer.ghosttalk.ui.templates
 
+import android.content.res.Configuration
+import androidx.compose.ui.platform.LocalConfiguration
+import kotlinx.coroutines.launch
+
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -122,6 +126,10 @@ fun TemplateScreen(
             }
         }
     ) { paddingValues ->
+        val configuration = LocalConfiguration.current
+        val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        val dynamicCardHeight = (configuration.screenHeightDp * if (isLandscape) 0.18f else 0.12f).dp.coerceIn(90.dp, 140.dp)
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -164,6 +172,7 @@ fun TemplateScreen(
                         subtitle = "Raster: ${template.rows}x${template.columns} " + if (template.isBuiltIn) "(${stringResource(R.string.template_built_in_label)})" else "(${stringResource(R.string.template_custom_label)})",
                         icon = GhosTTalkIcons.GridView,
                         onClick = { onTemplateClick(template.id) },
+                        height = dynamicCardHeight,
                         modifier = Modifier,
                         trailingAction = {
                             Row(verticalAlignment = Alignment.CenterVertically) {

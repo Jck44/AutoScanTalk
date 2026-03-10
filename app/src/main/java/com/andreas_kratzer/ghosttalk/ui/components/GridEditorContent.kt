@@ -34,7 +34,9 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -56,6 +58,7 @@ import com.andreas_kratzer.ghosttalk.ui.theme.GhosTTalkIcons
 import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions
 import com.andreas_kratzer.ghosttalk.ui.util.GridUtils
+import kotlinx.coroutines.delay
 import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -99,25 +102,35 @@ fun GridEditorContent(
         ) {
             val controlModifier = Modifier.weight(1f).widthIn(min = 250.dp)
 
+            var localRows by remember(item.rows) { mutableIntStateOf(item.rows) }
+            var localCols by remember(item.columns) { mutableIntStateOf(item.columns) }
+
+            LaunchedEffect(localRows, localCols) {
+                if (localRows != item.rows || localCols != item.columns) {
+                    delay(100)
+                    actions.updateGridSettings(
+                        itemId = item.id,
+                        newName = item.name,
+                        newScanPattern = item.scanPattern,
+                        newRowNames = item.rowNames,
+                        newRows = localRows,
+                        newColumns = localCols
+                    )
+                }
+            }
+
             // Rows Slider
             Column(modifier = controlModifier) {
-                val rowsLabel = stringResource(R.string.page_rows_field) + ": ${item.rows}"
+                val rowsLabel = stringResource(R.string.page_rows_field) + ": $localRows"
                 Text(
                     text = rowsLabel,
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.primary
                 )
                 Slider(
-                    value = item.rows.toFloat(),
+                    value = localRows.toFloat(),
                     onValueChange = { newValue ->
-                        actions.updateGridSettings(
-                            itemId = item.id,
-                            newName = item.name,
-                            newScanPattern = item.scanPattern,
-                            newRowNames = item.rowNames,
-                            newRows = newValue.toInt(),
-                            newColumns = item.columns
-                        )
+                        localRows = Math.round(newValue)
                     },
                     valueRange = 1f..7f,
                     steps = 5
@@ -126,23 +139,16 @@ fun GridEditorContent(
 
             // Columns Slider
             Column(modifier = controlModifier) {
-                val colsLabel = stringResource(R.string.page_cols_field) + ": ${item.columns}"
+                val colsLabel = stringResource(R.string.page_cols_field) + ": $localCols"
                 Text(
                     text = colsLabel,
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.primary
                 )
                 Slider(
-                    value = item.columns.toFloat(),
+                    value = localCols.toFloat(),
                     onValueChange = { newValue ->
-                        actions.updateGridSettings(
-                            itemId = item.id,
-                            newName = item.name,
-                            newScanPattern = item.scanPattern,
-                            newRowNames = item.rowNames,
-                            newRows = item.rows,
-                            newColumns = newValue.toInt()
-                        )
+                        localCols = Math.round(newValue)
                     },
                     valueRange = 1f..7f,
                     steps = 5
@@ -370,25 +376,25 @@ fun GridEditorContent(
             }
         }
 
-        if (showRowEditDialog && editingRowIndex != null) {
-            val rowIndex = editingRowIndex!!
+        val currentRowIndex = editingRowIndex
+        if (showRowEditDialog && currentRowIndex != null) {
             RowEditDialog(
-                initialName = item.rowNames.getOrNull(rowIndex) ?: rowDefaultLabelTemplate.format(rowIndex + 1),
+                initialName = item.rowNames.getOrNull(currentRowIndex) ?: rowDefaultLabelTemplate.format(currentRowIndex + 1),
                 onDismiss = {
                     showRowEditDialog = false
                     editingRowIndex = null
                 },
                 onSave = { newName ->
-                    actions.updateRowName(item.id, rowIndex, newName)
+                    actions.updateRowName(item.id, currentRowIndex, newName)
                     showRowEditDialog = false
                     editingRowIndex = null
                 }
             )
         }
 
-        if (showDialog && selectedButtonIndex != null) {
-            val editingIndex = selectedButtonIndex!!
-            val currentConfig = item.buttonConfigs.getOrNull(editingIndex)
+        val currentEditingIndex = selectedButtonIndex
+        if (showDialog && currentEditingIndex != null) {
+            val currentConfig = item.buttonConfigs.getOrNull(currentEditingIndex)
             val buttonId = currentConfig?.id ?: UUID.randomUUID().toString()
             val isExecuting by actions.isExecuting.collectAsStateWithLifecycle()
 
@@ -405,7 +411,7 @@ fun GridEditorContent(
                     selectedButtonIndex = null
                 },
                 onSave = { newConfig ->
-                    actions.updateButtonConfig(item.id, editingIndex, newConfig)
+                    actions.updateButtonConfig(item.id, currentEditingIndex, newConfig)
                     showDialog = false
                     selectedButtonIndex = null
                 },
@@ -425,7 +431,7 @@ fun GridEditorContent(
                     )
                 },
                 onMoveToPage = { targetId, forceMove, onResult ->
-                    actions.moveButtonToPage(item.id, editingIndex, targetId, forceMove, onResult)
+                    actions.moveButtonToPage(item.id, currentEditingIndex, targetId, forceMove, onResult)
                 }
             )
         }

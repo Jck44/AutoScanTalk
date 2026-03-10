@@ -21,7 +21,7 @@ class UpdateRowNameUseCase @Inject constructor(
             updatedNames[rowIndex] = newName
             
             val updatedPage = page.copy(rowNames = updatedNames)
-            pageRepository.updatePage(updatedPage)
+            pageRepository.updatePageSettingsOnly(updatedPage)
             bookRepository.updateLastModified(page.bookId)
             return updatedPage
         }

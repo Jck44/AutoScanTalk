@@ -1,5 +1,9 @@
 package com.andreas_kratzer.ghosttalk.ui.settings
 
+import android.content.res.Configuration
+import androidx.compose.ui.platform.LocalConfiguration
+import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
+
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -18,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.ui.components.GhostTalkCard
 import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
@@ -50,6 +55,10 @@ fun ContentManagementScreen(
             )
         }
     ) { paddingValues ->
+        val configuration = LocalConfiguration.current
+        val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        val dynamicCardHeight = (configuration.screenHeightDp * if (isLandscape) 0.18f else 0.12f).dp.coerceIn(90.dp, 140.dp)
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -61,13 +70,15 @@ fun ContentManagementScreen(
             GhostTalkCard(
                 title = stringResource(R.string.page_list_title),
                 icon = GhosTTalkIcons.Description,
-                onClick = onNavigateToPageManager
+                onClick = onNavigateToPageManager,
+                height = dynamicCardHeight
             )
             
             GhostTalkCard(
                 title = stringResource(R.string.template_manage_title),
                 icon = GhosTTalkIcons.GridView,
-                onClick = onNavigateToTemplateManager
+                onClick = onNavigateToTemplateManager,
+                height = dynamicCardHeight
             )
         }
     }

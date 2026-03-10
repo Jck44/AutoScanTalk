@@ -22,7 +22,7 @@ class ReorderPagesUseCase @Inject constructor(
         // Update indices in DB
         mutableList.forEachIndexed { index, page ->
             if (page.orderIndex != index) {
-                pageRepository.updatePage(page.copy(orderIndex = index))
+                pageRepository.updatePageSettingsOnly(page.copy(orderIndex = index))
             }
         }
         

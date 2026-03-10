@@ -31,7 +31,7 @@ class UpdatePageSettingsUseCase @Inject constructor(
                 rows = targetRows,
                 columns = targetCols
             )
-            pageRepository.updatePage(updatedPage)
+            pageRepository.updatePageSettingsOnly(updatedPage)
             bookRepository.updateLastModified(page.bookId)
             return updatedPage
         }

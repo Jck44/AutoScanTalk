@@ -1,16 +1,14 @@
 package com.andreas_kratzer.ghosttalk.ui.pages.sections
 
 import android.content.res.Configuration
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
@@ -30,26 +28,39 @@ fun ButtonGrid(
     pageViewModel: PageViewModel
 ) {
     val dimensions = LocalDimensions.current
-    androidx.compose.foundation.layout.Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .horizontalScroll(rememberScrollState()),
+    BoxWithConstraints(
+        modifier = Modifier.fillMaxSize(),
         contentAlignment = androidx.compose.ui.Alignment.TopCenter
     ) {
         val configuration = LocalConfiguration.current
         val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-        val minButtonWidth = if( isLandscape) (dimensions.minButtonWidth.value * 1.8).dp else dimensions.minButtonWidth
-        val totalMinWidth = minButtonWidth * page.columns + (dimensions.gridSpacing * (page.columns - 1))
         
+        // Calculate available space from constraints
+        val availableWidth = maxWidth - (dimensions.paddingMedium * 2)
+        val availableHeight = maxHeight - (dimensions.paddingMedium * 2)
+        
+        // Calculate size to fit columns
+        val buttonWidthToFit = (availableWidth - (dimensions.gridSpacing * (page.columns - 1))) / page.columns
+        // Calculate size to fit rows
+        val buttonHeightToFit = (availableHeight - (dimensions.gridSpacing * (page.rows - 1))) / page.rows
+        
+        // Optimal size is the minimum of both to ensure it fits in the available area
+        // We cap the maximum size (e.g. 140dp) so small grids don't over-expand
+        val maxButtonSize = 140.dp
+        val optimalSize = minOf(buttonWidthToFit, buttonHeightToFit).coerceIn(dimensions.minButtonWidth, maxButtonSize)
+        
+        val totalWidth = (optimalSize * page.columns) + (dimensions.gridSpacing * (page.columns - 1))
+        val totalHeight = (optimalSize * page.rows) + (dimensions.gridSpacing * (page.rows - 1))
+
         LazyVerticalGrid(
             columns = GridCells.Fixed(page.columns),
             modifier = Modifier
-                .widthIn(max = dimensions.baseMaxButtonWidth * page.columns)
-                .width(totalMinWidth)
-                .fillMaxHeight(),
+                .width(totalWidth)
+                .height(totalHeight),
             contentPadding = PaddingValues(dimensions.paddingMedium),
             verticalArrangement = Arrangement.spacedBy(dimensions.gridSpacing),
-            horizontalArrangement = Arrangement.spacedBy(dimensions.gridSpacing)
+            horizontalArrangement = Arrangement.spacedBy(dimensions.gridSpacing),
+            userScrollEnabled = false // Should fit, so no scrolling needed within the grid itself
         ) {
             val rows = page.rows
             val cols = page.columns
