@@ -136,10 +136,11 @@ class PageImportExportManagerTest {
 
         val json = manager.exportToJson(listOf(page))
         
-        assertTrue(json.contains("\"holdingTimeSeconds\":0.75"))
-        assertTrue(json.contains("\"auditoryCueText\":\"Cue\""))
-        assertTrue(json.contains("\"spokenText\":\"Speak\""))
-        assertTrue(json.contains("\"textToSpeech\":\"Speak\""))
+        val jsonCompact = json.replace("\\s".toRegex(), "")
+        assertTrue(jsonCompact.contains("\"holdingTimeSeconds\":0.75"))
+        assertTrue(jsonCompact.contains("\"auditoryCueText\":\"Cue\""))
+        assertTrue(jsonCompact.contains("\"spokenText\":\"Speak\""))
+        assertTrue(jsonCompact.contains("\"textToSpeech\":\"Speak\""))
     }
 
     @Test
@@ -248,10 +249,11 @@ class PageImportExportManagerTest {
         
         val json = manager.exportToJson(listOf(page), book)
         
-        assertTrue(json.contains("\"bookName\":\"My Book\""))
-        assertTrue(json.contains("\"bookCreatedAt\":1000"))
-        assertTrue(json.contains("\"scanPattern\":\"row-by-row\""))
-        assertTrue(json.contains("\"rowNames\":[\"R1\",\"R2\"]"))
+        val jsonCompact = json.replace("\\s".toRegex(), "")
+        assertTrue(jsonCompact.contains("\"bookName\":\"MyBook\""))
+        assertTrue(jsonCompact.contains("\"bookCreatedAt\":1000"))
+        assertTrue(jsonCompact.contains("\"scanPattern\":\"row-by-row\""))
+        assertTrue(jsonCompact.contains("\"rowNames\":[\"R1\",\"R2\"]"))
     }
 
     @Test
@@ -291,6 +293,7 @@ class PageImportExportManagerTest {
 
     @Test
     fun `importFromJson prevents duplicates by preserving IDs`() = runTest(testDispatcher) {
+        coEvery { pageRepository.getPageById(any()) } returns null
         val pageId = "unique-page-id"
         val buttonId = "unique-button-id"
         val jsonString = """
@@ -337,6 +340,124 @@ class PageImportExportManagerTest {
         )
         
         val json = manager.exportToJson(listOf(page))
-        assertTrue(json.contains("\"id\":\"button-123\""))
+        val jsonCompact = json.replace("\\s".toRegex(), "")
+        assertTrue(jsonCompact.contains("\"id\":\"button-123\""))
+    }
+
+    @Test
+    fun `importFromJson regenerates IDs when forced or bookId mismatch`() = runTest(testDispatcher) {
+        val pageId = "old-page-id"
+        val buttonId = "old-button-id"
+        val jsonString = """
+            {
+                "bookId": "original-book",
+                "pages": [
+                    {
+                        "importId": "$pageId", "name": "P1", "rows": 4, "columns": 4,
+                        "buttons": [
+                            { "id": "$buttonId", "index": 0, "label": "B1", "active": true, "action": { "type": "SpeakText", "textToSpeech": "Hello" } }
+                        ]
+                    }
+                ]
+            }
+        """.trimIndent()
+
+        val pageSlot = slot<Page>()
+        coEvery { pageRepository.insertPage(capture(pageSlot)) } returns Unit
+
+        // Import into a DIFFERENT book (test_book)
+        manager.importFromJson(jsonString, "test_book")
+
+        assertTrue(pageSlot.isCaptured)
+        val importedPage = pageSlot.captured
+        
+        // IDs should be DIFFERENT from the ones in the JSON
+        assertTrue(importedPage.id != pageId)
+        assertTrue(importedPage.buttonConfigs[0]?.id != buttonId)
+        
+        // But bookId should be correct
+        assertEquals("test_book", importedPage.bookId)
+    }
+
+    @Test
+    fun `importFromJson preserves navigation after ID regeneration`() = runTest(testDispatcher) {
+        val jsonString = """
+            {
+                "bookId": "source-book",
+                "pages": [
+                    {
+                        "importId": "page-1", "name": "Start", "rows": 1, "columns": 1,
+                        "buttons": [
+                            { "index": 0, "label": "Go to 2", "action": { "type": "NavigateToPage", "targetPageImportId": "page-2" } }
+                        ]
+                    },
+                    {
+                        "importId": "page-2", "name": "Target", "rows": 1, "columns": 1,
+                        "buttons": []
+                    }
+                ]
+            }
+        """.trimIndent()
+
+        val capturedPages = mutableListOf<Page>()
+        coEvery { pageRepository.insertPage(capture(capturedPages)) } returns Unit
+
+        // Import into another book (triggers regeneration)
+        manager.importFromJson(jsonString, "target-book")
+
+        assertEquals(2, capturedPages.size)
+        val startPage = capturedPages.find { it.name == "Start" }
+        val targetPage = capturedPages.find { it.name == "Target" }
+
+        assertNotNull(startPage)
+        assertNotNull(targetPage)
+
+        // New IDs
+        val newTargetId = targetPage!!.id
+        assertTrue(newTargetId != "page-2")
+
+        // Action on start page should point to new target ID
+        val action = startPage!!.buttonConfigs[0]?.buttonAction
+        assertTrue(action is com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction)
+        assertEquals(newTargetId, (action as com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction).pageId)
+    }
+
+    @Test
+    fun `importFromJson regenerates IDs on collision with different book`() = runTest(testDispatcher) {
+        val pageId = "colliding-page-id"
+        val buttonId = "colliding-button-id"
+        val jsonString = """
+            {
+                "bookId": "target-book",
+                "pages": [
+                    {
+                        "importId": "$pageId", "name": "P1", "rows": 4, "columns": 4,
+                        "buttons": [
+                            { "id": "$buttonId", "index": 0, "label": "B1", "active": true, "action": { "type": "SpeakText", "textToSpeech": "Hello" } }
+                        ]
+                    }
+                ]
+            }
+        """.trimIndent()
+
+        // Mock that the page already exists in the database but under a DIFFERENT book
+        val existingPage = Page(id = pageId, bookId = "some-other-book", name = "Existing Page", rows = 4, columns = 4)
+        coEvery { pageRepository.getPageById(pageId) } returns existingPage
+
+        val pageSlot = slot<Page>()
+        coEvery { pageRepository.insertPage(capture(pageSlot)) } returns Unit
+
+        // Import into target-book. regenerateIds is false by default if bookId matches (both "target-book").
+        manager.importFromJson(jsonString, "target-book")
+
+        assertTrue(pageSlot.isCaptured)
+        val importedPage = pageSlot.captured
+        
+        // IDs MUST be DIFFERENT because of the collision detection
+        assertTrue("Page ID should have been regenerated to avoid stealing", importedPage.id != pageId)
+        assertTrue("Button ID should have been regenerated", importedPage.buttonConfigs[0]?.id != buttonId)
+        
+        // bookId should be the target book
+        assertEquals("target-book", importedPage.bookId)
     }
 }

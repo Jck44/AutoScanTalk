@@ -101,8 +101,8 @@ class CloudSyncUseCaseTest {
         // Verify that downloadFile was called (overwriting local) and updateFile was NOT called
         coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile("file_1", any()) }
         coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().updateFile(any(), any(), any()) }
-        // Verify import was called
-        coVerify(exactly = 1) { mockImportExportManager.importBookFromJson(any(), bookId) }
+        // Verify import was called with restoreSyncSettings = false
+        coVerify(exactly = 1) { mockImportExportManager.importFromJson(any(), bookId, restoreSyncSettings = false) }
     }
 
     @Test
@@ -151,6 +151,6 @@ class CloudSyncUseCaseTest {
         advanceUntilIdle()
 
         coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile("file_1", any()) }
-        coVerify(exactly = 1) { mockImportExportManager.importBookFromJson(any(), bookId) }
+        coVerify(exactly = 1) { mockImportExportManager.importFromJson(any(), bookId, restoreSyncSettings = false) }
     }
 }

@@ -190,14 +190,8 @@ fun PageListScreen(
                     }
 
                     if (isLandscape) {
-                        Button(
-                            onClick = { exportLauncher.launch("GhosTTalk_Export.json") },
-                            modifier = Modifier.padding(end = 8.dp)
-                        ) {
-                            Text(stringResource(R.string.action_export_json))
-                        }
                         Button(onClick = { importLauncher.launch("application/json") }) {
-                            Text(stringResource(R.string.action_import_json))
+                            Text(stringResource(R.string.action_import_json_migration))
                         }
                     } else {
                         var showMenu by remember { mutableStateOf(false) }
@@ -205,8 +199,7 @@ fun PageListScreen(
                             Icon(Icons.Default.Add, contentDescription = stringResource(R.string.action_more))
                         }
                         DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-                            DropdownMenuItem(text = { Text(stringResource(R.string.action_export_json)) }, onClick = { showMenu = false; exportLauncher.launch("GhosTTalk_Export.json") })
-                            DropdownMenuItem(text = { Text(stringResource(R.string.action_import_json)) }, onClick = { showMenu = false; importLauncher.launch("application/json") })
+                            DropdownMenuItem(text = { Text(stringResource(R.string.action_import_json_migration)) }, onClick = { showMenu = false; importLauncher.launch("application/json") })
                         }
                     }
                 }

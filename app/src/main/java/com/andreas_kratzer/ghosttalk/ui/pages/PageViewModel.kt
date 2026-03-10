@@ -298,8 +298,8 @@ class PageViewModel @Inject constructor(
 
     fun deletePage(page: Page, deleteUsages: Boolean = false) = pageManagementDelegate.deletePage(page, deleteUsages)
     suspend fun getPageUsages(pageId: String) = pageManagementDelegate.getPageUsages(pageId)
-    fun importFromJson(jsonString: String, bookId: String, onSuccess: () -> Unit, onError: (String) -> Unit) =
-        pageManagementDelegate.importFromJson(jsonString, bookId, onSuccess, onError)
+    fun importFromJson(jsonString: String, bookId: String, regenerateIds: Boolean? = true, onSuccess: () -> Unit, onError: (String) -> Unit) =
+        pageManagementDelegate.importFromJson(jsonString, bookId, regenerateIds, restoreSyncSettings = true, onSuccess, onError)
 
     suspend fun exportToJson(): String = pageManagementDelegate.exportToJson()
 

@@ -29,6 +29,7 @@ data class ImportExportData(
     val keepScreenOnUserMode: Boolean? = null,
     val userModeScreenBehavior: String? = null,
     val bookName: String? = null,
+    val bookId: String? = null,
     val bookCreatedAt: Long? = null,
     val bookUpdatedAt: Long? = null,
     val themeMode: String? = null,

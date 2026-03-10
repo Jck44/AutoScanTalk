@@ -47,6 +47,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -60,6 +61,12 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.CloudSettingsSection
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import java.io.OutputStreamWriter
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.ExperimentalSettingsSection
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.GenAiSettingsSection
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.GeneralSettingsSection
@@ -115,6 +122,60 @@ fun SettingsScreen(
 
     LaunchedEffect(signInError) {
         signInError?.let { Toast.makeText(context, it, Toast.LENGTH_LONG).show() }
+    }
+
+    val coroutineScope = rememberCoroutineScope()
+    val localImportSuccessMsg = stringResource(R.string.page_import_success)
+    val localExportSuccessMsg = stringResource(R.string.page_export_success)
+
+    val localImportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let {
+            try {
+                context.contentResolver.openInputStream(it)?.use { inputStream ->
+                    val reader = BufferedReader(InputStreamReader(inputStream))
+                    val jsonContent = reader.readText()
+                    coroutineScope.launch {
+                        viewModel.importLocalBackup(
+                            json = jsonContent,
+                            onSuccess = {
+                                Toast.makeText(context, localImportSuccessMsg, Toast.LENGTH_SHORT).show()
+                            },
+                            onError = { error ->
+                                Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+                            }
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Toast.makeText(context, "Fehler beim Import: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    val localExportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        uri?.let {
+            coroutineScope.launch {
+                try {
+                    val jsonContent = viewModel.exportLocalBackup()
+                    withContext(Dispatchers.IO) {
+                        context.contentResolver.openOutputStream(it)?.use { outputStream ->
+                            val writer = OutputStreamWriter(outputStream)
+                            writer.write(jsonContent)
+                            writer.close()
+                        }
+                    }
+                    Toast.makeText(context, localExportSuccessMsg, Toast.LENGTH_SHORT).show()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    Toast.makeText(context, "Fehler beim Export: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
     }
 
     BackHandler {
@@ -217,7 +278,9 @@ fun SettingsScreen(
                     onLockClicked = {
                         viewModel.lock()
                         onNavigateToStart()
-                    }
+                    },
+                    onLocalExport = { localExportLauncher.launch("GhosTTalk_Backup.json") },
+                    onLocalImport = { localImportLauncher.launch("application/json") }
                 )
                 Spacer(modifier = Modifier.height(dimensions.paddingDoubleExtraLarge * 2)) // Increased for tablets
             }
@@ -231,7 +294,9 @@ fun SubmenuContent(
     section: SettingsSection, 
     viewModel: SettingsViewModel,
     isGlobal: Boolean,
-    onLockClicked: () -> Unit = {}
+    onLockClicked: () -> Unit = {},
+    onLocalExport: () -> Unit = {},
+    onLocalImport: () -> Unit = {}
 ) {
     when (section) {
         SettingsSection.GENERAL -> {
@@ -289,7 +354,11 @@ fun SubmenuContent(
             }
             TestSettingsSection(viewModel, isGlobal = isGlobal)
             if (!isGlobal) {
-                MaintenanceSection(viewModel)
+                MaintenanceSection(
+                    viewModel = viewModel,
+                    onLocalExport = onLocalExport,
+                    onLocalImport = onLocalImport
+                )
             }
         }
     }

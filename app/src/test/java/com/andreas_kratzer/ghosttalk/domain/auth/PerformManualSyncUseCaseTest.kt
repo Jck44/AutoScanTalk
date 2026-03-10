@@ -61,6 +61,7 @@ class PerformManualSyncUseCaseTest {
         val drive = mockk<Drive>(relaxed = true)
         every { googleAuthManager.getGoogleCredential() } returns mockk()
         every { settingsRepository.activeBookId } returns "book1"
+        coEvery { cloudSyncUseCase.syncBook(any(), any(), any()) } returns true
 
         val result = useCase.execute(SyncMode.TWO_WAY, driveOverride = drive)
 

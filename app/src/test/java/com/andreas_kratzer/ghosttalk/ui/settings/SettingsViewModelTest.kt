@@ -10,6 +10,7 @@ import com.andreas_kratzer.ghosttalk.ui.settings.delegates.ExperimentalSettingsD
 import com.andreas_kratzer.ghosttalk.ui.settings.delegates.GenAiSettingsDelegate
 import com.andreas_kratzer.ghosttalk.ui.settings.delegates.ScanningSettingsDelegate
 import com.andreas_kratzer.ghosttalk.ui.settings.delegates.TtsSettingsDelegate
+import com.andreas_kratzer.ghosttalk.core.pages.PageImportExportManager
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -42,6 +43,7 @@ class SettingsViewModelTest {
     private lateinit var cloudSyncDelegate: CloudSyncSettingsDelegate
     private lateinit var genAiDelegate: GenAiSettingsDelegate
     private lateinit var experimentalDelegate: ExperimentalSettingsDelegate
+    private lateinit var importExportManager: PageImportExportManager
     
     private lateinit var viewModel: SettingsViewModel
 
@@ -60,6 +62,7 @@ class SettingsViewModelTest {
         cloudSyncDelegate = mockk(relaxed = true)
         genAiDelegate = mockk(relaxed = true)
         experimentalDelegate = mockk(relaxed = true)
+        importExportManager = mockk(relaxed = true)
 
         // Mock common flows
         every { settingsRepository.activeBookId } returns "test-book"
@@ -82,7 +85,8 @@ class SettingsViewModelTest {
             scanningDelegate = scanningDelegate,
             cloudSyncDelegate = cloudSyncDelegate,
             genAiDelegate = genAiDelegate,
-            experimentalDelegate = experimentalDelegate
+            experimentalDelegate = experimentalDelegate,
+            importExportManager = importExportManager
         )
     }
 

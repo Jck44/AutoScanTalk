@@ -24,6 +24,9 @@ import kotlinx.coroutines.withContext
 import java.util.UUID
 
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.encodeToString
 
 class PageImportExportManager @javax.inject.Inject constructor(
@@ -37,15 +40,38 @@ class PageImportExportManager @javax.inject.Inject constructor(
     private val json = Json {
         ignoreUnknownKeys = true
         encodeDefaults = true
+        prettyPrint = true
     }
 
-    suspend fun importFromJson(jsonString: String, bookId: String): Result<Int> = importBookFromJson(jsonString, bookId)
+    suspend fun importFromJson(
+        jsonString: String, 
+        bookId: String, 
+        regenerateIds: Boolean? = null,
+        restoreSyncSettings: Boolean = true
+    ): Result<Int> = importBookFromJson(jsonString, bookId, regenerateIds, restoreSyncSettings)
 
-    suspend fun importBookFromJson(jsonString: String, bookId: String): Result<Int> = withContext(ioDispatcher) {
+    fun extractBookNameFromJson(jsonString: String): String? {
+        return try {
+            val jsonObject = json.parseToJsonElement(jsonString).jsonObject
+            jsonObject["bookName"]?.jsonPrimitive?.contentOrNull
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private suspend fun importBookFromJson(
+        jsonString: String, 
+        bookId: String, 
+        regenerateIds: Boolean? = null,
+        restoreSyncSettings: Boolean = true
+    ): Result<Int> {
+        return withContext(ioDispatcher) {
         try {
             logger.d("PageImportExportManager", "Starting import mapping parsing for book $bookId...")
             val importData = json.decodeFromString<ImportExportData>(jsonString)
-
+            
+            val finalRegenerateIds = regenerateIds ?: (importData.bookId != null && importData.bookId != bookId)
+            
             if (importData.pages.isEmpty()) {
                 logger.e("PageImportExportManager", "Parsed JSON was invalid or missing 'pages'")
                 return@withContext Result.failure(Exception("Ungültiges JSON-Format. Seiten fehlen."))
@@ -68,9 +94,11 @@ class PageImportExportManager @javax.inject.Inject constructor(
             importData.isGeminiEnabled?.let { settingsRepository.isGeminiEnabled = it }
             importData.useLocalGenerativeAi?.let { settingsRepository.useLocalGenerativeAi = it }
 
-            importData.isCloudSyncEnabled?.let { settingsRepository.isCloudSyncEnabled = it }
-            importData.syncIntervalMinutes?.let { settingsRepository.syncIntervalMinutes = it }
-            importData.syncMode?.let { settingsRepository.syncMode = it }
+            if (restoreSyncSettings) {
+                importData.isCloudSyncEnabled?.let { settingsRepository.isCloudSyncEnabled = it }
+                importData.syncIntervalMinutes?.let { settingsRepository.syncIntervalMinutes = it }
+                importData.syncMode?.let { settingsRepository.syncMode = it }
+            }
 
             importData.ttsLanguage?.let { settingsRepository.ttsLanguage = it }
             importData.ttsVoiceName?.let { settingsRepository.ttsVoiceName = it }
@@ -105,10 +133,28 @@ class PageImportExportManager @javax.inject.Inject constructor(
                 }
             }
 
-            // Map IDs for incoming pages. We use the importId as the actual ID to prevent duplicates.
-            val pageIdMap = mutableMapOf<String, String>()
+            // Map IDs for incoming pages. We use the importId if present, else generate a new UUID.
+            // Using a unique key for the map to handle empty/missing importIds correctly per page object.
+            val pageToIdMap = mutableMapOf<ImportPage, String>()
+            val importIdToIdMap = mutableMapOf<String, String>()
             importData.pages.forEach { p ->
-                pageIdMap[p.importId] = p.importId
+                var forceRegenerate = finalRegenerateIds || p.importId.isBlank()
+                
+                // Collision check: if the ID already exists in the DB but belongs to a DIFFERENT book,
+                // we MUST regenerate it to prevent "stealing" the page from the other book.
+                if (!forceRegenerate) {
+                    val existingPage = pageRepository.getPageById(p.importId)
+                    if (existingPage != null && existingPage.bookId != bookId) {
+                        logger.w("PageImportExportManager", "Collision detected for page ${p.importId}. It belongs to book ${existingPage.bookId}, but we are importing into $bookId. Forcing ID regeneration.")
+                        forceRegenerate = true
+                    }
+                }
+                
+                val targetId = if (forceRegenerate) UUID.randomUUID().toString() else p.importId
+                pageToIdMap[p] = targetId
+                if (p.importId.isNotBlank()) {
+                    importIdToIdMap[p.importId] = targetId
+                }
             }
 
             // Handle Templates
@@ -150,7 +196,7 @@ class PageImportExportManager @javax.inject.Inject constructor(
                                     }
                                     "NavigateToPage", "NAVIGATE" -> {
                                         val sourceId = ia.targetPageImportId ?: ia.targetPageId ?: ""
-                                        val targetId = pageIdMap[sourceId] ?: sourceId
+                                        val targetId = importIdToIdMap[sourceId] ?: sourceId
                                         NavigateToPageButtonAction(targetId)
                                     }
                                     else -> null
@@ -158,7 +204,7 @@ class PageImportExportManager @javax.inject.Inject constructor(
                             }
                             if (importButton.label.isNotBlank() && action != null) {
                                 templateButtonConfigs[globalIdx] = ButtonConfig(
-                                    id = importButton.id ?: UUID.randomUUID().toString(),
+                                    id = if (finalRegenerateIds || importButton.id.isNullOrBlank()) UUID.randomUUID().toString() else importButton.id!!,
                                     label = importButton.label,
                                     spokenText = importButton.spokenText ?: importAction.textToSpeech ?: importAction.ttsFeedback,
                                     buttonAction = action,
@@ -188,7 +234,7 @@ class PageImportExportManager @javax.inject.Inject constructor(
             logger.d("PageImportExportManager", "Parsed ${importData.pages.size} pages. Committing to Room DB...")
 
             val newPages = importData.pages.map { importPage ->
-                val newPageId = importPage.importId
+                val newPageId = pageToIdMap[importPage] ?: UUID.randomUUID().toString()
                 val maxIndex = importPage.buttons.maxOfOrNull { it.index }?.toInt() ?: -1
                 var rows = importPage.rows
                 var columns = importPage.columns
@@ -211,6 +257,7 @@ class PageImportExportManager @javax.inject.Inject constructor(
                 
                 val buttonConfigs = MutableList<ButtonConfig?>(GridUtils.TOTAL_SLOTS) { null }
                 importPage.buttons.forEach { importButton ->
+                    val buttonId = if (importButton.id.isNullOrBlank()) UUID.randomUUID().toString() else importButton.id
                     val localIdx = importButton.index.toInt()
                     // Spatial mapping: place it in the 7x7 storage at (row, col)
                     val globalIdx = GridUtils.localToGlobalIndex(localIdx, importPage.columns)
@@ -226,15 +273,16 @@ class PageImportExportManager @javax.inject.Inject constructor(
                                 }
                                 "NavigateToPage", "NAVIGATE" -> {
                                     val sourceId = ia.targetPageImportId ?: ia.targetPageId ?: ""
-                                    val targetId = pageIdMap[sourceId] ?: sourceId
+                                    val targetId = importIdToIdMap[sourceId] ?: sourceId
                                     NavigateToPageButtonAction(targetId)
                                 }
                                 else -> null
                             }
                         }
                         if (importButton.label.isNotBlank() && action != null) {
+                            val forceButtonRegenerate = finalRegenerateIds || (importPage.importId.isNotBlank() && newPageId != importPage.importId)
                             buttonConfigs[globalIdx] = ButtonConfig(
-                                id = importButton.id ?: UUID.randomUUID().toString(),
+                                id = if (forceButtonRegenerate || importButton.id.isNullOrBlank()) UUID.randomUUID().toString() else importButton.id!!,
                                 label = importButton.label,
                                 spokenText = importButton.spokenText ?: importAction.textToSpeech ?: importAction.ttsFeedback,
                                 buttonAction = action,
@@ -269,6 +317,7 @@ class PageImportExportManager @javax.inject.Inject constructor(
             Result.failure(e)
         }
     }
+}
 
     suspend fun exportBookToJson(bookId: String): String = withContext(ioDispatcher) {
         val book = bookRepository.getBookById(bookId)
@@ -388,6 +437,7 @@ class PageImportExportManager @javax.inject.Inject constructor(
             ghosttalk_import_version = "1.1",
             appName = "GhosTTalk (Export)",
             bookName = book?.name,
+            bookId = book?.id,
             bookCreatedAt = book?.createdAt,
             bookUpdatedAt = book?.updatedAt,
             themeMode = settingsRepository.themeMode,

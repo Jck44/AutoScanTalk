@@ -191,9 +191,16 @@ class PageManagementDelegate @Inject constructor(
     }
 
 
-    fun importFromJson(jsonString: String, bookId: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
+    fun importFromJson(
+        jsonString: String, 
+        bookId: String, 
+        regenerateIds: Boolean? = true, 
+        restoreSyncSettings: Boolean = true,
+        onSuccess: () -> Unit, 
+        onError: (String) -> Unit
+    ) {
         scope.launch {
-            val result = importPageUseCase.execute(jsonString, bookId)
+            val result = importPageUseCase.execute(jsonString, bookId, regenerateIds, restoreSyncSettings)
             result.onSuccess { onSuccess() }.onFailure { e -> onError("Fehler beim Import: ${e.message}") }
         }
     }

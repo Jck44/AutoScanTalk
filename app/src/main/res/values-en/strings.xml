@@ -253,8 +253,17 @@
     <string name="settings_cloud_sync_mode_two_way">2-Way (Backup &amp; Restore)</string>
     <string name="settings_cloud_sync_mode_backup">1-Way (Backup to Google Drive only)</string>
     <string name="settings_cloud_sync_mode_restore">1-Way (Restore from Google Drive only)</string>
-    <string name="settings_cloud_backup_now">Backup</string>
+    <string name="settings_cloud_sync_now">Synchronize</string>
+    <string name="settings_cloud_backup_now">Backup now</string>
     <string name="settings_cloud_restore_now">Restore</string>
+    <string name="settings_cloud_sync_started">Cloud synchronization started…</string>
+    <string name="settings_cloud_sync_success">Synchronization completed successfully.</string>
+    <string name="settings_cloud_backup_success">Backup created successfully.</string>
+    <string name="settings_cloud_restore_success">Restore completed successfully.</string>
+    <string name="settings_cloud_sync_error">Cloud synchronization error: %1$s</string>
+    <string name="settings_cloud_backup_selection_title">Select Backup</string>
+    <string name="settings_cloud_backup_selection_description">No matching backup found for this book. Please select a backup from the list below:</string>
+    <string name="settings_cloud_backup_date_format">Backup date: %1$s</string>
 
     <!-- Gemini Integration -->
     <string name="settings_category_gemini">Gemini AI Assistant</string>

@@ -6,7 +6,12 @@ import javax.inject.Inject
 class ImportPageUseCase @Inject constructor(
     private val importExportManager: PageImportExportManager
 ) {
-    suspend fun execute(jsonString: String, bookId: String): Result<Int> {
-        return importExportManager.importFromJson(jsonString, bookId)
+    suspend fun execute(
+        jsonString: String, 
+        bookId: String, 
+        regenerateIds: Boolean? = true,
+        restoreSyncSettings: Boolean = true
+    ): Result<Int> {
+        return importExportManager.importFromJson(jsonString, bookId, regenerateIds, restoreSyncSettings)
     }
 }

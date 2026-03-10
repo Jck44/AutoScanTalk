@@ -15,6 +15,7 @@ import com.andreas_kratzer.ghosttalk.ui.settings.delegates.ExperimentalSettingsD
 import com.andreas_kratzer.ghosttalk.ui.settings.delegates.GenAiSettingsDelegate
 import com.andreas_kratzer.ghosttalk.ui.settings.delegates.ScanningSettingsDelegate
 import com.andreas_kratzer.ghosttalk.ui.settings.delegates.TtsSettingsDelegate
+import com.andreas_kratzer.ghosttalk.core.pages.PageImportExportManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -34,7 +35,8 @@ class SettingsViewModel @Inject constructor(
     val scanningDelegate: ScanningSettingsDelegate,
     val cloudSyncDelegate: CloudSyncSettingsDelegate,
     val genAiDelegate: GenAiSettingsDelegate,
-    val experimentalDelegate: ExperimentalSettingsDelegate
+    val experimentalDelegate: ExperimentalSettingsDelegate,
+    private val importExportManager: PageImportExportManager
 ) : AndroidViewModel(application) {
 
     private val _activeBookId = MutableStateFlow(settingsRepository.activeBookId)
@@ -72,6 +74,9 @@ class SettingsViewModel @Inject constructor(
     val syncIntervalMinutes = settingsRepository.syncIntervalMinutesFlow
     val isSyncing = cloudSyncDelegate.isSyncing
     val userEmail = cloudSyncDelegate.userEmail
+    
+    val availableBackups = cloudSyncDelegate.availableBackups
+    val showBackupSelectionDialog = cloudSyncDelegate.showBackupSelectionDialog
     
     val isGeminiEnabled = settingsRepository.isGeminiEnabledFlow
     val useLocalGenerativeAi = settingsRepository.useLocalGenerativeAiFlow
@@ -159,6 +164,10 @@ class SettingsViewModel @Inject constructor(
     fun setCloudSyncEnabled(ctx: Context, e: Boolean) = cloudSyncDelegate.setCloudSyncEnabled(ctx, e, viewModelScope)
     fun syncNow() = cloudSyncDelegate.performManualSync(com.andreas_kratzer.ghosttalk.domain.auth.SyncMode.TWO_WAY, viewModelScope)
     fun backupNow() = cloudSyncDelegate.performManualSync(com.andreas_kratzer.ghosttalk.domain.auth.SyncMode.BACKUP_ONLY, viewModelScope)
+    fun restoreNow() = cloudSyncDelegate.performManualSync(com.andreas_kratzer.ghosttalk.domain.auth.SyncMode.RESTORE_ONLY, viewModelScope)
+    fun restoreFromBackup(fileId: String) = cloudSyncDelegate.restoreFromBackup(fileId, viewModelScope)
+    fun dismissBackupSelectionDialog() = cloudSyncDelegate.dismissBackupSelectionDialog()
+    
     fun setSyncMode(m: String) { settingsRepository.syncMode = m }
     fun setSyncIntervalMinutes(minutes: Long) { settingsRepository.syncIntervalMinutes = minutes }
 
@@ -278,5 +287,21 @@ class SettingsViewModel @Inject constructor(
         settingsRepository.ttsAudioDeviceAddress?.split("|")?.lastOrNull()?.let { keep.add(it) }
         settingsRepository.cuesAudioDeviceAddress?.split("|")?.lastOrNull()?.let { keep.add(it) }
         settingsRepository.cleanupDeviceCache(keep)
+    }
+
+    suspend fun exportLocalBackup(): String {
+        val pages = allPages.value
+        return importExportManager.exportToJson(pages)
+    }
+
+    suspend fun importLocalBackup(json: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        val result = importExportManager.importFromJson(
+            jsonString = json,
+            bookId = activeBookId,
+            regenerateIds = true,
+            restoreSyncSettings = false
+        )
+        result.onSuccess { onSuccess() }
+            .onFailure { e -> onError("Fehler beim Import: ${e.message}") }
     }
 }

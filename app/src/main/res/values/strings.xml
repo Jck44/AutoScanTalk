@@ -79,6 +79,9 @@
     <string name="settings_category_ui">Benutzeroberfläche</string>
     <string name="settings_category_maintenance">Wartung</string>
     <string name="settings_clear_usage_stats">Nutzungsstatistiken leeren</string>
+    <string name="settings_category_local_backup">Lokale Datensicherung</string>
+    <string name="settings_local_backup_create">Backup erstellen</string>
+    <string name="settings_local_backup_restore">Backup wiederherstellen</string>
     <string name="settings_category_advanced">Erweiterte Einstellungen</string>
     <string name="settings_bluetooth_delay">Bluetooth-Verzögerung (ms)</string>
 
@@ -167,8 +170,9 @@
     <string name="page_export_success">Export erfolgreich!</string>
     <string name="page_export_error">Fehler beim Export: %s</string>
     
-    <string name="action_export_json">Export JSON</string>
-    <string name="action_import_json">Import JSON</string>
+    <string name="action_export_json">Export JSON (Backup)</string>
+    <string name="action_import_json">Import JSON (Wiederherstellung)</string>
+    <string name="action_import_json_migration">Import JSON (GoTalkNow Migration)</string>
     <string name="action_more">Mehr</string>
 
     <!-- Page Editor Screen -->
@@ -248,8 +252,17 @@
     <string name="settings_cloud_sync_mode_two_way">2-Way (Backup &amp; Restore)</string>
     <string name="settings_cloud_sync_mode_backup">1-Way (Nur Backup zu Google Drive)</string>
     <string name="settings_cloud_sync_mode_restore">1-Way (Nur Restore von Google Drive)</string>
-    <string name="settings_cloud_backup_now">Sichern</string>
+    <string name="settings_cloud_sync_now">Synchronisieren</string>
+    <string name="settings_cloud_backup_now">Backup jetzt erstellen</string>
     <string name="settings_cloud_restore_now">Wiederherstellen</string>
+    <string name="settings_cloud_sync_started">Cloud-Abgleich gestartet…</string>
+    <string name="settings_cloud_sync_success">Synchronisierung erfolgreich abgeschlossen.</string>
+    <string name="settings_cloud_backup_success">Backup erfolgreich erstellt.</string>
+    <string name="settings_cloud_restore_success">Wiederherstellung erfolgreich abgeschlossen.</string>
+    <string name="settings_cloud_sync_error">Fehler beim Cloud-Abgleich: %1$s</string>
+    <string name="settings_cloud_backup_selection_title">Backup auswählen</string>
+    <string name="settings_cloud_backup_selection_description">Es wurde kein passendes Backup für dieses Buch gefunden. Bitte wähle ein Backup aus der Liste aus:</string>
+    <string name="settings_cloud_backup_date_format">Sicherungsdatum: %1$s</string>
 
     <!-- Gemini Integration -->
     <string name="settings_category_gemini">Gemini KI-Assistent</string>

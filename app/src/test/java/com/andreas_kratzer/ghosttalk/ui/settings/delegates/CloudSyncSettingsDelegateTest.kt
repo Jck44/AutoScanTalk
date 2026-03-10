@@ -12,7 +12,11 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
 import io.mockk.verify
+import android.widget.Toast
+import io.mockk.unmockkStatic
+import org.junit.After
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -40,6 +44,10 @@ class CloudSyncSettingsDelegateTest {
 
     @Before
     fun setup() {
+        mockkStatic(Toast::class)
+        every { Toast.makeText(any(), any<Int>(), any()) } returns mockk(relaxed = true)
+        every { Toast.makeText(any(), any<String>(), any()) } returns mockk(relaxed = true)
+
         application = mockk(relaxed = true)
         googleAuthManager = mockk(relaxed = true)
         setCloudSyncEnabledUseCase = mockk(relaxed = true)
@@ -57,6 +65,11 @@ class CloudSyncSettingsDelegateTest {
             signInUseCase,
             signOutUseCase
         )
+    }
+
+    @After
+    fun tearDown() {
+        unmockkStatic(Toast::class)
     }
 
     @Test
