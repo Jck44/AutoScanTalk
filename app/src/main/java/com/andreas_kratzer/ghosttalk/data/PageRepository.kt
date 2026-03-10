@@ -51,4 +51,8 @@ class PageRepository(
         // buttons will be deleted via CASCADE FK
         pageDao.deletePageEntity(page)
     }
+
+    suspend fun deletePagesForBook(bookId: String) {
+        pageDao.deletePagesForBook(bookId)
+    }
 }

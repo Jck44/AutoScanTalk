@@ -6,6 +6,7 @@ import com.andreas_kratzer.ghosttalk.data.PageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.data.TemplateRepository
 import com.andreas_kratzer.ghosttalk.model.AuditoryCue
+import com.andreas_kratzer.ghosttalk.model.Book
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
@@ -459,5 +460,85 @@ class PageImportExportManagerTest {
         
         // bookId should be the target book
         assertEquals("target-book", importedPage.bookId)
+    }
+
+    @Test
+    fun `importAsNewBook creates book and imports with same IDs`() = runTest(testDispatcher) {
+        val bookId = "new-book-id"
+        val pageId = "p1"
+        val jsonString = """
+            {
+                "bookId": "$bookId",
+                "bookName": "Cloud Book",
+                "pages": [
+                    { "importId": "$pageId", "name": "Page 1", "rows": 1, "columns": 1, "buttons": [] }
+                ]
+            }
+        """.trimIndent()
+
+        // Mock book repository to return null (book doesn't exist)
+        coEvery { bookRepository.getBookById(bookId) } returns null
+        coEvery { pageRepository.getPageById(pageId) } returns null
+        
+        val bookSlot = slot<Book>()
+        coEvery { bookRepository.insertBook(capture(bookSlot)) } returns Unit
+        
+        val pageSlot = slot<Page>()
+        coEvery { pageRepository.insertPage(capture(pageSlot)) } returns Unit
+        
+        val result = manager.importCloudBackup(jsonString, null)
+
+        assertTrue(result.isSuccess)
+        assertEquals(bookId, result.getOrNull())
+
+        // Verify book insertion
+        assertTrue(bookSlot.isCaptured)
+        assertEquals(bookId, bookSlot.captured.id)
+        assertEquals("Cloud Book", bookSlot.captured.name)
+        
+        // Verify page insertion with same ID
+        assertTrue(pageSlot.isCaptured)
+        assertEquals(pageId, pageSlot.captured.id)
+        assertEquals(bookId, pageSlot.captured.bookId)
+    }
+
+    @Test
+    fun `importCloudBackup extracts bookId from name if missing from field`() = runTest(testDispatcher) {
+        val extractedId = "12345678-1234-1234-1234-123456789012"
+        val jsonString = """
+            {
+                "bookName": "Test Book [${extractedId}]",
+                "pages": [
+                    { "importId": "p1", "name": "P1", "rows": 1, "columns": 1, "buttons": [] }
+                ]
+            }
+        """.trimIndent()
+
+        coEvery { bookRepository.getBookById(any()) } returns null
+        coEvery { bookRepository.insertBook(any()) } returns Unit
+        coEvery { pageRepository.getPageById(any()) } returns null
+        coEvery { pageRepository.insertPage(any()) } returns Unit
+
+        val result = manager.importCloudBackup(jsonString, null)
+
+        assertTrue(result.isSuccess)
+        assertEquals(extractedId.lowercase(), result.getOrNull()?.lowercase())
+    }
+
+    @Test
+    fun `importCloudBackup returns failure if bookId missing and not found in name or filename`() = runTest(testDispatcher) {
+        val jsonString = """
+            {
+                "bookName": "Just a Name",
+                "pages": [
+                    { "importId": "p1", "name": "P1", "rows": 1, "columns": 1, "buttons": [] }
+                ]
+            }
+        """.trimIndent()
+
+        val result = manager.importCloudBackup(jsonString, null)
+
+        assertTrue(result.isFailure)
+        assertEquals("Konnte keine Buch-ID im Backup finden.", result.exceptionOrNull()?.message)
     }
 }

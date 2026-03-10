@@ -20,6 +20,7 @@ import com.andreas_kratzer.ghosttalk.domain.auth.SignOutUseCase
 import com.andreas_kratzer.ghosttalk.domain.auth.RemoteBackupInfo
 import com.andreas_kratzer.ghosttalk.domain.auth.SyncMode
 import com.google.api.services.drive.Drive
+import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,8 +35,10 @@ import javax.inject.Singleton
 class CloudSyncSettingsDelegate @Inject constructor(
     private val application: Application,
     private val googleAuthManager: GoogleAuthManager,
+    private val settingsRepository: com.andreas_kratzer.ghosttalk.data.SettingsRepository,
     private val setCloudSyncEnabledUseCase: SetCloudSyncEnabledUseCase,
     private val performManualSyncUseCase: PerformManualSyncUseCase,
+    private val cloudSyncUseCase: com.andreas_kratzer.ghosttalk.domain.auth.CloudSyncUseCase,
     private val signInUseCase: SignInUseCase,
     private val signOutUseCase: SignOutUseCase
 ) {
@@ -83,17 +86,13 @@ class CloudSyncSettingsDelegate @Inject constructor(
 
     fun performManualSync(
         mode: SyncMode,
-        scope: CoroutineScope,
-        driveOverride: Drive? = null,
-        fileIdOverride: String? = null
+        scope: CoroutineScope
     ) {
         scope.launch {
             _isSyncing.value = true
-            if (fileIdOverride == null) {
-                Toast.makeText(application, R.string.settings_cloud_sync_started, Toast.LENGTH_SHORT).show()
-            }
+            Toast.makeText(application, R.string.settings_cloud_sync_started, Toast.LENGTH_SHORT).show()
             
-            when (val result = performManualSyncUseCase.execute(mode, driveOverride, fileIdOverride)) {
+            when (val result = performManualSyncUseCase.execute(mode)) {
                 is PerformManualSyncUseCase.Result.Success -> {
                     val messageRes = when (mode) {
                         SyncMode.BACKUP_ONLY -> R.string.settings_cloud_backup_success
@@ -102,10 +101,6 @@ class CloudSyncSettingsDelegate @Inject constructor(
                     }
                     Toast.makeText(application, messageRes, Toast.LENGTH_LONG).show()
                 }
-                is PerformManualSyncUseCase.Result.NoMatchingBackupFound -> {
-                    _availableBackups.value = result.backups
-                    _showBackupSelectionDialog.value = true
-                }
                 is PerformManualSyncUseCase.Result.RecoverableAuth -> {
                     _authIntentFlow.emit(result.intent)
                 }
@@ -113,19 +108,82 @@ class CloudSyncSettingsDelegate @Inject constructor(
                     val errorMsg = application.getString(R.string.settings_cloud_sync_error, result.message)
                     Toast.makeText(application, errorMsg, Toast.LENGTH_LONG).show()
                 }
+                else -> {
+                    // NoMatchingBackupFound is no longer expected here as it's handled as an Error
+                }
             }
             _isSyncing.value = false
         }
     }
 
-    fun restoreFromBackup(fileId: String, scope: CoroutineScope) {
-        _showBackupSelectionDialog.value = false
-        performManualSync(SyncMode.RESTORE_ONLY, scope, fileIdOverride = fileId)
-    }
-
     fun dismissBackupSelectionDialog() {
         _showBackupSelectionDialog.value = false
-        _availableBackups.value = emptyList<com.andreas_kratzer.ghosttalk.domain.auth.RemoteBackupInfo>()
+        _availableBackups.value = emptyList()
+    }
+
+    fun fetchAvailableBackupsForImport(scope: CoroutineScope) {
+        scope.launch {
+            val credential = googleAuthManager.getGoogleCredential()
+            if (credential == null) {
+                Toast.makeText(application, "Kein Cloud-Konto verbunden.", Toast.LENGTH_LONG).show()
+                return@launch
+            }
+            _isSyncing.value = true
+            try {
+                val drive = com.google.api.services.drive.Drive.Builder(
+                    com.google.api.client.http.javanet.NetHttpTransport(),
+                    com.google.api.client.json.gson.GsonFactory.getDefaultInstance(),
+                    credential
+                ).setApplicationName("GhosTTalk").build()
+
+                val backups = cloudSyncUseCase.getAvailableBackups(drive)
+                _availableBackups.value = backups
+                if (backups.isEmpty()) {
+                    Toast.makeText(application, "Keine Backups in der Cloud gefunden.", Toast.LENGTH_LONG).show()
+                } else {
+                    _showBackupSelectionDialog.value = true
+                }
+            } catch (e: Exception) {
+                Toast.makeText(application, "Fehler beim Laden der Backups: ${e.message}", Toast.LENGTH_LONG).show()
+            } finally {
+                _isSyncing.value = false
+            }
+        }
+    }
+
+    fun importCloudBackup(backupInfo: RemoteBackupInfo, scope: CoroutineScope, onImported: (String) -> Unit = {}) {
+        _showBackupSelectionDialog.value = false
+        scope.launch {
+            val credential = googleAuthManager.getGoogleCredential() ?: return@launch
+            _isSyncing.value = true
+            Toast.makeText(application, "Import wird gestartet...", Toast.LENGTH_SHORT).show()
+            
+            try {
+                val drive = com.google.api.services.drive.Drive.Builder(
+                    com.google.api.client.http.javanet.NetHttpTransport(),
+                    com.google.api.client.json.gson.GsonFactory.getDefaultInstance(),
+                    credential
+                ).setApplicationName("GhosTTalk").build()
+
+                val result = cloudSyncUseCase.importCloudBackup(drive, backupInfo.fileId, backupInfo.fileName)
+                if (result.isSuccess) {
+                    val bookId = result.getOrThrow()
+                    settingsRepository.activeBookId = bookId
+                    Toast.makeText(application, R.string.book_import_cloud_success, Toast.LENGTH_LONG).show()
+                    onImported(bookId)
+                } else {
+                    val errorMsg = application.getString(R.string.book_import_cloud_error, result.exceptionOrNull()?.message ?: "Unbekannter Fehler")
+                    Toast.makeText(application, errorMsg, Toast.LENGTH_LONG).show()
+                }
+            } catch (e: UserRecoverableAuthIOException) {
+                _authIntentFlow.emit(e.intent)
+            } catch (e: Exception) {
+                val errorMsg = application.getString(R.string.book_import_cloud_error, e.message ?: "Unerwarteter Fehler")
+                Toast.makeText(application, errorMsg, Toast.LENGTH_LONG).show()
+            } finally {
+                _isSyncing.value = false
+            }
+        }
     }
 
     private fun findActivity(context: Context): Activity? {

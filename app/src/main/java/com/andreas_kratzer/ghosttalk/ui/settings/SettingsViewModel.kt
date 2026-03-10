@@ -39,7 +39,7 @@ class SettingsViewModel @Inject constructor(
     private val importExportManager: PageImportExportManager
 ) : AndroidViewModel(application) {
 
-    private val _activeBookId = MutableStateFlow(settingsRepository.activeBookId)
+    private val _activeBookId = settingsRepository.activeBookIdFlow
     val allPages: StateFlow<List<Page>> = getPagesUseCase.execute(_activeBookId)
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
@@ -128,7 +128,6 @@ class SettingsViewModel @Inject constructor(
 
     // --- Delegation Methods (UI Actions) ---
     fun refresh() {
-        _activeBookId.value = settingsRepository.activeBookId
         ttsDelegate.loadAvailableLanguages()
         ttsDelegate.loadAvailableVoices()
         ttsDelegate.loadAvailableAudioDevices()
@@ -165,7 +164,8 @@ class SettingsViewModel @Inject constructor(
     fun syncNow() = cloudSyncDelegate.performManualSync(com.andreas_kratzer.ghosttalk.domain.auth.SyncMode.TWO_WAY, viewModelScope)
     fun backupNow() = cloudSyncDelegate.performManualSync(com.andreas_kratzer.ghosttalk.domain.auth.SyncMode.BACKUP_ONLY, viewModelScope)
     fun restoreNow() = cloudSyncDelegate.performManualSync(com.andreas_kratzer.ghosttalk.domain.auth.SyncMode.RESTORE_ONLY, viewModelScope)
-    fun restoreFromBackup(fileId: String) = cloudSyncDelegate.restoreFromBackup(fileId, viewModelScope)
+    fun fetchAvailableBackupsForImport() = cloudSyncDelegate.fetchAvailableBackupsForImport(viewModelScope)
+    fun importCloudBackup(backupInfo: com.andreas_kratzer.ghosttalk.domain.auth.RemoteBackupInfo) = cloudSyncDelegate.importCloudBackup(backupInfo, viewModelScope)
     fun dismissBackupSelectionDialog() = cloudSyncDelegate.dismissBackupSelectionDialog()
     
     fun setSyncMode(m: String) { settingsRepository.syncMode = m }

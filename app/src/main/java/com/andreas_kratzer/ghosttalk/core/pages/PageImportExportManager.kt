@@ -21,13 +21,11 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
-import java.util.UUID
-
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.encodeToString
+import java.util.UUID
 
 class PageImportExportManager @javax.inject.Inject constructor(
     private val bookRepository: com.andreas_kratzer.ghosttalk.data.BookRepository,
@@ -37,6 +35,8 @@ class PageImportExportManager @javax.inject.Inject constructor(
     private val logger: Logger,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) {
+    private val TAG = "PageImportExportManager"
+
     private val json = Json {
         ignoreUnknownKeys = true
         encodeDefaults = true
@@ -50,11 +50,62 @@ class PageImportExportManager @javax.inject.Inject constructor(
         restoreSyncSettings: Boolean = true
     ): Result<Int> = importBookFromJson(jsonString, bookId, regenerateIds, restoreSyncSettings)
 
+    suspend fun importCloudBackup(jsonString: String, fileName: String?): Result<String> = withContext(ioDispatcher) {
+        try {
+            val importData = json.decodeFromString<ImportExportData>(jsonString)
+            var importBookId = importData.bookId
+            if (importBookId.isNullOrBlank()) {
+                val fileNameRegex = Regex("book_(.*)\\.json", RegexOption.IGNORE_CASE)
+                importBookId = fileName?.let { fileNameRegex.find(it)?.groupValues?.get(1) }
+            }
+            if (importBookId.isNullOrBlank()) {
+                val uuidRegex = Regex("[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}", RegexOption.IGNORE_CASE)
+                importBookId = importData.bookName?.let { name ->
+                    uuidRegex.find(name)?.value
+                }
+            }
+            if (importBookId.isNullOrBlank()) {
+                 return@withContext Result.failure(Exception("Konnte keine Buch-ID im Backup finden."))
+            }
+
+            val existingBook = bookRepository.getBookById(importBookId)
+            if (existingBook != null) {
+                return@withContext Result.failure(Exception("Ein Buch mit dieser ID existiert bereits lokal. Bitte verwende stattdessen die Buch-Einstellungen zum Synchronisieren oder Wiederherstellen."))
+            }
+
+            val newBook = com.andreas_kratzer.ghosttalk.model.Book(
+                id = importBookId,
+                name = importData.bookName ?: "Importiertes Buch",
+                createdAt = importData.bookCreatedAt ?: System.currentTimeMillis(),
+                updatedAt = importData.bookUpdatedAt ?: System.currentTimeMillis()
+            )
+            bookRepository.insertBook(newBook)
+
+            val result = importBookFromJson(
+                jsonString = jsonString,
+                bookId = importBookId,
+                regenerateIds = false,
+                restoreSyncSettings = false
+            )
+            
+            if (result.isSuccess) {
+                Result.success(importBookId)
+            } else {
+                Result.failure(result.exceptionOrNull() ?: Exception("Import fehlgeschlagen"))
+            }
+        } catch (e: Exception) {
+            logger.e(TAG, "Error in importCloudBackup", e)
+            Result.failure(e)
+        }
+    }
+
+
     fun extractBookNameFromJson(jsonString: String): String? {
         return try {
             val jsonObject = json.parseToJsonElement(jsonString).jsonObject
             jsonObject["bookName"]?.jsonPrimitive?.contentOrNull
         } catch (e: Exception) {
+            logger.e(TAG, "Error extracting book name from JSON", e)
             null
         }
     }
@@ -67,16 +118,26 @@ class PageImportExportManager @javax.inject.Inject constructor(
     ): Result<Int> {
         return withContext(ioDispatcher) {
         try {
-            logger.d("PageImportExportManager", "Starting import mapping parsing for book $bookId...")
-            val importData = json.decodeFromString<ImportExportData>(jsonString)
+            logger.d(TAG, "Starting import for book $bookId. String length: ${jsonString.length}")
+            
+            val importData = try {
+                json.decodeFromString<ImportExportData>(jsonString)
+            } catch (e: Exception) {
+                logger.e(TAG, "Failed to decode JSON to ImportExportData", e)
+                return@withContext Result.failure(Exception("JSON-Dekodierungsfehler: ${e.message}"))
+            }
+            
+            logger.d(TAG, "Successfully decoded JSON. Version: ${importData.ghosttalk_import_version}, App: ${importData.appName}")
             
             val finalRegenerateIds = regenerateIds ?: (importData.bookId != null && importData.bookId != bookId)
-            
+            logger.d(TAG, "Regenerate IDs: $finalRegenerateIds (original request: $regenerateIds, data bookId: ${importData.bookId})")
+
             if (importData.pages.isEmpty()) {
-                logger.e("PageImportExportManager", "Parsed JSON was invalid or missing 'pages'")
+                logger.e(TAG, "Parsed JSON has no pages.")
                 return@withContext Result.failure(Exception("Ungültiges JSON-Format. Seiten fehlen."))
             }
 
+            logger.d(TAG, "Syncing settings...")
             // Sync settings if present
             importData.holdingTimeSeconds?.let { seconds ->
                 settingsRepository.holdingTimeMillis = (seconds * 1000).toLong()
@@ -95,9 +156,12 @@ class PageImportExportManager @javax.inject.Inject constructor(
             importData.useLocalGenerativeAi?.let { settingsRepository.useLocalGenerativeAi = it }
 
             if (restoreSyncSettings) {
+                logger.d(TAG, "Restoring sync settings...")
                 importData.isCloudSyncEnabled?.let { settingsRepository.isCloudSyncEnabled = it }
                 importData.syncIntervalMinutes?.let { settingsRepository.syncIntervalMinutes = it }
                 importData.syncMode?.let { settingsRepository.syncMode = it }
+            } else {
+                logger.d(TAG, "Skipping sync settings restoration as requested.")
             }
 
             importData.ttsLanguage?.let { settingsRepository.ttsLanguage = it }
@@ -123,6 +187,7 @@ class PageImportExportManager @javax.inject.Inject constructor(
 
             // Update Book metadata if present
             if (importData.bookName != null) {
+                logger.d(TAG, "Updating book metadata: ${importData.bookName}")
                 val existingBook = bookRepository.getBookById(bookId)
                 if (existingBook != null) {
                     bookRepository.updateBook(existingBook.copy(
@@ -133,19 +198,24 @@ class PageImportExportManager @javax.inject.Inject constructor(
                 }
             }
 
+            // If we are NOT regenerating IDs, it means we want to match the backup exactly (Restore/Sync).
+            // In this case, we should clear existing pages to avoid orphaned local pages.
+            if (!finalRegenerateIds) {
+                logger.d(TAG, "Restore/Sync detected (regenerateIds=false). Clearing local pages for book $bookId")
+                pageRepository.deletePagesForBook(bookId)
+            }
+
+            logger.d(TAG, "Mapping page IDs...")
             // Map IDs for incoming pages. We use the importId if present, else generate a new UUID.
-            // Using a unique key for the map to handle empty/missing importIds correctly per page object.
             val pageToIdMap = mutableMapOf<ImportPage, String>()
             val importIdToIdMap = mutableMapOf<String, String>()
             importData.pages.forEach { p ->
                 var forceRegenerate = finalRegenerateIds || p.importId.isBlank()
                 
-                // Collision check: if the ID already exists in the DB but belongs to a DIFFERENT book,
-                // we MUST regenerate it to prevent "stealing" the page from the other book.
                 if (!forceRegenerate) {
                     val existingPage = pageRepository.getPageById(p.importId)
                     if (existingPage != null && existingPage.bookId != bookId) {
-                        logger.w("PageImportExportManager", "Collision detected for page ${p.importId}. It belongs to book ${existingPage.bookId}, but we are importing into $bookId. Forcing ID regeneration.")
+                        logger.w(TAG, "Collision detected for page ${p.importId}. Belongs to ${existingPage.bookId}, importing to $bookId. Forcing regeneration.")
                         forceRegenerate = true
                     }
                 }
@@ -158,6 +228,7 @@ class PageImportExportManager @javax.inject.Inject constructor(
             }
 
             // Handle Templates
+            logger.d(TAG, "Processing ${importData.templates?.size ?: 0} templates...")
             importData.templates?.forEach { importTemplate ->
                 if (!importTemplate.isBuiltIn) {
                     val maxIndex = importTemplate.buttons.maxOfOrNull { it.index }?.toInt() ?: -1
@@ -165,6 +236,7 @@ class PageImportExportManager @javax.inject.Inject constructor(
                     var columns = importTemplate.columns
                     
                     if (maxIndex >= rows * columns) {
+                        logger.w(TAG, "Template ${importTemplate.name} buttons exceed grid ${rows}x${columns}. Adjusting...")
                         if (columns < 7 && maxIndex >= rows * 7) {
                             columns = 7
                         } else if (columns < 7) {
@@ -204,7 +276,7 @@ class PageImportExportManager @javax.inject.Inject constructor(
                             }
                             if (importButton.label.isNotBlank() && action != null) {
                                 templateButtonConfigs[globalIdx] = ButtonConfig(
-                                    id = if (finalRegenerateIds || importButton.id.isNullOrBlank()) UUID.randomUUID().toString() else importButton.id!!,
+                                    id = if (finalRegenerateIds || importButton.id.isNullOrBlank()) UUID.randomUUID().toString() else importButton.id,
                                     label = importButton.label,
                                     spokenText = importButton.spokenText ?: importAction.textToSpeech ?: importAction.ttsFeedback,
                                     buttonAction = action,
@@ -231,8 +303,7 @@ class PageImportExportManager @javax.inject.Inject constructor(
                 }
             }
 
-            logger.d("PageImportExportManager", "Parsed ${importData.pages.size} pages. Committing to Room DB...")
-
+            logger.d(TAG, "Processing ${importData.pages.size} pages...")
             val newPages = importData.pages.map { importPage ->
                 val newPageId = pageToIdMap[importPage] ?: UUID.randomUUID().toString()
                 val maxIndex = importPage.buttons.maxOfOrNull { it.index }?.toInt() ?: -1
@@ -240,6 +311,7 @@ class PageImportExportManager @javax.inject.Inject constructor(
                 var columns = importPage.columns
 
                 if (maxIndex >= rows * columns) {
+                    logger.w(TAG, "Page ${importPage.name} buttons exceed grid ${rows}x${columns}. Adjusting...")
                     if (columns < 7 && maxIndex >= rows * 7) {
                         columns = 7
                     } else if (columns < 7) {
@@ -257,9 +329,7 @@ class PageImportExportManager @javax.inject.Inject constructor(
                 
                 val buttonConfigs = MutableList<ButtonConfig?>(GridUtils.TOTAL_SLOTS) { null }
                 importPage.buttons.forEach { importButton ->
-                    val buttonId = if (importButton.id.isNullOrBlank()) UUID.randomUUID().toString() else importButton.id
                     val localIdx = importButton.index.toInt()
-                    // Spatial mapping: place it in the 7x7 storage at (row, col)
                     val globalIdx = GridUtils.localToGlobalIndex(localIdx, importPage.columns)
                     
                     if (globalIdx < GridUtils.TOTAL_SLOTS) {
@@ -282,7 +352,7 @@ class PageImportExportManager @javax.inject.Inject constructor(
                         if (importButton.label.isNotBlank() && action != null) {
                             val forceButtonRegenerate = finalRegenerateIds || (importPage.importId.isNotBlank() && newPageId != importPage.importId)
                             buttonConfigs[globalIdx] = ButtonConfig(
-                                id = if (forceButtonRegenerate || importButton.id.isNullOrBlank()) UUID.randomUUID().toString() else importButton.id!!,
+                                id = if (forceButtonRegenerate || importButton.id.isNullOrBlank()) UUID.randomUUID().toString() else importButton.id,
                                 label = importButton.label,
                                 spokenText = importButton.spokenText ?: importAction.textToSpeech ?: importAction.ttsFeedback,
                                 buttonAction = action,
@@ -309,11 +379,12 @@ class PageImportExportManager @javax.inject.Inject constructor(
                 )
             }
 
+            logger.d(TAG, "Inserting ${newPages.size} pages into DB...")
             newPages.forEach { pageRepository.insertPage(it) }
-            logger.d("PageImportExportManager", "Successfully committed ${newPages.size} pages")
+            logger.d(TAG, "Import successfully finished for book $bookId.")
             Result.success(newPages.size)
         } catch (e: Exception) {
-            logger.e("PageImportExportManager", "Exception during import", e)
+            logger.e(TAG, "Unexpected exception during import for book $bookId", e)
             Result.failure(e)
         }
     }
@@ -327,8 +398,6 @@ class PageImportExportManager @javax.inject.Inject constructor(
 
     suspend fun exportToJson(pages: List<Page>, book: com.andreas_kratzer.ghosttalk.model.Book? = null): String = withContext(ioDispatcher) {
         val importPages = pages.map { page ->
-            // Use current rows/cols of the page to decide which buttons to export
-            // and how to map their indices
             val buttons = page.buttonConfigs.mapIndexedNotNull { globalIndex, config ->
                 if (config != null && GridUtils.isVisibleInGrid(globalIndex, page.rows, page.columns)) {
                     val importAction = when (val action = config.buttonAction) {
@@ -353,7 +422,6 @@ class PageImportExportManager @javax.inject.Inject constructor(
                         else -> null
                     }
                     
-                    // Reverse spatial mapping: global 7x7 back to local (rows x cols)
                     val localIndex = GridUtils.globalToLocalIndex(globalIndex, page.columns)
 
                     ImportButton(

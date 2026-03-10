@@ -129,6 +129,9 @@
     <string name="book_dialog_delete_title">Buch löschen?</string>
     <string name="book_dialog_delete_confirm">Möchtest du das Buch \"%s\" wirklich unwiderruflich löschen? Alle darin enthaltenen Seiten gehen verloren.</string>
     <string name="book_name_label">Name des Buches</string>
+    <string name="book_import_cloud_description">Bestehendes Buch aus Cloud laden</string>
+    <string name="book_import_cloud_success">Buch erfolgreich aus der Cloud geladen.</string>
+    <string name="book_import_cloud_error">Fehler beim Laden aus der Cloud: %s</string>
     
     <!-- Shared Actions -->
     <string name="action_create">Erstellen</string>
@@ -263,6 +266,14 @@
     <string name="settings_cloud_backup_selection_title">Backup auswählen</string>
     <string name="settings_cloud_backup_selection_description">Es wurde kein passendes Backup für dieses Buch gefunden. Bitte wähle ein Backup aus der Liste aus:</string>
     <string name="settings_cloud_backup_date_format">Sicherungsdatum: %1$s</string>
+    <string name="settings_category_cloud_import">Cloud Import</string>
+    <string name="settings_cloud_import_as_new">Aus Cloud-Backup importieren</string>
+    <string name="settings_cloud_import_explanation">Lade ein bestehendes Backup aus deiner Cloud als ein zusätzlich neues Buch in deine App. Bestehende Bücher bleiben erhalten.</string>
+    <string name="settings_category_cloud_account">Cloud Konto</string>
+    <string name="settings_cloud_signed_in_as">Angemeldet als %s</string>
+    <string name="settings_cloud_sign_out">Abmelden</string>
+    <string name="settings_cloud_sign_in">Anmelden</string>
+    <string name="settings_cloud_last_sync">Letzter Sync: %s</string>
 
     <!-- Gemini Integration -->
     <string name="settings_category_gemini">Gemini KI-Assistent</string>

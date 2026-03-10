@@ -31,13 +31,13 @@ class DriveServiceHelper(private val driveService: Drive) {
         } catch (e: com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException) {
             throw e
         } catch (e: GoogleJsonResponseException) {
-            Log.e(TAG, "Failed to create folder. Status: ${e.statusCode}, Message: ${e.details.message}")
+            Log.e(TAG, "Failed to create folder. Status: ${e.statusCode}, Message: ${e.details.message}", e)
             if (e.statusCode == 403) {
                 Log.e(TAG, "403 Forbidden: Check if Drive API is enabled in Google Cloud Console and if the user has given consent.")
             }
             null
-        } catch (e: IOException) {
-            Log.e(TAG, "Failed to create folder due to IOException: ${e.message}", e)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to create folder due to unexpected exception: ${e.message}", e)
             null
         }
     }
@@ -48,18 +48,20 @@ class DriveServiceHelper(private val driveService: Drive) {
     suspend fun findFolder(folderName: String): String? = withContext(Dispatchers.IO) {
         val query = "name = '$folderName' and mimeType = 'application/vnd.google-apps.folder' and trashed = false"
         try {
-            Log.d(TAG, "Searching for folder: $folderName")
+            Log.d(TAG, "Searching for folder: $folderName with query: $query")
             val result: FileList = driveService.files().list().setQ(query).setFields("files(id, name)").execute()
-            val id = result.files.firstOrNull()?.id
+            val files = result.files ?: emptyList()
+            Log.d(TAG, "Search returned ${files.size} entries for $folderName")
+            val id = files.firstOrNull()?.id
             Log.d(TAG, "Search result for $folderName: ${id ?: "Not found"}")
             id
         } catch (e: com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException) {
             throw e
         } catch (e: GoogleJsonResponseException) {
-            Log.e(TAG, "Failed to find folder. Status: ${e.statusCode}, Message: ${e.details.message}")
+            Log.e(TAG, "Failed to find folder. Status: ${e.statusCode}, Message: ${e.details.message}", e)
             null
-        } catch (e: IOException) {
-            Log.e(TAG, "Failed to find folder due to IOException: ${e.message}", e)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to find folder due to unexpected exception: ${e.message}", e)
             null
         }
     }
@@ -85,10 +87,10 @@ class DriveServiceHelper(private val driveService: Drive) {
         } catch (e: com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException) {
             throw e
         } catch (e: GoogleJsonResponseException) {
-            Log.e(TAG, "Failed to upload file. Status: ${e.statusCode}, Message: ${e.details.message}")
+            Log.e(TAG, "Failed to upload file. Status: ${e.statusCode}, Message: ${e.details.message}", e)
             null
-        } catch (e: IOException) {
-            Log.e(TAG, "Failed to upload file due to IOException: ${e.message}", e)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to upload file due to unexpected exception: ${e.message}", e)
             null
         }
     }
@@ -113,10 +115,10 @@ class DriveServiceHelper(private val driveService: Drive) {
         } catch (e: com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException) {
             throw e
         } catch (e: GoogleJsonResponseException) {
-            Log.e(TAG, "Failed to update file. Status: ${e.statusCode}, Message: ${e.details.message}")
+            Log.e(TAG, "Failed to update file. Status: ${e.statusCode}, Message: ${e.details.message}", e)
             false
-        } catch (e: IOException) {
-            Log.e(TAG, "Failed to update file due to IOException: ${e.message}", e)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to update file due to unexpected exception: ${e.message}", e)
             false
         }
     }
@@ -135,10 +137,33 @@ class DriveServiceHelper(private val driveService: Drive) {
         } catch (e: com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException) {
             throw e
         } catch (e: GoogleJsonResponseException) {
-            Log.e(TAG, "Failed to download file. Status: ${e.statusCode}, Message: ${e.details.message}")
+            Log.e(TAG, "Failed to download file. Status: ${e.statusCode}, Message: ${e.details.message}", e)
             false
-        } catch (e: IOException) {
-            Log.e(TAG, "Failed to download file due to IOException: ${e.message}", e)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to download file due to unexpected exception: ${e.message}", e)
+            false
+        }
+    }
+
+    /**
+     * Renames a file in Google Drive.
+     */
+    suspend fun renameFile(fileId: String, newName: String): Boolean = withContext(Dispatchers.IO) {
+        val metadata = File().apply {
+            name = newName
+        }
+        try {
+            Log.d(TAG, "Renaming file $fileId to $newName")
+            driveService.files().update(fileId, metadata).execute()
+            Log.d(TAG, "File renamed successfully: $fileId")
+            true
+        } catch (e: com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException) {
+            throw e
+        } catch (e: GoogleJsonResponseException) {
+            Log.e(TAG, "Failed to rename file. Status: ${e.statusCode}, Message: ${e.details.message}", e)
+            false
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to rename file due to unexpected exception: ${e.message}", e)
             false
         }
     }
@@ -149,7 +174,7 @@ class DriveServiceHelper(private val driveService: Drive) {
     suspend fun listFiles(folderId: String): List<File> = withContext(Dispatchers.IO) {
         val query = "'$folderId' in parents and trashed = false"
         try {
-            Log.d(TAG, "Listing files in folder: $folderId")
+            Log.d(TAG, "Listing files in folder: $folderId with query: $query")
             val result: FileList = driveService.files().list().setQ(query).setFields("files(id, name, modifiedTime)").execute()
             val files = result.files ?: emptyList()
             Log.d(TAG, "Found ${files.size} files in folder $folderId")
@@ -157,10 +182,10 @@ class DriveServiceHelper(private val driveService: Drive) {
         } catch (e: com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException) {
             throw e
         } catch (e: GoogleJsonResponseException) {
-            Log.e(TAG, "Failed to list files. Status: ${e.statusCode}, Message: ${e.details.message}")
+            Log.e(TAG, "Failed to list files. Status: ${e.statusCode}, Message: ${e.details.message}", e)
             emptyList()
-        } catch (e: IOException) {
-            Log.e(TAG, "Failed to list files due to IOException: ${e.message}", e)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to list files due to unexpected exception: ${e.message}", e)
             emptyList()
         }
     }
@@ -171,7 +196,7 @@ class DriveServiceHelper(private val driveService: Drive) {
     suspend fun searchFiles(queryText: String): List<File> = withContext(Dispatchers.IO) {
         val query = "name contains '$queryText' and trashed = false"
         try {
-            Log.d(TAG, "Searching for files with query: $queryText")
+            Log.d(TAG, "Searching for files with query: $query")
             val result: FileList = driveService.files().list().setQ(query).setFields("files(id, name, modifiedTime)").execute()
             val files = result.files ?: emptyList()
             Log.d(TAG, "Found ${files.size} files matching '$queryText'")
@@ -179,10 +204,10 @@ class DriveServiceHelper(private val driveService: Drive) {
         } catch (e: com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException) {
             throw e
         } catch (e: GoogleJsonResponseException) {
-            Log.e(TAG, "Failed to search files. Status: ${e.statusCode}, Message: ${e.details.message}")
+            Log.e(TAG, "Failed to search files. Status: ${e.statusCode}, Message: ${e.details.message}", e)
             emptyList()
-        } catch (e: IOException) {
-            Log.e(TAG, "Failed to search files due to IOException: ${e.message}", e)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to search files due to unexpected exception: ${e.message}", e)
             emptyList()
         }
     }

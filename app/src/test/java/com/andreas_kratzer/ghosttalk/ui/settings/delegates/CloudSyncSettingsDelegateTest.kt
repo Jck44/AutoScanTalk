@@ -3,6 +3,7 @@ package com.andreas_kratzer.ghosttalk.ui.settings.delegates
 import android.app.Activity
 import android.app.Application
 import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
+import com.andreas_kratzer.ghosttalk.domain.auth.CloudSyncUseCase
 import com.andreas_kratzer.ghosttalk.domain.auth.PerformManualSyncUseCase
 import com.andreas_kratzer.ghosttalk.domain.auth.SetCloudSyncEnabledUseCase
 import com.andreas_kratzer.ghosttalk.domain.auth.SignInUseCase
@@ -34,8 +35,10 @@ class CloudSyncSettingsDelegateTest {
 
     private lateinit var application: Application
     private lateinit var googleAuthManager: GoogleAuthManager
+    private lateinit var settingsRepository: com.andreas_kratzer.ghosttalk.data.SettingsRepository
     private lateinit var setCloudSyncEnabledUseCase: SetCloudSyncEnabledUseCase
     private lateinit var performManualSyncUseCase: PerformManualSyncUseCase
+    private lateinit var cloudSyncUseCase: CloudSyncUseCase
     private lateinit var signInUseCase: SignInUseCase
     private lateinit var signOutUseCase: SignOutUseCase
     private lateinit var delegate: CloudSyncSettingsDelegate
@@ -50,8 +53,10 @@ class CloudSyncSettingsDelegateTest {
 
         application = mockk(relaxed = true)
         googleAuthManager = mockk(relaxed = true)
+        settingsRepository = mockk(relaxed = true)
         setCloudSyncEnabledUseCase = mockk(relaxed = true)
         performManualSyncUseCase = mockk(relaxed = true)
+        cloudSyncUseCase = mockk(relaxed = true)
         signInUseCase = mockk(relaxed = true)
         signOutUseCase = mockk(relaxed = true)
         
@@ -60,8 +65,10 @@ class CloudSyncSettingsDelegateTest {
         delegate = CloudSyncSettingsDelegate(
             application,
             googleAuthManager,
+            settingsRepository,
             setCloudSyncEnabledUseCase,
             performManualSyncUseCase,
+            cloudSyncUseCase,
             signInUseCase,
             signOutUseCase
         )
@@ -99,10 +106,10 @@ class CloudSyncSettingsDelegateTest {
 
     @Test
     fun `performManualSync calls use case`() = runTest {
-        coEvery { performManualSyncUseCase.execute(any(), any()) } returns PerformManualSyncUseCase.Result.Success
-        delegate.performManualSync(SyncMode.TWO_WAY, this)
-        advanceUntilIdle()
-        coVerify { performManualSyncUseCase.execute(SyncMode.TWO_WAY, null) }
+        coEvery { performManualSyncUseCase.execute(any()) } returns PerformManualSyncUseCase.Result.Success
+        delegate.performManualSync(SyncMode.TWO_WAY, testScope)
+        testDispatcher.scheduler.advanceUntilIdle()
+        coVerify { performManualSyncUseCase.execute(SyncMode.TWO_WAY) }
     }
 
     @Test

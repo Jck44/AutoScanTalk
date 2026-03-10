@@ -58,15 +58,14 @@ class PerformManualSyncUseCaseTest {
 
     @Test
     fun `execute returns Success on successful sync`() = runTest {
-        val drive = mockk<Drive>(relaxed = true)
         every { googleAuthManager.getGoogleCredential() } returns mockk()
         every { settingsRepository.activeBookId } returns "book1"
         coEvery { cloudSyncUseCase.syncBook(any(), any(), any()) } returns true
 
-        val result = useCase.execute(SyncMode.TWO_WAY, driveOverride = drive)
+        val result = useCase.execute(SyncMode.TWO_WAY)
 
         assertTrue(result is PerformManualSyncUseCase.Result.Success)
-        coVerify { cloudSyncUseCase.syncBook(drive, "book1", SyncMode.TWO_WAY) }
+        coVerify { cloudSyncUseCase.syncBook(any(), "book1", SyncMode.TWO_WAY) }
         verify { settingsRepository.lastSuccessfulSyncTime = any() }
     }
 
@@ -80,7 +79,7 @@ class PerformManualSyncUseCaseTest {
         every { ioException.intent } returns intent
         coEvery { cloudSyncUseCase.syncBook(any(), any(), any()) } throws ioException
 
-        val result = useCase.execute(SyncMode.TWO_WAY, driveOverride = drive)
+        val result = useCase.execute(SyncMode.TWO_WAY)
 
         assertTrue("Expected RecoverableAuth but got $result", result is PerformManualSyncUseCase.Result.RecoverableAuth)
         if (result is PerformManualSyncUseCase.Result.RecoverableAuth) {

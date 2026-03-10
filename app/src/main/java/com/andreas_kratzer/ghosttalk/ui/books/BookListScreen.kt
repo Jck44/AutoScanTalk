@@ -49,6 +49,12 @@ import com.andreas_kratzer.ghosttalk.ui.components.AppBrandHeader
 import com.andreas_kratzer.ghosttalk.ui.components.SecurityEntryDialog
 import com.andreas_kratzer.ghosttalk.ui.components.GhostTalkCard
 import com.andreas_kratzer.ghosttalk.ui.components.PinEntryDialog
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
+import android.widget.Toast
+import com.andreas_kratzer.ghosttalk.ui.settings.dialogs.BackupSelectionDialog
 import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -63,7 +69,9 @@ fun BookListScreen(
     onBookSelected: (String) -> Unit,
     onNavigateToGlobalSettings: () -> Unit
 ) {
+    val context = LocalContext.current
     val allBooks by bookViewModel.allBooks.collectAsState()
+    
     var showAddDialog by remember { mutableStateOf(false) }
     var bookToDelete by remember { mutableStateOf<Book?>(null) }
     var bookToEdit by remember { mutableStateOf<Book?>(null) }

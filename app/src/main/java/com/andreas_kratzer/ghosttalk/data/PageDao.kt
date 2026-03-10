@@ -56,4 +56,7 @@ interface PageDao {
 
     @Delete
     suspend fun deletePageEntity(page: Page)
+
+    @Query("DELETE FROM pages WHERE bookId = :bookId")
+    suspend fun deletePagesForBook(bookId: String)
 }

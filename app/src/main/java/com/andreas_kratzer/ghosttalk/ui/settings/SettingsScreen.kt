@@ -86,7 +86,7 @@ enum class SettingsSection(val titleRes: Int, val icon: ImageVector, val isGloba
     VOICE(R.string.settings_category_voice, GhosTTalkIcons.RecordVoiceOver, isGlobal = false, isScoped = true),
     SCANNING(R.string.settings_category_scanning, GhosTTalkIcons.SettingsAccessibility, isGlobal = false, isScoped = true),
     SECURITY(R.string.settings_category_security, GhosTTalkIcons.Security, isGlobal = true, isScoped = false),
-    CLOUD(R.string.settings_category_cloud, GhosTTalkIcons.Cloud, isGlobal = false, isScoped = true),
+    CLOUD(R.string.settings_category_cloud, GhosTTalkIcons.Cloud, isGlobal = true, isScoped = true),
     GEMINI(R.string.settings_category_gemini, GhosTTalkIcons.AutoAwesome, isGlobal = false, isScoped = true),
     NOTIFICATIONS(R.string.settings_category_notifications, GhosTTalkIcons.Notifications, isGlobal = true, isScoped = false),
     ADVANCED(R.string.settings_category_advanced, GhosTTalkIcons.Science, isGlobal = true, isScoped = true)
@@ -340,7 +340,7 @@ fun SubmenuContent(
             )
         }
         SettingsSection.CLOUD -> {
-            CloudSettingsSection(viewModel)
+            CloudSettingsSection(viewModel, isGlobal = isGlobal)
         }
         SettingsSection.GEMINI -> {
             GenAiSettingsSection(viewModel, isGlobal = isGlobal)

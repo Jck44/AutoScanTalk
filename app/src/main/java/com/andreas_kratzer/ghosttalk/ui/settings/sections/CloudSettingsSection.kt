@@ -1,18 +1,16 @@
 package com.andreas_kratzer.ghosttalk.ui.settings.sections
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Button
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -26,166 +24,174 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.ui.settings.PreferenceCategory
-import com.andreas_kratzer.ghosttalk.ui.settings.SettingsClickableItem
+import com.andreas_kratzer.ghosttalk.ui.settings.SettingsDropdownItem
 import com.andreas_kratzer.ghosttalk.ui.settings.SettingsToggleItem
 import com.andreas_kratzer.ghosttalk.ui.settings.SettingsViewModel
 import com.andreas_kratzer.ghosttalk.ui.settings.dialogs.BackupSelectionDialog
+import com.andreas_kratzer.ghosttalk.ui.theme.GhosTTalkIcons
 import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun CloudSettingsSection(viewModel: SettingsViewModel) {
-    val isEnabled by viewModel.isCloudSyncEnabled.collectAsState(false)
-    val syncMode by viewModel.syncMode.collectAsState("TWO_WAY")
-    val lastSyncTime by viewModel.lastSuccessfulSyncTime.collectAsState(0L)
-    val syncInterval by viewModel.syncIntervalMinutes.collectAsState(15L)
-    val userEmail by viewModel.userEmail.collectAsState(null)
-    val isSyncing by viewModel.isSyncing.collectAsState(false)
-    val availableBackups by viewModel.availableBackups.collectAsState(emptyList<com.andreas_kratzer.ghosttalk.domain.auth.RemoteBackupInfo>())
-    val showBackupSelectionDialog by viewModel.showBackupSelectionDialog.collectAsState(false)
-
-    if (showBackupSelectionDialog) {
-        BackupSelectionDialog(
-            backups = availableBackups,
-            onBackupSelected = { fileId ->
-                viewModel.restoreFromBackup(fileId)
-            },
-            onDismiss = {
-                viewModel.dismissBackupSelectionDialog()
-            }
-        )
-    }
+fun CloudSettingsSection(
+    viewModel: SettingsViewModel,
+    isGlobal: Boolean
+) {
     val context = LocalContext.current
+    val userEmail by viewModel.userEmail.collectAsState()
+    val isSyncing by viewModel.isSyncing.collectAsState()
+    
+    val syncMode by viewModel.syncMode.collectAsState()
+    val syncIntervalMinutes by viewModel.syncIntervalMinutes.collectAsState()
+    val isCloudSyncEnabled by viewModel.isCloudSyncEnabled.collectAsState()
+    val lastSyncTime by viewModel.lastSuccessfulSyncTime.collectAsState()
+
+    val availableBackups by viewModel.availableBackups.collectAsState()
+    val showBackupSelectionDialog by viewModel.showBackupSelectionDialog.collectAsState()
+    
+    // We use a local state to track if the dialog was triggered by "Import" (Global) or "Restore" (Scoped)
+    var showImportSelectionDialog by remember { mutableStateOf(false) }
+
     val dimensions = LocalDimensions.current
+    val dateFormat = remember { SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()) }
 
-    var expandedMode by remember { mutableStateOf(false) }
-
-    FlowRow(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium),
-        verticalArrangement = Arrangement.spacedBy(dimensions.paddingMedium),
-        maxItemsInEachRow = 2
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(dimensions.paddingMedium)
     ) {
-        PreferenceCategory(stringResource(R.string.settings_category_cloud), modifier = Modifier.weight(1f)) {
-            SettingsToggleItem(stringResource(R.string.settings_cloud_sync_enabled), isEnabled) { viewModel.setCloudSyncEnabled(context, it) }
-            
-            Box(modifier = Modifier.fillMaxWidth()) {
-                val modeLabel = when (syncMode) {
-                    "BACKUP_ONLY" -> stringResource(R.string.settings_cloud_sync_mode_backup)
-                    "RESTORE_ONLY" -> stringResource(R.string.settings_cloud_sync_mode_restore)
-                    else -> stringResource(R.string.settings_cloud_sync_mode_two_way)
-                }
-                SettingsClickableItem(stringResource(R.string.settings_cloud_sync_mode), modeLabel) { expandedMode = true }
-                DropdownMenu(expanded = expandedMode, onDismissRequest = { expandedMode = false }) {
-                    listOf("TWO_WAY", "BACKUP_ONLY", "RESTORE_ONLY").forEach { mode ->
-                        val itemLabel = when (mode) {
-                            "BACKUP_ONLY" -> stringResource(R.string.settings_cloud_sync_mode_backup)
-                            "RESTORE_ONLY" -> stringResource(R.string.settings_cloud_sync_mode_restore)
-                            else -> stringResource(R.string.settings_cloud_sync_mode_two_way)
-                        }
-                        DropdownMenuItem(text = { Text(itemLabel) }, onClick = { viewModel.setSyncMode(mode); expandedMode = false })
-                    }
-                }
-            }
+        if (isSyncing) {
+            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            Spacer(modifier = Modifier.height(8.dp))
+        }
 
-            if (isEnabled) {
-                com.andreas_kratzer.ghosttalk.ui.settings.SettingsEditTextItem(
-                    label = "Sync-Intervall (Minuten)",
-                    value = syncInterval.toString(),
-                    onValueChange = { newValue ->
-                        newValue.toLongOrNull()?.let { viewModel.setSyncIntervalMinutes(it) }
-                    },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                )
-
-                val lastSyncTimeValue = lastSyncTime
-                val lastSyncText = if (lastSyncTimeValue > 0) {
-                    val sdf = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
-                    sdf.format(Date(lastSyncTimeValue))
-                } else {
-                    "Nie"
-                }
-                Text(
-                    text = "Letzter Sync: $lastSyncText",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(vertical = dimensions.paddingSmall)
-                )
-            }
-
+        PreferenceCategory(stringResource(R.string.settings_category_cloud_account)) {
             if (userEmail != null) {
                 Text(
-                    text = stringResource(R.string.settings_google_account_status_signed_in_as, userEmail!!),
+                    text = stringResource(R.string.settings_cloud_signed_in_as, userEmail!!),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(vertical = dimensions.paddingSmall)
+                    modifier = Modifier.padding(bottom = 8.dp)
                 )
-                OutlinedButton(
+                Button(
                     onClick = { viewModel.signOut() },
-                    shape = MaterialTheme.shapes.medium,
-                    modifier = Modifier.padding(bottom = dimensions.paddingMedium)
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(stringResource(R.string.settings_google_account_sign_out))
+                    Text(stringResource(R.string.settings_cloud_sign_out))
                 }
             } else {
                 Button(
                     onClick = { viewModel.signIn(context) },
-                    shape = MaterialTheme.shapes.medium,
-                    modifier = Modifier.padding(bottom = dimensions.paddingMedium)
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(stringResource(R.string.settings_google_account_sign_in))
+                    Text(stringResource(R.string.settings_cloud_sign_in))
                 }
-            }
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium),
-                modifier = Modifier.padding(top = dimensions.paddingMedium).fillMaxWidth()
-            ) {
-                Button(
-                    onClick = { viewModel.syncNow() },
-                    enabled = !isSyncing && userEmail != null,
-                    shape = MaterialTheme.shapes.medium,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(stringResource(R.string.settings_cloud_sync_now))
-                }
-            }
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium),
-                modifier = Modifier.padding(top = dimensions.paddingSmall).fillMaxWidth()
-            ) {
-                OutlinedButton(
-                    onClick = { viewModel.backupNow() },
-                    enabled = !isSyncing && userEmail != null,
-                    shape = MaterialTheme.shapes.medium,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(stringResource(R.string.settings_cloud_backup_now))
-                }
-                OutlinedButton(
-                    onClick = { viewModel.restoreNow() },
-                    enabled = !isSyncing && userEmail != null,
-                    shape = MaterialTheme.shapes.medium,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(stringResource(R.string.settings_cloud_restore_now))
-                }
-            }
-
-            if (isSyncing) {
-                Spacer(modifier = Modifier.height(dimensions.paddingMedium))
-                LinearProgressIndicator(
-                    modifier = Modifier.fillMaxWidth().height(dimensions.paddingSmall / 2),
-                    color = MaterialTheme.colorScheme.primary,
-                    trackColor = MaterialTheme.colorScheme.surfaceVariant
-                )
             }
         }
+
+        if (isGlobal) {
+            // Global Mode: Only show "Import as New Book"
+            PreferenceCategory(stringResource(R.string.settings_category_cloud_import)) {
+                Button(
+                    onClick = { 
+                        viewModel.fetchAvailableBackupsForImport() 
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = userEmail != null && !isSyncing
+                ) {
+                    Icon(GhosTTalkIcons.Cloud, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(stringResource(R.string.settings_cloud_import_as_new))
+                }
+                Text(
+                    text = stringResource(R.string.settings_cloud_import_explanation),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
+        } else {
+            // Book-Scoped Mode: Show Sync Settings and manual buttons
+            PreferenceCategory(stringResource(R.string.settings_category_cloud)) {
+                SettingsToggleItem(
+                    label = stringResource(R.string.settings_cloud_sync_enabled),
+                    checked = isCloudSyncEnabled,
+                    onCheckedChange = { viewModel.setCloudSyncEnabled(context, it) },
+                    enabled = userEmail != null
+                )
+
+                if (isCloudSyncEnabled) {
+                    Text(
+                        text = stringResource(R.string.settings_cloud_last_sync, if (lastSyncTime > 0) dateFormat.format(Date(lastSyncTime)) else "-"),
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    )
+
+                    SettingsDropdownItem(
+                        label = stringResource(R.string.settings_cloud_sync_mode),
+                        selectedOption = syncMode,
+                        options = listOf("TWO_WAY", "BACKUP_ONLY", "RESTORE_ONLY").map { mode ->
+                            mode to { viewModel.setSyncMode(mode) }
+                        }
+                    )
+
+                    SettingsDropdownItem(
+                        label = stringResource(R.string.settings_cloud_sync_interval),
+                        selectedOption = syncIntervalMinutes.toString(),
+                        options = listOf("15", "30", "60", "120", "360", "1440").map { interval ->
+                            interval to { viewModel.setSyncIntervalMinutes(interval.toLong()) }
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.height(dimensions.paddingMedium))
+
+                    Button(
+                        onClick = { viewModel.syncNow() },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = !isSyncing
+                    ) {
+                        Text(stringResource(R.string.settings_cloud_sync_now))
+                    }
+
+                    Spacer(modifier = Modifier.height(dimensions.paddingSmall))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)
+                    ) {
+                        OutlinedButton(
+                            onClick = { viewModel.backupNow() },
+                            modifier = Modifier.weight(1f),
+                            enabled = !isSyncing
+                        ) {
+                            Text(stringResource(R.string.settings_cloud_backup_now))
+                        }
+                        OutlinedButton(
+                            onClick = { 
+                                viewModel.restoreNow() 
+                            },
+                            modifier = Modifier.weight(1f),
+                            enabled = !isSyncing
+                        ) {
+                            Text(stringResource(R.string.settings_cloud_restore_now))
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (showBackupSelectionDialog) {
+        BackupSelectionDialog(
+            backups = availableBackups,
+            onDismiss = { viewModel.dismissBackupSelectionDialog() },
+            onBackupSelected = { backupInfo ->
+                viewModel.importCloudBackup(backupInfo)
+            }
+        )
     }
 }

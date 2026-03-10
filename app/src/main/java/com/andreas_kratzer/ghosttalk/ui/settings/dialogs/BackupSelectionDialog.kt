@@ -19,7 +19,7 @@ import java.util.*
 @Composable
 fun BackupSelectionDialog(
     backups: List<RemoteBackupInfo>,
-    onBackupSelected: (String) -> Unit,
+    onBackupSelected: (RemoteBackupInfo) -> Unit,
     onDismiss: () -> Unit
 ) {
     val dimensions = LocalDimensions.current
@@ -58,7 +58,7 @@ fun BackupSelectionDialog(
                             BackupItem(
                                 backup = backup,
                                 dateFormat = dateFormat,
-                                onClick = { onBackupSelected(backup.fileId) }
+                                onClick = { onBackupSelected(backup) }
                             )
                             HorizontalDivider(
                                 modifier = Modifier.padding(horizontal = dimensions.paddingSmall),

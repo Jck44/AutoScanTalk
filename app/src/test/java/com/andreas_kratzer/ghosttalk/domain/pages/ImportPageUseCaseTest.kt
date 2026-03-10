@@ -24,7 +24,7 @@ class ImportPageUseCaseTest {
     fun `execute returns Success when manager succeeds`() = runTest {
         val json = "{\"test\": \"data\"}"
         val bookId = "book1"
-        coEvery { importExportManager.importFromJson(json, bookId) } returns Result.success(5)
+        coEvery { importExportManager.importFromJson(json, bookId, any(), any()) } returns Result.success(5)
 
         val result = useCase.execute(json, bookId)
 
@@ -37,7 +37,7 @@ class ImportPageUseCaseTest {
         val json = "invalid"
         val bookId = "book1"
         val exception = RuntimeException("Import failed")
-        coEvery { importExportManager.importFromJson(json, bookId) } returns Result.failure(exception)
+        coEvery { importExportManager.importFromJson(json, bookId, any(), any()) } returns Result.failure(exception)
 
         val result = useCase.execute(json, bookId)
 
