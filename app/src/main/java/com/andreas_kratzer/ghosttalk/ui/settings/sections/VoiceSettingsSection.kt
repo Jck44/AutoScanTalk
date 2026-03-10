@@ -14,7 +14,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.andreas_kratzer.ghosttalk.R
-import com.andreas_kratzer.ghosttalk.ui.settings.PreferenceCategory
+import com.andreas_kratzer.ghosttalk.ui.components.PreferenceCategory
 import com.andreas_kratzer.ghosttalk.ui.settings.SettingsViewModel
 import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.util.VoiceUtils
@@ -65,7 +65,7 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                     languageOptions.add(locale.displayName to { viewModel.setTtsLanguage(locale.toLanguageTag()) })
                 }
 
-                com.andreas_kratzer.ghosttalk.ui.settings.SettingsDropdownItem(
+                com.andreas_kratzer.ghosttalk.ui.components.SettingsDropdownItem(
                     label = stringResource(R.string.settings_tts_language),
                     selectedOption = currentLangLabel,
                     options = languageOptions
@@ -100,7 +100,7 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                     voiceOptions.add(display to { viewModel.setTtsVoice(voice.name) })
                 }
 
-                com.andreas_kratzer.ghosttalk.ui.settings.SettingsDropdownItem(
+                com.andreas_kratzer.ghosttalk.ui.components.SettingsDropdownItem(
                     label = stringResource(R.string.settings_select_voice),
                     selectedOption = voiceLabel,
                     options = voiceOptions
@@ -115,7 +115,7 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                     ttsOptions.add(device.name to { viewModel.setTtsAudioDevice(device.address) })
                 }
 
-                com.andreas_kratzer.ghosttalk.ui.settings.SettingsDropdownItem(
+                com.andreas_kratzer.ghosttalk.ui.components.SettingsDropdownItem(
                     label = stringResource(R.string.settings_audio_tts),
                     selectedOption = viewModel.getResolvedDeviceName(selectedTtsAddress),
                     options = ttsOptions
@@ -128,7 +128,7 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                     cuesOptions.add(device.name to { viewModel.setCuesAudioDevice(device.address) })
                 }
 
-                com.andreas_kratzer.ghosttalk.ui.settings.SettingsDropdownItem(
+                com.andreas_kratzer.ghosttalk.ui.components.SettingsDropdownItem(
                     label = stringResource(R.string.settings_audio_cues),
                     selectedOption = viewModel.getResolvedDeviceName(selectedCuesAddress),
                     options = cuesOptions

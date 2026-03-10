@@ -61,6 +61,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.ui.settings.sections.VoiceSettingsSection
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.CloudSettingsSection
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.ExperimentalSettingsSection
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.GenAiSettingsSection
@@ -71,7 +72,11 @@ import com.andreas_kratzer.ghosttalk.ui.settings.sections.NotificationSettingsSe
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.ScanningSettingsSection
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.SecuritySettingsSection
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.TestSettingsSection
-import com.andreas_kratzer.ghosttalk.ui.settings.sections.VoiceSettingsSection
+import com.andreas_kratzer.ghosttalk.ui.components.PreferenceCategory
+import com.andreas_kratzer.ghosttalk.ui.components.SettingsClickableItem
+import com.andreas_kratzer.ghosttalk.ui.components.SettingsDropdownItem
+import com.andreas_kratzer.ghosttalk.ui.components.SettingsEditTextItem
+import com.andreas_kratzer.ghosttalk.ui.components.SettingsToggleItem
 import com.andreas_kratzer.ghosttalk.ui.theme.GhosTTalkIcons
 import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 import kotlinx.coroutines.Dispatchers
@@ -126,33 +131,12 @@ fun SettingsScreen(
     }
 
     val coroutineScope = rememberCoroutineScope()
-    val localImportSuccessMsg = stringResource(R.string.page_import_success)
-    val localExportSuccessMsg = stringResource(R.string.page_export_success)
 
     val localImportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
         uri?.let {
-            try {
-                context.contentResolver.openInputStream(it)?.use { inputStream ->
-                    val reader = BufferedReader(InputStreamReader(inputStream))
-                    val jsonContent = reader.readText()
-                    coroutineScope.launch {
-                        viewModel.importLocalBackup(
-                            json = jsonContent,
-                            onSuccess = {
-                                Toast.makeText(context, localImportSuccessMsg, Toast.LENGTH_SHORT).show()
-                            },
-                            onError = { error ->
-                                Toast.makeText(context, error, Toast.LENGTH_LONG).show()
-                            }
-                        )
-                    }
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                Toast.makeText(context, "Fehler beim Import: ${e.message}", Toast.LENGTH_LONG).show()
-            }
+            handleLocalImport(context, it, viewModel, coroutineScope)
         }
     }
 
@@ -160,22 +144,7 @@ fun SettingsScreen(
         contract = ActivityResultContracts.CreateDocument("application/json")
     ) { uri ->
         uri?.let {
-            coroutineScope.launch {
-                try {
-                    val jsonContent = viewModel.exportLocalBackup()
-                    withContext(Dispatchers.IO) {
-                        context.contentResolver.openOutputStream(it)?.use { outputStream ->
-                            val writer = OutputStreamWriter(outputStream)
-                            writer.write(jsonContent)
-                            writer.close()
-                        }
-                    }
-                    Toast.makeText(context, localExportSuccessMsg, Toast.LENGTH_SHORT).show()
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                    Toast.makeText(context, "Fehler beim Export: ${e.message}", Toast.LENGTH_LONG).show()
-                }
-            }
+            handleLocalExport(context, it, viewModel, coroutineScope)
         }
     }
 
@@ -189,106 +158,207 @@ fun SettingsScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { 
-                    Text(
-                        text = if (selectedSection == null) 
-                            stringResource(if (isGlobal) R.string.settings_title_global else R.string.settings_title_book) 
-                        else 
-                            stringResource(selectedSection!!.titleRes), 
-                        style = MaterialTheme.typography.titleLarge
-                    ) 
-                },
-                navigationIcon = {
-                    IconButton(onClick = { if (selectedSection == null) onNavigateBack() else selectedSection = null }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                }
+            SettingsTopBar(
+                selectedSection = selectedSection,
+                isGlobal = isGlobal,
+                onBack = { if (selectedSection == null) onNavigateBack() else selectedSection = null }
             )
         }
     ) { padding ->
         if (selectedSection == null) {
-            // Main Menu as Adaptive Grid
-            val sections = SettingsSection.entries.filter { if (isGlobal) it.isGlobal else it.isScoped }
-            LazyVerticalGrid(
-                columns = GridCells.Adaptive(minSize = 300.dp),
-                modifier = Modifier
-                    .padding(padding)
-                    .fillMaxSize()
-                    .padding(horizontal = dimensions.paddingLarge, vertical = dimensions.paddingMedium),
-                verticalArrangement = Arrangement.spacedBy(dimensions.paddingSmall),
-                horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium),
-                contentPadding = PaddingValues(bottom = dimensions.paddingDoubleExtraLarge)
-            ) {
-                items(sections) { section ->
-                    Surface(
-                        onClick = { selectedSection = section },
-                        shape = MaterialTheme.shapes.large,
-                        color = MaterialTheme.colorScheme.surfaceContainerLow,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        ListItem(
-                            headlineContent = { 
-                                Text(
-                                    text = stringResource(section.titleRes),
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.Medium
-                                ) 
-                            },
-                            leadingContent = {
-                                Icon(
-                                    imageVector = section.icon,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            },
-                            trailingContent = {
-                                Icon(
-                                    imageVector = GhosTTalkIcons.ArrowForward,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            },
-                            colors = ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent)
-                        )
-                    }
-                }
-                
-                item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
-                    Column {
-                        Spacer(modifier = Modifier.height(dimensions.paddingDoubleExtraLarge))
-                        VersionInfo()
-                    }
-                }
-            }
+            SettingsMainMenu(
+                isGlobal = isGlobal,
+                padding = padding,
+                dimensions = dimensions,
+                onSectionSelected = { selectedSection = it }
+            )
         } else {
-            // Submenu Content as Scrollable Column
-            Column(
-                modifier = Modifier
-                    .padding(padding)
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = dimensions.paddingLarge, vertical = dimensions.paddingMedium)
+            SettingsSubMenu(
+                section = selectedSection!!,
+                padding = padding,
+                dimensions = dimensions,
+                isGlobal = isGlobal,
+                viewModel = viewModel,
+                onLockClicked = {
+                    viewModel.lock()
+                    onNavigateToStart()
+                },
+                onLocalExport = { localExportLauncher.launch("GhosTTalk_Backup.json") },
+                onLocalImport = { localImportLauncher.launch("application/json") }
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SettingsTopBar(
+    selectedSection: SettingsSection?,
+    isGlobal: Boolean,
+    onBack: () -> Unit
+) {
+    TopAppBar(
+        title = {
+            Text(
+                text = if (selectedSection == null)
+                    stringResource(if (isGlobal) R.string.settings_title_global else R.string.settings_title_book)
+                else
+                    stringResource(selectedSection.titleRes),
+                style = MaterialTheme.typography.titleLarge
+            )
+        },
+        navigationIcon = {
+            IconButton(onClick = onBack) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+            }
+        }
+    )
+}
+
+@Composable
+private fun SettingsMainMenu(
+    isGlobal: Boolean,
+    padding: PaddingValues,
+    dimensions: com.andreas_kratzer.ghosttalk.ui.theme.Dimensions,
+    onSectionSelected: (SettingsSection) -> Unit
+) {
+    val sections = SettingsSection.entries.filter { if (isGlobal) it.isGlobal else it.isScoped }
+    LazyVerticalGrid(
+        columns = GridCells.Adaptive(minSize = 300.dp),
+        modifier = Modifier
+            .padding(padding)
+            .fillMaxSize()
+            .padding(horizontal = dimensions.paddingLarge, vertical = dimensions.paddingMedium),
+        verticalArrangement = Arrangement.spacedBy(dimensions.paddingSmall),
+        horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium),
+        contentPadding = PaddingValues(bottom = dimensions.paddingDoubleExtraLarge)
+    ) {
+        items(sections) { section ->
+            Surface(
+                onClick = { onSectionSelected(section) },
+                shape = MaterialTheme.shapes.large,
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                SubmenuContent(
-                    selectedSection!!, 
-                    viewModel,
-                    isGlobal = isGlobal,
-                    onLockClicked = {
-                        viewModel.lock()
-                        onNavigateToStart()
+                ListItem(
+                    headlineContent = {
+                        Text(
+                            text = stringResource(section.titleRes),
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Medium
+                        )
                     },
-                    onLocalExport = { localExportLauncher.launch("GhosTTalk_Backup.json") },
-                    onLocalImport = { localImportLauncher.launch("application/json") }
+                    leadingContent = {
+                        Icon(
+                            imageVector = section.icon,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    },
+                    trailingContent = {
+                        Icon(
+                            imageVector = GhosTTalkIcons.ArrowForward,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    },
+                    colors = ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent)
                 )
-                Spacer(modifier = Modifier.height(dimensions.paddingDoubleExtraLarge * 2)) // Increased for tablets
+            }
+        }
+
+        item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
+            Column {
+                Spacer(modifier = Modifier.height(dimensions.paddingDoubleExtraLarge))
+                VersionInfo()
             }
         }
     }
 }
 
+@Composable
+private fun SettingsSubMenu(
+    section: SettingsSection,
+    padding: PaddingValues,
+    dimensions: com.andreas_kratzer.ghosttalk.ui.theme.Dimensions,
+    isGlobal: Boolean,
+    viewModel: SettingsViewModel,
+    onLockClicked: () -> Unit,
+    onLocalExport: () -> Unit,
+    onLocalImport: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .padding(padding)
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = dimensions.paddingLarge, vertical = dimensions.paddingMedium)
+    ) {
+        SubmenuContent(
+            section,
+            viewModel,
+            isGlobal = isGlobal,
+            onLockClicked = onLockClicked,
+            onLocalExport = onLocalExport,
+            onLocalImport = onLocalImport
+        )
+        Spacer(modifier = Modifier.height(dimensions.paddingDoubleExtraLarge * 2))
+    }
+}
+
+private fun handleLocalImport(
+    context: android.content.Context,
+    uri: android.net.Uri,
+    viewModel: SettingsViewModel,
+    coroutineScope: kotlinx.coroutines.CoroutineScope
+) {
+    try {
+        context.contentResolver.openInputStream(uri)?.use { inputStream ->
+            val reader = BufferedReader(InputStreamReader(inputStream))
+            val jsonContent = reader.readText()
+            coroutineScope.launch {
+                viewModel.importLocalBackup(
+                    json = jsonContent,
+                    onSuccess = {
+                        Toast.makeText(context, context.getString(R.string.page_import_success), Toast.LENGTH_SHORT).show()
+                    },
+                    onError = { error ->
+                        Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+                    }
+                )
+            }
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+        Toast.makeText(context, "Fehler beim Import: ${e.message}", Toast.LENGTH_LONG).show()
+    }
+}
+
+private fun handleLocalExport(
+    context: android.content.Context,
+    uri: android.net.Uri,
+    viewModel: SettingsViewModel,
+    coroutineScope: kotlinx.coroutines.CoroutineScope
+) {
+    coroutineScope.launch {
+        try {
+            val jsonContent = viewModel.exportLocalBackup()
+            withContext(Dispatchers.IO) {
+                context.contentResolver.openOutputStream(uri)?.use { outputStream ->
+                    val writer = OutputStreamWriter(outputStream)
+                    writer.write(jsonContent)
+                    writer.close()
+                }
+            }
+            Toast.makeText(context, context.getString(R.string.page_export_success), Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Toast.makeText(context, "Fehler beim Export: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+}
 
 @Composable
 fun SubmenuContent(
@@ -382,159 +452,3 @@ fun VersionInfo() {
     )
 }
 
-@Composable
-fun PreferenceCategory(
-    title: String,
-    modifier: Modifier = Modifier,
-    content: @Composable ColumnScope.() -> Unit) {
-    val dimensions = LocalDimensions.current
-    Column(modifier = modifier.padding(vertical = dimensions.paddingMedium)) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(start = dimensions.paddingSmall, bottom = dimensions.paddingMedium)
-        )
-        Surface(
-            shape = MaterialTheme.shapes.large,
-            color = MaterialTheme.colorScheme.surfaceContainerLow,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(modifier = Modifier.padding(dimensions.paddingMedium), content = content)
-        }
-    }
-}
-
-@Composable
-fun SettingsToggleItem(
-    label: String, 
-    checked: Boolean, 
-    enabled: Boolean = true,
-    onCheckedChange: (Boolean) -> Unit
-) {
-    val dimensions = LocalDimensions.current
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = dimensions.paddingSmall),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = label, 
-            modifier = Modifier.weight(1f), 
-            style = MaterialTheme.typography.bodyLarge,
-            color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-        )
-        Switch(checked = checked, onCheckedChange = onCheckedChange, enabled = enabled)
-    }
-}
-
-@Composable
-fun SettingsClickableItem(label: String, value: String, onClick: () -> Unit) {
-    val dimensions = LocalDimensions.current
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(vertical = dimensions.paddingMedium)
-    ) {
-        Text(
-            text = label, 
-            style = MaterialTheme.typography.labelMedium, 
-            color = MaterialTheme.colorScheme.primary
-        )
-        Text(
-            text = value, 
-            style = MaterialTheme.typography.bodyLarge
-        )
-    }
-}
-
-@Composable
-fun SettingsEditTextItem(
-    label: String, 
-    value: String, 
-    onValueChange: (String) -> Unit,
-    keyboardOptions: KeyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-) {
-    val dimensions = LocalDimensions.current
-    var localValue by remember(value) { mutableStateOf(value) }
-    
-    LaunchedEffect(localValue) {
-        if (localValue != value) {
-            delay(500) // Debounce period
-            onValueChange(localValue)
-        }
-    }
-
-    OutlinedTextField(
-        value = localValue,
-        onValueChange = { newValue -> localValue = newValue },
-        label = { Text(label, style = MaterialTheme.typography.bodyMedium) },
-        textStyle = MaterialTheme.typography.bodyLarge,
-        shape = MaterialTheme.shapes.large,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = dimensions.paddingSmall),
-        keyboardOptions = keyboardOptions,
-        singleLine = true
-    )
-}
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun SettingsDropdownItem(
-    label: String,
-    selectedOption: String,
-    options: List<Pair<String, () -> Unit>>,
-    modifier: Modifier = Modifier
-) {
-    val dimensions = LocalDimensions.current
-    var expanded by remember { mutableStateOf(false) }
-    val focusManager = LocalFocusManager.current
-
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = dimensions.paddingSmall)
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(bottom = dimensions.paddingSmall)
-        )
-
-        ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { expanded = !expanded }
-        ) {
-            OutlinedTextField(
-                value = selectedOption,
-                onValueChange = {},
-                readOnly = true,
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
-                shape = MaterialTheme.shapes.large,
-                modifier = Modifier
-                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
-                    .fillMaxWidth()
-            )
-
-            ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
-            ) {
-                options.forEach { (optionLabel, onClick) ->
-                    DropdownMenuItem(
-                        text = { Text(optionLabel, style = MaterialTheme.typography.bodyLarge) },
-                        onClick = {
-                            onClick()
-                            focusManager.clearFocus()
-                            expanded = false
-                        }
-                    )
-                }
-            }
-        }
-    }
-}

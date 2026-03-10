@@ -45,7 +45,7 @@ class UpdateRowNameUseCaseTest {
         assertEquals(listOf("R1", "NewR2", "R3"), result?.rowNames)
         
         coVerify {
-            pageRepository.updatePage(match { 
+            pageRepository.updatePageSettingsOnly(match { 
                 it.id == "p1" && it.rowNames == listOf("R1", "NewR2", "R3")
             })
             bookRepository.updateLastModified("book1")

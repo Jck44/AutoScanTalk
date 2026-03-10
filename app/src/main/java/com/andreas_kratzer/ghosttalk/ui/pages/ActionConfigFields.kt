@@ -441,3 +441,127 @@ fun MessagingFields(
         )
     }
 }
+@Composable
+fun ActionConfigWrapper(
+    selectedActionType: String,
+    // Labels for mapping
+    actionTypeNavigate: String,
+    actionTypeGemini: String,
+    actionTypeGeminiSearch: String,
+    actionTypeGeminiNano: String,
+    actionTypeFrequent: String,
+    actionTypeSmart: String,
+    actionTypeControlDevice: String,
+    actionTypeWeather: String,
+    // Shared State & Actions
+    label: String,
+    onLabelError: () -> Unit,
+    spokenText: String,
+    ttsFeedback: String,
+    isActive: Boolean,
+    playActionAsAuditoryCue: Boolean,
+    buttonId: String,
+    onSave: (com.andreas_kratzer.ghosttalk.model.ButtonConfig) -> Unit,
+    onDismiss: () -> Unit,
+    // Action Specific State/Actions
+    navigateToPageId: String,
+    onNavigateToPageIdChange: (String) -> Unit,
+    availablePages: List<Page>,
+    templates: List<PageTemplate>,
+    onNavigateToPage: ((String) -> Unit)?,
+    onCreatePage: ((String, Int, Int, String?, (String) -> Unit) -> Unit)?,
+    geminiPrompt: String,
+    onGeminiPromptChange: (String) -> Unit,
+    frequentRank: String,
+    onFrequentRankChange: (String) -> Unit,
+    smartRank: String,
+    onSmartRankChange: (String) -> Unit,
+    controlActionType: DeviceActionType,
+    onControlActionTypeChange: (DeviceActionType) -> Unit,
+    controlVolumeValue: String,
+    onControlVolumeValueChange: (String) -> Unit,
+    controlContactName: String,
+    onControlContactChange: (name: String, phone: String) -> Unit,
+    controlMessageText: String,
+    onControlMessageTextChange: (String) -> Unit,
+    // Helper to build action (passed from parent to avoid logic duplication)
+    buildAction: () -> com.andreas_kratzer.ghosttalk.model.ButtonAction
+) {
+    when (selectedActionType) {
+        actionTypeNavigate -> {
+            NavigationActionFields(
+                navigateToPageId = navigateToPageId,
+                onPageSelected = onNavigateToPageIdChange,
+                availablePages = availablePages,
+                templates = templates,
+                onNavigateToPage = onNavigateToPage,
+                onBeforeCreatePage = {
+                    if (label.isBlank()) {
+                        onLabelError()
+                        false
+                    } else {
+                        true
+                    }
+                },
+                onCreatePage = { name, rows, cols, templateId, onCreated ->
+                    onCreatePage?.invoke(name, rows, cols, templateId) { newId ->
+                        onNavigateToPageIdChange(newId)
+                        val cue = if (ttsFeedback.isNotBlank()) {
+                            com.andreas_kratzer.ghosttalk.model.AuditoryCue.TextToSpeechCue(text = ttsFeedback)
+                        } else null
+
+                        onSave(
+                            com.andreas_kratzer.ghosttalk.model.ButtonConfig(
+                                id = buttonId,
+                                label = label,
+                                spokenText = spokenText.takeIf { it.isNotBlank() },
+                                buttonAction = buildAction(),
+                                isActive = isActive,
+                                playActionAsAuditoryCue = playActionAsAuditoryCue,
+                                auditoryCue = cue
+                            )
+                        )
+                        onCreated(newId)
+                    }
+                },
+                onDismissDialog = onDismiss
+            )
+        }
+        actionTypeGemini, actionTypeGeminiSearch -> {
+            GeminiActionFields(
+                prompt = geminiPrompt,
+                onPromptChanged = onGeminiPromptChange
+            )
+        }
+        actionTypeGeminiNano -> {
+            GeminiNanoActionFields(
+                selectedIntent = geminiPrompt,
+                onIntentSelected = onGeminiPromptChange
+            )
+        }
+        actionTypeFrequent -> {
+            RankActionFields(
+                rank = frequentRank,
+                onRankChanged = onFrequentRankChange
+            )
+        }
+        actionTypeSmart -> {
+            RankActionFields(
+                rank = smartRank,
+                onRankChanged = onSmartRankChange
+            )
+        }
+        actionTypeControlDevice -> {
+            ControlDeviceActionFields(
+                selectedType = controlActionType,
+                onTypeSelected = onControlActionTypeChange,
+                volumeValue = controlVolumeValue,
+                onVolumeValueChange = onControlVolumeValueChange,
+                contactName = controlContactName,
+                onContactSelected = onControlContactChange,
+                messageText = controlMessageText,
+                onMessageTextChange = onControlMessageTextChange
+            )
+        }
+    }
+}

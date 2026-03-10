@@ -58,7 +58,7 @@ class DeleteTemplateUseCaseTest {
 
         deleteTemplateUseCase.execute(template, clearUsages = true)
 
-        coVerify { pageRepository.updatePage(match { it.id == "p1" && it.templateId == null }) }
+        coVerify { pageRepository.updatePageSettingsOnly(match { it.id == "p1" && it.templateId == null }) }
         coVerify { templateRepository.delete(template) }
     }
 }

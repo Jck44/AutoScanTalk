@@ -51,12 +51,12 @@ class ReorderPagesUseCaseTest {
 
         // Expected order: p2 (0), p1 (1), p3 (2)
         coVerify {
-            pageRepository.updatePage(match { it.id == "2" && it.orderIndex == 0 })
-            pageRepository.updatePage(match { it.id == "1" && it.orderIndex == 1 })
+            pageRepository.updatePageSettingsOnly(match { it.id == "2" && it.orderIndex == 0 })
+            pageRepository.updatePageSettingsOnly(match { it.id == "1" && it.orderIndex == 1 })
         }
         // p3's orderIndex did not change, so it shouldn't be updated
         coVerify(exactly = 0) {
-            pageRepository.updatePage(match { it.id == "3" })
+            pageRepository.updatePageSettingsOnly(match { it.id == "3" })
         }
         
         coVerify { bookRepository.updateLastModified("b1") }
@@ -71,7 +71,7 @@ class ReorderPagesUseCaseTest {
         useCase.execute(currentList, fromIndex = 5, toIndex = 0, activeBookId = "b1")
 
         coVerify(exactly = 0) {
-            pageRepository.updatePage(any())
+            pageRepository.updatePageSettingsOnly(any())
             bookRepository.updateLastModified(any())
         }
     }

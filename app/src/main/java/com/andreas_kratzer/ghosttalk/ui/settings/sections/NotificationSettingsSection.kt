@@ -25,7 +25,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.core.app.NotificationManagerCompat
 import com.andreas_kratzer.ghosttalk.R
-import com.andreas_kratzer.ghosttalk.ui.settings.PreferenceCategory
+import com.andreas_kratzer.ghosttalk.ui.components.PreferenceCategory
 import com.andreas_kratzer.ghosttalk.ui.settings.SettingsViewModel
 import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 

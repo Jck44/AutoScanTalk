@@ -327,98 +327,50 @@ fun ButtonConfigDialog(
                     }
                 }
 
-                // Conditional fields for specific actions
-                when (selectedActionType) {
-                    actionTypeNavigate -> {
-                        NavigationActionFields(
-                            navigateToPageId = navigateToPageId,
-                            onPageSelected = { navigateToPageId = it },
-                            availablePages = availablePages,
-                            templates = templates,
-                            onNavigateToPage = onNavigateToPage,
-                            onBeforeCreatePage = {
-                                if (label.isBlank()) {
-                                    isError = true
-                                    false
-                                } else {
-                                    true
-                                }
-                            },
-                            onCreatePage = { name, rows, cols, templateId, onCreated ->
-                                onCreatePage?.invoke(name, rows, cols, templateId) { newId ->
-                                    // Update local state
-                                    navigateToPageId = newId
-                                    selectedActionType = actionTypeNavigate
-                                    
-                                    // Save the button immediately with the new page ID
-                                    val action = buildButtonAction()
-                                    val cue = if (ttsFeedback.isNotBlank()) {
-                                        AuditoryCue.TextToSpeechCue(text = ttsFeedback)
-                                    } else {
-                                        null
-                                    }
-
-                                    onSave(
-                                        ButtonConfig(
-                                            id = buttonId, 
-                                            label = label, 
-                                            spokenText = spokenText.takeIf { it.isNotBlank() },
-                                            buttonAction = action,
-                                            isActive = isActive,
-                                            playActionAsAuditoryCue = playActionAsAuditoryCue,
-                                            auditoryCue = cue
-                                        )
-                                    )
-                                    onCreated(newId)
-                                }
-                            },
-                            onDismissDialog = onDismiss
-                        )
-
-                    }
-                    actionTypeGemini, actionTypeGeminiSearch -> {
-                        GeminiActionFields(
-                            prompt = geminiPrompt,
-                            onPromptChanged = { geminiPrompt = it }
-                        )
-                    }
-                    actionTypeGeminiNano -> {
-                        GeminiNanoActionFields(
-                            selectedIntent = geminiPrompt,
-                            onIntentSelected = { geminiPrompt = it }
-                        )
-                    }
-                    actionTypeFrequent -> {
-                        RankActionFields(
-                            rank = frequentRank,
-                            onRankChanged = { frequentRank = it }
-                        )
-                    }
-                    actionTypeSmart -> {
-                        RankActionFields(
-                            rank = smartRank,
-                            onRankChanged = { smartRank = it }
-                        )
-                    }
-                    actionTypeWeather -> {
-                         // No additional fields for simple weather action
-                    }
-                    actionTypeControlDevice -> {
-                        ControlDeviceActionFields(
-                            selectedType = controlActionType,
-                            onTypeSelected = { controlActionType = it },
-                            volumeValue = controlVolumeValue,
-                            onVolumeValueChange = { controlVolumeValue = it },
-                            contactName = controlContactName,
-                            onContactSelected = { name, phone ->
-                                controlContactName = name
-                                controlContactPhone = phone
-                            },
-                            messageText = controlMessageText,
-                            onMessageTextChange = { controlMessageText = it }
-                        )
-                    }
-                }
+                ActionConfigWrapper(
+                    selectedActionType = selectedActionType,
+                    actionTypeNavigate = actionTypeNavigate,
+                    actionTypeGemini = actionTypeGemini,
+                    actionTypeGeminiSearch = actionTypeGeminiSearch,
+                    actionTypeGeminiNano = actionTypeGeminiNano,
+                    actionTypeFrequent = actionTypeFrequent,
+                    actionTypeSmart = actionTypeSmart,
+                    actionTypeControlDevice = actionTypeControlDevice,
+                    actionTypeWeather = actionTypeWeather,
+                    label = label,
+                    onLabelError = { isError = true },
+                    spokenText = spokenText,
+                    ttsFeedback = ttsFeedback,
+                    isActive = isActive,
+                    playActionAsAuditoryCue = playActionAsAuditoryCue,
+                    buttonId = buttonId,
+                    onSave = { onSave(it) },
+                    onDismiss = onDismiss,
+                    navigateToPageId = navigateToPageId,
+                    onNavigateToPageIdChange = { navigateToPageId = it },
+                    availablePages = availablePages,
+                    templates = templates,
+                    onNavigateToPage = onNavigateToPage,
+                    onCreatePage = onCreatePage,
+                    geminiPrompt = geminiPrompt,
+                    onGeminiPromptChange = { geminiPrompt = it },
+                    frequentRank = frequentRank,
+                    onFrequentRankChange = { frequentRank = it },
+                    smartRank = smartRank,
+                    onSmartRankChange = { smartRank = it },
+                    controlActionType = controlActionType,
+                    onControlActionTypeChange = { controlActionType = it },
+                    controlVolumeValue = controlVolumeValue,
+                    onControlVolumeValueChange = { controlVolumeValue = it },
+                    controlContactName = controlContactName,
+                    onControlContactChange = { name, phone ->
+                        controlContactName = name
+                        controlContactPhone = phone
+                    },
+                    controlMessageText = controlMessageText,
+                    onControlMessageTextChange = { controlMessageText = it },
+                    buildAction = ::buildButtonAction
+                )
 
                 // Auditory Cue Routing Toggle (Visible for actions with audio output)
                 if (selectedActionType == actionTypeSpeak || 
@@ -439,39 +391,37 @@ fun ButtonConfigDialog(
                             onCheckedChange = { playActionAsAuditoryCue = it }
                         )
                     }
-
                 }
             }
         },
         confirmButton = {
             Row(horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium)) {
+                val validateAndConfig = {
+                    if (label.isNotBlank()) {
+                        val action = buildButtonAction()
+                        val cue = if (ttsFeedback.isNotBlank()) {
+                            AuditoryCue.TextToSpeechCue(text = ttsFeedback)
+                        } else null
+                        
+                        ButtonConfig(
+                            id = buttonId, 
+                            label = label, 
+                            spokenText = spokenText.takeIf { it.isNotBlank() },
+                            buttonAction = action,
+                            isActive = isActive,
+                            playActionAsAuditoryCue = playActionAsAuditoryCue,
+                            auditoryCue = cue
+                        )
+                    } else {
+                        isError = true
+                        null
+                    }
+                }
+
                 if (onTest != null) {
                     Button(
                         enabled = !isTesting,
-                        onClick = {
-                            if (label.isNotBlank()) {
-                                val action = buildButtonAction()
-                                val cue = if (ttsFeedback.isNotBlank()) {
-                                    AuditoryCue.TextToSpeechCue(text = ttsFeedback)
-                                } else {
-                                    null
-                                }
-
-                                onTest(
-                                    ButtonConfig(
-                                        id = buttonId, 
-                                        label = label, 
-                                        spokenText = spokenText.takeIf { it.isNotBlank() },
-                                        buttonAction = action,
-                                        isActive = isActive,
-                                        playActionAsAuditoryCue = playActionAsAuditoryCue,
-                                        auditoryCue = cue
-                                    )
-                                )
-                            } else {
-                                isError = true
-                            }
-                        },
+                        onClick = { validateAndConfig()?.let { onTest(it) } },
                         shape = MaterialTheme.shapes.medium,
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
                     ) {
@@ -482,43 +432,18 @@ fun ButtonConfigDialog(
                 Button(
                     enabled = !isTesting,
                     onClick = {
-                        if (label.isNotBlank()) {
-                            val action = buildButtonAction()
-                            
+                        validateAndConfig()?.let { config ->
                             // Check for weather permission if weather is selected
-                            if (action is GeminiNanoButtonAction && action.intent == "weather") {
+                            if (config.buttonAction is GeminiNanoButtonAction && config.buttonAction.intent == "weather") {
                                 val hasFine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
                                 val hasCoarse = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
                                 if (!hasFine && !hasCoarse) {
                                     permissionLauncher.launch(
-                                        arrayOf(
-                                            Manifest.permission.ACCESS_FINE_LOCATION,
-                                            Manifest.permission.ACCESS_COARSE_LOCATION
-                                        )
+                                        arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
                                     )
                                 }
                             }
-
-                            val cue = if (ttsFeedback.isNotBlank()) {
-                                AuditoryCue.TextToSpeechCue(text = ttsFeedback)
-
-                            } else {
-                                null
-                            }
-
-                            onSave(
-                                ButtonConfig(
-                                    id = buttonId, 
-                                    label = label, 
-                                    spokenText = spokenText.takeIf { it.isNotBlank() },
-                                    buttonAction = action,
-                                    isActive = isActive,
-                                    playActionAsAuditoryCue = playActionAsAuditoryCue,
-                                    auditoryCue = cue
-                                )
-                            )
-                        } else {
-                            isError = true
+                            onSave(config)
                         }
                     },
                     shape = MaterialTheme.shapes.medium
@@ -527,6 +452,7 @@ fun ButtonConfigDialog(
                 }
             }
         },
+
         dismissButton = {
             Row(horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium)) {
                 // Move Button (Only for Pages, not Templates)

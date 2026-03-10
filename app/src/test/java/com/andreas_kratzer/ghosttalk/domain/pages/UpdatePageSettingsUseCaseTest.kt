@@ -48,7 +48,7 @@ class UpdatePageSettingsUseCaseTest {
         assertEquals(newRowNames, result?.rowNames)
         
         coVerify {
-            pageRepository.updatePage(match { 
+            pageRepository.updatePageSettingsOnly(match { 
                 it.id == "p1" && 
                 it.name == "New Name" && 
                 it.scanPattern == "row_by_row" && 
@@ -66,7 +66,7 @@ class UpdatePageSettingsUseCaseTest {
 
         assertNull(result)
         coVerify(exactly = 0) {
-            pageRepository.updatePage(any())
+            pageRepository.updatePageSettingsOnly(any())
         }
     }
 }

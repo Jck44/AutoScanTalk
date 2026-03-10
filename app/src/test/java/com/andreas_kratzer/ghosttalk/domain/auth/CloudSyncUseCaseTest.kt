@@ -29,7 +29,7 @@ class CloudSyncUseCaseTest {
 
     private lateinit var useCase: CloudSyncUseCase
     private val mockContext: Context = mockk(relaxed = true)
-    private val mockSettingsRepository: SettingsRepository = mockk(relaxed = true)
+
     private val mockBookRepository: BookRepository = mockk(relaxed = true)
     private val mockImportExportManager: PageImportExportManager = mockk(relaxed = true)
     private val mockDrive: Drive = mockk(relaxed = true)
@@ -44,10 +44,10 @@ class CloudSyncUseCaseTest {
         
         mockkConstructor(com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper::class)
         every { mockContext.cacheDir } returns File(System.getProperty("java.io.tmpdir") ?: "/tmp")
-        every { mockSettingsRepository.isCloudSyncEnabled } returns true
+
         val mockBook = Book(id = "test-book", name = "Test", updatedAt = System.currentTimeMillis())
         coEvery { mockBookRepository.getBookById(any()) } returns mockBook
-        useCase = CloudSyncUseCase(mockContext, mockSettingsRepository, mockBookRepository, mockImportExportManager, mockLogger)
+        useCase = CloudSyncUseCase(mockContext, mockBookRepository, mockImportExportManager, mockLogger)
     }
 
     @After
