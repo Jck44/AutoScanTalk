@@ -50,12 +50,8 @@ class CloudSyncUseCase @Inject constructor(
             return@withContext false
         }
 
-        // Manual sync (BACKUP_ONLY or RESTORE_ONLY) is allowed even if Auto-Sync is disabled
-        val isManual = syncMode == SyncMode.BACKUP_ONLY || syncMode == SyncMode.RESTORE_ONLY
-        if (!settingsRepository.isCloudSyncEnabled && !isManual) {
-            logger.w(TAG, "Cloud sync is disabled in settings and not manual. Skipping.")
-            return@withContext false
-        }
+        // Automatic Sync is handled by CloudSyncWorker. 
+        // Manual sync (and the worker if enabled) should always be able to proceed in this UseCase.
 
         val helper = DriveServiceHelper(drive)
         

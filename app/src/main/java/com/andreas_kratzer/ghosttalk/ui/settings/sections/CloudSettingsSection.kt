@@ -124,21 +124,31 @@ fun CloudSettingsSection(
                     enabled = userEmail != null
                 )
 
+                Text(
+                    text = stringResource(R.string.settings_cloud_last_sync, if (lastSyncTime > 0) dateFormat.format(Date(lastSyncTime)) else "-"),
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(vertical = 4.dp)
+                )
+
+                val syncModeLabel = when (syncMode) {
+                    "BACKUP_ONLY" -> stringResource(R.string.settings_cloud_sync_mode_backup)
+                    "RESTORE_ONLY" -> stringResource(R.string.settings_cloud_sync_mode_restore)
+                    else -> stringResource(R.string.settings_cloud_sync_mode_two_way)
+                }
+
+                SettingsDropdownItem(
+                    label = stringResource(R.string.settings_cloud_sync_mode),
+                    selectedOption = syncModeLabel,
+                    options = listOf(
+                        "TWO_WAY" to R.string.settings_cloud_sync_mode_two_way,
+                        "BACKUP_ONLY" to R.string.settings_cloud_sync_mode_backup,
+                        "RESTORE_ONLY" to R.string.settings_cloud_sync_mode_restore
+                    ).map { (mode, resId) ->
+                        stringResource(resId) to { viewModel.setSyncMode(mode) }
+                    }
+                )
+
                 if (isCloudSyncEnabled) {
-                    Text(
-                        text = stringResource(R.string.settings_cloud_last_sync, if (lastSyncTime > 0) dateFormat.format(Date(lastSyncTime)) else "-"),
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(vertical = 4.dp)
-                    )
-
-                    SettingsDropdownItem(
-                        label = stringResource(R.string.settings_cloud_sync_mode),
-                        selectedOption = syncMode,
-                        options = listOf("TWO_WAY", "BACKUP_ONLY", "RESTORE_ONLY").map { mode ->
-                            mode to { viewModel.setSyncMode(mode) }
-                        }
-                    )
-
                     SettingsDropdownItem(
                         label = stringResource(R.string.settings_cloud_sync_interval),
                         selectedOption = syncIntervalMinutes.toString(),
@@ -146,39 +156,39 @@ fun CloudSettingsSection(
                             interval to { viewModel.setSyncIntervalMinutes(interval.toLong()) }
                         }
                     )
+                }
 
-                    Spacer(modifier = Modifier.height(dimensions.paddingMedium))
+                Spacer(modifier = Modifier.height(dimensions.paddingMedium))
 
-                    Button(
-                        onClick = { viewModel.syncNow() },
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = !isSyncing
+                Button(
+                    onClick = { viewModel.syncNow() },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isSyncing && userEmail != null
+                ) {
+                    Text(stringResource(R.string.settings_cloud_sync_now))
+                }
+
+                Spacer(modifier = Modifier.height(dimensions.paddingSmall))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)
+                ) {
+                    OutlinedButton(
+                        onClick = { viewModel.backupNow() },
+                        modifier = Modifier.weight(1f),
+                        enabled = !isSyncing && userEmail != null
                     ) {
-                        Text(stringResource(R.string.settings_cloud_sync_now))
+                        Text(stringResource(R.string.settings_cloud_backup_now))
                     }
-
-                    Spacer(modifier = Modifier.height(dimensions.paddingSmall))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)
+                    OutlinedButton(
+                        onClick = { 
+                            viewModel.restoreNow() 
+                        },
+                        modifier = Modifier.weight(1f),
+                        enabled = !isSyncing && userEmail != null
                     ) {
-                        OutlinedButton(
-                            onClick = { viewModel.backupNow() },
-                            modifier = Modifier.weight(1f),
-                            enabled = !isSyncing
-                        ) {
-                            Text(stringResource(R.string.settings_cloud_backup_now))
-                        }
-                        OutlinedButton(
-                            onClick = { 
-                                viewModel.restoreNow() 
-                            },
-                            modifier = Modifier.weight(1f),
-                            enabled = !isSyncing
-                        ) {
-                            Text(stringResource(R.string.settings_cloud_restore_now))
-                        }
+                        Text(stringResource(R.string.settings_cloud_restore_now))
                     }
                 }
             }
