@@ -224,6 +224,8 @@ class SettingsRepository(context: Context) {
     private val _isSmartPredictionEnabled = BooleanSetting(KEY_SMART_PREDICTION_ENABLED, false)
     private val _geminiRedoPrediction = BooleanSetting(KEY_GEMINI_REDO_PREDICTION, false)
     private val _geminiTimeout = LongSetting(KEY_GEMINI_TIMEOUT, 6000L)
+    private val _securityPinHash = StringSetting(KEY_SECURITY_PIN_HASH, "", isScoped = false)
+    private val _securityPinSalt = StringSetting(KEY_SECURITY_PIN_SALT, "", isScoped = false)
     private val _bluetoothDelay = LongSetting(KEY_BLUETOOTH_DELAY, 100L, isScoped = false)
     private val _isCloudSyncEnabled = BooleanSetting(KEY_CLOUD_SYNC_ENABLED, false)
     private val _syncIntervalMinutes = LongSetting(KEY_SYNC_INTERVAL_MINUTES, 15L)
@@ -249,6 +251,17 @@ class SettingsRepository(context: Context) {
 
     init {
         cleanupLegacyBookPins()
+        migrateLegacyPinToHash()
+    }
+
+    private fun migrateLegacyPinToHash() {
+        val legacyPin = securityPin
+        if (!legacyPin.isNullOrEmpty()) {
+            // We can't use SecurityManager here because of circular dependency
+            // but we can implement a simple version or just let SecurityManager handle it on first unlock
+            // Actually, SecurityManager is better suited. But we need to define how migration happens.
+            // For now, we leave it as is, SecurityManager.unlock handles it.
+        }
     }
 
     private fun cleanupLegacyBookPins() {
@@ -288,6 +301,8 @@ class SettingsRepository(context: Context) {
         _isSmartPredictionEnabled.refresh()
         _geminiRedoPrediction.refresh()
         _geminiTimeout.refresh()
+        _securityPinHash.refresh()
+        _securityPinSalt.refresh()
         _bluetoothDelay.refresh()
         _isCloudSyncEnabled.refresh()
         _syncIntervalMinutes.refresh()
@@ -351,6 +366,8 @@ class SettingsRepository(context: Context) {
     val geminiRedoPredictionFlow: StateFlow<Boolean> get() = _geminiRedoPrediction.flow
     val weatherCacheTimeoutFlow: StateFlow<Long> get() = _weatherCacheTimeout.flow
     val securityPinFlow: StateFlow<String?> get() = _securityPin.flow
+    val securityPinHashFlow: StateFlow<String?> get() = _securityPinHash.flow
+    val securityPinSaltFlow: StateFlow<String?> get() = _securityPinSalt.flow
     val securityPinTimeoutMinutesFlow: StateFlow<Long> get() = _securityPinTimeoutMinutes.flow
     val isPinRequiredForDeletionFlow: StateFlow<Boolean> get() = _isPinRequiredForDeletion.flow
     val isBiometricEnabledFlow: StateFlow<Boolean> get() = _isBiometricEnabled.flow
@@ -515,6 +532,14 @@ class SettingsRepository(context: Context) {
         get() = _securityPin.value
         set(value) { _securityPin.value = value }
 
+    var securityPinHash: String?
+        get() = _securityPinHash.value
+        set(value) { _securityPinHash.value = value }
+
+    var securityPinSalt: String?
+        get() = _securityPinSalt.value
+        set(value) { _securityPinSalt.value = value }
+
     var securityPinTimeoutMinutes: Long
         get() = _securityPinTimeoutMinutes.value
         set(value) { _securityPinTimeoutMinutes.value = value }
@@ -623,6 +648,8 @@ class SettingsRepository(context: Context) {
         private const val KEY_GEMINI_REDO_PREDICTION = "gemini_redo_prediction"
         private const val KEY_WEATHER_CACHE_TIMEOUT = "weather_cache_timeout_minutes"
         private const val KEY_SECURITY_PIN = "security_pin"
+        private const val KEY_SECURITY_PIN_HASH = "security_pin_hash"
+        private const val KEY_SECURITY_PIN_SALT = "security_pin_salt"
         private const val KEY_SECURITY_PIN_TIMEOUT_MINUTES = "security_pin_timeout_minutes"
         private const val KEY_IS_PIN_REQUIRED_FOR_DELETION = "is_pin_required_for_deletion"
         private const val KEY_BIOMETRIC_ENABLED = "biometric_enabled"

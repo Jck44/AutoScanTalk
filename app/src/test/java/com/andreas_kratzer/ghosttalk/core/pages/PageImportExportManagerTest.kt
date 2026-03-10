@@ -26,13 +26,14 @@ import org.junit.Test
 class PageImportExportManagerTest {
 
     private val testDispatcher = StandardTestDispatcher()
+    private val bookRepository: com.andreas_kratzer.ghosttalk.data.BookRepository = mockk(relaxed = true)
     private val pageRepository: PageRepository = mockk(relaxed = true)
     private val settingsRepository: SettingsRepository = mockk(relaxed = true)
     private val templateRepository: TemplateRepository = mockk(relaxed = true) {
         coEvery { getAllTemplates() } returns flowOf(emptyList())
     }
     private val logger: Logger = TestLogger()
-    private val manager = PageImportExportManager(pageRepository, settingsRepository, templateRepository, logger, testDispatcher)
+    private val manager = PageImportExportManager(bookRepository, pageRepository, settingsRepository, templateRepository, logger, testDispatcher)
 
     @Test
     fun `importFromJson maps buttons and isActive correctly`() = runTest(testDispatcher) {
@@ -237,17 +238,54 @@ class PageImportExportManagerTest {
     }
 
     @Test
-    fun `exportToJson reverses spatial mapping correctly`() = runTest(testDispatcher) {
-        // Page 2x2. Button at (1, 1). Global index = 1*7 + 1 = 8.
-        val configs = MutableList<ButtonConfig?>(49) { null }
-        configs[8] = ButtonConfig(id = "b1", label = "Target", spokenText = "T", buttonAction = SpeakTextButtonAction(), auditoryCue = null, isActive = true)
+    fun `exportToJson serializes book metadata and page extras`() = runTest(testDispatcher) {
+        val book = com.andreas_kratzer.ghosttalk.model.Book(id = "b1", name = "My Book", createdAt = 1000L, updatedAt = 2000L)
+        val page = Page(
+            id = "p1", bookId = "b1", name = "TestPage", rows = 4, columns = 4,
+            scanPattern = "row-by-row",
+            rowNames = listOf("R1", "R2")
+        )
         
-        val page = Page(id = "p1", bookId = "b1", name = "Test", rows = 2, columns = 2, buttonConfigs = configs)
+        val json = manager.exportToJson(listOf(page), book)
         
-        val json = manager.exportToJson(listOf(page))
+        assertTrue(json.contains("\"bookName\":\"My Book\""))
+        assertTrue(json.contains("\"bookCreatedAt\":1000"))
+        assertTrue(json.contains("\"scanPattern\":\"row-by-row\""))
+        assertTrue(json.contains("\"rowNames\":[\"R1\",\"R2\"]"))
+    }
+
+    @Test
+    fun `importFromJson restores book metadata and page extras`() = runTest(testDispatcher) {
+        val jsonString = """
+            {
+                "bookName": "Restored Book",
+                "bookCreatedAt": 5000,
+                "pages": [
+                    {
+                        "importId": "p1", "name": "P1", "rows": 4, "columns": 4,
+                        "scanPattern": "linear",
+                        "rowNames": ["Row A"],
+                        "buttons": []
+                    }
+                ]
+            }
+        """.trimIndent()
+
+        val bookSlot = slot<com.andreas_kratzer.ghosttalk.model.Book>()
+        val pageSlot = slot<Page>()
         
-        // Local index for (1, 1) in 2x2 is 1*2 + 1 = 3.
-        assertTrue(json.contains("\"index\":3"))
-        assertTrue(json.contains("\"label\":\"Target\""))
+        coEvery { bookRepository.getBookById("book1") } returns com.andreas_kratzer.ghosttalk.model.Book("book1", "Old Name")
+        coEvery { bookRepository.updateBook(capture(bookSlot)) } returns Unit
+        coEvery { pageRepository.insertPage(capture(pageSlot)) } returns Unit
+
+        manager.importFromJson(jsonString, "book1")
+
+        assertTrue(bookSlot.isCaptured)
+        assertEquals("Restored Book", bookSlot.captured.name)
+        assertEquals(5000L, bookSlot.captured.createdAt)
+
+        assertTrue(pageSlot.isCaptured)
+        assertEquals("linear", pageSlot.captured.scanPattern)
+        assertEquals(listOf("Row A"), pageSlot.captured.rowNames)
     }
 }

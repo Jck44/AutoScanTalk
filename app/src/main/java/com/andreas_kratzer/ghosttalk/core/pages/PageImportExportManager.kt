@@ -27,6 +27,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.encodeToString
 
 class PageImportExportManager @javax.inject.Inject constructor(
+    private val bookRepository: com.andreas_kratzer.ghosttalk.data.BookRepository,
     private val pageRepository: PageRepository,
     private val settingsRepository: SettingsRepository,
     private val templateRepository: TemplateRepository,
@@ -79,6 +80,30 @@ class PageImportExportManager @javax.inject.Inject constructor(
             importData.keepScreenOnUserMode?.let { settingsRepository.keepScreenOnUserMode = it }
             importData.userModeScreenBehavior?.let { settingsRepository.userModeScreenBehavior = it }
             importData.defaultStartPageId?.let { settingsRepository.defaultStartPageId = it }
+            importData.securityPinHash?.let { settingsRepository.securityPinHash = it }
+            importData.securityPinSalt?.let { settingsRepository.securityPinSalt = it }
+            
+            importData.themeMode?.let { settingsRepository.themeMode = it }
+            importData.securityPinTimeoutMinutes?.let { settingsRepository.securityPinTimeoutMinutes = it }
+            importData.isPinRequiredForDeletion?.let { settingsRepository.isPinRequiredForDeletion = it }
+            importData.isBiometricEnabled?.let { settingsRepository.isBiometricEnabled = it }
+            importData.isSecurityRequiredForEdit?.let { settingsRepository.isSecurityRequiredForEdit = it }
+            importData.isSecurityRequiredForSettings?.let { settingsRepository.isSecurityRequiredForSettings = it }
+            importData.startupBehavior?.let { settingsRepository.startupBehavior = it }
+            importData.favoriteBookId?.let { settingsRepository.favoriteBookId = it }
+            importData.weatherCacheTimeout?.let { settingsRepository.weatherCacheTimeout = it }
+
+            // Update Book metadata if present
+            if (importData.bookName != null) {
+                val existingBook = bookRepository.getBookById(bookId)
+                if (existingBook != null) {
+                    bookRepository.updateBook(existingBook.copy(
+                        name = importData.bookName,
+                        createdAt = importData.bookCreatedAt ?: existingBook.createdAt,
+                        updatedAt = importData.bookUpdatedAt ?: System.currentTimeMillis()
+                    ))
+                }
+            }
 
             // Map UUIDs for incoming pages first, so templates with Navigation actions can reference them
             val pageIdMap = mutableMapOf<String, String>()
@@ -149,8 +174,12 @@ class PageImportExportManager @javax.inject.Inject constructor(
                         name = importTemplate.name,
                         rows = rows,
                         columns = columns,
+                        scanPattern = importTemplate.scanPattern,
+                        rowNames = importTemplate.rowNames ?: emptyList(),
                         buttonConfigs = templateButtonConfigs,
-                        isBuiltIn = false
+                        isBuiltIn = false,
+                        orderIndex = importTemplate.orderIndex ?: 0,
+                        createdAt = importTemplate.createdAt ?: System.currentTimeMillis()
                     )
                     templateRepository.insert(pageTemplate)
                 }
@@ -221,12 +250,14 @@ class PageImportExportManager @javax.inject.Inject constructor(
                     id = newPageId,
                     bookId = bookId,
                     name = importPage.name,
-                    templateId = null,
+                    templateId = importPage.templateId,
                     rows = rows,
                     columns = columns,
-                    scanPattern = null,
-                    rowNames = emptyList(),
-                    buttonConfigs = buttonConfigs
+                    scanPattern = importPage.scanPattern,
+                    rowNames = importPage.rowNames ?: emptyList(),
+                    buttonConfigs = buttonConfigs,
+                    orderIndex = importPage.orderIndex ?: 0,
+                    createdAt = importPage.createdAt ?: System.currentTimeMillis()
                 )
             }
 
@@ -240,11 +271,12 @@ class PageImportExportManager @javax.inject.Inject constructor(
     }
 
     suspend fun exportBookToJson(bookId: String): String = withContext(ioDispatcher) {
+        val book = bookRepository.getBookById(bookId)
         val pages = pageRepository.getPagesForBook(bookId)
-        exportToJson(pages)
+        exportToJson(pages, book)
     }
 
-    suspend fun exportToJson(pages: List<Page>): String = withContext(ioDispatcher) {
+    suspend fun exportToJson(pages: List<Page>, book: com.andreas_kratzer.ghosttalk.model.Book? = null): String = withContext(ioDispatcher) {
         val importPages = pages.map { page ->
             // Use current rows/cols of the page to decide which buttons to export
             // and how to map their indices
@@ -289,8 +321,13 @@ class PageImportExportManager @javax.inject.Inject constructor(
             ImportPage(
                 importId = page.id,
                 name = page.name,
+                templateId = page.templateId,
                 rows = page.rows,
                 columns = page.columns,
+                scanPattern = page.scanPattern,
+                rowNames = page.rowNames,
+                orderIndex = page.orderIndex,
+                createdAt = page.createdAt,
                 buttons = buttons
             )
         }
@@ -336,14 +373,30 @@ class PageImportExportManager @javax.inject.Inject constructor(
                 name = template.name,
                 rows = template.rows,
                 columns = template.columns,
+                scanPattern = template.scanPattern,
+                rowNames = template.rowNames,
+                orderIndex = template.orderIndex,
+                createdAt = template.createdAt,
                 isBuiltIn = template.isBuiltIn,
                 buttons = buttons
             )
         }
 
         val exportData = ImportExportData(
-            ghosttalk_import_version = "1.0",
+            ghosttalk_import_version = "1.1",
             appName = "GhosTTalk (Export)",
+            bookName = book?.name,
+            bookCreatedAt = book?.createdAt,
+            bookUpdatedAt = book?.updatedAt,
+            themeMode = settingsRepository.themeMode,
+            securityPinTimeoutMinutes = settingsRepository.securityPinTimeoutMinutes,
+            isPinRequiredForDeletion = settingsRepository.isPinRequiredForDeletion,
+            isBiometricEnabled = settingsRepository.isBiometricEnabled,
+            isSecurityRequiredForEdit = settingsRepository.isSecurityRequiredForEdit,
+            isSecurityRequiredForSettings = settingsRepository.isSecurityRequiredForSettings,
+            startupBehavior = settingsRepository.startupBehavior,
+            favoriteBookId = settingsRepository.favoriteBookId,
+            weatherCacheTimeout = settingsRepository.weatherCacheTimeout,
             holdingTimeSeconds = settingsRepository.holdingTimeMillis / 1000f,
             autoStartScanning = settingsRepository.autoStartScanning,
             scanDelayMillis = settingsRepository.scanDelayMillis,
@@ -367,6 +420,8 @@ class PageImportExportManager @javax.inject.Inject constructor(
             keepScreenOnUserMode = settingsRepository.keepScreenOnUserMode,
             userModeScreenBehavior = settingsRepository.userModeScreenBehavior,
             defaultStartPageId = settingsRepository.defaultStartPageId,
+            securityPinHash = settingsRepository.securityPinHash,
+            securityPinSalt = settingsRepository.securityPinSalt,
             templates = importTemplates,
             pages = importPages
         )

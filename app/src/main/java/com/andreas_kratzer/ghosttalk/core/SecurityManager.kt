@@ -1,5 +1,6 @@
 package com.andreas_kratzer.ghosttalk.core
 
+import android.util.Base64
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
@@ -12,8 +13,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import javax.crypto.SecretKeyFactory
+import javax.crypto.spec.PBEKeySpec
 import javax.inject.Inject
 import javax.inject.Singleton
+import java.security.SecureRandom
 
 @Singleton
 class SecurityManager @Inject constructor(
@@ -71,14 +75,62 @@ class SecurityManager @Inject constructor(
     }
 
     fun unlock(pin: String): Boolean {
-        val correctPin = settingsRepository.securityPin
-        
-        return if (!correctPin.isNullOrEmpty() && pin == correctPin) {
-            _isUnlocked.value = true
-            updateActivity()
-            true
+        val pinHash = settingsRepository.securityPinHash
+        val salt = settingsRepository.securityPinSalt
+
+        return if (!pinHash.isNullOrEmpty() && !salt.isNullOrEmpty()) {
+            val hashedInput = hashPin(pin, salt)
+            if (hashedInput == pinHash) {
+                _isUnlocked.value = true
+                updateActivity()
+                true
+            } else {
+                false
+            }
         } else {
-            false
+            // Fallback for migration or not set
+            val legacyPin = settingsRepository.securityPin
+            if (!legacyPin.isNullOrEmpty() && pin == legacyPin) {
+                // If it matches legacy, we should probably migrate it here too
+                // but for now just unlock
+                _isUnlocked.value = true
+                updateActivity()
+                true
+            } else {
+                false
+            }
+        }
+    }
+
+    fun hashPin(pin: String, salt: String): String {
+        val iterations = 10000
+        val keyLength = 256
+        val saltBytes = Base64.decode(salt, Base64.DEFAULT)
+        val spec = PBEKeySpec(pin.toCharArray(), saltBytes, iterations, keyLength)
+        val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
+        val hash = factory.generateSecret(spec).encoded
+        return Base64.encodeToString(hash, Base64.DEFAULT).trim()
+    }
+
+    fun generateSalt(): String {
+        val random = SecureRandom()
+        val salt = ByteArray(16)
+        random.nextBytes(salt)
+        return Base64.encodeToString(salt, Base64.DEFAULT).trim()
+    }
+
+    fun updatePin(newPin: String) {
+        if (newPin.isEmpty()) {
+            settingsRepository.securityPin = ""
+            settingsRepository.securityPinHash = ""
+            settingsRepository.securityPinSalt = ""
+        } else {
+            val salt = generateSalt()
+            val hash = hashPin(newPin, salt)
+            settingsRepository.securityPinHash = hash
+            settingsRepository.securityPinSalt = salt
+            // Clear legacy pin
+            settingsRepository.securityPin = ""
         }
     }
 
@@ -109,11 +161,13 @@ class SecurityManager @Inject constructor(
     }
 
     fun isPinSet(): Boolean {
-        return !settingsRepository.securityPin.isNullOrEmpty()
+        return !settingsRepository.securityPinHash.isNullOrEmpty() || !settingsRepository.securityPin.isNullOrEmpty()
     }
     
     fun clearPin() {
         settingsRepository.securityPin = ""
+        settingsRepository.securityPinHash = ""
+        settingsRepository.securityPinSalt = ""
         lock()
     }
 

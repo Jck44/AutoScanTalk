@@ -4,8 +4,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class ImportExportData(
-    val ghosttalk_import_version: String?,
-    val appName: String?,
+    val ghosttalk_import_version: String? = "1.1",
+    val appName: String? = "GhosTTalk",
     val holdingTimeSeconds: Float? = null,
     val autoStartScanning: Boolean? = null,
     val scanDelayMillis: Long? = null,
@@ -28,7 +28,21 @@ data class ImportExportData(
     val smartPredictionDelay: Long? = null,
     val keepScreenOnUserMode: Boolean? = null,
     val userModeScreenBehavior: String? = null,
+    val bookName: String? = null,
+    val bookCreatedAt: Long? = null,
+    val bookUpdatedAt: Long? = null,
+    val themeMode: String? = null,
+    val securityPinTimeoutMinutes: Long? = null,
+    val isPinRequiredForDeletion: Boolean? = null,
+    val isBiometricEnabled: Boolean? = null,
+    val isSecurityRequiredForEdit: Boolean? = null,
+    val isSecurityRequiredForSettings: Boolean? = null,
+    val startupBehavior: String? = null,
+    val favoriteBookId: String? = null,
+    val weatherCacheTimeout: Long? = null,
     val defaultStartPageId: String? = null,
+    val securityPinHash: String? = null,
+    val securityPinSalt: String? = null,
     val templates: List<ImportTemplate>? = null,
     val pages: List<ImportPage> = emptyList()
 )
@@ -39,6 +53,10 @@ data class ImportTemplate(
     val name: String = "",
     val rows: Int = 4,
     val columns: Int = 4,
+    val scanPattern: String? = null,
+    val rowNames: List<String>? = null,
+    val orderIndex: Int? = null,
+    val createdAt: Long? = null,
     val isBuiltIn: Boolean = false,
     val buttons: List<ImportButton> = emptyList()
 )
@@ -49,6 +67,11 @@ data class ImportPage(
     val name: String = "",
     val rows: Int = 4,
     val columns: Int = 4,
+    val templateId: String? = null,
+    val scanPattern: String? = null,
+    val rowNames: List<String>? = null,
+    val orderIndex: Int? = null,
+    val createdAt: Long? = null,
     val buttons: List<ImportButton> = emptyList()
 )
 
