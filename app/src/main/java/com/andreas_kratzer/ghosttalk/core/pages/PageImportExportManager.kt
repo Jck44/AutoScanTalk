@@ -105,10 +105,10 @@ class PageImportExportManager @javax.inject.Inject constructor(
                 }
             }
 
-            // Map UUIDs for incoming pages first, so templates with Navigation actions can reference them
+            // Map IDs for incoming pages. We use the importId as the actual ID to prevent duplicates.
             val pageIdMap = mutableMapOf<String, String>()
             importData.pages.forEach { p ->
-                pageIdMap[p.importId] = UUID.randomUUID().toString()
+                pageIdMap[p.importId] = p.importId
             }
 
             // Handle Templates
@@ -158,7 +158,7 @@ class PageImportExportManager @javax.inject.Inject constructor(
                             }
                             if (importButton.label.isNotBlank() && action != null) {
                                 templateButtonConfigs[globalIdx] = ButtonConfig(
-                                    id = UUID.randomUUID().toString(),
+                                    id = importButton.id ?: UUID.randomUUID().toString(),
                                     label = importButton.label,
                                     spokenText = importButton.spokenText ?: importAction.textToSpeech ?: importAction.ttsFeedback,
                                     buttonAction = action,
@@ -188,7 +188,7 @@ class PageImportExportManager @javax.inject.Inject constructor(
             logger.d("PageImportExportManager", "Parsed ${importData.pages.size} pages. Committing to Room DB...")
 
             val newPages = importData.pages.map { importPage ->
-                val newPageId = pageIdMap[importPage.importId] ?: UUID.randomUUID().toString()
+                val newPageId = importPage.importId
                 val maxIndex = importPage.buttons.maxOfOrNull { it.index }?.toInt() ?: -1
                 var rows = importPage.rows
                 var columns = importPage.columns
@@ -234,7 +234,7 @@ class PageImportExportManager @javax.inject.Inject constructor(
                         }
                         if (importButton.label.isNotBlank() && action != null) {
                             buttonConfigs[globalIdx] = ButtonConfig(
-                                id = UUID.randomUUID().toString(),
+                                id = importButton.id ?: UUID.randomUUID().toString(),
                                 label = importButton.label,
                                 spokenText = importButton.spokenText ?: importAction.textToSpeech ?: importAction.ttsFeedback,
                                 buttonAction = action,
@@ -308,6 +308,7 @@ class PageImportExportManager @javax.inject.Inject constructor(
                     val localIndex = GridUtils.globalToLocalIndex(globalIndex, page.columns)
 
                     ImportButton(
+                        id = config.id,
                         index = localIndex.toLong(),
                         label = config.label,
                         spokenText = config.spokenText,
@@ -358,6 +359,7 @@ class PageImportExportManager @javax.inject.Inject constructor(
                         else -> null
                     }
                     ImportButton(
+                        id = it.id,
                         index = index.toLong(),
                         label = it.label,
                         spokenText = it.spokenText,

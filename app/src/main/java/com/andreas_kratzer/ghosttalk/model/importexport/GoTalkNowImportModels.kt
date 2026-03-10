@@ -77,6 +77,7 @@ data class ImportPage(
 
 @Serializable
 data class ImportButton(
+    val id: String? = null,
     val index: Long = 0,
     val label: String = "",
     val auditoryCueText: String? = null,

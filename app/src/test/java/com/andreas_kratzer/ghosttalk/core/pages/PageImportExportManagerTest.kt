@@ -288,4 +288,55 @@ class PageImportExportManagerTest {
         assertEquals("linear", pageSlot.captured.scanPattern)
         assertEquals(listOf("Row A"), pageSlot.captured.rowNames)
     }
+
+    @Test
+    fun `importFromJson prevents duplicates by preserving IDs`() = runTest(testDispatcher) {
+        val pageId = "unique-page-id"
+        val buttonId = "unique-button-id"
+        val jsonString = """
+            {
+                "pages": [
+                    {
+                        "importId": "$pageId", "name": "P1", "rows": 4, "columns": 4,
+                        "buttons": [
+                            { "id": "$buttonId", "index": 0, "label": "B1", "active": true, "action": { "type": "SpeakText", "textToSpeech": "Hello" } }
+                        ]
+                    }
+                ]
+            }
+        """.trimIndent()
+
+        val pageSlot = slot<Page>()
+        coEvery { pageRepository.insertPage(capture(pageSlot)) } returns Unit
+
+        // First import
+        manager.importFromJson(jsonString, "book1")
+        val firstPage = pageSlot.captured
+        assertEquals(pageId, firstPage.id)
+        assertEquals(buttonId, firstPage.buttonConfigs[0]?.id)
+
+        // Second import of the same data
+        manager.importFromJson(jsonString, "book1")
+        val secondPage = pageSlot.captured
+        
+        // The ID should be the same as before, not a new one
+        assertEquals(pageId, secondPage.id)
+        assertEquals(buttonId, secondPage.buttonConfigs[0]?.id)
+        
+        // Verify insertPage was called twice (Room REPLACE handles the deduplication at DB level)
+        io.mockk.coVerify(exactly = 2) { pageRepository.insertPage(any()) }
+    }
+
+    @Test
+    fun `exportToJson includes button IDs`() = runTest(testDispatcher) {
+        val page = Page(
+            id = "p1", bookId = "b1", name = "Test", rows = 1, columns = 1,
+            buttonConfigs = listOf(
+                ButtonConfig(id = "button-123", label = "L", buttonAction = SpeakTextButtonAction())
+            )
+        )
+        
+        val json = manager.exportToJson(listOf(page))
+        assertTrue(json.contains("\"id\":\"button-123\""))
+    }
 }
