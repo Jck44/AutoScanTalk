@@ -48,13 +48,13 @@ import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
+import com.andreas_kratzer.ghosttalk.ui.theme.LocalCurrentPageId
 import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ButtonConfigDialog(
     initialConfig: ButtonConfig?,
-    currentPageId: String,
     availablePages: List<Page>,
     buttonId: String,
     featureGuard: com.andreas_kratzer.ghosttalk.domain.settings.FeatureGuard,
@@ -67,6 +67,7 @@ fun ButtonConfigDialog(
     onCreatePage: ((String, Int, Int, String?, (String) -> Unit) -> Unit)? = null,
     onMoveToPage: ((String, Boolean, (com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult) -> Unit) -> Unit)? = null
 ) {
+    val currentPageId = LocalCurrentPageId.current ?: ""
     val dimensions = LocalDimensions.current
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current

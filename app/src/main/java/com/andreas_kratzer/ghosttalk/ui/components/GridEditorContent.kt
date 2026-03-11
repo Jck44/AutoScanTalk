@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -19,25 +18,17 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuAnchorType
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -46,7 +37,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -57,11 +47,11 @@ import com.andreas_kratzer.ghosttalk.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.ui.pages.ButtonConfigDialog
 import com.andreas_kratzer.ghosttalk.ui.pages.GridButton
 import com.andreas_kratzer.ghosttalk.ui.theme.GhosTTalkIcons
+import com.andreas_kratzer.ghosttalk.ui.theme.LocalCurrentPageId
 import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
+import com.andreas_kratzer.ghosttalk.ui.theme.LocalIsUserModeActive
 import com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions
 import com.andreas_kratzer.ghosttalk.ui.util.GridUtils
-import kotlinx.coroutines.delay
-import java.util.UUID
 import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.items
@@ -79,114 +69,119 @@ fun GridEditorContent(
     paddingValues: PaddingValues,
     onEditPage: ((String) -> Unit)? = null
 ) {
-    val dimensions = LocalDimensions.current
-    val configuration = LocalConfiguration.current
-    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-    val density = LocalDensity.current.density
-    val isExecuting by actions.isExecuting.collectAsStateWithLifecycle()
-
-    var selectedButtonIndex by remember { mutableStateOf<Int?>(null) }
-    var showDialog by remember { mutableStateOf(false) }
-    var editingRowIndex by remember { mutableStateOf<Int?>(null) }
-    var showRowEditDialog by remember { mutableStateOf(false) }
-
-    val gridState = rememberLazyGridState()
-    val rowReorderState = rememberReorderableState()
-    val buttonReorderState = rememberReorderableState()
-
-    Column(
-        modifier = Modifier
-            .padding(paddingValues)
-            .padding(if (isLandscape) dimensions.paddingMedium else dimensions.paddingLarge),
-        horizontalAlignment = Alignment.CenterHorizontally
+    CompositionLocalProvider(
+        LocalCurrentPageId provides item.id,
+        LocalIsUserModeActive provides false
     ) {
-        GridEditorControls(item = item, actions = actions)
+        val dimensions = LocalDimensions.current
+        val configuration = LocalConfiguration.current
+        val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        val density = LocalDensity.current.density
+        val isExecuting by actions.isExecuting.collectAsStateWithLifecycle()
 
-        val effectiveScanPattern = item.scanPattern ?: bookDefaultScanPattern
-        val isRowByRow = effectiveScanPattern == "row_by_row"
+        var selectedButtonIndex by remember { mutableStateOf<Int?>(null) }
+        var showDialog by remember { mutableStateOf(false) }
+        var editingRowIndex by remember { mutableStateOf<Int?>(null) }
+        var showRowEditDialog by remember { mutableStateOf(false) }
 
-        BoxWithConstraints(
-            modifier = Modifier.weight(1f).fillMaxWidth(),
-            contentAlignment = Alignment.TopCenter
+        val gridState = rememberLazyGridState()
+        val rowReorderState = rememberReorderableState()
+        val buttonReorderState = rememberReorderableState()
+
+        Column(
+            modifier = Modifier
+                .padding(paddingValues)
+                .padding(if (isLandscape) dimensions.paddingMedium else dimensions.paddingLarge),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            val sizeInfo = calculateGridSize(
-                maxWidth = maxWidth,
-                maxHeight = maxHeight,
-                rows = item.rows,
-                cols = item.columns,
-                isRowByRow = isRowByRow,
-                dimensions = dimensions
-            )
+            GridEditorControls(item = item, actions = actions)
 
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(item.columns),
-                state = gridState,
-                modifier = Modifier
-                    .width(sizeInfo.totalWidth)
-                    .height(sizeInfo.totalHeight),
-                contentPadding = PaddingValues(dimensions.paddingMedium),
-                verticalArrangement = Arrangement.spacedBy(dimensions.gridSpacing),
-                horizontalArrangement = Arrangement.spacedBy(dimensions.gridSpacing)
+            val effectiveScanPattern = item.scanPattern ?: bookDefaultScanPattern
+            val isRowByRow = effectiveScanPattern == "row_by_row"
+
+            BoxWithConstraints(
+                modifier = Modifier.weight(1f).fillMaxWidth(),
+                contentAlignment = Alignment.TopCenter
             ) {
-                if (isRowByRow) {
-                    renderRowByRowGrid(
-                        item = item,
-                        actions = actions,
-                        gridState = gridState,
-                        rowReorderState = rowReorderState,
-                        buttonReorderState = buttonReorderState,
-                        sizeInfo = sizeInfo,
-                        dimensions = dimensions,
-                        density = density,
-                        onEditRow = { r ->
-                            editingRowIndex = r
-                            showRowEditDialog = true
-                        },
-                        onEditButton = { idx ->
-                            selectedButtonIndex = idx
-                            showDialog = true
-                        }
-                    )
-                } else {
-                    renderLinearGrid(
-                        item = item,
-                        actions = actions,
-                        gridState = gridState,
-                        buttonReorderState = buttonReorderState,
-                        sizeInfo = sizeInfo,
-                        dimensions = dimensions,
-                        density = density,
-                        onEditButton = { idx ->
-                            selectedButtonIndex = idx
-                            showDialog = true
-                        }
-                    )
+                val sizeInfo = calculateGridSize(
+                    maxWidth = maxWidth,
+                    maxHeight = maxHeight,
+                    rows = item.rows,
+                    cols = item.columns,
+                    isRowByRow = isRowByRow,
+                    dimensions = dimensions
+                )
+
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(item.columns),
+                    state = gridState,
+                    modifier = Modifier
+                        .width(sizeInfo.totalWidth)
+                        .height(sizeInfo.totalHeight),
+                    contentPadding = PaddingValues(dimensions.paddingMedium),
+                    verticalArrangement = Arrangement.spacedBy(dimensions.gridSpacing),
+                    horizontalArrangement = Arrangement.spacedBy(dimensions.gridSpacing)
+                ) {
+                    if (isRowByRow) {
+                        renderRowByRowGrid(
+                            item = item,
+                            actions = actions,
+                            gridState = gridState,
+                            rowReorderState = rowReorderState,
+                            buttonReorderState = buttonReorderState,
+                            sizeInfo = sizeInfo,
+                            dimensions = dimensions,
+                            density = density,
+                            onEditRow = { r ->
+                                editingRowIndex = r
+                                showRowEditDialog = true
+                            },
+                            onEditButton = { idx ->
+                                selectedButtonIndex = idx
+                                showDialog = true
+                            }
+                        )
+                    } else {
+                        renderLinearGrid(
+                            item = item,
+                            actions = actions,
+                            gridState = gridState,
+                            buttonReorderState = buttonReorderState,
+                            sizeInfo = sizeInfo,
+                            dimensions = dimensions,
+                            density = density,
+                            onEditButton = { idx ->
+                                selectedButtonIndex = idx
+                                showDialog = true
+                            }
+                        )
+                    }
                 }
             }
         }
-    }
 
-    EditorDialogs(
-        item = item,
-        actions = actions,
-        availablePages = availablePages,
-        templates = templates,
-        featureGuard = featureGuard,
-        isExecuting = isExecuting,
-        editingRowIndex = editingRowIndex,
-        showRowEditDialog = showRowEditDialog,
-        selectedButtonIndex = selectedButtonIndex,
-        showDialog = showDialog,
-        onDismissRowDialog = {
-            showRowEditDialog = false
-            editingRowIndex = null
-        },
-        onDismissButtonDialog = {
-            showDialog = false
-            selectedButtonIndex = null
-        },
-        onEditPage = onEditPage
-    )
+        EditorDialogs(
+            item = item,
+            actions = actions,
+            availablePages = availablePages,
+            templates = templates,
+            featureGuard = featureGuard,
+            isExecuting = isExecuting,
+            editingRowIndex = editingRowIndex,
+            showRowEditDialog = showRowEditDialog,
+            selectedButtonIndex = selectedButtonIndex,
+            showDialog = showDialog,
+            onDismissRowDialog = {
+                showRowEditDialog = false
+                editingRowIndex = null
+            },
+            onDismissButtonDialog = {
+                showDialog = false
+                selectedButtonIndex = null
+            },
+            onEditPage = onEditPage
+        )
+    }
 }
 
 @Composable
@@ -225,7 +220,7 @@ private fun EditorButtonCell(
         GridButton(
             buttonConfig = buttonConfig,
             isFocused = false,
-            isEditorMode = true,
+            // isEditorMode now defaults to !LocalIsUserModeActive.current
             onClick = onClick,
             modifier = Modifier.width(width).height(height)
         )
@@ -387,7 +382,7 @@ private fun EditorDialogs(
         val buttonId = "page_button_${item.id}_${selectedButtonIndex}"
         ButtonConfigDialog(
             initialConfig = buttonConfig ?: com.andreas_kratzer.ghosttalk.model.ButtonConfig(),
-            currentPageId = item.id,
+            // currentPageId will be sourced from LocalCurrentPageId in ButtonConfigDialog
             buttonId = buttonId,
             availablePages = availablePages,
             featureGuard = featureGuard,
@@ -410,4 +405,3 @@ private fun EditorDialogs(
         )
     }
 }
-

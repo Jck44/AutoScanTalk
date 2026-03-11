@@ -64,6 +64,7 @@ class PageViewModel @Inject constructor(
     private var geminiUseCase: GeminiUseCase? = null
 
     val activeBookId = pageManagementDelegate.activeBookId
+    val currentPageId = pageManagementDelegate.currentPageId
     val searchQuery = pageManagementDelegate.searchQuery
     val filteredPages = pageManagementDelegate.filteredPages
     val unfilteredPages = pageManagementDelegate.unfilteredPages

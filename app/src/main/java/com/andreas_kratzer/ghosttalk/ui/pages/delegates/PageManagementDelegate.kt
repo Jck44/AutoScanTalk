@@ -50,6 +50,7 @@ class PageManagementDelegate @Inject constructor(
     private lateinit var scope: CoroutineScope
 
     val activeBookId: StateFlow<String?> = appStateRepository.activeBookId
+    val currentPageId: StateFlow<String?> = appStateRepository.currentPageId
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()

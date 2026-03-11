@@ -48,6 +48,10 @@ import com.andreas_kratzer.ghosttalk.ui.main.GhosTTalkNavHost
 import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
 import com.andreas_kratzer.ghosttalk.ui.settings.SettingsViewModel
 import com.andreas_kratzer.ghosttalk.ui.theme.GhosTTalkTheme
+import com.andreas_kratzer.ghosttalk.ui.theme.LocalActiveBookId
+import com.andreas_kratzer.ghosttalk.ui.theme.LocalCurrentPageId
+import com.andreas_kratzer.ghosttalk.ui.theme.LocalIsUserModeActive
+import androidx.compose.runtime.CompositionLocalProvider
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -167,9 +171,17 @@ class MainActivity : AppCompatActivity() {
         setContent {
             val themeMode by settingsViewModel.themeMode.collectAsState()
             val screenState by pageViewModel.screenState.collectAsState()
+            val isUserModeActive by pageViewModel.isUserModeActive.collectAsState()
+            val activeBookId by pageViewModel.activeBookId.collectAsState()
+            val currentPageId by pageViewModel.currentPageId.collectAsState()
             
             GhosTTalkTheme(themeMode = themeMode) {
-                Surface(
+                CompositionLocalProvider(
+                    LocalIsUserModeActive provides isUserModeActive,
+                    LocalActiveBookId provides activeBookId,
+                    LocalCurrentPageId provides currentPageId
+                ) {
+                    Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
@@ -213,6 +225,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
     }
 
     override fun onResume() {

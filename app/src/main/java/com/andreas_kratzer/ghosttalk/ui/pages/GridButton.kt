@@ -22,6 +22,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
+import com.andreas_kratzer.ghosttalk.ui.theme.LocalIsUserModeActive
 
 @Composable
 fun GridButton(
@@ -29,7 +30,7 @@ fun GridButton(
     modifier: Modifier = Modifier,
     isFocused: Boolean = false,
     isRowFocused: Boolean = false,
-    isEditorMode: Boolean = false,
+    isEditorMode: Boolean = !LocalIsUserModeActive.current,
     overrideLabel: String? = null,
     onClick: () -> Unit
 ) {
