@@ -168,4 +168,55 @@ class ScanCoordinatorTest {
         // Then: stopScanning should be called
         verify { scannerEngine.stopScanning() }
     }
+
+    @Test
+    fun `should automatically restart scanning when entering user mode if autoStart is true`() = runTest(testDispatcher) {
+        // Given: User mode is currently inactive, but auto-start is enabled
+        isUserModeActive.value = false
+        every { settingsRepository.autoStartScanning } returns true
+        
+        val page = mockk<Page>(relaxed = true) {
+            every { id } returns "p1"
+            every { buttonConfigs } returns emptyList()
+        }
+        every { checkForPredictorUseCase(any()) } returns false
+        currentPage.value = page
+        resolvedPage.value = page
+
+        scanCoordinator.init(currentPage, isUserModeActive, resolvedPage, isSmartPredictionLoading, smartPredictions)
+        testDispatcher.scheduler.advanceUntilIdle()
+        verify(exactly = 0) { scannerEngine.startScanning(any(), any(), any(), any(), any(), any(), any()) }
+
+        // When: User mode becomes active
+        isUserModeActive.value = true
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Then: Scanning should start
+        verify { scannerEngine.startScanning(any(), any(), any(), any(), any(), any(), eq("p1")) }
+    }
+
+    @Test
+    fun `should NOT start scanning when entering user mode if autoStart is false`() = runTest(testDispatcher) {
+        // Given: User mode is currently inactive, and auto-start is disabled
+        isUserModeActive.value = false
+        every { settingsRepository.autoStartScanning } returns false
+        
+        val page = mockk<Page>(relaxed = true) {
+            every { id } returns "p1"
+            every { buttonConfigs } returns emptyList()
+        }
+        every { checkForPredictorUseCase(any()) } returns false
+        currentPage.value = page
+        resolvedPage.value = page
+
+        scanCoordinator.init(currentPage, isUserModeActive, resolvedPage, isSmartPredictionLoading, smartPredictions)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // When: User mode becomes active
+        isUserModeActive.value = true
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Then: Scanning should NOT start
+        verify(exactly = 0) { scannerEngine.startScanning(any(), any(), any(), any(), any(), any(), any()) }
+    }
 }
