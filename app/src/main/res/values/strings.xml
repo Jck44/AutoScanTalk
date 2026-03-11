@@ -65,6 +65,11 @@
     <string name="settings_category_local_backup">Lokale Datensicherung</string>
     <string name="settings_local_backup_create">Sicherung erstellen</string>
     <string name="settings_local_backup_restore">Sicherung wiederherstellen</string>
+    <string name="settings_local_backup_import">Sicherung importieren</string>
+    <string name="settings_local_backup_describe_create">Sichert das aktuelle Buch in einer lokalen Datei.</string>
+
+    <string name="settings_local_backup_describe_restore">Aktualisiert dieses Buch mit Daten aus einer Sicherung (IDs müssen übereinstimmen).</string>
+    <string name="settings_local_backup_describe_global_import">Importiert ein neues Buch aus einer lokalen Sicherungsdatei.</string>
     <string name="settings_category_advanced">Erweiterte Einstellungen</string>
     <string name="settings_bluetooth_delay">Bluetooth-Verzögerung (ms)</string>
 

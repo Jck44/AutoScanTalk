@@ -90,9 +90,19 @@ data class ImportButton(
 
 @Serializable
 data class ImportAction(
-    val type: String = "SPEAK", // "SPEAK" or "NAVIGATE"
+    val type: String = "SPEAK", // "SPEAK", "NAVIGATE", "GEMINI", "GEMINI_SEARCH", "GEMINI_NANO", "SMART_PREDICTION", "DEVICE_CONTROL", "WEATHER"
     val textToSpeech: String? = null,
     val targetPageImportId: String? = null,
     val targetPageId: String? = null, // Legacy alias
-    val ttsFeedback: String? = null
+    val ttsFeedback: String? = null,
+    
+    // GhosTTalk specific expansions
+    val prompt: String? = null,
+    val rank: Int? = null,
+    val intent: String? = null,
+    val deviceActionType: String? = null,
+    val volumeValue: String? = null,
+    val contactName: String? = null,
+    val contactPhone: String? = null,
+    val messageText: String? = null
 )

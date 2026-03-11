@@ -9,7 +9,14 @@ import com.andreas_kratzer.ghosttalk.model.AuditoryCue
 import com.andreas_kratzer.ghosttalk.model.Book
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.model.Page
+import com.andreas_kratzer.ghosttalk.model.ControlDeviceButtonAction
+import com.andreas_kratzer.ghosttalk.model.DeviceActionType
+import com.andreas_kratzer.ghosttalk.model.GeminiButtonAction
+import com.andreas_kratzer.ghosttalk.model.GeminiNanoButtonAction
+import com.andreas_kratzer.ghosttalk.model.GeminiSearchButtonAction
+import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
+import com.andreas_kratzer.ghosttalk.model.WeatherButtonAction
 import io.mockk.coEvery
 import io.mockk.mockk
 import io.mockk.slot
@@ -540,5 +547,56 @@ class PageImportExportManagerTest {
 
         assertTrue(result.isFailure)
         assertEquals("Konnte keine Buch-ID im Backup finden.", result.exceptionOrNull()?.message)
+    }
+
+    @Test
+    fun `export and import cycle preserves complex GhosTTalk actions`() = runTest(testDispatcher) {
+        val bookId = "test-book"
+        val originalPages = listOf(
+            Page(
+                id = "p1", bookId = bookId, name = "Actions", rows = 7, columns = 7,
+                buttonConfigs = MutableList<ButtonConfig?>(49) { null }.apply {
+                    this[0] = ButtonConfig(id = "b1", label = "Gemini", buttonAction = GeminiButtonAction("Prompt 1"))
+                    this[1] = ButtonConfig(id = "b2", label = "Device", buttonAction = ControlDeviceButtonAction(DeviceActionType.VOLUME_MEDIA, volumeValue = "15"))
+                    this[2] = ButtonConfig(id = "b3", label = "Weather", buttonAction = WeatherButtonAction())
+                    this[3] = ButtonConfig(id = "b4", label = "Smart", buttonAction = SmartPredictionButtonAction(3))
+                    this[4] = ButtonConfig(id = "b5", label = "Search", buttonAction = GeminiSearchButtonAction("Search Query"))
+                    this[5] = ButtonConfig(id = "b6", label = "Nano", buttonAction = GeminiNanoButtonAction("Intent A"))
+                }
+            )
+        )
+
+        // 1. Export
+        val jsonString = manager.exportToJson(originalPages, Book(bookId, "Test Book"))
+
+        // 2. Import
+        val pageSlot = mutableListOf<Page>()
+        coEvery { pageRepository.insertPage(capture(pageSlot)) } returns Unit
+        coEvery { pageRepository.getPageById(any()) } returns null
+
+        val result = manager.importFromJson(jsonString, bookId, regenerateIds = false)
+
+        assertTrue(result.isSuccess)
+        assertEquals(1, pageSlot.size)
+        val importedPage = pageSlot[0]
+
+        // Verify actions
+        val b1 = importedPage.buttonConfigs[0]?.buttonAction as GeminiButtonAction
+        assertEquals("Prompt 1", b1.prompt)
+
+        val b2 = importedPage.buttonConfigs[1]?.buttonAction as ControlDeviceButtonAction
+        assertEquals(DeviceActionType.VOLUME_MEDIA, b2.actionType)
+        assertEquals("15", b2.volumeValue)
+
+        assertTrue(importedPage.buttonConfigs[2]?.buttonAction is WeatherButtonAction)
+
+        val b4 = importedPage.buttonConfigs[3]?.buttonAction as SmartPredictionButtonAction
+        assertEquals(3, b4.rank)
+
+        val b5 = importedPage.buttonConfigs[4]?.buttonAction as GeminiSearchButtonAction
+        assertEquals("Search Query", b5.prompt)
+
+        val b6 = importedPage.buttonConfigs[5]?.buttonAction as GeminiNanoButtonAction
+        assertEquals("Intent A", b6.intent)
     }
 }

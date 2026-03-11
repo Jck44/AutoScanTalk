@@ -289,18 +289,30 @@ class SettingsViewModel @Inject constructor(
     }
 
     suspend fun exportLocalBackup(): String {
-        val pages = allPages.value
-        return importExportManager.exportToJson(pages)
+        return importExportManager.exportBookToJson(activeBookId)
     }
 
     suspend fun importLocalBackup(json: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        val importBookId = importExportManager.extractBookIdFromJson(json)
+        
+        if (importBookId != activeBookId) {
+            onError("Fehler: Buch-IDs stimmen nicht überein. Dieses Backup gehört zu einem anderen Buch.")
+            return
+        }
+
         val result = importExportManager.importFromJson(
             jsonString = json,
             bookId = activeBookId,
-            regenerateIds = true,
+            regenerateIds = false, // Preserve IDs for matching book
             restoreSyncSettings = false
         )
         result.onSuccess { onSuccess() }
             .onFailure { e -> onError("Fehler beim Import: ${e.message}") }
+    }
+
+    suspend fun importGlobalManualBackup(json: String, onSuccess: (String) -> Unit, onError: (String) -> Unit) {
+        val result = importExportManager.importCloudBackup(json, null)
+        result.onSuccess { bookId -> onSuccess(bookId) }
+            .onFailure { e -> onError("Fehler beim globalen Import: ${e.message}") }
     }
 }

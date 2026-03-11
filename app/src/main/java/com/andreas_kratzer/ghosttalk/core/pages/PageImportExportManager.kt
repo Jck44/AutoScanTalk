@@ -5,12 +5,20 @@ import com.andreas_kratzer.ghosttalk.data.PageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.data.TemplateRepository
 import com.andreas_kratzer.ghosttalk.model.AuditoryCue
+import com.andreas_kratzer.ghosttalk.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.model.ControlDeviceButtonAction
+import com.andreas_kratzer.ghosttalk.model.DeviceActionType
 import com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction
+import com.andreas_kratzer.ghosttalk.model.GeminiButtonAction
+import com.andreas_kratzer.ghosttalk.model.GeminiNanoButtonAction
+import com.andreas_kratzer.ghosttalk.model.GeminiSearchButtonAction
 import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.model.PageTemplate
+import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
+import com.andreas_kratzer.ghosttalk.model.WeatherButtonAction
 import com.andreas_kratzer.ghosttalk.model.importexport.ImportAction
 import com.andreas_kratzer.ghosttalk.model.importexport.ImportButton
 import com.andreas_kratzer.ghosttalk.model.importexport.ImportExportData
@@ -106,6 +114,16 @@ class PageImportExportManager @javax.inject.Inject constructor(
             jsonObject["bookName"]?.jsonPrimitive?.contentOrNull
         } catch (e: Exception) {
             logger.e(TAG, "Error extracting book name from JSON", e)
+            null
+        }
+    }
+
+    fun extractBookIdFromJson(jsonString: String): String? {
+        return try {
+            val jsonObject = json.parseToJsonElement(jsonString).jsonObject
+            jsonObject["bookId"]?.jsonPrimitive?.contentOrNull
+        } catch (e: Exception) {
+            logger.e(TAG, "Error extracting book ID from JSON", e)
             null
         }
     }
@@ -259,26 +277,13 @@ class PageImportExportManager @javax.inject.Inject constructor(
                         
                         if (globalIdx < GridUtils.TOTAL_SLOTS) {
                             val importAction = importButton.action
-                            val action = importAction?.let { ia ->
-                                when (ia.type) {
-                                    "SpeakText", "SPEAK" -> SpeakTextButtonAction()
-                                    "FrequentAction" -> {
-                                        val rank = ia.targetPageImportId?.toIntOrNull() ?: 1
-                                        FrequentActionButtonAction(rank)
-                                    }
-                                    "NavigateToPage", "NAVIGATE" -> {
-                                        val sourceId = ia.targetPageImportId ?: ia.targetPageId ?: ""
-                                        val targetId = importIdToIdMap[sourceId] ?: sourceId
-                                        NavigateToPageButtonAction(targetId)
-                                    }
-                                    else -> null
-                                }
-                            }
+                            val action = importAction?.let { mapImportActionToAction(it, importIdToIdMap) }
                             if (importButton.label.isNotBlank() && action != null) {
                                 templateButtonConfigs[globalIdx] = ButtonConfig(
                                     id = if (finalRegenerateIds || importButton.id.isNullOrBlank()) UUID.randomUUID().toString() else importButton.id,
                                     label = importButton.label,
-                                    spokenText = importButton.spokenText ?: importAction.textToSpeech ?: importAction.ttsFeedback,
+                                    spokenText = importButton.spokenText ?: importAction.textToSpeech
+                                    ?: importAction.ttsFeedback,
                                     buttonAction = action,
                                     auditoryCue = importButton.auditoryCueText?.let { AuditoryCue.TextToSpeechCue(it) },
                                     isActive = importButton.active ?: true,
@@ -334,21 +339,7 @@ class PageImportExportManager @javax.inject.Inject constructor(
                     
                     if (globalIdx < GridUtils.TOTAL_SLOTS) {
                         val importAction = importButton.action
-                        val action = importAction?.let { ia ->
-                            when (ia.type) {
-                                "SpeakText", "SPEAK" -> SpeakTextButtonAction()
-                                "FrequentAction" -> {
-                                    val rank = ia.targetPageImportId?.toIntOrNull() ?: 1
-                                    FrequentActionButtonAction(rank)
-                                }
-                                "NavigateToPage", "NAVIGATE" -> {
-                                    val sourceId = ia.targetPageImportId ?: ia.targetPageId ?: ""
-                                    val targetId = importIdToIdMap[sourceId] ?: sourceId
-                                    NavigateToPageButtonAction(targetId)
-                                }
-                                else -> null
-                            }
-                        }
+                        val action = importAction?.let { mapImportActionToAction(it, importIdToIdMap) }
                         if (importButton.label.isNotBlank() && action != null) {
                             val forceButtonRegenerate = finalRegenerateIds || (importPage.importId.isNotBlank() && newPageId != importPage.importId)
                             buttonConfigs[globalIdx] = ButtonConfig(
@@ -387,8 +378,8 @@ class PageImportExportManager @javax.inject.Inject constructor(
             logger.e(TAG, "Unexpected exception during import for book $bookId", e)
             Result.failure(e)
         }
+        }
     }
-}
 
     suspend fun exportBookToJson(bookId: String): String = withContext(ioDispatcher) {
         val book = bookRepository.getBookById(bookId)
@@ -400,27 +391,7 @@ class PageImportExportManager @javax.inject.Inject constructor(
         val importPages = pages.map { page ->
             val buttons = page.buttonConfigs.mapIndexedNotNull { globalIndex, config ->
                 if (config != null && GridUtils.isVisibleInGrid(globalIndex, page.rows, page.columns)) {
-                    val importAction = when (val action = config.buttonAction) {
-                        is SpeakTextButtonAction -> ImportAction(
-                            type = "SPEAK",
-                            textToSpeech = config.spokenText,
-                            targetPageImportId = null,
-                            ttsFeedback = null
-                        )
-                        is FrequentActionButtonAction -> ImportAction(
-                            type = "FrequentAction",
-                            textToSpeech = null,
-                            targetPageImportId = action.rank.toString(),
-                            ttsFeedback = null
-                        )
-                        is NavigateToPageButtonAction -> ImportAction(
-                            type = "NAVIGATE",
-                            textToSpeech = null,
-                            targetPageImportId = action.pageId,
-                            ttsFeedback = null
-                        )
-                        else -> null
-                    }
+                    val importAction = mapActionToImportAction(config.buttonAction, config)
                     
                     val localIndex = GridUtils.globalToLocalIndex(globalIndex, page.columns)
 
@@ -454,27 +425,7 @@ class PageImportExportManager @javax.inject.Inject constructor(
         val importTemplates = allTemplates.filter { !it.isBuiltIn }.map { template ->
             val buttons = template.buttonConfigs.mapIndexedNotNull { index, config ->
                 config?.let {
-                    val importAction = when (val action = it.buttonAction) {
-                        is SpeakTextButtonAction -> ImportAction(
-                            type = "SPEAK",
-                            textToSpeech = it.spokenText,
-                            targetPageImportId = null,
-                            ttsFeedback = null
-                        )
-                        is FrequentActionButtonAction -> ImportAction(
-                            type = "FrequentAction",
-                            textToSpeech = null,
-                            targetPageImportId = action.rank.toString(),
-                            ttsFeedback = null
-                        )
-                        is NavigateToPageButtonAction -> ImportAction(
-                            type = "NAVIGATE",
-                            textToSpeech = null,
-                            targetPageImportId = action.pageId,
-                            ttsFeedback = null
-                        )
-                        else -> null
-                    }
+                    val importAction = mapActionToImportAction(it.buttonAction, it)
                     ImportButton(
                         id = it.id,
                         index = index.toLong(),
@@ -546,5 +497,83 @@ class PageImportExportManager @javax.inject.Inject constructor(
             pages = importPages
         )
         json.encodeToString(exportData)
+    }
+
+    private fun mapActionToImportAction(action: ButtonAction, config: ButtonConfig): ImportAction? {
+        return when (action) {
+            is SpeakTextButtonAction -> ImportAction(
+                type = "SPEAK",
+                textToSpeech = config.spokenText
+            )
+            is FrequentActionButtonAction -> ImportAction(
+                type = "FrequentAction",
+                rank = action.rank
+            )
+            is NavigateToPageButtonAction -> ImportAction(
+                type = "NAVIGATE",
+                targetPageImportId = action.pageId
+            )
+            is GeminiButtonAction -> ImportAction(
+                type = "GEMINI",
+                prompt = action.prompt
+            )
+            is GeminiSearchButtonAction -> ImportAction(
+                type = "GEMINI_SEARCH",
+                prompt = action.prompt
+            )
+            is GeminiNanoButtonAction -> ImportAction(
+                type = "GEMINI_NANO",
+                intent = action.intent
+            )
+            is SmartPredictionButtonAction -> ImportAction(
+                type = "SMART_PREDICTION",
+                rank = action.rank
+            )
+            is ControlDeviceButtonAction -> ImportAction(
+                type = "DEVICE_CONTROL",
+                deviceActionType = action.actionType.name,
+                volumeValue = action.volumeValue,
+                contactName = action.contactName,
+                contactPhone = action.contactPhone,
+                messageText = action.messageText
+            )
+            is WeatherButtonAction -> ImportAction(
+                type = "WEATHER"
+            )
+        }
+    }
+
+    private fun mapImportActionToAction(ia: ImportAction, importIdToIdMap: Map<String, String>? = null): ButtonAction? {
+        return when (ia.type) {
+            "SpeakText", "SPEAK" -> SpeakTextButtonAction()
+            "FrequentAction" -> {
+                val rank = ia.rank ?: ia.targetPageImportId?.toIntOrNull() ?: 1
+                FrequentActionButtonAction(rank)
+            }
+            "NavigateToPage", "NAVIGATE" -> {
+                val sourceId = ia.targetPageImportId ?: ia.targetPageId ?: ""
+                val targetId = if (importIdToIdMap != null) importIdToIdMap[sourceId] ?: sourceId else sourceId
+                NavigateToPageButtonAction(targetId)
+            }
+            "GEMINI" -> GeminiButtonAction(ia.prompt ?: "")
+            "GEMINI_SEARCH" -> GeminiSearchButtonAction(ia.prompt ?: "")
+            "GEMINI_NANO" -> GeminiNanoButtonAction(ia.intent ?: "")
+            "SMART_PREDICTION" -> SmartPredictionButtonAction(ia.rank ?: 1)
+            "DEVICE_CONTROL" -> {
+                try {
+                    ControlDeviceButtonAction(
+                        actionType = DeviceActionType.valueOf(ia.deviceActionType ?: "READ_TIME"),
+                        volumeValue = ia.volumeValue,
+                        contactName = ia.contactName,
+                        contactPhone = ia.contactPhone,
+                        messageText = ia.messageText
+                    )
+                } catch (e: Exception) {
+                    ControlDeviceButtonAction(DeviceActionType.READ_TIME)
+                }
+            }
+            "WEATHER" -> WeatherButtonAction()
+            else -> null
+        }
     }
 }

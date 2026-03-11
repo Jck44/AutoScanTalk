@@ -136,7 +136,7 @@ fun SettingsScreen(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
         uri?.let {
-            handleLocalImport(context, it, viewModel, coroutineScope)
+            handleLocalImport(context, it, viewModel, coroutineScope, isGlobal)
         }
     }
 
@@ -312,22 +312,35 @@ private fun handleLocalImport(
     context: android.content.Context,
     uri: android.net.Uri,
     viewModel: SettingsViewModel,
-    coroutineScope: kotlinx.coroutines.CoroutineScope
+    coroutineScope: kotlinx.coroutines.CoroutineScope,
+    isGlobal: Boolean
 ) {
     try {
         context.contentResolver.openInputStream(uri)?.use { inputStream ->
             val reader = BufferedReader(InputStreamReader(inputStream))
             val jsonContent = reader.readText()
             coroutineScope.launch {
-                viewModel.importLocalBackup(
-                    json = jsonContent,
-                    onSuccess = {
-                        Toast.makeText(context, context.getString(R.string.page_import_success), Toast.LENGTH_SHORT).show()
-                    },
-                    onError = { error ->
-                        Toast.makeText(context, error, Toast.LENGTH_LONG).show()
-                    }
-                )
+                if (isGlobal) {
+                    viewModel.importGlobalManualBackup(
+                        json = jsonContent,
+                        onSuccess = { _ ->
+                            Toast.makeText(context, "Buch erfolgreich importiert.", Toast.LENGTH_SHORT).show()
+                        },
+                        onError = { error ->
+                            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+                        }
+                    )
+                } else {
+                    viewModel.importLocalBackup(
+                        json = jsonContent,
+                        onSuccess = {
+                            Toast.makeText(context, context.getString(R.string.page_import_success), Toast.LENGTH_SHORT).show()
+                        },
+                        onError = { error ->
+                            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+                        }
+                    )
+                }
             }
         }
     } catch (e: Exception) {
@@ -422,11 +435,18 @@ fun SubmenuContent(
         SettingsSection.ADVANCED -> {
             if (isGlobal) {
                 ExperimentalSettingsSection(viewModel) // Weather timeout is here and global
+                MaintenanceSection(
+                    viewModel = viewModel,
+                    isGlobal = true,
+                    onLocalExport = {},
+                    onLocalImport = onLocalImport
+                )
             }
             TestSettingsSection(viewModel, isGlobal = isGlobal)
             if (!isGlobal) {
                 MaintenanceSection(
                     viewModel = viewModel,
+                    isGlobal = false,
                     onLocalExport = onLocalExport,
                     onLocalImport = onLocalImport
                 )
