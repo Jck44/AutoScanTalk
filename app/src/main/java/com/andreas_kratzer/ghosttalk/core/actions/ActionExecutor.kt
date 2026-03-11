@@ -93,7 +93,7 @@ class ActionExecutor @Inject constructor(
         _isExecuting.value = true
 
         // Record button usage for statistics
-        if (bookId != null && buttonUsageRepository != null && index != -1) {
+        if (bookId != null && index != -1) {
             scope.launch {
                 try {
                     buttonUsageRepository.recordUsage(bookId, buttonConfig, rows, columns, index)
