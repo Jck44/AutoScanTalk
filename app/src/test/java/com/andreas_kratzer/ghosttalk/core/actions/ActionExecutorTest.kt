@@ -49,9 +49,14 @@ class ActionExecutorTest {
             logger = logger,
             localIntentRouter = mockk(relaxed = true),
             weatherExecutor = mockk(relaxed = true),
-            buttonUsageRepository = buttonUsageRepository
+            buttonUsageRepository = buttonUsageRepository,
+            geminiUseCaseLazy = object : dagger.Lazy<com.andreas_kratzer.ghosttalk.domain.genai.GeminiUseCase> {
+                override fun get() = geminiUseCase
+            },
+            ttsHelperLazy = object : dagger.Lazy<TextToSpeechHelper> {
+                override fun get() = ttsHelper
+            }
         )
-        executor.updateDependencies(geminiUseCase, ttsHelper)
         executor.setTimeProviderForTest(timeProvider)
         return executor
     }

@@ -37,9 +37,13 @@ class GeminiActionHandlerTest {
         handler = GeminiActionHandler(
             scope = scope,
             settingsRepository = settingsRepository,
-            geminiUseCase = geminiUseCase,
+            geminiUseCaseLazy = object : dagger.Lazy<GeminiUseCase> {
+                override fun get() = geminiUseCase
+            },
             localIntentRouter = localIntentRouter,
-            ttsHelper = ttsHelper,
+            ttsHelperLazy = object : dagger.Lazy<TextToSpeechHelper> {
+                override fun get() = ttsHelper
+            },
             emitEvent = { events.add(it) },
             log = { println(it) }
         )

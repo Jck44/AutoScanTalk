@@ -10,26 +10,23 @@ import org.junit.Test
 
 class GetGeminiToolStatusUseCaseTest {
 
-    private lateinit var geminiUseCaseFactory: GeminiUseCaseFactory
     private lateinit var googleAuthManager: GoogleAuthManager
     private lateinit var geminiUseCase: GeminiUseCase
     private lateinit var useCase: GetGeminiToolStatusUseCase
 
     @Before
     fun setup() {
-        geminiUseCaseFactory = mockk()
         googleAuthManager = mockk()
         geminiUseCase = mockk()
         
-        every { geminiUseCaseFactory.create(any()) } returns geminiUseCase
-        useCase = GetGeminiToolStatusUseCase(geminiUseCaseFactory, googleAuthManager)
+        useCase = GetGeminiToolStatusUseCase(geminiUseCase, googleAuthManager)
     }
 
     @Test
     fun `invoke returns correct status map based on auth`() {
         // Given
         val mockStatus = mapOf("tool1" to GeminiUseCase.ToolStatus.AVAILABLE)
-        every { googleAuthManager.userEmail } returns MutableStateFlow("test@example.com")
+        every { googleAuthManager.userEmail } returns MutableStateFlow<String?>("test@example.com")
         every { geminiUseCase.getToolStatus(true) } returns mockStatus
 
         // When

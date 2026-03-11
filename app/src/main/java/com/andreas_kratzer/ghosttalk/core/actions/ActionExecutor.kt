@@ -27,13 +27,10 @@ class ActionExecutor @Inject constructor(
     private val logger: Logger,
     private val localIntentRouter: com.andreas_kratzer.ghosttalk.domain.executors.LocalIntentRouter,
     private val weatherExecutor: com.andreas_kratzer.ghosttalk.domain.executors.WeatherExecutor,
-    private val buttonUsageRepository: ButtonUsageRepository
+    private val buttonUsageRepository: ButtonUsageRepository,
+    private val geminiUseCaseLazy: dagger.Lazy<GeminiUseCase>,
+    private val ttsHelperLazy: dagger.Lazy<TextToSpeechHelper>
 ) {
-    // These might be properly injected later, but for now we provide them via setters 
-    // or keep them nullable to match existing instantiation patterns in PageViewModel.
-    var geminiUseCase: GeminiUseCase? = null
-    var ttsHelper: TextToSpeechHelper? = null
-    
     // Default time provider
     private var timeProvider: () -> Long = { System.currentTimeMillis() }
     
@@ -60,20 +57,14 @@ class ActionExecutor @Inject constructor(
 
     private fun createHandlers(): List<ActionHandler> {
         return listOf(
-            SpeechActionHandler(settingsRepository, ttsHelper, ::log),
-            NavigationActionHandler(scope, settingsRepository, ttsHelper, ::emitEvent, ::log),
-            ControlDeviceActionHandler(application, settingsRepository, ttsHelper, ::log),
-            WeatherActionHandler(application, settingsRepository, ttsHelper, weatherExecutor, scope, ::log),
-            GeminiActionHandler(scope, settingsRepository, geminiUseCase, localIntentRouter, ttsHelper, ::emitEvent, ::log),
+            SpeechActionHandler(settingsRepository, ttsHelperLazy, ::log),
+            NavigationActionHandler(scope, settingsRepository, ttsHelperLazy, ::emitEvent, ::log),
+            ControlDeviceActionHandler(application, settingsRepository, ttsHelperLazy, ::log),
+            WeatherActionHandler(application, settingsRepository, ttsHelperLazy, weatherExecutor, scope, ::log),
+            GeminiActionHandler(scope, settingsRepository, geminiUseCaseLazy, localIntentRouter, ttsHelperLazy, ::emitEvent, ::log),
             FrequentActionHandler(::log),
             SmartPredictionActionHandler(::log)
         )
-    }
-
-    fun updateDependencies(geminiUseCase: GeminiUseCase?, ttsHelper: TextToSpeechHelper?) {
-        this.geminiUseCase = geminiUseCase
-        this.ttsHelper = ttsHelper
-        this.handlers = createHandlers()
     }
 
 

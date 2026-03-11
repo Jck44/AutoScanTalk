@@ -11,7 +11,7 @@ import kotlinx.coroutines.launch
 class NavigationActionHandler(
     private val scope: CoroutineScope,
     private val settingsRepository: SettingsRepository,
-    private val ttsHelper: TextToSpeechHelper?,
+    private val ttsHelperLazy: dagger.Lazy<TextToSpeechHelper>,
     private val emitEvent: suspend (ActionExecutor.ExecutionEvent) -> Unit,
     private val log: (String) -> Unit
 ) : ActionHandler {
@@ -29,12 +29,13 @@ class NavigationActionHandler(
         
         val performNavigation = {
             scope.launch {
-                emitEvent(ActionExecutor.ExecutionEvent.NavigateToPage(action.pageId))
+                emitEvent(ActionExecutor.ExecutionEvent.NavigateToPage(navAction.pageId))
                 onFinish(executionId)
             }
         }
 
-        if (feedback != null && ttsHelper?.isReady == true) {
+        val ttsHelper = ttsHelperLazy.get()
+        if (feedback != null && ttsHelper.isReady) {
             ttsHelper.speakRouted(
                 text = feedback,
                 deviceAddress = settingsRepository.cuesAudioDeviceAddress,

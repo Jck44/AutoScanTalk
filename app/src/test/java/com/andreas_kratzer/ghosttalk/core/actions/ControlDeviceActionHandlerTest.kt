@@ -40,7 +40,9 @@ class ControlDeviceActionHandlerTest {
 
         every { context.getSystemService(Context.AUDIO_SERVICE) } returns audioManager
         
-        handler = ControlDeviceActionHandler(context, settingsRepository, ttsHelper, log)
+        handler = ControlDeviceActionHandler(context, settingsRepository, object : dagger.Lazy<TextToSpeechHelper> {
+            override fun get() = ttsHelper
+        }, log)
         
         every { ttsHelper.isReadingNotification = any() } just Runs
         

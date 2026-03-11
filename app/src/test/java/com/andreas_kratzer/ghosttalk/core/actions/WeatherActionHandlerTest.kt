@@ -47,7 +47,9 @@ class WeatherActionHandlerTest {
             }
         }
         
-        handler = WeatherActionHandler(context, settingsRepository, ttsHelper, weatherExecutor, testScope, log)
+        handler = WeatherActionHandler(context, settingsRepository, object : dagger.Lazy<TextToSpeechHelper> {
+            override fun get() = ttsHelper
+        }, weatherExecutor, testScope, log)
     }
 
     @Test

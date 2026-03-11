@@ -1,24 +1,45 @@
 package com.andreas_kratzer.ghosttalk.domain.genai
 
-
 import com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper
+import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
+import com.google.api.client.http.javanet.NetHttpTransport
+import com.google.api.client.json.gson.GsonFactory
 import com.google.api.services.drive.Drive
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
 import java.net.URL
+import javax.inject.Inject
+import javax.inject.Singleton
 import javax.net.ssl.HttpsURLConnection
 
 /**
  * UseCase for interacting with Gemini AI.
  * Reuses the app's OAuth token for authentication.
  */
-class GeminiUseCase(
-    private val oauthTokenProvider: suspend () -> String?,
-    private val driveProvider: suspend () -> Drive?,
+@Singleton
+class GeminiUseCase @Inject constructor(
+    private val googleAuthManager: GoogleAuthManager,
     private val logger: com.andreas_kratzer.ghosttalk.core.util.Logger
 ) {
+    private val oauthTokenProvider: suspend () -> String? = {
+        googleAuthManager.getGoogleCredential()?.getToken()
+    }
+
+    private val driveProvider: suspend () -> Drive? = {
+        val credential = googleAuthManager.getGoogleCredential()
+        if (credential == null) {
+            null
+        } else {
+            Drive.Builder(
+                NetHttpTransport(),
+                GsonFactory.getDefaultInstance(),
+                credential
+            ).setApplicationName("GhosTTalk").build()
+        }
+    }
+
     enum class ToolStatus {
         AVAILABLE,
         REQUIRES_AUTH,

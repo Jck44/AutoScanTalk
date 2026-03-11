@@ -34,13 +34,17 @@ class NavigationActionHandlerTest {
 
     @Test
     fun `canHandle returns true for NavigateToPageButtonAction`() = runTest {
-        handler = NavigationActionHandler(this, settingsRepository, ttsHelper, emitEvent, log)
+        handler = NavigationActionHandler(this, settingsRepository, object : dagger.Lazy<TextToSpeechHelper> {
+            override fun get() = ttsHelper
+        }, emitEvent, log)
         assert(handler.canHandle(NavigateToPageButtonAction("p1")))
     }
 
     @Test
     fun `handle navigates immediately if no feedback provided`() = runTest {
-        handler = NavigationActionHandler(this, settingsRepository, ttsHelper, emitEvent, log)
+        handler = NavigationActionHandler(this, settingsRepository, object : dagger.Lazy<TextToSpeechHelper> {
+            override fun get() = ttsHelper
+        }, emitEvent, log)
         val action = NavigateToPageButtonAction("p2")
         val config = ButtonConfig(id = "b1", label = "Go", spokenText = null, buttonAction = action, auditoryCue = null)
         val onFinish = mockk<(Int) -> Unit>(relaxed = true)
@@ -54,7 +58,9 @@ class NavigationActionHandlerTest {
 
     @Test
     fun `handle navigates immediately if feedback is blank`() = runTest {
-        handler = NavigationActionHandler(this, settingsRepository, ttsHelper, emitEvent, log)
+        handler = NavigationActionHandler(this, settingsRepository, object : dagger.Lazy<TextToSpeechHelper> {
+            override fun get() = ttsHelper
+        }, emitEvent, log)
         val action = NavigateToPageButtonAction("p2")
         val config = ButtonConfig(id = "b1", label = "Go", spokenText = "", buttonAction = action, auditoryCue = null)
         val onFinish = mockk<(Int) -> Unit>(relaxed = true)
@@ -68,7 +74,9 @@ class NavigationActionHandlerTest {
 
     @Test
     fun `handle navigates after tts speech if feedback provided`() = runTest {
-        handler = NavigationActionHandler(this, settingsRepository, ttsHelper, emitEvent, log)
+        handler = NavigationActionHandler(this, settingsRepository, object : dagger.Lazy<TextToSpeechHelper> {
+            override fun get() = ttsHelper
+        }, emitEvent, log)
         val action = NavigateToPageButtonAction("p2")
         val config = ButtonConfig(id = "b1", label = "Go", spokenText = "Navigating", buttonAction = action, auditoryCue = null)
         val onFinish = mockk<(Int) -> Unit>(relaxed = true)
@@ -94,7 +102,9 @@ class NavigationActionHandlerTest {
 
     @Test
     fun `handle navigates immediately and logs if feedback provided but tts not ready`() = runTest {
-        handler = NavigationActionHandler(this, settingsRepository, ttsHelper, emitEvent, log)
+        handler = NavigationActionHandler(this, settingsRepository, object : dagger.Lazy<TextToSpeechHelper> {
+            override fun get() = ttsHelper
+        }, emitEvent, log)
         val action = NavigateToPageButtonAction("p2")
         val config = ButtonConfig(id = "b1", label = "Go", spokenText = "Navigating", buttonAction = action, auditoryCue = null)
         val onFinish = mockk<(Int) -> Unit>(relaxed = true)

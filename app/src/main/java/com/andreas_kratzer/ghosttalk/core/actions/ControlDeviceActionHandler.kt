@@ -24,7 +24,7 @@ import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
 class ControlDeviceActionHandler(
     private val context: Context,
     private val settingsRepository: SettingsRepository,
-    private val ttsHelper: TextToSpeechHelper?,
+    private val ttsHelperLazy: dagger.Lazy<TextToSpeechHelper>,
     private val log: (String) -> Unit
 ) : ActionHandler {
 
@@ -210,11 +210,11 @@ class ControlDeviceActionHandler(
             settingsRepository.ttsAudioDeviceAddress
         }
 
-        val tts = ttsHelper
+        val tts = ttsHelperLazy.get()
         if (service == null || !settingsRepository.isNotificationReadingEnabled) {
             val msg = "Vorlesen von Benachrichtigungen nicht aktiv oder Berechtigung fehlt."
             log(msg)
-            if (tts?.isReady == true) {
+            if (tts.isReady) {
                 tts.speakRouted(msg, targetDeviceAddress) {
                     onFinish(executionId)
                 }
@@ -232,7 +232,7 @@ class ControlDeviceActionHandler(
         if (activeNotifs == null || activeNotifs.isEmpty()) {
             val msg = "Keine Benachrichtigungen vorhanden."
             log(msg)
-            if (tts?.isReady == true) {
+            if (tts.isReady) {
                 tts.speakRouted(msg, targetDeviceAddress) {
                     onFinish(executionId)
                 }
@@ -249,7 +249,7 @@ class ControlDeviceActionHandler(
         if (filtered.isEmpty()) {
             val msg = "Keine passenden Benachrichtigungen gefunden."
             log(msg)
-            if (tts?.isReady == true) {
+            if (tts.isReady) {
                 tts.speakRouted(msg, targetDeviceAddress) {
                     onFinish(executionId)
                 }
@@ -267,7 +267,7 @@ class ControlDeviceActionHandler(
         if (messagesToRead.isEmpty()) {
             val msg = "Benachrichtigungen enthalten keinen Text."
             log(msg)
-            if (tts?.isReady == true) {
+            if (tts.isReady) {
                 tts.speakRouted(msg, targetDeviceAddress) {
                     onFinish(executionId)
                 }
@@ -278,14 +278,14 @@ class ControlDeviceActionHandler(
         val combinedMessage = messagesToRead.joinToString(". ")
         log("Lese Benachrichtigungen: $combinedMessage")
         
-        tts?.isReadingNotification = true
-        if (tts?.isReady == true) {
+        tts.isReadingNotification = true
+        if (tts.isReady) {
             tts.speakRouted(combinedMessage, targetDeviceAddress) {
                 tts.isReadingNotification = false
                 onFinish(executionId)
             }
         } else {
-            tts?.isReadingNotification = false
+            tts.isReadingNotification = false
             onFinish(executionId)
         }
     }
@@ -337,8 +337,9 @@ class ControlDeviceActionHandler(
             settingsRepository.ttsAudioDeviceAddress
         }
         
-        if (ttsHelper?.isReady == true) {
-            ttsHelper.speakRouted(ssml, targetDeviceAddress) {
+        val tts = ttsHelperLazy.get()
+        if (tts.isReady) {
+            tts.speakRouted(ssml, targetDeviceAddress) {
                 onFinish(executionId)
             }
         } else {

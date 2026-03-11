@@ -23,7 +23,9 @@ class SpeechActionHandlerTest {
         settingsRepository = mockk(relaxed = true)
         ttsHelper = mockk(relaxed = true)
         log = mockk(relaxed = true)
-        handler = SpeechActionHandler(settingsRepository, ttsHelper, log)
+        handler = SpeechActionHandler(settingsRepository, object : dagger.Lazy<TextToSpeechHelper> {
+            override fun get() = ttsHelper
+        }, log)
     }
 
     @Test

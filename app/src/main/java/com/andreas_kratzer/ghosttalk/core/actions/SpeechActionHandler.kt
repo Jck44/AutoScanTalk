@@ -8,7 +8,7 @@ import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
 
 class SpeechActionHandler(
     private val settingsRepository: SettingsRepository,
-    private val ttsHelper: TextToSpeechHelper?,
+    private val ttsHelperLazy: dagger.Lazy<TextToSpeechHelper>,
     private val log: (String) -> Unit
 ) : ActionHandler {
 
@@ -30,8 +30,8 @@ class SpeechActionHandler(
             settingsRepository.ttsAudioDeviceAddress
         }
         
-        val tts = ttsHelper
-        if (tts?.isReady == true) {
+        val tts = ttsHelperLazy.get()
+        if (tts.isReady) {
             tts.speakRouted(
                 text = textToSpeak,
                 deviceAddress = targetDeviceAddress,

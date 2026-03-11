@@ -9,10 +9,9 @@ import org.junit.Test
 
 class GeminiUseCaseTest {
 
-    private val oauthTokenProvider: suspend () -> String? = mockk()
-    private val driveProvider: suspend () -> com.google.api.services.drive.Drive? = mockk()
+    private val googleAuthManager: com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager = mockk(relaxed = true)
     private val logger: com.andreas_kratzer.ghosttalk.core.util.Logger = mockk(relaxed = true)
-    private val useCase = GeminiUseCase(oauthTokenProvider, driveProvider, logger)
+    private val useCase = GeminiUseCase(googleAuthManager, logger)
 
     @Before
     fun setup() {

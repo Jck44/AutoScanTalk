@@ -14,21 +14,16 @@ import org.junit.Test
 @ExperimentalCoroutinesApi
 class ActivateGeminiUseCaseTest {
 
-    private lateinit var geminiUseCaseFactory: GeminiUseCaseFactory
-    private lateinit var googleAuthManager: GoogleAuthManager
     private lateinit var settingsRepository: SettingsRepository
     private lateinit var geminiUseCase: GeminiUseCase
     private lateinit var useCase: ActivateGeminiUseCase
 
     @Before
     fun setup() {
-        geminiUseCaseFactory = mockk()
-        googleAuthManager = mockk(relaxed = true)
         settingsRepository = mockk(relaxed = true)
         geminiUseCase = mockk()
         
-        every { geminiUseCaseFactory.create(any()) } returns geminiUseCase
-        useCase = ActivateGeminiUseCase(geminiUseCaseFactory, googleAuthManager, settingsRepository)
+        useCase = ActivateGeminiUseCase(geminiUseCase, settingsRepository)
     }
 
     @Test

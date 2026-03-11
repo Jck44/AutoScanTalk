@@ -15,7 +15,6 @@ import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.domain.actions.ResolveDynamicButtonsUseCase
 import com.andreas_kratzer.ghosttalk.domain.actions.UpdateSmartPredictionsUseCase
 import com.andreas_kratzer.ghosttalk.domain.genai.GeminiUseCase
-import com.andreas_kratzer.ghosttalk.domain.genai.GeminiUseCaseFactory
 import com.andreas_kratzer.ghosttalk.domain.settings.CheckForPredictorUseCase
 import com.andreas_kratzer.ghosttalk.domain.settings.FeatureGuard
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
@@ -46,7 +45,6 @@ class PageViewModel @Inject constructor(
     val settingsRepository: SettingsRepository,
     internal val importExportManager: PageImportExportManager,
     private val googleAuthManager: GoogleAuthManager,
-    geminiUseCaseFactory: GeminiUseCaseFactory,
     private val ttsHelper: TextToSpeechHelper,
     private val logger: Logger,
     private val weatherExecutor: com.andreas_kratzer.ghosttalk.domain.executors.WeatherExecutor,
@@ -58,10 +56,9 @@ class PageViewModel @Inject constructor(
     private val resolveDynamicButtonsUseCase: ResolveDynamicButtonsUseCase,
     private val updateSmartPredictionsUseCase: UpdateSmartPredictionsUseCase,
     val actionExecutor: ActionExecutor,
-    private val scanCoordinator: ScanCoordinator
+    private val scanCoordinator: ScanCoordinator,
+    private val geminiUseCase: GeminiUseCase
 ) : AndroidViewModel(application), com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions {
-
-    private var geminiUseCase: GeminiUseCase? = null
 
     val activeBookId = pageManagementDelegate.activeBookId
     val currentPageId = pageManagementDelegate.currentPageId
@@ -120,14 +117,6 @@ class PageViewModel @Inject constructor(
             onPredictionsUpdated = { _smartPredictions.value = it }
         )
 
-        geminiUseCase = geminiUseCaseFactory.create {
-            googleAuthManager.getGoogleCredential()?.getToken()
-        }
-        
-        // Supply optional dependencies to Singleton Executors
-        actionExecutor.geminiUseCase = geminiUseCase
-        actionExecutor.ttsHelper = ttsHelper
-
         scanCoordinator.init(
             currentPage = currentPage,
             isUserModeActive = isUserModeActive,
@@ -137,7 +126,7 @@ class PageViewModel @Inject constructor(
         )
 
         // Set up Gemini command handlers
-        geminiUseCase?.setAppCommandHandler { command, args ->
+        geminiUseCase.setAppCommandHandler { command, args ->
             when (command) {
                 "SPOTIFY_PLAY" -> {
                     val query = args["query"] ?: return@setAppCommandHandler

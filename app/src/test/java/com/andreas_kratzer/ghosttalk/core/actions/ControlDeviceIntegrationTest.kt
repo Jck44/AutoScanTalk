@@ -41,9 +41,14 @@ class ControlDeviceIntegrationTest {
             logger = logger,
             localIntentRouter = mockk(relaxed = true),
             weatherExecutor = mockk(relaxed = true),
-            buttonUsageRepository = mockk(relaxed = true)
+            buttonUsageRepository = mockk(relaxed = true),
+            geminiUseCaseLazy = object : dagger.Lazy<com.andreas_kratzer.ghosttalk.domain.genai.GeminiUseCase> {
+                override fun get() = mockk<com.andreas_kratzer.ghosttalk.domain.genai.GeminiUseCase>(relaxed = true)
+            },
+            ttsHelperLazy = object : dagger.Lazy<TextToSpeechHelper> {
+                override fun get() = ttsHelper
+            }
         )
-        actionExecutor.ttsHelper = ttsHelper
 
         val action = ControlDeviceButtonAction(DeviceActionType.MEDIA_NEXT)
         val buttonConfig = ButtonConfig(

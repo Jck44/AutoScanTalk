@@ -17,9 +17,9 @@ import kotlinx.coroutines.launch
 class GeminiActionHandler(
     private val scope: CoroutineScope,
     private val settingsRepository: SettingsRepository,
-    private val geminiUseCase: GeminiUseCase?,
+    private val geminiUseCaseLazy: dagger.Lazy<GeminiUseCase>,
     private val localIntentRouter: com.andreas_kratzer.ghosttalk.domain.executors.LocalIntentRouter,
-    private val ttsHelper: TextToSpeechHelper?,
+    private val ttsHelperLazy: dagger.Lazy<TextToSpeechHelper>,
     private val emitEvent: suspend (ActionExecutor.ExecutionEvent) -> Unit,
     private val log: (String) -> Unit
 ) : ActionHandler { // Handles both GeminiButtonAction and GeminiSearchButtonAction
@@ -53,17 +53,14 @@ class GeminiActionHandler(
         }
 
         scope.launch {
-            val tts = ttsHelper
+            val tts = ttsHelperLazy.get()
             try {
                 if (isNanoAction) {
                     if (!settingsRepository.useLocalGenerativeAi) {
-                        val errorMsg = tts?.context?.getString(R.string.error_gemini_disabled) 
-                            ?: "Gemini Nano in Einstellungen aktivieren"
-                        if (tts != null) {
-                            tts.speakRouted(errorMsg, targetDeviceAddress) {
-                                onFinish(executionId)
-                            }
-                        } else { onFinish(executionId) }
+                        val errorMsg = tts.context.getString(R.string.error_gemini_disabled) 
+                        tts.speakRouted(errorMsg, targetDeviceAddress) {
+                            onFinish(executionId)
+                        }
                         return@launch
                     }
 
@@ -71,11 +68,14 @@ class GeminiActionHandler(
                         val displayResponse = if (response.length > 50) response.take(50) + "..." else response
                         log("Gemini Nano [${nanoIntent}] Antwort: '$displayResponse'")
 
-                        if (tts?.isReady == true) {
+                        tts.isReadingNotification = true
+                        if (tts.isReady) {
                             tts.speakRouted(response, targetDeviceAddress) {
+                                tts.isReadingNotification = false
                                 onFinish(executionId)
                             }
                         } else {
+                            tts.isReadingNotification = false
                             onFinish(executionId)
                         }
                     }
@@ -84,20 +84,16 @@ class GeminiActionHandler(
 
                 // Cloud actions path
                 if (!settingsRepository.isGeminiEnabled) {
-                    val errorMsg = tts?.context?.getString(R.string.error_gemini_disabled) 
-                        ?: "Gemini in Einstellungen prüfen"
-                    if (tts != null) {
-                        tts.speakRouted(errorMsg, targetDeviceAddress) {
-                            onFinish(executionId)
-                        }
-                    } else { onFinish(executionId) }
+                    val errorMsg = tts.context.getString(R.string.error_gemini_disabled) 
+                    tts.speakRouted(errorMsg, targetDeviceAddress) {
+                        onFinish(executionId)
+                    }
                     return@launch
                 }
 
-                val response = geminiUseCase?.generateResponse(prompt, useGoogleSearch = useGoogleSearch) 
-                    ?: "Fehler: Gemini Integration nicht verfügbar."
+                val response = geminiUseCaseLazy.get().generateResponse(prompt, useGoogleSearch = useGoogleSearch) 
                 
-                if (tts?.isReady == true) {
+                if (tts.isReady) {
                     tts.speakRouted(response, targetDeviceAddress) {
                         onFinish(executionId)
                     }
@@ -119,12 +115,12 @@ class GeminiActionHandler(
                     val remainingMatch = Regex("wait (\\d+) seconds", RegexOption.IGNORE_CASE).find(message)
                     val seconds = remainingMatch?.groupValues?.get(1)?.toIntOrNull() ?: 60
 
-                    val quotaMsg = tts?.context?.getString(
+                    val quotaMsg = tts.context.getString(
                         R.string.error_gemini_quota_reached, seconds
-                    ) ?: "Gemini-Limit erreicht. Bitte $seconds Sekunden warten."
+                    )
                     
                     log(quotaMsg)
-                    if (tts?.isReady == true) {
+                    if (tts.isReady) {
                         tts.speakRouted(quotaMsg, settingsRepository.ttsAudioDeviceAddress) {
                             onFinish(executionId)
                         }

@@ -19,7 +19,7 @@ import com.andreas_kratzer.ghosttalk.domain.actions.ResolveDynamicButtonsUseCase
 import com.andreas_kratzer.ghosttalk.domain.actions.ResolveSmartPredictionUseCase
 import com.andreas_kratzer.ghosttalk.domain.actions.UpdateSmartPredictionsUseCase
 import com.andreas_kratzer.ghosttalk.domain.executors.LocalIntentRouter
-import com.andreas_kratzer.ghosttalk.domain.genai.GeminiUseCaseFactory
+import com.andreas_kratzer.ghosttalk.domain.genai.GeminiUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.CreatePageUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.DeletePageUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.ExportPageUseCase
@@ -71,7 +71,7 @@ class PageViewModelTest {
     private lateinit var importExportManager: PageImportExportManager
     private lateinit var scannerEngine: ScannerEngine
     private lateinit var googleAuthManager: GoogleAuthManager
-    private lateinit var geminiUseCaseFactory: GeminiUseCaseFactory
+    private lateinit var geminiUseCase: GeminiUseCase
     private lateinit var ttsHelper: TextToSpeechHelper
     private lateinit var localIntentRouter: LocalIntentRouter
     private lateinit var weatherExecutor: com.andreas_kratzer.ghosttalk.domain.executors.WeatherExecutor
@@ -112,7 +112,7 @@ class PageViewModelTest {
         importExportManager = mockk<PageImportExportManager>(relaxed = true)
         scannerEngine = mockk<ScannerEngine>(relaxed = true)
         googleAuthManager = mockk<GoogleAuthManager>(relaxed = true)
-        geminiUseCaseFactory = mockk<GeminiUseCaseFactory>(relaxed = true)
+        geminiUseCase = mockk<GeminiUseCase>(relaxed = true)
         ttsHelper = mockk<TextToSpeechHelper>(relaxed = true)
         localIntentRouter = mockk<LocalIntentRouter>(relaxed = true)
         weatherExecutor = mockk<com.andreas_kratzer.ghosttalk.domain.executors.WeatherExecutor>(relaxed = true)
@@ -214,7 +214,13 @@ class PageViewModelTest {
             logger = logger,
             localIntentRouter = localIntentRouter,
             weatherExecutor = weatherExecutor,
-            buttonUsageRepository = buttonUsageRepository
+            buttonUsageRepository = buttonUsageRepository,
+            geminiUseCaseLazy = object : dagger.Lazy<GeminiUseCase> {
+                override fun get() = geminiUseCase
+            },
+            ttsHelperLazy = object : dagger.Lazy<TextToSpeechHelper> {
+                override fun get() = ttsHelper
+            }
         )
 
         val scanCoordinator = ScanCoordinator(
@@ -231,7 +237,6 @@ class PageViewModelTest {
             settingsRepository = settingsRepository,
             importExportManager = importExportManager,
             googleAuthManager = googleAuthManager,
-            geminiUseCaseFactory = geminiUseCaseFactory,
             ttsHelper = ttsHelper,
             logger = logger,
             weatherExecutor = weatherExecutor,
@@ -243,7 +248,8 @@ class PageViewModelTest {
             resolveDynamicButtonsUseCase = resolveDynamicButtonsUseCase,
             updateSmartPredictionsUseCase = updateSmartPredictionsUseCase,
             actionExecutor = actionExecutor,
-            scanCoordinator = scanCoordinator
+            scanCoordinator = scanCoordinator,
+            geminiUseCase = geminiUseCase
         )
     }
 

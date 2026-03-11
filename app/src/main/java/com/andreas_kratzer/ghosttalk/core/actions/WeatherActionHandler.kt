@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
 class WeatherActionHandler(
     private val context: Context,
     private val settingsRepository: SettingsRepository,
-    private val ttsHelper: TextToSpeechHelper?,
+    private val ttsHelperLazy: dagger.Lazy<TextToSpeechHelper>,
     private val weatherExecutor: WeatherExecutor,
     private val scope: CoroutineScope,
     private val log: (String) -> Unit
@@ -76,7 +76,8 @@ class WeatherActionHandler(
             settingsRepository.ttsAudioDeviceAddress
         }
         
-        if (ttsHelper?.isReady == true) {
+        val ttsHelper = ttsHelperLazy.get()
+        if (ttsHelper.isReady) {
             ttsHelper.speakRouted(ssml, targetDeviceAddress) {
                 onFinish(executionId)
             }
