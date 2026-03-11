@@ -202,7 +202,6 @@ fun PageListScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
         ) {
             val searchQuery by pageViewModel.searchQuery.collectAsState()
             OutlinedTextField(
