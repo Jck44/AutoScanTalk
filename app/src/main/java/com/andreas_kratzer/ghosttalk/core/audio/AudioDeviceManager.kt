@@ -15,7 +15,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class AudioDeviceManager @Inject constructor(
+open class AudioDeviceManager @Inject constructor(
     @param:ApplicationContext private val context: Context
 ) {
 
@@ -39,7 +39,7 @@ class AudioDeviceManager @Inject constructor(
         audioManager.registerAudioDeviceCallback(audioDeviceCallback, Handler(Looper.getMainLooper()))
     }
 
-    fun getAvailableOutputDevices(): List<AudioOutputDevice> {
+    open fun getAvailableOutputDevices(): List<AudioOutputDevice> {
         val devices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
         return devices.filter { 
             // Filter out telephony devices to avoid duplicates of the earpiece/phone
@@ -85,7 +85,7 @@ class AudioDeviceManager @Inject constructor(
         }
     }
 
-    fun getAudioDeviceInfo(address: String?): AudioDeviceInfo? {
+    open fun getAudioDeviceInfo(address: String?): AudioDeviceInfo? {
         if (address.isNullOrBlank()) return null
         val devices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
         
@@ -107,7 +107,7 @@ class AudioDeviceManager @Inject constructor(
         }
     }
 
-    fun getBuiltInSpeaker(): AudioDeviceInfo? {
+    open fun getBuiltInSpeaker(): AudioDeviceInfo? {
         val devices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
         return devices.find { it.type == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER } ?: devices.firstOrNull()
     }

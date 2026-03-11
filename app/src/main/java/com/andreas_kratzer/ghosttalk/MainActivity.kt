@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -51,7 +52,6 @@ import com.andreas_kratzer.ghosttalk.ui.theme.GhosTTalkTheme
 import com.andreas_kratzer.ghosttalk.ui.theme.LocalActiveBookId
 import com.andreas_kratzer.ghosttalk.ui.theme.LocalCurrentPageId
 import com.andreas_kratzer.ghosttalk.ui.theme.LocalIsUserModeActive
-import androidx.compose.runtime.CompositionLocalProvider
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -106,7 +106,12 @@ class MainActivity : AppCompatActivity() {
         updateManager = UpdateManager(this)
         updateManager.checkForUpdates(updateLauncher)
 
-        registerReceiver(screenOffReceiver, IntentFilter(Intent.ACTION_SCREEN_OFF))
+        // Android 14+ requires export flags for receivers
+        registerReceiver(
+            screenOffReceiver, 
+            IntentFilter(Intent.ACTION_SCREEN_OFF), 
+            RECEIVER_NOT_EXPORTED
+        )
 
         globalPageViewModel = pageViewModel
 
@@ -239,7 +244,7 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
         try {
             unregisterReceiver(screenOffReceiver)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             // Ignore
         }
     }

@@ -69,6 +69,11 @@
     <string name="settings_category_local_backup">Local Backup</string>
     <string name="settings_local_backup_create">Create Backup</string>
     <string name="settings_local_backup_restore">Restore Backup</string>
+    <string name="settings_local_backup_import">Import Backup</string>
+    <string name="settings_local_backup_describe_create">Backs up the current book to a local file.</string>
+    <string name="settings_local_backup_describe_restore">Updates this book with data from a backup (IDs must match).</string>
+    <string name="settings_local_backup_describe_global_import">Imports a new book from a local backup file.</string>
+
     <string name="settings_category_advanced">Advanced Settings</string>
     <string name="settings_bluetooth_delay">Bluetooth Delay (ms)</string>
 
@@ -150,6 +155,7 @@
 
     <string name="action_import_json_migration">Import JSON (GoTalkNow Migration)</string>
     <string name="action_more">More</string>
+    <string name="action_more_options">More options</string>
 
     <!-- Page Editor Screen -->
     <string name="page_editor_row_name_label">Row Name</string>

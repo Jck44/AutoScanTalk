@@ -50,7 +50,7 @@ fun AppBrandHeader(
     ) {
         androidx.compose.foundation.Image(
             painter = painterResource(id = R.drawable.ic_app_logo),
-            contentDescription = null,
+            contentDescription = stringResource(R.string.app_name),
             modifier = Modifier.size(logoSize)
         )
         if (displayTitle.isNotBlank() || displaySubtitle.isNotBlank()) {

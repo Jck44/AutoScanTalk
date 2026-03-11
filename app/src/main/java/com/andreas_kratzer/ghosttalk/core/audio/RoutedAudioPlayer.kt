@@ -19,7 +19,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class RoutedAudioPlayer @Inject constructor(
+open class RoutedAudioPlayer @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val audioDeviceManager: AudioDeviceManager,
     private val settingsRepository: SettingsRepository
@@ -37,7 +37,7 @@ class RoutedAudioPlayer @Inject constructor(
         return isBT
     }
 
-    fun playAudioFile(file: File, deviceAddress: String?, volumeMultiplier: Float = 1.0f, onCompletion: (() -> Unit)? = null) {
+    open fun playAudioFile(file: File, deviceAddress: String?, volumeMultiplier: Float = 1.0f, onCompletion: (() -> Unit)? = null) {
         if (!file.exists()) {
             Log.e("RoutedAudioPlayer", "Audio file does not exist: ${file.absolutePath}")
             onCompletion?.invoke()
@@ -128,7 +128,7 @@ class RoutedAudioPlayer @Inject constructor(
                 }
 
                 activePlayers[mediaPlayer] = true
-                playbackJobs[mediaPlayer] = coroutineContext[Job]!! // Leaving this as is since Job should be there, but fixing the others.
+                playbackJobs[mediaPlayer] = coroutineContext[Job]!!
                 
                 mediaPlayer.prepare()
 
@@ -205,7 +205,7 @@ class RoutedAudioPlayer @Inject constructor(
         }
     }
 
-    fun stopAll() {
+    open fun stopAll() {
         Log.d("RoutedAudioPlayer", "stopAll() called. Cancelling ${playbackJobs.size} jobs and stopping ${activePlayers.size} players.")
         val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
         
