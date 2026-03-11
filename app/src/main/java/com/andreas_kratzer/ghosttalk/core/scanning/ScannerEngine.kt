@@ -35,6 +35,9 @@ class ScannerEngine @Inject constructor(
     private var currentPageId: String? = null
 
     private var scanJob: Job? = null
+    private val _isScanning = MutableStateFlow(false)
+    val isScanning: StateFlow<Boolean> = _isScanning.asStateFlow()
+    
     var scanDelayMillis: Long = 1000L
 
     private val linearStrategy = LinearScanStrategy()
@@ -53,13 +56,13 @@ class ScannerEngine @Inject constructor(
         if (scanJob?.isActive == true &&
             currentPageId == pageId &&
             currentButtonConfigs == buttonConfigs &&
-            currentStartIndex == startIndex &&
+            (currentStartIndex == startIndex || _focusedButtonIndex.value == startIndex || _focusedRowIndex.value == startIndex) &&
             currentPattern == pattern &&
             currentRows == rows &&
             currentColumns == columns &&
             currentRowNames == rowNames
         ) {
-            Log.d("ScannerEngine", "startScanning: Idempotency triggered. Already scanning Page $pageId with same config. Skipping restart.")
+            Log.d("ScannerEngine", "startScanning: Idempotency triggered. Already scanning Page $pageId at/near index $startIndex. Skipping restart.")
             return
         }
 
@@ -79,33 +82,38 @@ class ScannerEngine @Inject constructor(
         currentStartIndex = startIndex
         currentPageId = pageId
 
+        _isScanning.value = true
         scanJob = scope.launch {
-            if (pattern == "row_by_row") {
-                rowByRowStrategy.executeScan(
-                    buttonConfigs = buttonConfigs,
-                    rows = rows,
-                    columns = columns,
-                    rowNames = rowNames,
-                    startIndex = startIndex,
-                    focusedButtonIndex = _focusedButtonIndex,
-                    focusedRowIndex = _focusedRowIndex,
-                    onSpeakCue = { handleSpeakCue(it) },
-                    delayMillis = scanDelayMillis,
-                    featureGuard = featureGuard
-                )
-            } else if (pattern == "linear") {
-                linearStrategy.executeScan(
-                    buttonConfigs = buttonConfigs,
-                    rows = rows,
-                    columns = columns,
-                    rowNames = rowNames,
-                    startIndex = startIndex,
-                    focusedButtonIndex = _focusedButtonIndex,
-                    focusedRowIndex = _focusedRowIndex,
-                    onSpeakCue = { handleSpeakCue(it) },
-                    delayMillis = scanDelayMillis,
-                    featureGuard = featureGuard
-                )
+            try {
+                if (pattern == "row_by_row") {
+                    rowByRowStrategy.executeScan(
+                        buttonConfigs = buttonConfigs,
+                        rows = rows,
+                        columns = columns,
+                        rowNames = rowNames,
+                        startIndex = startIndex,
+                        focusedButtonIndex = _focusedButtonIndex,
+                        focusedRowIndex = _focusedRowIndex,
+                        onSpeakCue = { handleSpeakCue(it) },
+                        delayMillis = scanDelayMillis,
+                        featureGuard = featureGuard
+                    )
+                } else if (pattern == "linear") {
+                    linearStrategy.executeScan(
+                        buttonConfigs = buttonConfigs,
+                        rows = rows,
+                        columns = columns,
+                        rowNames = rowNames,
+                        startIndex = startIndex,
+                        focusedButtonIndex = _focusedButtonIndex,
+                        focusedRowIndex = _focusedRowIndex,
+                        onSpeakCue = { handleSpeakCue(it) },
+                        delayMillis = scanDelayMillis,
+                        featureGuard = featureGuard
+                    )
+                }
+            } finally {
+                _isScanning.value = false
             }
         }
     }
@@ -136,14 +144,14 @@ class ScannerEngine @Inject constructor(
         Log.d("ScannerEngine", "pauseScanning: Pausing scan job.")
         scanJob?.cancel()
         scanJob = null
+        _isScanning.value = false
     }
 
     fun stopScanning() {
         Log.d("ScannerEngine", "stopScanning: Stopping scan job.")
         scanJob?.cancel()
         scanJob = null
-        // We do NOT clear currentButtonConfigs here, so that resumeScanning (idempotency)
-        // works correctly if called with the same parameters.
+        _isScanning.value = false
         _focusedButtonIndex.value = null
         _focusedRowIndex.value = null
     }

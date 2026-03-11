@@ -71,12 +71,9 @@ fun PageScreen(
                 pageViewModel.setUserModeActive(false)
             } else if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
                 pageViewModel.setUserModeActive(true)
-                pageViewModel.resumeScanningIfEnabled()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
-
-        pageViewModel.resumeScanningIfEnabled()
 
         onDispose {
             pageViewModel.setUserModeActive(false)

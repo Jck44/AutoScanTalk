@@ -62,7 +62,7 @@ fun SecurityEntryDialog(
                     },
                     label = { Text(stringResource(R.string.settings_security_pin_label)) },
                     visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword, imeAction = androidx.compose.ui.text.input.ImeAction.Done),
                     modifier = Modifier.fillMaxWidth(),
                     isError = errorMessage != null
                 )

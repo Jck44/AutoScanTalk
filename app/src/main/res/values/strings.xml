@@ -146,6 +146,7 @@
     <string name="page_export_error">Fehler beim Export: %s</string>
     <string name="action_import_json_migration">Import JSON (GoTalkNow Migration)</string>
     <string name="action_more">Mehr</string>
+    <string name="action_more_options">Weitere Optionen</string>
 
     <!-- Page Editor Screen -->
     <string name="page_editor_row_name_label">Zeilenname</string>

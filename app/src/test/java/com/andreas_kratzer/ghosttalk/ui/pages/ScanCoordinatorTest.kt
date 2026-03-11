@@ -47,6 +47,8 @@ class ScanCoordinatorTest {
         every { settingsRepository.autoStartScanning } returns true
         every { actionExecutor.isExecuting } returns isExecuting
         every { scannerEngine.focusedButtonIndex } returns MutableStateFlow(null)
+        every { scannerEngine.focusedRowIndex } returns MutableStateFlow(null)
+        every { scannerEngine.isScanning } returns MutableStateFlow(false)
         
         scanCoordinator = ScanCoordinator(
             scope = scope,
@@ -116,6 +118,11 @@ class ScanCoordinatorTest {
         resolvedPage.value = rawPage
         smartPredictions.value = null
         isSmartPredictionLoading.value = true
+
+        // Must init so that isUserModeActive is set
+        scanCoordinator.init(currentPage, isUserModeActive, resolvedPage, isSmartPredictionLoading, smartPredictions)
+        testDispatcher.scheduler.advanceUntilIdle()
+        clearMocks(scannerEngine, answers = false)
         
         // When: Something (like PageScreen) calls resumeScanningIfEnabled
         scanCoordinator.resumeScanningIfEnabled()
@@ -132,5 +139,33 @@ class ScanCoordinatorTest {
         smartPredictions.value = emptyList()
         scanCoordinator.resumeScanningIfEnabled()
         verify(exactly = 0) { scannerEngine.startScanning(any(), any(), any(), any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `should stop scanning when user mode becomes inactive`() = runTest(testDispatcher) {
+        // Given: Scanning is active
+        isUserModeActive.value = true
+        isExecuting.value = false
+        val page = mockk<Page>(relaxed = true) {
+            every { id } returns "p1"
+            every { buttonConfigs } returns emptyList()
+        }
+        every { checkForPredictorUseCase(any()) } returns false
+        currentPage.value = page
+        resolvedPage.value = page
+        
+        scanCoordinator.init(currentPage, isUserModeActive, resolvedPage, isSmartPredictionLoading, smartPredictions)
+        testDispatcher.scheduler.advanceUntilIdle()
+        
+        // Sanity check: Start scanning was called (via resumeScanningIfEnabled logic in init collection)
+        verify { scannerEngine.startScanning(any(), any(), any(), any(), any(), any(), eq("p1")) }
+        clearMocks(scannerEngine, answers = false)
+
+        // When: User mode becomes inactive
+        isUserModeActive.value = false
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Then: stopScanning should be called
+        verify { scannerEngine.stopScanning() }
     }
 }

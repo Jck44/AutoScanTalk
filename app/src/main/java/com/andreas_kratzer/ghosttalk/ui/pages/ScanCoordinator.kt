@@ -44,6 +44,7 @@ class ScanCoordinator @Inject constructor(
     )
     val focusedButtonIndex: StateFlow<Int?> = scannerEngine.focusedButtonIndex
     val focusedRowIndex: StateFlow<Int?> = scannerEngine.focusedRowIndex
+    val isScanning: StateFlow<Boolean> = scannerEngine.isScanning
 
     private var lastCuePageId: String? = null
     fun init(
@@ -75,7 +76,8 @@ class ScanCoordinator @Inject constructor(
                 Data(isExecuting, resPage, rawPage, isActive, isLoading, predictions) 
             }.collect { data ->
                 if (!data.isActive) {
-                    Log.d("ScanCoordinator", "User mode inactive, ignoring state change.")
+                    Log.d("ScanCoordinator", "User mode inactive, stopping scan.")
+                    stopScanning()
                     return@collect
                 }
                 
@@ -105,7 +107,7 @@ class ScanCoordinator @Inject constructor(
                 if (data.isExecuting) {
                     Log.d("ScanCoordinator", "ActionExecutor is executing. Pausing scan.")
                     stopScanningTemporarily()
-                } else if (data.resolvedPage != null) {
+                } else if (data.resolvedPage != null && data.isActive) {
                     Log.d("ScanCoordinator", "Ready to resume on page ${data.resolvedPage.id}")
                     resumeScanningIfEnabled()
                 }
@@ -142,6 +144,10 @@ class ScanCoordinator @Inject constructor(
     }
 
     fun resumeScanningIfEnabled() {
+        if (isUserModeActive?.value != true) {
+            Log.d("ScanCoordinator", "resumeScanningIfEnabled: User mode inactive, skipping.")
+            return
+        }
         if (actionExecutor.isExecuting.value) {
             Log.d("ScanCoordinator", "resumeScanningIfEnabled: ActionExecutor busy, skipping.")
             return
@@ -162,6 +168,11 @@ class ScanCoordinator @Inject constructor(
             return
         }
 
+        if (scannerEngine.isScanning.value) {
+            Log.d("ScanCoordinator", "resumeScanningIfEnabled: Already scanning, skipping.")
+            return
+        }
+
         if (settingsRepository.autoStartScanning) {
             val startIndex = if (settingsRepository.resumeScanningFromStart) {
                 0
@@ -173,6 +184,10 @@ class ScanCoordinator @Inject constructor(
     }
 
     fun startScanning(startIndex: Int = 0) {
+        if (isUserModeActive?.value != true) {
+            Log.d("ScanCoordinator", "startScanning: User mode inactive, skipping.")
+            return
+        }
         val page = resolvedPage?.value ?: return
         scannerEngine.startScanning(
             buttonConfigs = page.buttonConfigs,
@@ -187,7 +202,7 @@ class ScanCoordinator @Inject constructor(
 
     fun setScanDelay(delayMillis: Long) {
         scannerEngine.scanDelayMillis = delayMillis
-        if (settingsRepository.autoStartScanning) {
+        if (settingsRepository.autoStartScanning && isUserModeActive?.value == true) {
             startScanning()
         }
     }

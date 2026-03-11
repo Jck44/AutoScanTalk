@@ -8,17 +8,27 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
@@ -33,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.core.content.ContextCompat
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.model.AuditoryCue
@@ -171,6 +182,9 @@ fun ButtonConfigDialog(
     var showTargetSelector by remember { mutableStateOf(false) }
     var showHiddenPrompt by remember { mutableStateOf<com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.NeedsConfirmation?>(null) }
     var moveError by remember { mutableStateOf<String?>(null) }
+    
+    // Action menu state
+    var showActionMenu by remember { mutableStateOf(false) }
 
     // Helper to build the action object from current UI state
     fun buildButtonAction(): ButtonAction {
@@ -269,6 +283,7 @@ fun ButtonConfigDialog(
                     shape = MaterialTheme.shapes.large,
                     modifier = Modifier.fillMaxWidth(),
                     isError = isError,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                     supportingText = {
                         if (isError) {
                             Text(stringResource(R.string.error_button_label_required))
@@ -282,9 +297,10 @@ fun ButtonConfigDialog(
                     value = spokenText,
                     onValueChange = { spokenText = it },
                     label = { Text(stringResource(R.string.button_spoken_text_field)) },
-                    singleLine = false,
+                    singleLine = true,
                     shape = MaterialTheme.shapes.large,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
                 )
 
                 // Hinweistext (formerly Auditory Cue)
@@ -294,7 +310,8 @@ fun ButtonConfigDialog(
                     label = { Text(stringResource(R.string.button_auditory_cue_field)) },
                     singleLine = true,
                     shape = MaterialTheme.shapes.large,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
                 )
 
                 // Action Type Dropdown
@@ -396,7 +413,10 @@ fun ButtonConfigDialog(
             }
         },
         confirmButton = {
-            Row(horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium)) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 val validateAndConfig = {
                     if (label.isNotBlank()) {
                         val action = buildButtonAction()
@@ -429,7 +449,7 @@ fun ButtonConfigDialog(
                         Text(stringResource(R.string.button_action_test))
                     }
                 }
-                
+
                 Button(
                     enabled = !isTesting,
                     onClick = {
@@ -451,30 +471,46 @@ fun ButtonConfigDialog(
                 ) {
                     Text(stringResource(R.string.action_save))
                 }
-            }
-        },
 
-        dismissButton = {
-            Row(horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium)) {
-                // Move Button (Only for Pages, not Templates)
-                if (initialConfig != null && onMoveToPage != null) { 
-                    Button(
-                        enabled = !isTesting,
-                        onClick = { showTargetSelector = true },
-                        shape = MaterialTheme.shapes.medium,
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary)
-                    ) {
-                        Text(stringResource(R.string.button_action_move))
+                // Overflow menu (Move, Delete)
+                Box {
+                    IconButton(onClick = { showActionMenu = true }) {
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = stringResource(R.string.action_more_options)
+                        )
                     }
-                }
+                    DropdownMenu(
+                        expanded = showActionMenu,
+                        onDismissRequest = { showActionMenu = false }
+                    ) {
+                        if (initialConfig != null && onMoveToPage != null) { 
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.button_action_move)) },
+                                onClick = {
+                                    showActionMenu = false
+                                    if (!isTesting) {
+                                        showTargetSelector = true
+                                    }
+                                }
+                            )
+                        }
 
-                Button(
-                    enabled = !isTesting,
-                    onClick = { onSave(null) },
-                    shape = MaterialTheme.shapes.medium,
-                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                ) {
-                    Text(stringResource(R.string.action_clear_delete))
+                        DropdownMenuItem(
+                            text = { 
+                                Text(
+                                    stringResource(R.string.action_clear_delete),
+                                    color = MaterialTheme.colorScheme.error
+                                ) 
+                            },
+                            onClick = {
+                                showActionMenu = false
+                                if (!isTesting) {
+                                    onSave(null)
+                                }
+                            }
+                        )
+                    }
                 }
             }
         }

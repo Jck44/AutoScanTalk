@@ -50,7 +50,8 @@ fun TargetPageSelectionDialog(
                     label = { Text(stringResource(R.string.search_hint)) },
                     modifier = Modifier.fillMaxWidth().padding(bottom = dimensions.paddingMedium),
                     singleLine = true,
-                    shape = MaterialTheme.shapes.large
+                    shape = MaterialTheme.shapes.large,
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = androidx.compose.ui.text.input.ImeAction.Done)
                 )
 
                 if (filteredPages.isEmpty()) {

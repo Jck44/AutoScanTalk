@@ -1,6 +1,8 @@
 package com.andreas_kratzer.ghosttalk.ui.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -17,6 +19,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import com.andreas_kratzer.ghosttalk.R
 
@@ -48,7 +51,11 @@ fun RowEditDialog(
                     .fillMaxWidth()
                     .focusRequester(focusRequester),
                 singleLine = true,
-                shape = MaterialTheme.shapes.large
+                shape = MaterialTheme.shapes.large,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(
+                    onDone = { onSave(textFieldValue.text) }
+                )
             )
         },
         confirmButton = {

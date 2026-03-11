@@ -108,6 +108,7 @@ fun AddPageDialog(
                     shape = MaterialTheme.shapes.large,
                     modifier = Modifier.fillMaxWidth(),
                     isError = isError,
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = androidx.compose.ui.text.input.ImeAction.Done),
                     supportingText = {
                         if (isError) {
                             Text(stringResource(R.string.error_page_name_required))

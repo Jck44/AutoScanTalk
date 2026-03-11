@@ -89,9 +89,7 @@ class InteractionDelegate @Inject constructor(
                 locationExecutor.refreshLocation()
             }
         } else {
-            scanCoordinator.stopScanningTemporarily()
             ttsHelper.stopNotificationTTS()
-            _smartPredictions.value = null // Clear stale results on exit
         }
     }
 
