@@ -21,7 +21,8 @@ class GeminiActionHandler(
     private val localIntentRouter: com.andreas_kratzer.ghosttalk.domain.executors.LocalIntentRouter,
     private val ttsHelperLazy: dagger.Lazy<TextToSpeechHelper>,
     private val emitEvent: suspend (ActionExecutor.ExecutionEvent) -> Unit,
-    private val log: (String) -> Unit
+    private val log: (String) -> Unit,
+    private val error: (String, Throwable?) -> Unit
 ) : ActionHandler { // Handles both GeminiButtonAction and GeminiSearchButtonAction
 
     override fun canHandle(action: ButtonAction): Boolean = 
@@ -53,10 +54,10 @@ class GeminiActionHandler(
         }
 
         scope.launch {
-            val tts = ttsHelperLazy.get()
             try {
                 if (isNanoAction) {
                     if (!settingsRepository.useLocalGenerativeAi) {
+                        val tts = ttsHelperLazy.get()
                         val errorMsg = tts.context.getString(R.string.error_gemini_disabled) 
                         tts.speakRouted(errorMsg, targetDeviceAddress) {
                             onFinish(executionId)
@@ -68,6 +69,7 @@ class GeminiActionHandler(
                         val displayResponse = if (response.length > 50) response.take(50) + "..." else response
                         log("Gemini Nano [${nanoIntent}] Antwort: '$displayResponse'")
 
+                        val tts = ttsHelperLazy.get()
                         tts.isReadingNotification = true
                         if (tts.isReady) {
                             tts.speakRouted(response, targetDeviceAddress) {
@@ -84,6 +86,7 @@ class GeminiActionHandler(
 
                 // Cloud actions path
                 if (!settingsRepository.isGeminiEnabled) {
+                    val tts = ttsHelperLazy.get()
                     val errorMsg = tts.context.getString(R.string.error_gemini_disabled) 
                     tts.speakRouted(errorMsg, targetDeviceAddress) {
                         onFinish(executionId)
@@ -93,6 +96,7 @@ class GeminiActionHandler(
 
                 val response = geminiUseCaseLazy.get().generateResponse(prompt, useGoogleSearch = useGoogleSearch) 
                 
+                val tts = ttsHelperLazy.get()
                 if (tts.isReady) {
                     tts.speakRouted(response, targetDeviceAddress) {
                         onFinish(executionId)
@@ -102,15 +106,16 @@ class GeminiActionHandler(
                     onFinish(executionId)
                 }
             } catch (e: UserRecoverableAuthIOException) {
-                log("Gemini: Berechtigung erforderlich.")
+                error("Gemini: Berechtigung erforderlich.", e)
                 e.intent?.let { emitEvent(ActionExecutor.ExecutionEvent.RecoverableAuthError(it)) }
                 onFinish(executionId)
             } catch (e: UserRecoverableAuthException) {
-                log("Gemini: Berechtigung erforderlich.")
+                error("Gemini: Berechtigung erforderlich.", e)
                 e.intent?.let { emitEvent(ActionExecutor.ExecutionEvent.RecoverableAuthError(it)) }
                 onFinish(executionId)
             } catch (e: Exception) {
                 val message = e.message ?: ""
+                val tts = ttsHelperLazy.get()
                 if (message.contains("429")) {
                     val remainingMatch = Regex("wait (\\d+) seconds", RegexOption.IGNORE_CASE).find(message)
                     val seconds = remainingMatch?.groupValues?.get(1)?.toIntOrNull() ?: 60
@@ -128,7 +133,7 @@ class GeminiActionHandler(
                         onFinish(executionId)
                     }
                 } else {
-                    log("Gemini Fehler: $message")
+                    error("Gemini Fehler: $message", e)
                     onFinish(executionId)
                 }
             }

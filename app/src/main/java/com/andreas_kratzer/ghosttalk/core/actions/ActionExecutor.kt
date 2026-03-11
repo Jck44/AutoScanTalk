@@ -61,7 +61,7 @@ class ActionExecutor @Inject constructor(
             NavigationActionHandler(scope, settingsRepository, ttsHelperLazy, ::emitEvent, ::log),
             ControlDeviceActionHandler(application, settingsRepository, ttsHelperLazy, ::log),
             WeatherActionHandler(application, settingsRepository, ttsHelperLazy, weatherExecutor, scope, ::log),
-            GeminiActionHandler(scope, settingsRepository, geminiUseCaseLazy, localIntentRouter, ttsHelperLazy, ::emitEvent, ::log),
+            GeminiActionHandler(scope, settingsRepository, geminiUseCaseLazy, localIntentRouter, ttsHelperLazy, ::emitEvent, ::log, ::error),
             FrequentActionHandler(::log),
             SmartPredictionActionHandler(::log)
         )
@@ -127,6 +127,11 @@ class ActionExecutor @Inject constructor(
     private fun log(message: String) {
         logger.d("ActionExecutor", "Log: $message")
         scope.launch { _events.emit(ExecutionEvent.Log(message)) }
+    }
+
+    private fun error(message: String, throwable: Throwable? = null) {
+        logger.e("ActionExecutor", message, throwable)
+        scope.launch { _events.emit(ExecutionEvent.Log("Error: $message")) }
     }
 
     private suspend fun emitEvent(event: ExecutionEvent) {

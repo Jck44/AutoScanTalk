@@ -34,18 +34,22 @@ class NavigationActionHandler(
             }
         }
 
-        val ttsHelper = ttsHelperLazy.get()
-        if (feedback != null && ttsHelper.isReady) {
-            ttsHelper.speakRouted(
-                text = feedback,
-                deviceAddress = settingsRepository.cuesAudioDeviceAddress,
-                queueMode = android.speech.tts.TextToSpeech.QUEUE_FLUSH,
-                isForCues = true,
-                onDone = { performNavigation() }
-            )
-            log("Navigations-Feedback: \"$feedback\"")
+        if (feedback != null) {
+            val ttsHelper = ttsHelperLazy.get()
+            if (ttsHelper.isReady) {
+                ttsHelper.speakRouted(
+                    text = feedback,
+                    deviceAddress = settingsRepository.cuesAudioDeviceAddress,
+                    queueMode = android.speech.tts.TextToSpeech.QUEUE_FLUSH,
+                    isForCues = true,
+                    onDone = { performNavigation() }
+                )
+                log("Navigations-Feedback: \"$feedback\"")
+            } else {
+                log("Nav-Feedback (TTS nicht bereit): \"$feedback\"")
+                performNavigation()
+            }
         } else {
-            if (feedback != null) log("Nav-Feedback (TTS nicht bereit): \"$feedback\"")
             performNavigation()
         }
     }

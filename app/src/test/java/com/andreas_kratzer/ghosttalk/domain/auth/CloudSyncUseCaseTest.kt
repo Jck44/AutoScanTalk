@@ -1,5 +1,7 @@
 package com.andreas_kratzer.ghosttalk.domain.auth
 
+import org.junit.Assert.assertEquals
+
 
 import android.content.Context
 import android.util.Log
@@ -157,5 +159,64 @@ class CloudSyncUseCaseTest {
 
         coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile("file_1", any()) }
         coVerify(exactly = 1) { mockImportExportManager.importFromJson(any(), bookId, restoreSyncSettings = false) }
+    }
+
+    @Test
+    fun `syncBook with TWO_WAY mode does nothing if synchronized within grace period`() = runTest {
+        val bookId = "test-book"
+        val now = System.currentTimeMillis()
+
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder(any()) } returns "folder_1"
+
+        val remoteFile = com.google.api.services.drive.model.File().apply {
+            id = "file_1"
+            name = "book_$bookId.json"
+            modifiedTime = com.google.api.client.util.DateTime(now + 500L) // Remote is only 0.5s newer
+        }
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("folder_1") } returns listOf(remoteFile)
+
+        useCase.syncBook(mockDrive, bookId, SyncMode.TWO_WAY)
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile(any(), any()) }
+        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().updateFile(any(), any(), any()) }
+    }
+
+    @Test
+    fun `syncBook returns false in RESTORE_ONLY mode if remote file is missing`() = runTest {
+        val bookId = "test-book"
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder(any()) } returns "folder_1"
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("folder_1") } returns emptyList()
+
+        val result = useCase.syncBook(mockDrive, bookId, SyncMode.RESTORE_ONLY)
+        advanceUntilIdle()
+
+        assert(!result)
+    }
+
+    @Test
+    fun `getAvailableBackups parses metadata correctly`() = runTest {
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder(any()) } returns "folder_1"
+        
+        val remoteFile1 = com.google.api.services.drive.model.File().apply {
+            id = "f1"
+            name = "book_1.json"
+            modifiedTime = com.google.api.client.util.DateTime(1000L)
+        }
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("folder_1") } returns listOf(remoteFile1)
+        
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile("f1", any()) } answers {
+            val file = args[1] as File
+            file.writeText("{\"bookName\": \"Test Book\"}")
+            true
+        }
+        every { mockImportExportManager.extractBookNameFromJson(any()) } returns "Test Book"
+
+        val backups = useCase.getAvailableBackups(mockDrive)
+        advanceUntilIdle()
+
+        assertEquals(1, backups.size)
+        assertEquals("Test Book", backups[0].bookName)
+        assertEquals(1000L, backups[0].lastModified)
     }
 }

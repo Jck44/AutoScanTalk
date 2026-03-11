@@ -44,8 +44,9 @@ class GeminiActionHandlerTest {
             ttsHelperLazy = object : dagger.Lazy<TextToSpeechHelper> {
                 override fun get() = ttsHelper
             },
-            emitEvent = { events.add(it) },
-            log = { println(it) }
+            emitEvent = { _ -> },
+            log = { _ -> },
+            error = { _, _ -> }
         )
         every { ttsHelper.isReady } returns true
     }
