@@ -19,7 +19,7 @@ android {
         versionCode = 31
         versionName = "0.9.8"
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "com.andreas_kratzer.ghosttalk.HiltTestRunner"
         
         ndk {
             debugSymbolLevel = "full"
@@ -157,6 +157,7 @@ dependencies {
     testImplementation(libs.hilt.android.testing)
     kspTest(libs.hilt.compiler)
     androidTestImplementation(libs.hilt.android.testing)
+    androidTestImplementation(libs.mockk.android)
     kspAndroidTest(libs.hilt.compiler)
 
     // WorkManager & Hilt Work
@@ -164,5 +165,6 @@ dependencies {
     implementation(libs.androidx.hilt.work)
     implementation(libs.androidx.biometric)
     implementation(libs.kotlinx.serialization.json)
+    androidTestImplementation(libs.androidx.work.testing)
     ksp(libs.androidx.hilt.compiler)
 }

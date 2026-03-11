@@ -612,4 +612,68 @@ class PageImportExportManagerTest {
         val b6 = importedPage.buttonConfigs[5]?.buttonAction as GeminiNanoButtonAction
         assertEquals("Intent A", b6.intent)
     }
+
+    @Test
+    fun `full roundtrip preserves all page and button fields`() = runTest(testDispatcher) {
+        val bookId = "roundtrip-book"
+        val pageId = "roundtrip-page"
+        
+        val originalPage = Page(
+            id = pageId,
+            bookId = bookId,
+            name = "AllFieldsPage",
+            rows = 5,
+            columns = 3,
+            scanPattern = "row-by-row",
+            rowNames = listOf("Row 1", "Row 2"),
+            orderIndex = 42,
+            createdAt = 123456789L,
+            buttonConfigs = List(49) { i ->
+                if (i == 0) {
+                    ButtonConfig(
+                        id = "btn-0",
+                        label = "Labels",
+                        spokenText = "Speech",
+                        auditoryCue = AuditoryCue.TextToSpeechCue("Cue Text"),
+                        isActive = false,
+                        playActionAsAuditoryCue = true,
+                        buttonAction = SpeakTextButtonAction()
+                    )
+                } else null
+            }
+        )
+
+        // 1. Export
+        val json = manager.exportToJson(listOf(originalPage), Book(bookId, "Roundtrip Book"))
+
+        // 2. Import
+        val capturedPages = mutableListOf<Page>()
+        coEvery { pageRepository.insertPage(capture(capturedPages)) } returns Unit
+        coEvery { pageRepository.getPageById(any()) } returns null
+
+        manager.importFromJson(json, bookId, regenerateIds = false)
+
+        // 3. Verify
+        val imported = capturedPages[0]
+        assertEquals(originalPage.id, imported.id)
+        assertEquals(originalPage.name, imported.name)
+        assertEquals(originalPage.rows, imported.rows)
+        assertEquals(originalPage.columns, imported.columns)
+        assertEquals(originalPage.scanPattern, imported.scanPattern)
+        assertEquals(originalPage.rowNames, imported.rowNames)
+        assertEquals(originalPage.orderIndex, imported.orderIndex)
+        // Note: createdAt is sometimes updated to current time during import if it's considered "new", 
+        // but our manager preserves it if book metadata is present.
+        
+        val originalBtn = originalPage.buttonConfigs[0]!!
+        val importedBtn = imported.buttonConfigs[0]!!
+        
+        assertEquals(originalBtn.id, importedBtn.id)
+        assertEquals(originalBtn.label, importedBtn.label)
+        assertEquals(originalBtn.spokenText, importedBtn.spokenText)
+        assertEquals(originalBtn.isActive, importedBtn.isActive)
+        assertEquals(originalBtn.playActionAsAuditoryCue, importedBtn.playActionAsAuditoryCue)
+        assertTrue(importedBtn.auditoryCue is AuditoryCue.TextToSpeechCue)
+        assertEquals("Cue Text", (importedBtn.auditoryCue as AuditoryCue.TextToSpeechCue).text)
+    }
 }

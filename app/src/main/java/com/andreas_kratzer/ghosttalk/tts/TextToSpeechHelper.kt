@@ -20,7 +20,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class TextToSpeechHelper @Inject constructor(
+open class TextToSpeechHelper @Inject constructor(
     @param:ApplicationContext val context: Context,
     @param:ApplicationScope private val scope: CoroutineScope,
     private val settingsRepository: SettingsRepository,
@@ -143,11 +143,11 @@ class TextToSpeechHelper @Inject constructor(
     // Support for direct callbacks
     private val directCallbacks = ConcurrentHashMap<String, () -> Unit>()
 
-    fun speak(text: String, queueMode: Int = TextToSpeech.QUEUE_FLUSH, onDone: (() -> Unit)? = null) {
+    open fun speak(text: String, queueMode: Int = TextToSpeech.QUEUE_FLUSH, onDone: (() -> Unit)? = null) {
         speakRouted(text, null, queueMode, false, onDone)
     }
 
-    fun speakRouted(
+    open fun speakRouted(
         text: String, 
         deviceAddress: String?, 
         queueMode: Int = TextToSpeech.QUEUE_FLUSH,

@@ -27,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -100,7 +101,7 @@ fun StartScreen(
                     title = stringResource(R.string.start_user_mode),
                     icon = Icons.Filled.PlayArrow,
                     onClick = onNavigateToUserMode,
-                    modifier = cardModifier,
+                    modifier = cardModifier.testTag("start_card_user_mode"),
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     iconColor = MaterialTheme.colorScheme.primary,
                     height = dynamicCardHeight
@@ -110,7 +111,7 @@ fun StartScreen(
                     title = stringResource(R.string.start_manage_content),
                     icon = Icons.Filled.Edit,
                     onClick = onNavigateToContentManagement,
-                    modifier = cardModifier,
+                    modifier = cardModifier.testTag("start_card_manage"),
                     containerColor = MaterialTheme.colorScheme.tertiaryContainer,
                     iconColor = MaterialTheme.colorScheme.tertiary,
                     height = dynamicCardHeight
@@ -120,7 +121,7 @@ fun StartScreen(
                     title = stringResource(R.string.settings_title_book),
                     icon = Icons.Filled.Settings,
                     onClick = onNavigateToSettings,
-                    modifier = cardModifier,
+                    modifier = cardModifier.testTag("start_card_settings"),
                     containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     iconColor = MaterialTheme.colorScheme.secondary,
                     height = dynamicCardHeight

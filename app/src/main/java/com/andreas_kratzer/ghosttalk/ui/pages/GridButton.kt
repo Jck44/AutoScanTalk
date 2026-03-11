@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -40,7 +41,8 @@ fun GridButton(
     Card(
         modifier = modifier
             .clickable(onClick = onClick)
-            .alpha(if (isEditorMode && !isActive) 0.5f else 1f),
+            .alpha(if (isEditorMode && !isActive) 0.5f else 1f)
+            .testTag(if (isFocused) "button_focused" else if (isRowFocused) "row_focused" else "button_idle"),
         shape = MaterialTheme.shapes.medium,
         elevation = CardDefaults.cardElevation(
             defaultElevation = if (buttonConfig != null) dimensions.cardElevation else 0.dp

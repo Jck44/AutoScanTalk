@@ -81,12 +81,6 @@ object AppModule {
     }
 
     @Provides
-    @Singleton
-    fun provideWorkManager(@ApplicationContext context: Context): androidx.work.WorkManager {
-        return androidx.work.WorkManager.getInstance(context)
-    }
-
-    @Provides
     fun provideTemplateDao(appDatabase: AppDatabase): TemplateDao {
         return appDatabase.templateDao()
     }

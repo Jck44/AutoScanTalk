@@ -26,6 +26,8 @@ class RoomDatabaseTest {
     private lateinit var db: AppDatabase
     private lateinit var bookDao: BookDao
     private lateinit var pageDao: PageDao
+    private lateinit var buttonDao: ButtonDao
+    private lateinit var pageRepository: PageRepository
 
     @Before
     fun createDb() {
@@ -36,6 +38,8 @@ class RoomDatabaseTest {
         ).build()
         bookDao = db.bookDao()
         pageDao = db.pageDao()
+        buttonDao = db.buttonDao()
+        pageRepository = PageRepository(pageDao, buttonDao)
     }
 
     @After
@@ -66,12 +70,12 @@ class RoomDatabaseTest {
         val page2 = Page(id = "p2", bookId = "b1", name = "Page A2", rows = 2, columns = 2, buttonConfigs = emptyList())
         val page3 = Page(id = "p3", bookId = "b2", name = "Page B1", rows = 2, columns = 2, buttonConfigs = emptyList())
 
-        pageDao.insertPage(page1)
-        pageDao.insertPage(page2)
-        pageDao.insertPage(page3)
+        pageRepository.insertPage(page1)
+        pageRepository.insertPage(page2)
+        pageRepository.insertPage(page3)
 
-        val pagesBook1 = pageDao.getPagesForBook("b1")
-        val pagesBook2 = pageDao.getPagesForBook("b2")
+        val pagesBook1 = pageRepository.getPagesForBook("b1")
+        val pagesBook2 = pageRepository.getPagesForBook("b2")
 
         assertEquals(2, pagesBook1.size)
         assertEquals(1, pagesBook2.size)
@@ -83,13 +87,13 @@ class RoomDatabaseTest {
         val book = Book(id = "complexBook", name = "Complex")
         bookDao.insertBook(book)
 
-        // A highly customized button configuration to test Converters.kt deeply
+        // A highly customized button configuration to test normalization and roundtrip deeply
         val buttonConfig1 = ButtonConfig(
             id = "b1",
             label = "Speak Label",
             spokenText = "I override the label",
             auditoryCue = AuditoryCue.TextToSpeechCue("Hint Text"),
-            buttonAction = SpeakTextButtonAction("Action String")
+            buttonAction = SpeakTextButtonAction()
         )
 
         val buttonConfig2 = ButtonConfig(
@@ -105,25 +109,24 @@ class RoomDatabaseTest {
         val page = Page(
             id = "complexPage",
             bookId = "complexBook",
-            name = "Gson Serializer Test Page",
+            name = "Normalized DB Test Page",
             rows = 2,
             columns = 2,
             buttonConfigs = buttons
         )
 
-        pageDao.insertPage(page)
+        pageRepository.insertPage(page)
 
-        val retrievedPage = pageDao.getPageById("complexPage")
+        val retrievedPage = pageRepository.getPageById("complexPage")
         assertNotNull(retrievedPage)
-        assertEquals("Gson Serializer Test Page", retrievedPage?.name)
-        assertEquals(4, retrievedPage?.buttonConfigs?.size)
+        assertEquals("Normalized DB Test Page", retrievedPage?.name)
+        assertEquals(49, retrievedPage?.buttonConfigs?.size)
         
         // Slot 1: Speak Text Config
         val loadedBtn1 = retrievedPage?.buttonConfigs?.get(0)!!
         assertEquals("Speak Label", loadedBtn1.label)
         assertEquals("I override the label", loadedBtn1.spokenText)
         assertTrue(loadedBtn1.buttonAction is SpeakTextButtonAction)
-        assertEquals("Action String", (loadedBtn1.buttonAction as SpeakTextButtonAction).ttsMode)
 
         // Slot 2: Null
         assertNull(retrievedPage.buttonConfigs[1])
