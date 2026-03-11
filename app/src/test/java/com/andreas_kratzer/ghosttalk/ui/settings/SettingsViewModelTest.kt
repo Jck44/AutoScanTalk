@@ -11,6 +11,8 @@ import com.andreas_kratzer.ghosttalk.ui.settings.delegates.ExperimentalSettingsD
 import com.andreas_kratzer.ghosttalk.ui.settings.delegates.GenAiSettingsDelegate
 import com.andreas_kratzer.ghosttalk.ui.settings.delegates.ScanningSettingsDelegate
 import com.andreas_kratzer.ghosttalk.ui.settings.delegates.TtsSettingsDelegate
+import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -115,5 +117,48 @@ class SettingsViewModelTest {
 
         viewModel.activateGemini(mockk())
         verify { genAiDelegate.activateGemini(any(), any()) }
+    }
+
+    @Test
+    fun `exportLocalBackup calls manager correctly`() = runTest {
+        coEvery { importExportManager.exportBookToJson("test-book") } returns "{\"json\":true}"
+        val result = viewModel.exportLocalBackup()
+        assertEquals("{\"json\":true}", result)
+    }
+
+    @Test
+    fun `importLocalBackup fails if bookId mismatch`() = runTest {
+        val json = "{\"bookId\":\"wrong-id\"}"
+        coEvery { importExportManager.extractBookIdFromJson(json) } returns "wrong-id"
+        
+        var errorMsg: String? = null
+        viewModel.importLocalBackup(json, onSuccess = {}, onError = { errorMsg = it })
+        
+        assertEquals("Fehler: Buch-IDs stimmen nicht überein. Dieses Backup gehört zu einem anderen Buch.", errorMsg)
+    }
+
+    @Test
+    fun `importLocalBackup calls manager if bookId matches`() = runTest {
+        val json = "{\"bookId\":\"test-book\"}"
+        coEvery { importExportManager.extractBookIdFromJson(json) } returns "test-book"
+        coEvery { importExportManager.importFromJson(any(), any(), any(), any()) } returns Result.success(5)
+        
+        var successCalled = false
+        viewModel.importLocalBackup(json, onSuccess = { successCalled = true }, onError = {})
+        
+        coVerify { importExportManager.importFromJson(json, "test-book", false, false) }
+        assertEquals(true, successCalled)
+    }
+
+    @Test
+    fun `importGlobalManualBackup calls cloud import correctly`() = runTest {
+        val json = "{\"json\":true}"
+        coEvery { importExportManager.importCloudBackup(json, null) } returns Result.success("new-book-id")
+        
+        var successId: String? = null
+        viewModel.importGlobalManualBackup(json, onSuccess = { successId = it }, onError = {})
+        
+        verify { importExportManager.importCloudBackup(json, null) }
+        assertEquals("new-book-id", successId)
     }
 }

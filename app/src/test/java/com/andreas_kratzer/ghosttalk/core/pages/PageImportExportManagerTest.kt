@@ -550,6 +550,19 @@ class PageImportExportManagerTest {
     }
 
     @Test
+    fun `importCloudBackup fails if book already exists locally`() = runTest(testDispatcher) {
+        val bookId = "existing-book-id"
+        val jsonString = "{\"bookId\":\"$bookId\", \"bookName\":\"Exists\", \"pages\":[]}"
+        
+        coEvery { bookRepository.getBookById(bookId) } returns Book(bookId, "Old Name")
+        
+        val result = manager.importCloudBackup(jsonString, null)
+        
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull()?.message?.contains("Ein Buch mit dieser ID existiert bereits lokal") == true)
+    }
+
+    @Test
     fun `export and import cycle preserves complex GhosTTalk actions`() = runTest(testDispatcher) {
         val bookId = "test-book"
         val originalPages = listOf(
