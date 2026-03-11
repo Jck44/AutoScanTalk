@@ -30,15 +30,49 @@ class ScanningIntegrationTest {
         settingsRepository.autoStartScanning = true
     }
 
+    /**
+     * Navigate from wherever we land (BookListScreen or StartScreen) to the StartScreen.
+     * The app starts on BookListScreen by default (startupBehavior = BOOK_SELECTION).
+     * We need to click a book card to get to StartScreen.
+     */
+    private fun navigateToStartScreen() {
+        // First, try to see if we're already on StartScreen
+        val startCardNodes = composeTestRule
+            .onAllNodesWithTag("start_card_user_mode")
+            .fetchSemanticsNodes()
+
+        if (startCardNodes.isNotEmpty()) {
+            // Already on StartScreen
+            return
+        }
+
+        // We're on BookListScreen – wait for a book card to appear and click it.
+        // The default book is named "Standardbuch" (created by SampleDataInitializer).
+        composeTestRule.waitUntil(15000) {
+            composeTestRule.onAllNodesWithText("Standardbuch", substring = true)
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText("Standardbuch", substring = true).performClick()
+
+        // Now wait for StartScreen to appear
+        composeTestRule.waitUntil(10000) {
+            composeTestRule.onAllNodesWithTag("start_card_user_mode")
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+    }
+
     @Test
     fun startScanningOnUserModeEntry_andStopOnExit() {
-        // 1. Wait for StartScreen and click "User Mode"
+        // 1. Navigate to StartScreen and click "User Mode"
+        navigateToStartScreen()
         composeTestRule.onNodeWithTag("start_card_user_mode").performClick()
 
-        // 2. We should now be in PageScreen. 
-        // We wait a bit or check for a focused button index (which is internal state, 
-        // but we can check if any button has a focused border/style if we added tags there too).
-        // For now, let's just verify we are on the PageScreen by checking the back button.
+        // 2. We should now be in PageScreen.
+        // Verify we are on the PageScreen by checking the back button.
+        composeTestRule.waitUntil(10000) {
+            composeTestRule.onAllNodesWithTag("page_screen_back_button")
+                .fetchSemanticsNodes().isNotEmpty()
+        }
         composeTestRule.onNodeWithTag("page_screen_back_button").assertExists()
 
         // 3. Since auto-start is true, the ScanCoordinator should have started.
@@ -52,7 +86,11 @@ class ScanningIntegrationTest {
         // 4. Leaving the screen works.
         composeTestRule.onNodeWithTag("page_screen_back_button").performClick()
 
-        // 4. We should be back at StartScreen
+        // 5. We should be back at StartScreen
+        composeTestRule.waitUntil(10000) {
+            composeTestRule.onAllNodesWithTag("start_card_user_mode")
+                .fetchSemanticsNodes().isNotEmpty()
+        }
         composeTestRule.onNodeWithTag("start_card_user_mode").assertExists()
     }
 }

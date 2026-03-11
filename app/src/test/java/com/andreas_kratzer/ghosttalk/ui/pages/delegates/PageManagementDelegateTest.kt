@@ -84,6 +84,7 @@ class PageManagementDelegateTest {
         appStateRepository = com.andreas_kratzer.ghosttalk.data.AppStateRepository()
 
         every { settingsRepository.pageSortOrderFlow } returns MutableStateFlow(SortOrder.A_Z.name)
+        every { getPagesUseCase.execute(any()) } returns MutableStateFlow(emptyList())
         every { templateRepository.getAllTemplates() } returns MutableStateFlow(emptyList())
 
         delegate = PageManagementDelegate(

@@ -152,7 +152,12 @@ class CloudSyncUseCaseTest {
             modifiedTime = com.google.api.client.util.DateTime(now + 10000L) // Remote is newer
         }
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("folder_1") } returns listOf(remoteFile)
-        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile(any(), any()) } returns true
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile(any(), any()) } answers {
+            val file = args[1] as File
+            file.writeText("{\"downloaded\": true}")
+            true
+        }
+        coEvery { mockImportExportManager.importFromJson(any(), any(), restoreSyncSettings = false) } returns Result.success(1)
 
         useCase.syncBook(mockDrive, bookId, SyncMode.TWO_WAY)
         advanceUntilIdle()

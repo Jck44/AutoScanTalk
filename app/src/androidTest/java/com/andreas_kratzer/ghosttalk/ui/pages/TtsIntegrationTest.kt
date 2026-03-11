@@ -40,16 +40,43 @@ class TtsIntegrationTest {
         recordingHelper.clear()
     }
 
+    /**
+     * Navigate from wherever we land (BookListScreen or StartScreen) to the StartScreen.
+     */
+    private fun navigateToStartScreen() {
+        val startCardNodes = composeTestRule
+            .onAllNodesWithTag("start_card_user_mode")
+            .fetchSemanticsNodes()
+
+        if (startCardNodes.isNotEmpty()) return
+
+        // We're on BookListScreen – click the default book
+        composeTestRule.waitUntil(15000) {
+            composeTestRule.onAllNodesWithText("Standardbuch", substring = true)
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText("Standardbuch", substring = true).performClick()
+
+        composeTestRule.waitUntil(10000) {
+            composeTestRule.onAllNodesWithTag("start_card_user_mode")
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+    }
+
     @Test
     fun buttonClick_triggersSingleTtsCall() {
-        // 1. Enter User Mode
+        // 1. Navigate to StartScreen and enter User Mode
+        navigateToStartScreen()
         composeTestRule.onNodeWithTag("start_card_user_mode").performClick()
 
         // 2. Wait for PageScreen
+        composeTestRule.waitUntil(10000) {
+            composeTestRule.onAllNodesWithTag("page_screen_back_button")
+                .fetchSemanticsNodes().isNotEmpty()
+        }
         composeTestRule.onNodeWithTag("page_screen_back_button").assertExists()
 
-        // 3. Click the first button (which we tagged as 'button_idle' initially)
-        // Find a button by tag 'button_idle' and click it
+        // 3. Click the first button
         composeTestRule.onAllNodesWithTag("button_idle").onFirst().performClick()
 
         // 4. Verify TTS recording
@@ -62,7 +89,8 @@ class TtsIntegrationTest {
         // 1. Enable auto-scanning
         settingsRepository.autoStartScanning = true
         
-        // 2. Enter User Mode
+        // 2. Navigate to StartScreen and enter User Mode
+        navigateToStartScreen()
         composeTestRule.onNodeWithTag("start_card_user_mode").performClick()
 
         // 3. Wait for scanning to start and focus first button
