@@ -56,6 +56,7 @@ class PageManagementDelegateTest {
     private lateinit var exportPageUseCase: ExportPageUseCase
     private lateinit var getFilteredPagesUseCase: GetFilteredPagesUseCase
     private lateinit var getPageUsagesUseCase: GetPageUsagesUseCase
+    private lateinit var appStateRepository: com.andreas_kratzer.ghosttalk.data.AppStateRepository
 
     private lateinit var delegate: PageManagementDelegate
 
@@ -80,6 +81,7 @@ class PageManagementDelegateTest {
         exportPageUseCase = mockk(relaxed = true)
         getPageUsagesUseCase = mockk(relaxed = true)
         getFilteredPagesUseCase = GetFilteredPagesUseCase(settingsRepository)
+        appStateRepository = com.andreas_kratzer.ghosttalk.data.AppStateRepository()
 
         every { settingsRepository.pageSortOrderFlow } returns MutableStateFlow(SortOrder.A_Z.name)
         every { templateRepository.getAllTemplates() } returns MutableStateFlow(emptyList())
@@ -100,7 +102,8 @@ class PageManagementDelegateTest {
             importPageUseCase,
             exportPageUseCase,
             getFilteredPagesUseCase,
-            getPageUsagesUseCase
+            getPageUsagesUseCase,
+            appStateRepository
         )
     }
 

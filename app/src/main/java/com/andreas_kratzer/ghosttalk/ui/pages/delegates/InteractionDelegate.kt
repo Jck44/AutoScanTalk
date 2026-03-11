@@ -3,6 +3,7 @@ package com.andreas_kratzer.ghosttalk.ui.pages.delegates
 import android.app.Application
 import android.content.Intent
 import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
+import com.andreas_kratzer.ghosttalk.data.AppStateRepository
 import com.andreas_kratzer.ghosttalk.domain.actions.ActionLogUseCase
 import com.andreas_kratzer.ghosttalk.domain.actions.ActivateButtonUseCase
 import com.andreas_kratzer.ghosttalk.domain.actions.HandleActionExecutionEventUseCase
@@ -25,7 +26,8 @@ class InteractionDelegate @Inject constructor(
     private val ttsHelper: TextToSpeechHelper,
     private val activateButtonUseCase: ActivateButtonUseCase,
     private val handleActionExecutionEventUseCase: HandleActionExecutionEventUseCase,
-    private val locationExecutor: com.andreas_kratzer.ghosttalk.domain.executors.LocationExecutor
+    private val locationExecutor: com.andreas_kratzer.ghosttalk.domain.executors.LocationExecutor,
+    private val appStateRepository: AppStateRepository
 ) {
     private lateinit var scope: CoroutineScope
     private lateinit var actionExecutor: ActionExecutor
@@ -37,8 +39,8 @@ class InteractionDelegate @Inject constructor(
     private val _authRecoverIntent = MutableSharedFlow<Intent>()
     val authRecoverIntent = _authRecoverIntent.asSharedFlow()
 
-    private val _isUserModeActive = MutableStateFlow(false)
-    val isUserModeActive: StateFlow<Boolean> = _isUserModeActive.asStateFlow()
+    // Now pointing to the global repository
+    val isUserModeActive: StateFlow<Boolean> = appStateRepository.isUserModeActive
 
     private var _smartPredictions = MutableStateFlow<List<String>?>(null)
 
@@ -81,7 +83,7 @@ class InteractionDelegate @Inject constructor(
     }
 
     fun setUserModeActive(isActive: Boolean) {
-        _isUserModeActive.value = isActive
+        appStateRepository.setUserModeActive(isActive)
         if (isActive) {
             scope.launch {
                 locationExecutor.refreshLocation()
@@ -99,7 +101,7 @@ class InteractionDelegate @Inject constructor(
                 index = index,
                 currentPage = currentPage,
                 activeBookId = activeBookId,
-                isUserModeActive = _isUserModeActive.value,
+                isUserModeActive = isUserModeActive.value,
                 smartPredictions = _smartPredictions.value ?: emptyList(),
                 actionExecutor = actionExecutor,
                 scanCoordinator = scanCoordinator

@@ -1,6 +1,7 @@
 package com.andreas_kratzer.ghosttalk.ui.pages
 
 import android.app.Application
+import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
 import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
 import com.andreas_kratzer.ghosttalk.core.pages.PageImportExportManager
 import com.andreas_kratzer.ghosttalk.core.scanning.ScannerEngine
@@ -171,6 +172,8 @@ class PageViewModelTest {
     }
 
     private fun createViewModel(): PageViewModel {
+        val appStateRepository = com.andreas_kratzer.ghosttalk.data.AppStateRepository()
+        
         val pageManagementDelegate = PageManagementDelegate(
             pageRepository = pageRepository,
             bookRepository = bookRepository,
@@ -187,7 +190,8 @@ class PageViewModelTest {
             importPageUseCase = importPageUseCase,
             exportPageUseCase = exportPageUseCase,
             getFilteredPagesUseCase = GetFilteredPagesUseCase(settingsRepository),
-            getPageUsagesUseCase = getPageUsagesUseCase
+            getPageUsagesUseCase = getPageUsagesUseCase,
+            appStateRepository = appStateRepository
         )
         val interactionDelegate = InteractionDelegate(
             application = application,
@@ -195,19 +199,51 @@ class PageViewModelTest {
             ttsHelper = ttsHelper,
             activateButtonUseCase = ActivateButtonUseCase(ttsHelper, ResolveSmartPredictionUseCase(pageRepository)),
             handleActionExecutionEventUseCase = HandleActionExecutionEventUseCase(pageRepository, settingsRepository),
-            locationExecutor = locationExecutor
+            locationExecutor = locationExecutor,
+            appStateRepository = appStateRepository
         )
         val smartPredictionDelegate = SmartPredictionDelegate(
             updateSmartPredictionsUseCase = updateSmartPredictionsUseCase
         )
         val screenManagementDelegate = ScreenManagementDelegate(settingsRepository)
 
+        val actionExecutor = ActionExecutor(
+            application = application,
+            scope = kotlinx.coroutines.CoroutineScope(testDispatcher),
+            settingsRepository = settingsRepository,
+            logger = logger,
+            localIntentRouter = localIntentRouter,
+            weatherExecutor = weatherExecutor,
+            buttonUsageRepository = buttonUsageRepository
+        )
+
+        val scanCoordinator = ScanCoordinator(
+            scope = kotlinx.coroutines.CoroutineScope(testDispatcher),
+            scannerEngine = scannerEngine,
+            settingsRepository = settingsRepository,
+            actionExecutor = actionExecutor,
+            checkForPredictorUseCase = checkForPredictorUseCase,
+            ttsHelper = ttsHelper
+        )
+
         return PageViewModel(
-            application, settingsRepository, importExportManager, scannerEngine, googleAuthManager,
-            geminiUseCaseFactory, ttsHelper, localIntentRouter, weatherExecutor, logger, buttonUsageRepository, 
-            featureGuard, pageManagementDelegate, interactionDelegate, screenManagementDelegate, 
-            smartPredictionDelegate, resolveDynamicButtonsUseCase, updateSmartPredictionsUseCase, 
-            checkForPredictorUseCase
+            application = application,
+            settingsRepository = settingsRepository,
+            importExportManager = importExportManager,
+            googleAuthManager = googleAuthManager,
+            geminiUseCaseFactory = geminiUseCaseFactory,
+            ttsHelper = ttsHelper,
+            logger = logger,
+            weatherExecutor = weatherExecutor,
+            featureGuard = featureGuard,
+            pageManagementDelegate = pageManagementDelegate,
+            interactionDelegate = interactionDelegate,
+            screenManagementDelegate = screenManagementDelegate,
+            smartPredictionDelegate = smartPredictionDelegate,
+            resolveDynamicButtonsUseCase = resolveDynamicButtonsUseCase,
+            updateSmartPredictionsUseCase = updateSmartPredictionsUseCase,
+            actionExecutor = actionExecutor,
+            scanCoordinator = scanCoordinator
         )
     }
 

@@ -1,8 +1,10 @@
 package com.andreas_kratzer.ghosttalk.core.actions
 
+import android.app.Application
 import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.di.ApplicationScope
 import com.andreas_kratzer.ghosttalk.domain.genai.GeminiUseCase
 import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
@@ -14,19 +16,30 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class ActionExecutor internal constructor(
-    private val application: android.app.Application,
-    private val scope: CoroutineScope,
+@Singleton
+class ActionExecutor @Inject constructor(
+    private val application: Application,
+    @ApplicationScope private val scope: CoroutineScope,
     private val settingsRepository: SettingsRepository,
     private val logger: Logger,
-    var geminiUseCase: GeminiUseCase?,
-    var ttsHelper: TextToSpeechHelper?,
     private val localIntentRouter: com.andreas_kratzer.ghosttalk.domain.executors.LocalIntentRouter,
     private val weatherExecutor: com.andreas_kratzer.ghosttalk.domain.executors.WeatherExecutor,
-    private val buttonUsageRepository: ButtonUsageRepository? = null,
-    private val timeProvider: () -> Long = { System.currentTimeMillis() }
+    private val buttonUsageRepository: ButtonUsageRepository
 ) {
+    // These might be properly injected later, but for now we provide them via setters 
+    // or keep them nullable to match existing instantiation patterns in PageViewModel.
+    var geminiUseCase: GeminiUseCase? = null
+    var ttsHelper: TextToSpeechHelper? = null
+    
+    // Default time provider
+    private var timeProvider: () -> Long = { System.currentTimeMillis() }
+    
+    internal fun setTimeProviderForTest(provider: () -> Long) {
+        this.timeProvider = provider
+    }
     sealed class ExecutionEvent {
         data class NavigateToPage(val pageId: String) : ExecutionEvent()
         data class Log(val message: String) : ExecutionEvent()
@@ -43,15 +56,25 @@ class ActionExecutor internal constructor(
     private var lastExecutionTime = -1L
     private var activeExecutionId = 0
 
-    internal var handlers: List<ActionHandler> = listOf(
-        SpeechActionHandler(settingsRepository, ttsHelper, ::log),
-        NavigationActionHandler(scope, settingsRepository, ttsHelper, ::emitEvent, ::log),
-        ControlDeviceActionHandler(application, settingsRepository, ttsHelper, ::log),
-        WeatherActionHandler(application, settingsRepository, ttsHelper, weatherExecutor, scope, ::log),
-        GeminiActionHandler(scope, settingsRepository, geminiUseCase, localIntentRouter, ttsHelper, ::emitEvent, ::log),
-        FrequentActionHandler(::log),
-        SmartPredictionActionHandler(::log)
-    )
+    internal var handlers: List<ActionHandler> = createHandlers()
+
+    private fun createHandlers(): List<ActionHandler> {
+        return listOf(
+            SpeechActionHandler(settingsRepository, ttsHelper, ::log),
+            NavigationActionHandler(scope, settingsRepository, ttsHelper, ::emitEvent, ::log),
+            ControlDeviceActionHandler(application, settingsRepository, ttsHelper, ::log),
+            WeatherActionHandler(application, settingsRepository, ttsHelper, weatherExecutor, scope, ::log),
+            GeminiActionHandler(scope, settingsRepository, geminiUseCase, localIntentRouter, ttsHelper, ::emitEvent, ::log),
+            FrequentActionHandler(::log),
+            SmartPredictionActionHandler(::log)
+        )
+    }
+
+    fun updateDependencies(geminiUseCase: GeminiUseCase?, ttsHelper: TextToSpeechHelper?) {
+        this.geminiUseCase = geminiUseCase
+        this.ttsHelper = ttsHelper
+        this.handlers = createHandlers()
+    }
 
 
     fun executeButtonAction(

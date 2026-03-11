@@ -41,18 +41,20 @@ class ActionExecutorTest {
         every { ttsHelper.isReady } returns true
     }
 
-    private fun createExecutor(scope: kotlinx.coroutines.CoroutineScope) = ActionExecutor(
-        application,
-        scope,
-        settingsRepository,
-        logger,
-        geminiUseCase,
-        ttsHelper,
-        mockk(relaxed = true), // localIntentRouter
-        mockk(relaxed = true), // weatherExecutor
-        buttonUsageRepository,
-        timeProvider
-    )
+    private fun createExecutor(scope: kotlinx.coroutines.CoroutineScope): ActionExecutor {
+        val executor = ActionExecutor(
+            application = application,
+            scope = scope,
+            settingsRepository = settingsRepository,
+            logger = logger,
+            localIntentRouter = mockk(relaxed = true),
+            weatherExecutor = mockk(relaxed = true),
+            buttonUsageRepository = buttonUsageRepository
+        )
+        executor.updateDependencies(geminiUseCase, ttsHelper)
+        executor.setTimeProviderForTest(timeProvider)
+        return executor
+    }
 
     @Test
     fun testSyncScanningAndSpeechWithHoldingTime_Timeline() = runTest {

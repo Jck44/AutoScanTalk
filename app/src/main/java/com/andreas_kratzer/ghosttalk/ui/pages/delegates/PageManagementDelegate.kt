@@ -1,5 +1,6 @@
 package com.andreas_kratzer.ghosttalk.ui.pages.delegates
 
+import com.andreas_kratzer.ghosttalk.data.AppStateRepository
 import com.andreas_kratzer.ghosttalk.data.BookRepository
 import com.andreas_kratzer.ghosttalk.data.PageRepository
 import com.andreas_kratzer.ghosttalk.data.TemplateRepository
@@ -43,12 +44,12 @@ class PageManagementDelegate @Inject constructor(
     private val importPageUseCase: ImportPageUseCase,
     private val exportPageUseCase: ExportPageUseCase,
     private val getFilteredPagesUseCase: GetFilteredPagesUseCase,
-    private val getPageUsagesUseCase: GetPageUsagesUseCase
+    private val getPageUsagesUseCase: GetPageUsagesUseCase,
+    private val appStateRepository: AppStateRepository
 ) {
     private lateinit var scope: CoroutineScope
 
-    private val _activeBookId = MutableStateFlow<String?>(null)
-    val activeBookId: StateFlow<String?> = _activeBookId.asStateFlow()
+    val activeBookId: StateFlow<String?> = appStateRepository.activeBookId
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
@@ -56,6 +57,9 @@ class PageManagementDelegate @Inject constructor(
     private val _allPages = MutableStateFlow<List<Page>>(emptyList())
     val allPagesFlow: StateFlow<List<Page>> = _allPages.asStateFlow()
     
+    // We keep a separate flow here for the full Page object,
+    // while appStateRepository only holds the ID for basic logic.
+    // This could also be refined later.
     private val _currentPage = MutableStateFlow<Page?>(null)
     val currentPage: StateFlow<Page?> = _currentPage.asStateFlow()
 
@@ -86,14 +90,14 @@ class PageManagementDelegate @Inject constructor(
         }
 
         scope.launch {
-            getPagesUseCase.execute(_activeBookId).collect { pages ->
+            getPagesUseCase.execute(appStateRepository.activeBookId).collect { pages ->
                 _allPages.value = pages
             }
         }
     }
 
     fun setActiveBookId(bookId: String?) {
-        _activeBookId.value = bookId
+        appStateRepository.setActiveBookId(bookId)
     }
 
     fun updateSearchQuery(query: String) {
@@ -102,6 +106,7 @@ class PageManagementDelegate @Inject constructor(
 
     fun setCurrentPage(page: Page?) {
         _currentPage.value = page
+        appStateRepository.setCurrentPageId(page?.id)
     }
 
     fun createNewPage(name: String, rows: Int, columns: Int, bookId: String, templateId: String? = null, onCreated: (String) -> Unit) {
@@ -116,7 +121,7 @@ class PageManagementDelegate @Inject constructor(
         scope.launch {
             val updatedPage = updateButtonConfigUseCase.execute(pageId, index, newConfig)
             if (updatedPage != null && _currentPage.value?.id == pageId) {
-                _currentPage.value = updatedPage
+                setCurrentPage(updatedPage)
             }
         }
     }
@@ -132,7 +137,7 @@ class PageManagementDelegate @Inject constructor(
         scope.launch {
             val updatedPage = updatePageSettingsUseCase.execute(pageId, newName, newScanPattern, newRowNames, newRows, newColumns)
             if (updatedPage != null && _currentPage.value?.id == pageId) {
-                _currentPage.value = updatedPage
+                setCurrentPage(updatedPage)
             }
         }
     }
@@ -141,7 +146,7 @@ class PageManagementDelegate @Inject constructor(
         scope.launch {
             val updatedPage = updateRowNameUseCase.execute(pageId, rowIndex, newName)
             if (updatedPage != null && _currentPage.value?.id == pageId) {
-                _currentPage.value = updatedPage
+                setCurrentPage(updatedPage)
             }
         }
     }
@@ -150,7 +155,7 @@ class PageManagementDelegate @Inject constructor(
         scope.launch {
             val updatedPage = moveRowUseCase.execute(pageId, fromRow, toRow)
             if (updatedPage != null && _currentPage.value?.id == pageId) {
-                _currentPage.value = updatedPage
+                setCurrentPage(updatedPage)
             }
         }
     }
@@ -159,7 +164,7 @@ class PageManagementDelegate @Inject constructor(
         scope.launch {
             val updatedPage = moveButtonUseCase.execute(pageId, fromIndex, toIndex)
             if (updatedPage != null && _currentPage.value?.id == pageId) {
-                _currentPage.value = updatedPage
+                setCurrentPage(updatedPage)
             }
         }
     }
@@ -175,9 +180,9 @@ class PageManagementDelegate @Inject constructor(
             val result = moveButtonToPageUseCase.execute(fromPageId, fromIndex, toPageId, forceMove)
             if (result is MoveButtonToPageUseCase.MoveResult.Success) {
                 if (_currentPage.value?.id == fromPageId) {
-                    _currentPage.value = result.fromPage
+                    setCurrentPage(result.fromPage)
                 } else if (_currentPage.value?.id == toPageId) {
-                    _currentPage.value = result.toPage
+                    setCurrentPage(result.toPage)
                 }
             }
             onResult(result)

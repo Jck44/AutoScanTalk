@@ -45,14 +45,11 @@ class PageViewModel @Inject constructor(
     application: Application,
     val settingsRepository: SettingsRepository,
     internal val importExportManager: PageImportExportManager,
-    internal val scannerEngine: ScannerEngine,
     private val googleAuthManager: GoogleAuthManager,
     geminiUseCaseFactory: GeminiUseCaseFactory,
     private val ttsHelper: TextToSpeechHelper,
-    private val localIntentRouter: com.andreas_kratzer.ghosttalk.domain.executors.LocalIntentRouter,
-    private val weatherExecutor: com.andreas_kratzer.ghosttalk.domain.executors.WeatherExecutor,
     private val logger: Logger,
-    val buttonUsageRepository: com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository,
+    private val weatherExecutor: com.andreas_kratzer.ghosttalk.domain.executors.WeatherExecutor,
     val featureGuard: FeatureGuard,
     val pageManagementDelegate: PageManagementDelegate,
     val interactionDelegate: InteractionDelegate,
@@ -60,7 +57,8 @@ class PageViewModel @Inject constructor(
     smartPredictionDelegate: SmartPredictionDelegate,
     private val resolveDynamicButtonsUseCase: ResolveDynamicButtonsUseCase,
     private val updateSmartPredictionsUseCase: UpdateSmartPredictionsUseCase,
-    private val checkForPredictorUseCase: CheckForPredictorUseCase
+    val actionExecutor: ActionExecutor,
+    private val scanCoordinator: ScanCoordinator
 ) : AndroidViewModel(application), com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions {
 
     private var geminiUseCase: GeminiUseCase? = null
@@ -102,32 +100,6 @@ class PageViewModel @Inject constructor(
     .distinctUntilChanged()
     .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), currentPage.value)
 
-    val actionExecutor = ActionExecutor(
-        application = application,
-        scope = viewModelScope,
-        settingsRepository = settingsRepository,
-        logger = logger,
-        ttsHelper = ttsHelper,
-        geminiUseCase = null,
-        localIntentRouter = localIntentRouter,
-        weatherExecutor = weatherExecutor,
-        buttonUsageRepository = buttonUsageRepository
-    )
-
-    private val scanCoordinator = ScanCoordinator(
-        scope = viewModelScope,
-        scannerEngine = scannerEngine,
-        settingsRepository = settingsRepository,
-        actionExecutor = actionExecutor,
-        currentPage = currentPage,
-        isUserModeActive = isUserModeActive,
-        resolvedPage = resolvedPage,
-        isSmartPredictionLoading = isSmartPredictionLoading,
-        checkForPredictorUseCase = checkForPredictorUseCase,
-        ttsHelper = ttsHelper,
-        smartPredictions = smartPredictions
-    )
-
     val focusedButtonIndex = scanCoordinator.focusedButtonIndex
     val focusedRowIndex = scanCoordinator.focusedRowIndex
 
@@ -150,10 +122,18 @@ class PageViewModel @Inject constructor(
         geminiUseCase = geminiUseCaseFactory.create {
             googleAuthManager.getGoogleCredential()?.getToken()
         }
+        
+        // Supply optional dependencies to Singleton Executors
         actionExecutor.geminiUseCase = geminiUseCase
         actionExecutor.ttsHelper = ttsHelper
 
-        scanCoordinator.init()
+        scanCoordinator.init(
+            currentPage = currentPage,
+            isUserModeActive = isUserModeActive,
+            resolvedPage = resolvedPage,
+            isSmartPredictionLoading = isSmartPredictionLoading,
+            smartPredictions = smartPredictions
+        )
 
         // Set up Gemini command handlers
         geminiUseCase?.setAppCommandHandler { command, args ->

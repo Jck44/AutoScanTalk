@@ -53,15 +53,10 @@ class ScanCoordinatorTest {
             scannerEngine = scannerEngine,
             settingsRepository = settingsRepository,
             actionExecutor = actionExecutor,
-            currentPage = currentPage,
-            isUserModeActive = isUserModeActive,
-            resolvedPage = resolvedPage,
-            isSmartPredictionLoading = isSmartPredictionLoading,
             checkForPredictorUseCase = checkForPredictorUseCase,
-            ttsHelper = ttsHelper,
-            smartPredictions = smartPredictions
+            ttsHelper = ttsHelper
         )
-        // scanCoordinator.init() // MOVE TO TEST
+        // scanCoordinator.init(currentPage, isUserModeActive, resolvedPage, isSmartPredictionLoading, smartPredictions) // MOVE TO TEST
     }
 
     @Test
@@ -81,7 +76,7 @@ class ScanCoordinatorTest {
         smartPredictions.value = null
         isSmartPredictionLoading.value = true
 
-        scanCoordinator.init()
+        scanCoordinator.init(currentPage, isUserModeActive, resolvedPage, isSmartPredictionLoading, smartPredictions)
         testDispatcher.scheduler.advanceUntilIdle()
 
         verify { scannerEngine.pauseScanning() }

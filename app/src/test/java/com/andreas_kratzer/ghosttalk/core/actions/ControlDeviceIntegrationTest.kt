@@ -39,12 +39,11 @@ class ControlDeviceIntegrationTest {
             scope = this,
             settingsRepository = settingsRepository,
             logger = logger,
-            geminiUseCase = null,
-            ttsHelper = ttsHelper,
             localIntentRouter = mockk(relaxed = true),
             weatherExecutor = mockk(relaxed = true),
-            buttonUsageRepository = null
+            buttonUsageRepository = mockk(relaxed = true)
         )
+        actionExecutor.ttsHelper = ttsHelper
 
         val action = ControlDeviceButtonAction(DeviceActionType.MEDIA_NEXT)
         val buttonConfig = ButtonConfig(
