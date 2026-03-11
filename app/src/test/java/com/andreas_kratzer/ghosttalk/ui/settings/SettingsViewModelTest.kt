@@ -158,7 +158,7 @@ class SettingsViewModelTest {
         var successId: String? = null
         viewModel.importGlobalManualBackup(json, onSuccess = { successId = it }, onError = {})
         
-        verify { importExportManager.importCloudBackup(json, null) }
+        coVerify { importExportManager.importCloudBackup(json, null) }
         assertEquals("new-book-id", successId)
     }
 }
