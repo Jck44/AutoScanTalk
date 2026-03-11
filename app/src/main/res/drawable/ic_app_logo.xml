@@ -1,0 +1,39 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Background Circle (Solid Blue/Periwinkle from screenshot) -->
+    <path
+        android:fillColor="#7986CB"
+        android:pathData="M54,54 m-48,0 a48,48 0 1,1 96,0 a48,48 0 1,1 -96,0" />
+
+    <!-- Grid Background Layer (Darker blue matching screenshot) clipped to Circle -->
+    <group>
+        <clip-path android:pathData="M6,54 A48,48 0 1,1 102,54 A48,48 0 1,1 6,54" />
+        <!-- Grid tiles sized and spaced to match screenshot look -->
+        <path
+            android:fillColor="#22000000"
+            android:pathData="M0,0 h34 v34 h-34 z M37,0 h34 v34 h-34 z M74,0 h34 v34 h-34 z M0,37 h34 v34 h-34 z M37,37 h34 v34 h-34 z M74,37 h34 v34 h-34 z M0,74 h34 v34 h-34 z M37,74 h34 v34 h-34 z M74,74 h34 v34 h-34 z" />
+    </group>
+
+    <!-- Glassmorphic Ghost Silhouette -->
+    <!-- Head and Body -->
+    <path
+        android:fillColor="#F5F5F5"
+        android:pathData="M54,28 c-14,0 -22,10 -22,22 v24 c0,4 4,6 8,6 c0,0 4,-4 8,-4 s8,4 8,4 s4,-4 8,-4 s8,4 8,4 c4,0 8,-2 8,-6 v-24 c0,-12 -8,-22 -22,-22 z" />
+    
+    <!-- Eyes (Vibrant blue matching themed icons) -->
+    <path
+        android:fillColor="#2196F3"
+        android:pathData="M43,45 a2.5,2.5 0 1,1 0.001,0 z M65,45 a2.5,2.5 0 1,1 0.001,0 z" />
+    
+    <!-- Smile -->
+    <path
+        android:strokeColor="#2196F3"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M46,60 q8,5 16,0" />
+
+</vector>

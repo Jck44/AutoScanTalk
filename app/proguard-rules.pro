@@ -5,17 +5,60 @@
 # For more details, see
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
-
 # Uncomment this to preserve the line number information for
 # debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+-keepattributes SourceFile,LineNumberTable
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# Room
+-keepclassmembers class * extends androidx.room.RoomDatabase {
+    public <init>(...);
+}
+-keep class androidx.room.util.TableInfo { *; }
+-keep class androidx.room.util.TableInfo$Column { *; }
+-keep class androidx.room.util.TableInfo$ForeignKey { *; }
+-keep class androidx.room.util.TableInfo$Index { *; }
+
+# Gson
+-keep class com.google.gson.reflect.TypeToken
+-keep class * extends com.google.gson.reflect.TypeToken
+-keep public class * implements com.google.gson.TypeAdapterFactory
+-keep public class * implements com.google.gson.TypeAdapter
+-keep public class * implements com.google.gson.JsonSerializer
+-keep public class * implements com.google.gson.JsonDeserializer
+
+# Kotlin Serialization
+-keepattributes *Annotation*, InnerClasses, EnclosingMethod, Signature, Exceptions
+-keep,allowobfuscation,allowoptimization @kotlinx.serialization.Serializable class * {
+    <fields>;
+}
+-keepclassmembers class com.andreas_kratzer.ghosttalk.** {
+    @kotlinx.serialization.SerialName <fields>;
+}
+# Keep the serializer object for @Serializable classes
+-keepclassmembers class * {
+    *** Companion;
+}
+-keepclassmembers class * {
+    *** $serializer;
+}
+
+# Keep models to avoid serialization/reflection issues
+-keep class com.andreas_kratzer.ghosttalk.model.** { *; }
+-keep class com.andreas_kratzer.ghosttalk.model.importexport.** { *; }
+
+# Google Drive API
+-keep class com.google.api.services.drive.** { *; }
+-keep class com.google.api.client.** { *; }
+-keep class com.google.api.services.drive.model.** { *; }
+
+# TTS & MediaPlayer
+-keepattributes *Annotation*
+-keepattributes Signature
+-keepattributes InnerClasses
+-keepattributes EnclosingMethod
+
+# Handle missing JDK classes on Android (often from Apache HttpClient or Google API Client)
+-dontwarn javax.naming.**
+-dontwarn org.apache.http.**
+-dontwarn com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
+-dontwarn com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException

@@ -1,0 +1,11 @@
+GhosTTalk is a powerful, customizable Augmentative and Alternative Communication (AAC) app designed to give a voice to those with speech impairments. 
+
+Features:
+- **Customizable Books & Pages**: Create structured communication boards tailored to your needs.
+- **Auditory Cues**: Support for auditory scanning, perfect for users with visual or motor impairments.
+- **Hardware Integration**: Use Bluetooth switches or volume keys to interact with the app.
+- **Advanced Audio Routing**: Separate audio output for cues and speech.
+- **Row-by-Row Scanning**: Efficient navigation through grid layouts.
+- **Generative AI (Coming Soon)**: Integration with Gemini for dynamic communication.
+
+Empower your communication with GhosTTalk.
