@@ -22,7 +22,12 @@ android {
         testInstrumentationRunner = "com.andreas_kratzer.ghosttalk.HiltTestRunner"
         
         ndk {
-            debugSymbolLevel = "full"
+            // Deaktiviere Debug-Symbole in CI, um Zeit zu sparen
+            debugSymbolLevel = if (project.hasProperty("isCI")) {
+                "none"
+            } else {
+                "full"
+            }
         }
     }
 
