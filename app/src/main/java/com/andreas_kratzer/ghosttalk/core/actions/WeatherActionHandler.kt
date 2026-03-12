@@ -36,17 +36,30 @@ class WeatherActionHandler(
 
         scope.launch {
             try {
-                val weather = weatherExecutor.getWeatherInfo()
-                val report = context.getString(com.andreas_kratzer.ghosttalk.R.string.action_weather_format, weather)
-                log(report)
-                val tts = ttsProxyLazy.get()
-                if (tts.isReady) {
-                    tts.speakRouted(report, targetDeviceAddress) {
+                when (val result = weatherExecutor.getWeatherInfo()) {
+                    is com.andreas_kratzer.ghosttalk.domain.executors.WeatherExecutor.WeatherResult.Success -> {
+                        val report = context.getString(
+                            com.andreas_kratzer.ghosttalk.R.string.action_weather_format,
+                            result.condition,
+                            result.temperature.toString()
+                        )
+                        log(report)
+                        val tts = ttsProxyLazy.get()
+                        if (tts.isReady) {
+                            tts.speakRouted(report, targetDeviceAddress) {
+                                onFinish(executionId)
+                            }
+                        } else onFinish(executionId)
+                    }
+                    is com.andreas_kratzer.ghosttalk.domain.executors.WeatherExecutor.WeatherResult.Error -> {
+                        val errorMessage = context.getString(com.andreas_kratzer.ghosttalk.R.string.action_weather_error, result.message)
+                        log(errorMessage)
                         onFinish(executionId)
                     }
-                } else onFinish(executionId)
+                }
             } catch (e: Exception) {
-                log(context.getString(com.andreas_kratzer.ghosttalk.R.string.action_weather_error))
+                val errorMessage = context.getString(com.andreas_kratzer.ghosttalk.R.string.action_weather_error, e.message ?: "Unknown error")
+                log(errorMessage)
                 onFinish(executionId)
             }
         }

@@ -26,7 +26,12 @@ class WeatherExecutor @Inject constructor(
 ) {
     private val TAG = "WeatherExecutor"
 
-    suspend fun getWeatherInfo(): String = withContext(Dispatchers.IO) {
+    sealed class WeatherResult {
+        data class Success(val condition: String, val temperature: Double) : WeatherResult()
+        data class Error(val message: String) : WeatherResult()
+    }
+
+    suspend fun getWeatherInfo(): WeatherResult = withContext(Dispatchers.IO) {
         val online = isOnline()
         val cacheTimeoutMinutes = settingsRepository.weatherCacheTimeout
         val lastTimestamp = repository.getLastTimestamp()
@@ -38,35 +43,74 @@ class WeatherExecutor @Inject constructor(
             val location = locationExecutor.getCurrentLocation()
             if (location != null) {
                 // Prioritize Open-Meteo as requested
-                var freshWeather = fetchOpenMeteoWeather(location.latitude, location.longitude)
+                val openMeteoData = fetchOpenMeteoWeather(location.latitude, location.longitude)
                 
-                if (freshWeather == null) {
-                    logger.w(TAG, "getWeatherInfo: Open-Meteo failed, trying wttr.in backup")
-                    val query = "${location.latitude},${location.longitude}"
-                    freshWeather = fetchLiveWeather(query)
+                if (openMeteoData != null) {
+                    logger.d(TAG, "getWeatherInfo: Open-Meteo success")
+                    val result = WeatherResult.Success(openMeteoData.first, openMeteoData.second)
+                    repository.saveWeather("${result.condition}, ${result.temperature} °C", System.currentTimeMillis())
+                    return@withContext result
                 }
 
-                if (freshWeather != null) {
-                    logger.d(TAG, "getWeatherInfo: Live fetch success")
-                    repository.saveWeather(freshWeather, System.currentTimeMillis())
-                    return@withContext freshWeather
-                } else {
-                    logger.w(TAG, "getWeatherInfo: All live fetches failed, trying cache")
+                logger.w(TAG, "getWeatherInfo: Open-Meteo failed, trying wttr.in backup")
+                val query = "${location.latitude},${location.longitude}"
+                val liveWeather = fetchLiveWeather(query)
+
+                if (liveWeather != null) {
+                    logger.d(TAG, "getWeatherInfo: wttr.in success")
+                    repository.saveWeather(liveWeather, System.currentTimeMillis())
+                    return@withContext parseWttrIn(liveWeather)
                 }
             }
         }
 
-        // Return cache if it exists (even if expired if we couldn't fetch live)
+        // Return cache if it exists
         val cached = repository.getLastWeather()
         val timestamp = repository.getLastTimestamp()
-        logger.d(TAG, "getWeatherInfo: cache null=${cached == null}, timestamp=$timestamp")
         
         if (cached != null) {
-            val dateStr = SimpleDateFormat("dd.MM.", Locale.GERMANY).format(Date(timestamp))
-            val timeStr = SimpleDateFormat("HH:mm", Locale.GERMANY).format(Date(timestamp))
-            return@withContext "$cached (Stand vom $dateStr um $timeStr Uhr)"
+            // Parse cached string back to structured data if possible, or return as special success
+            // For now, let's keep it simple and just parse the cached string if we can
+            return@withContext parseCachedWeather(cached, timestamp)
         } else {
-            return@withContext if (online) "Wetter-Dienst aktuell nicht erreichbar." else "Keine Wetterdaten verfügbar (offline)."
+            return@withContext if (online) WeatherResult.Error("Wetter-Dienst aktuell nicht erreichbar.") else WeatherResult.Error("Keine Wetterdaten verfügbar (offline).")
+        }
+    }
+
+    private fun parseWttrIn(weather: String): WeatherResult {
+        // wttr.in format=3 is usually "Condition: +Temp°C" or similar
+        // Let's try to extract temperature
+        return try {
+            val parts = weather.split(",")
+            if (parts.size >= 2) {
+                val cond = parts[0].trim()
+                val tempStr = parts[1].replace("°C", "").trim()
+                WeatherResult.Success(cond, tempStr.toDouble())
+            } else {
+                WeatherResult.Success(weather, 0.0)
+            }
+        } catch (e: Exception) {
+            WeatherResult.Success(weather, 0.0)
+        }
+    }
+
+    private fun parseCachedWeather(cached: String, timestamp: Long): WeatherResult {
+        val dateStr = SimpleDateFormat("dd.MM.", Locale.GERMANY).format(Date(timestamp))
+        val timeStr = SimpleDateFormat("HH:mm", Locale.GERMANY).format(Date(timestamp))
+        val displayStr = "$cached (Stand vom $dateStr um $timeStr Uhr)"
+        
+        // Try to extract condition and temp for formatting, otherwise return as error/fallback
+        return try {
+            val parts = cached.split(",")
+            if (parts.size >= 2) {
+                val cond = parts[0].trim()
+                val tempStr = parts[1].replace("°C", "").trim()
+                WeatherResult.Success("$cond (Stand $timeStr)", tempStr.toDouble())
+            } else {
+                WeatherResult.Success(displayStr, 0.0)
+            }
+        } catch (e: Exception) {
+            WeatherResult.Success(displayStr, 0.0)
         }
     }
 
@@ -107,7 +151,7 @@ class WeatherExecutor @Inject constructor(
         }
     }
 
-    private suspend fun fetchOpenMeteoWeather(lat: Double, lon: Double): String? {
+    private suspend fun fetchOpenMeteoWeather(lat: Double, lon: Double): Pair<String, Double>? {
         return try {
             val url = URL("https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon&current_weather=true")
             val connection = withContext(Dispatchers.IO) {
@@ -125,7 +169,7 @@ class WeatherExecutor @Inject constructor(
                 val code = currentWeather.get("weathercode").asInt
                 
                 val condition = mapWeatherCode(code)
-                "$condition, $temp °C"
+                Pair(condition, temp)
             } else {
                 null
             }

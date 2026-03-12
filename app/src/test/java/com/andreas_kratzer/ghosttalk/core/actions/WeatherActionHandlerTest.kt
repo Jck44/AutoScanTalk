@@ -61,7 +61,7 @@ class WeatherActionHandlerTest {
         val action = WeatherButtonAction()
         val config = ButtonConfig(id = "b1", label = "Weather", buttonAction = action, auditoryCue = null)
         
-        coEvery { weatherExecutor.getWeatherInfo() } returns "Regen, 15.0 °C"
+        coEvery { weatherExecutor.getWeatherInfo() } returns WeatherExecutor.WeatherResult.Success("Regen", 15.0)
         val onDoneSlot = slot<() -> Unit>()
         every { ttsProxy.speakRouted(any(), any(), any(), any(), capture(onDoneSlot)) } answers {
             onDoneSlot.captured.invoke()
@@ -73,7 +73,23 @@ class WeatherActionHandlerTest {
         handler.handle(config, action, 1, onFinish)
         
         verify { log("Wetterdaten werden abgerufen...") }
-        verify { ttsProxy.speakRouted(match { it.contains("Das aktuelle Wetter: Regen bei 15 Grad") }, any(), any(), any(), any()) }
+        verify { ttsProxy.speakRouted("Das aktuelle Wetter: Regen bei 15 Grad", any(), any(), any(), any()) }
+        verify { onFinish(1) }
+    }
+
+    @Test
+    fun `handle logs error when weather fetch fails`() = runTest(testDispatcher) {
+        val action = WeatherButtonAction()
+        val config = ButtonConfig(id = "b1", label = "Weather", buttonAction = action, auditoryCue = null)
+        
+        coEvery { weatherExecutor.getWeatherInfo() } returns WeatherExecutor.WeatherResult.Error("Timeout")
+        every { context.getString(R.string.action_weather_error, "Timeout") } returns "Fehler: Timeout"
+        
+        val onFinish = mockk<(Int) -> Unit>(relaxed = true)
+        
+        handler.handle(config, action, 1, onFinish)
+        
+        verify { log("Fehler: Timeout") }
         verify { onFinish(1) }
     }
 }

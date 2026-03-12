@@ -54,21 +54,29 @@ class WeatherExecutorTest {
         every { connectivityManager.getNetworkCapabilities(network) } returns capabilities
         every { capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) } returns false
         
+        val timestamp = System.currentTimeMillis()
+        val timeStr = java.text.SimpleDateFormat("HH:mm", java.util.Locale.GERMANY).format(java.util.Date(timestamp))
+        
         every { repository.getLastWeather() } returns "Sonnig, 20 °C"
-        every { repository.getLastTimestamp() } returns System.currentTimeMillis()
+        every { repository.getLastTimestamp() } returns timestamp
 
         // Act
         val result = weatherExecutor.getWeatherInfo()
 
         // Assert
-        assert(result.contains("Sonnig, 20 °C"))
-        assert(result.contains("Stand vom"))
+        assert(result is WeatherExecutor.WeatherResult.Success)
+        val success = result as WeatherExecutor.WeatherResult.Success
+        assertEquals("Sonnig (Stand $timeStr)", success.condition)
+        assertEquals(20.0, success.temperature, 0.1)
     }
 
     @Test
     fun `getWeatherInfo returns cached weather when cache not expired`() = runTest {
         // Arrange
         val now = System.currentTimeMillis()
+        val timestamp = now - (10 * 60 * 1000) // 10 mins ago (not expired)
+        val timeStr = java.text.SimpleDateFormat("HH:mm", java.util.Locale.GERMANY).format(java.util.Date(timestamp))
+        
         val network = mockk<Network>()
         val capabilities = mockk<NetworkCapabilities>()
         every { connectivityManager.activeNetwork } returns network
@@ -76,14 +84,17 @@ class WeatherExecutorTest {
         every { capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) } returns true
         
         every { settingsRepository.weatherCacheTimeout } returns 30
-        every { repository.getLastTimestamp() } returns now - (10 * 60 * 1000) // 10 mins ago (not expired)
+        every { repository.getLastTimestamp() } returns timestamp
         every { repository.getLastWeather() } returns "Bewölkt, 18 °C"
 
         // Act
         val result = weatherExecutor.getWeatherInfo()
 
         // Assert
-        assert(result.contains("Bewölkt, 18 °C"))
+        assert(result is WeatherExecutor.WeatherResult.Success)
+        val success = result as WeatherExecutor.WeatherResult.Success
+        assertEquals("Bewölkt (Stand $timeStr)", success.condition)
+        assertEquals(18.0, success.temperature, 0.1)
         coVerify(exactly = 0) { locationExecutor.getCurrentLocation(any()) }
     }
 
@@ -97,7 +108,8 @@ class WeatherExecutorTest {
         val result = weatherExecutor.getWeatherInfo()
 
         // Assert
-        assertEquals("Keine Wetterdaten verfügbar (offline).", result)
+        assert(result is WeatherExecutor.WeatherResult.Error)
+        assertEquals("Keine Wetterdaten verfügbar (offline).", (result as WeatherExecutor.WeatherResult.Error).message)
     }
 
     // Helper to test private mapWeatherCode via reflection if needed, 
