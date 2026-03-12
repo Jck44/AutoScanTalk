@@ -1,5 +1,6 @@
 package com.andreas_kratzer.ghosttalk.domain.executors
 
+import com.andreas_kratzer.ghosttalk.core.ai.LocalIntentRouter
 import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.google.mlkit.genai.prompt.GenerateContentRequest
 import com.google.mlkit.genai.prompt.Generation
@@ -13,7 +14,7 @@ data class LocalIntent(val id: String, val description: String)
 class LocalIntentRouter @Inject constructor(
     private val androidClockExecutor: AndroidClockExecutor,
     private val logger: Logger
-) {
+) : LocalIntentRouter {
     // Note: JSON Schema constraint parsing in ML Kit Prompt API is still highly experimental.
     // For this Phase 1 integration, we instruct the model to return plain JSON via system prompt.
     private fun getSystemInstruction(intent: String, context: String): String {
@@ -29,7 +30,7 @@ class LocalIntentRouter @Inject constructor(
         """.trimIndent()
     }
 
-    suspend fun generateRawResponse(prompt: String, maxTokens: Int = 100): String = withContext(Dispatchers.IO) {
+    override suspend fun generateRawResponse(prompt: String, maxTokens: Int): String = withContext(Dispatchers.IO) {
         try {
             val model = Generation.getClient()
             val textPart = TextPart(prompt)
@@ -55,7 +56,7 @@ class LocalIntentRouter @Inject constructor(
 
     suspend fun executeIntent(intent: LocalIntent, onSpeak: (String) -> Unit) = executeIntent(intent.id, onSpeak)
 
-    suspend fun executeIntent(intentId: String, onSpeak: (String) -> Unit) = withContext(Dispatchers.IO) {
+    override suspend fun executeIntent(intentId: String, onSpeak: (String) -> Unit) = withContext(Dispatchers.IO) {
         try {
             val context = when (intentId) {
                 "alarm" -> "Nächster Alarm: ${androidClockExecutor.getNextAlarm()}"
@@ -82,7 +83,7 @@ class LocalIntentRouter @Inject constructor(
         }
     }
 
-    suspend fun routeIntent(onSpeak: (String) -> Unit) = withContext(Dispatchers.IO) {
+    override suspend fun routeIntent(onSpeak: (String) -> Unit) = withContext(Dispatchers.IO) {
         // Obsolete, replaced by executeIntent
         onSpeak("Befehl konnte nicht verarbeitet werden.")
     }

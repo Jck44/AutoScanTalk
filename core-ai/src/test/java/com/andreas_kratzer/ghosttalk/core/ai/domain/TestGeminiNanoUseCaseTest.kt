@@ -1,6 +1,6 @@
-package com.andreas_kratzer.ghosttalk.domain.genai
+package com.andreas_kratzer.ghosttalk.core.ai.domain
 
-import com.andreas_kratzer.ghosttalk.domain.executors.LocalIntentRouter
+import com.andreas_kratzer.ghosttalk.core.ai.LocalIntentRouter
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -24,7 +24,7 @@ class TestGeminiNanoUseCaseTest {
     @Test
     fun `execute success calls onResponse`() = runTest {
         val expectedResponse = "Pong"
-        coEvery { localIntentRouter.routeIntent(any()) } answers {
+        coEvery { localIntentRouter.routeIntent(any<(String) -> Unit>()) } answers {
             val onSpeak = firstArg<(String) -> Unit>()
             onSpeak(expectedResponse)
         }
@@ -41,7 +41,7 @@ class TestGeminiNanoUseCaseTest {
     @Test
     fun `execute failure calls onError`() = runTest {
         val exception = RuntimeException("Model error")
-        coEvery { localIntentRouter.routeIntent(any()) } throws exception
+        coEvery { localIntentRouter.routeIntent(any<(String) -> Unit>()) } throws exception
 
         var actualError: Exception? = null
         useCase.execute(

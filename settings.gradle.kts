@@ -27,3 +27,5 @@ dependencyResolutionManagement {
 rootProject.name = "GhosTTalk"
 include(":app")
 include(":core")
+include(":core-ai")
+include(":core-cloud")

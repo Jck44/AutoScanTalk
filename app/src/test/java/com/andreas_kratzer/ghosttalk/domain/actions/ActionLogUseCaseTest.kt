@@ -7,10 +7,13 @@ import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
+@ExperimentalCoroutinesApi
 class ActionLogUseCaseTest {
 
     private val settingsRepository: SettingsRepository = mockk(relaxed = true)
@@ -49,7 +52,7 @@ class ActionLogUseCaseTest {
     }
 
     @Test
-    fun `loadSavedLogs returns empty when persistence disabled`() {
+    fun `loadSavedLogs returns empty when persistence disabled`() = runTest {
         every { settingsRepository.persistActionLogs } returns false
 
         val result = useCase.loadSavedLogs()
@@ -58,7 +61,7 @@ class ActionLogUseCaseTest {
     }
 
     @Test
-    fun `loadSavedLogs returns saved entries`() {
+    fun `loadSavedLogs returns saved entries`() = runTest {
         every { settingsRepository.persistActionLogs } returns true
         every { settingsRepository.actionLogsStorage } returns """["entry1","entry2"]"""
 
@@ -69,7 +72,7 @@ class ActionLogUseCaseTest {
     }
 
     @Test
-    fun `loadSavedLogs handles invalid JSON gracefully`() {
+    fun `loadSavedLogs handles invalid JSON gracefully`() = runTest {
         every { settingsRepository.persistActionLogs } returns true
         every { settingsRepository.actionLogsStorage } returns "not valid json"
 

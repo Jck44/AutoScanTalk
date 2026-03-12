@@ -57,7 +57,10 @@ class InteractionDelegate @Inject constructor(
         this.actionExecutor = actionExecutor
         this.onPageLoadRequested = onPageLoadRequested
         this._smartPredictions = smartPredictions
-        _lastActions.value = actionLogUseCase.loadSavedLogs()
+        
+        scope.launch {
+            _lastActions.value = actionLogUseCase.loadSavedLogs()
+        }
 
         scope.launch {
             actionExecutor.events.collect { event ->

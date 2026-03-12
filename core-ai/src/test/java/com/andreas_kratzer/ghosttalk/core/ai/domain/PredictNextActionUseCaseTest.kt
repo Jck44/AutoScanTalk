@@ -1,14 +1,17 @@
-package com.andreas_kratzer.ghosttalk.domain.actions
+package com.andreas_kratzer.ghosttalk.core.ai.domain
 
+import android.util.Log
+import com.andreas_kratzer.ghosttalk.core.data.ActionLogProvider
+import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageProvider
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
-import com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.domain.executors.LocalIntentRouter
+import com.andreas_kratzer.ghosttalk.core.settings.GenAiSettings
+import com.andreas_kratzer.ghosttalk.core.ai.LocalIntentRouter
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -17,21 +20,26 @@ import org.junit.Test
 
 class PredictNextActionUseCaseTest {
 
-    private lateinit var actionLogUseCase: ActionLogUseCase
-    private lateinit var buttonUsageRepository: ButtonUsageRepository
-    private lateinit var settingsRepository: SettingsRepository
+    private lateinit var actionLogProvider: ActionLogProvider
+    private lateinit var buttonUsageProvider: ButtonUsageProvider
+    private lateinit var settingsRepository: GenAiSettings
     private lateinit var localIntentRouter: LocalIntentRouter
     private lateinit var useCase: PredictNextActionUseCase
 
     @Before
     fun setup() {
-        actionLogUseCase = mockk()
-        buttonUsageRepository = mockk()
+        mockkStatic(Log::class)
+        every { Log.d(any<String>(), any<String>()) } returns 0
+        every { Log.e(any<String>(), any<String>(), any()) } returns 0
+        every { Log.w(any<String>(), any<String>()) } returns 0
+
+        actionLogProvider = mockk()
+        buttonUsageProvider = mockk()
         settingsRepository = mockk()
         localIntentRouter = mockk()
         useCase = PredictNextActionUseCase(
-            actionLogUseCase,
-            buttonUsageRepository,
+            actionLogProvider,
+            buttonUsageProvider,
             settingsRepository,
             localIntentRouter
         )
@@ -53,9 +61,9 @@ class PredictNextActionUseCaseTest {
     @Test
     fun `predict returns parsed IDs from model response`() = runTest {
         every { settingsRepository.useLocalGenerativeAi } returns true
-        every { actionLogUseCase.loadSavedLogs() } returns emptyList()
-        coEvery { buttonUsageRepository.getTopActions(any(), any()) } returns emptyList()
-        coEvery { localIntentRouter.generateRawResponse(any()) } returns "id1, id2, id3"
+        coEvery { actionLogProvider.loadSavedLogs() } returns emptyList()
+        coEvery { buttonUsageProvider.getTopActions(any<String>(), any<Int>()) } returns emptyList()
+        coEvery { localIntentRouter.generateRawResponse(any<String>()) } returns "id1, id2, id3"
 
         val currentPage = Page(
             id = "curr",
@@ -78,9 +86,9 @@ class PredictNextActionUseCaseTest {
     @Test
     fun `predict handles dirty model response with quotes`() = runTest {
         every { settingsRepository.useLocalGenerativeAi } returns true
-        every { actionLogUseCase.loadSavedLogs() } returns emptyList()
-        coEvery { buttonUsageRepository.getTopActions(any(), any()) } returns emptyList()
-        coEvery { localIntentRouter.generateRawResponse(any()) } returns "'id1', \"id2\" , id3"
+        coEvery { actionLogProvider.loadSavedLogs() } returns emptyList()
+        coEvery { buttonUsageProvider.getTopActions(any<String>(), any<Int>()) } returns emptyList()
+        coEvery { localIntentRouter.generateRawResponse(any<String>()) } returns "'id1', \"id2\" , id3"
 
         val currentPage = Page(
             id = "curr",
@@ -97,9 +105,9 @@ class PredictNextActionUseCaseTest {
     @Test
     fun `predict returns empty list on exception`() = runTest {
         every { settingsRepository.useLocalGenerativeAi } returns true
-        coEvery { localIntentRouter.generateRawResponse(any()) } throws RuntimeException("Model error")
-        every { actionLogUseCase.loadSavedLogs() } returns emptyList()
-        coEvery { buttonUsageRepository.getTopActions(any(), any()) } returns emptyList()
+        coEvery { localIntentRouter.generateRawResponse(any<String>()) } throws RuntimeException("Model error")
+        coEvery { actionLogProvider.loadSavedLogs() } returns emptyList()
+        coEvery { buttonUsageProvider.getTopActions(any<String>(), any<Int>()) } returns emptyList()
 
         val currentPage = Page(
             id = "curr",

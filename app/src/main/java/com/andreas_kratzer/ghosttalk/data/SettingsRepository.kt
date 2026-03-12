@@ -18,12 +18,13 @@ import com.andreas_kratzer.ghosttalk.data.settings.SecuritySettingsRepository
 import com.andreas_kratzer.ghosttalk.data.settings.SettingsConstants
 import com.andreas_kratzer.ghosttalk.data.settings.UserSettingsRepository
 import com.andreas_kratzer.ghosttalk.data.settings.VoiceSettingsRepository
+import com.andreas_kratzer.ghosttalk.core.settings.GenAiSettings
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 @SuppressLint("CommitPrefEdits", "ApplySharedPref", "UseKtx")
-class SettingsRepository(context: Context) : SecuritySettings, KeyEventSettings, AudioSettings, ControlDeviceSettings, SpeechSettings {
+class SettingsRepository(context: Context) : SecuritySettings, KeyEventSettings, AudioSettings, ControlDeviceSettings, SpeechSettings, GenAiSettings {
 
     private val prefs: SharedPreferences = context.getSharedPreferences(SettingsConstants.PREFS_NAME, Context.MODE_PRIVATE)
 
@@ -108,21 +109,15 @@ class SettingsRepository(context: Context) : SecuritySettings, KeyEventSettings,
     val pageSortOrderFlow: StateFlow<String> get() = generalSettings.pageSortOrderFlow
     val templateSortOrderFlow: StateFlow<String> get() = generalSettings.templateSortOrderFlow
     val lastSuccessfulSyncTimeFlow: StateFlow<Long> get() = cloudSettings.lastSuccessfulSyncTimeFlow
-    val isSmartPredictionEnabledFlow: StateFlow<Boolean> get() = advancedSettings.isSmartPredictionEnabledFlow
     val bluetoothDelayFlow: StateFlow<Long> get() = scanningSettings.bluetoothDelayFlow
     val isCloudSyncEnabledFlow: StateFlow<Boolean> get() = cloudSettings.isCloudSyncEnabledFlow
     val syncIntervalMinutesFlow: StateFlow<Long> get() = cloudSettings.syncIntervalMinutesFlow
     val syncModeFlow: StateFlow<String> get() = cloudSettings.syncModeFlow
-    val isGeminiEnabledFlow: StateFlow<Boolean> get() = genAiSettings.isGeminiEnabledFlow
-    val useLocalGenerativeAiFlow: StateFlow<Boolean> get() = genAiSettings.useLocalGenerativeAiFlow
-    val showPageIdInLogFlow: StateFlow<Boolean> get() = advancedSettings.showPageIdInLogFlow
     val isNotificationReadingEnabledFlow: StateFlow<Boolean> get() = notificationSettings.isNotificationReadingEnabledFlow
     val monitoredNotificationAppsFlow: StateFlow<Set<String>> get() = notificationSettings.monitoredNotificationAppsFlow
     val appLanguageFlow: StateFlow<String?> get() = generalSettings.appLanguageFlow
     val keepScreenOnUserModeFlow: StateFlow<Boolean> get() = userSettings.keepScreenOnUserModeFlow
     val userModeScreenBehaviorFlow: StateFlow<String> get() = userSettings.userModeScreenBehaviorFlow
-    val geminiTimeoutFlow: StateFlow<Long> get() = genAiSettings.geminiTimeoutFlow
-    val geminiRedoPredictionFlow: StateFlow<Boolean> get() = genAiSettings.geminiRedoPredictionFlow
     val weatherCacheTimeoutFlow: StateFlow<Long> get() = advancedSettings.weatherCacheTimeoutFlow
     val securityPinFlow: StateFlow<String?> get() = securitySettings.securityPinFlow
     val securityPinHashFlow: StateFlow<String?> get() = securitySettings.securityPinHashFlow
@@ -217,10 +212,6 @@ class SettingsRepository(context: Context) : SecuritySettings, KeyEventSettings,
         get() = advancedSettings.smartPredictionDelay
         set(value) { advancedSettings.smartPredictionDelay = value }
 
-    var isSmartPredictionEnabled: Boolean
-        get() = advancedSettings.isSmartPredictionEnabled
-        set(value) { advancedSettings.isSmartPredictionEnabled = value }
-
     override var bluetoothDelay: Long
         get() = scanningSettings.bluetoothDelay
         set(value) { scanningSettings.bluetoothDelay = value }
@@ -237,17 +228,25 @@ class SettingsRepository(context: Context) : SecuritySettings, KeyEventSettings,
         get() = cloudSettings.syncMode
         set(value) { cloudSettings.syncMode = value }
 
-    var isGeminiEnabled: Boolean
+    override var isGeminiEnabled: Boolean
         get() = genAiSettings.isGeminiEnabled
         set(value) { genAiSettings.isGeminiEnabled = value }
+    override val isGeminiEnabledFlow: StateFlow<Boolean> get() = genAiSettings.isGeminiEnabledFlow
 
-    var useLocalGenerativeAi: Boolean
+    override var isSmartPredictionEnabled: Boolean
+        get() = advancedSettings.isSmartPredictionEnabled
+        set(value) { advancedSettings.isSmartPredictionEnabled = value }
+    override val isSmartPredictionEnabledFlow: StateFlow<Boolean> get() = advancedSettings.isSmartPredictionEnabledFlow
+
+    override var useLocalGenerativeAi: Boolean
         get() = genAiSettings.useLocalGenerativeAi
         set(value) { genAiSettings.useLocalGenerativeAi = value }
+    override val useLocalGenerativeAiFlow: StateFlow<Boolean> get() = genAiSettings.useLocalGenerativeAiFlow
 
-    var showPageIdInLog: Boolean
+    override var showPageIdInLog: Boolean
         get() = advancedSettings.showPageIdInLog
         set(value) { advancedSettings.showPageIdInLog = value }
+    override val showPageIdInLogFlow: StateFlow<Boolean> get() = advancedSettings.showPageIdInLogFlow
 
     override var isNotificationReadingEnabled: Boolean
         get() = notificationSettings.isNotificationReadingEnabled
@@ -273,13 +272,15 @@ class SettingsRepository(context: Context) : SecuritySettings, KeyEventSettings,
         get() = userSettings.userModeScreenBehavior
         set(value) { userSettings.userModeScreenBehavior = value }
 
-    var geminiTimeout: Long
+    override var geminiTimeout: Long
         get() = genAiSettings.geminiTimeout
         set(value) { genAiSettings.geminiTimeout = value }
+    override val geminiTimeoutFlow: StateFlow<Long> get() = genAiSettings.geminiTimeoutFlow
 
-    var geminiRedoPrediction: Boolean
+    override var geminiRedoPrediction: Boolean
         get() = genAiSettings.geminiRedoPrediction
         set(value) { genAiSettings.geminiRedoPrediction = value }
+    override val geminiRedoPredictionFlow: StateFlow<Boolean> get() = genAiSettings.geminiRedoPredictionFlow
 
     var weatherCacheTimeout: Long
         get() = advancedSettings.weatherCacheTimeout

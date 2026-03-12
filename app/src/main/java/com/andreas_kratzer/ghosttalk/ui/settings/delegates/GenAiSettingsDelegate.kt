@@ -9,11 +9,11 @@ import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.domain.auth.SignInUseCase
-import com.andreas_kratzer.ghosttalk.domain.genai.ActivateGeminiUseCase
-import com.andreas_kratzer.ghosttalk.domain.genai.GeminiUseCase
-import com.andreas_kratzer.ghosttalk.domain.genai.GetGeminiToolStatusUseCase
-import com.andreas_kratzer.ghosttalk.domain.genai.HandleGenAiExceptionUseCase
-import com.andreas_kratzer.ghosttalk.domain.genai.TestGeminiNanoUseCase
+import com.andreas_kratzer.ghosttalk.core.ai.domain.ActivateGeminiUseCase
+import com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase
+import com.andreas_kratzer.ghosttalk.core.ai.domain.GetGeminiToolStatusUseCase
+import com.andreas_kratzer.ghosttalk.core.ai.domain.HandleGenAiExceptionUseCase
+import com.andreas_kratzer.ghosttalk.core.ai.domain.TestGeminiNanoUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow

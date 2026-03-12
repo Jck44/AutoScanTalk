@@ -23,7 +23,7 @@ class FeatureGuard @Inject constructor(
     /**
      * Checks if a specific action is currently enabled based on global settings.
      */
-    fun isActionEnabled(action: ButtonAction): Boolean {
+    override fun isActionEnabled(action: ButtonAction): Boolean {
         return when (action) {
             is SmartPredictionButtonAction -> settingsRepository.isSmartPredictionEnabled
             is GeminiButtonAction -> settingsRepository.isGeminiEnabled

@@ -18,12 +18,12 @@ import com.andreas_kratzer.ghosttalk.data.TemplateRepository
 import com.andreas_kratzer.ghosttalk.domain.actions.ActionLogUseCase
 import com.andreas_kratzer.ghosttalk.domain.actions.ActivateButtonUseCase
 import com.andreas_kratzer.ghosttalk.domain.actions.HandleActionExecutionEventUseCase
-import com.andreas_kratzer.ghosttalk.domain.actions.PredictNextActionUseCase
+import com.andreas_kratzer.ghosttalk.core.ai.domain.PredictNextActionUseCase
 import com.andreas_kratzer.ghosttalk.domain.actions.ResolveDynamicButtonsUseCase
 import com.andreas_kratzer.ghosttalk.domain.actions.ResolveSmartPredictionUseCase
-import com.andreas_kratzer.ghosttalk.domain.actions.UpdateSmartPredictionsUseCase
-import com.andreas_kratzer.ghosttalk.domain.executors.LocalIntentRouter
-import com.andreas_kratzer.ghosttalk.domain.genai.GeminiUseCase
+import com.andreas_kratzer.ghosttalk.core.ai.domain.UpdateSmartPredictionsUseCase
+import com.andreas_kratzer.ghosttalk.core.ai.LocalIntentRouter
+import com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.CreatePageUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.DeletePageUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.ExportPageUseCase
@@ -93,7 +93,7 @@ class PageViewModelTest {
     private lateinit var importPageUseCase: ImportPageUseCase
     private lateinit var exportPageUseCase: ExportPageUseCase
     private lateinit var predictNextActionUseCase: PredictNextActionUseCase
-    private lateinit var checkForPredictorUseCase: com.andreas_kratzer.ghosttalk.domain.settings.CheckForPredictorUseCase
+    private lateinit var checkForPredictorUseCase: com.andreas_kratzer.ghosttalk.core.ai.domain.CheckForPredictorUseCase
     private lateinit var resolveDynamicButtonsUseCase: ResolveDynamicButtonsUseCase
     private lateinit var updateSmartPredictionsUseCase: UpdateSmartPredictionsUseCase
     private lateinit var getPageUsagesUseCase: GetPageUsagesUseCase
@@ -134,7 +134,7 @@ class PageViewModelTest {
         importPageUseCase = mockk<ImportPageUseCase>(relaxed = true)
         exportPageUseCase = mockk<ExportPageUseCase>(relaxed = true)
         predictNextActionUseCase = mockk<PredictNextActionUseCase>(relaxed = true)
-        checkForPredictorUseCase = mockk<com.andreas_kratzer.ghosttalk.domain.settings.CheckForPredictorUseCase>(relaxed = true)
+        checkForPredictorUseCase = mockk<com.andreas_kratzer.ghosttalk.core.ai.domain.CheckForPredictorUseCase>(relaxed = true)
         resolveDynamicButtonsUseCase = mockk<ResolveDynamicButtonsUseCase>(relaxed = true)
         updateSmartPredictionsUseCase = mockk<UpdateSmartPredictionsUseCase>(relaxed = true)
         getPageUsagesUseCase = mockk<GetPageUsagesUseCase>(relaxed = true)

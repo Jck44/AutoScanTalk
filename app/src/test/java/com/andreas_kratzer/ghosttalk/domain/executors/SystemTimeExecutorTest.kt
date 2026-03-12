@@ -1,5 +1,7 @@
 package com.andreas_kratzer.ghosttalk.domain.executors
 
+import com.andreas_kratzer.ghosttalk.domain.executors.SystemTimeExecutor
+
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test

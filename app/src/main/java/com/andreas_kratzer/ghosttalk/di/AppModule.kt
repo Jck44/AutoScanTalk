@@ -12,6 +12,8 @@ import com.andreas_kratzer.ghosttalk.data.PageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.data.TemplateDao
 import com.andreas_kratzer.ghosttalk.data.TemplateRepository
+import com.andreas_kratzer.ghosttalk.domain.actions.ActionLogUseCase
+import com.andreas_kratzer.ghosttalk.core.ai.domain.CheckForPredictorUseCase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -71,6 +73,33 @@ object AppModule {
     @Singleton
     fun provideSettingsRepository(@ApplicationContext context: Context): SettingsRepository {
         return SettingsRepository(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideActionLogProvider(actionLogUseCase: ActionLogUseCase): com.andreas_kratzer.ghosttalk.core.data.ActionLogProvider {
+        return actionLogUseCase
+    }
+
+    @Provides
+    @Singleton
+    fun provideButtonUsageProvider(buttonUsageRepository: ButtonUsageRepository): com.andreas_kratzer.ghosttalk.core.data.ButtonUsageProvider {
+        return buttonUsageRepository
+    }
+
+    @Provides
+    @Singleton
+    fun provideLocalIntentRouter(
+        androidClockExecutor: com.andreas_kratzer.ghosttalk.domain.executors.AndroidClockExecutor,
+        logger: com.andreas_kratzer.ghosttalk.core.util.Logger
+    ): com.andreas_kratzer.ghosttalk.core.ai.LocalIntentRouter {
+        return com.andreas_kratzer.ghosttalk.domain.executors.LocalIntentRouter(androidClockExecutor, logger)
+    }
+
+    @Provides
+    @Singleton
+    fun provideGenAiSettings(settingsRepository: SettingsRepository): com.andreas_kratzer.ghosttalk.core.settings.GenAiSettings {
+        return settingsRepository
     }
 
 

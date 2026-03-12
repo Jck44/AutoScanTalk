@@ -1,13 +1,14 @@
-package com.andreas_kratzer.ghosttalk.domain.actions
+package com.andreas_kratzer.ghosttalk.core.ai.domain
 
 import android.util.Log
+import com.andreas_kratzer.ghosttalk.core.data.ActionLogProvider
+import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageProvider
 import com.andreas_kratzer.ghosttalk.core.model.FrequentActionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
+import com.andreas_kratzer.ghosttalk.core.settings.GenAiSettings
 import com.andreas_kratzer.ghosttalk.core.util.GridUtils
-import com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.domain.executors.LocalIntentRouter
+import com.andreas_kratzer.ghosttalk.core.ai.LocalIntentRouter
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withTimeout
 import java.time.LocalTime
@@ -18,9 +19,9 @@ import javax.inject.Inject
  * Uses Button IDs for robust action resolution.
  */
 class PredictNextActionUseCase @Inject constructor(
-    private val actionLogUseCase: ActionLogUseCase,
-    private val buttonUsageRepository: ButtonUsageRepository,
-    private val settingsRepository: SettingsRepository,
+    private val actionLogProvider: ActionLogProvider,
+    private val buttonUsageProvider: ButtonUsageProvider,
+    private val settingsRepository: GenAiSettings,
     private val localIntentRouter: LocalIntentRouter
 ) {
 
@@ -29,7 +30,7 @@ class PredictNextActionUseCase @Inject constructor(
             return emptyList()
         }
 
-        val rawHistory = actionLogUseCase.loadSavedLogs().take(15)
+        val rawHistory = actionLogProvider.loadSavedLogs().take(15)
         val showId = settingsRepository.showPageIdInLog
         
         val history = if (showId) {
@@ -37,7 +38,7 @@ class PredictNextActionUseCase @Inject constructor(
         } else {
             rawHistory.map { it.replace(Regex(" \\(ID: .*?\\)"), "") }
         }
-        val frequentActions = buttonUsageRepository.getTopActions(bookId, 5)
+        val frequentActions = buttonUsageProvider.getTopActions(bookId, 5)
         val timeNow = LocalTime.now().toString()
         
         // Map buttons and pages to IDs for the model. 

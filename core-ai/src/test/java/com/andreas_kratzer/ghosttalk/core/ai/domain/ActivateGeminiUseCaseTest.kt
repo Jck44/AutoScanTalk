@@ -1,6 +1,6 @@
-package com.andreas_kratzer.ghosttalk.domain.genai
+package com.andreas_kratzer.ghosttalk.core.ai.domain
 
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.settings.GenAiSettings
 import io.mockk.coEvery
 import io.mockk.mockk
 import io.mockk.verify
@@ -12,7 +12,7 @@ import org.junit.Test
 @ExperimentalCoroutinesApi
 class ActivateGeminiUseCaseTest {
 
-    private lateinit var settingsRepository: SettingsRepository
+    private lateinit var settingsRepository: GenAiSettings
     private lateinit var geminiUseCase: GeminiUseCase
     private lateinit var useCase: ActivateGeminiUseCase
 

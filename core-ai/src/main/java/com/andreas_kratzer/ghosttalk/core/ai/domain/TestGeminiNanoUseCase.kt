@@ -1,6 +1,6 @@
-package com.andreas_kratzer.ghosttalk.domain.genai
+package com.andreas_kratzer.ghosttalk.core.ai.domain
 
-import com.andreas_kratzer.ghosttalk.domain.executors.LocalIntentRouter
+import com.andreas_kratzer.ghosttalk.core.ai.LocalIntentRouter
 import javax.inject.Inject
 
 class TestGeminiNanoUseCase @Inject constructor(

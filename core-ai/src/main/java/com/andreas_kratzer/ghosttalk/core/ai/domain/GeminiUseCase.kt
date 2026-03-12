@@ -1,4 +1,4 @@
-package com.andreas_kratzer.ghosttalk.domain.genai
+package com.andreas_kratzer.ghosttalk.core.ai.domain
 
 import com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper
 import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
@@ -9,6 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.File
 import java.net.URL
 import javax.inject.Inject
 import javax.inject.Singleton

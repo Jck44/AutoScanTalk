@@ -37,7 +37,7 @@ class WeatherActionHandler(
         scope.launch {
             try {
                 when (val result = weatherExecutor.getWeatherInfo()) {
-                    is com.andreas_kratzer.ghosttalk.domain.executors.WeatherExecutor.WeatherResult.Success -> {
+                    is WeatherExecutor.WeatherResult.Success -> {
                         val report = context.getString(
                             com.andreas_kratzer.ghosttalk.R.string.action_weather_format,
                             result.condition,
@@ -51,7 +51,7 @@ class WeatherActionHandler(
                             }
                         } else onFinish(executionId)
                     }
-                    is com.andreas_kratzer.ghosttalk.domain.executors.WeatherExecutor.WeatherResult.Error -> {
+                    is WeatherExecutor.WeatherResult.Error -> {
                         val errorMessage = context.getString(com.andreas_kratzer.ghosttalk.R.string.action_weather_error, result.message)
                         log(errorMessage)
                         onFinish(executionId)

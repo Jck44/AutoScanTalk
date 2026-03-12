@@ -1,5 +1,8 @@
 package com.andreas_kratzer.ghosttalk.domain.settings
 
+import com.andreas_kratzer.ghosttalk.core.ai.domain.CheckForPredictorUseCase
+import com.andreas_kratzer.ghosttalk.core.scanning.FeatureGuardProxy
+
 
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.Page
@@ -14,7 +17,7 @@ import org.junit.Test
 
 class CheckForPredictorUseCaseTest {
 
-    private lateinit var featureGuard: FeatureGuard
+    private lateinit var featureGuard: FeatureGuardProxy
     private lateinit var useCase: CheckForPredictorUseCase
 
     @Before

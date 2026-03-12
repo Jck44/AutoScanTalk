@@ -1,0 +1,23 @@
+package com.andreas_kratzer.ghosttalk.core.settings
+
+import kotlinx.coroutines.flow.StateFlow
+
+interface GenAiSettings {
+    var isGeminiEnabled: Boolean
+    val isGeminiEnabledFlow: StateFlow<Boolean>
+
+    var isSmartPredictionEnabled: Boolean
+    val isSmartPredictionEnabledFlow: StateFlow<Boolean>
+    
+    var useLocalGenerativeAi: Boolean
+    val useLocalGenerativeAiFlow: StateFlow<Boolean>
+
+    var showPageIdInLog: Boolean
+    val showPageIdInLogFlow: StateFlow<Boolean>
+    
+    var geminiTimeout: Long
+    val geminiTimeoutFlow: StateFlow<Long>
+    
+    var geminiRedoPrediction: Boolean
+    val geminiRedoPredictionFlow: StateFlow<Boolean>
+}

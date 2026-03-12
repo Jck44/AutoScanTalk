@@ -102,6 +102,8 @@ play {
 
 dependencies {
     implementation(project(":core"))
+    implementation(project(":core-ai"))
+    implementation(project(":core-cloud"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)

@@ -27,7 +27,7 @@ class ActionExecutorTest {
     private val application = mockk<android.app.Application>(relaxed = true)
     private val settingsRepository = mockk<SettingsRepository>(relaxed = true)
     private val ttsHelper = mockk<TextToSpeechHelper>(relaxed = true)
-    private val geminiUseCase = mockk<com.andreas_kratzer.ghosttalk.domain.genai.GeminiUseCase>(relaxed = true)
+    private val geminiUseCase = mockk<com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase>(relaxed = true)
     private val buttonUsageRepository = mockk<ButtonUsageRepository>(relaxed = true)
     private val logger: Logger = TestLogger()
 
@@ -50,7 +50,7 @@ class ActionExecutorTest {
             localIntentRouter = mockk(relaxed = true),
             weatherExecutor = mockk(relaxed = true),
             buttonUsageRepository = buttonUsageRepository,
-            geminiUseCaseLazy = object : dagger.Lazy<com.andreas_kratzer.ghosttalk.domain.genai.GeminiUseCase> {
+            geminiUseCaseLazy = object : dagger.Lazy<com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase> {
                 override fun get() = geminiUseCase
             },
             ttsHelperLazy = object : dagger.Lazy<TextToSpeechHelper> {

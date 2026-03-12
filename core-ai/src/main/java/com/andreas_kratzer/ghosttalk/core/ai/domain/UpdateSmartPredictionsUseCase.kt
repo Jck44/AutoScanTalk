@@ -1,9 +1,9 @@
-package com.andreas_kratzer.ghosttalk.domain.actions
+package com.andreas_kratzer.ghosttalk.core.ai.domain
 
 import android.util.Log
+import com.andreas_kratzer.ghosttalk.core.ai.domain.CheckForPredictorUseCase
 import com.andreas_kratzer.ghosttalk.core.model.Page
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.domain.settings.CheckForPredictorUseCase
+import com.andreas_kratzer.ghosttalk.core.settings.GenAiSettings
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.combine
 import javax.inject.Inject
 
 class UpdateSmartPredictionsUseCase @Inject constructor(
-    private val settingsRepository: SettingsRepository,
+    private val settingsRepository: GenAiSettings,
     private val predictNextActionUseCase: PredictNextActionUseCase,
     private val checkForPredictorUseCase: CheckForPredictorUseCase
 ) {

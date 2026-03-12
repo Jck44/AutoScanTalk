@@ -1,4 +1,7 @@
-package com.andreas_kratzer.ghosttalk.domain.executors
+package com.andreas_kratzer.ghosttalk.core.ai.executors
+
+import com.andreas_kratzer.ghosttalk.domain.executors.WeatherExecutor
+import com.andreas_kratzer.ghosttalk.domain.executors.LocationExecutor
 
 import android.content.Context
 import android.net.ConnectivityManager
@@ -119,7 +122,7 @@ class WeatherExecutorTest {
     @Test
     fun `mapWeatherCode returns correct strings`() {
         // Using reflection to test the private method 'mapWeatherCode'
-        val method = weatherExecutor.javaClass.getDeclaredMethod("mapWeatherCode", Int::class.java)
+        val method = WeatherExecutor::class.java.getDeclaredMethod("mapWeatherCode", Int::class.javaPrimitiveType)
         method.isAccessible = true
         
         assertEquals("Klarer Himmel", method.invoke(weatherExecutor, 0))

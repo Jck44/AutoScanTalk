@@ -7,6 +7,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+import com.andreas_kratzer.ghosttalk.core.data.ActionLogProvider
 import javax.inject.Inject
 
 /**
@@ -15,11 +16,11 @@ import javax.inject.Inject
 class ActionLogUseCase @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val logger: Logger
-) {
+) : ActionLogProvider {
     private val gson = Gson()
     private val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
 
-    fun loadSavedLogs(): List<String> {
+    override suspend fun loadSavedLogs(): List<String> {
         if (!settingsRepository.persistActionLogs) return emptyList()
         
         val savedJson = settingsRepository.actionLogsStorage

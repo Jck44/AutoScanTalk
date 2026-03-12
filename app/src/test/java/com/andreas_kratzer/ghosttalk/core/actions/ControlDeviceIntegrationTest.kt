@@ -42,8 +42,8 @@ class ControlDeviceIntegrationTest {
             localIntentRouter = mockk(relaxed = true),
             weatherExecutor = mockk(relaxed = true),
             buttonUsageRepository = mockk(relaxed = true),
-            geminiUseCaseLazy = object : dagger.Lazy<com.andreas_kratzer.ghosttalk.domain.genai.GeminiUseCase> {
-                override fun get() = mockk<com.andreas_kratzer.ghosttalk.domain.genai.GeminiUseCase>(relaxed = true)
+            geminiUseCaseLazy = object : dagger.Lazy<com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase> {
+                override fun get() = mockk<com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase>(relaxed = true)
             },
             ttsHelperLazy = object : dagger.Lazy<TextToSpeechHelper> {
                 override fun get() = ttsHelper

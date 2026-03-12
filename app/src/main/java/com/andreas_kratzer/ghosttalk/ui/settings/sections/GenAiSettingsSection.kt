@@ -19,7 +19,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
-import com.andreas_kratzer.ghosttalk.domain.genai.GeminiUseCase
+import com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase
 import com.andreas_kratzer.ghosttalk.ui.components.PreferenceCategory
 import com.andreas_kratzer.ghosttalk.ui.components.SettingsEditTextItem
 import com.andreas_kratzer.ghosttalk.ui.components.SettingsToggleItem

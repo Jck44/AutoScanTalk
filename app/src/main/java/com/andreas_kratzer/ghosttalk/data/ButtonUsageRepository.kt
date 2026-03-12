@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.serialization.json.Json
+import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageProvider
 import javax.inject.Inject
 
 /**
@@ -16,7 +17,7 @@ import javax.inject.Inject
  */
 class ButtonUsageRepository @Inject constructor(
     private val dao: ButtonUsageDao
-) {
+) : ButtonUsageProvider {
     private val json = Json {
         ignoreUnknownKeys = true
         encodeDefaults = true
@@ -80,7 +81,7 @@ class ButtonUsageRepository @Inject constructor(
     /**
      * Returns the top N most frequently used buttons for a book.
      */
-    suspend fun getTopActions(bookId: String, limit: Int): List<ButtonUsageStat> {
+    override suspend fun getTopActions(bookId: String, limit: Int): List<ButtonUsageStat> {
         return dao.getTopButtons(bookId, limit)
     }
 

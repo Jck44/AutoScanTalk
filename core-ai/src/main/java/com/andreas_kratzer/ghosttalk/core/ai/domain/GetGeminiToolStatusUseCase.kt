@@ -1,4 +1,4 @@
-package com.andreas_kratzer.ghosttalk.domain.genai
+package com.andreas_kratzer.ghosttalk.core.ai.domain
 
 import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
 import javax.inject.Inject

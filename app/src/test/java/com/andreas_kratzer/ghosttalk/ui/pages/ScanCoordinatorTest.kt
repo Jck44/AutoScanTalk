@@ -6,7 +6,7 @@ import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.core.scanning.ScannerEngine
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.domain.settings.CheckForPredictorUseCase
+import com.andreas_kratzer.ghosttalk.core.ai.domain.CheckForPredictorUseCase
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
 import io.mockk.clearMocks
 import io.mockk.every
@@ -150,7 +150,7 @@ class ScanCoordinatorTest {
             every { id } returns "p1"
             every { buttonConfigs } returns emptyList()
         }
-        every { checkForPredictorUseCase(any()) } returns false
+        every { checkForPredictorUseCase(any<Page>()) } returns false
         currentPage.value = page
         resolvedPage.value = page
         
@@ -179,7 +179,7 @@ class ScanCoordinatorTest {
             every { id } returns "p1"
             every { buttonConfigs } returns emptyList()
         }
-        every { checkForPredictorUseCase(any()) } returns false
+        every { checkForPredictorUseCase(any<Page>()) } returns false
         currentPage.value = page
         resolvedPage.value = page
 
@@ -205,7 +205,7 @@ class ScanCoordinatorTest {
             every { id } returns "p1"
             every { buttonConfigs } returns emptyList()
         }
-        every { checkForPredictorUseCase(any()) } returns false
+        every { checkForPredictorUseCase(any<Page>()) } returns false
         currentPage.value = page
         resolvedPage.value = page
 
@@ -231,7 +231,7 @@ class ScanCoordinatorTest {
         every { settingsRepository.resumeScanningFromStart } returns true
         every { settingsRepository.defaultScanPattern } returns "linear"
         every { settingsRepository.scanDelayFlow } returns MutableStateFlow(1000L)
-        every { checkForPredictorUseCase(any()) } returns false
+        every { checkForPredictorUseCase(any<Page>()) } returns false
 
         val page = Page(
             id = "p1", 

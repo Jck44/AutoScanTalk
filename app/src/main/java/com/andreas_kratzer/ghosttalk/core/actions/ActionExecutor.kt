@@ -6,7 +6,7 @@ import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.domain.genai.GeminiUseCase
+import com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -25,7 +25,7 @@ class ActionExecutor @Inject constructor(
     @param:ApplicationScope private val scope: CoroutineScope,
     private val settingsRepository: SettingsRepository,
     private val logger: Logger,
-    private val localIntentRouter: com.andreas_kratzer.ghosttalk.domain.executors.LocalIntentRouter,
+    private val localIntentRouter: com.andreas_kratzer.ghosttalk.core.ai.LocalIntentRouter,
     private val weatherExecutor: com.andreas_kratzer.ghosttalk.domain.executors.WeatherExecutor,
     private val buttonUsageRepository: ButtonUsageRepository,
     private val geminiUseCaseLazy: dagger.Lazy<GeminiUseCase>,

@@ -1,4 +1,4 @@
-package com.andreas_kratzer.ghosttalk.domain.genai
+package com.andreas_kratzer.ghosttalk.core.ai.domain
 
 import android.content.Intent
 import com.google.android.gms.auth.UserRecoverableAuthException
@@ -15,12 +15,12 @@ class HandleGenAiExceptionUseCase @Inject constructor() {
         while (cause != null) {
             when (cause) {
                 is UserRecoverableAuthIOException -> {
-                    val intent = cause.intent
-                    if (intent != null) return Effect.EmitAuthIntent(intent)
+                    val authIntent = cause.intent
+                    if (authIntent != null) return Effect.EmitAuthIntent(authIntent)
                 }
                 is UserRecoverableAuthException -> {
-                    val intent = cause.intent
-                    if (intent != null) return Effect.EmitAuthIntent(intent)
+                    val authIntent = cause.intent
+                    if (authIntent != null) return Effect.EmitAuthIntent(authIntent)
                 }
             }
             cause = cause.cause

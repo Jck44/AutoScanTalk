@@ -15,8 +15,8 @@ import com.andreas_kratzer.ghosttalk.core.pages.PageImportExportManager
 import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.domain.actions.ResolveDynamicButtonsUseCase
-import com.andreas_kratzer.ghosttalk.domain.actions.UpdateSmartPredictionsUseCase
-import com.andreas_kratzer.ghosttalk.domain.genai.GeminiUseCase
+import com.andreas_kratzer.ghosttalk.core.ai.domain.UpdateSmartPredictionsUseCase
+import com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase
 import com.andreas_kratzer.ghosttalk.domain.settings.FeatureGuard
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.InteractionDelegate
