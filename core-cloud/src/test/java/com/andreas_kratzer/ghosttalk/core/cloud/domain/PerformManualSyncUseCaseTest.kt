@@ -3,7 +3,7 @@ package com.andreas_kratzer.ghosttalk.core.cloud.domain
 import android.content.Intent
 import android.util.Log
 import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.settings.CloudSettings
 import com.google.android.gms.auth.UserRecoverableAuthException
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
 import com.google.api.services.drive.Drive
@@ -27,7 +27,7 @@ class PerformManualSyncUseCaseTest {
 
     private lateinit var googleAuthManager: GoogleAuthManager
     private lateinit var cloudSyncUseCase: CloudSyncUseCase
-    private lateinit var settingsRepository: SettingsRepository
+    private lateinit var settingsRepository: CloudSettings
     private lateinit var useCase: PerformManualSyncUseCase
 
     @Before

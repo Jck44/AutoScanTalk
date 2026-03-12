@@ -2,7 +2,7 @@ package com.andreas_kratzer.ghosttalk.core.cloud.domain
 
 
 import androidx.work.WorkManager
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.settings.CloudSettings
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkStatic
@@ -14,7 +14,7 @@ import org.junit.Test
 
 class SetCloudSyncEnabledUseCaseTest {
 
-    private lateinit var settingsRepository: SettingsRepository
+    private lateinit var settingsRepository: CloudSettings
     private lateinit var workManager: WorkManager
     private lateinit var useCase: SetCloudSyncEnabledUseCase
 

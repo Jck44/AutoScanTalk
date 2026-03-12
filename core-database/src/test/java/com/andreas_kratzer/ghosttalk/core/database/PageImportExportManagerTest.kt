@@ -1,4 +1,4 @@
-package com.andreas_kratzer.ghosttalk.core.pages
+package com.andreas_kratzer.ghosttalk.core.database
 
 import com.andreas_kratzer.ghosttalk.core.model.AuditoryCue
 import com.andreas_kratzer.ghosttalk.core.model.Book
@@ -13,7 +13,7 @@ import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.WeatherButtonAction
 import com.andreas_kratzer.ghosttalk.core.database.PageRepository
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.settings.ImportExportSettings
 import io.mockk.coEvery
 import io.mockk.mockk
 import io.mockk.slot
@@ -31,7 +31,7 @@ class PageImportExportManagerTest {
     private val context: android.content.Context = mockk(relaxed = true)
     private val bookRepository: com.andreas_kratzer.ghosttalk.core.database.BookRepository = mockk(relaxed = true)
     private val pageRepository: PageRepository = mockk(relaxed = true)
-    private val settingsRepository: SettingsRepository = mockk(relaxed = true)
+    private val settingsRepository: ImportExportSettings = mockk(relaxed = true)
     private val manager = PageImportExportManager(context, pageRepository, bookRepository, settingsRepository)
 
     @Test
