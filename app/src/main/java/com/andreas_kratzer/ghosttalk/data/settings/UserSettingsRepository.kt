@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.StateFlow
 
 class UserSettingsRepository(
     prefs: SharedPreferences,
-    activeBookIdFlow: StateFlow<String>
+    activeBookIdFlow: StateFlow<String?>
 ) : BaseSettingsRepository(prefs, activeBookIdFlow) {
 
     private val _keepScreenOnUserMode = BooleanSetting(KEY_KEEP_SCREEN_ON_USER_MODE, true)

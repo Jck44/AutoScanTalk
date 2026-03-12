@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.StateFlow
 
 class SecuritySettingsRepository(
     prefs: SharedPreferences,
-    activeBookIdFlow: StateFlow<String>
+    activeBookIdFlow: StateFlow<String?>
 ) : BaseSettingsRepository(prefs, activeBookIdFlow) {
 
     private val _securityPinHash = StringSetting(KEY_SECURITY_PIN_HASH, "", isScoped = false)

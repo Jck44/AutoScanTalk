@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.StateFlow
 
 class NotificationSettingsRepository(
     prefs: SharedPreferences,
-    activeBookIdFlow: StateFlow<String>
+    activeBookIdFlow: StateFlow<String?>
 ) : BaseSettingsRepository(prefs, activeBookIdFlow) {
 
     private val _isNotificationReadingEnabled = BooleanSetting(KEY_NOTIFICATION_READING_ENABLED, false, isScoped = false)

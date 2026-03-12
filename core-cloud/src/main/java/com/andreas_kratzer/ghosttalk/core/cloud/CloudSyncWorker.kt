@@ -5,9 +5,9 @@ import android.util.Log
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.domain.auth.CloudSyncUseCase
-import com.andreas_kratzer.ghosttalk.domain.auth.SyncMode
+import com.andreas_kratzer.ghosttalk.core.cloud.domain.CloudSyncUseCase
+import com.andreas_kratzer.ghosttalk.core.cloud.domain.SyncMode
+import com.andreas_kratzer.ghosttalk.core.settings.CloudSettings
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
 import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.gson.GsonFactory
@@ -22,7 +22,7 @@ class CloudSyncWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted workerParams: WorkerParameters,
     private val googleAuthManager: GoogleAuthManager,
-    private val settingsRepository: SettingsRepository,
+    private val settingsRepository: CloudSettings,
     private val cloudSyncUseCase: CloudSyncUseCase
 ) : CoroutineWorker(context, workerParams) {
 

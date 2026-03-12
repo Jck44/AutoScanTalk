@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.StateFlow
 
 class CloudSettingsRepository(
     prefs: SharedPreferences,
-    activeBookIdFlow: StateFlow<String>
+    activeBookIdFlow: StateFlow<String?>
 ) : BaseSettingsRepository(prefs, activeBookIdFlow) {
 
     private val _isCloudSyncEnabled = BooleanSetting(KEY_CLOUD_SYNC_ENABLED, false)

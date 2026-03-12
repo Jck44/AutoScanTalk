@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.StateFlow
 
 class GeneralSettingsRepository(
     prefs: SharedPreferences,
-    activeBookIdFlow: StateFlow<String>
+    activeBookIdFlow: StateFlow<String?>
 ) : BaseSettingsRepository(prefs, activeBookIdFlow) {
 
     private val _themeMode = NonNullStringSetting(KEY_THEME_MODE, "LIGHT", isScoped = false)

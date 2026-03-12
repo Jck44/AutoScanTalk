@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.StateFlow
 
 class GenAiSettingsRepository(
     prefs: SharedPreferences,
-    activeBookIdFlow: StateFlow<String>
+    activeBookIdFlow: StateFlow<String?>
 ) : BaseSettingsRepository(prefs, activeBookIdFlow) {
 
     private val _isGeminiEnabled = BooleanSetting(KEY_GEMINI_ENABLED, false)

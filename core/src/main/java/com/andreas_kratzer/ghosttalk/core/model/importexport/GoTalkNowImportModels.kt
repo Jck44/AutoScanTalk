@@ -1,4 +1,4 @@
-package com.andreas_kratzer.ghosttalk.model.importexport
+package com.andreas_kratzer.ghosttalk.core.model.importexport
 
 import kotlinx.serialization.Serializable
 

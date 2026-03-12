@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.StateFlow
 
 class VoiceSettingsRepository(
     prefs: SharedPreferences,
-    activeBookIdFlow: StateFlow<String>
+    activeBookIdFlow: StateFlow<String?>
 ) : BaseSettingsRepository(prefs, activeBookIdFlow) {
 
     private val _ttsLanguage = StringSetting(KEY_TTS_LANGUAGE)

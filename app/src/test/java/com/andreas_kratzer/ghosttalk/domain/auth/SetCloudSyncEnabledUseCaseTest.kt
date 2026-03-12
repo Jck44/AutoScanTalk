@@ -1,4 +1,4 @@
-package com.andreas_kratzer.ghosttalk.domain.auth
+package com.andreas_kratzer.ghosttalk.core.cloud.domain
 
 
 import androidx.work.WorkManager

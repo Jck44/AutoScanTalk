@@ -7,7 +7,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.andreas_kratzer.ghosttalk.core.SecurityManager
 import com.andreas_kratzer.ghosttalk.core.model.Page
-import com.andreas_kratzer.ghosttalk.core.pages.PageImportExportManager
+import com.andreas_kratzer.ghosttalk.core.database.PageImportExportManager
 import com.andreas_kratzer.ghosttalk.core.database.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.domain.pages.GetPagesUseCase
@@ -160,11 +160,11 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun setCloudSyncEnabled(ctx: Context, e: Boolean) = cloudSyncDelegate.setCloudSyncEnabled(ctx, e, viewModelScope)
-    fun syncNow() = cloudSyncDelegate.performManualSync(com.andreas_kratzer.ghosttalk.domain.auth.SyncMode.TWO_WAY, viewModelScope)
-    fun backupNow() = cloudSyncDelegate.performManualSync(com.andreas_kratzer.ghosttalk.domain.auth.SyncMode.BACKUP_ONLY, viewModelScope)
-    fun restoreNow() = cloudSyncDelegate.performManualSync(com.andreas_kratzer.ghosttalk.domain.auth.SyncMode.RESTORE_ONLY, viewModelScope)
+    fun syncNow() = cloudSyncDelegate.performManualSync(com.andreas_kratzer.ghosttalk.core.cloud.domain.SyncMode.TWO_WAY, viewModelScope)
+    fun backupNow() = cloudSyncDelegate.performManualSync(com.andreas_kratzer.ghosttalk.core.cloud.domain.SyncMode.BACKUP_ONLY, viewModelScope)
+    fun restoreNow() = cloudSyncDelegate.performManualSync(com.andreas_kratzer.ghosttalk.core.cloud.domain.SyncMode.RESTORE_ONLY, viewModelScope)
     fun fetchAvailableBackupsForImport() = cloudSyncDelegate.fetchAvailableBackupsForImport(viewModelScope)
-    fun importCloudBackup(backupInfo: com.andreas_kratzer.ghosttalk.domain.auth.RemoteBackupInfo) = cloudSyncDelegate.importCloudBackup(backupInfo, viewModelScope)
+    fun importCloudBackup(backupInfo: com.andreas_kratzer.ghosttalk.core.cloud.domain.RemoteBackupInfo) = cloudSyncDelegate.importCloudBackup(backupInfo, viewModelScope)
     fun dismissBackupSelectionDialog() = cloudSyncDelegate.dismissBackupSelectionDialog()
     
     fun setSyncMode(m: String) { settingsRepository.syncMode = m }

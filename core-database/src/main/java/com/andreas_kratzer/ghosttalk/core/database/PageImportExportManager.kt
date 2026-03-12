@@ -1,4 +1,4 @@
-package com.andreas_kratzer.ghosttalk.core.pages
+package com.andreas_kratzer.ghosttalk.core.database
 
 import android.content.Context
 import com.andreas_kratzer.ghosttalk.core.model.AuditoryCue
@@ -17,10 +17,11 @@ import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.WeatherButtonAction
 import com.andreas_kratzer.ghosttalk.core.database.BookRepository
 import com.andreas_kratzer.ghosttalk.core.database.PageRepository
-import com.andreas_kratzer.ghosttalk.model.importexport.ImportAction
-import com.andreas_kratzer.ghosttalk.model.importexport.ImportButton
-import com.andreas_kratzer.ghosttalk.model.importexport.ImportExportData
-import com.andreas_kratzer.ghosttalk.model.importexport.ImportPage
+import com.andreas_kratzer.ghosttalk.core.settings.ImportExportSettings
+import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportAction
+import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportButton
+import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportExportData
+import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportPage
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -36,7 +37,7 @@ class PageImportExportManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val pageRepository: PageRepository,
     private val bookRepository: BookRepository,
-    private val settingsRepository: com.andreas_kratzer.ghosttalk.data.SettingsRepository
+    private val settingsRepository: ImportExportSettings
 ) {
     private val json = Json {
         ignoreUnknownKeys = true

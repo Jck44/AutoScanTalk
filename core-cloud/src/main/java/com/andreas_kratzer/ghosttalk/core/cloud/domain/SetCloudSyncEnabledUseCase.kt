@@ -1,4 +1,4 @@
-package com.andreas_kratzer.ghosttalk.domain.auth
+package com.andreas_kratzer.ghosttalk.core.cloud.domain
 
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -6,12 +6,12 @@ import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.andreas_kratzer.ghosttalk.core.cloud.CloudSyncWorker
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.settings.CloudSettings
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 class SetCloudSyncEnabledUseCase @Inject constructor(
-    private val settingsRepository: SettingsRepository,
+    private val settingsRepository: CloudSettings,
     private val workManager: WorkManager
 ) {
     operator fun invoke(enabled: Boolean) {

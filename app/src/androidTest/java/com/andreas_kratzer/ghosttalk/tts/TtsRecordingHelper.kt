@@ -1,4 +1,4 @@
-package com.andreas_kratzer.ghosttalk.tts
+package com.andreas_kratzer.ghosttalk.core.tts
 
 import android.content.Context
 import android.util.Log

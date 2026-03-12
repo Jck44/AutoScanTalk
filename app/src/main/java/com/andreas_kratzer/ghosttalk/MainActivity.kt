@@ -101,7 +101,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        com.andreas_kratzer.ghosttalk.tts.VoiceDebugger(applicationContext).start()
+        com.andreas_kratzer.ghosttalk.core.tts.VoiceDebugger(applicationContext).start()
         
         updateManager = UpdateManager(this)
         updateManager.checkForUpdates(updateLauncher)

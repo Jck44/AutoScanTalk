@@ -1,9 +1,9 @@
-package com.andreas_kratzer.ghosttalk.domain.auth
+package com.andreas_kratzer.ghosttalk.core.cloud.domain
 
 import android.content.Intent
 import android.util.Log
 import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.settings.CloudSettings
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
 import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.gson.GsonFactory
@@ -15,7 +15,7 @@ import javax.inject.Inject
 class PerformManualSyncUseCase @Inject constructor(
     private val googleAuthManager: GoogleAuthManager,
     private val cloudSyncUseCase: CloudSyncUseCase,
-    private val settingsRepository: SettingsRepository
+    private val settingsRepository: CloudSettings
 ) {
     private val TAG = "PerformManualSyncUseCase"
 

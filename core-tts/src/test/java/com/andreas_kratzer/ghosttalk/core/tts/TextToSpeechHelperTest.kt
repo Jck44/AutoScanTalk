@@ -1,10 +1,10 @@
-package com.andreas_kratzer.ghosttalk.tts
+package com.andreas_kratzer.ghosttalk.core.tts
 
 import android.content.Context
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
 import com.andreas_kratzer.ghosttalk.core.audio.RoutedAudioPlayer
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.settings.TtsSettings
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkConstructor
@@ -28,7 +28,7 @@ class TextToSpeechHelperTest {
     private val testScope = TestScope(testDispatcher)
 
     private val mockContext = mockk<Context>(relaxed = true)
-    private val mockSettingsRepository = mockk<SettingsRepository>(relaxed = true)
+    private val mockSettingsRepository = mockk<TtsSettings>(relaxed = true)
     private val mockAudioPlayer = mockk<RoutedAudioPlayer>(relaxed = true)
     private val mockVoiceManager = mockk<TtsVoiceManager>(relaxed = true)
 

@@ -105,6 +105,7 @@ dependencies {
     implementation(project(":core-ai"))
     implementation(project(":core-cloud"))
     implementation(project(":core-database"))
+    implementation(project(":core-tts"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)

@@ -64,6 +64,24 @@ object AppModule {
         return settingsRepository
     }
 
+    @Provides
+    @Singleton
+    fun provideTtsSettings(settingsRepository: SettingsRepository): com.andreas_kratzer.ghosttalk.core.settings.TtsSettings {
+        return settingsRepository
+    }
+
+    @Provides
+    @Singleton
+    fun provideImportExportSettings(settingsRepository: SettingsRepository): com.andreas_kratzer.ghosttalk.core.settings.ImportExportSettings {
+        return settingsRepository
+    }
+
+    @Provides
+    @Singleton
+    fun provideCloudSettings(settingsRepository: SettingsRepository): com.andreas_kratzer.ghosttalk.core.settings.CloudSettings {
+        return settingsRepository
+    }
+
 
 
     @Provides

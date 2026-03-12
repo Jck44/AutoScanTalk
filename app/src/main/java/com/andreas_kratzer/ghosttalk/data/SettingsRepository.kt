@@ -18,21 +18,24 @@ import com.andreas_kratzer.ghosttalk.data.settings.SecuritySettingsRepository
 import com.andreas_kratzer.ghosttalk.data.settings.SettingsConstants
 import com.andreas_kratzer.ghosttalk.data.settings.UserSettingsRepository
 import com.andreas_kratzer.ghosttalk.data.settings.VoiceSettingsRepository
+import com.andreas_kratzer.ghosttalk.core.settings.CloudSettings
 import com.andreas_kratzer.ghosttalk.core.settings.DatabaseSettings
 import com.andreas_kratzer.ghosttalk.core.settings.GenAiSettings
+import com.andreas_kratzer.ghosttalk.core.settings.ImportExportSettings
+import com.andreas_kratzer.ghosttalk.core.settings.TtsSettings
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 @SuppressLint("CommitPrefEdits", "ApplySharedPref", "UseKtx")
-class SettingsRepository(context: Context) : SecuritySettings, KeyEventSettings, AudioSettings, ControlDeviceSettings, SpeechSettings, GenAiSettings, DatabaseSettings {
+class SettingsRepository(context: Context) : SecuritySettings, KeyEventSettings, AudioSettings, ControlDeviceSettings, SpeechSettings, GenAiSettings, DatabaseSettings, TtsSettings, ImportExportSettings, CloudSettings {
 
     private val prefs: SharedPreferences = context.getSharedPreferences(SettingsConstants.PREFS_NAME, Context.MODE_PRIVATE)
 
     private val _activeBookIdFlow = MutableStateFlow(prefs.getString(SettingsConstants.KEY_ACTIVE_BOOK_ID, "book-default") ?: "book-default")
-    val activeBookIdFlow: StateFlow<String> = _activeBookIdFlow.asStateFlow()
+    override val activeBookIdFlow: StateFlow<String?> = _activeBookIdFlow.asStateFlow()
 
-    var activeBookId: String
+    override var activeBookId: String
         get() = _activeBookIdFlow.value
         set(value) {
             _activeBookIdFlow.value = value
@@ -91,8 +94,8 @@ class SettingsRepository(context: Context) : SecuritySettings, KeyEventSettings,
 
     // ── Public API: Flows ────────────────────────────────────────────────
 
-    val ttsLanguageFlow: StateFlow<String?> get() = voiceSettings.ttsLanguageFlow
-    val ttsVoiceNameFlow: StateFlow<String?> get() = voiceSettings.ttsVoiceNameFlow
+    override val ttsLanguageFlow: StateFlow<String?> get() = voiceSettings.ttsLanguageFlow
+    override val ttsVoiceNameFlow: StateFlow<String?> get() = voiceSettings.ttsVoiceNameFlow
     val autoStartScanningFlow: StateFlow<Boolean> get() = scanningSettings.autoStartScanningFlow
     val scanDelayFlow: StateFlow<Long> get() = scanningSettings.scanDelayFlow
     val resumeScanningFromStartFlow: StateFlow<Boolean> get() = scanningSettings.resumeScanningFromStartFlow
@@ -116,7 +119,7 @@ class SettingsRepository(context: Context) : SecuritySettings, KeyEventSettings,
     val syncModeFlow: StateFlow<String> get() = cloudSettings.syncModeFlow
     val isNotificationReadingEnabledFlow: StateFlow<Boolean> get() = notificationSettings.isNotificationReadingEnabledFlow
     val monitoredNotificationAppsFlow: StateFlow<Set<String>> get() = notificationSettings.monitoredNotificationAppsFlow
-    val appLanguageFlow: StateFlow<String?> get() = generalSettings.appLanguageFlow
+    override val appLanguageFlow: StateFlow<String?> get() = generalSettings.appLanguageFlow
     val keepScreenOnUserModeFlow: StateFlow<Boolean> get() = userSettings.keepScreenOnUserModeFlow
     val userModeScreenBehaviorFlow: StateFlow<String> get() = userSettings.userModeScreenBehaviorFlow
     val weatherCacheTimeoutFlow: StateFlow<Long> get() = advancedSettings.weatherCacheTimeoutFlow
@@ -133,11 +136,11 @@ class SettingsRepository(context: Context) : SecuritySettings, KeyEventSettings,
 
     // ── Public API: Properties ───────────────────────────────────────────
 
-    var ttsLanguage: String?
+    override var ttsLanguage: String?
         get() = voiceSettings.ttsLanguage
         set(value) { voiceSettings.ttsLanguage = value }
 
-    var ttsVoiceName: String?
+    override var ttsVoiceName: String?
         get() = voiceSettings.ttsVoiceName
         set(value) { voiceSettings.ttsVoiceName = value }
 
@@ -165,7 +168,7 @@ class SettingsRepository(context: Context) : SecuritySettings, KeyEventSettings,
         get() = voiceSettings.cuesAudioDeviceAddress
         set(value) { voiceSettings.cuesAudioDeviceAddress = value }
 
-    var holdingTimeMillis: Long
+    override var holdingTimeMillis: Long
         get() = scanningSettings.holdingTimeMillis
         set(value) { scanningSettings.holdingTimeMillis = value }
 
@@ -205,7 +208,7 @@ class SettingsRepository(context: Context) : SecuritySettings, KeyEventSettings,
         get() = generalSettings.templateSortOrder
         set(value) { generalSettings.templateSortOrder = value }
 
-    var lastSuccessfulSyncTime: Long
+    override var lastSuccessfulSyncTime: Long
         get() = cloudSettings.lastSuccessfulSyncTime
         set(value) { cloudSettings.lastSuccessfulSyncTime = value }
 
@@ -217,15 +220,15 @@ class SettingsRepository(context: Context) : SecuritySettings, KeyEventSettings,
         get() = scanningSettings.bluetoothDelay
         set(value) { scanningSettings.bluetoothDelay = value }
 
-    var isCloudSyncEnabled: Boolean
+    override var isCloudSyncEnabled: Boolean
         get() = cloudSettings.isCloudSyncEnabled
         set(value) { cloudSettings.isCloudSyncEnabled = value }
 
-    var syncIntervalMinutes: Long
+    override var syncIntervalMinutes: Long
         get() = cloudSettings.syncIntervalMinutes
         set(value) { cloudSettings.syncIntervalMinutes = value }
 
-    var syncMode: String
+    override var syncMode: String
         get() = cloudSettings.syncMode
         set(value) { cloudSettings.syncMode = value }
 
@@ -257,7 +260,7 @@ class SettingsRepository(context: Context) : SecuritySettings, KeyEventSettings,
         get() = notificationSettings.monitoredNotificationApps
         set(value) { notificationSettings.monitoredNotificationApps = value }
 
-    var appLanguage: String?
+    override var appLanguage: String?
         get() = generalSettings.appLanguage
         set(value) { generalSettings.appLanguage = value }
     

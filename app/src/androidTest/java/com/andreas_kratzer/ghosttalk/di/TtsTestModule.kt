@@ -1,7 +1,7 @@
 package com.andreas_kratzer.ghosttalk.di
 
-import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
-import com.andreas_kratzer.ghosttalk.tts.TtsRecordingHelper
+import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
+import com.andreas_kratzer.ghosttalk.core.tts.TtsRecordingHelper
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.components.SingletonComponent

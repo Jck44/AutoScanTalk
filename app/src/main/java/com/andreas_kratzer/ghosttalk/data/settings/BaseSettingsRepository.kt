@@ -8,9 +8,9 @@ import kotlinx.coroutines.flow.asStateFlow
 
 abstract class BaseSettingsRepository(
     protected val prefs: SharedPreferences,
-    protected val activeBookIdFlow: StateFlow<String>
+    protected val activeBookIdFlow: StateFlow<String?>
 ) {
-    protected val activeBookId: String get() = activeBookIdFlow.value
+    protected val activeBookId: String get() = activeBookIdFlow.value ?: "book-default"
 
     protected fun getScopedKey(key: String): String = "${activeBookId}_$key"
 

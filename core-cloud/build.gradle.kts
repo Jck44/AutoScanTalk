@@ -31,11 +31,14 @@ android {
 
 dependencies {
     implementation(project(":core"))
+    implementation(project(":core-database"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
+    implementation(libs.androidx.hilt.work)
+    ksp(libs.androidx.hilt.compiler)
     
     // Google Drive & Auth
     api(libs.google.api.client.android)
@@ -45,6 +48,7 @@ dependencies {
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.googleid)
     implementation(libs.gms.play.services.auth)
+    implementation(libs.androidx.work.runtime.ktx)
 
     implementation(libs.gson)
     implementation(libs.kotlinx.coroutines.android)

@@ -8,12 +8,12 @@ import android.content.Intent
 import android.widget.Toast
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
-import com.andreas_kratzer.ghosttalk.domain.auth.PerformManualSyncUseCase
-import com.andreas_kratzer.ghosttalk.domain.auth.RemoteBackupInfo
-import com.andreas_kratzer.ghosttalk.domain.auth.SetCloudSyncEnabledUseCase
-import com.andreas_kratzer.ghosttalk.domain.auth.SignInUseCase
-import com.andreas_kratzer.ghosttalk.domain.auth.SignOutUseCase
-import com.andreas_kratzer.ghosttalk.domain.auth.SyncMode
+import com.andreas_kratzer.ghosttalk.core.cloud.domain.PerformManualSyncUseCase
+import com.andreas_kratzer.ghosttalk.core.cloud.domain.RemoteBackupInfo
+import com.andreas_kratzer.ghosttalk.core.cloud.domain.SetCloudSyncEnabledUseCase
+import com.andreas_kratzer.ghosttalk.core.cloud.domain.SignInUseCase
+import com.andreas_kratzer.ghosttalk.core.cloud.domain.SignOutUseCase
+import com.andreas_kratzer.ghosttalk.core.cloud.domain.SyncMode
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -32,7 +32,7 @@ class CloudSyncSettingsDelegate @Inject constructor(
     private val settingsRepository: com.andreas_kratzer.ghosttalk.data.SettingsRepository,
     private val setCloudSyncEnabledUseCase: SetCloudSyncEnabledUseCase,
     private val performManualSyncUseCase: PerformManualSyncUseCase,
-    private val cloudSyncUseCase: com.andreas_kratzer.ghosttalk.domain.auth.CloudSyncUseCase,
+    private val cloudSyncUseCase: com.andreas_kratzer.ghosttalk.core.cloud.domain.CloudSyncUseCase,
     private val signInUseCase: SignInUseCase,
     private val signOutUseCase: SignOutUseCase
 ) {

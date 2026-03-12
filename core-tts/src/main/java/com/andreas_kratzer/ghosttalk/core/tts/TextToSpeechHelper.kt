@@ -1,4 +1,4 @@
-package com.andreas_kratzer.ghosttalk.tts
+package com.andreas_kratzer.ghosttalk.core.tts
 
 import android.content.Context
 import android.os.Handler
@@ -8,7 +8,7 @@ import android.util.Log
 import android.widget.Toast
 import com.andreas_kratzer.ghosttalk.core.audio.RoutedAudioPlayer
 import com.andreas_kratzer.ghosttalk.core.di.ApplicationScope
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.settings.TtsSettings
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.combine
@@ -23,7 +23,7 @@ import javax.inject.Singleton
 open class TextToSpeechHelper @Inject constructor(
     @param:ApplicationContext val context: Context,
     @param:ApplicationScope private val scope: CoroutineScope,
-    private val settingsRepository: SettingsRepository,
+    private val settingsRepository: TtsSettings,
     private val routedAudioPlayer: RoutedAudioPlayer,
     private val voiceManager: TtsVoiceManager
 ) : TextToSpeech.OnInitListener {
