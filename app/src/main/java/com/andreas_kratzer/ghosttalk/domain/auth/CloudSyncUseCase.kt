@@ -26,7 +26,7 @@ data class RemoteBackupInfo(
 
 class CloudSyncUseCase @Inject constructor(
     @param:ApplicationContext private val context: Context,
-    private val bookRepository: com.andreas_kratzer.ghosttalk.data.BookRepository,
+    private val bookRepository: com.andreas_kratzer.ghosttalk.core.database.BookRepository,
     private val importExportManager: PageImportExportManager,
     private val logger: Logger
 ) {

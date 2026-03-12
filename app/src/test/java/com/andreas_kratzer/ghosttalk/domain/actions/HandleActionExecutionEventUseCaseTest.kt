@@ -4,7 +4,7 @@ import android.content.Intent
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
 import com.andreas_kratzer.ghosttalk.core.model.Page
-import com.andreas_kratzer.ghosttalk.data.PageRepository
+import com.andreas_kratzer.ghosttalk.core.database.PageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import io.mockk.coEvery
 import io.mockk.every

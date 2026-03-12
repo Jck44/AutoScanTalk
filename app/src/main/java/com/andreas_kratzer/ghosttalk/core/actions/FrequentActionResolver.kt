@@ -5,7 +5,7 @@ import com.andreas_kratzer.ghosttalk.core.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.FrequentActionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
-import com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository
+import com.andreas_kratzer.ghosttalk.core.database.ButtonUsageRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json

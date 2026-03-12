@@ -15,8 +15,8 @@ import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.WeatherButtonAction
-import com.andreas_kratzer.ghosttalk.data.BookRepository
-import com.andreas_kratzer.ghosttalk.data.PageRepository
+import com.andreas_kratzer.ghosttalk.core.database.BookRepository
+import com.andreas_kratzer.ghosttalk.core.database.PageRepository
 import com.andreas_kratzer.ghosttalk.model.importexport.ImportAction
 import com.andreas_kratzer.ghosttalk.model.importexport.ImportButton
 import com.andreas_kratzer.ghosttalk.model.importexport.ImportExportData

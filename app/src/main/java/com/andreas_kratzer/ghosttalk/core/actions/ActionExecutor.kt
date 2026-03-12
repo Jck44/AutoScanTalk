@@ -4,7 +4,7 @@ import android.app.Application
 import com.andreas_kratzer.ghosttalk.core.di.ApplicationScope
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.util.Logger
-import com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository
+import com.andreas_kratzer.ghosttalk.core.database.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper

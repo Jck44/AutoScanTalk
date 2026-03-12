@@ -41,8 +41,8 @@ import androidx.navigation.compose.rememberNavController
 import com.andreas_kratzer.ghosttalk.core.KeyEventCoordinator
 import com.andreas_kratzer.ghosttalk.core.SecurityManager
 import com.andreas_kratzer.ghosttalk.core.UpdateManager
-import com.andreas_kratzer.ghosttalk.data.PageRepository
-import com.andreas_kratzer.ghosttalk.data.SampleDataInitializer
+import com.andreas_kratzer.ghosttalk.core.database.PageRepository
+import com.andreas_kratzer.ghosttalk.core.database.SampleDataInitializer
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.ui.books.BookViewModel
 import com.andreas_kratzer.ghosttalk.ui.main.GhosTTalkNavHost
@@ -62,7 +62,7 @@ class MainActivity : AppCompatActivity() {
 
     @Inject lateinit var settingsRepository: SettingsRepository
     @Inject lateinit var pageRepository: PageRepository
-    @Inject lateinit var bookRepository: com.andreas_kratzer.ghosttalk.data.BookRepository
+    @Inject lateinit var bookRepository: com.andreas_kratzer.ghosttalk.core.database.BookRepository
     @Inject lateinit var sampleDataInitializer: SampleDataInitializer
     @Inject lateinit var keyEventCoordinator: KeyEventCoordinator
     @Inject lateinit var securityManager: SecurityManager

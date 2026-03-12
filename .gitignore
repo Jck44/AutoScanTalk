@@ -23,3 +23,4 @@ local.properties
 /core/build/
 /core-ai/build/
 /core-cloud/build/
+/core-database/build/

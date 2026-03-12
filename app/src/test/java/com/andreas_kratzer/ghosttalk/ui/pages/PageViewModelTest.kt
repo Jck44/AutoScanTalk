@@ -10,11 +10,11 @@ import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.core.pages.PageImportExportManager
 import com.andreas_kratzer.ghosttalk.core.scanning.ScannerEngine
 import com.andreas_kratzer.ghosttalk.core.util.Logger
-import com.andreas_kratzer.ghosttalk.data.BookRepository
-import com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository
-import com.andreas_kratzer.ghosttalk.data.PageRepository
+import com.andreas_kratzer.ghosttalk.core.database.BookRepository
+import com.andreas_kratzer.ghosttalk.core.database.ButtonUsageRepository
+import com.andreas_kratzer.ghosttalk.core.database.PageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.data.TemplateRepository
+import com.andreas_kratzer.ghosttalk.core.database.TemplateRepository
 import com.andreas_kratzer.ghosttalk.domain.actions.ActionLogUseCase
 import com.andreas_kratzer.ghosttalk.domain.actions.ActivateButtonUseCase
 import com.andreas_kratzer.ghosttalk.domain.actions.HandleActionExecutionEventUseCase

@@ -5,10 +5,10 @@ import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.util.GridUtils
-import com.andreas_kratzer.ghosttalk.data.BookRepository
-import com.andreas_kratzer.ghosttalk.data.PageRepository
+import com.andreas_kratzer.ghosttalk.core.database.BookRepository
+import com.andreas_kratzer.ghosttalk.core.database.PageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.data.TemplateRepository
+import com.andreas_kratzer.ghosttalk.core.database.TemplateRepository
 import java.util.UUID
 import javax.inject.Inject
 

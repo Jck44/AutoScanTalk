@@ -1,7 +1,7 @@
 package com.andreas_kratzer.ghosttalk.domain.templates
 
 import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
-import com.andreas_kratzer.ghosttalk.data.TemplateRepository
+import com.andreas_kratzer.ghosttalk.core.database.TemplateRepository
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -13,7 +13,7 @@ import org.junit.Test
 class DeleteTemplateUseCaseTest {
 
     private lateinit var templateRepository: TemplateRepository
-    private lateinit var pageRepository: com.andreas_kratzer.ghosttalk.data.PageRepository
+    private lateinit var pageRepository: com.andreas_kratzer.ghosttalk.core.database.PageRepository
     private lateinit var deleteTemplateUseCase: DeleteTemplateUseCase
 
     @Before

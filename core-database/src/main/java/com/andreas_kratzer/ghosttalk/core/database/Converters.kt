@@ -1,4 +1,4 @@
-package com.andreas_kratzer.ghosttalk.data
+package com.andreas_kratzer.ghosttalk.core.database
 
 import androidx.room.TypeConverter
 import com.andreas_kratzer.ghosttalk.core.model.AuditoryCue

@@ -1,6 +1,11 @@
-package com.andreas_kratzer.ghosttalk.data
+package com.andreas_kratzer.ghosttalk.core.database
 
+import com.andreas_kratzer.ghosttalk.core.settings.DatabaseSettings
 import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.FrequentActionButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -12,7 +17,7 @@ import org.junit.Test
 class TemplateRepositoryTest {
 
     private val templateDao = mockk<TemplateDao>(relaxed = true)
-    private val settingsRepository = mockk<SettingsRepository>(relaxed = true)
+    private val settingsRepository = mockk<DatabaseSettings>(relaxed = true)
     private val repository = TemplateRepository(templateDao, settingsRepository)
 
     @Test

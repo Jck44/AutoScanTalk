@@ -3,7 +3,7 @@ package com.andreas_kratzer.ghosttalk.ui.settings
 import android.app.Application
 import com.andreas_kratzer.ghosttalk.core.SecurityManager
 import com.andreas_kratzer.ghosttalk.core.pages.PageImportExportManager
-import com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository
+import com.andreas_kratzer.ghosttalk.core.database.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.domain.pages.GetPagesUseCase
 import com.andreas_kratzer.ghosttalk.ui.settings.delegates.CloudSyncSettingsDelegate

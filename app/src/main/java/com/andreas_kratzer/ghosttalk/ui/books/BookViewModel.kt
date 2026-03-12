@@ -4,7 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.andreas_kratzer.ghosttalk.core.model.Book
-import com.andreas_kratzer.ghosttalk.data.BookRepository
+import com.andreas_kratzer.ghosttalk.core.database.BookRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers

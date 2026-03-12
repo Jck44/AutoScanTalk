@@ -5,7 +5,7 @@ import com.andreas_kratzer.ghosttalk.core.model.ButtonUsageStat
 import com.andreas_kratzer.ghosttalk.core.model.FrequentActionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
-import com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository
+import com.andreas_kratzer.ghosttalk.core.database.ButtonUsageRepository
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest

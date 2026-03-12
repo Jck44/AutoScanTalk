@@ -1,4 +1,4 @@
-package com.andreas_kratzer.ghosttalk.data.entities
+package com.andreas_kratzer.ghosttalk.core.database
 
 import androidx.room.Entity
 import androidx.room.ForeignKey

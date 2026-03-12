@@ -1,10 +1,10 @@
-package com.andreas_kratzer.ghosttalk.data
+package com.andreas_kratzer.ghosttalk.core.database
 
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import com.andreas_kratzer.ghosttalk.data.entities.ButtonEntity
+import com.andreas_kratzer.ghosttalk.core.database.ButtonEntity
 
 @Dao
 interface ButtonDao {

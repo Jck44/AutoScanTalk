@@ -2,9 +2,9 @@ package com.andreas_kratzer.ghosttalk.domain.pages
 
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.Page
-import com.andreas_kratzer.ghosttalk.data.BookRepository
-import com.andreas_kratzer.ghosttalk.data.PageRepository
-import com.andreas_kratzer.ghosttalk.data.TemplateRepository
+import com.andreas_kratzer.ghosttalk.core.database.BookRepository
+import com.andreas_kratzer.ghosttalk.core.database.PageRepository
+import com.andreas_kratzer.ghosttalk.core.database.TemplateRepository
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 

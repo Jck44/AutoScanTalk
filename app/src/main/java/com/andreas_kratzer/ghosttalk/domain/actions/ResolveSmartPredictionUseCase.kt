@@ -5,7 +5,7 @@ import com.andreas_kratzer.ghosttalk.core.model.AuditoryCue
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.Page
-import com.andreas_kratzer.ghosttalk.data.PageRepository
+import com.andreas_kratzer.ghosttalk.core.database.PageRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject

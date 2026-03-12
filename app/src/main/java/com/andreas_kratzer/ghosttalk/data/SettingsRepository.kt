@@ -18,13 +18,14 @@ import com.andreas_kratzer.ghosttalk.data.settings.SecuritySettingsRepository
 import com.andreas_kratzer.ghosttalk.data.settings.SettingsConstants
 import com.andreas_kratzer.ghosttalk.data.settings.UserSettingsRepository
 import com.andreas_kratzer.ghosttalk.data.settings.VoiceSettingsRepository
+import com.andreas_kratzer.ghosttalk.core.settings.DatabaseSettings
 import com.andreas_kratzer.ghosttalk.core.settings.GenAiSettings
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 @SuppressLint("CommitPrefEdits", "ApplySharedPref", "UseKtx")
-class SettingsRepository(context: Context) : SecuritySettings, KeyEventSettings, AudioSettings, ControlDeviceSettings, SpeechSettings, GenAiSettings {
+class SettingsRepository(context: Context) : SecuritySettings, KeyEventSettings, AudioSettings, ControlDeviceSettings, SpeechSettings, GenAiSettings, DatabaseSettings {
 
     private val prefs: SharedPreferences = context.getSharedPreferences(SettingsConstants.PREFS_NAME, Context.MODE_PRIVATE)
 
@@ -260,7 +261,7 @@ class SettingsRepository(context: Context) : SecuritySettings, KeyEventSettings,
         get() = generalSettings.appLanguage
         set(value) { generalSettings.appLanguage = value }
     
-    var initialTemplatesCreated: Boolean
+    override var initialTemplatesCreated: Boolean
         get() = prefs.getBoolean(SettingsConstants.KEY_INITIAL_TEMPLATES_CREATED, false)
         set(value) { prefs.edit().putBoolean(SettingsConstants.KEY_INITIAL_TEMPLATES_CREATED, value).apply() }
 

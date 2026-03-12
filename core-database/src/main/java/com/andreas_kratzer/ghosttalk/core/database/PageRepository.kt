@@ -1,8 +1,8 @@
-package com.andreas_kratzer.ghosttalk.data
+package com.andreas_kratzer.ghosttalk.core.database
 
 import androidx.room.Transaction
 import com.andreas_kratzer.ghosttalk.core.model.Page
-import com.andreas_kratzer.ghosttalk.data.entities.toButtonEntities
+import com.andreas_kratzer.ghosttalk.core.database.toButtonEntities
 import kotlinx.coroutines.flow.Flow
 
 class PageRepository(

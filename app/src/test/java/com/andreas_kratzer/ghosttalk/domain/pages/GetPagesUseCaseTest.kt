@@ -2,7 +2,7 @@ package com.andreas_kratzer.ghosttalk.domain.pages
 
 
 import com.andreas_kratzer.ghosttalk.core.model.Page
-import com.andreas_kratzer.ghosttalk.data.PageRepository
+import com.andreas_kratzer.ghosttalk.core.database.PageRepository
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
