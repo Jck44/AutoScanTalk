@@ -2,11 +2,11 @@ package com.andreas_kratzer.ghosttalk.ui.pages
 
 import android.util.Log
 import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
+import com.andreas_kratzer.ghosttalk.core.di.ApplicationScope
+import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.scanning.ScannerEngine
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.di.ApplicationScope
 import com.andreas_kratzer.ghosttalk.domain.settings.CheckForPredictorUseCase
-import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
@@ -20,7 +20,7 @@ import javax.inject.Singleton
  */
 @Singleton
 class ScanCoordinator @Inject constructor(
-    @ApplicationScope private val scope: CoroutineScope,
+    @param:ApplicationScope private val scope: CoroutineScope,
     private val scannerEngine: ScannerEngine,
     private val settingsRepository: SettingsRepository,
     private val actionExecutor: ActionExecutor,

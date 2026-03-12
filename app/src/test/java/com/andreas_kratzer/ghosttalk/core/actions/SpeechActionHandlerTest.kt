@@ -1,9 +1,7 @@
 package com.andreas_kratzer.ghosttalk.core.actions
 
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
-import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
@@ -13,18 +11,18 @@ import org.junit.Test
 
 class SpeechActionHandlerTest {
 
-    private lateinit var settingsRepository: SettingsRepository
-    private lateinit var ttsHelper: TextToSpeechHelper
+    private lateinit var settings: SpeechSettings
+    private lateinit var ttsProxy: ActionTtsProxy
     private lateinit var log: (String) -> Unit
     private lateinit var handler: SpeechActionHandler
 
     @Before
     fun setup() {
-        settingsRepository = mockk(relaxed = true)
-        ttsHelper = mockk(relaxed = true)
+        settings = mockk(relaxed = true)
+        ttsProxy = mockk(relaxed = true)
         log = mockk(relaxed = true)
-        handler = SpeechActionHandler(settingsRepository, object : dagger.Lazy<TextToSpeechHelper> {
-            override fun get() = ttsHelper
+        handler = SpeechActionHandler(settings, object : dagger.Lazy<ActionTtsProxy> {
+            override fun get() = ttsProxy
         }, log)
     }
 
@@ -43,11 +41,11 @@ class SpeechActionHandlerTest {
             buttonAction = action,
             auditoryCue = null
         )
-        every { ttsHelper.isReady } returns true
+        every { ttsProxy.isReady } returns true
 
         handler.handle(config, action, 1) {}
 
-        verify { ttsHelper.speakRouted("Spoken", any(), any(), any(), any()) }
+        verify { ttsProxy.speakRouted("Spoken", any(), any(), any(), any()) }
     }
 
     @Test
@@ -60,11 +58,11 @@ class SpeechActionHandlerTest {
             buttonAction = action,
             auditoryCue = null
         )
-        every { ttsHelper.isReady } returns true
+        every { ttsProxy.isReady } returns true
 
         handler.handle(config, action, 1) {}
 
-        verify { ttsHelper.speakRouted("Label", any(), any(), any(), any()) }
+        verify { ttsProxy.speakRouted("Label", any(), any(), any(), any()) }
     }
 
     @Test
@@ -77,12 +75,12 @@ class SpeechActionHandlerTest {
             playActionAsAuditoryCue = true,
             auditoryCue = null
         )
-        every { ttsHelper.isReady } returns true
-        every { settingsRepository.cuesAudioDeviceAddress } returns "cues-addr"
+        every { ttsProxy.isReady } returns true
+        every { settings.cuesAudioDeviceAddress } returns "cues-addr"
 
         handler.handle(config, action, 1) {}
 
-        verify { ttsHelper.speakRouted(any(), "cues-addr", any(), any(), any()) }
+        verify { ttsProxy.speakRouted(any(), "cues-addr", any(), any(), any()) }
     }
 
     @Test
@@ -95,19 +93,19 @@ class SpeechActionHandlerTest {
             playActionAsAuditoryCue = false,
             auditoryCue = null
         )
-        every { ttsHelper.isReady } returns true
-        every { settingsRepository.ttsAudioDeviceAddress } returns "tts-addr"
+        every { ttsProxy.isReady } returns true
+        every { settings.ttsAudioDeviceAddress } returns "tts-addr"
 
         handler.handle(config, action, 1) {}
 
-        verify { ttsHelper.speakRouted(any(), "tts-addr", any(), any(), any()) }
+        verify { ttsProxy.speakRouted(any(), "tts-addr", any(), any(), any()) }
     }
 
     @Test
     fun `handle finishes immediately and logs if tts is not ready`() {
         val action = SpeakTextButtonAction()
         val config = ButtonConfig(id = "b1", label = "Test", buttonAction = action, auditoryCue = null)
-        every { ttsHelper.isReady } returns false
+        every { ttsProxy.isReady } returns false
         
         val finishCallback = mockk<(Int) -> Unit>(relaxed = true)
 
@@ -121,10 +119,10 @@ class SpeechActionHandlerTest {
     fun `handle calls onFinish when tts speak completes`() {
         val action = SpeakTextButtonAction()
         val config = ButtonConfig(id = "b1", label = "Test", buttonAction = action, auditoryCue = null)
-        every { ttsHelper.isReady } returns true
+        every { ttsProxy.isReady } returns true
         
         val onCompleteSlot = slot<() -> Unit>()
-        every { ttsHelper.speakRouted(any(), any(), any(), any(), capture(onCompleteSlot)) } returns Unit
+        every { ttsProxy.speakRouted(any(), any(), any(), any(), capture(onCompleteSlot)) } returns Unit
         
         val finishCallback = mockk<(Int) -> Unit>(relaxed = true)
 

@@ -8,6 +8,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
+data class LocalIntent(val id: String, val description: String)
+
 class LocalIntentRouter @Inject constructor(
     private val androidClockExecutor: AndroidClockExecutor,
     private val logger: Logger
@@ -44,21 +46,30 @@ class LocalIntentRouter @Inject constructor(
         }
     }
 
-    suspend fun executeIntent(intent: String, onSpeak: (String) -> Unit) = withContext(Dispatchers.IO) {
+    fun findIntent(response: String): LocalIntent? {
+        // Simple heuristic for now: check if response contains intent keywords
+        return if (response.contains("ALARM_STATUS", ignoreCase = true)) {
+            LocalIntent("alarm", "Nächsten Alarm abrufen")
+        } else null
+    }
+
+    suspend fun executeIntent(intent: LocalIntent, onSpeak: (String) -> Unit) = executeIntent(intent.id, onSpeak)
+
+    suspend fun executeIntent(intentId: String, onSpeak: (String) -> Unit) = withContext(Dispatchers.IO) {
         try {
-            val context = when (intent) {
+            val context = when (intentId) {
                 "alarm" -> "Nächster Alarm: ${androidClockExecutor.getNextAlarm()}"
                 else -> ""
             }
 
-            val systemPrompt = getSystemInstruction(intent, context)
+            val systemPrompt = getSystemInstruction(intentId, context)
             val naturalResponse = generateRawResponse(systemPrompt)
             
             if (naturalResponse.isNotBlank()) {
                 onSpeak(naturalResponse)
             } else {
                 // Fallback if AI fails
-                val fallback = when (intent) {
+                val fallback = when (intentId) {
                     "alarm" -> androidClockExecutor.getNextAlarm()
                     else -> "Ich kann diesen Befehl gerade nicht ausführen."
                 }
@@ -76,4 +87,3 @@ class LocalIntentRouter @Inject constructor(
         onSpeak("Befehl konnte nicht verarbeitet werden.")
     }
 }
-

@@ -7,8 +7,8 @@ import android.speech.tts.TextToSpeech
 import android.util.Log
 import android.widget.Toast
 import com.andreas_kratzer.ghosttalk.core.audio.RoutedAudioPlayer
+import com.andreas_kratzer.ghosttalk.core.di.ApplicationScope
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.di.ApplicationScope
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.combine

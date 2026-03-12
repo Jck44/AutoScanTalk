@@ -1,9 +1,9 @@
 package com.andreas_kratzer.ghosttalk.domain.actions
 
 import android.util.Log
+import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.domain.settings.CheckForPredictorUseCase
-import com.andreas_kratzer.ghosttalk.model.Page
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

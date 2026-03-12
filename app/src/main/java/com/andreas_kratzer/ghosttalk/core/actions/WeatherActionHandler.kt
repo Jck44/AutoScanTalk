@@ -1,28 +1,24 @@
 package com.andreas_kratzer.ghosttalk.core.actions
 
 import android.content.Context
-import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.core.model.ButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.WeatherButtonAction
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.domain.executors.WeatherExecutor
-import com.andreas_kratzer.ghosttalk.model.ButtonAction
-import com.andreas_kratzer.ghosttalk.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.model.WeatherButtonAction
-import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 class WeatherActionHandler(
     private val context: Context,
     private val settingsRepository: SettingsRepository,
-    private val ttsHelperLazy: dagger.Lazy<TextToSpeechHelper>,
+    private val ttsProxyLazy: dagger.Lazy<ActionTtsProxy>,
     private val weatherExecutor: WeatherExecutor,
     private val scope: CoroutineScope,
     private val log: (String) -> Unit
 ) : ActionHandler {
 
-    override fun canHandle(action: ButtonAction): Boolean {
-        return action is WeatherButtonAction
-    }
+    override fun canHandle(action: ButtonAction): Boolean = action is WeatherButtonAction
 
     override fun handle(
         buttonConfig: ButtonConfig,
@@ -30,59 +26,29 @@ class WeatherActionHandler(
         executionId: Int,
         onFinish: (Int) -> Unit
     ) {
-        if (action !is WeatherButtonAction) return
-
-        log(context.getString(R.string.action_weather_fetching))
-
-        scope.launch {
-            try {
-                val weatherResult = weatherExecutor.getWeatherInfo()
-                
-                // Format: "Regen, 15.0 °C" or "wttr.in format"
-                // User wants: "Das aktuelle Wetter: Regen bei 15 Grad"
-                
-                val formattedWeather = if (weatherResult.contains(",")) {
-                    val parts = weatherResult.split(",")
-                    val condition = parts[0].trim()
-                    val tempPart = parts.getOrNull(1)?.trim() ?: ""
-                    val tempValue = tempPart.replace("°C", "").trim().toDoubleOrNull() ?: 0.0
-                    val roundedTemp = kotlin.math.round(tempValue).toInt()
-                    context.getString(R.string.action_weather_format, condition, roundedTemp.toString())
-                } else {
-                    weatherResult
-                }
-
-                speakRoutedWithLogging(formattedWeather, buttonConfig, action, executionId, onFinish)
-            } catch (e: Exception) {
-                log(context.getString(R.string.action_weather_error, e.message ?: "Unknown error"))
-                onFinish(executionId)
-            }
-        }
-    }
-
-    private fun speakRoutedWithLogging(
-        text: String,
-        config: ButtonConfig,
-        action: WeatherButtonAction,
-        executionId: Int,
-        onFinish: (Int) -> Unit
-    ) {
-        val ssml = "<speak>$text</speak>"
-        log(text)
+        log(context.getString(com.andreas_kratzer.ghosttalk.R.string.action_weather_fetching))
         
-        val targetDeviceAddress = if (config.playActionAsAuditoryCue) {
+        val targetDeviceAddress = if (buttonConfig.playActionAsAuditoryCue) {
             settingsRepository.cuesAudioDeviceAddress
         } else {
             settingsRepository.ttsAudioDeviceAddress
         }
-        
-        val ttsHelper = ttsHelperLazy.get()
-        if (ttsHelper.isReady) {
-            ttsHelper.speakRouted(ssml, targetDeviceAddress) {
+
+        scope.launch {
+            try {
+                val weather = weatherExecutor.getWeatherInfo()
+                val report = context.getString(com.andreas_kratzer.ghosttalk.R.string.action_weather_format, weather)
+                log(report)
+                val tts = ttsProxyLazy.get()
+                if (tts.isReady) {
+                    tts.speakRouted(report, targetDeviceAddress) {
+                        onFinish(executionId)
+                    }
+                } else onFinish(executionId)
+            } catch (e: Exception) {
+                log(context.getString(com.andreas_kratzer.ghosttalk.R.string.action_weather_error))
                 onFinish(executionId)
             }
-        } else {
-            onFinish(executionId)
         }
     }
 }

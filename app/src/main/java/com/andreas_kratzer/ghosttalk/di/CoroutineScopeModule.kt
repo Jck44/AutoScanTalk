@@ -1,5 +1,6 @@
 package com.andreas_kratzer.ghosttalk.di
 
+import com.andreas_kratzer.ghosttalk.core.di.ApplicationScope
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

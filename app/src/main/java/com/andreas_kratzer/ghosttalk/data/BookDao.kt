@@ -6,7 +6,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
-import com.andreas_kratzer.ghosttalk.model.Book
+import com.andreas_kratzer.ghosttalk.core.model.Book
 import kotlinx.coroutines.flow.Flow
 
 @Dao

@@ -2,14 +2,15 @@ package com.andreas_kratzer.ghosttalk.ui.templates
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
+import com.andreas_kratzer.ghosttalk.core.model.SortOrder
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.data.TemplateRepository
 import com.andreas_kratzer.ghosttalk.domain.templates.CreateTemplateUseCase
 import com.andreas_kratzer.ghosttalk.domain.templates.DeleteTemplateUseCase
 import com.andreas_kratzer.ghosttalk.domain.templates.GetTemplateUsagesUseCase
 import com.andreas_kratzer.ghosttalk.domain.templates.UpdateButtonConfigInTemplateUseCase
-import com.andreas_kratzer.ghosttalk.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.ui.util.filterAndSort
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,7 +45,7 @@ class TemplateViewModel @Inject constructor(
         settingsRepository.templateSortOrderFlow,
         _searchQuery
     ) { templates, sortOrderStr, query ->
-        val sortOrder = try { com.andreas_kratzer.ghosttalk.model.SortOrder.valueOf(sortOrderStr) } catch (_: Exception) { com.andreas_kratzer.ghosttalk.model.SortOrder.MANUAL }
+        val sortOrder = try { SortOrder.valueOf(sortOrderStr) } catch (_: Exception) { SortOrder.MANUAL }
         templates.filterAndSort(query, sortOrder)
     }.stateIn(
         scope = viewModelScope,

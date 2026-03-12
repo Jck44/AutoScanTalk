@@ -1,6 +1,6 @@
 package com.andreas_kratzer.ghosttalk.data
 
-import com.andreas_kratzer.ghosttalk.model.Page
+import com.andreas_kratzer.ghosttalk.core.model.Page
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every

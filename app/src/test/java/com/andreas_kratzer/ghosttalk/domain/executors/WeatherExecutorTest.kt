@@ -10,8 +10,6 @@ import com.andreas_kratzer.ghosttalk.data.WeatherRepository
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.verify
-import io.mockk.coEvery
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Before

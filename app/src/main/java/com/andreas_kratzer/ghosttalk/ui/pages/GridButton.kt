@@ -18,10 +18,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.andreas_kratzer.ghosttalk.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.ui.theme.LocalIsUserModeActive
 
@@ -75,7 +76,11 @@ fun GridButton(
                     textAlign = TextAlign.Center,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    style = MaterialTheme.typography.titleLarge.copy(fontSize = dimensions.buttonFontSize)
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontSize = dimensions.buttonFontSize,
+                        lineHeight = dimensions.buttonFontSize * 1.1f,
+                        platformStyle = PlatformTextStyle(includeFontPadding = false)
+                    )
                 )
             } else if (isEditorMode) {
                 Icon(

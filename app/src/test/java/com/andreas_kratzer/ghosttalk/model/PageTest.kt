@@ -1,4 +1,4 @@
-package com.andreas_kratzer.ghosttalk.model
+package com.andreas_kratzer.ghosttalk.core.model
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows

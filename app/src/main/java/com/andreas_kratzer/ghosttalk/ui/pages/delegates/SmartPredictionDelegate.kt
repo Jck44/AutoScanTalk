@@ -1,7 +1,7 @@
 package com.andreas_kratzer.ghosttalk.ui.pages.delegates
 
+import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.domain.actions.UpdateSmartPredictionsUseCase
-import com.andreas_kratzer.ghosttalk.model.Page
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch

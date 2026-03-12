@@ -1,16 +1,13 @@
 package com.andreas_kratzer.ghosttalk.domain.auth
 
-import org.junit.Assert.assertEquals
-
 
 import android.content.Context
 import android.util.Log
+import com.andreas_kratzer.ghosttalk.core.model.Book
 import com.andreas_kratzer.ghosttalk.core.pages.PageImportExportManager
 import com.andreas_kratzer.ghosttalk.core.util.Logger
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
-import com.google.api.services.drive.Drive
 import com.andreas_kratzer.ghosttalk.data.BookRepository
-import com.andreas_kratzer.ghosttalk.model.Book
+import com.google.api.services.drive.Drive
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -22,6 +19,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import java.io.File
@@ -215,7 +213,7 @@ class CloudSyncUseCaseTest {
             file.writeText("{\"bookName\": \"Test Book\"}")
             true
         }
-        every { mockImportExportManager.extractBookNameFromJson(any()) } returns "Test Book"
+        coEvery { mockImportExportManager.extractBookNameFromJson(any()) } returns "Test Book"
 
         val backups = useCase.getAvailableBackups(mockDrive)
         advanceUntilIdle()

@@ -1,7 +1,7 @@
 package com.andreas_kratzer.ghosttalk.domain.settings
 
-import com.andreas_kratzer.ghosttalk.model.Page
-import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.Page
+import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
 import javax.inject.Inject
 
 class CheckForPredictorUseCase @Inject constructor(

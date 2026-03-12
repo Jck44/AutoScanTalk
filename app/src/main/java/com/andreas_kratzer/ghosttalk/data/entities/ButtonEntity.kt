@@ -4,14 +4,15 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import com.andreas_kratzer.ghosttalk.model.AuditoryCue
-import com.andreas_kratzer.ghosttalk.model.ButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.AuditoryCue
+import com.andreas_kratzer.ghosttalk.core.model.ButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.Page
 
 @Entity(
     tableName = "buttons",
     foreignKeys = [
         ForeignKey(
-            entity = com.andreas_kratzer.ghosttalk.model.Page::class,
+            entity = Page::class,
             parentColumns = ["id"],
             childColumns = ["pageId"],
             onDelete = ForeignKey.CASCADE

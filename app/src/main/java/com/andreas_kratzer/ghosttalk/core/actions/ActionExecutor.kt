@@ -1,12 +1,12 @@
 package com.andreas_kratzer.ghosttalk.core.actions
 
 import android.app.Application
+import com.andreas_kratzer.ghosttalk.core.di.ApplicationScope
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.di.ApplicationScope
 import com.andreas_kratzer.ghosttalk.domain.genai.GeminiUseCase
-import com.andreas_kratzer.ghosttalk.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -22,7 +22,7 @@ import javax.inject.Singleton
 @Singleton
 class ActionExecutor @Inject constructor(
     private val application: Application,
-    @ApplicationScope private val scope: CoroutineScope,
+    @param:ApplicationScope private val scope: CoroutineScope,
     private val settingsRepository: SettingsRepository,
     private val logger: Logger,
     private val localIntentRouter: com.andreas_kratzer.ghosttalk.domain.executors.LocalIntentRouter,
@@ -31,7 +31,6 @@ class ActionExecutor @Inject constructor(
     private val geminiUseCaseLazy: dagger.Lazy<GeminiUseCase>,
     private val ttsHelperLazy: dagger.Lazy<TextToSpeechHelper>
 ) {
-    // Default time provider
     private var timeProvider: () -> Long = { System.currentTimeMillis() }
     
     internal fun setTimeProviderForTest(provider: () -> Long) {
@@ -53,20 +52,54 @@ class ActionExecutor @Inject constructor(
     private var lastExecutionTime = -1L
     private var activeExecutionId = 0
 
-    internal var handlers: List<ActionHandler> = createHandlers()
-
-    private fun createHandlers(): List<ActionHandler> {
-        return listOf(
-            SpeechActionHandler(settingsRepository, ttsHelperLazy, ::log),
-            NavigationActionHandler(scope, settingsRepository, ttsHelperLazy, ::emitEvent, ::log),
-            ControlDeviceActionHandler(application, settingsRepository, ttsHelperLazy, ::log),
-            WeatherActionHandler(application, settingsRepository, ttsHelperLazy, weatherExecutor, scope, ::log),
-            GeminiActionHandler(scope, settingsRepository, geminiUseCaseLazy, localIntentRouter, ttsHelperLazy, ::emitEvent, ::log, ::error),
-            FrequentActionHandler(::log),
-            SmartPredictionActionHandler(::log)
-        )
+    // Proxy for TTS to be used by core handlers
+    private val actionTtsProxy = object : ActionTtsProxy {
+        override val isReady: Boolean get() = ttsHelperLazy.get().isReady
+        override var isReadingNotification: Boolean 
+            get() = ttsHelperLazy.get().isReadingNotification
+            set(value) { ttsHelperLazy.get().isReadingNotification = value }
+        
+        override fun speakRouted(text: String, deviceAddress: String?, queueMode: Int, isForCues: Boolean, onDone: (() -> Unit)?) {
+            ttsHelperLazy.get().speakRouted(text, deviceAddress, queueMode, isForCues, onDone)
+        }
     }
 
+    private val controlDeviceTtsProxy = object : ControlDeviceTtsProxy {
+        override val isReady: Boolean get() = ttsHelperLazy.get().isReady
+        override var isReadingNotification: Boolean 
+            get() = ttsHelperLazy.get().isReadingNotification
+            set(value) { ttsHelperLazy.get().isReadingNotification = value }
+        
+        override fun speakRouted(text: String, deviceAddress: String?, onDone: (() -> Unit)?) {
+            ttsHelperLazy.get().speakRouted(text, deviceAddress, onDone = onDone)
+        }
+    }
+
+    internal var handlers: List<ActionHandler> = listOf(
+        SpeechActionHandler(settingsRepository, dagger.Lazy { actionTtsProxy }, ::log),
+        NavigationActionHandler(scope, settingsRepository, ttsHelperLazy, ::emitEvent, ::log),
+        ControlDeviceActionHandler(
+            application, 
+            settingsRepository, 
+            dagger.Lazy { controlDeviceTtsProxy }, 
+            ::log,
+            { id, args -> application.getString(id, *args) }
+        ),
+        WeatherActionHandler(application, settingsRepository, dagger.Lazy { actionTtsProxy }, weatherExecutor, scope, ::log),
+        GeminiActionHandler(
+            scope, 
+            settingsRepository, 
+            geminiUseCaseLazy, 
+            localIntentRouter, 
+            dagger.Lazy { actionTtsProxy }, 
+            ::emitEvent, 
+            ::log, 
+            ::error,
+            { id, args -> application.getString(id, *args) }
+        ),
+        FrequentActionHandler(::log),
+        SmartPredictionActionHandler(::log)
+    )
 
     fun executeButtonAction(
         buttonConfig: ButtonConfig, 
@@ -92,12 +125,11 @@ class ActionExecutor @Inject constructor(
         val currentExecutionId = ++activeExecutionId
         _isExecuting.value = true
 
-        // Record button usage for statistics
         if (bookId != null && index != -1) {
             scope.launch {
                 try {
                     buttonUsageRepository.recordUsage(bookId, buttonConfig, rows, columns, index)
-                } catch (_: Exception) { /* Non-critical, don't block action */ }
+                } catch (_: Exception) { }
             }
         }
 
@@ -112,7 +144,7 @@ class ActionExecutor @Inject constructor(
                 ::finishExecution
             )
         } else {
-            log("Kein Handler für Aktionstyp gefunden: ${action::class.simpleName}")
+            log("Kein Handler für Aktion gefunden: ${action::class.simpleName}")
             logger.d("ActionExecutor", "No handler for ${action::class.simpleName}")
             finishExecution(currentExecutionId)
         }

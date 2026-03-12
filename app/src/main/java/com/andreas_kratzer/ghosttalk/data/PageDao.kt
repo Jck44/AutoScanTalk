@@ -6,8 +6,8 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.data.entities.PageWithButtons
-import com.andreas_kratzer.ghosttalk.model.Page
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 

@@ -1,108 +1,59 @@
 package com.andreas_kratzer.ghosttalk.ui.pages
 
-import android.Manifest
-import android.content.pm.PackageManager
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuAnchorType
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Switch
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.ImeAction
-import androidx.core.content.ContextCompat
+import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
-import com.andreas_kratzer.ghosttalk.model.AuditoryCue
-import com.andreas_kratzer.ghosttalk.model.ButtonAction
-import com.andreas_kratzer.ghosttalk.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.model.ControlDeviceButtonAction
-import com.andreas_kratzer.ghosttalk.model.DeviceActionType
-import com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction
-import com.andreas_kratzer.ghosttalk.model.GeminiButtonAction
-import com.andreas_kratzer.ghosttalk.model.GeminiNanoButtonAction
-import com.andreas_kratzer.ghosttalk.model.GeminiSearchButtonAction
-import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
-import com.andreas_kratzer.ghosttalk.model.Page
-import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
-import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
-import com.andreas_kratzer.ghosttalk.ui.theme.LocalCurrentPageId
+import com.andreas_kratzer.ghosttalk.core.model.AuditoryCue
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.ControlDeviceButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.DeviceActionType
+import com.andreas_kratzer.ghosttalk.core.model.FrequentActionButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.GeminiButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.GeminiNanoButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.GeminiSearchButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.Page
+import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
+import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.WeatherButtonAction
+import com.andreas_kratzer.ghosttalk.ui.components.SettingsDropdownItem
+import com.andreas_kratzer.ghosttalk.ui.components.SettingsEditTextItem
+import com.andreas_kratzer.ghosttalk.ui.components.SettingsToggleItem
 import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ButtonConfigDialog(
-    initialConfig: ButtonConfig?,
-    availablePages: List<Page>,
-    buttonId: String,
-    featureGuard: com.andreas_kratzer.ghosttalk.domain.settings.FeatureGuard,
-    templates: List<com.andreas_kratzer.ghosttalk.model.PageTemplate>,
-    isTesting: Boolean = false,
-    onDismiss: () -> Unit,
-    onSave: (ButtonConfig?) -> Unit,
-    onTest: ((ButtonConfig) -> Unit)? = null,
-    onNavigateToPage: ((String) -> Unit)? = null,
-    onCreatePage: ((String, Int, Int, String?, (String) -> Unit) -> Unit)? = null,
-    onMoveToPage: ((String, Boolean, (com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult) -> Unit) -> Unit)? = null
+    buttonConfig: ButtonConfig,
+    pages: List<Page>,
+    templates: List<PageTemplate>,
+    onSave: (ButtonConfig) -> Unit,
+    onDismiss: () -> Unit
 ) {
-    val currentPageId = LocalCurrentPageId.current ?: ""
-    val dimensions = LocalDimensions.current
-    val context = LocalContext.current
-    val focusManager = LocalFocusManager.current
-
-    val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { _ -> 
-        // Permissions handled reactively
+    var label by remember { mutableStateOf(buttonConfig.label) }
+    var spokenText by remember { mutableStateOf(buttonConfig.spokenText ?: "") }
+    var auditoryCueText by remember { 
+        mutableStateOf((buttonConfig.auditoryCue as? AuditoryCue.TextToSpeechCue)?.text ?: "") 
     }
+    var isActive by remember { mutableStateOf(buttonConfig.isActive) }
+    var playActionAsAuditoryCue by remember { mutableStateOf(buttonConfig.playActionAsAuditoryCue) }
     
-    // Current State
-    var label by remember { mutableStateOf(initialConfig?.label ?: "") }
-    var isError by remember { mutableStateOf(false) }
-    var spokenText by remember { mutableStateOf(initialConfig?.spokenText ?: "") }
-
-    var ttsFeedback by remember { 
-        mutableStateOf(
-            (initialConfig?.auditoryCue as? AuditoryCue.TextToSpeechCue)?.text ?: ""
-        ) 
-    }
-    var isActive by remember { mutableStateOf(initialConfig?.isActive ?: true) }
-    var playActionAsAuditoryCue by remember { mutableStateOf(initialConfig?.playActionAsAuditoryCue ?: false) }
-    
-    // Action Type selection
     val actionTypeSpeak = stringResource(R.string.button_action_speak_text)
     val actionTypeNavigate = stringResource(R.string.button_action_navigate_page)
     val actionTypeGemini = stringResource(R.string.button_action_gemini)
@@ -110,467 +61,189 @@ fun ButtonConfigDialog(
     val actionTypeGeminiNano = stringResource(R.string.button_action_gemini_nano)
     val actionTypeFrequent = stringResource(R.string.button_action_frequent_action)
     val actionTypeSmart = stringResource(R.string.button_action_smart_prediction)
-    val actionTypeControlDevice = stringResource(R.string.button_action_control_device)
+    val actionTypeDevice = stringResource(R.string.button_action_control_device)
     val actionTypeWeather = stringResource(R.string.button_action_weather)
 
-    val actionTypes = remember(featureGuard, actionTypeControlDevice, actionTypeWeather) {
-        val base = mutableListOf(
-            actionTypeSpeak, actionTypeNavigate, actionTypeFrequent, actionTypeControlDevice, actionTypeWeather
-        )
-        if (featureGuard.isActionEnabled(GeminiButtonAction(""))) {
-            base.add(actionTypeGemini)
-            base.add(actionTypeGeminiSearch)
-        }
-        if (featureGuard.isActionEnabled(GeminiNanoButtonAction("")) || initialConfig?.buttonAction is GeminiNanoButtonAction) {
-            base.add(actionTypeGeminiNano)
-        }
-        if (featureGuard.isActionEnabled(SmartPredictionButtonAction())) {
-            base.add(actionTypeSmart)
-        }
-        base.toList()
-    }
-    
     var selectedActionType by remember {
         mutableStateOf(
-            when (initialConfig?.buttonAction) {
+            when (val action = buttonConfig.buttonAction) {
                 is NavigateToPageButtonAction -> actionTypeNavigate
                 is GeminiButtonAction -> actionTypeGemini
                 is GeminiSearchButtonAction -> actionTypeGeminiSearch
                 is GeminiNanoButtonAction -> actionTypeGeminiNano
                 is FrequentActionButtonAction -> actionTypeFrequent
                 is SmartPredictionButtonAction -> actionTypeSmart
-                is ControlDeviceButtonAction -> actionTypeControlDevice
-                is com.andreas_kratzer.ghosttalk.model.WeatherButtonAction -> actionTypeWeather
+                is ControlDeviceButtonAction -> actionTypeDevice
+                is WeatherButtonAction -> actionTypeWeather
                 else -> actionTypeSpeak
             }
         )
     }
-    var expandedActionType by remember { mutableStateOf(false) }
 
-
-
-    // Navigation Details
-    val navAction = initialConfig?.buttonAction as? NavigateToPageButtonAction
-    var navigateToPageId by remember { mutableStateOf(navAction?.pageId ?: "") }
-
-    // Gemini Details
-    val geminiAction = initialConfig?.buttonAction as? GeminiButtonAction
-    val geminiSearchAction = initialConfig?.buttonAction as? GeminiSearchButtonAction
-    val geminiNanoAction = initialConfig?.buttonAction as? GeminiNanoButtonAction
-    var geminiPrompt by remember { mutableStateOf(geminiAction?.prompt ?: geminiSearchAction?.prompt ?: geminiNanoAction?.intent ?: "") }
-
-    // Frequent Action Details
-    val frequentActionDef = initialConfig?.buttonAction as? FrequentActionButtonAction
-    var frequentRank by remember { mutableStateOf((frequentActionDef?.rank ?: 1).toString()) }
-
-    // Smart Prediction Details
-    val smartActionDef = initialConfig?.buttonAction as? SmartPredictionButtonAction
-    var smartRank by remember { mutableStateOf((smartActionDef?.rank ?: 1).toString()) }
-
-    // Device Control Details
-    val controlActionDef = initialConfig?.buttonAction as? ControlDeviceButtonAction
-    var controlActionType by remember { 
-        mutableStateOf(controlActionDef?.actionType ?: DeviceActionType.READ_NOTIFICATIONS) 
-    }
-    var controlVolumeValue by remember { mutableStateOf(controlActionDef?.volumeValue ?: "50") }
-    val contactPickerTitle = stringResource(R.string.contact_picker_title)
-    var controlContactName by remember { mutableStateOf(controlActionDef?.contactName ?: contactPickerTitle) }
-    var controlContactPhone by remember { mutableStateOf(controlActionDef?.contactPhone ?: "") }
-    var controlMessageText by remember { mutableStateOf(controlActionDef?.messageText ?: "") }
-
-    // Move logic state
-    var showTargetSelector by remember { mutableStateOf(false) }
-    var showHiddenPrompt by remember { mutableStateOf<com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.NeedsConfirmation?>(null) }
-    var moveError by remember { mutableStateOf<String?>(null) }
-    
-    // Action menu state
-    var showActionMenu by remember { mutableStateOf(false) }
-
-    // Helper to build the action object from current UI state
-    fun buildButtonAction(): ButtonAction {
-        return when (selectedActionType) {
-            actionTypeNavigate -> NavigateToPageButtonAction(pageId = navigateToPageId)
-            actionTypeGemini -> GeminiButtonAction(prompt = geminiPrompt)
-            actionTypeGeminiSearch -> GeminiSearchButtonAction(prompt = geminiPrompt)
-            actionTypeGeminiNano -> GeminiNanoButtonAction(intent = geminiPrompt)
-            actionTypeFrequent -> FrequentActionButtonAction(rank = frequentRank.toIntOrNull()?.coerceAtLeast(1) ?: 1)
-            actionTypeSmart -> SmartPredictionButtonAction(rank = smartRank.toIntOrNull()?.coerceAtLeast(1) ?: 1)
-            actionTypeWeather -> com.andreas_kratzer.ghosttalk.model.WeatherButtonAction()
-            actionTypeControlDevice -> ControlDeviceButtonAction(
-                actionType = controlActionType,
-                volumeValue = controlVolumeValue,
-                contactName = controlContactName,
-                contactPhone = controlContactPhone,
-                messageText = controlMessageText
-            )
-            else -> SpeakTextButtonAction()
-        }
+    // Navigation specific state
+    var targetPageId by remember {
+        mutableStateOf((buttonConfig.buttonAction as? NavigateToPageButtonAction)?.pageId ?: "")
     }
 
-    val testStartedToast = stringResource(R.string.button_test_started)
-    val testFinishedToast = stringResource(R.string.button_test_finished)
+    // Gemini specific state
+    var geminiPrompt by remember {
+        mutableStateOf(
+            when(val action = buttonConfig.buttonAction) {
+                is GeminiButtonAction -> action.prompt
+                is GeminiSearchButtonAction -> action.prompt
+                is GeminiNanoButtonAction -> action.intent
+                else -> ""
+            }
+        )
+    }
 
-    val moveSuccessToast = stringResource(R.string.button_move_success)
-    val moveErrorFull = stringResource(R.string.button_move_error_full)
+    // Frequent/Smart specific state
+    var rank by remember {
+        mutableStateOf(
+            when(val action = buttonConfig.buttonAction) {
+                is FrequentActionButtonAction -> action.rank
+                is SmartPredictionButtonAction -> action.rank
+                else -> 1
+            }
+        )
+    }
 
-    // Since LaunchedEffect(isTesting) will also trigger on initial composition (false), 
-    // and we only want to show "Finished" when it transitions from true to false, 
-    // we need to track the previous state.
-    var wasTesting by remember { mutableStateOf(false) }
-    androidx.compose.runtime.LaunchedEffect(isTesting) {
-        if (isTesting) {
-            android.widget.Toast.makeText(context, testStartedToast, android.widget.Toast.LENGTH_SHORT).show()
-            wasTesting = true
-        } else if (wasTesting) {
-            android.widget.Toast.makeText(context, testFinishedToast, android.widget.Toast.LENGTH_SHORT).show()
-            wasTesting = false
-        }
+    // Device control specific state
+    var deviceActionType by remember {
+        mutableStateOf((buttonConfig.buttonAction as? ControlDeviceButtonAction)?.actionType ?: DeviceActionType.READ_TIME)
+    }
+    var volumeValue by remember {
+        mutableStateOf((buttonConfig.buttonAction as? ControlDeviceButtonAction)?.volumeValue ?: "50")
+    }
+    var contactName by remember {
+        mutableStateOf((buttonConfig.buttonAction as? ControlDeviceButtonAction)?.contactName ?: "")
+    }
+    var contactPhone by remember {
+        mutableStateOf((buttonConfig.buttonAction as? ControlDeviceButtonAction)?.contactPhone ?: "")
+    }
+    var messageText by remember {
+        mutableStateOf((buttonConfig.buttonAction as? ControlDeviceButtonAction)?.messageText ?: "")
     }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (initialConfig == null) stringResource(R.string.button_dialog_new_title) else stringResource(R.string.button_dialog_edit_title)) },
+        title = { Text(stringResource(R.string.button_dialog_edit_title)) },
         text = {
             Column(
-                verticalArrangement = Arrangement.spacedBy(dimensions.paddingMedium),
-                modifier = Modifier.verticalScroll(rememberScrollState())
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(LocalDimensions.current.paddingSmall)
             ) {
-                // IsActive Toggle (Moved to top)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(stringResource(R.string.button_is_active_label), style = MaterialTheme.typography.bodyLarge)
-                    Switch(
-                        checked = isActive,
-                        onCheckedChange = { isActive = it }
-                    )
-                }
-
-                if (!featureGuard.isActionEnabled(SmartPredictionButtonAction()) && initialConfig?.buttonAction is SmartPredictionButtonAction) {
-                    Text(
-                        text = stringResource(R.string.settings_smart_prediction_disabled_warning),
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = dimensions.paddingMedium)
-                    )
-                }
-                
-
-                if (!featureGuard.isActionEnabled(GeminiNanoButtonAction("")) && initialConfig?.buttonAction is GeminiNanoButtonAction) {
-                    Text(
-                        text = stringResource(R.string.settings_gemini_nano_disabled_warning),
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = dimensions.paddingMedium)
-                    )
-                }
-
-                // Label Input
-                OutlinedTextField(
+                SettingsEditTextItem(
+                    label = stringResource(R.string.button_label_field),
                     value = label,
-                    onValueChange = { 
-                        label = it 
-                        if (it.isNotBlank()) isError = false
-                    },
-                    label = { Text(stringResource(R.string.button_label_field)) },
-                    singleLine = true,
-                    shape = MaterialTheme.shapes.large,
-                    modifier = Modifier.fillMaxWidth(),
-                    isError = isError,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                    supportingText = {
-                        if (isError) {
-                            Text(stringResource(R.string.error_button_label_required))
-                        }
-                    }
+                    onValueChange = { label = it }
                 )
-
-
-                // Explicit Spoken Text Input
-                OutlinedTextField(
+                
+                SettingsEditTextItem(
+                    label = stringResource(R.string.button_spoken_text_field),
                     value = spokenText,
-                    onValueChange = { spokenText = it },
-                    label = { Text(stringResource(R.string.button_spoken_text_field)) },
-                    singleLine = true,
-                    shape = MaterialTheme.shapes.large,
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
+                    onValueChange = { spokenText = it }
                 )
 
-                // Hinweistext (formerly Auditory Cue)
-                OutlinedTextField(
-                    value = ttsFeedback,
-                    onValueChange = { ttsFeedback = it },
-                    label = { Text(stringResource(R.string.button_auditory_cue_field)) },
-                    singleLine = true,
-                    shape = MaterialTheme.shapes.large,
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
+                SettingsEditTextItem(
+                    label = stringResource(R.string.button_auditory_cue_field),
+                    value = auditoryCueText,
+                    onValueChange = { auditoryCueText = it }
                 )
 
-                // Action Type Dropdown
-                ExposedDropdownMenuBox(
-                    expanded = expandedActionType,
-                    onExpandedChange = { expandedActionType = !expandedActionType }
-                ) {
-                    OutlinedTextField(
-                        readOnly = true,
-                        value = selectedActionType,
-                        onValueChange = { },
-                        label = { Text(stringResource(R.string.button_action_label)) },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedActionType) },
-                        shape = MaterialTheme.shapes.large,
-                        modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
-                    )
-                    ExposedDropdownMenu(
-                        expanded = expandedActionType,
-                        onDismissRequest = { expandedActionType = false }
-                    ) {
-                        actionTypes.forEach { selectionOption ->
-                            DropdownMenuItem(
-                                text = { Text(selectionOption) },
-                                onClick = {
-                                    selectedActionType = selectionOption
-                                    focusManager.clearFocus()
-                                    expandedActionType = false
-                                }
-                            )
-                        }
-                    }
-                }
+                SettingsToggleItem(
+                    label = stringResource(R.string.button_is_active_label),
+                    checked = isActive,
+                    onCheckedChange = { isActive = it }
+                )
 
-                ActionConfigWrapper(
+                SettingsToggleItem(
+                    label = stringResource(R.string.button_play_as_cue),
+                    checked = playActionAsAuditoryCue,
+                    onCheckedChange = { playActionAsAuditoryCue = it }
+                )
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                SettingsDropdownItem(
+                    label = stringResource(R.string.button_action_label),
+                    selectedOption = selectedActionType,
+                    options = listOf(
+                        actionTypeSpeak,
+                        actionTypeNavigate,
+                        actionTypeGemini,
+                        actionTypeGeminiSearch,
+                        actionTypeGeminiNano,
+                        actionTypeFrequent,
+                        actionTypeSmart,
+                        actionTypeWeather,
+                        actionTypeDevice
+                    ).map { type -> type to { selectedActionType = type } }
+                )
+
+                ActionConfigFields(
                     selectedActionType = selectedActionType,
-                    actionTypeNavigate = actionTypeNavigate,
-                    actionTypeGemini = actionTypeGemini,
-                    actionTypeGeminiSearch = actionTypeGeminiSearch,
-                    actionTypeGeminiNano = actionTypeGeminiNano,
-                    actionTypeFrequent = actionTypeFrequent,
-                    actionTypeSmart = actionTypeSmart,
-                    actionTypeControlDevice = actionTypeControlDevice,
-                    actionTypeWeather = actionTypeWeather,
-                    label = label,
-                    onLabelError = { isError = true },
-                    spokenText = spokenText,
-                    ttsFeedback = ttsFeedback,
-                    isActive = isActive,
-                    playActionAsAuditoryCue = playActionAsAuditoryCue,
-                    buttonId = buttonId,
-                    onSave = { onSave(it) },
-                    onDismiss = onDismiss,
-                    navigateToPageId = navigateToPageId,
-                    onNavigateToPageIdChange = { navigateToPageId = it },
-                    availablePages = availablePages,
+                    pages = pages,
                     templates = templates,
-                    onNavigateToPage = onNavigateToPage,
-                    onCreatePage = onCreatePage,
+                    targetPageId = targetPageId,
+                    onTargetPageIdChange = { targetPageId = it },
                     geminiPrompt = geminiPrompt,
                     onGeminiPromptChange = { geminiPrompt = it },
-                    frequentRank = frequentRank,
-                    onFrequentRankChange = { frequentRank = it },
-                    smartRank = smartRank,
-                    onSmartRankChange = { smartRank = it },
-                    controlActionType = controlActionType,
-                    onControlActionTypeChange = { controlActionType = it },
-                    controlVolumeValue = controlVolumeValue,
-                    onControlVolumeValueChange = { controlVolumeValue = it },
-                    controlContactName = controlContactName,
-                    onControlContactChange = { name, phone ->
-                        controlContactName = name
-                        controlContactPhone = phone
-                    },
-                    controlMessageText = controlMessageText,
-                    onControlMessageTextChange = { controlMessageText = it },
-                    buildAction = ::buildButtonAction
+                    rank = rank,
+                    onRankChange = { rank = it },
+                    deviceActionType = deviceActionType,
+                    onDeviceActionTypeChange = { deviceActionType = it },
+                    volumeValue = volumeValue,
+                    onVolumeValueChange = { volumeValue = it },
+                    contactName = contactName,
+                    onContactNameChange = { contactName = it },
+                    contactPhone = contactPhone,
+                    onContactPhoneChange = { contactPhone = it },
+                    messageText = messageText,
+                    onMessageTextChange = { messageText = it }
                 )
-
-                // Auditory Cue Routing Toggle (Visible for actions with audio output)
-                if (selectedActionType == actionTypeSpeak || 
-                    selectedActionType == actionTypeGemini || 
-                    selectedActionType == actionTypeGeminiSearch ||
-                    selectedActionType == actionTypeGeminiNano ||
-                    selectedActionType == actionTypeSmart || 
-                    selectedActionType == actionTypeWeather || 
-                    selectedActionType == actionTypeControlDevice) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(stringResource(R.string.button_play_as_cue), style = MaterialTheme.typography.bodyMedium)
-                        Switch(
-                            checked = playActionAsAuditoryCue,
-                            onCheckedChange = { playActionAsAuditoryCue = it }
-                        )
-                    }
-                }
             }
         },
         confirmButton = {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                val validateAndConfig = {
-                    if (label.isNotBlank()) {
-                        val action = buildButtonAction()
-                        val cue = if (ttsFeedback.isNotBlank()) {
-                            AuditoryCue.TextToSpeechCue(text = ttsFeedback)
-                        } else null
-                        
-                        ButtonConfig(
-                            id = buttonId, 
-                            label = label, 
-                            spokenText = spokenText.takeIf { it.isNotBlank() },
-                            buttonAction = action,
-                            isActive = isActive,
-                            playActionAsAuditoryCue = playActionAsAuditoryCue,
-                            auditoryCue = cue
-                        )
-                    } else {
-                        isError = true
-                        null
-                    }
+            TextButton(onClick = {
+                val action = when (selectedActionType) {
+                    actionTypeNavigate -> NavigateToPageButtonAction(targetPageId)
+                    actionTypeGemini -> GeminiButtonAction(geminiPrompt)
+                    actionTypeGeminiSearch -> GeminiSearchButtonAction(geminiPrompt)
+                    actionTypeGeminiNano -> GeminiNanoButtonAction(geminiPrompt)
+                    actionTypeFrequent -> FrequentActionButtonAction(rank)
+                    actionTypeSmart -> SmartPredictionButtonAction(rank)
+                    actionTypeWeather -> WeatherButtonAction()
+                    actionTypeDevice -> ControlDeviceButtonAction(
+                        actionType = deviceActionType,
+                        volumeValue = volumeValue,
+                        contactName = contactName,
+                        contactPhone = contactPhone,
+                        messageText = messageText
+                    )
+                    else -> SpeakTextButtonAction()
                 }
 
-                if (onTest != null) {
-                    Button(
-                        enabled = !isTesting,
-                        onClick = { validateAndConfig()?.let { onTest(it) } },
-                        shape = MaterialTheme.shapes.medium,
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
-                    ) {
-                        Text(stringResource(R.string.button_action_test))
-                    }
-                }
-
-                Button(
-                    enabled = !isTesting,
-                    onClick = {
-                        validateAndConfig()?.let { config ->
-                            // Check for weather permission if weather is selected
-                            if (config.buttonAction is GeminiNanoButtonAction && config.buttonAction.intent == "weather") {
-                                val hasFine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-                                val hasCoarse = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
-                                if (!hasFine && !hasCoarse) {
-                                    permissionLauncher.launch(
-                                        arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
-                                    )
-                                }
-                            }
-                            onSave(config)
-                        }
-                    },
-                    shape = MaterialTheme.shapes.medium
-                ) {
-                    Text(stringResource(R.string.action_save))
-                }
-
-                // Overflow menu (Move, Delete)
-                Box {
-                    IconButton(onClick = { showActionMenu = true }) {
-                        Icon(
-                            imageVector = Icons.Default.MoreVert,
-                            contentDescription = stringResource(R.string.action_more_options)
-                        )
-                    }
-                    DropdownMenu(
-                        expanded = showActionMenu,
-                        onDismissRequest = { showActionMenu = false }
-                    ) {
-                        if (initialConfig != null && onMoveToPage != null) { 
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.button_action_move)) },
-                                onClick = {
-                                    showActionMenu = false
-                                    if (!isTesting) {
-                                        showTargetSelector = true
-                                    }
-                                }
-                            )
-                        }
-
-                        DropdownMenuItem(
-                            text = { 
-                                Text(
-                                    stringResource(R.string.action_clear_delete),
-                                    color = MaterialTheme.colorScheme.error
-                                ) 
-                            },
-                            onClick = {
-                                showActionMenu = false
-                                if (!isTesting) {
-                                    onSave(null)
-                                }
-                            }
-                        )
-                    }
-                }
+                onSave(
+                    buttonConfig.copy(
+                        label = label,
+                        spokenText = spokenText.ifBlank { null },
+                        auditoryCue = if (auditoryCueText.isNotBlank()) AuditoryCue.TextToSpeechCue(auditoryCueText) else null,
+                        isActive = isActive,
+                        playActionAsAuditoryCue = playActionAsAuditoryCue,
+                        buttonAction = action
+                    )
+                )
+            }) {
+                Text(stringResource(R.string.action_save))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.action_cancel))
             }
         }
     )
-
-    // Dialogs for Move
-    if (showTargetSelector) {
-        TargetPageSelectionDialog(
-            availablePages = availablePages.filter { it.id != currentPageId },
-            onPageSelected = { targetPage ->
-                showTargetSelector = false
-                onMoveToPage?.invoke(targetPage.id, false) { result ->
-                    when (result) {
-                        is com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.NeedsConfirmation -> {
-                            showHiddenPrompt = result
-                        }
-                        is com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.Success -> {
-                            android.widget.Toast.makeText(context, moveSuccessToast, android.widget.Toast.LENGTH_SHORT).show()
-                            onDismiss()
-                        }
-                        is com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.TargetFull -> {
-                            moveError = moveErrorFull
-                        }
-                        else -> { /* Error handled generally */ }
-                    }
-                }
-            },
-            onDismiss = { showTargetSelector = false }
-        )
-    }
-
-    if (showHiddenPrompt != null) {
-        val promptData = showHiddenPrompt!!
-        MoveHiddenPromptDialog(
-            requiredRows = if (promptData.requiredRows > promptData.targetPage.rows) promptData.requiredRows else 0,
-            requiredCols = if (promptData.requiredCols > promptData.targetPage.columns) promptData.requiredCols else 0,
-            onConfirm = {
-                val targetId = promptData.targetPage.id
-                showHiddenPrompt = null
-                onMoveToPage?.invoke(targetId, true) { result ->
-                    if (result is com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.Success) {
-                        android.widget.Toast.makeText(context, moveSuccessToast, android.widget.Toast.LENGTH_SHORT).show()
-                        onDismiss()
-                    }
-                }
-            },
-            onDismiss = { showHiddenPrompt = null }
-        )
-    }
-
-    if (moveError != null) {
-        AlertDialog(
-            onDismissRequest = { moveError = null },
-            title = { Text(stringResource(R.string.button_move_error_full)) },
-            text = { Text(moveError!!) },
-            confirmButton = {
-                Button(onClick = { moveError = null }) {
-                    Text(stringResource(R.string.action_cancel))
-                }
-            }
-        )
-    }
 }

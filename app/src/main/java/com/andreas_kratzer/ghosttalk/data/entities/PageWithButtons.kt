@@ -2,9 +2,9 @@ package com.andreas_kratzer.ghosttalk.data.entities
 
 import androidx.room.Embedded
 import androidx.room.Relation
-import com.andreas_kratzer.ghosttalk.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.model.Page
-import com.andreas_kratzer.ghosttalk.ui.util.GridUtils
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.Page
+import com.andreas_kratzer.ghosttalk.core.util.GridUtils
 
 data class PageWithButtons(
     @Embedded val page: Page,

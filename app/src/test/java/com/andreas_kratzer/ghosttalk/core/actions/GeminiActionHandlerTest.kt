@@ -1,12 +1,11 @@
 package com.andreas_kratzer.ghosttalk.core.actions
 
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.GeminiButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.GeminiNanoButtonAction
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.domain.executors.LocalIntentRouter
 import com.andreas_kratzer.ghosttalk.domain.genai.GeminiUseCase
-import com.andreas_kratzer.ghosttalk.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.model.GeminiButtonAction
-import com.andreas_kratzer.ghosttalk.model.GeminiNanoButtonAction
-import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -26,7 +25,7 @@ class GeminiActionHandlerTest {
     private val settingsRepository = mockk<SettingsRepository>(relaxed = true)
     private val geminiUseCase = mockk<GeminiUseCase>(relaxed = true)
     private val localIntentRouter = mockk<LocalIntentRouter>(relaxed = true)
-    private val ttsHelper = mockk<TextToSpeechHelper>(relaxed = true)
+    private val ttsProxy = mockk<ActionTtsProxy>(relaxed = true)
     
     private val events = mutableListOf<ActionExecutor.ExecutionEvent>()
 
@@ -41,14 +40,15 @@ class GeminiActionHandlerTest {
                 override fun get() = geminiUseCase
             },
             localIntentRouter = localIntentRouter,
-            ttsHelperLazy = object : dagger.Lazy<TextToSpeechHelper> {
-                override fun get() = ttsHelper
+            ttsProxyLazy = object : dagger.Lazy<ActionTtsProxy> {
+                override fun get() = ttsProxy
             },
             emitEvent = { _ -> },
             log = { _ -> },
-            error = { _, _ -> }
+            error = { _, _ -> },
+            getString = { _, args -> "Wait ${args[0]}s" }
         )
-        every { ttsHelper.isReady } returns true
+        every { ttsProxy.isReady } returns true
     }
 
     @Test
@@ -80,7 +80,7 @@ class GeminiActionHandlerTest {
         runCurrent()
         
         val ttsCallback = slot<() -> Unit>()
-        verify { ttsHelper.speakRouted(text = "12:00", deviceAddress = any(), onDone = capture(ttsCallback)) }
+        verify { ttsProxy.speakRouted(text = "12:00", deviceAddress = any(), onDone = capture(ttsCallback)) }
         
         ttsCallback.captured.invoke()
         runCurrent()
@@ -110,10 +110,10 @@ class GeminiActionHandlerTest {
         runCurrent()
         
         // THEN
-        coVerify(exactly = 0) { localIntentRouter.executeIntent(any(), any()) } // Must NOT use Nano
+        coVerify(exactly = 0) { localIntentRouter.executeIntent(any<String>(), any<(String) -> Unit>()) } // Must NOT use Nano
         coVerify { geminiUseCase.generateResponse("What is AI?", any()) }
         
-        verify { ttsHelper.speakRouted(text = "Cloud Response", deviceAddress = any(), onDone = any()) }
+        verify { ttsProxy.speakRouted(text = "Cloud Response", deviceAddress = any<String>(), onDone = any<() -> Unit>()) }
     }
 
     @Test
@@ -131,19 +131,64 @@ class GeminiActionHandlerTest {
         
         val onFinish = mockk<(Int) -> Unit>(relaxed = true)
         val ttsCallback = slot<() -> Unit>()
-        every { ttsHelper.speakRouted(text = any(), deviceAddress = any(), onDone = capture(ttsCallback)) } returns Unit
+        every { ttsProxy.speakRouted(text = any<String>(), deviceAddress = any<String>(), onDone = capture(ttsCallback)) } returns Unit
         
         // WHEN
         handler.handle(config, action, 1, onFinish)
         runCurrent()
         
         // THEN
-        coVerify(exactly = 0) { localIntentRouter.executeIntent(any(), any()) }
-        verify { ttsHelper.speakRouted(text = any(), deviceAddress = any(), onDone = any()) } 
+        coVerify(exactly = 0) { localIntentRouter.executeIntent(any<String>(), any<(String) -> Unit>()) }
+        verify { ttsProxy.speakRouted(text = any<String>(), deviceAddress = any<String>(), onDone = any<() -> Unit>()) } 
         
         ttsCallback.captured.invoke()
         runCurrent()
         
         verify { onFinish(1) }
+    }
+    
+    @Test
+    fun `CloudAction should speak Wait 45s when 429 occurs`() = scope.runTest {
+        // GIVEN
+        val action = GeminiButtonAction("Help")
+        val config = ButtonConfig(id = "1", label = "Gemini", auditoryCue = null, buttonAction = action)
+        
+        every { settingsRepository.isGeminiEnabled } returns true
+        coEvery { geminiUseCase.generateResponse(any(), any()) } throws Exception("HTTP 429: wait 45 seconds")
+        
+        val onFinish = mockk<(Int) -> Unit>(relaxed = true)
+        val ttsCallback = slot<() -> Unit>()
+        every { ttsProxy.speakRouted(text = "Wait 45s", deviceAddress = any(), onDone = capture(ttsCallback)) } returns Unit
+        
+        // WHEN
+        handler.handle(config, action, 1, onFinish)
+        runCurrent()
+        
+        // THEN
+        verify { ttsProxy.speakRouted(text = "Wait 45s", deviceAddress = any(), onDone = any()) }
+        
+        ttsCallback.captured.invoke()
+        runCurrent()
+        verify { onFinish(1) }
+    }
+
+    @Test
+    fun `GeminiActionHandler regression - should extract wait time correctly from 429 error and skip status code`() = scope.runTest {
+        // GIVEN
+        every { settingsRepository.isGeminiEnabled } returns true
+        every { ttsProxy.isReady } returns true
+        
+        // Mock 429 with both code and wait time
+        coEvery { geminiUseCase.generateResponse(any(), any()) } throws Exception("HTTP 429: Rate limit exceeded. Wait 45 seconds.")
+
+        val button = ButtonConfig(id = "1", label = "G", buttonAction = GeminiButtonAction("Hi"), auditoryCue = null)
+        
+        // WHEN
+        handler.handle(button, button.buttonAction!!, 1) {}
+        runCurrent()
+
+        // THEN
+        // Verify it extracts 45, not 429 or 42945
+        verify { ttsProxy.speakRouted("Wait 45s", any(), any(), any(), any()) }
     }
 }

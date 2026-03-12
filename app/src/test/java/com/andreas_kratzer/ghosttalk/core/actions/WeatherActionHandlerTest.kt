@@ -2,11 +2,10 @@ package com.andreas_kratzer.ghosttalk.core.actions
 
 import android.content.Context
 import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.WeatherButtonAction
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.domain.executors.WeatherExecutor
-import com.andreas_kratzer.ghosttalk.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.model.WeatherButtonAction
-import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
@@ -22,7 +21,7 @@ class WeatherActionHandlerTest {
 
     private lateinit var context: Context
     private lateinit var settingsRepository: SettingsRepository
-    private lateinit var ttsHelper: TextToSpeechHelper
+    private lateinit var ttsProxy: ActionTtsProxy
     private lateinit var weatherExecutor: WeatherExecutor
     private lateinit var log: (String) -> Unit
     private lateinit var handler: WeatherActionHandler
@@ -33,7 +32,7 @@ class WeatherActionHandlerTest {
     fun setup() {
         context = mockk(relaxed = true)
         settingsRepository = mockk(relaxed = true)
-        ttsHelper = mockk(relaxed = true)
+        ttsProxy = mockk(relaxed = true)
         weatherExecutor = mockk(relaxed = true)
         log = mockk(relaxed = true)
         
@@ -47,8 +46,8 @@ class WeatherActionHandlerTest {
             }
         }
         
-        handler = WeatherActionHandler(context, settingsRepository, object : dagger.Lazy<TextToSpeechHelper> {
-            override fun get() = ttsHelper
+        handler = WeatherActionHandler(context, settingsRepository, object : dagger.Lazy<ActionTtsProxy> {
+            override fun get() = ttsProxy
         }, weatherExecutor, testScope, log)
     }
 
@@ -64,17 +63,17 @@ class WeatherActionHandlerTest {
         
         coEvery { weatherExecutor.getWeatherInfo() } returns "Regen, 15.0 °C"
         val onDoneSlot = slot<() -> Unit>()
-        every { ttsHelper.speakRouted(any(), any(), any(), any(), capture(onDoneSlot)) } answers {
+        every { ttsProxy.speakRouted(any(), any(), any(), any(), capture(onDoneSlot)) } answers {
             onDoneSlot.captured.invoke()
         }
-        every { ttsHelper.isReady } returns true
+        every { ttsProxy.isReady } returns true
         
         val onFinish = mockk<(Int) -> Unit>(relaxed = true)
         
         handler.handle(config, action, 1, onFinish)
         
         verify { log("Wetterdaten werden abgerufen...") }
-        verify { ttsHelper.speakRouted(match { it.contains("Das aktuelle Wetter: Regen bei 15 Grad") }, any(), any(), any(), any()) }
+        verify { ttsProxy.speakRouted(match { it.contains("Das aktuelle Wetter: Regen bei 15 Grad") }, any(), any(), any(), any()) }
         verify { onFinish(1) }
     }
 }

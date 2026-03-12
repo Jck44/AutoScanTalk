@@ -1,534 +1,129 @@
 package com.andreas_kratzer.ghosttalk.core.pages
 
-import com.andreas_kratzer.ghosttalk.core.util.Logger
+import android.content.Context
+import com.andreas_kratzer.ghosttalk.core.model.AuditoryCue
+import com.andreas_kratzer.ghosttalk.core.model.ButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.ControlDeviceButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.DeviceActionType
+import com.andreas_kratzer.ghosttalk.core.model.FrequentActionButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.GeminiButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.GeminiNanoButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.GeminiSearchButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.Page
+import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.WeatherButtonAction
+import com.andreas_kratzer.ghosttalk.data.BookRepository
 import com.andreas_kratzer.ghosttalk.data.PageRepository
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.data.TemplateRepository
-import com.andreas_kratzer.ghosttalk.model.AuditoryCue
-import com.andreas_kratzer.ghosttalk.model.ButtonAction
-import com.andreas_kratzer.ghosttalk.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.model.ControlDeviceButtonAction
-import com.andreas_kratzer.ghosttalk.model.DeviceActionType
-import com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction
-import com.andreas_kratzer.ghosttalk.model.GeminiButtonAction
-import com.andreas_kratzer.ghosttalk.model.GeminiNanoButtonAction
-import com.andreas_kratzer.ghosttalk.model.GeminiSearchButtonAction
-import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
-import com.andreas_kratzer.ghosttalk.model.Page
-import com.andreas_kratzer.ghosttalk.model.PageTemplate
-import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
-import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
-import com.andreas_kratzer.ghosttalk.model.WeatherButtonAction
 import com.andreas_kratzer.ghosttalk.model.importexport.ImportAction
 import com.andreas_kratzer.ghosttalk.model.importexport.ImportButton
 import com.andreas_kratzer.ghosttalk.model.importexport.ImportExportData
 import com.andreas_kratzer.ghosttalk.model.importexport.ImportPage
-import com.andreas_kratzer.ghosttalk.model.importexport.ImportTemplate
-import com.andreas_kratzer.ghosttalk.ui.util.GridUtils
-import kotlinx.coroutines.CoroutineDispatcher
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class PageImportExportManager @javax.inject.Inject constructor(
-    private val bookRepository: com.andreas_kratzer.ghosttalk.data.BookRepository,
+@Singleton
+class PageImportExportManager @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val pageRepository: PageRepository,
-    private val settingsRepository: SettingsRepository,
-    private val templateRepository: TemplateRepository,
-    private val logger: Logger,
-    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
+    private val bookRepository: BookRepository,
+    private val settingsRepository: com.andreas_kratzer.ghosttalk.data.SettingsRepository
 ) {
-    private val TAG = "PageImportExportManager"
-
     private val json = Json {
         ignoreUnknownKeys = true
-        encodeDefaults = true
         prettyPrint = true
+        encodeDefaults = true
     }
 
-    suspend fun importFromJson(
-        jsonString: String, 
-        bookId: String, 
-        regenerateIds: Boolean? = null,
-        restoreSyncSettings: Boolean = true
-    ): Result<Int> = importBookFromJson(jsonString, bookId, regenerateIds, restoreSyncSettings)
-
-    suspend fun importCloudBackup(jsonString: String, fileName: String?): Result<String> = withContext(ioDispatcher) {
-        try {
-            val importData = json.decodeFromString<ImportExportData>(jsonString)
-            var importBookId = importData.bookId
-            if (importBookId.isNullOrBlank()) {
-                val fileNameRegex = Regex("book_(.*)\\.json", RegexOption.IGNORE_CASE)
-                importBookId = fileName?.let { fileNameRegex.find(it)?.groupValues?.get(1) }
-            }
-            if (importBookId.isNullOrBlank()) {
-                val uuidRegex = Regex("[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}", RegexOption.IGNORE_CASE)
-                importBookId = importData.bookName?.let { name ->
-                    uuidRegex.find(name)?.value
-                }
-            }
-            if (importBookId.isNullOrBlank()) {
-                 return@withContext Result.failure(Exception("Konnte keine Buch-ID im Backup finden."))
-            }
-
-            val existingBook = bookRepository.getBookById(importBookId)
-            if (existingBook != null) {
-                return@withContext Result.failure(Exception("Ein Buch mit dieser ID existiert bereits lokal. Bitte verwende stattdessen die Buch-Einstellungen zum Synchronisieren oder Wiederherstellen."))
-            }
-
-            val newBook = com.andreas_kratzer.ghosttalk.model.Book(
-                id = importBookId,
-                name = importData.bookName ?: "Importiertes Buch",
-                createdAt = importData.bookCreatedAt ?: System.currentTimeMillis(),
-                updatedAt = importData.bookUpdatedAt ?: System.currentTimeMillis()
-            )
-            bookRepository.insertBook(newBook)
-
-            val result = importBookFromJson(
-                jsonString = jsonString,
-                bookId = importBookId,
-                regenerateIds = false,
-                restoreSyncSettings = false
-            )
-            
-            if (result.isSuccess) {
-                Result.success(importBookId)
-            } else {
-                Result.failure(result.exceptionOrNull() ?: Exception("Import fehlgeschlagen"))
-            }
-        } catch (e: Exception) {
-            logger.e(TAG, "Error in importCloudBackup", e)
-            Result.failure(e)
-        }
-    }
-
-
-    fun extractBookNameFromJson(jsonString: String): String? {
-        return try {
-            val jsonObject = json.parseToJsonElement(jsonString).jsonObject
-            jsonObject["bookName"]?.jsonPrimitive?.contentOrNull
-        } catch (e: Exception) {
-            logger.e(TAG, "Error extracting book name from JSON", e)
-            null
-        }
-    }
-
-    fun extractBookIdFromJson(jsonString: String): String? {
-        return try {
-            val jsonObject = json.parseToJsonElement(jsonString).jsonObject
-            jsonObject["bookId"]?.jsonPrimitive?.contentOrNull
-        } catch (e: Exception) {
-            logger.e(TAG, "Error extracting book ID from JSON", e)
-            null
-        }
-    }
-
-    private suspend fun importBookFromJson(
-        jsonString: String, 
-        bookId: String, 
-        regenerateIds: Boolean? = null,
-        restoreSyncSettings: Boolean = true
-    ): Result<Int> {
-        return withContext(ioDispatcher) {
-        try {
-            logger.d(TAG, "Starting import for book $bookId. String length: ${jsonString.length}")
-            
-            val importData = try {
-                json.decodeFromString<ImportExportData>(jsonString)
-            } catch (e: Exception) {
-                logger.e(TAG, "Failed to decode JSON to ImportExportData", e)
-                return@withContext Result.failure(Exception("JSON-Dekodierungsfehler: ${e.message}"))
-            }
-            
-            logger.d(TAG, "Successfully decoded JSON. Version: ${importData.ghosttalk_import_version}, App: ${importData.appName}")
-            
-            val finalRegenerateIds = regenerateIds ?: (importData.bookId != null && importData.bookId != bookId)
-            logger.d(TAG, "Regenerate IDs: $finalRegenerateIds (original request: $regenerateIds, data bookId: ${importData.bookId})")
-
-            if (importData.pages.isEmpty()) {
-                logger.e(TAG, "Parsed JSON has no pages.")
-                return@withContext Result.failure(Exception("Ungültiges JSON-Format. Seiten fehlen."))
-            }
-
-            logger.d(TAG, "Syncing settings...")
-            // Sync settings if present
-            importData.holdingTimeSeconds?.let { seconds ->
-                settingsRepository.holdingTimeMillis = (seconds * 1000).toLong()
-            }
-            importData.autoStartScanning?.let { settingsRepository.autoStartScanning = it }
-            importData.scanDelayMillis?.let { settingsRepository.scanDelayMillis = it }
-            importData.resumeScanningFromStart?.let { settingsRepository.resumeScanningFromStart = it }
-            importData.switchActivationKey?.let { settingsRepository.switchActivationKey = it }
-            importData.volumeKeysActivate?.let { settingsRepository.volumeKeysActivate = it }
-            importData.defaultScanPattern?.let { settingsRepository.defaultScanPattern = it }
-            
-            importData.isSmartPredictionEnabled?.let { settingsRepository.isSmartPredictionEnabled = it }
-            importData.geminiRedoPrediction?.let { settingsRepository.geminiRedoPrediction = it }
-            importData.geminiTimeout?.let { settingsRepository.geminiTimeout = it }
-            importData.isGeminiEnabled?.let { settingsRepository.isGeminiEnabled = it }
-            importData.useLocalGenerativeAi?.let { settingsRepository.useLocalGenerativeAi = it }
-
-            if (restoreSyncSettings) {
-                logger.d(TAG, "Restoring sync settings...")
-                importData.isCloudSyncEnabled?.let { settingsRepository.isCloudSyncEnabled = it }
-                importData.syncIntervalMinutes?.let { settingsRepository.syncIntervalMinutes = it }
-                importData.syncMode?.let { settingsRepository.syncMode = it }
-            } else {
-                logger.d(TAG, "Skipping sync settings restoration as requested.")
-            }
-
-            importData.ttsLanguage?.let { settingsRepository.ttsLanguage = it }
-            importData.ttsVoiceName?.let { settingsRepository.ttsVoiceName = it }
-            importData.pageSortOrder?.let { settingsRepository.pageSortOrder = it }
-            importData.templateSortOrder?.let { settingsRepository.templateSortOrder = it }
-            importData.smartPredictionDelay?.let { settingsRepository.smartPredictionDelayMillis = it }
-            importData.keepScreenOnUserMode?.let { settingsRepository.keepScreenOnUserMode = it }
-            importData.userModeScreenBehavior?.let { settingsRepository.userModeScreenBehavior = it }
-            importData.defaultStartPageId?.let { settingsRepository.defaultStartPageId = it }
-            importData.securityPinHash?.let { settingsRepository.securityPinHash = it }
-            importData.securityPinSalt?.let { settingsRepository.securityPinSalt = it }
-            
-            importData.themeMode?.let { settingsRepository.themeMode = it }
-            importData.securityPinTimeoutMinutes?.let { settingsRepository.securityPinTimeoutMinutes = it }
-            importData.isPinRequiredForDeletion?.let { settingsRepository.isPinRequiredForDeletion = it }
-            importData.isBiometricEnabled?.let { settingsRepository.isBiometricEnabled = it }
-            importData.isSecurityRequiredForEdit?.let { settingsRepository.isSecurityRequiredForEdit = it }
-            importData.isSecurityRequiredForSettings?.let { settingsRepository.isSecurityRequiredForSettings = it }
-            importData.startupBehavior?.let { settingsRepository.startupBehavior = it }
-            importData.favoriteBookId?.let { settingsRepository.favoriteBookId = it }
-            importData.weatherCacheTimeout?.let { settingsRepository.weatherCacheTimeout = it }
-
-            // Update Book metadata if present
-            if (importData.bookName != null) {
-                logger.d(TAG, "Updating book metadata: ${importData.bookName}")
-                val existingBook = bookRepository.getBookById(bookId)
-                if (existingBook != null) {
-                    bookRepository.updateBook(existingBook.copy(
-                        name = importData.bookName,
-                        createdAt = importData.bookCreatedAt ?: existingBook.createdAt,
-                        updatedAt = importData.bookUpdatedAt ?: System.currentTimeMillis()
-                    ))
-                }
-            }
-
-            // If we are NOT regenerating IDs, it means we want to match the backup exactly (Restore/Sync).
-            // In this case, we should clear existing pages to avoid orphaned local pages.
-            if (!finalRegenerateIds) {
-                logger.d(TAG, "Restore/Sync detected (regenerateIds=false). Clearing local pages for book $bookId")
-                pageRepository.deletePagesForBook(bookId)
-            }
-
-            logger.d(TAG, "Mapping page IDs...")
-            // Map IDs for incoming pages. We use the importId if present, else generate a new UUID.
-            val pageToIdMap = mutableMapOf<ImportPage, String>()
-            val importIdToIdMap = mutableMapOf<String, String>()
-            importData.pages.forEach { p ->
-                var forceRegenerate = finalRegenerateIds || p.importId.isBlank()
-                
-                if (!forceRegenerate) {
-                    val existingPage = pageRepository.getPageById(p.importId)
-                    if (existingPage != null && existingPage.bookId != bookId) {
-                        logger.w(TAG, "Collision detected for page ${p.importId}. Belongs to ${existingPage.bookId}, importing to $bookId. Forcing regeneration.")
-                        forceRegenerate = true
-                    }
-                }
-                
-                val targetId = if (forceRegenerate) UUID.randomUUID().toString() else p.importId
-                pageToIdMap[p] = targetId
-                if (p.importId.isNotBlank()) {
-                    importIdToIdMap[p.importId] = targetId
-                }
-            }
-
-            // Handle Templates
-            logger.d(TAG, "Processing ${importData.templates?.size ?: 0} templates...")
-            importData.templates?.forEach { importTemplate ->
-                if (!importTemplate.isBuiltIn) {
-                    val maxIndex = importTemplate.buttons.maxOfOrNull { it.index }?.toInt() ?: -1
-                    var rows = importTemplate.rows
-                    var columns = importTemplate.columns
-                    
-                    if (maxIndex >= rows * columns) {
-                        logger.w(TAG, "Template ${importTemplate.name} buttons exceed grid ${rows}x${columns}. Adjusting...")
-                        if (columns < 7 && maxIndex >= rows * 7) {
-                            columns = 7
-                        } else if (columns < 7) {
-                            while (columns < 7 && rows * columns <= maxIndex) {
-                                columns++
-                            }
-                        }
-                        while (rows < 7 && rows * columns <= maxIndex) {
-                            rows++
-                        }
-                    }
-
-                    rows = rows.coerceIn(1, 7)
-                    columns = columns.coerceIn(1, 7)
-
-                    val templateButtonConfigs = MutableList<ButtonConfig?>(GridUtils.TOTAL_SLOTS) { null }
-                    importTemplate.buttons.forEach { importButton ->
-                        val localIdx = importButton.index.toInt()
-                        val globalIdx = GridUtils.localToGlobalIndex(localIdx, importTemplate.columns)
-                        
-                        if (globalIdx < GridUtils.TOTAL_SLOTS) {
-                            val importAction = importButton.action
-                            val action = importAction?.let { mapImportActionToAction(it, importIdToIdMap) }
-                            if (importButton.label.isNotBlank() && action != null) {
-                                templateButtonConfigs[globalIdx] = ButtonConfig(
-                                    id = if (finalRegenerateIds || importButton.id.isNullOrBlank()) UUID.randomUUID().toString() else importButton.id,
-                                    label = importButton.label,
-                                    spokenText = importButton.spokenText ?: importAction.textToSpeech
-                                    ?: importAction.ttsFeedback,
-                                    buttonAction = action,
-                                    auditoryCue = importButton.auditoryCueText?.let { AuditoryCue.TextToSpeechCue(it) },
-                                    isActive = importButton.active ?: true,
-                                    playActionAsAuditoryCue = importButton.playActionAsAuditoryCue ?: false
-                                )
-                            }
-                        }
-                    }
-                    val pageTemplate = PageTemplate(
-                        id = importTemplate.id,
-                        name = importTemplate.name,
-                        rows = rows,
-                        columns = columns,
-                        scanPattern = importTemplate.scanPattern,
-                        rowNames = importTemplate.rowNames ?: emptyList(),
-                        buttonConfigs = templateButtonConfigs,
-                        isBuiltIn = false,
-                        orderIndex = importTemplate.orderIndex ?: 0,
-                        createdAt = importTemplate.createdAt ?: System.currentTimeMillis()
-                    )
-                    templateRepository.insert(pageTemplate)
-                }
-            }
-
-            logger.d(TAG, "Processing ${importData.pages.size} pages...")
-            val newPages = importData.pages.map { importPage ->
-                val newPageId = pageToIdMap[importPage] ?: UUID.randomUUID().toString()
-                val maxIndex = importPage.buttons.maxOfOrNull { it.index }?.toInt() ?: -1
-                var rows = importPage.rows
-                var columns = importPage.columns
-
-                if (maxIndex >= rows * columns) {
-                    logger.w(TAG, "Page ${importPage.name} buttons exceed grid ${rows}x${columns}. Adjusting...")
-                    if (columns < 7 && maxIndex >= rows * 7) {
-                        columns = 7
-                    } else if (columns < 7) {
-                        while (columns < 7 && rows * columns <= maxIndex) {
-                            columns++
-                        }
-                    }
-                    while (rows < 7 && rows * columns <= maxIndex) {
-                        rows++
-                    }
-                }
-
-                rows = rows.coerceIn(1, 7)
-                columns = columns.coerceIn(1, 7)
-                
-                val buttonConfigs = MutableList<ButtonConfig?>(GridUtils.TOTAL_SLOTS) { null }
-                importPage.buttons.forEach { importButton ->
-                    val localIdx = importButton.index.toInt()
-                    val globalIdx = GridUtils.localToGlobalIndex(localIdx, importPage.columns)
-                    
-                    if (globalIdx < GridUtils.TOTAL_SLOTS) {
-                        val importAction = importButton.action
-                        val action = importAction?.let { mapImportActionToAction(it, importIdToIdMap) }
-                        if (importButton.label.isNotBlank() && action != null) {
-                            val forceButtonRegenerate = finalRegenerateIds || (importPage.importId.isNotBlank() && newPageId != importPage.importId)
-                            buttonConfigs[globalIdx] = ButtonConfig(
-                                id = if (forceButtonRegenerate || importButton.id.isNullOrBlank()) UUID.randomUUID().toString() else importButton.id,
-                                label = importButton.label,
-                                spokenText = importButton.spokenText ?: importAction.textToSpeech ?: importAction.ttsFeedback,
-                                buttonAction = action,
-                                auditoryCue = importButton.auditoryCueText?.let { AuditoryCue.TextToSpeechCue(it) },
-                                isActive = importButton.active ?: true,
-                                playActionAsAuditoryCue = importButton.playActionAsAuditoryCue ?: false
-                            )
-                        }
-                    }
-                }
-
-                Page(
-                    id = newPageId,
-                    bookId = bookId,
-                    name = importPage.name,
-                    templateId = importPage.templateId,
-                    rows = rows,
-                    columns = columns,
-                    scanPattern = importPage.scanPattern,
-                    rowNames = importPage.rowNames ?: emptyList(),
-                    buttonConfigs = buttonConfigs,
-                    orderIndex = importPage.orderIndex ?: 0,
-                    createdAt = importPage.createdAt ?: System.currentTimeMillis()
+    suspend fun exportPageListToJson(pages: List<Page>): String = withContext(Dispatchers.IO) {
+        val exportData = ImportExportData(
+            bookId = pages.firstOrNull()?.bookId ?: "unknown",
+            bookName = "Exportierte Seiten",
+            holdingTimeSeconds = settingsRepository.holdingTimeMillis / 1000f,
+            pages = pages.map { page ->
+                ImportPage(
+                    importId = page.id,
+                    name = page.name,
+                    templateId = page.templateId,
+                    rows = page.rows,
+                    columns = page.columns,
+                    scanPattern = page.scanPattern,
+                    rowNames = page.rowNames,
+                    orderIndex = page.orderIndex,
+                    createdAt = page.createdAt,
+                    buttons = page.buttonConfigs.mapIndexed { index, config ->
+                        ImportButton(
+                            id = config?.id,
+                            index = index.toLong(),
+                            label = config?.label ?: "",
+                            spokenText = config?.spokenText,
+                            auditoryCueText = config?.auditoryCue?.let { if (it is AuditoryCue.TextToSpeechCue) it.text else "" },
+                            active = config?.isActive,
+                            playActionAsAuditoryCue = config?.playActionAsAuditoryCue,
+                            action = config?.buttonAction?.let { exportAction(it, config.spokenText) }
+                        )
+                    }.filter { it.label.isNotEmpty() || it.action != null || it.auditoryCueText != null }
                 )
             }
-
-            logger.d(TAG, "Inserting ${newPages.size} pages into DB...")
-            newPages.forEach { pageRepository.insertPage(it) }
-            logger.d(TAG, "Import successfully finished for book $bookId.")
-            Result.success(newPages.size)
-        } catch (e: Exception) {
-            logger.e(TAG, "Unexpected exception during import for book $bookId", e)
-            Result.failure(e)
-        }
-        }
-    }
-
-    suspend fun exportBookToJson(bookId: String): String = withContext(ioDispatcher) {
-        val book = bookRepository.getBookById(bookId)
-        val pages = pageRepository.getPagesForBook(bookId)
-        exportToJson(pages, book)
-    }
-
-    suspend fun exportToJson(pages: List<Page>, book: com.andreas_kratzer.ghosttalk.model.Book? = null): String = withContext(ioDispatcher) {
-        val importPages = pages.map { page ->
-            val buttons = page.buttonConfigs.mapIndexedNotNull { globalIndex, config ->
-                if (config != null && GridUtils.isVisibleInGrid(globalIndex, page.rows, page.columns)) {
-                    val importAction = mapActionToImportAction(config.buttonAction, config)
-                    
-                    val localIndex = GridUtils.globalToLocalIndex(globalIndex, page.columns)
-
-                    ImportButton(
-                        id = config.id,
-                        index = localIndex.toLong(),
-                        label = config.label,
-                        spokenText = config.spokenText,
-                        auditoryCueText = (config.auditoryCue as? AuditoryCue.TextToSpeechCue)?.text,
-                        action = importAction,
-                        active = config.isActive,
-                        playActionAsAuditoryCue = config.playActionAsAuditoryCue
-                    )
-                } else null
-            }
-            ImportPage(
-                importId = page.id,
-                name = page.name,
-                templateId = page.templateId,
-                rows = page.rows,
-                columns = page.columns,
-                scanPattern = page.scanPattern,
-                rowNames = page.rowNames,
-                orderIndex = page.orderIndex,
-                createdAt = page.createdAt,
-                buttons = buttons
-            )
-        }
-        
-        val allTemplates = templateRepository.getAllTemplates().first()
-        val importTemplates = allTemplates.filter { !it.isBuiltIn }.map { template ->
-            val buttons = template.buttonConfigs.mapIndexedNotNull { index, config ->
-                config?.let {
-                    val importAction = mapActionToImportAction(it.buttonAction, it)
-                    ImportButton(
-                        id = it.id,
-                        index = index.toLong(),
-                        label = it.label,
-                        spokenText = it.spokenText,
-                        auditoryCueText = (it.auditoryCue as? AuditoryCue.TextToSpeechCue)?.text,
-                        action = importAction,
-                        active = it.isActive,
-                        playActionAsAuditoryCue = it.playActionAsAuditoryCue
-                    )
-                }
-            }
-            ImportTemplate(
-                id = template.id,
-                name = template.name,
-                rows = template.rows,
-                columns = template.columns,
-                scanPattern = template.scanPattern,
-                rowNames = template.rowNames,
-                orderIndex = template.orderIndex,
-                createdAt = template.createdAt,
-                isBuiltIn = template.isBuiltIn,
-                buttons = buttons
-            )
-        }
-
-        val exportData = ImportExportData(
-            ghosttalk_import_version = "1.1",
-            appName = "GhosTTalk (Export)",
-            bookName = book?.name,
-            bookId = book?.id,
-            bookCreatedAt = book?.createdAt,
-            bookUpdatedAt = book?.updatedAt,
-            themeMode = settingsRepository.themeMode,
-            securityPinTimeoutMinutes = settingsRepository.securityPinTimeoutMinutes,
-            isPinRequiredForDeletion = settingsRepository.isPinRequiredForDeletion,
-            isBiometricEnabled = settingsRepository.isBiometricEnabled,
-            isSecurityRequiredForEdit = settingsRepository.isSecurityRequiredForEdit,
-            isSecurityRequiredForSettings = settingsRepository.isSecurityRequiredForSettings,
-            startupBehavior = settingsRepository.startupBehavior,
-            favoriteBookId = settingsRepository.favoriteBookId,
-            weatherCacheTimeout = settingsRepository.weatherCacheTimeout,
-            holdingTimeSeconds = settingsRepository.holdingTimeMillis / 1000f,
-            autoStartScanning = settingsRepository.autoStartScanning,
-            scanDelayMillis = settingsRepository.scanDelayMillis,
-            resumeScanningFromStart = settingsRepository.resumeScanningFromStart,
-            switchActivationKey = settingsRepository.switchActivationKey,
-            volumeKeysActivate = settingsRepository.volumeKeysActivate,
-            defaultScanPattern = settingsRepository.defaultScanPattern,
-            isSmartPredictionEnabled = settingsRepository.isSmartPredictionEnabled,
-            geminiRedoPrediction = settingsRepository.geminiRedoPrediction,
-            geminiTimeout = settingsRepository.geminiTimeout,
-            isGeminiEnabled = settingsRepository.isGeminiEnabled,
-            useLocalGenerativeAi = settingsRepository.useLocalGenerativeAi,
-            isCloudSyncEnabled = settingsRepository.isCloudSyncEnabled,
-            syncIntervalMinutes = settingsRepository.syncIntervalMinutes,
-            syncMode = settingsRepository.syncMode,
-            ttsLanguage = settingsRepository.ttsLanguage,
-            ttsVoiceName = settingsRepository.ttsVoiceName,
-            pageSortOrder = settingsRepository.pageSortOrder,
-            templateSortOrder = settingsRepository.templateSortOrder,
-            smartPredictionDelay = settingsRepository.smartPredictionDelayMillis,
-            keepScreenOnUserMode = settingsRepository.keepScreenOnUserMode,
-            userModeScreenBehavior = settingsRepository.userModeScreenBehavior,
-            defaultStartPageId = settingsRepository.defaultStartPageId,
-            securityPinHash = settingsRepository.securityPinHash,
-            securityPinSalt = settingsRepository.securityPinSalt,
-            templates = importTemplates,
-            pages = importPages
         )
         json.encodeToString(exportData)
     }
 
-    private fun mapActionToImportAction(action: ButtonAction, config: ButtonConfig): ImportAction? {
+    suspend fun exportBookToJson(bookId: String): String = withContext(Dispatchers.IO) {
+        val book = bookRepository.getBookById(bookId) ?: throw Exception("Book not found")
+        val pages = pageRepository.getPagesForBook(bookId)
+        val exportData = ImportExportData(
+            bookId = book.id,
+            bookName = book.name,
+            bookCreatedAt = book.createdAt,
+            holdingTimeSeconds = settingsRepository.holdingTimeMillis / 1000f,
+            pages = pages.map { page ->
+                ImportPage(
+                    importId = page.id,
+                    name = page.name,
+                    templateId = page.templateId,
+                    rows = page.rows,
+                    columns = page.columns,
+                    scanPattern = page.scanPattern,
+                    rowNames = page.rowNames,
+                    orderIndex = page.orderIndex,
+                    createdAt = page.createdAt,
+                    buttons = page.buttonConfigs.mapIndexed { index, config ->
+                        ImportButton(
+                            id = config?.id,
+                            index = index.toLong(),
+                            label = config?.label ?: "",
+                            spokenText = config?.spokenText,
+                            auditoryCueText = config?.auditoryCue?.let { if (it is AuditoryCue.TextToSpeechCue) it.text else "" },
+                            active = config?.isActive,
+                            playActionAsAuditoryCue = config?.playActionAsAuditoryCue,
+                            action = config?.buttonAction?.let { exportAction(it, config.spokenText) }
+                        )
+                    }.filter { it.label.isNotEmpty() || it.action != null || it.auditoryCueText != null }
+                )
+            }
+        )
+        json.encodeToString(exportData)
+    }
+
+    private fun exportAction(action: ButtonAction, spokenText: String? = null): ImportAction {
         return when (action) {
-            is SpeakTextButtonAction -> ImportAction(
-                type = "SPEAK",
-                textToSpeech = config.spokenText
-            )
-            is FrequentActionButtonAction -> ImportAction(
-                type = "FrequentAction",
-                rank = action.rank
-            )
-            is NavigateToPageButtonAction -> ImportAction(
-                type = "NAVIGATE",
-                targetPageImportId = action.pageId
-            )
-            is GeminiButtonAction -> ImportAction(
-                type = "GEMINI",
-                prompt = action.prompt
-            )
-            is GeminiSearchButtonAction -> ImportAction(
-                type = "GEMINI_SEARCH",
-                prompt = action.prompt
-            )
-            is GeminiNanoButtonAction -> ImportAction(
-                type = "GEMINI_NANO",
-                intent = action.intent
-            )
-            is SmartPredictionButtonAction -> ImportAction(
-                type = "SMART_PREDICTION",
-                rank = action.rank
-            )
+            is SpeakTextButtonAction -> ImportAction(type = "SPEAK", textToSpeech = spokenText)
+            is NavigateToPageButtonAction -> ImportAction(type = "NAVIGATE", targetPageId = action.pageId, targetPageImportId = action.pageId)
+            is FrequentActionButtonAction -> ImportAction(type = "SMART_PREDICTION", rank = action.rank)
+            is GeminiButtonAction -> ImportAction(type = "GEMINI", prompt = action.prompt)
+            is GeminiSearchButtonAction -> ImportAction(type = "GEMINI_SEARCH", prompt = action.prompt)
+            is GeminiNanoButtonAction -> ImportAction(type = "GEMINI_NANO", intent = action.intent)
+            is SmartPredictionButtonAction -> ImportAction(type = "SMART_PREDICTION", rank = action.rank)
             is ControlDeviceButtonAction -> ImportAction(
                 type = "DEVICE_CONTROL",
                 deviceActionType = action.actionType.name,
@@ -537,43 +132,197 @@ class PageImportExportManager @javax.inject.Inject constructor(
                 contactPhone = action.contactPhone,
                 messageText = action.messageText
             )
-            is WeatherButtonAction -> ImportAction(
-                type = "WEATHER"
-            )
+            is WeatherButtonAction -> ImportAction(type = "WEATHER")
         }
     }
 
-    private fun mapImportActionToAction(ia: ImportAction, importIdToIdMap: Map<String, String>? = null): ButtonAction? {
-        return when (ia.type) {
-            "SpeakText", "SPEAK" -> SpeakTextButtonAction()
-            "FrequentAction" -> {
-                val rank = ia.rank ?: ia.targetPageImportId?.toIntOrNull() ?: 1
-                FrequentActionButtonAction(rank)
+    suspend fun importFromJson(
+        jsonString: String,
+        bookId: String,
+        regenerateIds: Boolean = false,
+        restoreSyncSettings: Boolean = false
+    ): Result<Int> = withContext(Dispatchers.IO) {
+        try {
+            val importData = json.decodeFromString<ImportExportData>(jsonString)
+            
+            // 1. Update book and app settings if provided
+            importData.holdingTimeSeconds?.let { 
+                settingsRepository.holdingTimeMillis = (it * 1000).toLong()
             }
-            "NavigateToPage", "NAVIGATE" -> {
-                val sourceId = ia.targetPageImportId ?: ia.targetPageId ?: ""
-                val targetId = if (importIdToIdMap != null) importIdToIdMap[sourceId] ?: sourceId else sourceId
-                NavigateToPageButtonAction(targetId)
-            }
-            "GEMINI" -> GeminiButtonAction(ia.prompt ?: "")
-            "GEMINI_SEARCH" -> GeminiSearchButtonAction(ia.prompt ?: "")
-            "GEMINI_NANO" -> GeminiNanoButtonAction(ia.intent ?: "")
-            "SMART_PREDICTION" -> SmartPredictionButtonAction(ia.rank ?: 1)
-            "DEVICE_CONTROL" -> {
-                try {
-                    ControlDeviceButtonAction(
-                        actionType = DeviceActionType.valueOf(ia.deviceActionType ?: "READ_TIME"),
-                        volumeValue = ia.volumeValue,
-                        contactName = ia.contactName,
-                        contactPhone = ia.contactPhone,
-                        messageText = ia.messageText
-                    )
-                } catch (e: Exception) {
-                    ControlDeviceButtonAction(DeviceActionType.READ_TIME)
+            importData.bookName?.let { newName ->
+                bookRepository.getBookById(bookId)?.let { book ->
+                    bookRepository.updateBook(book.copy(
+                        name = newName,
+                        createdAt = importData.bookCreatedAt ?: book.createdAt
+                    ))
                 }
+            }
+
+            val idMap = mutableMapOf<String, String>()
+            
+            // 2. Determine ID regeneration needs
+            val sourceBookId = importData.bookId
+            val forceRegeneration = regenerateIds || (sourceBookId != null && sourceBookId != bookId)
+
+            val regeneratedPages = mutableSetOf<String>()
+            importData.pages.forEach { importPage ->
+                var targetPageId = importPage.importId
+                val existingPage = pageRepository.getPageById(targetPageId)
+                
+                if (forceRegeneration || (existingPage != null && existingPage.bookId != bookId)) {
+                    targetPageId = UUID.randomUUID().toString()
+                    regeneratedPages.add(importPage.importId)
+                }
+                idMap[importPage.importId] = targetPageId
+            }
+
+            importData.pages.forEach { importPage ->
+                val newPageId = idMap[importPage.importId]!!
+                
+                // Spatial mapping to 49 (7x7) buttons
+                val buttons = MutableList<ButtonConfig?>(49) { null }
+                
+                importPage.buttons.forEach { importButton ->
+                    val action = importButton.action?.let { importAction(it, idMap) }
+                    
+                    if (importButton.label.isEmpty() && action == null && importButton.auditoryCueText == null) {
+                        return@forEach
+                    }
+
+                    val finalAction = action ?: SpeakTextButtonAction()
+                    val pageRegenerated = regeneratedPages.contains(importPage.importId)
+                    val config = ButtonConfig(
+                        id = if (forceRegeneration || pageRegenerated) UUID.randomUUID().toString() else (importButton.id ?: UUID.randomUUID().toString()),
+                        label = importButton.label,
+                        spokenText = importButton.spokenText ?: importButton.action?.textToSpeech,
+                        auditoryCue = importButton.auditoryCueText?.let { AuditoryCue.TextToSpeechCue(it) },
+                        isActive = importButton.active ?: true,
+                        playActionAsAuditoryCue = importButton.playActionAsAuditoryCue ?: false,
+                        buttonAction = finalAction
+                    )
+                    
+                    // Spatial logic: map index from source columns to 7 columns
+                    val sourceCols = importPage.columns.coerceAtLeast(1)
+                    val row = (importButton.index / sourceCols).toInt()
+                    val col = (importButton.index % sourceCols).toInt()
+                    
+                    val globalIndex = row * 7 + col
+                    if (globalIndex < buttons.size) {
+                        buttons[globalIndex] = config
+                    }
+                }
+
+                // Auto-expand rows/columns if buttons exceed metadata (Spatial matching)
+                var finalRows = importPage.rows
+                var finalCols = importPage.columns
+                importPage.buttons.forEach { 
+                    val maxIndex = it.index.toInt()
+                    while (finalRows < 7 && finalRows * finalCols <= maxIndex) {
+                        if (finalCols < 7) finalCols++ else finalRows++
+                    }
+                }
+
+                val page = Page(
+                    id = newPageId,
+                    bookId = bookId,
+                    name = importPage.name,
+                    templateId = importPage.templateId,
+                    rows = finalRows.coerceIn(1, 7),
+                    columns = finalCols.coerceIn(1, 7),
+                    scanPattern = importPage.scanPattern ?: "linear",
+                    rowNames = importPage.rowNames ?: emptyList(),
+                    buttonConfigs = buttons,
+                    orderIndex = importPage.orderIndex ?: 0,
+                    createdAt = importPage.createdAt ?: System.currentTimeMillis()
+                )
+                pageRepository.insertPage(page)
+            }
+            Result.success(importData.pages.size)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    private fun importAction(importAction: ImportAction, idMap: Map<String, String>): ButtonAction? {
+        val type = importAction.type?.uppercase() ?: return null
+        return when (type) {
+            "SPEAK", "SPEAKTEXT" -> SpeakTextButtonAction()
+            "NAVIGATE", "NAVIGATETOPAGE" -> {
+                val oldId = importAction.targetPageId ?: importAction.targetPageImportId ?: ""
+                NavigateToPageButtonAction(idMap[oldId] ?: oldId)
+            }
+            "GEMINI" -> GeminiButtonAction(importAction.prompt ?: "")
+            "GEMINI_SEARCH" -> GeminiSearchButtonAction(importAction.prompt ?: "")
+            "GEMINI_NANO" -> GeminiNanoButtonAction(importAction.intent ?: "")
+            "SMART_PREDICTION" -> SmartPredictionButtonAction(importAction.rank ?: 1)
+            "DEVICE_CONTROL" -> {
+                val typeName = importAction.deviceActionType ?: "READ_TIME"
+                ControlDeviceButtonAction(
+                    actionType = try { DeviceActionType.valueOf(typeName) } catch(_: Exception) { DeviceActionType.READ_TIME },
+                    volumeValue = importAction.volumeValue,
+                    contactName = importAction.contactName,
+                    contactPhone = importAction.contactPhone,
+                    messageText = importAction.messageText
+                )
             }
             "WEATHER" -> WeatherButtonAction()
             else -> null
+        }
+    }
+
+    suspend fun extractBookIdFromJson(jsonString: String): String? = withContext(Dispatchers.Default) {
+        try {
+            val root = json.parseToJsonElement(jsonString) as? JsonObject
+            root?.get("bookId")?.jsonPrimitive?.content
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    suspend fun extractBookNameFromJson(jsonString: String): String? = withContext(Dispatchers.Default) {
+        try {
+            val root = json.parseToJsonElement(jsonString) as? JsonObject
+            root?.get("bookName")?.jsonPrimitive?.content
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    suspend fun importCloudBackup(jsonString: String, bookId: String?): Result<String> = withContext(Dispatchers.IO) {
+        try {
+            val importData = json.decodeFromString<ImportExportData>(jsonString)
+            
+            // Extract bookId from name if missing from field (e.g. "Name [uuid]")
+            val extractedId = importData.bookId ?: run {
+                val name = importData.bookName ?: ""
+                val regex = "\\[([a-fA-F0-9-]{36})\\]".toRegex()
+                regex.find(name)?.groupValues?.get(1)
+            }
+
+            if (extractedId == null && bookId == null) {
+                return@withContext Result.failure(Exception("Konnte keine Buch-ID im Backup finden."))
+            }
+
+            val targetBookId = bookId ?: extractedId!!
+            
+            val existingBook = bookRepository.getBookById(targetBookId)
+            if (existingBook != null && bookId == null) {
+                return@withContext Result.failure(Exception("Ein Buch mit dieser ID existiert bereits lokal."))
+            }
+
+            if (existingBook == null) {
+                val newBook = com.andreas_kratzer.ghosttalk.core.model.Book(
+                    id = targetBookId,
+                    name = importData.bookName ?: "Importiertes Buch",
+                    createdAt = System.currentTimeMillis()
+                )
+                bookRepository.insertBook(newBook)
+            }
+
+            importFromJson(jsonString, targetBookId, regenerateIds = false)
+            Result.success(targetBookId)
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 }

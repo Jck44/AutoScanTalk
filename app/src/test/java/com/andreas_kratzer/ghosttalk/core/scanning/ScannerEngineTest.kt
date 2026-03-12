@@ -1,8 +1,7 @@
 package com.andreas_kratzer.ghosttalk.core.scanning
 
-import com.andreas_kratzer.ghosttalk.domain.settings.FeatureGuard
-import com.andreas_kratzer.ghosttalk.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -17,7 +16,7 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class ScannerEngineTest {
 
-    private lateinit var featureGuard: FeatureGuard
+    private lateinit var featureGuard: FeatureGuardProxy
     private lateinit var feedbackProvider: ScannerFeedbackProvider
 
     @Before
@@ -29,7 +28,6 @@ class ScannerEngineTest {
 
         featureGuard = mockk(relaxed = true) {
             every { isButtonVisible(any()) } returns true
-            every { isActionEnabled(any()) } returns true
         }
         feedbackProvider = mockk(relaxed = true)
     }
@@ -77,6 +75,7 @@ class ScannerEngineTest {
             rowNames = emptyList(),
             pageId = "page1"
         )
+        runCurrent()
         advanceTimeBy(110) // Focus on 0
 
         assertEquals(0, engine.focusedButtonIndex.value)

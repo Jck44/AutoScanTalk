@@ -1,12 +1,12 @@
 package com.andreas_kratzer.ghosttalk.ui.pages
 
 import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.Page
+import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.core.scanning.ScannerEngine
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.domain.settings.CheckForPredictorUseCase
-import com.andreas_kratzer.ghosttalk.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.model.Page
-import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
 import io.mockk.clearMocks
 import io.mockk.every
@@ -218,5 +218,65 @@ class ScanCoordinatorTest {
 
         // Then: Scanning should NOT start
         verify(exactly = 0) { scannerEngine.startScanning(any(), any(), any(), any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `ScanCoordinator regression - should restart scanning at first button when action finishes and resumeScanningFromStart is true`() = runTest(testDispatcher) {
+        val focusedButtonIndexFlow = MutableStateFlow<Int?>(0)
+        val isScanningFlow = MutableStateFlow(false)
+        
+        every { scannerEngine.focusedButtonIndex } returns focusedButtonIndexFlow
+        every { scannerEngine.isScanning } returns isScanningFlow
+        every { settingsRepository.autoStartScanning } returns true
+        every { settingsRepository.resumeScanningFromStart } returns true
+        every { settingsRepository.defaultScanPattern } returns "linear"
+        every { settingsRepository.scanDelayFlow } returns MutableStateFlow(1000L)
+        every { checkForPredictorUseCase(any()) } returns false
+
+        val page = Page(
+            id = "p1", 
+            bookId = "book1",
+            name = "T", 
+            rows = 1, 
+            columns = 2, 
+            buttonConfigs = listOf(
+                ButtonConfig(id = "b1", label = "B1", isActive = true),
+                ButtonConfig(id = "b2", label = "B2", isActive = true)
+            )
+        )
+        
+        scanCoordinator.init(
+            currentPage = MutableStateFlow(page),
+            isUserModeActive = MutableStateFlow(true),
+            resolvedPage = MutableStateFlow(page),
+            isSmartPredictionLoading = MutableStateFlow(false),
+            smartPredictions = MutableStateFlow(null)
+        )
+        
+        testDispatcher.scheduler.advanceUntilIdle()
+        
+        // Trigger action
+        isExecuting.value = true
+        testDispatcher.scheduler.advanceUntilIdle()
+        verify { scannerEngine.pauseScanning() }
+        
+        // Mock that we were at index 1 (second button)
+        focusedButtonIndexFlow.value = 1
+        isScanningFlow.value = false
+        
+        // Finish action
+        isExecuting.value = false
+        testDispatcher.scheduler.advanceUntilIdle()
+        
+        // Should restart at 0 because resumeScanningFromStart is true
+        verify { scannerEngine.startScanning(
+            page.buttonConfigs,
+            0,
+            "linear",
+            page.rows,
+            page.columns,
+            page.rowNames,
+            page.id
+        ) }
     }
 }

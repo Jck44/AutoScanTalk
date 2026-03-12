@@ -3,13 +3,27 @@ package com.andreas_kratzer.ghosttalk.data
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
-import com.andreas_kratzer.ghosttalk.data.settings.*
+import com.andreas_kratzer.ghosttalk.core.KeyEventSettings
+import com.andreas_kratzer.ghosttalk.core.SecuritySettings
+import com.andreas_kratzer.ghosttalk.core.actions.ControlDeviceSettings
+import com.andreas_kratzer.ghosttalk.core.actions.SpeechSettings
+import com.andreas_kratzer.ghosttalk.core.audio.AudioSettings
+import com.andreas_kratzer.ghosttalk.data.settings.AdvancedSettingsRepository
+import com.andreas_kratzer.ghosttalk.data.settings.CloudSettingsRepository
+import com.andreas_kratzer.ghosttalk.data.settings.GenAiSettingsRepository
+import com.andreas_kratzer.ghosttalk.data.settings.GeneralSettingsRepository
+import com.andreas_kratzer.ghosttalk.data.settings.NotificationSettingsRepository
+import com.andreas_kratzer.ghosttalk.data.settings.ScanningSettingsRepository
+import com.andreas_kratzer.ghosttalk.data.settings.SecuritySettingsRepository
+import com.andreas_kratzer.ghosttalk.data.settings.SettingsConstants
+import com.andreas_kratzer.ghosttalk.data.settings.UserSettingsRepository
+import com.andreas_kratzer.ghosttalk.data.settings.VoiceSettingsRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 @SuppressLint("CommitPrefEdits", "ApplySharedPref", "UseKtx")
-class SettingsRepository(context: Context) {
+class SettingsRepository(context: Context) : SecuritySettings, KeyEventSettings, AudioSettings, ControlDeviceSettings, SpeechSettings {
 
     private val prefs: SharedPreferences = context.getSharedPreferences(SettingsConstants.PREFS_NAME, Context.MODE_PRIVATE)
 
@@ -147,11 +161,11 @@ class SettingsRepository(context: Context) {
         get() = generalSettings.defaultStartPageId
         set(value) { generalSettings.defaultStartPageId = value }
 
-    var ttsAudioDeviceAddress: String?
+    override var ttsAudioDeviceAddress: String?
         get() = voiceSettings.ttsAudioDeviceAddress
         set(value) { voiceSettings.ttsAudioDeviceAddress = value }
 
-    var cuesAudioDeviceAddress: String?
+    override var cuesAudioDeviceAddress: String?
         get() = voiceSettings.cuesAudioDeviceAddress
         set(value) { voiceSettings.cuesAudioDeviceAddress = value }
 
@@ -167,11 +181,11 @@ class SettingsRepository(context: Context) {
         get() = advancedSettings.actionLogsStorage
         set(value) { advancedSettings.actionLogsStorage = value }
 
-    var switchActivationKey: String
+    override var switchActivationKey: String
         get() = scanningSettings.switchActivationKey
         set(value) { scanningSettings.switchActivationKey = value }
 
-    var volumeKeysActivate: Boolean
+    override var volumeKeysActivate: Boolean
         get() = scanningSettings.volumeKeysActivate
         set(value) { scanningSettings.volumeKeysActivate = value }
 
@@ -207,7 +221,7 @@ class SettingsRepository(context: Context) {
         get() = advancedSettings.isSmartPredictionEnabled
         set(value) { advancedSettings.isSmartPredictionEnabled = value }
 
-    var bluetoothDelay: Long
+    override var bluetoothDelay: Long
         get() = scanningSettings.bluetoothDelay
         set(value) { scanningSettings.bluetoothDelay = value }
 
@@ -235,11 +249,11 @@ class SettingsRepository(context: Context) {
         get() = advancedSettings.showPageIdInLog
         set(value) { advancedSettings.showPageIdInLog = value }
 
-    var isNotificationReadingEnabled: Boolean
+    override var isNotificationReadingEnabled: Boolean
         get() = notificationSettings.isNotificationReadingEnabled
         set(value) { notificationSettings.isNotificationReadingEnabled = value }
 
-    var monitoredNotificationApps: Set<String>
+    override var monitoredNotificationApps: Set<String>
         get() = notificationSettings.monitoredNotificationApps
         set(value) { notificationSettings.monitoredNotificationApps = value }
 
@@ -271,23 +285,23 @@ class SettingsRepository(context: Context) {
         get() = advancedSettings.weatherCacheTimeout
         set(value) { advancedSettings.weatherCacheTimeout = value }
 
-    var securityPin: String?
+    override var securityPin: String?
         get() = securitySettings.securityPin
         set(value) { securitySettings.securityPin = value }
 
-    var securityPinHash: String?
+    override var securityPinHash: String?
         get() = securitySettings.securityPinHash
         set(value) { securitySettings.securityPinHash = value }
 
-    var securityPinSalt: String?
+    override var securityPinSalt: String?
         get() = securitySettings.securityPinSalt
         set(value) { securitySettings.securityPinSalt = value }
 
-    var securityPinTimeoutMinutes: Long
+    override var securityPinTimeoutMinutes: Long
         get() = securitySettings.securityPinTimeoutMinutes
         set(value) { securitySettings.securityPinTimeoutMinutes = value }
 
-    var isPinRequiredForDeletion: Boolean
+    override var isPinRequiredForDeletion: Boolean
         get() = securitySettings.isPinRequiredForDeletion
         set(value) { securitySettings.isPinRequiredForDeletion = value }
 
@@ -295,11 +309,11 @@ class SettingsRepository(context: Context) {
         get() = securitySettings.isBiometricEnabled
         set(value) { securitySettings.isBiometricEnabled = value }
 
-    var isSecurityRequiredForEdit: Boolean
+    override var isSecurityRequiredForEdit: Boolean
         get() = securitySettings.isSecurityRequiredForEdit
         set(value) { securitySettings.isSecurityRequiredForEdit = value }
 
-    var isSecurityRequiredForSettings: Boolean
+    override var isSecurityRequiredForSettings: Boolean
         get() = securitySettings.isSecurityRequiredForSettings
         set(value) { securitySettings.isSecurityRequiredForSettings = value }
 

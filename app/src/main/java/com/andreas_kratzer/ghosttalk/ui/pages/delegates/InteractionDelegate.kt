@@ -3,11 +3,11 @@ package com.andreas_kratzer.ghosttalk.ui.pages.delegates
 import android.app.Application
 import android.content.Intent
 import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
+import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.data.AppStateRepository
 import com.andreas_kratzer.ghosttalk.domain.actions.ActionLogUseCase
 import com.andreas_kratzer.ghosttalk.domain.actions.ActivateButtonUseCase
 import com.andreas_kratzer.ghosttalk.domain.actions.HandleActionExecutionEventUseCase
-import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
 import com.andreas_kratzer.ghosttalk.ui.pages.ScanCoordinator
 import kotlinx.coroutines.CoroutineScope

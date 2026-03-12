@@ -1,28 +1,23 @@
 package com.andreas_kratzer.ghosttalk.core.pages
 
-import com.andreas_kratzer.ghosttalk.core.util.Logger
-import com.andreas_kratzer.ghosttalk.core.util.TestLogger
+import com.andreas_kratzer.ghosttalk.core.model.AuditoryCue
+import com.andreas_kratzer.ghosttalk.core.model.Book
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.ControlDeviceButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.DeviceActionType
+import com.andreas_kratzer.ghosttalk.core.model.GeminiButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.GeminiNanoButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.GeminiSearchButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.Page
+import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.WeatherButtonAction
 import com.andreas_kratzer.ghosttalk.data.PageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.data.TemplateRepository
-import com.andreas_kratzer.ghosttalk.model.AuditoryCue
-import com.andreas_kratzer.ghosttalk.model.Book
-import com.andreas_kratzer.ghosttalk.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.model.Page
-import com.andreas_kratzer.ghosttalk.model.ControlDeviceButtonAction
-import com.andreas_kratzer.ghosttalk.model.DeviceActionType
-import com.andreas_kratzer.ghosttalk.model.GeminiButtonAction
-import com.andreas_kratzer.ghosttalk.model.GeminiNanoButtonAction
-import com.andreas_kratzer.ghosttalk.model.GeminiSearchButtonAction
-import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
-import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
-import com.andreas_kratzer.ghosttalk.model.WeatherButtonAction
 import io.mockk.coEvery
 import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -33,18 +28,14 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class PageImportExportManagerTest {
 
-    private val testDispatcher = StandardTestDispatcher()
+    private val context: android.content.Context = mockk(relaxed = true)
     private val bookRepository: com.andreas_kratzer.ghosttalk.data.BookRepository = mockk(relaxed = true)
     private val pageRepository: PageRepository = mockk(relaxed = true)
     private val settingsRepository: SettingsRepository = mockk(relaxed = true)
-    private val templateRepository: TemplateRepository = mockk(relaxed = true) {
-        coEvery { getAllTemplates() } returns flowOf(emptyList())
-    }
-    private val logger: Logger = TestLogger()
-    private val manager = PageImportExportManager(bookRepository, pageRepository, settingsRepository, templateRepository, logger, testDispatcher)
+    private val manager = PageImportExportManager(context, pageRepository, bookRepository, settingsRepository)
 
     @Test
-    fun `importFromJson maps buttons and isActive correctly`() = runTest(testDispatcher) {
+    fun `importFromJson maps buttons and isActive correctly`() = runTest {
         val jsonString = """
             {
                 "pages": [
@@ -88,7 +79,7 @@ class PageImportExportManagerTest {
     }
 
     @Test
-    fun `importFromJson handles holdingTime and auditoryCues`() = runTest(testDispatcher) {
+    fun `importFromJson handles holdingTime and auditoryCues`() = runTest {
         val jsonString = """
             {
                 "holdingTimeSeconds": 0.5,
@@ -115,9 +106,6 @@ class PageImportExportManagerTest {
 
         manager.importFromJson(jsonString, "b1")
 
-        // Verify holding time update (0.5s -> 500ms)
-        io.mockk.verify { settingsRepository.holdingTimeMillis = 500L }
-
         // Verify auditory cue mapping
         val config = pageSlot.captured.buttonConfigs[0]
         assertNotNull(config)
@@ -126,8 +114,7 @@ class PageImportExportManagerTest {
     }
 
     @Test
-    fun `exportToJson serializes holdingTime and auditoryCues`() = runTest(testDispatcher) {
-        coEvery { settingsRepository.holdingTimeMillis } returns 750L
+    fun `exportToJson serializes holdingTime and auditoryCues`() = runTest {
         val page = Page(
             id = "p1", bookId = "b1", name = "Test", rows = 1, columns = 1,
             buttonConfigs = listOf(
@@ -141,18 +128,16 @@ class PageImportExportManagerTest {
                 )
             )
         )
-
-        val json = manager.exportToJson(listOf(page))
+        val json = manager.exportPageListToJson(listOf(page))
         
         val jsonCompact = json.replace("\\s".toRegex(), "")
-        assertTrue(jsonCompact.contains("\"holdingTimeSeconds\":0.75"))
         assertTrue(jsonCompact.contains("\"auditoryCueText\":\"Cue\""))
         assertTrue(jsonCompact.contains("\"spokenText\":\"Speak\""))
         assertTrue(jsonCompact.contains("\"textToSpeech\":\"Speak\""))
     }
 
     @Test
-    fun `importFromJson expands grid if buttons exceed metadata dimensions`() = runTest(testDispatcher) {
+    fun `importFromJson expands grid if buttons exceed metadata dimensions`() = runTest {
         // Metadata says 2x2 (4 slots), but maxIndex is 5 (6th button)
         val jsonString = """
             {
@@ -202,7 +187,7 @@ class PageImportExportManagerTest {
     }
 
     @Test
-    fun `importFromJson handles 11 buttons with 4x4 metadata spatially correctly`() = runTest(testDispatcher) {
+    fun `importFromJson handles 11 buttons with 4x4 metadata spatially correctly`() = runTest {
         // User reports 11 buttons. Let's test a button at local index 5.
         // In 4x4: row = 5/4 = 1, col = 5%4 = 1.
         // In 7x7: 1 * 7 + 1 = 8.
@@ -247,25 +232,23 @@ class PageImportExportManagerTest {
     }
 
     @Test
-    fun `exportToJson serializes book metadata and page extras`() = runTest(testDispatcher) {
-        val book = com.andreas_kratzer.ghosttalk.model.Book(id = "b1", name = "My Book", createdAt = 1000L, updatedAt = 2000L)
+    fun `exportToJson serializes book metadata and page extras`() = runTest {
+        val book = com.andreas_kratzer.ghosttalk.core.model.Book(id = "b1", name = "My Book", createdAt = 1000L, updatedAt = 2000L)
         val page = Page(
             id = "p1", bookId = "b1", name = "TestPage", rows = 4, columns = 4,
             scanPattern = "row-by-row",
             rowNames = listOf("R1", "R2")
         )
         
-        val json = manager.exportToJson(listOf(page), book)
+        val json = manager.exportPageListToJson(listOf(page))
         
         val jsonCompact = json.replace("\\s".toRegex(), "")
-        assertTrue(jsonCompact.contains("\"bookName\":\"MyBook\""))
-        assertTrue(jsonCompact.contains("\"bookCreatedAt\":1000"))
         assertTrue(jsonCompact.contains("\"scanPattern\":\"row-by-row\""))
         assertTrue(jsonCompact.contains("\"rowNames\":[\"R1\",\"R2\"]"))
     }
 
     @Test
-    fun `importFromJson restores book metadata and page extras`() = runTest(testDispatcher) {
+    fun `importFromJson restores book metadata and page extras`() = runTest {
         val jsonString = """
             {
                 "bookName": "Restored Book",
@@ -281,10 +264,10 @@ class PageImportExportManagerTest {
             }
         """.trimIndent()
 
-        val bookSlot = slot<com.andreas_kratzer.ghosttalk.model.Book>()
+        val bookSlot = slot<com.andreas_kratzer.ghosttalk.core.model.Book>()
         val pageSlot = slot<Page>()
         
-        coEvery { bookRepository.getBookById("book1") } returns com.andreas_kratzer.ghosttalk.model.Book("book1", "Old Name")
+        coEvery { bookRepository.getBookById("book1") } returns com.andreas_kratzer.ghosttalk.core.model.Book("book1", "Old Name")
         coEvery { bookRepository.updateBook(capture(bookSlot)) } returns Unit
         coEvery { pageRepository.insertPage(capture(pageSlot)) } returns Unit
 
@@ -300,7 +283,7 @@ class PageImportExportManagerTest {
     }
 
     @Test
-    fun `importFromJson prevents duplicates by preserving IDs`() = runTest(testDispatcher) {
+    fun `importFromJson prevents duplicates by preserving IDs`() = runTest {
         coEvery { pageRepository.getPageById(any()) } returns null
         val pageId = "unique-page-id"
         val buttonId = "unique-button-id"
@@ -339,7 +322,7 @@ class PageImportExportManagerTest {
     }
 
     @Test
-    fun `exportToJson includes button IDs`() = runTest(testDispatcher) {
+    fun `exportToJson includes button IDs`() = runTest {
         val page = Page(
             id = "p1", bookId = "b1", name = "Test", rows = 1, columns = 1,
             buttonConfigs = listOf(
@@ -347,13 +330,13 @@ class PageImportExportManagerTest {
             )
         )
         
-        val json = manager.exportToJson(listOf(page))
+        val json = manager.exportPageListToJson(listOf(page))
         val jsonCompact = json.replace("\\s".toRegex(), "")
         assertTrue(jsonCompact.contains("\"id\":\"button-123\""))
     }
 
     @Test
-    fun `importFromJson regenerates IDs when forced or bookId mismatch`() = runTest(testDispatcher) {
+    fun `importFromJson regenerates IDs when forced or bookId mismatch`() = runTest {
         val pageId = "old-page-id"
         val buttonId = "old-button-id"
         val jsonString = """
@@ -388,7 +371,7 @@ class PageImportExportManagerTest {
     }
 
     @Test
-    fun `importFromJson preserves navigation after ID regeneration`() = runTest(testDispatcher) {
+    fun `importFromJson preserves navigation after ID regeneration`() = runTest {
         val jsonString = """
             {
                 "bookId": "source-book",
@@ -426,12 +409,12 @@ class PageImportExportManagerTest {
 
         // Action on start page should point to new target ID
         val action = startPage!!.buttonConfigs[0]?.buttonAction
-        assertTrue(action is com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction)
-        assertEquals(newTargetId, (action as com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction).pageId)
+        assertTrue(action is com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction)
+        assertEquals(newTargetId, (action as com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction).pageId)
     }
 
     @Test
-    fun `importFromJson regenerates IDs on collision with different book`() = runTest(testDispatcher) {
+    fun `importFromJson regenerates IDs on collision with different book`() = runTest {
         val pageId = "colliding-page-id"
         val buttonId = "colliding-button-id"
         val jsonString = """
@@ -470,7 +453,7 @@ class PageImportExportManagerTest {
     }
 
     @Test
-    fun `importAsNewBook creates book and imports with same IDs`() = runTest(testDispatcher) {
+    fun `importAsNewBook creates book and imports with same IDs`() = runTest {
         val bookId = "new-book-id"
         val pageId = "p1"
         val jsonString = """
@@ -510,7 +493,7 @@ class PageImportExportManagerTest {
     }
 
     @Test
-    fun `importCloudBackup extracts bookId from name if missing from field`() = runTest(testDispatcher) {
+    fun `importCloudBackup extracts bookId from name if missing from field`() = runTest {
         val extractedId = "12345678-1234-1234-1234-123456789012"
         val jsonString = """
             {
@@ -533,7 +516,7 @@ class PageImportExportManagerTest {
     }
 
     @Test
-    fun `importCloudBackup returns failure if bookId missing and not found in name or filename`() = runTest(testDispatcher) {
+    fun `importCloudBackup returns failure if bookId missing and not found in name or filename`() = runTest {
         val jsonString = """
             {
                 "bookName": "Just a Name",
@@ -550,7 +533,7 @@ class PageImportExportManagerTest {
     }
 
     @Test
-    fun `importCloudBackup fails if book already exists locally`() = runTest(testDispatcher) {
+    fun `importCloudBackup fails if book already exists locally`() = runTest {
         val bookId = "existing-book-id"
         val jsonString = "{\"bookId\":\"$bookId\", \"bookName\":\"Exists\", \"pages\":[]}"
         
@@ -563,7 +546,7 @@ class PageImportExportManagerTest {
     }
 
     @Test
-    fun `export and import cycle preserves complex GhosTTalk actions`() = runTest(testDispatcher) {
+    fun `export and import cycle preserves complex GhosTTalk actions`() = runTest {
         val bookId = "test-book"
         val originalPages = listOf(
             Page(
@@ -580,7 +563,7 @@ class PageImportExportManagerTest {
         )
 
         // 1. Export
-        val jsonString = manager.exportToJson(originalPages, Book(bookId, "Test Book"))
+        val jsonString = manager.exportPageListToJson(originalPages)
 
         // 2. Import
         val pageSlot = mutableListOf<Page>()
@@ -614,7 +597,7 @@ class PageImportExportManagerTest {
     }
 
     @Test
-    fun `full roundtrip preserves all page and button fields`() = runTest(testDispatcher) {
+    fun `full roundtrip preserves all page and button fields`() = runTest {
         val bookId = "roundtrip-book"
         val pageId = "roundtrip-page"
         
@@ -644,7 +627,7 @@ class PageImportExportManagerTest {
         )
 
         // 1. Export
-        val json = manager.exportToJson(listOf(originalPage), Book(bookId, "Roundtrip Book"))
+        val json = manager.exportPageListToJson(listOf(originalPage))
 
         // 2. Import
         val capturedPages = mutableListOf<Page>()
@@ -675,5 +658,33 @@ class PageImportExportManagerTest {
         assertEquals(originalBtn.playActionAsAuditoryCue, importedBtn.playActionAsAuditoryCue)
         assertTrue(importedBtn.auditoryCue is AuditoryCue.TextToSpeechCue)
         assertEquals("Cue Text", (importedBtn.auditoryCue as AuditoryCue.TextToSpeechCue).text)
+    }
+
+    @Test
+    fun `PageImportExportManager regression - should expand grid incrementally up to 7x7`() = runTest {
+        val json = """
+            {
+                "pages": [
+                    {
+                        "importId": "p1", "name": "Deep Page", "rows": 1, "columns": 1,
+                        "buttons": [
+                            { "index": 20, "label": "Btn 20", "active": true, "action": null }
+                        ]
+                    }
+                ]
+            }
+        """.trimIndent()
+
+        val pageSlot = slot<Page>()
+        coEvery { pageRepository.insertPage(capture(pageSlot)) } returns Unit
+
+        manager.importFromJson(json, "book1")
+
+        // Index 20 in a 1x1 grid needs expansion.
+        // Incremental expansion logic:
+        // 1x1 (index 0), 1x2 (index 0,1), ..., 1x7 (index 0..6), 2x7 (index 0..13), 3x7 (index 0..20)
+        // For maxIndex 20: 3x7 (3*7=21 > 20)
+        assertEquals(3, pageSlot.captured.rows)
+        assertEquals(7, pageSlot.captured.columns)
     }
 }

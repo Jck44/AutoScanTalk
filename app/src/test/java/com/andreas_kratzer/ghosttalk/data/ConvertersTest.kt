@@ -1,10 +1,10 @@
 package com.andreas_kratzer.ghosttalk.data
 
-import com.andreas_kratzer.ghosttalk.model.AuditoryCue
-import com.andreas_kratzer.ghosttalk.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.model.GeminiButtonAction
-import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
-import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.AuditoryCue
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.GeminiButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -61,14 +61,14 @@ class ConvertersTest {
     @Test
     fun `ButtonConfig roundtrip with FrequentAction`() {
         val configs = listOf(
-            ButtonConfig("b1", "Rank 1", auditoryCue = null, buttonAction = com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction(1), isActive = true)
+            ButtonConfig("b1", "Rank 1", auditoryCue = null, buttonAction = com.andreas_kratzer.ghosttalk.core.model.FrequentActionButtonAction(1), isActive = true)
         )
 
         val json = converters.fromButtonConfigList(configs)
         val restored = converters.toButtonConfigList(json!!)
 
-        assertTrue(restored!![0]!!.buttonAction is com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction)
-        assertEquals(1, (restored[0]!!.buttonAction as com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction).rank)
+        assertTrue(restored!![0]!!.buttonAction is com.andreas_kratzer.ghosttalk.core.model.FrequentActionButtonAction)
+        assertEquals(1, (restored[0]!!.buttonAction as com.andreas_kratzer.ghosttalk.core.model.FrequentActionButtonAction).rank)
     }
 
     @Test

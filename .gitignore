@@ -20,3 +20,4 @@ local.properties
 /app/build_output.txt
 /build_output.txt
 /htmlReport/
+/core/build/

@@ -20,11 +20,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.domain.genai.GeminiUseCase
-import com.andreas_kratzer.ghosttalk.ui.settings.GeminiDeactivatedDialog
-import com.andreas_kratzer.ghosttalk.ui.settings.GeminiDownloadDialog
 import com.andreas_kratzer.ghosttalk.ui.components.PreferenceCategory
 import com.andreas_kratzer.ghosttalk.ui.components.SettingsEditTextItem
 import com.andreas_kratzer.ghosttalk.ui.components.SettingsToggleItem
+import com.andreas_kratzer.ghosttalk.ui.settings.GeminiDeactivatedDialog
+import com.andreas_kratzer.ghosttalk.ui.settings.GeminiDownloadDialog
 import com.andreas_kratzer.ghosttalk.ui.settings.SettingsViewModel
 import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 

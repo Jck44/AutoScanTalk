@@ -1,8 +1,8 @@
 package com.andreas_kratzer.ghosttalk.data
 
-import com.andreas_kratzer.ghosttalk.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.model.ButtonUsageStat
-import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.ButtonUsageStat
+import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk

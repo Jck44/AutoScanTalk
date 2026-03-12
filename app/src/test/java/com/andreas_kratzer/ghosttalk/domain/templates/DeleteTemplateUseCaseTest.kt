@@ -1,7 +1,7 @@
 package com.andreas_kratzer.ghosttalk.domain.templates
 
+import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.data.TemplateRepository
-import com.andreas_kratzer.ghosttalk.model.PageTemplate
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -44,7 +44,7 @@ class DeleteTemplateUseCaseTest {
     @Test
     fun `execute with clearUsages true nullifies templateId in pages`() = runTest {
         val template = PageTemplate(id = "t1", name = "Template", rows = 1, columns = 1, buttonConfigs = emptyList())
-        val page = com.andreas_kratzer.ghosttalk.model.Page(
+        val page = com.andreas_kratzer.ghosttalk.core.model.Page(
             id = "p1", 
             bookId = "b1", 
             name = "Page", 

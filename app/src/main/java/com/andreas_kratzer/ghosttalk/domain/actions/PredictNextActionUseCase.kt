@@ -1,11 +1,13 @@
 package com.andreas_kratzer.ghosttalk.domain.actions
 
 import android.util.Log
+import com.andreas_kratzer.ghosttalk.core.model.FrequentActionButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.Page
+import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
+import com.andreas_kratzer.ghosttalk.core.util.GridUtils
 import com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.domain.executors.LocalIntentRouter
-import com.andreas_kratzer.ghosttalk.model.Page
-import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withTimeout
 import java.time.LocalTime
@@ -46,8 +48,8 @@ class PredictNextActionUseCase @Inject constructor(
                     it.isActive && 
                     it.label.isNotBlank() && 
                     it.buttonAction !is SmartPredictionButtonAction &&
-                    it.buttonAction !is com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction &&
-                    com.andreas_kratzer.ghosttalk.ui.util.GridUtils.isVisibleInGrid(index, currentPage.rows, currentPage.columns)
+                    it.buttonAction !is FrequentActionButtonAction &&
+                    GridUtils.isVisibleInGrid(index, currentPage.rows, currentPage.columns)
                 ) {
                     "${it.id}:${it.label}"
                 } else null

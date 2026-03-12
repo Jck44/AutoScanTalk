@@ -1,6 +1,6 @@
 package com.andreas_kratzer.ghosttalk.ui.util
 
-import com.andreas_kratzer.ghosttalk.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 
 object GridUtils {
     const val MAX_GRID_SIZE = 7

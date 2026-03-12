@@ -1,15 +1,14 @@
 package com.andreas_kratzer.ghosttalk.ui.settings.delegates
 
+import android.content.Context
+import android.speech.tts.TextToSpeech
 import android.speech.tts.Voice
 import com.andreas_kratzer.ghosttalk.core.audio.AudioDeviceManager
+import com.andreas_kratzer.ghosttalk.core.model.AudioOutputDevice
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.domain.tts.GetAudioDevicesUseCase
-import com.andreas_kratzer.ghosttalk.domain.tts.SetAudioDeviceUseCase
 import com.andreas_kratzer.ghosttalk.domain.tts.SetTtsLanguageUseCase
-import com.andreas_kratzer.ghosttalk.domain.tts.SetTtsVoiceUseCase
-import com.andreas_kratzer.ghosttalk.model.AudioOutputDevice
-import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
-import kotlinx.coroutines.CoroutineDispatcher
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,17 +17,13 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.Locale
 import javax.inject.Inject
-import javax.inject.Singleton
 
-@Singleton
 class TtsSettingsDelegate @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val settingsRepository: SettingsRepository,
-    private val ttsHelper: TextToSpeechHelper,
     private val audioDeviceManager: AudioDeviceManager,
-    private val setTtsLanguageUseCase: SetTtsLanguageUseCase,
-    private val setTtsVoiceUseCase: SetTtsVoiceUseCase,
-    private val setAudioDeviceUseCase: SetAudioDeviceUseCase,
-    private val getAudioDevicesUseCase: GetAudioDevicesUseCase
+    private val getAudioDevicesUseCase: GetAudioDevicesUseCase,
+    private val setTtsLanguageUseCase: SetTtsLanguageUseCase
 ) {
     private val _availableLanguages = MutableStateFlow<List<Locale>>(emptyList())
     val availableLanguages: StateFlow<List<Locale>> = _availableLanguages.asStateFlow()
@@ -39,80 +34,54 @@ class TtsSettingsDelegate @Inject constructor(
     private val _availableAudioDevices = MutableStateFlow<List<AudioOutputDevice>>(emptyList())
     val availableAudioDevices: StateFlow<List<AudioOutputDevice>> = _availableAudioDevices.asStateFlow()
 
-    // Dispatcher for background init, can be overridden in tests
-    var backgroundDispatcher: CoroutineDispatcher = Dispatchers.IO
+    private var tts: TextToSpeech? = null
+    private var scope: CoroutineScope? = null
 
-    fun initialize(scope: CoroutineScope, onVoiceFallback: (String, String?) -> Unit) {
-        scope.launch(backgroundDispatcher) {
-            ttsHelper.setLanguageAndVoice(
-                settingsRepository.ttsLanguage ?: "default",
-                settingsRepository.ttsVoiceName
-            )
-
-            loadAvailableLanguages()
-            loadAvailableVoices()
-            loadAvailableAudioDevices()
-
-            launch {
-                audioDeviceManager.availableDevicesFlow.collect {
-                    loadAvailableAudioDevices()
-                }
+    fun initialize(scope: CoroutineScope, onVoiceMissing: (String, String?) -> Unit) {
+        this.scope = scope
+        tts = TextToSpeech(context) { status ->
+            if (status == TextToSpeech.SUCCESS) {
+                _availableLanguages.value = tts?.availableLanguages?.toList() ?: emptyList()
+                loadAvailableVoices()
             }
         }
-
-        ttsHelper.fallbackListener = object : TextToSpeechHelper.OnVoiceFallbackListener {
-            override fun onVoiceFallback(originalVoice: String, fallbackVoice: String?, reason: String) {
-                scope.launch {
-                    onVoiceFallback(originalVoice, fallbackVoice)
-                }
-            }
-        }
+        loadAvailableAudioDevices()
     }
 
     fun loadAvailableLanguages() {
-        if (ttsHelper.isReady) {
-            _availableLanguages.value = ttsHelper.getAvailableLanguages()
-        }
+        _availableLanguages.value = tts?.availableLanguages?.toList() ?: emptyList()
     }
 
     fun loadAvailableVoices() {
-        if (ttsHelper.isReady) {
-            _availableVoices.value = ttsHelper.getAvailableVoices(settingsRepository.ttsLanguage ?: "default")
-        }
+        _availableVoices.value = tts?.voices?.toList() ?: emptyList()
     }
 
     fun loadAvailableAudioDevices() {
-        _availableAudioDevices.value = getAudioDevicesUseCase.execute()
+        val launchScope = scope ?: CoroutineScope(Dispatchers.Main)
+        launchScope.launch {
+            _availableAudioDevices.value = getAudioDevicesUseCase.execute()
+        }
     }
 
-    fun setTtsLanguage(languageTag: String) {
-        setTtsLanguageUseCase(languageTag)
-        loadAvailableVoices()
+    fun setTtsLanguage(tag: String) {
+        setTtsLanguageUseCase(tag)
     }
 
-    fun setTtsVoice(voiceName: String?) {
-        setTtsVoiceUseCase(voiceName)
+    fun setTtsVoice(name: String?) {
+        settingsRepository.ttsVoiceName = name
     }
 
-    fun setTtsAudioDevice(address: String?) {
-        setAudioDeviceUseCase.execute(address, isForCues = false)
+    fun setTtsAudioDevice(addr: String?) {
+        settingsRepository.ttsAudioDeviceAddress = addr
     }
 
-    fun setCuesAudioDevice(address: String?) {
-        setAudioDeviceUseCase.execute(address, isForCues = true)
+    fun setCuesAudioDevice(addr: String?) {
+        settingsRepository.cuesAudioDeviceAddress = addr
     }
 
-    fun getResolvedDeviceName(savedAddress: String?): String {
-        if (savedAddress.isNullOrBlank()) return "System-Standard (Automatisch)"
-        
-        val devices = _availableAudioDevices.value
-        val exactMatch = devices.find { it.address == savedAddress }
-        if (exactMatch != null) return exactMatch.name
-        
-        val persistentId = savedAddress.split("|").lastOrNull() ?: savedAddress
-        val cachedName = settingsRepository.getDeviceName(persistentId)
-        if (cachedName != null) return "$cachedName (Laden...)"
-        
-        return "System-Standard (Automatisch)"
+    fun getResolvedDeviceName(addr: String?): String {
+        if (addr == null) return "Standard"
+        val device = audioDeviceManager.getAudioDeviceInfo(addr)
+        return device?.productName?.toString() ?: "Unbekannt"
     }
 }

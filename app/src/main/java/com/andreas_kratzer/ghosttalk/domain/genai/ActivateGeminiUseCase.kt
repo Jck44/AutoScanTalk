@@ -1,6 +1,5 @@
 package com.andreas_kratzer.ghosttalk.domain.genai
 
-import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import javax.inject.Inject
 

@@ -1,13 +1,7 @@
 package com.andreas_kratzer.ghosttalk.ui.util
 
-import com.andreas_kratzer.ghosttalk.model.SortOrder
-
-interface ListableItem {
-    val id: String
-    val name: String
-    val orderIndex: Int
-    val createdAt: Long
-}
+import com.andreas_kratzer.ghosttalk.core.model.ListableItem
+import com.andreas_kratzer.ghosttalk.core.model.SortOrder
 
 fun <T : ListableItem> List<T>.filterAndSort(query: String, sortOrder: SortOrder): List<T> {
     val filtered = if (query.isBlank()) {

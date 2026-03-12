@@ -1,7 +1,11 @@
 package com.andreas_kratzer.ghosttalk.ui.pages
 
-import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import com.andreas_kratzer.ghosttalk.MainActivity
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import dagger.hilt.android.testing.HiltAndroidRule

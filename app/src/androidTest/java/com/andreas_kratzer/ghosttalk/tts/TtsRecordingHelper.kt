@@ -3,16 +3,18 @@ package com.andreas_kratzer.ghosttalk.tts
 import android.content.Context
 import android.util.Log
 import com.andreas_kratzer.ghosttalk.core.audio.AudioDeviceManager
+import com.andreas_kratzer.ghosttalk.core.audio.AudioSettings
 import com.andreas_kratzer.ghosttalk.core.audio.RoutedAudioPlayer
+import com.andreas_kratzer.ghosttalk.core.model.AudioOutputDevice
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
-import java.io.File
 
 /**
  * A test-double for TextToSpeechHelper that records all spoken text without using MockK.
@@ -28,7 +30,7 @@ class TtsRecordingHelper @Inject constructor(
     CoroutineScope(kotlinx.coroutines.Dispatchers.Main), 
     settingsRepository, 
     // Manual No-Op implementation for RoutedAudioPlayer to avoid MockK in AndroidTest
-    TestRoutedAudioPlayer(context, TestAudioDeviceManager(context), settingsRepository),
+    TestRoutedAudioPlayer(context, TestAudioDeviceManager(context), settingsRepository as AudioSettings),
     voiceManager
 ) {
     
@@ -63,7 +65,7 @@ class TtsRecordingHelper @Inject constructor(
 
     // Manual doubles to avoid MockK
     private class TestAudioDeviceManager(context: Context) : AudioDeviceManager(context) {
-        override fun getAvailableOutputDevices(): List<com.andreas_kratzer.ghosttalk.model.AudioOutputDevice> = emptyList()
+        override fun getAvailableOutputDevices(): List<AudioOutputDevice> = emptyList()
         override fun getAudioDeviceInfo(address: String?) = null
         override fun getBuiltInSpeaker() = null
     }
@@ -71,7 +73,7 @@ class TtsRecordingHelper @Inject constructor(
     private class TestRoutedAudioPlayer(
         context: Context, 
         deviceManager: AudioDeviceManager, 
-        settings: SettingsRepository
+        settings: AudioSettings
     ) : RoutedAudioPlayer(context, deviceManager, settings) {
         override fun playAudioFile(file: File, deviceAddress: String?, volumeMultiplier: Float, onCompletion: (() -> Unit)?) {
             onCompletion?.invoke()

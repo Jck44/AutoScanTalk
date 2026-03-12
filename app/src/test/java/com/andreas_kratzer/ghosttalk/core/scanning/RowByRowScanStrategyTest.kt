@@ -1,14 +1,14 @@
 package com.andreas_kratzer.ghosttalk.core.scanning
 
-import com.andreas_kratzer.ghosttalk.domain.settings.FeatureGuard
-import com.andreas_kratzer.ghosttalk.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -19,7 +19,7 @@ import org.junit.Test
 class RowByRowScanStrategyTest {
 
     private lateinit var strategy: RowByRowScanStrategy
-    private lateinit var featureGuard: FeatureGuard
+    private lateinit var featureGuard: FeatureGuardProxy
     private val focusedButtonIndex = MutableStateFlow<Int?>(null)
     private val focusedRowIndex = MutableStateFlow<Int?>(null)
 
@@ -157,5 +157,46 @@ class RowByRowScanStrategyTest {
         )
         
         assertNull(focusedButtonIndex.value)
+    }
+
+    @Test
+    fun `RowByRowScanStrategy regression - should have initial delay of 100ms to settle race conditions`() = runTest {
+        val buttonConfigs = (0 until 49).map { 
+            if (it == 0) ButtonConfig(id = "1", label = "Test", isActive = true) else null 
+        }
+        
+        val focusedButtonIndex = MutableStateFlow<Int?>(null)
+        val focusedRowIndex = MutableStateFlow<Int?>(null)
+        val speakCount = MutableStateFlow(0)
+
+        // Use backgroundScope from runTest to ensure cleanup
+        backgroundScope.launch {
+            strategy.executeScan(
+                buttonConfigs = buttonConfigs,
+                rows = 1,
+                columns = 1,
+                rowNames = emptyList(),
+                startIndex = 0,
+                focusedButtonIndex = focusedButtonIndex,
+                focusedRowIndex = focusedRowIndex,
+                onSpeakCue = { speakCount.value++ },
+                delayMillis = 500,
+                featureGuard = mockk(relaxed = true) {
+                    every { isButtonVisible(any()) } returns true
+                }
+            )
+        }
+
+        // Initially 0
+        runCurrent()
+        assertEquals("Should not have spoken at T=0", 0, speakCount.value)
+        
+        advanceTimeBy(50)
+        runCurrent()
+        assertEquals("Should still not have spoken at T=50", 0, speakCount.value)
+
+        advanceTimeBy(51)
+        runCurrent()
+        assertEquals("Should have spoken after 100ms settle delay (at T=101)", 1, speakCount.value)
     }
 }

@@ -6,11 +6,11 @@ import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.andreas_kratzer.ghosttalk.core.SecurityManager
+import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.pages.PageImportExportManager
 import com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.domain.pages.GetPagesUseCase
-import com.andreas_kratzer.ghosttalk.model.Page
 import com.andreas_kratzer.ghosttalk.ui.settings.delegates.CloudSyncSettingsDelegate
 import com.andreas_kratzer.ghosttalk.ui.settings.delegates.ExperimentalSettingsDelegate
 import com.andreas_kratzer.ghosttalk.ui.settings.delegates.GenAiSettingsDelegate

@@ -1,9 +1,9 @@
 package com.andreas_kratzer.ghosttalk.data
 
 import androidx.room.TypeConverter
-import com.andreas_kratzer.ghosttalk.model.AuditoryCue
-import com.andreas_kratzer.ghosttalk.model.ButtonAction
-import com.andreas_kratzer.ghosttalk.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.AuditoryCue
+import com.andreas_kratzer.ghosttalk.core.model.ButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import kotlinx.serialization.json.Json
 
 class Converters {

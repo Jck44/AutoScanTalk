@@ -1,8 +1,8 @@
 package com.andreas_kratzer.ghosttalk.core.actions
 
-import com.andreas_kratzer.ghosttalk.model.ButtonAction
-import com.andreas_kratzer.ghosttalk.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.ButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
 
 class SmartPredictionActionHandler(
     private val log: (String) -> Unit

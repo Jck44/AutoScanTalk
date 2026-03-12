@@ -26,3 +26,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "GhosTTalk"
 include(":app")
+include(":core")

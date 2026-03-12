@@ -1,7 +1,8 @@
 package com.andreas_kratzer.ghosttalk.data
 
-import com.andreas_kratzer.ghosttalk.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.model.ButtonUsageStat
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.ButtonUsageStat
+import com.andreas_kratzer.ghosttalk.core.model.FrequentActionButtonAction
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -36,12 +37,12 @@ class ButtonUsageRepository @Inject constructor(
         }
 
         // Ignore FrequentActionButtonAction to prevent ranking loops
-        if (buttonConfig.buttonAction is com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction) {
+        if (buttonConfig.buttonAction is FrequentActionButtonAction) {
             return
         }
 
         // Only record if visible in the current grid configuration
-        if (!com.andreas_kratzer.ghosttalk.ui.util.GridUtils.isVisibleInGrid(indexInPage, rows, columns)) {
+        if (!com.andreas_kratzer.ghosttalk.core.util.GridUtils.isVisibleInGrid(indexInPage, rows, columns)) {
             return
         }
         

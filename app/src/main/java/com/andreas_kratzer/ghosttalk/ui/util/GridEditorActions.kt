@@ -1,6 +1,6 @@
 package com.andreas_kratzer.ghosttalk.ui.util
 
-import com.andreas_kratzer.ghosttalk.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import kotlinx.coroutines.flow.StateFlow
 
 interface GridEditorActions {

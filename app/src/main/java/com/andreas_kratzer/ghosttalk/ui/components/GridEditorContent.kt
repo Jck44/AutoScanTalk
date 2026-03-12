@@ -20,12 +20,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyGridScope
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -38,12 +39,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.andreas_kratzer.ghosttalk.R
-import com.andreas_kratzer.ghosttalk.model.GridItem
-import com.andreas_kratzer.ghosttalk.model.Page
-import com.andreas_kratzer.ghosttalk.model.PageTemplate
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.GridItem
+import com.andreas_kratzer.ghosttalk.core.model.Page
+import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.ui.pages.ButtonConfigDialog
 import com.andreas_kratzer.ghosttalk.ui.pages.GridButton
 import com.andreas_kratzer.ghosttalk.ui.theme.GhosTTalkIcons
@@ -52,10 +55,6 @@ import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.ui.theme.LocalIsUserModeActive
 import com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions
 import com.andreas_kratzer.ghosttalk.ui.util.GridUtils
-import androidx.compose.foundation.lazy.grid.LazyGridScope
-import androidx.compose.foundation.lazy.grid.LazyGridState
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.ui.unit.Dp
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -187,7 +186,7 @@ fun GridEditorContent(
 @Composable
 private fun EditorButtonCell(
     index: Int,
-    buttonConfig: com.andreas_kratzer.ghosttalk.model.ButtonConfig?,
+    buttonConfig: ButtonConfig?,
     reorderState: ReorderableState,
     isTarget: Boolean,
     width: Dp,
@@ -331,7 +330,8 @@ private fun LazyGridScope.renderLinearGrid(
 ) {
     val buttonTargetIndex = buttonReorderState.findTargetButtonIndex(gridState, item.columns, false, density)
     
-    items(item.rows * item.columns) { globalIndex ->
+    items(item.rows * item.columns) { localIndex ->
+        val globalIndex = GridUtils.localToGlobalIndex(localIndex, item.columns)
         EditorButtonCell(
             index = globalIndex,
             buttonConfig = item.buttonConfigs.getOrNull(globalIndex),
@@ -381,26 +381,13 @@ private fun EditorDialogs(
         val buttonConfig = item.buttonConfigs.getOrNull(selectedButtonIndex)
         val buttonId = "page_button_${item.id}_${selectedButtonIndex}"
         ButtonConfigDialog(
-            initialConfig = buttonConfig ?: com.andreas_kratzer.ghosttalk.model.ButtonConfig(),
-            // currentPageId will be sourced from LocalCurrentPageId in ButtonConfigDialog
-            buttonId = buttonId,
-            availablePages = availablePages,
-            featureGuard = featureGuard,
+            buttonConfig = buttonConfig ?: ButtonConfig(),
+            pages = availablePages,
             templates = templates,
-            isTesting = isExecuting,
             onDismiss = onDismissButtonDialog,
             onSave = { newConfig ->
                 actions.updateButtonConfig(item.id, selectedButtonIndex, newConfig)
                 onDismissButtonDialog()
-            },
-            onTest = { testConfig -> actions.executeButtonAction(testConfig) },
-            onNavigateToPage = onEditPage,
-            onCreatePage = { name, rows, cols, templateId, onCreated ->
-                val bookId = (item as? Page)?.bookId ?: "book-default"
-                actions.createNewPage(name, rows, cols, bookId, templateId, onCreated)
-            },
-            onMoveToPage = { targetId, forceMove, onResult ->
-                actions.moveButtonToPage(item.id, selectedButtonIndex, targetId, forceMove, onResult)
             }
         )
     }

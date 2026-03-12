@@ -1,9 +1,9 @@
 package com.andreas_kratzer.ghosttalk.domain.pages
 
+import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.data.BookRepository
 import com.andreas_kratzer.ghosttalk.data.PageRepository
 import com.andreas_kratzer.ghosttalk.data.TemplateRepository
-import com.andreas_kratzer.ghosttalk.model.Page
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
@@ -45,11 +45,11 @@ class DeletePageUseCaseTest {
             rows = 1,
             columns = 1,
             buttonConfigs = listOf(
-                com.andreas_kratzer.ghosttalk.model.ButtonConfig(
+                com.andreas_kratzer.ghosttalk.core.model.ButtonConfig(
                     id = "b1",
                     label = "Navigate",
                     spokenText = "",
-                    buttonAction = com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction("p1"),
+                    buttonAction = com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction("p1"),
                     auditoryCue = null
                 )
             )

@@ -1,7 +1,7 @@
 package com.andreas_kratzer.ghosttalk.domain.pages
 
+import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.pages.PageImportExportManager
-import com.andreas_kratzer.ghosttalk.model.Page
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
@@ -24,7 +24,7 @@ class ExportPageUseCaseTest {
     fun `execute calls manager and returns json`() = runTest {
         val pages = listOf<Page>(mockk())
         val expectedJson = "{\"pages\": []}"
-        coEvery { importExportManager.exportToJson(pages) } returns expectedJson
+        coEvery { importExportManager.exportPageListToJson(pages) } returns expectedJson
 
         val result = useCase.execute(pages)
 

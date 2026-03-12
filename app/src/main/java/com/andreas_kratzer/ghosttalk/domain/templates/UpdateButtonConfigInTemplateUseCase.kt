@@ -1,8 +1,8 @@
 package com.andreas_kratzer.ghosttalk.domain.templates
 
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.data.TemplateRepository
-import com.andreas_kratzer.ghosttalk.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.model.PageTemplate
 import javax.inject.Inject
 
 class UpdateButtonConfigInTemplateUseCase @Inject constructor(

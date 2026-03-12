@@ -1,11 +1,8 @@
 package com.andreas_kratzer.ghosttalk.di
 
-import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
 import dagger.Module
-import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)

@@ -1,9 +1,8 @@
 package com.andreas_kratzer.ghosttalk.core.scanning
 
-import com.andreas_kratzer.ghosttalk.domain.settings.FeatureGuard
-import com.andreas_kratzer.ghosttalk.model.AuditoryCue
-import com.andreas_kratzer.ghosttalk.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.AuditoryCue
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -20,7 +19,7 @@ import org.junit.Test
 class LinearScanStrategyTest {
 
     private lateinit var strategy: LinearScanStrategy
-    private lateinit var featureGuard: FeatureGuard
+    private lateinit var featureGuard: FeatureGuardProxy
     private val focusedButtonIndex = MutableStateFlow<Int?>(null)
     private val focusedRowIndex = MutableStateFlow<Int?>(null)
 
