@@ -31,3 +31,4 @@ local.properties
 /build_log_full.txt
 /build_tail.txt
 /core-ui/build/
+/feature-settings/build/

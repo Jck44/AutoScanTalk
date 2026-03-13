@@ -11,7 +11,7 @@ import com.andreas_kratzer.ghosttalk.domain.pages.DeletePageUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.ExportPageUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.GetFilteredPagesUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.GetPageUsagesUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.GetPagesUseCase
+import com.andreas_kratzer.ghosttalk.core.data.GetPagesUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.ImportPageUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonUseCase

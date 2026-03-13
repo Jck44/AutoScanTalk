@@ -47,7 +47,7 @@ import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.ui.books.BookViewModel
 import com.andreas_kratzer.ghosttalk.ui.main.GhosTTalkNavHost
 import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
-import com.andreas_kratzer.ghosttalk.ui.settings.SettingsViewModel
+import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhosTTalkTheme
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalActiveBookId
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalCurrentPageId

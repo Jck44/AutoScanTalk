@@ -59,7 +59,7 @@ class CoreLogicTest {
         every { settingsRepo.scanDelayMillis } returns 10L
         every { ttsHelper.isReady } returns true
         
-        val featureGuard = mockk<com.andreas_kratzer.ghosttalk.domain.settings.FeatureGuard>(relaxed = true) {
+        val featureGuard = mockk<com.andreas_kratzer.ghosttalk.feature.settings.domain.FeatureGuard>(relaxed = true) {
             every { isButtonVisible(any()) } returns true
             every { isActionEnabled(any()) } returns true
         }

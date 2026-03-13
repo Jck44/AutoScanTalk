@@ -109,6 +109,7 @@ dependencies {
     implementation(project(":core-tts"))
     implementation(project(":core-scanning"))
     implementation(project(":core-ui"))
+    implementation(project(":feature-settings"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)

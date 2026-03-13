@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Settings Screen Labels -->
+    <string name="settings_title_global">App Einstellungen</string>
+    <string name="settings_title_book">Buch Einstellungen</string>
+    <string name="settings_category_general">Allgemein</string>
+    <string name="settings_category_voice">Text-to-Speech</string>
+    <string name="settings_category_scanning">Scannen &amp; Bedienung</string>
+    <string name="settings_category_security">Sicherheit &amp; PIN</string>
+    <string name="settings_category_cloud">Google Drive Sync</string>
+    <string name="settings_category_gemini">Gemini KI-Assistent</string>
+    <string name="settings_category_notifications">Benachrichtigungen (Audio-Hinweis)</string>
+    <string name="settings_category_advanced">Erweiterte Einstellungen</string>
+    
+    <!-- General Settings -->
+    <string name="settings_start_page">Standard Startseite</string>
+    <string name="settings_start_page_auto">Automatisch (Erste Seite)</string>
+    <string name="settings_scan_pattern">Scan Muster (Standard)</string>
+    <string name="settings_pattern_linear">Button für Button</string>
+    <string name="settings_pattern_row_by_row">Zeilenweise</string>
+    <string name="settings_app_language">App-Sprache (Menüs &amp; UI)</string>
+    <string name="settings_theme_mode">App-Design (Hell/Dunkel)</string>
+    <string name="settings_theme_system">System-Standard</string>
+    <string name="settings_theme_light">Hell</string>
+    <string name="settings_theme_dark">Dunkel</string>
+    <string name="settings_keep_screen_on">Bildschirm im Nutzer-Modus eingeschaltet lassen</string>
+    <string name="settings_screen_behavior">Bildschirm-Verhalten</string>
+    <string name="settings_screen_behavior_normal">Normal</string>
+    <string name="settings_screen_behavior_dimmed">Gedimmt (Akku sparen)</string>
+    <string name="settings_screen_behavior_black">Schwarz (für OLED)</string>
+    <string name="settings_screen_black_overlay_text">Akku Sparmodus.\nÜber Zurück zur App zurückkehren</string>
+    <string name="settings_startup_behavior">App öffnen in:</string>
+    <string name="settings_startup_behavior_book_list">Buchauswahl</string>
+    <string name="settings_startup_behavior_last_book">Ausgewähltes Buch</string>
+    <string name="settings_startup_behavior_user_mode">Nutzer Modus (gewähltes Buch)</string>
+
+    <!-- TTS Settings -->
+    <string name="settings_tts_language">TTS Sprache</string>
+    <string name="settings_system_default">System-Standard</string>
+    <string name="settings_select_voice">Stimme wählen</string>
+    <string name="settings_voice_default">Standard</string>
+    <string name="settings_voice_local_hint"> (Lokal)</string>
+    <string name="settings_audio_tts">Ausgabe: Laut Sprechen</string>
+    <string name="settings_audio_cues">Ausgabe: Audio-Hinweis</string>
+    <string name="settings_audio_default">System-Standard (Automatisch)</string>
+    <string name="settings_category_audio_hardware">Audio-Hardware</string>
+    
+    <!-- Scanning Settings -->
+    <string name="settings_auto_scan">Auto-Scan beim Start</string>
+    <string name="settings_restart_scan">Scan nach Aktion neu starten</string>
+    <string name="settings_scan_delay">Scangeschwindigkeit (ms)</string>
+    <string name="settings_holding_time">Haltezeit / Doppelklick-Schutz (ms)</string>
+    <string name="settings_bluetooth_delay">Bluetooth-Verzögerung (ms)</string>
+    
+    <!-- Security Settings -->
+    <string name="settings_security_require_pin">PIN Schutz für Einstellungen / Bearbeitung</string>
+    <string name="settings_security_pin_label">PIN Schutz</string>
+    <string name="settings_security_set_pin_title">Sicherheits-PIN festlegen</string>
+    <string name="settings_security_pin_timeout">PIN Timeout (Minuten)</string>
+    <string name="settings_security_pin_required_for_deletion">PIN-Abfrage beim Löschen von Büchern</string>
+    <string name="settings_security_lock_now">Sofort Sperren</string>
+    <string name="settings_security_pin_active">Aktiviert</string>
+    <string name="settings_security_pin_inactive">Deaktiviert</string>
+    <string name="settings_security_biometric_enabled">Fingerabdruck zum Entsperren nutzen</string>
+    <string name="settings_security_require_for_edit">Buch-Bearbeitung schützen</string>
+    <string name="settings_security_require_for_settings">Zugriff auf Einstellungen schützen</string>
+
+    <!-- Cloud Sync Settings -->
+    <string name="settings_cloud_sync_enabled">Automatischer Sync</string>
+    <string name="settings_cloud_sync_mode">Sync-Modus</string>
+    <string name="settings_cloud_sync_interval">Sync-Intervall (Minuten)</string>
+    <string name="settings_cloud_sync_mode_two_way">2-Wege (Sichern &amp; Wiederherstellen)</string>
+    <string name="settings_cloud_sync_mode_backup">1-Weg (Nur Sicherung zu Google Drive)</string>
+    <string name="settings_cloud_sync_mode_restore">1-Weg (Nur Wiederherstellung von Google Drive)</string>
+    <string name="settings_cloud_sync_now">Synchronisieren</string>
+    <string name="settings_cloud_backup_now">Sicherung</string>
+    <string name="settings_cloud_restore_now">Wiederherstellen</string>
+    <string name="settings_cloud_sync_started">Cloud-Abgleich gestartet…</string>
+    <string name="settings_cloud_sync_success">Synchronisierung erfolgreich abgeschlossen.</string>
+    <string name="settings_cloud_backup_success">Sicherung erfolgreich erstellt.</string>
+    <string name="settings_cloud_restore_success">Wiederherstellung erfolgreich abgeschlossen.</string>
+    <string name="settings_cloud_sync_error">Fehler beim Cloud-Abgleich: %1$s</string>
+    <string name="settings_cloud_backup_selection_title">Sicherung auswählen</string>
+    <string name="settings_cloud_backup_selection_description">Es wurde keine passende Sicherung für dieses Buch gefunden. Bitte wähle eine Sicherung aus der Liste aus:</string>
+    <string name="settings_cloud_backup_date_format">Sicherungsdatum: %1$s</string>
+    <string name="settings_cloud_signed_in_as">Angemeldet als %s</string>
+    <string name="settings_cloud_last_sync">Letzter Sync: %s</string>
+    <string name="book_import_cloud_success">Buch erfolgreich aus der Cloud geladen.</string>
+    <string name="book_import_cloud_error">Fehler beim Laden aus der Cloud: %s</string>
+
+    <!-- Gemini Settings -->
+    <string name="settings_gemini_activate_button">Gemini Initialisieren / Testen</string>
+    <string name="settings_gemini_activation_desc">Tippe auf den Button, um Gemini zu initialisieren und die notwendigen Berechtigungen abzufragen.</string>
+    <string name="settings_gemini_activation_success">Gemini erfolgreich aktiviert!</string>
+    <string name="settings_gemini_enable">Gemini (Cloud)</string>
+    <string name="settings_gemini_local_enable">Gemini Nano (offline)</string>
+    <string name="settings_gemini_local_desc">Schneller, komplett offline und kostenlos. Nutzt ein kleines KI-Modell auf deinem Gerät für Smart Home und Uhrzeit. Keine Internetverbindung nötig.</string>
+    <string name="settings_smart_prediction_enable">Gemini Vorhersage (Experimentell)</string>
+    <string name="settings_smart_prediction_hint">Ermöglicht Buttons, die dynamisch die nächste wahrscheinliche Aktion vorhersagen.</string>
+    <string name="settings_gemini_redo_prediction">Bei Navigation auf die gleiche Seite erneut Prediction machen</string>
+    <string name="settings_gemini_redo_prediction_hint">Erzwingt eine neue KI-Vorhersage, auch wenn dieselbe Seite erneut aufgerufen wird.</string>
+    <string name="settings_gemini_tools_title">Verfügbare Funktionen (Tools):</string>
+    <string name="settings_gemini_tool_status_active">Aktiv</string>
+    <string name="settings_gemini_tool_status_requires_auth">Anmeldung erforderlich</string>
+    <string name="settings_gemini_tool_status_failed">Nicht verfügbar</string>
+    <string name="settings_gemini_tool_status_pending">Ausstehend…</string>
+    
+    <!-- Notification Settings -->
+    <string name="settings_notifications_enable">Benachrichtigungen vorlesen</string>
+    <string name="settings_notifications_enable_desc">Ermöglicht das automatische Vorlesen von Benachrichtigungen ausgewählter Apps als Audio-Hinweis.</string>
+    <string name="settings_notifications_permission_button">Berechtigung erteilen</string>
+
+    <!-- Advanced / Maintenance -->
+    <string name="settings_weather_cache_timeout_label">Wetter Cache Dauer (Minuten)</string>
+    <string name="settings_clear_usage_stats">Nutzungsstatistiken leeren</string>
+    <string name="settings_category_local_backup">Lokale Datensicherung</string>
+    <string name="settings_local_backup_create">Sicherung erstellen</string>
+    <string name="settings_local_backup_restore">Sicherung wiederherstellen</string>
+    <string name="settings_local_backup_import">Sicherung importieren</string>
+    <string name="settings_local_backup_describe_create">Sichert das aktuelle Buch in einer lokalen Datei.</string>
+    <string name="settings_local_backup_describe_restore">Aktualisiert dieses Buch mit Daten aus einer Sicherung (IDs müssen übereinstimmen).</string>
+    <string name="settings_local_backup_describe_global_import">Importiert ein neues Buch aus einer lokalen Sicherungsdatei.</string>
+    
+    <!-- Test Settings -->
+    <string name="settings_show_test_buttons">Test-Buttons auf Seite anzeigen</string>
+    <string name="settings_persist_logs">Aktionen persistent protokollieren</string>
+    <string name="settings_show_page_id_in_log">Page ID im Verlauf anzeigen</string>
+
+    <!-- Other UI -->
+    <string name="start_manage_content">Inhalte verwalten</string>
+    <string name="page_import_success">Import erfolgreich!</string>
+    <string name="page_export_success">Export erfolgreich!</string>
+    <string name="settings_category_button_history">Aktionsverlauf</string>
+    <string name="settings_history_empty">Noch keine Aktionen aufgezeichnet.</string>
+    <string name="settings_category_experimental">Experimentelle Funktionen</string>
+    <string name="settings_volume_keys_trigger">Lautstärketasten zum Auslösen nutzen</string>
+    <string name="settings_category_test">Test-Einstellungen</string>
+    <string name="settings_category_hardware">Hardware &amp; Tasten</string>
+    <string name="settings_switch_key">Externer Taster (Taste)</string>
+    <string name="settings_category_google_account">Google Konto</string>
+    <string name="settings_google_account_status_not_signed_in">Nicht angemeldet</string>
+    <string name="settings_google_account_sign_in">Anmelden</string>
+    <string name="settings_google_account_sign_out">Abmelden</string>
+    <string name="settings_category_ui">Benutzeroberfläche</string>
+    <string name="settings_category_maintenance">Erweiterte Wartung</string>
+    <string name="settings_gemini_nano_deactivated_title">Gemini Nano deaktiviert</string>
+    <string name="settings_gemini_nano_deactivated_message">Das On-Device KI-Modell wurde auf diesem Gerät deaktiviert oder ist nicht verfügbar.</string>
+    <string name="settings_category_gemini_nano">Gemini Nano (Lokale KI)</string>
+    <string name="gemini_download_title">Gemini Nano Modell</string>
+    <string name="gemini_download_confirm">Herunterladen</string>
+    <string name="gemini_download_background">Im Hintergrund fortsetzen</string>
+    <string name="gemini_download_cancel">Abbrechen</string>
+    <string name="settings_category_cloud_account">Cloud-Konto</string>
+    <string name="settings_cloud_sign_in">Anmelden</string>
+    <string name="settings_cloud_sign_out">Abmelden</string>
+    <string name="settings_category_cloud_import">Cloud-Import</string>
+    <string name="settings_cloud_import_as_new">Buch aus Cloud importieren</string>
+    <string name="settings_cloud_import_explanation">Importiere ein Buch aus deinem Google Drive als neues Buch (zusätzlich zu den bestehenden).</string>
+    <string name="back_button_content_description">Zurück</string>
+    <string name="page_list_title">Seiten verwalten</string>
+    <string name="template_manage_title">Vorlagen verwalten</string>
+</resources>

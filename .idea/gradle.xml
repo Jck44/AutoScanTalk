@@ -17,6 +17,8 @@
             <option value="$PROJECT_DIR$/core-database" />
             <option value="$PROJECT_DIR$/core-scanning" />
             <option value="$PROJECT_DIR$/core-tts" />
+            <option value="$PROJECT_DIR$/core-ui" />
+            <option value="$PROJECT_DIR$/feature-settings" />
           </set>
         </option>
       </GradleProjectSettings>

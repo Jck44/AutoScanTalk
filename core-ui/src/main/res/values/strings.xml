@@ -2,4 +2,16 @@
 <resources>
     <string name="app_name">GhosTTalk</string>
     <string name="start_tagline">Your voice, powered by AI.</string>
+    
+    <!-- Security Strings -->
+    <string name="security_pin_title">Sicherheits-Check</string>
+    <string name="security_use_biometric">Mit Fingerabdruck entsperren</string>
+    <string name="settings_security_pin_label">PIN Schutz</string>
+    <string name="security_pin_entry_title">PIN eingeben</string>
+    
+    <!-- Common Actions -->
+    <string name="action_cancel">Abbrechen</string>
+    <string name="action_delete">Löschen</string>
+    <string name="action_create">Erstellen</string>
+    <string name="action_save">Speichern</string>
 </resources>

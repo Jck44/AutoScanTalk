@@ -63,7 +63,7 @@ fun GridEditorContent(
     actions: GridEditorActions,
     availablePages: List<Page>,
     templates: List<PageTemplate>,
-    featureGuard: com.andreas_kratzer.ghosttalk.domain.settings.FeatureGuard,
+    featureGuard: com.andreas_kratzer.ghosttalk.feature.settings.domain.FeatureGuard,
     bookDefaultScanPattern: String?,
     paddingValues: PaddingValues,
     onEditPage: ((String) -> Unit)? = null
@@ -356,7 +356,7 @@ private fun EditorDialogs(
     actions: GridEditorActions,
     availablePages: List<Page>,
     templates: List<PageTemplate>,
-    featureGuard: com.andreas_kratzer.ghosttalk.domain.settings.FeatureGuard,
+    featureGuard: com.andreas_kratzer.ghosttalk.feature.settings.domain.FeatureGuard,
     isExecuting: Boolean,
     editingRowIndex: Int?,
     showRowEditDialog: Boolean,

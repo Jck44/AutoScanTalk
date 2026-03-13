@@ -47,7 +47,7 @@ import com.andreas_kratzer.ghosttalk.core.model.Book
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.ui.components.AppBrandHeader
 import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkCard
-import com.andreas_kratzer.ghosttalk.ui.components.SecurityEntryDialog
+import com.andreas_kratzer.ghosttalk.core.ui.components.SecurityEntryDialog
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhosTTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import java.text.SimpleDateFormat
@@ -228,7 +228,7 @@ fun BookListScreen(
                     showSecurityDialogForEdit = false
                     bookToEdit = null
                 },
-                onConfirm = { success ->
+                onConfirm = { success: Boolean ->
                     if (success) {
                         showSecurityDialogForEdit = false
                         // bookToEdit is already set from the IconButton click

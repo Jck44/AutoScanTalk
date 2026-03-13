@@ -3,7 +3,7 @@ package com.andreas_kratzer.ghosttalk.di
 import com.andreas_kratzer.ghosttalk.core.scanning.FeatureGuardProxy
 import com.andreas_kratzer.ghosttalk.core.scanning.ScannerFeedbackProvider
 import com.andreas_kratzer.ghosttalk.core.scanning.TtsScannerFeedbackProvider
-import com.andreas_kratzer.ghosttalk.domain.settings.FeatureGuard
+import com.andreas_kratzer.ghosttalk.feature.settings.domain.FeatureGuard
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn

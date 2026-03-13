@@ -30,14 +30,14 @@ import com.andreas_kratzer.ghosttalk.domain.pages.DeletePageUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.ExportPageUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.GetFilteredPagesUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.GetPageUsagesUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.GetPagesUseCase
+import com.andreas_kratzer.ghosttalk.core.data.GetPagesUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.ImportPageUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.MoveRowUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.UpdateButtonConfigUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.UpdatePageSettingsUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.UpdateRowNameUseCase
-import com.andreas_kratzer.ghosttalk.domain.settings.FeatureGuard
+import com.andreas_kratzer.ghosttalk.feature.settings.domain.FeatureGuard
 import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.InteractionDelegate
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.PageManagementDelegate
