@@ -12,11 +12,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import com.andreas_kratzer.ghosttalk.R
-import com.andreas_kratzer.ghosttalk.ui.components.PreferenceCategory
-import com.andreas_kratzer.ghosttalk.ui.components.SettingsEditTextItem
-import com.andreas_kratzer.ghosttalk.ui.components.SettingsToggleItem
+import com.andreas_kratzer.ghosttalk.core.ui.components.PreferenceCategory
+import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsEditTextItem
+import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsToggleItem
 import com.andreas_kratzer.ghosttalk.ui.settings.SettingsViewModel
-import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
+import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -61,7 +61,7 @@ fun ScanningSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                 else -> scanPattern
             }
             
-            com.andreas_kratzer.ghosttalk.ui.components.SettingsDropdownItem(
+            com.andreas_kratzer.ghosttalk.core.ui.components.SettingsDropdownItem(
                 label = stringResource(R.string.settings_scan_pattern),
                 selectedOption = patternLabel,
                 options = listOf(

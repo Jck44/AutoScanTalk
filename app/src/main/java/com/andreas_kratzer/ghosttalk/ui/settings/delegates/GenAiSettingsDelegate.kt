@@ -7,7 +7,7 @@ import android.content.ContextWrapper
 import android.widget.Toast
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.SignInUseCase
 import com.andreas_kratzer.ghosttalk.core.ai.domain.ActivateGeminiUseCase
 import com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase

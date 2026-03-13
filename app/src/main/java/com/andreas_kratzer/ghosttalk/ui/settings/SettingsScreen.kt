@@ -58,8 +58,8 @@ import com.andreas_kratzer.ghosttalk.ui.settings.sections.ScanningSettingsSectio
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.SecuritySettingsSection
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.TestSettingsSection
 import com.andreas_kratzer.ghosttalk.ui.settings.sections.VoiceSettingsSection
-import com.andreas_kratzer.ghosttalk.ui.theme.GhosTTalkIcons
-import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
+import com.andreas_kratzer.ghosttalk.core.ui.theme.GhosTTalkIcons
+import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -199,7 +199,7 @@ private fun SettingsTopBar(
 private fun SettingsMainMenu(
     isGlobal: Boolean,
     padding: PaddingValues,
-    dimensions: com.andreas_kratzer.ghosttalk.ui.theme.Dimensions,
+    dimensions: com.andreas_kratzer.ghosttalk.core.ui.theme.Dimensions,
     onSectionSelected: (SettingsSection) -> Unit
 ) {
     val sections = SettingsSection.entries.filter { if (isGlobal) it.isGlobal else it.isScoped }
@@ -262,7 +262,7 @@ private fun SettingsMainMenu(
 private fun SettingsSubMenu(
     section: SettingsSection,
     padding: PaddingValues,
-    dimensions: com.andreas_kratzer.ghosttalk.ui.theme.Dimensions,
+    dimensions: com.andreas_kratzer.ghosttalk.core.ui.theme.Dimensions,
     isGlobal: Boolean,
     viewModel: SettingsViewModel,
     onLockClicked: () -> Unit,

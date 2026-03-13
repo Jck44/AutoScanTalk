@@ -15,8 +15,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.andreas_kratzer.ghosttalk.R
-import com.andreas_kratzer.ghosttalk.ui.components.PreferenceCategory
-import com.andreas_kratzer.ghosttalk.ui.components.SettingsClickableItem
+import com.andreas_kratzer.ghosttalk.core.ui.components.PreferenceCategory
+import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsClickableItem
 import com.andreas_kratzer.ghosttalk.ui.settings.SettingsViewModel
 import java.util.Locale
 

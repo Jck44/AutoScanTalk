@@ -1,7 +1,7 @@
 package com.andreas_kratzer.ghosttalk.core
 
 import android.util.Base64
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkStatic

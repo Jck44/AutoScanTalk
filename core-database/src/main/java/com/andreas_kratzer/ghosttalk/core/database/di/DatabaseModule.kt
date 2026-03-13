@@ -44,40 +44,4 @@ object DatabaseModule {
     fun provideTemplateDao(appDatabase: AppDatabase): TemplateDao {
         return appDatabase.templateDao()
     }
-
-    @Provides
-    @Singleton
-    fun providePageRepository(pageDao: PageDao, buttonDao: ButtonDao): PageRepository {
-        return PageRepository(pageDao, buttonDao)
-    }
-
-    @Provides
-    @Singleton
-    fun provideBookRepository(bookDao: BookDao): BookRepository {
-        return BookRepository(bookDao)
-    }
-
-    @Provides
-    @Singleton
-    fun provideButtonUsageRepository(buttonUsageDao: ButtonUsageDao): ButtonUsageRepository {
-        return ButtonUsageRepository(buttonUsageDao)
-    }
-
-    @Provides
-    @Singleton
-    fun provideTemplateRepository(
-        templateDao: TemplateDao,
-        settingsRepository: DatabaseSettings
-    ): TemplateRepository {
-        return TemplateRepository(templateDao, settingsRepository)
-    }
-    
-    @Provides
-    @Singleton
-    fun provideSampleDataInitializer(
-        bookRepository: BookRepository,
-        pageRepository: PageRepository
-    ): SampleDataInitializer {
-        return SampleDataInitializer(bookRepository, pageRepository)
-    }
 }

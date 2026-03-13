@@ -5,7 +5,7 @@ import android.speech.tts.TextToSpeech
 import android.speech.tts.Voice
 import com.andreas_kratzer.ghosttalk.core.audio.AudioDeviceManager
 import com.andreas_kratzer.ghosttalk.core.model.AudioOutputDevice
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.domain.tts.GetAudioDevicesUseCase
 import com.andreas_kratzer.ghosttalk.domain.tts.SetTtsLanguageUseCase
 import dagger.hilt.android.qualifiers.ApplicationContext

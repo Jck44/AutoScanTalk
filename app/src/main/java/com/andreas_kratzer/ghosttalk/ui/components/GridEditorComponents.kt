@@ -29,7 +29,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.model.GridItem
-import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
+import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions
 import kotlinx.coroutines.delay
 
@@ -168,7 +168,7 @@ fun calculateGridSize(
     rows: Int,
     cols: Int,
     isRowByRow: Boolean,
-    dimensions: com.andreas_kratzer.ghosttalk.ui.theme.Dimensions
+    dimensions: com.andreas_kratzer.ghosttalk.core.ui.theme.Dimensions
 ): GridSizeInfo {
     // Subtract extra width if row handles are present (approx 48dp handle + padding/borders)
     val rowHandleWidth = if (isRowByRow) 64.dp else 0.dp

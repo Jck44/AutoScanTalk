@@ -2,7 +2,7 @@ package com.andreas_kratzer.ghosttalk.core.cloud.domain
 
 import android.content.Context
 import com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper
-import com.andreas_kratzer.ghosttalk.core.database.PageImportExportManager
+import com.andreas_kratzer.ghosttalk.core.data.impl.PageImportExportManager
 import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.google.api.services.drive.Drive
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -26,7 +26,7 @@ data class RemoteBackupInfo(
 
 class CloudSyncUseCase @Inject constructor(
     @param:ApplicationContext private val context: Context,
-    private val bookRepository: com.andreas_kratzer.ghosttalk.core.database.BookRepository,
+    private val bookRepository: com.andreas_kratzer.ghosttalk.core.data.BookRepository,
     private val importExportManager: PageImportExportManager,
     private val logger: Logger
 ) {

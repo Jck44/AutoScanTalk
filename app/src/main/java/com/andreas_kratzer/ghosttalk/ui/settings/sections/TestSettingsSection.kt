@@ -24,11 +24,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
-import com.andreas_kratzer.ghosttalk.ui.components.PreferenceCategory
-import com.andreas_kratzer.ghosttalk.ui.components.SettingsToggleItem
+import com.andreas_kratzer.ghosttalk.core.ui.components.PreferenceCategory
+import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsToggleItem
 import com.andreas_kratzer.ghosttalk.ui.settings.SettingsViewModel
-import com.andreas_kratzer.ghosttalk.ui.theme.GhosTTalkIcons
-import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
+import com.andreas_kratzer.ghosttalk.core.ui.theme.GhosTTalkIcons
+import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale

@@ -1,7 +1,7 @@
 package com.andreas_kratzer.ghosttalk.domain.pages
 
 import com.andreas_kratzer.ghosttalk.core.model.Page
-import com.andreas_kratzer.ghosttalk.core.database.PageImportExportManager
+import com.andreas_kratzer.ghosttalk.core.data.impl.PageImportExportManager
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest

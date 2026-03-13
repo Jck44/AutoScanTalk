@@ -29,7 +29,7 @@ import javax.inject.Singleton
 class CloudSyncSettingsDelegate @Inject constructor(
     private val application: Application,
     private val googleAuthManager: GoogleAuthManager,
-    private val settingsRepository: com.andreas_kratzer.ghosttalk.data.SettingsRepository,
+    private val settingsRepository: com.andreas_kratzer.ghosttalk.core.data.SettingsRepository,
     private val setCloudSyncEnabledUseCase: SetCloudSyncEnabledUseCase,
     private val performManualSyncUseCase: PerformManualSyncUseCase,
     private val cloudSyncUseCase: com.andreas_kratzer.ghosttalk.core.cloud.domain.CloudSyncUseCase,

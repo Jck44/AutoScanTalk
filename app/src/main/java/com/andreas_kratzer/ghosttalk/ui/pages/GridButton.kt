@@ -23,8 +23,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
-import com.andreas_kratzer.ghosttalk.ui.theme.LocalIsUserModeActive
+import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
+import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalIsUserModeActive
 
 @Composable
 fun GridButton(

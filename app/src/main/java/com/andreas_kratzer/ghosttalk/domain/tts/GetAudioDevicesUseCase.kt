@@ -2,7 +2,7 @@ package com.andreas_kratzer.ghosttalk.domain.tts
 
 import com.andreas_kratzer.ghosttalk.core.audio.AudioDeviceManager
 import com.andreas_kratzer.ghosttalk.core.model.AudioOutputDevice
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import javax.inject.Inject
 
 class GetAudioDevicesUseCase @Inject constructor(

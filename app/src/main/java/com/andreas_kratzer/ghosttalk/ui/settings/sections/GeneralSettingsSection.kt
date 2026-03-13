@@ -28,10 +28,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import com.andreas_kratzer.ghosttalk.R
-import com.andreas_kratzer.ghosttalk.ui.components.PreferenceCategory
-import com.andreas_kratzer.ghosttalk.ui.components.SettingsToggleItem
+import com.andreas_kratzer.ghosttalk.core.ui.components.PreferenceCategory
+import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsDropdownItem
+import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsToggleItem
 import com.andreas_kratzer.ghosttalk.ui.settings.SettingsViewModel
-import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
+import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -108,7 +109,7 @@ fun GeneralSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                     else -> themeSystem
                 }
                 
-                com.andreas_kratzer.ghosttalk.ui.components.SettingsDropdownItem(
+                SettingsDropdownItem(
                     label = themeModeLabel,
                     selectedOption = themeLabel,
                     options = listOf(
@@ -138,7 +139,7 @@ fun GeneralSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                     else -> startupBookList
                 }
 
-                com.andreas_kratzer.ghosttalk.ui.components.SettingsDropdownItem(
+                SettingsDropdownItem(
                     label = startupBehaviorLabel,
                     selectedOption = startupLabel,
                     options = listOf(
@@ -174,7 +175,7 @@ fun GeneralSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                         else -> screenNormal
                     }
 
-                    com.andreas_kratzer.ghosttalk.ui.components.SettingsDropdownItem(
+                    SettingsDropdownItem(
                         label = screenBehaviorLabel,
                         selectedOption = behaviorLabel,
                         options = listOf(

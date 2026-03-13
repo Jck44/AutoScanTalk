@@ -26,3 +26,8 @@ local.properties
 /core-database/build/
 /core-tts/build/
 /core-scanning/build/
+/core-data/build/
+/build_log.txt
+/build_log_full.txt
+/build_tail.txt
+/core-ui/build/

@@ -16,8 +16,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.andreas_kratzer.ghosttalk.core.SecurityManager
-import com.andreas_kratzer.ghosttalk.core.database.PageRepository
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.data.PageRepository
+import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.ui.books.BookListScreen
 import com.andreas_kratzer.ghosttalk.ui.books.BookViewModel
 import com.andreas_kratzer.ghosttalk.ui.components.SecurityEntryDialog
@@ -72,7 +72,7 @@ fun GhosTTalkNavHost(
             onDismiss = { 
                 pendingRoute = null
             },
-            onConfirm = { success ->
+            onConfirm = { success: Boolean ->
                 if (success) {
                     val route = pendingRoute!!
                     pendingRoute = null

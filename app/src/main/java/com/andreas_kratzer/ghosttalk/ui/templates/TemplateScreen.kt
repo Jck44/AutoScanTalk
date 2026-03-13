@@ -48,9 +48,9 @@ import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.core.model.SortOrder
 import com.andreas_kratzer.ghosttalk.domain.pages.UsageLocation
-import com.andreas_kratzer.ghosttalk.ui.components.GhostTalkCard
-import com.andreas_kratzer.ghosttalk.ui.theme.GhosTTalkIcons
-import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkCard
+import com.andreas_kratzer.ghosttalk.core.ui.theme.GhosTTalkIcons
+import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)

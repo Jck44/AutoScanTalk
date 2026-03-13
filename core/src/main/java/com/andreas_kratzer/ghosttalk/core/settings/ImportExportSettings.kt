@@ -1,5 +1,5 @@
 package com.andreas_kratzer.ghosttalk.core.settings
 
 interface ImportExportSettings {
-    var holdingTimeMillis: Long
+    // Add import/export specific settings here if needed
 }

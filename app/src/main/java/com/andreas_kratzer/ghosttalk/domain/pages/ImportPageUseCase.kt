@@ -1,6 +1,6 @@
 package com.andreas_kratzer.ghosttalk.domain.pages
 
-import com.andreas_kratzer.ghosttalk.core.database.PageImportExportManager
+import com.andreas_kratzer.ghosttalk.core.data.impl.PageImportExportManager
 import javax.inject.Inject
 
 class ImportPageUseCase @Inject constructor(

@@ -29,7 +29,7 @@ import androidx.compose.ui.res.stringResource
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.ui.components.GridEditorContent
 import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
-import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
+import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -97,7 +97,7 @@ fun TemplateEditorScreen(
             featureGuard = pageViewModel.featureGuard,
             bookDefaultScanPattern = bookDefaultScanPattern,
             paddingValues = paddingValues,
-            onEditPage = { pageId ->
+            onEditPage = { pageId: String ->
                 scope.launch {
                     val target = pageViewModel.pageManagementDelegate.getPageById(pageId)
                     if (target != null) {

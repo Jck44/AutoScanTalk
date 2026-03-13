@@ -1,6 +1,6 @@
 package com.andreas_kratzer.ghosttalk.domain.tts
 
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
 import io.mockk.mockk
 import io.mockk.verify

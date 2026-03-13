@@ -7,15 +7,15 @@ import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
-import com.andreas_kratzer.ghosttalk.core.database.PageImportExportManager
+import com.andreas_kratzer.ghosttalk.core.data.impl.PageImportExportManager
 import com.andreas_kratzer.ghosttalk.core.scanning.ScannerEngine
 import com.andreas_kratzer.ghosttalk.core.scanning.ScanCoordinator
 import com.andreas_kratzer.ghosttalk.core.util.Logger
-import com.andreas_kratzer.ghosttalk.core.database.BookRepository
-import com.andreas_kratzer.ghosttalk.core.database.ButtonUsageRepository
-import com.andreas_kratzer.ghosttalk.core.database.PageRepository
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.core.database.TemplateRepository
+import com.andreas_kratzer.ghosttalk.core.data.BookRepository
+import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository
+import com.andreas_kratzer.ghosttalk.core.data.PageRepository
+import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.data.TemplateRepository
 import com.andreas_kratzer.ghosttalk.domain.actions.ActionLogUseCase
 import com.andreas_kratzer.ghosttalk.domain.actions.ActivateButtonUseCase
 import com.andreas_kratzer.ghosttalk.domain.actions.HandleActionExecutionEventUseCase
@@ -173,7 +173,10 @@ class PageViewModelTest {
     }
 
     private fun createViewModel(): PageViewModel {
-        val appStateRepository = com.andreas_kratzer.ghosttalk.data.AppStateRepository()
+        val appStateRepository = mockk<com.andreas_kratzer.ghosttalk.core.data.AppStateRepository>(relaxed = true)
+        every { appStateRepository.isUserModeActive } returns MutableStateFlow(true)
+        every { appStateRepository.activeBookId } returns MutableStateFlow("b1")
+        every { appStateRepository.currentPageId } returns MutableStateFlow("p1")
         
         val pageManagementDelegate = PageManagementDelegate(
             pageRepository = pageRepository,
@@ -275,6 +278,7 @@ class PageViewModelTest {
 
         // Bypass resolvedPage by calling interactionDelegate directly to avoid flowOn(Dispatchers.Default) issues in test
         viewModel.interactionDelegate.activateButtonAtIndex(0, p1, "b1")
+        testScheduler.advanceUntilIdle()
 
         assertEquals(p2.id, viewModel.currentPage.value?.id)
         assertEquals(p2.name, viewModel.currentPage.value?.name)

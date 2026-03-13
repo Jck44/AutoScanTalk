@@ -4,6 +4,12 @@ import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.andreas_kratzer.ghosttalk.core.data.PageRepository
+import com.andreas_kratzer.ghosttalk.core.data.impl.PageRepositoryImpl
+import com.andreas_kratzer.ghosttalk.core.database.AppDatabase
+import com.andreas_kratzer.ghosttalk.core.database.BookDao
+import com.andreas_kratzer.ghosttalk.core.database.ButtonDao
+import com.andreas_kratzer.ghosttalk.core.database.PageDao
 import com.andreas_kratzer.ghosttalk.core.model.AuditoryCue
 import com.andreas_kratzer.ghosttalk.core.model.Book
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
@@ -39,7 +45,7 @@ class RoomDatabaseTest {
         bookDao = db.bookDao()
         pageDao = db.pageDao()
         buttonDao = db.buttonDao()
-        pageRepository = PageRepository(pageDao, buttonDao)
+        pageRepository = PageRepositoryImpl(pageDao, buttonDao)
     }
 
     @After

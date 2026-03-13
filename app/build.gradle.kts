@@ -102,11 +102,13 @@ play {
 
 dependencies {
     implementation(project(":core"))
+    implementation(project(":core-data"))
     implementation(project(":core-ai"))
     implementation(project(":core-cloud"))
     implementation(project(":core-database"))
     implementation(project(":core-tts"))
     implementation(project(":core-scanning"))
+    implementation(project(":core-ui"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)

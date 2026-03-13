@@ -55,7 +55,7 @@ class CoreLogicTest {
 
     @Test
     fun testScannerEngine_RowByRowScanning() = runTest {
-        val settingsRepo = mockk<com.andreas_kratzer.ghosttalk.data.SettingsRepository>(relaxed = true)
+        val settingsRepo = mockk<com.andreas_kratzer.ghosttalk.core.data.SettingsRepository>(relaxed = true)
         every { settingsRepo.scanDelayMillis } returns 10L
         every { ttsHelper.isReady } returns true
         

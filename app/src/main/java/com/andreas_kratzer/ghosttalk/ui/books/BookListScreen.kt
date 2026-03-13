@@ -44,12 +44,12 @@ import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.SecurityManager
 import com.andreas_kratzer.ghosttalk.core.model.Book
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.ui.components.AppBrandHeader
-import com.andreas_kratzer.ghosttalk.ui.components.GhostTalkCard
+import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.ui.components.AppBrandHeader
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkCard
 import com.andreas_kratzer.ghosttalk.ui.components.SecurityEntryDialog
-import com.andreas_kratzer.ghosttalk.ui.theme.GhosTTalkIcons
-import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
+import com.andreas_kratzer.ghosttalk.core.ui.theme.GhosTTalkIcons
+import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -208,7 +208,7 @@ fun BookListScreen(
                     showSecurityDialogForDelete = false
                     bookToDelete = null
                 },
-                onConfirm = { success ->
+                onConfirm = { success: Boolean ->
                     if (success) {
                         showSecurityDialogForDelete = false
                         // The confirmation dialog for deletion will now show because bookToDelete is set

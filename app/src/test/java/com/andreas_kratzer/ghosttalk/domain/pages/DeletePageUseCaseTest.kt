@@ -1,9 +1,9 @@
 package com.andreas_kratzer.ghosttalk.domain.pages
 
 import com.andreas_kratzer.ghosttalk.core.model.Page
-import com.andreas_kratzer.ghosttalk.core.database.BookRepository
-import com.andreas_kratzer.ghosttalk.core.database.PageRepository
-import com.andreas_kratzer.ghosttalk.core.database.TemplateRepository
+import com.andreas_kratzer.ghosttalk.core.data.BookRepository
+import com.andreas_kratzer.ghosttalk.core.data.PageRepository
+import com.andreas_kratzer.ghosttalk.core.data.TemplateRepository
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest

@@ -49,10 +49,10 @@ import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.ui.pages.ButtonConfigDialog
 import com.andreas_kratzer.ghosttalk.ui.pages.GridButton
-import com.andreas_kratzer.ghosttalk.ui.theme.GhosTTalkIcons
-import com.andreas_kratzer.ghosttalk.ui.theme.LocalCurrentPageId
-import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
-import com.andreas_kratzer.ghosttalk.ui.theme.LocalIsUserModeActive
+import com.andreas_kratzer.ghosttalk.core.ui.theme.GhosTTalkIcons
+import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalCurrentPageId
+import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
+import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalIsUserModeActive
 import com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions
 import com.andreas_kratzer.ghosttalk.ui.util.GridUtils
 
@@ -233,7 +233,7 @@ private fun LazyGridScope.renderRowByRowGrid(
     rowReorderState: ReorderableState,
     buttonReorderState: ReorderableState,
     sizeInfo: GridSizeInfo,
-    dimensions: com.andreas_kratzer.ghosttalk.ui.theme.Dimensions,
+    dimensions: com.andreas_kratzer.ghosttalk.core.ui.theme.Dimensions,
     density: Float,
     onEditRow: (Int) -> Unit,
     onEditButton: (Int) -> Unit
@@ -324,7 +324,7 @@ private fun LazyGridScope.renderLinearGrid(
     gridState: LazyGridState,
     buttonReorderState: ReorderableState,
     sizeInfo: GridSizeInfo,
-    dimensions: com.andreas_kratzer.ghosttalk.ui.theme.Dimensions,
+    dimensions: com.andreas_kratzer.ghosttalk.core.ui.theme.Dimensions,
     density: Float,
     onEditButton: (Int) -> Unit
 ) {

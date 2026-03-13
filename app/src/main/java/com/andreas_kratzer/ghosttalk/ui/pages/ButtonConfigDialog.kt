@@ -33,10 +33,10 @@ import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.WeatherButtonAction
-import com.andreas_kratzer.ghosttalk.ui.components.SettingsDropdownItem
-import com.andreas_kratzer.ghosttalk.ui.components.SettingsEditTextItem
-import com.andreas_kratzer.ghosttalk.ui.components.SettingsToggleItem
-import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
+import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsDropdownItem
+import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsEditTextItem
+import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsToggleItem
+import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 
 @Composable
 fun ButtonConfigDialog(

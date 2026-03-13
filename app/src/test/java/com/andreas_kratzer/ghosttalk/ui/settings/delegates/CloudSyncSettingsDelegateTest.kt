@@ -34,7 +34,7 @@ class CloudSyncSettingsDelegateTest {
 
     private lateinit var application: Application
     private lateinit var googleAuthManager: GoogleAuthManager
-    private lateinit var settingsRepository: com.andreas_kratzer.ghosttalk.data.SettingsRepository
+    private lateinit var settingsRepository: com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
     private lateinit var setCloudSyncEnabledUseCase: SetCloudSyncEnabledUseCase
     private lateinit var performManualSyncUseCase: PerformManualSyncUseCase
     private lateinit var cloudSyncUseCase: CloudSyncUseCase

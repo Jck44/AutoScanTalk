@@ -2,10 +2,10 @@ package com.andreas_kratzer.ghosttalk.ui.pages.delegates
 
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.SortOrder
-import com.andreas_kratzer.ghosttalk.core.database.BookRepository
-import com.andreas_kratzer.ghosttalk.core.database.PageRepository
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.core.database.TemplateRepository
+import com.andreas_kratzer.ghosttalk.core.data.BookRepository
+import com.andreas_kratzer.ghosttalk.core.data.PageRepository
+import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.data.TemplateRepository
 import com.andreas_kratzer.ghosttalk.domain.pages.CreatePageUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.DeletePageUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.ExportPageUseCase
@@ -56,7 +56,7 @@ class PageManagementDelegateTest {
     private lateinit var exportPageUseCase: ExportPageUseCase
     private lateinit var getFilteredPagesUseCase: GetFilteredPagesUseCase
     private lateinit var getPageUsagesUseCase: GetPageUsagesUseCase
-    private lateinit var appStateRepository: com.andreas_kratzer.ghosttalk.data.AppStateRepository
+    private lateinit var appStateRepository: com.andreas_kratzer.ghosttalk.core.data.AppStateRepository
 
     private lateinit var delegate: PageManagementDelegate
 
@@ -81,7 +81,7 @@ class PageManagementDelegateTest {
         exportPageUseCase = mockk(relaxed = true)
         getPageUsagesUseCase = mockk(relaxed = true)
         getFilteredPagesUseCase = GetFilteredPagesUseCase(settingsRepository)
-        appStateRepository = com.andreas_kratzer.ghosttalk.data.AppStateRepository()
+        appStateRepository = mockk(relaxed = true)
 
         every { settingsRepository.pageSortOrderFlow } returns MutableStateFlow(SortOrder.A_Z.name)
         every { getPagesUseCase.execute(any()) } returns MutableStateFlow(emptyList())

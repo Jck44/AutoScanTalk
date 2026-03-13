@@ -1,0 +1,124 @@
+package com.andreas_kratzer.ghosttalk.core.database
+
+import com.andreas_kratzer.ghosttalk.core.data.impl.ButtonUsageRepositoryImpl
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.ButtonUsageStat
+import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.mockk
+import io.mockk.slot
+import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.Test
+
+class ButtonUsageRepositoryTest {
+
+    private val mockButtonUsageDao = mockk<ButtonUsageDao>(relaxed = true)
+    private lateinit var buttonUsageRepository: ButtonUsageRepositoryImpl
+
+    @Before
+    fun setup() {
+        buttonUsageRepository = ButtonUsageRepositoryImpl(mockButtonUsageDao)
+    }
+    
+    private val testButton = ButtonConfig(
+        id = "btn-1",
+        label = "Ja",
+        auditoryCue = null,
+        buttonAction = SpeakTextButtonAction()
+    )
+
+    @Test
+    fun `recordUsage creates new stat when button not yet tracked`() = runTest {
+        coEvery { mockButtonUsageDao.getStatForButton("book1", "btn-1") } returns null
+
+        buttonUsageRepository.recordUsage("book1", testButton, rows = 6, columns = 6, indexInPage = 0)
+
+        val statSlot = slot<ButtonUsageStat>()
+        coVerify { mockButtonUsageDao.upsert(capture(statSlot)) }
+
+        val stat = statSlot.captured
+        assertEquals("book1", stat.bookId)
+        assertEquals("btn-1", stat.buttonConfigId)
+        assertEquals("Ja", stat.label)
+        assertEquals(1L, stat.usageCount)
+    }
+
+    @Test
+    fun `recordUsage increments counter for existing stat`() = runTest {
+        val existing = ButtonUsageStat(
+            bookId = "book1",
+            buttonConfigId = "btn-1",
+            label = "Ja",
+            actionJson = "{}",
+            usageCount = 5,
+            lastUsedAt = 1000L
+        )
+        coEvery { mockButtonUsageDao.getStatForButton("book1", "btn-1") } returns existing
+
+        buttonUsageRepository.recordUsage("book1", testButton, rows = 6, columns = 6, indexInPage = 0)
+
+        val statSlot = slot<ButtonUsageStat>()
+        coVerify { mockButtonUsageDao.upsert(capture(statSlot)) }
+
+        assertEquals(6L, statSlot.captured.usageCount)
+    }
+
+    @Test
+    fun `recordUsage updates label from current button config`() = runTest {
+        val existing = ButtonUsageStat(
+            bookId = "book1",
+            buttonConfigId = "btn-1",
+            label = "Old Label",
+            actionJson = "{}",
+            usageCount = 3,
+            lastUsedAt = 1000L
+        )
+        coEvery { mockButtonUsageDao.getStatForButton("book1", "btn-1") } returns existing
+
+        buttonUsageRepository.recordUsage("book1", testButton, rows = 6, columns = 6, indexInPage = 0)
+
+        val statSlot = slot<ButtonUsageStat>()
+        coVerify { mockButtonUsageDao.upsert(capture(statSlot)) }
+
+        assertEquals("Ja", statSlot.captured.label)
+    }
+
+    @Test
+    fun `getTopActions delegates to dao`() = runTest {
+        val stats = listOf(
+            ButtonUsageStat("book1", "btn-1", "Ja", "{}", 10),
+            ButtonUsageStat("book1", "btn-2", "Nein", "{}", 5)
+        )
+        coEvery { mockButtonUsageDao.getTopButtons("book1", 5) } returns stats
+
+        val result = buttonUsageRepository.getTopActions("book1", 5)
+
+        assertEquals(2, result.size)
+        assertEquals("Ja", result[0].label)
+        assertEquals(10L, result[0].usageCount)
+    }
+
+    @Test
+    fun `clearStats delegates to dao`() = runTest {
+        buttonUsageRepository.clearStats("book1")
+
+        coVerify { mockButtonUsageDao.clearStatsForBook("book1") }
+    }
+
+    @Test
+    fun `recordUsage serializes action to JSON`() = runTest {
+        coEvery { mockButtonUsageDao.getStatForButton("book1", "btn-1") } returns null
+
+        buttonUsageRepository.recordUsage("book1", testButton, rows = 6, columns = 6, indexInPage = 0)
+
+        val statSlot = slot<ButtonUsageStat>()
+        coVerify { mockButtonUsageDao.upsert(capture(statSlot)) }
+
+        // The actionJson should contain the serialized SpeakTextButtonAction
+        assertTrue(statSlot.captured.actionJson.contains("SpeakTextButtonAction"))
+    }
+}
