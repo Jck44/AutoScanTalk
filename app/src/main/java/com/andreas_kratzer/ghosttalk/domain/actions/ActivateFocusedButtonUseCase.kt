@@ -2,7 +2,7 @@ package com.andreas_kratzer.ghosttalk.domain.actions
 
 import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
 import com.andreas_kratzer.ghosttalk.core.model.Page
-import com.andreas_kratzer.ghosttalk.ui.pages.ScanCoordinator
+import com.andreas_kratzer.ghosttalk.core.scanning.ScanCoordinator
 import javax.inject.Inject
 
 class ActivateFocusedButtonUseCase @Inject constructor(

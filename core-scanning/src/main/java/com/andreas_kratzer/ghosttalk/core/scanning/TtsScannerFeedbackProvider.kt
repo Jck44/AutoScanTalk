@@ -1,13 +1,13 @@
 package com.andreas_kratzer.ghosttalk.core.scanning
 
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.settings.ScanningSettings
 import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
 import kotlinx.coroutines.delay
 import javax.inject.Inject
 
 class TtsScannerFeedbackProvider @Inject constructor(
     private val ttsHelper: TextToSpeechHelper,
-    private val settingsRepository: SettingsRepository
+    private val scanningSettings: ScanningSettings
 ) : ScannerFeedbackProvider {
     
     override suspend fun speakCue(text: String) {
@@ -20,7 +20,7 @@ class TtsScannerFeedbackProvider @Inject constructor(
         if (ttsHelper.isReady) {
             ttsHelper.speakRouted(
                 text = text, 
-                deviceAddress = settingsRepository.cuesAudioDeviceAddress,
+                deviceAddress = scanningSettings.cuesAudioDeviceAddress,
                 queueMode = android.speech.tts.TextToSpeech.QUEUE_FLUSH,
                 isForCues = true
             )

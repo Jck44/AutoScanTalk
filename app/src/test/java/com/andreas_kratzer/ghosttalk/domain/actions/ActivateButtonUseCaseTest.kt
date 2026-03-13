@@ -6,7 +6,7 @@ import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
-import com.andreas_kratzer.ghosttalk.ui.pages.ScanCoordinator
+import com.andreas_kratzer.ghosttalk.core.scanning.ScanCoordinator
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk

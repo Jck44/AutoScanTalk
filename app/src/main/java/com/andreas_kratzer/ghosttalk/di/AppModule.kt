@@ -49,14 +49,6 @@ object AppModule {
         return buttonUsageRepository
     }
 
-    @Provides
-    @Singleton
-    fun provideLocalIntentRouter(
-        androidClockExecutor: com.andreas_kratzer.ghosttalk.domain.executors.AndroidClockExecutor,
-        logger: com.andreas_kratzer.ghosttalk.core.util.Logger
-    ): com.andreas_kratzer.ghosttalk.core.ai.LocalIntentRouter {
-        return com.andreas_kratzer.ghosttalk.domain.executors.LocalIntentRouter(androidClockExecutor, logger)
-    }
 
     @Provides
     @Singleton

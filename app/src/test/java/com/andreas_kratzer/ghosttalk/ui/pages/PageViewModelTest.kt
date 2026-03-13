@@ -9,6 +9,7 @@ import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.core.database.PageImportExportManager
 import com.andreas_kratzer.ghosttalk.core.scanning.ScannerEngine
+import com.andreas_kratzer.ghosttalk.core.scanning.ScanCoordinator
 import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.andreas_kratzer.ghosttalk.core.database.BookRepository
 import com.andreas_kratzer.ghosttalk.core.database.ButtonUsageRepository
@@ -223,14 +224,7 @@ class PageViewModelTest {
             }
         )
 
-        val scanCoordinator = ScanCoordinator(
-            scope = kotlinx.coroutines.CoroutineScope(testDispatcher),
-            scannerEngine = scannerEngine,
-            settingsRepository = settingsRepository,
-            actionExecutor = actionExecutor,
-            checkForPredictorUseCase = checkForPredictorUseCase,
-            ttsHelper = ttsHelper
-        )
+        val scanCoordinator = mockk<ScanCoordinator>(relaxed = true)
 
         return PageViewModel(
             application = application,

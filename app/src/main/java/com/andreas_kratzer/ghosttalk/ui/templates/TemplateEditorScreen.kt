@@ -44,7 +44,7 @@ fun TemplateEditorScreen(
     val scope = rememberCoroutineScope()
     val templates by templateViewModel.templates.collectAsState()
     val unfilteredPages by pageViewModel.unfilteredPages.collectAsState()
-    val bookDefaultScanPattern by pageViewModel.defaultScanPattern.collectAsState()
+    val bookDefaultScanPattern by pageViewModel.defaultScanPattern.collectAsState(initial = "linear")
     val template = templates.find { it.id == templateId }
     val dimensions = LocalDimensions.current
 

@@ -1,11 +1,11 @@
-package com.andreas_kratzer.ghosttalk.ui.pages
+package com.andreas_kratzer.ghosttalk.core.scanning
 
-import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
+import com.andreas_kratzer.ghosttalk.core.actions.ScannerActionProvider
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
-import com.andreas_kratzer.ghosttalk.core.scanning.ScannerEngine
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.settings.ScanningSettings
+import com.andreas_kratzer.ghosttalk.core.settings.FeatureSettings
 import com.andreas_kratzer.ghosttalk.core.ai.domain.CheckForPredictorUseCase
 import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
 import io.mockk.clearMocks
@@ -26,8 +26,9 @@ class ScanCoordinatorTest {
     private val testDispatcher = UnconfinedTestDispatcher()
     private val scope = TestScope(testDispatcher)
     private val scannerEngine = mockk<ScannerEngine>(relaxed = true)
-    private val settingsRepository = mockk<SettingsRepository>(relaxed = true)
-    private val actionExecutor = mockk<ActionExecutor>(relaxed = true)
+    private val scanningSettings = mockk<ScanningSettings>(relaxed = true)
+    private val featureSettings = mockk<FeatureSettings>(relaxed = true)
+    private val actionProvider = mockk<ScannerActionProvider>(relaxed = true)
     private val checkForPredictorUseCase = mockk<CheckForPredictorUseCase>()
     private val ttsHelper = mockk<TextToSpeechHelper>(relaxed = true)
 
@@ -42,10 +43,10 @@ class ScanCoordinatorTest {
 
     @Before
     fun setup() {
-        every { settingsRepository.scanDelayFlow } returns MutableStateFlow(1000L)
-        every { settingsRepository.isSmartPredictionEnabled } returns true
-        every { settingsRepository.autoStartScanning } returns true
-        every { actionExecutor.isExecuting } returns isExecuting
+        every { scanningSettings.scanDelayFlow } returns MutableStateFlow(1000L)
+        every { featureSettings.isSmartPredictionEnabled } returns true
+        every { scanningSettings.autoStartScanning } returns true
+        every { actionProvider.isExecuting } returns isExecuting
         every { scannerEngine.focusedButtonIndex } returns MutableStateFlow(null)
         every { scannerEngine.focusedRowIndex } returns MutableStateFlow(null)
         every { scannerEngine.isScanning } returns MutableStateFlow(false)
@@ -53,8 +54,9 @@ class ScanCoordinatorTest {
         scanCoordinator = ScanCoordinator(
             scope = scope,
             scannerEngine = scannerEngine,
-            settingsRepository = settingsRepository,
-            actionExecutor = actionExecutor,
+            scanningSettings = scanningSettings,
+            featureSettings = featureSettings,
+            actionProvider = actionProvider,
             checkForPredictorUseCase = checkForPredictorUseCase,
             ttsHelper = ttsHelper
         )
@@ -173,7 +175,7 @@ class ScanCoordinatorTest {
     fun `should automatically restart scanning when entering user mode if autoStart is true`() = runTest(testDispatcher) {
         // Given: User mode is currently inactive, but auto-start is enabled
         isUserModeActive.value = false
-        every { settingsRepository.autoStartScanning } returns true
+        every { scanningSettings.autoStartScanning } returns true
         
         val page = mockk<Page>(relaxed = true) {
             every { id } returns "p1"
@@ -199,7 +201,7 @@ class ScanCoordinatorTest {
     fun `should NOT start scanning when entering user mode if autoStart is false`() = runTest(testDispatcher) {
         // Given: User mode is currently inactive, and auto-start is disabled
         isUserModeActive.value = false
-        every { settingsRepository.autoStartScanning } returns false
+        every { scanningSettings.autoStartScanning } returns false
         
         val page = mockk<Page>(relaxed = true) {
             every { id } returns "p1"
@@ -227,10 +229,10 @@ class ScanCoordinatorTest {
         
         every { scannerEngine.focusedButtonIndex } returns focusedButtonIndexFlow
         every { scannerEngine.isScanning } returns isScanningFlow
-        every { settingsRepository.autoStartScanning } returns true
-        every { settingsRepository.resumeScanningFromStart } returns true
-        every { settingsRepository.defaultScanPattern } returns "linear"
-        every { settingsRepository.scanDelayFlow } returns MutableStateFlow(1000L)
+        every { scanningSettings.autoStartScanning } returns true
+        every { scanningSettings.resumeScanningFromStart } returns true
+        every { scanningSettings.defaultScanPattern } returns "linear"
+        every { scanningSettings.scanDelayFlow } returns MutableStateFlow(1000L)
         every { checkForPredictorUseCase(any<Page>()) } returns false
 
         val page = Page(

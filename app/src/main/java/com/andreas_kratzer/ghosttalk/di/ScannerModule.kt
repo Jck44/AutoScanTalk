@@ -25,4 +25,22 @@ abstract class ScannerModule {
     abstract fun bindFeatureGuardProxy(
         featureGuard: FeatureGuard
     ): FeatureGuardProxy
+
+    @Binds
+    @Singleton
+    abstract fun bindScanningSettings(
+        settingsRepository: com.andreas_kratzer.ghosttalk.data.SettingsRepository
+    ): com.andreas_kratzer.ghosttalk.core.settings.ScanningSettings
+
+    @Binds
+    @Singleton
+    abstract fun bindFeatureSettings(
+        settingsRepository: com.andreas_kratzer.ghosttalk.data.SettingsRepository
+    ): com.andreas_kratzer.ghosttalk.core.settings.FeatureSettings
+
+    @Binds
+    @Singleton
+    abstract fun bindScannerActionProvider(
+        actionExecutor: com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
+    ): com.andreas_kratzer.ghosttalk.core.actions.ScannerActionProvider
 }

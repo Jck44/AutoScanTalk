@@ -28,7 +28,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 @SuppressLint("CommitPrefEdits", "ApplySharedPref", "UseKtx")
-class SettingsRepository(context: Context) : SecuritySettings, KeyEventSettings, AudioSettings, ControlDeviceSettings, SpeechSettings, GenAiSettings, DatabaseSettings, TtsSettings, ImportExportSettings, CloudSettings {
+class SettingsRepository(context: Context) : SecuritySettings, KeyEventSettings, AudioSettings, ControlDeviceSettings, SpeechSettings, GenAiSettings, DatabaseSettings, TtsSettings, ImportExportSettings, CloudSettings, com.andreas_kratzer.ghosttalk.core.settings.ScanningSettings, com.andreas_kratzer.ghosttalk.core.settings.FeatureSettings {
 
     private val prefs: SharedPreferences = context.getSharedPreferences(SettingsConstants.PREFS_NAME, Context.MODE_PRIVATE)
 
@@ -96,33 +96,41 @@ class SettingsRepository(context: Context) : SecuritySettings, KeyEventSettings,
 
     override val ttsLanguageFlow: StateFlow<String?> get() = voiceSettings.ttsLanguageFlow
     override val ttsVoiceNameFlow: StateFlow<String?> get() = voiceSettings.ttsVoiceNameFlow
-    val autoStartScanningFlow: StateFlow<Boolean> get() = scanningSettings.autoStartScanningFlow
-    val scanDelayFlow: StateFlow<Long> get() = scanningSettings.scanDelayFlow
-    val resumeScanningFromStartFlow: StateFlow<Boolean> get() = scanningSettings.resumeScanningFromStartFlow
+    
+    // --- ScanningSettings ---
+    override val autoStartScanningFlow: StateFlow<Boolean> get() = scanningSettings.autoStartScanningFlow
+    override val scanDelayFlow: StateFlow<Long> get() = scanningSettings.scanDelayFlow
+    override val resumeScanningFromStartFlow: StateFlow<Boolean> get() = scanningSettings.resumeScanningFromStartFlow
+    override val defaultScanPatternFlow: StateFlow<String> get() = scanningSettings.defaultScanPatternFlow
+    
+    
+
+    // --- FeatureSettings ---
+    override val appLanguageFlow: StateFlow<String?> get() = generalSettings.appLanguageFlow
+    
+    // --- UI/ViewModel Flows ---
+    val templateSortOrderFlow: StateFlow<String> get() = generalSettings.templateSortOrderFlow
+    val pageSortOrderFlow: StateFlow<String> get() = generalSettings.pageSortOrderFlow
+    val themeModeFlow: StateFlow<String> get() = generalSettings.themeModeFlow
     val defaultStartPageIdFlow: StateFlow<String?> get() = generalSettings.defaultStartPageIdFlow
     val ttsAudioDeviceAddressFlow: StateFlow<String?> get() = voiceSettings.ttsAudioDeviceAddressFlow
-    val cuesAudioDeviceAddressFlow: StateFlow<String?> get() = voiceSettings.cuesAudioDeviceAddressFlow
     val holdingTimeMillisFlow: StateFlow<Long> get() = scanningSettings.holdingTimeMillisFlow
-    val persistActionLogsFlow: StateFlow<Boolean> get() = advancedSettings.persistActionLogsFlow
-    val actionLogsStorageFlow: StateFlow<String?> get() = advancedSettings.actionLogsStorageFlow
     val switchActivationKeyFlow: StateFlow<String> get() = scanningSettings.switchActivationKeyFlow
     val volumeKeysActivateFlow: StateFlow<Boolean> get() = scanningSettings.volumeKeysActivateFlow
-    val showTestButtonsFlow: StateFlow<Boolean> get() = advancedSettings.showTestButtonsFlow
-    val defaultScanPatternFlow: StateFlow<String> get() = scanningSettings.defaultScanPatternFlow
-    val themeModeFlow: StateFlow<String> get() = generalSettings.themeModeFlow
-    val pageSortOrderFlow: StateFlow<String> get() = generalSettings.pageSortOrderFlow
-    val templateSortOrderFlow: StateFlow<String> get() = generalSettings.templateSortOrderFlow
-    val lastSuccessfulSyncTimeFlow: StateFlow<Long> get() = cloudSettings.lastSuccessfulSyncTimeFlow
     val bluetoothDelayFlow: StateFlow<Long> get() = scanningSettings.bluetoothDelayFlow
     val isCloudSyncEnabledFlow: StateFlow<Boolean> get() = cloudSettings.isCloudSyncEnabledFlow
     val syncIntervalMinutesFlow: StateFlow<Long> get() = cloudSettings.syncIntervalMinutesFlow
     val syncModeFlow: StateFlow<String> get() = cloudSettings.syncModeFlow
+    val lastSuccessfulSyncTimeFlow: StateFlow<Long> get() = cloudSettings.lastSuccessfulSyncTimeFlow
     val isNotificationReadingEnabledFlow: StateFlow<Boolean> get() = notificationSettings.isNotificationReadingEnabledFlow
     val monitoredNotificationAppsFlow: StateFlow<Set<String>> get() = notificationSettings.monitoredNotificationAppsFlow
-    override val appLanguageFlow: StateFlow<String?> get() = generalSettings.appLanguageFlow
+    val persistActionLogsFlow: StateFlow<Boolean> get() = advancedSettings.persistActionLogsFlow
+    val actionLogsStorageFlow: StateFlow<String?> get() = advancedSettings.actionLogsStorageFlow
+    val showTestButtonsFlow: StateFlow<Boolean> get() = advancedSettings.showTestButtonsFlow
+    val weatherCacheTimeoutFlow: StateFlow<Long> get() = advancedSettings.weatherCacheTimeoutFlow
+    override val cuesAudioDeviceAddressFlow: StateFlow<String?> get() = voiceSettings.cuesAudioDeviceAddressFlow
     val keepScreenOnUserModeFlow: StateFlow<Boolean> get() = userSettings.keepScreenOnUserModeFlow
     val userModeScreenBehaviorFlow: StateFlow<String> get() = userSettings.userModeScreenBehaviorFlow
-    val weatherCacheTimeoutFlow: StateFlow<Long> get() = advancedSettings.weatherCacheTimeoutFlow
     val securityPinFlow: StateFlow<String?> get() = securitySettings.securityPinFlow
     val securityPinHashFlow: StateFlow<String?> get() = securitySettings.securityPinHashFlow
     val securityPinSaltFlow: StateFlow<String?> get() = securitySettings.securityPinSaltFlow
@@ -144,15 +152,15 @@ class SettingsRepository(context: Context) : SecuritySettings, KeyEventSettings,
         get() = voiceSettings.ttsVoiceName
         set(value) { voiceSettings.ttsVoiceName = value }
 
-    var autoStartScanning: Boolean
+    override var autoStartScanning: Boolean
         get() = scanningSettings.autoStartScanning
         set(value) { scanningSettings.autoStartScanning = value }
 
-    var scanDelayMillis: Long
+    override var scanDelayMillis: Long
         get() = scanningSettings.scanDelayMillis
         set(value) { scanningSettings.scanDelayMillis = value }
 
-    var resumeScanningFromStart: Boolean
+    override var resumeScanningFromStart: Boolean
         get() = scanningSettings.resumeScanningFromStart
         set(value) { scanningSettings.resumeScanningFromStart = value }
 
@@ -192,7 +200,7 @@ class SettingsRepository(context: Context) : SecuritySettings, KeyEventSettings,
         get() = advancedSettings.showTestButtons
         set(value) { advancedSettings.showTestButtons = value }
 
-    var defaultScanPattern: String
+    override var defaultScanPattern: String
         get() = scanningSettings.defaultScanPattern
         set(value) { scanningSettings.defaultScanPattern = value }
 

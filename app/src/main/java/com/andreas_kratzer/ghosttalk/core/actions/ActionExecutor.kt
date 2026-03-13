@@ -30,7 +30,7 @@ class ActionExecutor @Inject constructor(
     private val buttonUsageRepository: ButtonUsageRepository,
     private val geminiUseCaseLazy: dagger.Lazy<GeminiUseCase>,
     private val ttsHelperLazy: dagger.Lazy<TextToSpeechHelper>
-) {
+) : ScannerActionProvider {
     private var timeProvider: () -> Long = { System.currentTimeMillis() }
     
     internal fun setTimeProviderForTest(provider: () -> Long) {
@@ -44,7 +44,7 @@ class ActionExecutor @Inject constructor(
     }
 
     private val _isExecuting = MutableStateFlow(false)
-    val isExecuting: StateFlow<Boolean> = _isExecuting.asStateFlow()
+    override val isExecuting: StateFlow<Boolean> = _isExecuting.asStateFlow()
 
     private val _events = MutableSharedFlow<ExecutionEvent>()
     val events: SharedFlow<ExecutionEvent> = _events.asSharedFlow()

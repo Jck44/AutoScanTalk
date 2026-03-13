@@ -1,11 +1,11 @@
-package com.andreas_kratzer.ghosttalk.ui.pages
+package com.andreas_kratzer.ghosttalk.core.scanning
 
 import android.util.Log
-import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
+import com.andreas_kratzer.ghosttalk.core.actions.ScannerActionProvider
 import com.andreas_kratzer.ghosttalk.core.di.ApplicationScope
 import com.andreas_kratzer.ghosttalk.core.model.Page
-import com.andreas_kratzer.ghosttalk.core.scanning.ScannerEngine
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.settings.ScanningSettings
+import com.andreas_kratzer.ghosttalk.core.settings.FeatureSettings
 import com.andreas_kratzer.ghosttalk.core.ai.domain.CheckForPredictorUseCase
 import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
 import kotlinx.coroutines.CoroutineScope
@@ -22,8 +22,9 @@ import javax.inject.Singleton
 class ScanCoordinator @Inject constructor(
     @param:ApplicationScope private val scope: CoroutineScope,
     private val scannerEngine: ScannerEngine,
-    private val settingsRepository: SettingsRepository,
-    private val actionExecutor: ActionExecutor,
+    private val scanningSettings: ScanningSettings,
+    private val featureSettings: FeatureSettings,
+    private val actionProvider: ScannerActionProvider,
     private val checkForPredictorUseCase: CheckForPredictorUseCase,
     private val ttsHelper: TextToSpeechHelper
 ) {
@@ -64,10 +65,10 @@ class ScanCoordinator @Inject constructor(
             loading to predictions 
         }
 
-        // Scanning trigger: observe ActionExecutor, resolved page, raw page, user mode state, and Gemini status
+        // Scanning trigger: observe ActionProvider, resolved page, raw page, user mode state, and Gemini status
         scope.launch {
             combine(
-                actionExecutor.isExecuting,
+                actionProvider.isExecuting,
                 resolvedPage,
                 currentPage,
                 isUserModeActive,
@@ -93,7 +94,7 @@ class ScanCoordinator @Inject constructor(
                     )
                     
                     if (isWaiting) {
-                        if (rawPage.id != lastCuePageId && settingsRepository.isSmartPredictionEnabled) {
+                        if (rawPage.id != lastCuePageId && featureSettings.isSmartPredictionEnabled) {
                             Log.d("ScanCoordinator", "Page ${rawPage.name} has predictor and is waiting. Speaking cue.")
                             ttsHelper.speak("Befrage Gemini Nano")
                             lastCuePageId = rawPage.id
@@ -116,7 +117,7 @@ class ScanCoordinator @Inject constructor(
 
         // React to scan delay changes
         scope.launch {
-            settingsRepository.scanDelayFlow.collect { delay -> setScanDelay(delay) }
+            scanningSettings.scanDelayFlow.collect { delay -> setScanDelay(delay) }
         }
     }
 
@@ -148,8 +149,8 @@ class ScanCoordinator @Inject constructor(
             Log.d("ScanCoordinator", "resumeScanningIfEnabled: User mode inactive, skipping.")
             return
         }
-        if (actionExecutor.isExecuting.value) {
-            Log.d("ScanCoordinator", "resumeScanningIfEnabled: ActionExecutor busy, skipping.")
+        if (actionProvider.isExecuting.value) {
+            Log.d("ScanCoordinator", "resumeScanningIfEnabled: ActionProvider busy, skipping.")
             return
         }
 
@@ -173,8 +174,8 @@ class ScanCoordinator @Inject constructor(
             return
         }
 
-        if (settingsRepository.autoStartScanning) {
-            val startIndex = if (settingsRepository.resumeScanningFromStart) {
+        if (scanningSettings.autoStartScanning) {
+            val startIndex = if (scanningSettings.resumeScanningFromStart) {
                 0
             } else {
                 focusedButtonIndex.value ?: 0
@@ -192,7 +193,7 @@ class ScanCoordinator @Inject constructor(
         scannerEngine.startScanning(
             buttonConfigs = page.buttonConfigs,
             startIndex = startIndex,
-            pattern = page.scanPattern ?: settingsRepository.defaultScanPattern,
+            pattern = page.scanPattern ?: scanningSettings.defaultScanPattern,
             rows = page.rows,
             columns = page.columns,
             rowNames = page.rowNames,
@@ -202,7 +203,7 @@ class ScanCoordinator @Inject constructor(
 
     fun setScanDelay(delayMillis: Long) {
         scannerEngine.scanDelayMillis = delayMillis
-        if (settingsRepository.autoStartScanning && isUserModeActive?.value == true) {
+        if (scanningSettings.autoStartScanning && isUserModeActive?.value == true) {
             startScanning()
         }
     }

@@ -44,7 +44,7 @@ class TemplateViewModel @Inject constructor(
         templateRepository.getAllTemplates(),
         settingsRepository.templateSortOrderFlow,
         _searchQuery
-    ) { templates, sortOrderStr, query ->
+    ) { templates: List<PageTemplate>, sortOrderStr: String, query: String ->
         val sortOrder = try { SortOrder.valueOf(sortOrderStr) } catch (_: Exception) { SortOrder.MANUAL }
         templates.filterAndSort(query, sortOrder)
     }.stateIn(

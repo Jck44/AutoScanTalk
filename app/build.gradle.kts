@@ -106,6 +106,7 @@ dependencies {
     implementation(project(":core-cloud"))
     implementation(project(":core-database"))
     implementation(project(":core-tts"))
+    implementation(project(":core-scanning"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)

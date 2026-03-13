@@ -1,5 +1,6 @@
-package com.andreas_kratzer.ghosttalk.domain.executors
+package com.andreas_kratzer.ghosttalk.core.ai.domain
 
+import com.andreas_kratzer.ghosttalk.core.ai.ClockExecutor
 import com.andreas_kratzer.ghosttalk.core.ai.LocalIntentRouter
 import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.google.mlkit.genai.prompt.GenerateContentRequest
@@ -11,8 +12,8 @@ import javax.inject.Inject
 
 data class LocalIntent(val id: String, val description: String)
 
-class LocalIntentRouter @Inject constructor(
-    private val androidClockExecutor: AndroidClockExecutor,
+class LocalIntentRouterImpl @Inject constructor(
+    private val clockExecutor: ClockExecutor,
     private val logger: Logger
 ) : LocalIntentRouter {
     // Note: JSON Schema constraint parsing in ML Kit Prompt API is still highly experimental.
@@ -59,7 +60,7 @@ class LocalIntentRouter @Inject constructor(
     override suspend fun executeIntent(intentId: String, onSpeak: (String) -> Unit) = withContext(Dispatchers.IO) {
         try {
             val context = when (intentId) {
-                "alarm" -> "Nächster Alarm: ${androidClockExecutor.getNextAlarm()}"
+                "alarm" -> "Nächster Alarm: ${clockExecutor.getNextAlarm()}"
                 else -> ""
             }
 
@@ -71,7 +72,7 @@ class LocalIntentRouter @Inject constructor(
             } else {
                 // Fallback if AI fails
                 val fallback = when (intentId) {
-                    "alarm" -> androidClockExecutor.getNextAlarm()
+                    "alarm" -> clockExecutor.getNextAlarm()
                     else -> "Ich kann diesen Befehl gerade nicht ausführen."
                 }
                 onSpeak(fallback)

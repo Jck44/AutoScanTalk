@@ -1,7 +1,7 @@
-package com.andreas_kratzer.ghosttalk.domain.executors
+package com.andreas_kratzer.ghosttalk.core.ai.domain
 
-import com.andreas_kratzer.ghosttalk.domain.executors.LocalIntentRouter
-import com.andreas_kratzer.ghosttalk.domain.executors.AndroidClockExecutor
+import com.andreas_kratzer.ghosttalk.core.ai.ClockExecutor
+import com.andreas_kratzer.ghosttalk.core.ai.domain.LocalIntentRouterImpl
 
 import com.andreas_kratzer.ghosttalk.core.util.Logger
 import io.mockk.coEvery
@@ -14,16 +14,16 @@ import org.junit.Test
 
 class LocalIntentRouterTest {
 
-    private lateinit var androidClockExecutor: AndroidClockExecutor
+    private lateinit var clockExecutor: ClockExecutor
     private lateinit var logger: Logger
-    private lateinit var router: LocalIntentRouter
+    private lateinit var router: LocalIntentRouterImpl
 
     @Before
     fun setup() {
-        androidClockExecutor = mockk(relaxed = true)
+        clockExecutor = mockk(relaxed = true)
         logger = mockk(relaxed = true)
         
-        router = spyk(LocalIntentRouter(androidClockExecutor, logger))
+        router = spyk(LocalIntentRouterImpl(clockExecutor, logger))
     }
 
     @Test
@@ -31,7 +31,7 @@ class LocalIntentRouterTest {
         var spokenText = ""
         val onSpeak: (String) -> Unit = { spokenText = it }
         
-        every { androidClockExecutor.getNextAlarm() } returns "Wecker um 08:00 Uhr"
+        every { clockExecutor.getNextAlarm() } returns "Wecker um 08:00 Uhr"
         coEvery { router.generateRawResponse(any(), any()) } returns "Dein nächster Wecker klingelt um 8 Uhr morgens."
         
         router.executeIntent("alarm", onSpeak)
@@ -44,7 +44,7 @@ class LocalIntentRouterTest {
         var spokenText = ""
         val onSpeak: (String) -> Unit = { spokenText = it }
         
-        every { androidClockExecutor.getNextAlarm() } returns "Wecker um 08:00 Uhr"
+        every { clockExecutor.getNextAlarm() } returns "Wecker um 08:00 Uhr"
         coEvery { router.generateRawResponse(any(), any()) } returns ""
         
         router.executeIntent("alarm", onSpeak)
