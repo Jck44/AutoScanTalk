@@ -5,15 +5,17 @@ import android.app.Application
 import android.content.Context
 import android.content.ContextWrapper
 import android.widget.Toast
-import com.andreas_kratzer.ghosttalk.feature.settings.R
-import com.andreas_kratzer.ghosttalk.core.cloud.AuthManager
-import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.core.cloud.domain.SignInUseCase
 import com.andreas_kratzer.ghosttalk.core.ai.domain.ActivateGeminiUseCase
 import com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase
 import com.andreas_kratzer.ghosttalk.core.ai.domain.GetGeminiToolStatusUseCase
 import com.andreas_kratzer.ghosttalk.core.ai.domain.HandleGenAiExceptionUseCase
 import com.andreas_kratzer.ghosttalk.core.ai.domain.TestGeminiNanoUseCase
+import com.andreas_kratzer.ghosttalk.core.cloud.AuthManager
+import com.andreas_kratzer.ghosttalk.core.cloud.domain.SignInUseCase
+import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.feature.settings.R
+import com.google.mlkit.genai.common.FeatureStatus
+import com.google.mlkit.genai.prompt.Generation
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -24,8 +26,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
-import com.google.mlkit.genai.prompt.Generation
-import com.google.mlkit.genai.common.FeatureStatus
 
 @Singleton
 class GenAiSettingsDelegate @Inject constructor(
@@ -82,7 +82,7 @@ class GenAiSettingsDelegate @Inject constructor(
                     settingsRepository.useLocalGenerativeAi = false
                     _isDeactivationDialogVisible.value = true
                 }
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 _nanoFeatureStatus.value = FeatureStatus.UNAVAILABLE
                 settingsRepository.useLocalGenerativeAi = false
                 _isDeactivationDialogVisible.value = true
@@ -92,7 +92,7 @@ class GenAiSettingsDelegate @Inject constructor(
             try {
                 val model = Generation.getClient()
                 _nanoFeatureStatus.value = model.checkStatus()
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 _nanoFeatureStatus.value = FeatureStatus.UNAVAILABLE
             }
         }
@@ -142,7 +142,7 @@ class GenAiSettingsDelegate @Inject constructor(
                             showDownloadDialog() // Progress will be shown if already downloading
                         }
                     }
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     _nanoFeatureStatus.value = FeatureStatus.UNAVAILABLE
                     scope.launch(Dispatchers.Main) {
                         Toast.makeText(application, "Gemini Nano Status konnte nicht geprüft werden.", Toast.LENGTH_SHORT).show()

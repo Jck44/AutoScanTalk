@@ -12,7 +12,7 @@ import javax.inject.Singleton
 
 @Singleton
 class ActionCoordinator @Inject constructor(
-    @ApplicationScope private val scope: CoroutineScope,
+    @param:ApplicationScope private val scope: CoroutineScope,
     private val logger: Logger
 ) : ActionLogger, ActionEventEmitter {
 

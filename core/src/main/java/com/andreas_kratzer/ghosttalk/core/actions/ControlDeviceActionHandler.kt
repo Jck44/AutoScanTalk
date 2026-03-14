@@ -1,7 +1,5 @@
 package com.andreas_kratzer.ghosttalk.core.actions
 
-import javax.inject.Inject
-
 import android.app.Activity
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -19,6 +17,8 @@ import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.ControlDeviceButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.DeviceActionType
 import com.andreas_kratzer.ghosttalk.core.services.NotificationReaderService
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
 
 interface ControlDeviceTtsProxy {
     val isReady: Boolean
@@ -28,7 +28,7 @@ interface ControlDeviceTtsProxy {
 
 
 class ControlDeviceActionHandler @Inject constructor(
-    @dagger.hilt.android.qualifiers.ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val settings: ControlDeviceSettings,
     private val ttsProxyLazy: dagger.Lazy<ControlDeviceTtsProxy>,
     private val actionLogger: ActionLogger,

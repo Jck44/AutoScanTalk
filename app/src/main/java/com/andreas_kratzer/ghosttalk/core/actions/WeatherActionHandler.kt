@@ -1,23 +1,23 @@
 package com.andreas_kratzer.ghosttalk.core.actions
 
 import android.content.Context
+import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.di.ApplicationScope
 import com.andreas_kratzer.ghosttalk.core.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.WeatherButtonAction
-import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.domain.executors.WeatherExecutor
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-
 import javax.inject.Inject
-import com.andreas_kratzer.ghosttalk.core.di.ApplicationScope
 
 class WeatherActionHandler @Inject constructor(
-    @dagger.hilt.android.qualifiers.ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val settingsRepository: SettingsRepository,
     private val ttsProxyLazy: dagger.Lazy<ActionTtsProxy>,
     private val weatherExecutor: WeatherExecutor,
-    @ApplicationScope private val scope: CoroutineScope,
+    @param:ApplicationScope private val scope: CoroutineScope,
     private val actionLogger: ActionLogger,
     private val actionEventEmitter: ActionEventEmitter
 ) : ActionHandler {

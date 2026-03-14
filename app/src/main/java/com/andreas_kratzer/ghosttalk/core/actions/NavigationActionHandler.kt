@@ -11,7 +11,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 class NavigationActionHandler @Inject constructor(
-    @ApplicationScope private val scope: CoroutineScope,
+    @param:ApplicationScope private val scope: CoroutineScope,
     private val settingsRepository: SettingsRepository,
     private val ttsHelperLazy: dagger.Lazy<TextToSpeechHelper>,
     private val actionEventEmitter: ActionEventEmitter,

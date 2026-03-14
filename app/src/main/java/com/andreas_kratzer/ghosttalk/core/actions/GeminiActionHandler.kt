@@ -10,13 +10,14 @@ import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.GeminiButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiNanoButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiSearchButtonAction
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 class GeminiActionHandler @Inject constructor(
-    @ApplicationScope private val scope: CoroutineScope,
-    @dagger.hilt.android.qualifiers.ApplicationContext private val context: Context,
+    @param:ApplicationScope private val scope: CoroutineScope,
+    @param:ApplicationContext private val context: Context,
     private val settingsRepository: SettingsRepository,
     private val geminiUseCaseLazy: dagger.Lazy<GeminiUseCase>,
     private val localIntentRouter: LocalIntentRouter,
