@@ -92,6 +92,7 @@ fun PageEditorScreen(
         }
     ) { paddingValues ->
         val templates by pageViewModel.templates.collectAsState()
+        val googleHomeProjectId by pageViewModel.googleHomeProjectId.collectAsState()
         
         GridEditorContent(
             item = page,
@@ -101,7 +102,9 @@ fun PageEditorScreen(
             featureGuard = pageViewModel.featureGuard,
             bookDefaultScanPattern = bookDefaultScanPattern,
             paddingValues = paddingValues,
-            onEditPage = onEditPage
+            onEditPage = onEditPage,
+            googleHomeManager = pageViewModel.googleHomeManager,
+            googleHomeProjectId = googleHomeProjectId
         )
     }
 }

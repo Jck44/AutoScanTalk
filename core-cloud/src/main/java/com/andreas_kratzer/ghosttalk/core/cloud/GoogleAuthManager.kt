@@ -135,7 +135,8 @@ class GoogleAuthManager @javax.inject.Inject constructor(
             DriveScopes.DRIVE_FILE,
             "https://www.googleapis.com/auth/generative-language.retriever",
             "https://www.googleapis.com/auth/calendar.events.readonly",
-            "https://www.googleapis.com/auth/tasks.readonly"
+            "https://www.googleapis.com/auth/tasks.readonly",
+            "https://www.googleapis.com/auth/sdm.service"
         )
         val credential = GoogleAccountCredential.usingOAuth2(
             appContext, scopes

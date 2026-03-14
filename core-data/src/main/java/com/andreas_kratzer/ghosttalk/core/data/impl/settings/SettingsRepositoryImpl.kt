@@ -122,6 +122,7 @@ class SettingsRepositoryImpl(context: Context) : SettingsRepository {
     override val syncIntervalMinutesFlow: StateFlow<Long> get() = cloudSettings.syncIntervalMinutesFlow
     override val syncModeFlow: StateFlow<String> get() = cloudSettings.syncModeFlow
     override val lastSuccessfulSyncTimeFlow: StateFlow<Long> get() = cloudSettings.lastSuccessfulSyncTimeFlow
+    override val googleHomeProjectIdFlow: StateFlow<String> get() = cloudSettings.googleHomeProjectIdFlow
     override val cuesAudioDeviceAddressFlow: StateFlow<String?> get() = voiceSettings.cuesAudioDeviceAddressFlow
     override val securityPinFlow: StateFlow<String?> get() = securitySettings.securityPinFlow
     override val securityPinHashFlow: StateFlow<String?> get() = securitySettings.securityPinHashFlow
@@ -229,6 +230,10 @@ class SettingsRepositoryImpl(context: Context) : SettingsRepository {
     override var syncMode: String
         get() = cloudSettings.syncMode
         set(value) { cloudSettings.syncMode = value }
+
+    override var googleHomeProjectId: String
+        get() = cloudSettings.googleHomeProjectId
+        set(value) { cloudSettings.googleHomeProjectId = value }
 
     override var isGeminiEnabled: Boolean
         get() = genAiSettings.isGeminiEnabled

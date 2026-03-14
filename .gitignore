@@ -32,3 +32,7 @@ local.properties
 /build_tail.txt
 /core-ui/build/
 /feature-settings/build/
+/app_build_output.txt
+/app_build_output_2.txt
+/test_stacktrace.txt
+/test_fail_output.txt

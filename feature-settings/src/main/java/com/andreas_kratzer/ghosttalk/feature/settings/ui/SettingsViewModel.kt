@@ -71,6 +71,7 @@ class SettingsViewModel @Inject constructor(
     val syncMode = settingsRepository.syncModeFlow
     val lastSuccessfulSyncTime = settingsRepository.lastSuccessfulSyncTimeFlow
     val syncIntervalMinutes = settingsRepository.syncIntervalMinutesFlow
+    val googleHomeProjectId = settingsRepository.googleHomeProjectIdFlow
     val isSyncing = cloudSyncDelegate.isSyncing
     val userEmail = cloudSyncDelegate.userEmail
     
@@ -169,6 +170,7 @@ class SettingsViewModel @Inject constructor(
     
     fun setSyncMode(m: String) { settingsRepository.syncMode = m }
     fun setSyncIntervalMinutes(minutes: Long) { settingsRepository.syncIntervalMinutes = minutes }
+    fun setGoogleHomeProjectId(id: String) { settingsRepository.googleHomeProjectId = id }
 
     fun setGeminiEnabled(ctx: Context, e: Boolean) {
         genAiDelegate.setGeminiCloudEnabled(ctx, e, viewModelScope)

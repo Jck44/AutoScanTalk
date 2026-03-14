@@ -29,6 +29,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,9 +52,14 @@ import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.WeatherButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.GoogleHomeButtonAction
+import com.andreas_kratzer.ghosttalk.core.cloud.GoogleHomeManager
+import com.andreas_kratzer.ghosttalk.core.cloud.HomeDevice
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsDropdownItem
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsEditTextItem
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsToggleItem
+import kotlinx.coroutines.launch
+import java.util.UUID
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 
 @Composable
@@ -68,7 +74,10 @@ fun ButtonConfigDialog(
     onDelete: () -> Unit,
     onNavigateToPage: ((String) -> Unit)? = null,
     onCreatePage: ((String, Int, Int, String?, (String) -> Unit) -> Unit)? = null,
-    currentPageId: String? = null
+    currentPageId: String? = null,
+    // Google Home Support
+    googleHomeManager: GoogleHomeManager? = null,
+    googleHomeProjectId: String = ""
 ) {
     val context = LocalContext.current
     var label by remember { mutableStateOf(buttonConfig.label) }
@@ -99,6 +108,7 @@ fun ButtonConfigDialog(
     val actionTypeSmart = stringResource(R.string.button_action_smart_prediction)
     val actionTypeDevice = stringResource(R.string.button_action_control_device)
     val actionTypeWeather = stringResource(R.string.button_action_weather)
+    val actionTypeGoogleHome = stringResource(R.string.button_action_google_home)
 
     var selectedActionType by remember {
         mutableStateOf(
@@ -111,6 +121,7 @@ fun ButtonConfigDialog(
                 is SmartPredictionButtonAction -> actionTypeSmart
                 is ControlDeviceButtonAction -> actionTypeDevice
                 is WeatherButtonAction -> actionTypeWeather
+                is GoogleHomeButtonAction -> actionTypeGoogleHome
                 else -> actionTypeSpeak
             }
         )
@@ -160,6 +171,27 @@ fun ButtonConfigDialog(
     var messageText by remember {
         mutableStateOf((buttonConfig.buttonAction as? ControlDeviceButtonAction)?.messageText ?: "")
     }
+
+    // Google Home specific state
+    var googleHomeDeviceId by remember {
+        mutableStateOf((buttonConfig.buttonAction as? GoogleHomeButtonAction)?.deviceId ?: "")
+    }
+    var googleHomeDeviceName by remember {
+        mutableStateOf((buttonConfig.buttonAction as? GoogleHomeButtonAction)?.deviceName ?: "")
+    }
+    var googleHomeTrait by remember {
+        mutableStateOf((buttonConfig.buttonAction as? GoogleHomeButtonAction)?.trait ?: "")
+    }
+    var googleHomeCommand by remember {
+        mutableStateOf((buttonConfig.buttonAction as? GoogleHomeButtonAction)?.command ?: "")
+    }
+    var googleHomeValue by remember {
+        mutableStateOf((buttonConfig.buttonAction as? GoogleHomeButtonAction)?.value ?: "")
+    }
+    
+    var availableHomeDevices by remember { mutableStateOf<List<HomeDevice>>(emptyList()) }
+    var isFetchingDevices by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -215,6 +247,7 @@ fun ButtonConfigDialog(
                         actionTypeFrequent,
                         actionTypeSmart,
                         actionTypeWeather,
+                        actionTypeGoogleHome,
                         actionTypeDevice
                     ).map { type -> type to { selectedActionType = type } }
                 )
@@ -239,6 +272,28 @@ fun ButtonConfigDialog(
                     onContactPhoneChange = { contactPhone = it },
                     messageText = messageText,
                     onMessageTextChange = { messageText = it },
+                    // Google Home
+                    googleHomeDeviceId = googleHomeDeviceId,
+                    onGoogleHomeDeviceIdChange = { googleHomeDeviceId = it },
+                    googleHomeDeviceName = googleHomeDeviceName,
+                    onGoogleHomeDeviceNameChange = { googleHomeDeviceName = it },
+                    googleHomeTrait = googleHomeTrait,
+                    onGoogleHomeTraitChange = { googleHomeTrait = it },
+                    googleHomeCommand = googleHomeCommand,
+                    onGoogleHomeCommandChange = { googleHomeCommand = it },
+                    googleHomeValue = googleHomeValue,
+                    onGoogleHomeValueChange = { googleHomeValue = it },
+                    availableHomeDevices = availableHomeDevices,
+                    isFetchingDevices = isFetchingDevices,
+                    onFetchDevices = {
+                        if (googleHomeManager != null && googleHomeProjectId.isNotBlank()) {
+                            scope.launch {
+                                isFetchingDevices = true
+                                availableHomeDevices = googleHomeManager.listDevices(googleHomeProjectId)
+                                isFetchingDevices = false
+                            }
+                        }
+                    },
                     onNavigateToPage = onNavigateToPage,
                     onCreatePage = onCreatePage,
                     onDismissDialog = onDismiss
@@ -262,6 +317,13 @@ fun ButtonConfigDialog(
                             contactName = contactName,
                             contactPhone = contactPhone,
                             messageText = messageText
+                        )
+                        actionTypeGoogleHome -> GoogleHomeButtonAction(
+                            deviceId = googleHomeDeviceId,
+                            deviceName = googleHomeDeviceName,
+                            trait = googleHomeTrait,
+                            command = googleHomeCommand,
+                            value = googleHomeValue.ifBlank { null }
                         )
                         else -> SpeakTextButtonAction()
                     }
@@ -316,6 +378,13 @@ fun ButtonConfigDialog(
                                         contactName = contactName,
                                         contactPhone = contactPhone,
                                         messageText = messageText
+                                    )
+                                    actionTypeGoogleHome -> GoogleHomeButtonAction(
+                                        deviceId = googleHomeDeviceId,
+                                        deviceName = googleHomeDeviceName,
+                                        trait = googleHomeTrait,
+                                        command = googleHomeCommand,
+                                        value = googleHomeValue.ifBlank { null }
                                     )
                                     else -> SpeakTextButtonAction()
                                 }

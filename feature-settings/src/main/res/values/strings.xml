@@ -87,6 +87,8 @@
     <string name="settings_cloud_last_sync">Letzter Sync: %s</string>
     <string name="book_import_cloud_success">Buch erfolgreich aus der Cloud geladen.</string>
     <string name="book_import_cloud_error">Fehler beim Laden aus der Cloud: %s</string>
+    <string name="settings_google_home_project_id">Google Home Projekt-ID (Device Access)</string>
+    <string name="settings_google_home_project_id_desc">Die ID deines Device Access Projekts aus der Google Cloud Console.</string>
 
     <!-- Gemini Settings -->
     <string name="settings_gemini_activate_button">Gemini Initialisieren / Testen</string>

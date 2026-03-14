@@ -22,16 +22,17 @@ class SettingsRepositoryTest {
 
     @Before
     fun setup() {
-        mockContext = mockk()
-        mockPrefs = mockk()
-        mockEditor = mockk()
+        mockContext = mockk(relaxed = true)
+        mockPrefs = mockk(relaxed = true)
+        mockEditor = mockk(relaxed = true)
 
         io.mockk.mockkStatic(android.util.Log::class)
         every { android.util.Log.d(any(), any()) } returns 0
         every { android.util.Log.w(any(), any<String>()) } returns 0
         every { android.util.Log.e(any(), any(), any()) } returns 0
 
-        every { mockContext.getSharedPreferences("ghosttalk_settings", Context.MODE_PRIVATE) } returns mockPrefs
+        every { mockContext.getSharedPreferences(any(), any()) } returns mockPrefs
+        every { mockContext.applicationContext } returns mockContext
         every { mockPrefs.edit() } returns mockEditor
         
         every { mockPrefs.getString(any(), any()) } answers {

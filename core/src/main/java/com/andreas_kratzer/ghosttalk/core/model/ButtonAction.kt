@@ -96,6 +96,19 @@ data class WeatherButtonAction(
     val version: Int = 1
 ) : ButtonAction()
 
+/**
+ * An action to control Google Home devices directly.
+ */
+@Serializable
+@SerialName("GoogleHomeButtonAction")
+data class GoogleHomeButtonAction(
+    val deviceId: String = "",
+    val deviceName: String = "",
+    val trait: String = "",
+    val command: String = "",
+    val value: String? = null
+) : ButtonAction()
+
 @Serializable
 enum class DeviceActionType {
     READ_NOTIFICATIONS,

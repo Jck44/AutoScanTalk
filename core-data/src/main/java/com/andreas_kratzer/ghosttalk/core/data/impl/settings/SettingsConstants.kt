@@ -50,4 +50,5 @@ object SettingsConstants {
     const val KEY_SECURITY_REQUIRED_FOR_SETTINGS = "security_required_for_settings"
     const val KEY_STARTUP_BEHAVIOR = "startup_behavior"
     const val KEY_FAVORITE_BOOK_ID = "favorite_book_id"
+    const val KEY_GOOGLE_HOME_PROJECT_ID = "google_home_project_id"
 }

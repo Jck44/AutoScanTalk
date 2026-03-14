@@ -81,6 +81,7 @@
     <string name="button_action_notification">Benachrichtigung (Audio-Hinweis)</string>
     <string name="button_action_control_device">Gerätefunktionen</string>
     <string name="button_action_weather">Wetter vorlesen</string>
+    <string name="button_action_google_home">Google Home Steuerung</string>
     <string name="button_device_control_type_label">Aktion wählen</string>
     <string name="button_device_control_media_next">Nächstes Lied / Weiter</string>
     <string name="button_device_control_media_previous">Vorheriges Lied / Zurück</string>
@@ -96,6 +97,11 @@
     <string name="button_gemini_nano_intent_label">Gemini Nano Funktion</string>
     <string name="button_gemini_nano_intent_alarm">Nächster Alarm</string>
     <string name="button_play_as_cue">Als Audio-Hinweis abspielen</string>
+    <string name="button_google_home_device_label">Gerät</string>
+    <string name="button_google_home_command_label">Befehl</string>
+    <string name="button_google_home_value_label">Wert</string>
+    <string name="button_google_home_loading_devices">Lade Geräte…</string>
+    <string name="button_google_home_no_devices">Keine Geräte gefunden</string>
 
     <!-- Page Screen -->
     <string name="page_loading">Seite wird geladen…</string>

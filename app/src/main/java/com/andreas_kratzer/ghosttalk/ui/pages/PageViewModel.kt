@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
 import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.cloud.GoogleHomeManager
 import com.andreas_kratzer.ghosttalk.core.model.GeminiNanoButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.data.impl.PageImportExportManager
@@ -57,7 +58,8 @@ class PageViewModel @Inject constructor(
     updateSmartPredictionsUseCase: UpdateSmartPredictionsUseCase,
     val actionExecutor: ActionExecutor,
     private val scanCoordinator: ScanCoordinator,
-    geminiUseCase: GeminiUseCase
+    geminiUseCase: GeminiUseCase,
+    val googleHomeManager: GoogleHomeManager
 ) : AndroidViewModel(application), com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions {
 
     val activeBookId = pageManagementDelegate.activeBookId
@@ -80,6 +82,7 @@ class PageViewModel @Inject constructor(
 
     val defaultScanPattern = settingsRepository.defaultScanPatternFlow
     val showTestButtons = settingsRepository.showTestButtonsFlow
+    val googleHomeProjectId = settingsRepository.googleHomeProjectIdFlow
 
     val resolvedPage: StateFlow<Page?> = combine(
         currentPage,

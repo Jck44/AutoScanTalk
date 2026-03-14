@@ -57,6 +57,7 @@ import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalCurrentPageId
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalIsUserModeActive
 import com.andreas_kratzer.ghosttalk.ui.pages.ButtonConfigDialog
+import com.andreas_kratzer.ghosttalk.core.cloud.GoogleHomeManager
 import com.andreas_kratzer.ghosttalk.ui.pages.GridButton
 import com.andreas_kratzer.ghosttalk.ui.pages.MoveHiddenPromptDialog
 import com.andreas_kratzer.ghosttalk.ui.pages.TargetPageSelectionDialog
@@ -74,7 +75,9 @@ fun GridEditorContent(
     featureGuard: com.andreas_kratzer.ghosttalk.feature.settings.domain.FeatureGuard,
     bookDefaultScanPattern: String?,
     paddingValues: PaddingValues,
-    onEditPage: ((String) -> Unit)? = null
+    onEditPage: ((String) -> Unit)? = null,
+    googleHomeManager: GoogleHomeManager? = null,
+    googleHomeProjectId: String = ""
 ) {
     CompositionLocalProvider(
         LocalCurrentPageId provides item.id,
@@ -206,7 +209,9 @@ fun GridEditorContent(
                     selectedButtonIndex = null
                 }
             },
-            onEditPage = onEditPage
+            onEditPage = onEditPage,
+            googleHomeManager = googleHomeManager,
+            googleHomeProjectId = googleHomeProjectId
         )
     }
 }
@@ -398,7 +403,9 @@ private fun EditorDialogs(
     onShowHiddenPrompt: (com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.NeedsConfirmation?) -> Unit,
     onDismissRowDialog: () -> Unit,
     onDismissButtonDialog: () -> Unit,
-    onEditPage: ((String) -> Unit)?
+    onEditPage: ((String) -> Unit)?,
+    googleHomeManager: GoogleHomeManager? = null,
+    googleHomeProjectId: String = ""
 ) {
     val context = LocalContext.current
     if (showRowEditDialog && editingRowIndex != null) {
@@ -442,7 +449,9 @@ private fun EditorDialogs(
                     actions.createNewPage(name, r, c, bookId, t, callback)
                 }
             },
-            currentPageId = item.id
+            currentPageId = item.id,
+            googleHomeManager = googleHomeManager,
+            googleHomeProjectId = googleHomeProjectId
         )
     }
 

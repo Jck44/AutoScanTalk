@@ -104,5 +104,11 @@ data class ImportAction(
     val volumeValue: String? = null,
     val contactName: String? = null,
     val contactPhone: String? = null,
-    val messageText: String? = null
+    val messageText: String? = null,
+    
+    // Google Home specific
+    val googleHomeDeviceId: String? = null,
+    val googleHomeTrait: String? = null,
+    val googleHomeCommand: String? = null,
+    val googleHomeValue: String? = null
 )
