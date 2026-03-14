@@ -192,7 +192,7 @@ class GeminiActionHandlerTest {
         val button = ButtonConfig(id = "1", label = "G", buttonAction = GeminiButtonAction("Hi"), auditoryCue = null)
         
         // WHEN
-        handler.handle(button, button.buttonAction!!, 1) {}
+        handler.handle(button, button.buttonAction, 1) {}
         runCurrent()
 
         // THEN
