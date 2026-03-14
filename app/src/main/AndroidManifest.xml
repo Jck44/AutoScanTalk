@@ -29,7 +29,9 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.GhosTTalk">
+        android:theme="@style/Theme.GhosTTalk"
+        tools:ignore="RemoveWorkManagerInitializer">
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -44,9 +46,8 @@
 
         <!--
           Deaktiviert den WorkManager-Initializer für On-Demand Initialisierung.
-          tools:ignore="RemoveWorkManagerInitializer" wird hinzugefügt, um die
-          Lint-Warnung zu unterdrücken, da wir die Initialisierung korrekt in
-          GhosTTalkApplication (via Configuration.Provider) vornehmen.
+          tools:ignore="RemoveWorkManagerInitializer" wird im application-Tag genutzt,
+          um die Lint-Warnung global für die App zu unterdrücken.
         -->
         <provider
             android:name="androidx.startup.InitializationProvider"
@@ -56,8 +57,7 @@
             <meta-data
                 android:name="androidx.work.WorkManagerInitializer"
                 android:value="androidx.startup"
-                tools:node="remove"
-                tools:ignore="RemoveWorkManagerInitializer" />
+                tools:node="remove" />
         </provider>
 
         <service android:name=".core.services.NotificationReaderService"
