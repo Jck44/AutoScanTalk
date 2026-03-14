@@ -41,8 +41,6 @@ fun TestSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
     val volumeKeysActivate by viewModel.volumeKeysActivate.collectAsState(false)
     val buttonHistory by viewModel.buttonHistory.collectAsState(emptyList())
     val dimensions = LocalDimensions.current
-    
-    var showHistoryDialog by remember { mutableStateOf(false) }
 
     FlowRow(
         modifier = Modifier.fillMaxWidth(),

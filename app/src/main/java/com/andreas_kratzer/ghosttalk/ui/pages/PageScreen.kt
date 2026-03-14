@@ -49,7 +49,6 @@ fun PageScreen(
     val focusedButtonIndex by pageViewModel.focusedButtonIndex.collectAsState()
     val focusedRowIndex by pageViewModel.focusedRowIndex.collectAsState()
     val lastActions by pageViewModel.lastActions.collectAsState()
-    val smartPredictions by pageViewModel.smartPredictions.collectAsState()
     val showTestButtons by pageViewModel.showTestButtons.collectAsState()
     val dimensions = LocalDimensions.current
 

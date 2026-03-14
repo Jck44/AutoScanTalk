@@ -233,7 +233,7 @@ class PageImportExportManagerTest {
 
     @Test
     fun `exportToJson serializes book metadata and page extras`() = runTest {
-        val book = com.andreas_kratzer.ghosttalk.core.model.Book(id = "b1", name = "My Book", createdAt = 1000L, updatedAt = 2000L)
+        com.andreas_kratzer.ghosttalk.core.model.Book(id = "b1", name = "My Book", createdAt = 1000L, updatedAt = 2000L)
         val page = Page(
             id = "p1", bookId = "b1", name = "TestPage", rows = 4, columns = 4,
             scanPattern = "row-by-row",

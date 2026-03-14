@@ -88,8 +88,8 @@ class PerformanceBenchmark {
         val lookupTime2 = measureTimeMillis {
             if (lastPagesRef === pages) {
                 // Return cached version (simulated)
-                val _b = buttonLookup
-                val _p = pageLookup
+                buttonLookup
+                pageLookup
             }
         }
         println("Lookup Map Creation Pass 2 (Cached): ${lookupTime2}ms")

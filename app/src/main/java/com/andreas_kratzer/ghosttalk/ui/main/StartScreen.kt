@@ -48,7 +48,7 @@ fun StartScreen(
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     val dimensions = LocalDimensions.current
-    val vSpacing = if (isLandscape) dimensions.paddingLarge else dimensions.paddingExtraLarge
+    if (isLandscape) dimensions.paddingLarge else dimensions.paddingExtraLarge
 
     BackHandler {
         onNavigateToBooks()

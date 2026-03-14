@@ -175,7 +175,7 @@ class GenAiSettingsDelegate @Inject constructor(
             _downloadStatusMessage.value = "Download wird gestartet..."
             
             try {
-                val model = com.google.mlkit.genai.prompt.Generation.getClient()
+                val model = Generation.getClient()
                 model.download().collect { status ->
                     when (status) {
                         is com.google.mlkit.genai.common.DownloadStatus.DownloadStarted -> {

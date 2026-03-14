@@ -277,11 +277,11 @@ fun ButtonConfigDialog(
                     )
 
                     if (action is WeatherButtonAction) {
-                        val hasFine = ContextCompat.checkSelfPermission(context, android.Manifest.permission.ACCESS_FINE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED
-                        val hasCoarse = ContextCompat.checkSelfPermission(context, android.Manifest.permission.ACCESS_COARSE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                        val hasFine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                        val hasCoarse = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
                         if (!hasFine && !hasCoarse) {
                             permissionLauncher.launch(
-                                arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION)
+                                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
                             )
                         }
                     }
@@ -325,7 +325,7 @@ fun ButtonConfigDialog(
                                     spokenText = spokenText.ifBlank { null },
                                     buttonAction = currentAction
                                 ))
-                                android.widget.Toast.makeText(context, R.string.button_test_started, android.widget.Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, R.string.button_test_started, Toast.LENGTH_SHORT).show()
                             }
                         )
                         DropdownMenuItem(

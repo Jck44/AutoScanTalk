@@ -13,8 +13,8 @@ class MoveRowUseCase @Inject constructor(
         val page = pageRepository.getPageById(pageId) ?: return null
         if (fromRow == toRow) return page
 
-        val rows = page.rows
-        val cols = page.columns
+        page.rows
+        page.columns
         
         val maxCols = com.andreas_kratzer.ghosttalk.ui.util.GridUtils.MAX_GRID_SIZE
         val newButtonConfigs = page.buttonConfigs.toMutableList()
