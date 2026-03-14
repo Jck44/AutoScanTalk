@@ -2,7 +2,7 @@ package com.andreas_kratzer.ghosttalk.domain.actions
 
 import android.content.Intent
 import com.andreas_kratzer.ghosttalk.R
-import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
+import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutionEvent
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.data.PageRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
@@ -37,7 +37,7 @@ class HandleActionExecutionEventUseCaseTest {
         every { settingsRepository.showPageIdInLog } returns false
         coEvery { pageRepository.getPageById(pageId) } returns page
 
-        val event = ActionExecutor.ExecutionEvent.NavigateToPage(pageId)
+        val event = ActionExecutionEvent.NavigateToPage(pageId)
         val effect = useCase.execute(event)
 
         assertTrue(effect is HandleActionExecutionEventUseCase.Effect.LoadPage)
@@ -55,7 +55,7 @@ class HandleActionExecutionEventUseCaseTest {
         every { settingsRepository.showPageIdInLog } returns true
         coEvery { pageRepository.getPageById(pageId) } returns page
 
-        val event = ActionExecutor.ExecutionEvent.NavigateToPage(pageId)
+        val event = ActionExecutionEvent.NavigateToPage(pageId)
         val effect = useCase.execute(event)
 
         assertTrue(effect is HandleActionExecutionEventUseCase.Effect.LoadPage)
@@ -69,7 +69,7 @@ class HandleActionExecutionEventUseCaseTest {
         every { settingsRepository.showPageIdInLog } returns false
         coEvery { pageRepository.getPageById(pageId) } returns null
 
-        val event = ActionExecutor.ExecutionEvent.NavigateToPage(pageId)
+        val event = ActionExecutionEvent.NavigateToPage(pageId)
         val effect = useCase.execute(event)
 
         assertTrue(effect is HandleActionExecutionEventUseCase.Effect.SpeakError)
@@ -84,7 +84,7 @@ class HandleActionExecutionEventUseCaseTest {
         every { settingsRepository.showPageIdInLog } returns true
         coEvery { pageRepository.getPageById(pageId) } returns null
 
-        val event = ActionExecutor.ExecutionEvent.NavigateToPage(pageId)
+        val event = ActionExecutionEvent.NavigateToPage(pageId)
         val effect = useCase.execute(event)
 
         assertTrue(effect is HandleActionExecutionEventUseCase.Effect.SpeakError)
@@ -95,7 +95,7 @@ class HandleActionExecutionEventUseCaseTest {
     @Test
     fun `Log event returns LogAction effect`() = runTest {
         val message = "Test log message"
-        val event = ActionExecutor.ExecutionEvent.Log(message)
+        val event = ActionExecutionEvent.Log(message)
         val effect = useCase.execute(event)
 
         assertTrue(effect is HandleActionExecutionEventUseCase.Effect.LogAction)
@@ -105,7 +105,7 @@ class HandleActionExecutionEventUseCaseTest {
     @Test
     fun `Error event returns LogAction effect with prefix`() = runTest {
         val message = "Critical error"
-        val event = ActionExecutor.ExecutionEvent.Error(message)
+        val event = ActionExecutionEvent.Error(message)
         val effect = useCase.execute(event)
 
         assertTrue(effect is HandleActionExecutionEventUseCase.Effect.LogAction)
@@ -115,7 +115,7 @@ class HandleActionExecutionEventUseCaseTest {
     @Test
     fun `RecoverableAuthError event returns EmitAuthIntent effect`() = runTest {
         val intent = mockk<Intent>()
-        val event = ActionExecutor.ExecutionEvent.RecoverableAuthError(intent)
+        val event = ActionExecutionEvent.RecoverableAuthError(intent)
         val effect = useCase.execute(event)
 
         assertTrue(effect is HandleActionExecutionEventUseCase.Effect.EmitAuthIntent)

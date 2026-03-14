@@ -8,12 +8,17 @@ import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-class NavigationActionHandler(
-    private val scope: CoroutineScope,
+import javax.inject.Inject
+import com.andreas_kratzer.ghosttalk.core.di.ApplicationScope
+import com.andreas_kratzer.ghosttalk.core.actions.ActionEvent
+import com.andreas_kratzer.ghosttalk.core.actions.ActionEventEmitter
+
+class NavigationActionHandler @Inject constructor(
+    @ApplicationScope private val scope: CoroutineScope,
     private val settingsRepository: SettingsRepository,
     private val ttsHelperLazy: dagger.Lazy<TextToSpeechHelper>,
-    private val emitEvent: suspend (ActionExecutor.ExecutionEvent) -> Unit,
-    private val log: (String) -> Unit
+    private val actionEventEmitter: ActionEventEmitter,
+    private val actionLogger: ActionLogger
 ) : ActionHandler {
 
     override fun canHandle(action: ButtonAction): Boolean = action is NavigateToPageButtonAction
@@ -29,7 +34,7 @@ class NavigationActionHandler(
         
         val performNavigation = {
             scope.launch {
-                emitEvent(ActionExecutor.ExecutionEvent.NavigateToPage(navAction.pageId))
+                actionEventEmitter.emitEvent(ActionEvent.NavigateToPage(navAction.pageId))
                 onFinish(executionId)
             }
         }
@@ -44,9 +49,9 @@ class NavigationActionHandler(
                     isForCues = true,
                     onDone = { performNavigation() }
                 )
-                log("Navigations-Feedback: \"$feedback\"")
+                actionLogger.log("Navigations-Feedback: \"$feedback\"")
             } else {
-                log("Nav-Feedback (TTS nicht bereit): \"$feedback\"")
+                actionLogger.log("Nav-Feedback (TTS nicht bereit): \"$feedback\"")
                 performNavigation()
             }
         } else {

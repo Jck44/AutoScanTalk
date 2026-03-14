@@ -22,10 +22,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import androidx.core.os.LocaleListCompat
-import androidx.appcompat.app.AppCompatDelegate
-import com.andreas_kratzer.ghosttalk.core.cloud.domain.SyncMode
-import com.andreas_kratzer.ghosttalk.core.cloud.domain.RemoteBackupInfo
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(

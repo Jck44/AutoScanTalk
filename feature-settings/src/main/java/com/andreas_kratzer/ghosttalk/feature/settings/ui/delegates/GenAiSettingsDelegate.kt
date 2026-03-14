@@ -26,8 +26,6 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import com.google.mlkit.genai.prompt.Generation
 import com.google.mlkit.genai.common.FeatureStatus
-import com.google.mlkit.genai.common.DownloadStatus
-import android.content.Intent
 
 @Singleton
 class GenAiSettingsDelegate @Inject constructor(

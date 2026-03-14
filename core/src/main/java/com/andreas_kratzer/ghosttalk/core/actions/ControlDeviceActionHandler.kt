@@ -1,5 +1,7 @@
 package com.andreas_kratzer.ghosttalk.core.actions
 
+import javax.inject.Inject
+
 import android.app.Activity
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -24,13 +26,23 @@ interface ControlDeviceTtsProxy {
     fun speakRouted(text: String, deviceAddress: String?, onDone: (() -> Unit)? = null)
 }
 
-class ControlDeviceActionHandler(
-    private val context: Context,
+
+class ControlDeviceActionHandler @Inject constructor(
+    @dagger.hilt.android.qualifiers.ApplicationContext private val context: Context,
     private val settings: ControlDeviceSettings,
     private val ttsProxyLazy: dagger.Lazy<ControlDeviceTtsProxy>,
-    private val log: (String) -> Unit,
-    private val getString: (Int, Array<out Any?>) -> String
+    private val actionLogger: ActionLogger,
+    private val actionEventEmitter: ActionEventEmitter
 ) : ActionHandler {
+    
+    private val getString: (Int, Array<out Any?>) -> String = { id, args -> 
+        // Fallback for battery/time/date which used hardcoded negative IDs in the previous version
+        when (id) {
+            -1001 -> "Batteriestand ist bei $args Prozent"
+            -1002 -> "Batteriestand ist bei $args Prozent" 
+            else -> try { context.getString(id, *args) } catch(_: Exception) { "" }
+        }
+    }
 
     override fun canHandle(action: ButtonAction): Boolean = action is ControlDeviceButtonAction
 
@@ -63,7 +75,7 @@ class ControlDeviceActionHandler(
             DeviceActionType.READ_DATE -> handleReadDate(buttonConfig, deviceAction, executionId, onFinish)
 
             DeviceActionType.CLEAR_NOTIFICATIONS -> {
-                log("Benachrichtigungen löschen noch nicht unterstützt.")
+                actionLogger.log("Benachrichtigungen löschen noch nicht unterstützt.")
                 onFinish(executionId)
             }
         }
@@ -73,7 +85,7 @@ class ControlDeviceActionHandler(
         val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
         audioManager.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, keyCode))
         audioManager.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_UP, keyCode))
-        log(description)
+        actionLogger.log(description)
         onFinish(executionId)
     }
 
@@ -95,7 +107,7 @@ class ControlDeviceActionHandler(
         }
         
         audioManager.setStreamVolume(streamType, targetVolume, AudioManager.FLAG_SHOW_UI)
-        log("Lautstärke auf ${((targetVolume.toDouble() / maxVolume) * 100).toInt()}% gesetzt")
+        actionLogger.log("Lautstärke auf ${((targetVolume.toDouble() / maxVolume) * 100).toInt()}% gesetzt")
         onFinish(executionId)
     }
 
@@ -104,7 +116,7 @@ class ControlDeviceActionHandler(
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         
         if (ringerMode == AudioManager.RINGER_MODE_SILENT && !notificationManager.isNotificationPolicyAccessGranted) {
-            log("Berechtigung für 'Nicht stören' fehlt.")
+            actionLogger.log("Berechtigung für 'Nicht stören' fehlt.")
         } else {
             audioManager.ringerMode = ringerMode
             val modeName = when(ringerMode) {
@@ -112,7 +124,7 @@ class ControlDeviceActionHandler(
                 AudioManager.RINGER_MODE_VIBRATE -> "Vibration"
                 else -> "Laut"
             }
-            log("Modus auf $modeName gesetzt")
+            actionLogger.log("Modus auf $modeName gesetzt")
         }
         onFinish(executionId)
     }
@@ -122,7 +134,7 @@ class ControlDeviceActionHandler(
         val message = action.messageText ?: ""
 
         if (phone.isNullOrBlank()) {
-            log("Kein Kontakt ausgewählt.")
+            actionLogger.log("Kein Kontakt ausgewählt.")
             onFinish(executionId)
             return
         }
@@ -154,7 +166,7 @@ class ControlDeviceActionHandler(
                     SmsManager.RESULT_ERROR_RADIO_OFF -> "SMS-Fehler: Funk aus / Flugmodus"
                     else -> "SMS-Fehler: Code $resultCode"
                 }
-                log(result)
+                actionLogger.log(result)
                 try {
                     context.unregisterReceiver(this)
                 } catch (_: Exception) {
@@ -166,7 +178,7 @@ class ControlDeviceActionHandler(
 
         // Timeout fallback if system never responds
         timeoutHandler.postDelayed({
-            log("SMS-Timeout: Keine Rückmeldung vom System.")
+            actionLogger.log("SMS-Timeout: Keine Rückmeldung vom System.")
             try {
                 context.unregisterReceiver(receiver)
             } catch (_: Exception) {}
@@ -176,7 +188,7 @@ class ControlDeviceActionHandler(
         context.registerReceiver(receiver, IntentFilter(sentAction), Context.RECEIVER_NOT_EXPORTED)
 
         try {
-            log("Sende SMS an $phone...")
+            actionLogger.log("Sende SMS an $phone...")
             val smsManager = context.getSystemService(SmsManager::class.java)
             val parts = smsManager.divideMessage(message)
             
@@ -193,7 +205,7 @@ class ControlDeviceActionHandler(
             }
         } catch (e: Exception) {
             timeoutHandler.removeCallbacksAndMessages(null)
-            log("SMS-Sendeversuch fehlgeschlagen: ${e.message}")
+            actionLogger.log("SMS-Sendeversuch fehlgeschlagen: ${e.message}")
             try {
                 context.unregisterReceiver(receiver)
             } catch (_: Exception) {}
@@ -217,7 +229,7 @@ class ControlDeviceActionHandler(
         val tts = ttsProxyLazy.get()
         if (service == null || !settings.isNotificationReadingEnabled) {
             val msg = "Vorlesen von Benachrichtigungen nicht aktiv oder Berechtigung fehlt."
-            log(msg)
+            actionLogger.log(msg)
             if (tts.isReady) {
                 tts.speakRouted(msg, targetDeviceAddress) {
                     onFinish(executionId)
@@ -229,13 +241,13 @@ class ControlDeviceActionHandler(
         val activeNotifs = try {
             service.activeNotifications
         } catch (e: Exception) {
-            log("Fehler beim Abrufen der Benachrichtigungen: ${e.message}")
+            actionLogger.log("Fehler beim Abrufen der Benachrichtigungen: ${e.message}")
             null
         }
         
         if (activeNotifs == null || activeNotifs.isEmpty()) {
             val msg = "Keine Benachrichtigungen vorhanden."
-            log(msg)
+            actionLogger.log(msg)
             if (tts.isReady) {
                 tts.speakRouted(msg, targetDeviceAddress) {
                     onFinish(executionId)
@@ -252,7 +264,7 @@ class ControlDeviceActionHandler(
 
         if (filtered.isEmpty()) {
             val msg = "Keine passenden Benachrichtigungen gefunden."
-            log(msg)
+            actionLogger.log(msg)
             if (tts.isReady) {
                 tts.speakRouted(msg, targetDeviceAddress) {
                     onFinish(executionId)
@@ -270,7 +282,7 @@ class ControlDeviceActionHandler(
 
         if (messagesToRead.isEmpty()) {
             val msg = "Benachrichtigungen enthalten keinen Text."
-            log(msg)
+            actionLogger.log(msg)
             if (tts.isReady) {
                 tts.speakRouted(msg, targetDeviceAddress) {
                     onFinish(executionId)
@@ -280,7 +292,7 @@ class ControlDeviceActionHandler(
         }
 
         val combinedMessage = messagesToRead.joinToString(". ")
-        log("Lese Benachrichtigungen: $combinedMessage")
+        actionLogger.log("Lese Benachrichtigungen: $combinedMessage")
         
         tts.isReadingNotification = true
         if (tts.isReady) {
@@ -326,7 +338,7 @@ class ControlDeviceActionHandler(
         executionId: Int,
         onFinish: (Int) -> Unit
     ) {
-        log(plainText)
+        actionLogger.log(plainText)
         val targetDeviceAddress = if (config.playActionAsAuditoryCue) {
             settings.cuesAudioDeviceAddress
         } else {

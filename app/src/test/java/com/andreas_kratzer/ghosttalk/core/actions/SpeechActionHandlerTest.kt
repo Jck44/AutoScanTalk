@@ -2,6 +2,7 @@ package com.andreas_kratzer.ghosttalk.core.actions
 
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
+import com.andreas_kratzer.ghosttalk.core.actions.ActionLogger
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
@@ -13,17 +14,17 @@ class SpeechActionHandlerTest {
 
     private lateinit var settings: SpeechSettings
     private lateinit var ttsProxy: ActionTtsProxy
-    private lateinit var log: (String) -> Unit
+    private lateinit var actionLogger: ActionLogger
     private lateinit var handler: SpeechActionHandler
 
     @Before
     fun setup() {
         settings = mockk(relaxed = true)
         ttsProxy = mockk(relaxed = true)
-        log = mockk(relaxed = true)
+        actionLogger = mockk(relaxed = true)
         handler = SpeechActionHandler(settings, object : dagger.Lazy<ActionTtsProxy> {
             override fun get() = ttsProxy
-        }, log)
+        }, actionLogger)
     }
 
     @Test
@@ -111,7 +112,7 @@ class SpeechActionHandlerTest {
 
         handler.handle(config, action, 1, finishCallback)
 
-        verify { log("Sprechen (TTS nicht bereit): \"Test\"") }
+        verify { actionLogger.log("Sprechen (TTS nicht bereit): \"Test\"") }
         verify { finishCallback(1) }
     }
 
@@ -131,6 +132,6 @@ class SpeechActionHandlerTest {
         onCompleteSlot.captured.invoke()
 
         verify { finishCallback(1) }
-        verify { log("Gesprochen: \"Test\"") }
+        verify { actionLogger.log("Gesprochen: \"Test\"") }
     }
 }

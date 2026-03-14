@@ -1,13 +1,10 @@
 package com.andreas_kratzer.ghosttalk.core.actions
 
-import android.app.Application
 import com.andreas_kratzer.ghosttalk.core.di.ApplicationScope
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase
-import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,85 +18,30 @@ import javax.inject.Singleton
 
 @Singleton
 class ActionExecutor @Inject constructor(
-    private val application: Application,
     @param:ApplicationScope private val scope: CoroutineScope,
     private val settingsRepository: SettingsRepository,
-    private val logger: Logger,
-    private val localIntentRouter: com.andreas_kratzer.ghosttalk.core.ai.LocalIntentRouter,
-    private val weatherExecutor: com.andreas_kratzer.ghosttalk.domain.executors.WeatherExecutor,
     private val buttonUsageRepository: ButtonUsageRepository,
-    private val geminiUseCaseLazy: dagger.Lazy<GeminiUseCase>,
-    private val ttsHelperLazy: dagger.Lazy<TextToSpeechHelper>
+    private val handlers: Set<@JvmSuppressWildcards ActionHandler>,
+    private val actionCoordinator: ActionCoordinator
 ) : ScannerActionProvider {
     private var timeProvider: () -> Long = { System.currentTimeMillis() }
     
     internal fun setTimeProviderForTest(provider: () -> Long) {
         this.timeProvider = provider
     }
-    sealed class ExecutionEvent {
-        data class NavigateToPage(val pageId: String) : ExecutionEvent()
-        data class Log(val message: String) : ExecutionEvent()
-        data class Error(val message: String) : ExecutionEvent()
-        data class RecoverableAuthError(val intent: android.content.Intent) : ExecutionEvent()
-    }
 
     private val _isExecuting = MutableStateFlow(false)
     override val isExecuting: StateFlow<Boolean> = _isExecuting.asStateFlow()
 
-    private val _events = MutableSharedFlow<ExecutionEvent>()
-    val events: SharedFlow<ExecutionEvent> = _events.asSharedFlow()
+    // Delegate events to the coordinator
+    val events: SharedFlow<ActionExecutionEvent> = actionCoordinator.events
 
     private var lastExecutionTime = -1L
     private var activeExecutionId = 0
 
-    // Proxy for TTS to be used by core handlers
-    private val actionTtsProxy = object : ActionTtsProxy {
-        override val isReady: Boolean get() = ttsHelperLazy.get().isReady
-        override var isReadingNotification: Boolean 
-            get() = ttsHelperLazy.get().isReadingNotification
-            set(value) { ttsHelperLazy.get().isReadingNotification = value }
-        
-        override fun speakRouted(text: String, deviceAddress: String?, queueMode: Int, isForCues: Boolean, onDone: (() -> Unit)?) {
-            ttsHelperLazy.get().speakRouted(text, deviceAddress, queueMode, isForCues, onDone)
-        }
+    private fun log(message: String) {
+        actionCoordinator.log(message)
     }
-
-    private val controlDeviceTtsProxy = object : ControlDeviceTtsProxy {
-        override val isReady: Boolean get() = ttsHelperLazy.get().isReady
-        override var isReadingNotification: Boolean 
-            get() = ttsHelperLazy.get().isReadingNotification
-            set(value) { ttsHelperLazy.get().isReadingNotification = value }
-        
-        override fun speakRouted(text: String, deviceAddress: String?, onDone: (() -> Unit)?) {
-            ttsHelperLazy.get().speakRouted(text, deviceAddress, onDone = onDone)
-        }
-    }
-
-    internal var handlers: List<ActionHandler> = listOf(
-        SpeechActionHandler(settingsRepository, dagger.Lazy { actionTtsProxy }, ::log),
-        NavigationActionHandler(scope, settingsRepository, ttsHelperLazy, ::emitEvent, ::log),
-        ControlDeviceActionHandler(
-            application, 
-            settingsRepository, 
-            dagger.Lazy { controlDeviceTtsProxy }, 
-            ::log,
-            { id, args -> application.getString(id, *args) }
-        ),
-        WeatherActionHandler(application, settingsRepository, dagger.Lazy { actionTtsProxy }, weatherExecutor, scope, ::log),
-        GeminiActionHandler(
-            scope, 
-            settingsRepository, 
-            geminiUseCaseLazy, 
-            localIntentRouter, 
-            dagger.Lazy { actionTtsProxy }, 
-            ::emitEvent, 
-            ::log, 
-            ::error,
-            { id, args -> application.getString(id, *args) }
-        ),
-        FrequentActionHandler(::log),
-        SmartPredictionActionHandler(::log)
-    )
 
     fun executeButtonAction(
         buttonConfig: ButtonConfig, 
@@ -137,15 +79,19 @@ class ActionExecutor @Inject constructor(
         val handler = handlers.find { it.canHandle(action) }
         
         if (handler != null) {
-            handler.handle(
-                buttonConfig,
-                action,
-                currentExecutionId,
-                ::finishExecution
-            )
+            try {
+                handler.handle(
+                    buttonConfig,
+                    action,
+                    currentExecutionId,
+                    ::finishExecution
+                )
+            } catch (e: Exception) {
+                actionCoordinator.error("Handler execution failed: ${e.message}", e)
+                finishExecution(currentExecutionId)
+            }
         } else {
             log("Kein Handler für Aktion gefunden: ${action::class.simpleName}")
-            logger.d("ActionExecutor", "No handler for ${action::class.simpleName}")
             finishExecution(currentExecutionId)
         }
     }
@@ -156,19 +102,6 @@ class ActionExecutor @Inject constructor(
         }
     }
 
-    private fun log(message: String) {
-        logger.d("ActionExecutor", "Log: $message")
-        scope.launch { _events.emit(ExecutionEvent.Log(message)) }
-    }
-
-    private fun error(message: String, throwable: Throwable? = null) {
-        logger.e("ActionExecutor", message, throwable)
-        scope.launch { _events.emit(ExecutionEvent.Log("Error: $message")) }
-    }
-
-    private suspend fun emitEvent(event: ExecutionEvent) {
-        _events.emit(event)
-    }
     internal fun setExecutingStateForTest(executing: Boolean) {
         _isExecuting.value = executing
     }

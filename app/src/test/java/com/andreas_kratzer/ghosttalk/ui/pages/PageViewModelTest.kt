@@ -1,7 +1,12 @@
 package com.andreas_kratzer.ghosttalk.ui.pages
 
 import android.app.Application
+import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutionEvent
+import com.andreas_kratzer.ghosttalk.core.actions.ActionCoordinator
+import com.andreas_kratzer.ghosttalk.core.actions.ActionHandler
 import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
+import com.andreas_kratzer.ghosttalk.core.actions.NavigationActionHandler
+import kotlinx.coroutines.flow.MutableSharedFlow
 import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
@@ -210,21 +215,28 @@ class PageViewModelTest {
             updateSmartPredictionsUseCase = updateSmartPredictionsUseCase
         )
         val screenManagementDelegate = ScreenManagementDelegate(settingsRepository)
-
-        val actionExecutor = ActionExecutor(
-            application = application,
+        
+        val actionCoordinator = ActionCoordinator(
+            scope = kotlinx.coroutines.CoroutineScope(testDispatcher),
+            logger = logger
+        )
+        
+        val navHandler = NavigationActionHandler(
             scope = kotlinx.coroutines.CoroutineScope(testDispatcher),
             settingsRepository = settingsRepository,
-            logger = logger,
-            localIntentRouter = localIntentRouter,
-            weatherExecutor = weatherExecutor,
-            buttonUsageRepository = buttonUsageRepository,
-            geminiUseCaseLazy = object : dagger.Lazy<GeminiUseCase> {
-                override fun get() = geminiUseCase
-            },
             ttsHelperLazy = object : dagger.Lazy<TextToSpeechHelper> {
                 override fun get() = ttsHelper
-            }
+            },
+            actionEventEmitter = actionCoordinator,
+            actionLogger = actionCoordinator
+        )
+
+        val actionExecutor = ActionExecutor(
+            scope = kotlinx.coroutines.CoroutineScope(testDispatcher),
+            settingsRepository = settingsRepository,
+            buttonUsageRepository = buttonUsageRepository,
+            handlers = setOf(navHandler),
+            actionCoordinator = actionCoordinator
         )
 
         val scanCoordinator = mockk<ScanCoordinator>(relaxed = true)

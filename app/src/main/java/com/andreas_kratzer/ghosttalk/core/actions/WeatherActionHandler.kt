@@ -9,13 +9,17 @@ import com.andreas_kratzer.ghosttalk.domain.executors.WeatherExecutor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-class WeatherActionHandler(
-    private val context: Context,
+import javax.inject.Inject
+import com.andreas_kratzer.ghosttalk.core.di.ApplicationScope
+
+class WeatherActionHandler @Inject constructor(
+    @dagger.hilt.android.qualifiers.ApplicationContext private val context: Context,
     private val settingsRepository: SettingsRepository,
     private val ttsProxyLazy: dagger.Lazy<ActionTtsProxy>,
     private val weatherExecutor: WeatherExecutor,
-    private val scope: CoroutineScope,
-    private val log: (String) -> Unit
+    @ApplicationScope private val scope: CoroutineScope,
+    private val actionLogger: ActionLogger,
+    private val actionEventEmitter: ActionEventEmitter
 ) : ActionHandler {
 
     override fun canHandle(action: ButtonAction): Boolean = action is WeatherButtonAction
@@ -26,7 +30,7 @@ class WeatherActionHandler(
         executionId: Int,
         onFinish: (Int) -> Unit
     ) {
-        log(context.getString(com.andreas_kratzer.ghosttalk.R.string.action_weather_fetching))
+        actionLogger.log(context.getString(com.andreas_kratzer.ghosttalk.R.string.action_weather_fetching))
         
         val targetDeviceAddress = if (buttonConfig.playActionAsAuditoryCue) {
             settingsRepository.cuesAudioDeviceAddress
@@ -43,7 +47,7 @@ class WeatherActionHandler(
                             result.condition,
                             result.temperature.toString()
                         )
-                        log(report)
+                        actionLogger.log(report)
                         val tts = ttsProxyLazy.get()
                         if (tts.isReady) {
                             tts.speakRouted(report, targetDeviceAddress) {
@@ -53,13 +57,13 @@ class WeatherActionHandler(
                     }
                     is WeatherExecutor.WeatherResult.Error -> {
                         val errorMessage = context.getString(com.andreas_kratzer.ghosttalk.R.string.action_weather_error, result.message)
-                        log(errorMessage)
+                        actionLogger.log(errorMessage)
                         onFinish(executionId)
                     }
                 }
             } catch (e: Exception) {
                 val errorMessage = context.getString(com.andreas_kratzer.ghosttalk.R.string.action_weather_error, e.message ?: "Unknown error")
-                log(errorMessage)
+                actionLogger.log(errorMessage)
                 onFinish(executionId)
             }
         }

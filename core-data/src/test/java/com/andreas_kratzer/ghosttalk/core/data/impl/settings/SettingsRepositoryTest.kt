@@ -2,7 +2,6 @@ package com.andreas_kratzer.ghosttalk.core.data.impl.settings
 
 import android.content.Context
 import android.content.SharedPreferences
-import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.first

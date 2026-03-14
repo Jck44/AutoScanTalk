@@ -1,5 +1,7 @@
 package com.andreas_kratzer.ghosttalk.ui.pages
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -7,17 +9,34 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
+import android.Manifest
+import android.content.pm.PackageManager
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.model.AuditoryCue
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
@@ -44,16 +63,34 @@ fun ButtonConfigDialog(
     pages: List<Page>,
     templates: List<PageTemplate>,
     onSave: (ButtonConfig) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onTest: (ButtonConfig) -> Unit,
+    onMove: () -> Unit,
+    onDelete: () -> Unit,
+    onNavigateToPage: ((String) -> Unit)? = null,
+    onCreatePage: ((String, Int, Int, String?, (String) -> Unit) -> Unit)? = null,
+    currentPageId: String? = null
 ) {
+    val context = LocalContext.current
     var label by remember { mutableStateOf(buttonConfig.label) }
     var spokenText by remember { mutableStateOf(buttonConfig.spokenText ?: "") }
+    
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val granted = permissions.values.any { it }
+        if (!granted) {
+            Toast.makeText(context, R.string.permission_location_denied_weather, Toast.LENGTH_LONG).show()
+        }
+    }
     var auditoryCueText by remember { 
         mutableStateOf((buttonConfig.auditoryCue as? AuditoryCue.TextToSpeechCue)?.text ?: "") 
     }
     var isActive by remember { mutableStateOf(buttonConfig.isActive) }
     var playActionAsAuditoryCue by remember { mutableStateOf(buttonConfig.playActionAsAuditoryCue) }
     
+    var showMenu by remember { mutableStateOf(false) }
+
     val actionTypeSpeak = stringResource(R.string.button_action_speak_text)
     val actionTypeNavigate = stringResource(R.string.button_action_navigate_page)
     val actionTypeGemini = stringResource(R.string.button_action_gemini)
@@ -99,7 +136,7 @@ fun ButtonConfigDialog(
 
     // Frequent/Smart specific state
     var rank by remember {
-        mutableStateOf(
+        mutableIntStateOf(
             when(val action = buttonConfig.buttonAction) {
                 is FrequentActionButtonAction -> action.rank
                 is SmartPredictionButtonAction -> action.rank
@@ -202,32 +239,35 @@ fun ButtonConfigDialog(
                     contactPhone = contactPhone,
                     onContactPhoneChange = { contactPhone = it },
                     messageText = messageText,
-                    onMessageTextChange = { messageText = it }
+                    onMessageTextChange = { messageText = it },
+                    onNavigateToPage = onNavigateToPage,
+                    onCreatePage = onCreatePage,
+                    onDismissDialog = onDismiss
                 )
             }
         },
         confirmButton = {
-            TextButton(onClick = {
-                val action = when (selectedActionType) {
-                    actionTypeNavigate -> NavigateToPageButtonAction(targetPageId)
-                    actionTypeGemini -> GeminiButtonAction(geminiPrompt)
-                    actionTypeGeminiSearch -> GeminiSearchButtonAction(geminiPrompt)
-                    actionTypeGeminiNano -> GeminiNanoButtonAction(geminiPrompt)
-                    actionTypeFrequent -> FrequentActionButtonAction(rank)
-                    actionTypeSmart -> SmartPredictionButtonAction(rank)
-                    actionTypeWeather -> WeatherButtonAction()
-                    actionTypeDevice -> ControlDeviceButtonAction(
-                        actionType = deviceActionType,
-                        volumeValue = volumeValue,
-                        contactName = contactName,
-                        contactPhone = contactPhone,
-                        messageText = messageText
-                    )
-                    else -> SpeakTextButtonAction()
-                }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Button(onClick = {
+                    val action = when (selectedActionType) {
+                        actionTypeNavigate -> NavigateToPageButtonAction(targetPageId)
+                        actionTypeGemini -> GeminiButtonAction(geminiPrompt)
+                        actionTypeGeminiSearch -> GeminiSearchButtonAction(geminiPrompt)
+                        actionTypeGeminiNano -> GeminiNanoButtonAction(geminiPrompt)
+                        actionTypeFrequent -> FrequentActionButtonAction(rank)
+                        actionTypeSmart -> SmartPredictionButtonAction(rank)
+                        actionTypeWeather -> WeatherButtonAction()
+                        actionTypeDevice -> ControlDeviceButtonAction(
+                            actionType = deviceActionType,
+                            volumeValue = volumeValue,
+                            contactName = contactName,
+                            contactPhone = contactPhone,
+                            messageText = messageText
+                        )
+                        else -> SpeakTextButtonAction()
+                    }
 
-                onSave(
-                    buttonConfig.copy(
+                    val config = buttonConfig.copy(
                         label = label,
                         spokenText = spokenText.ifBlank { null },
                         auditoryCue = if (auditoryCueText.isNotBlank()) AuditoryCue.TextToSpeechCue(auditoryCueText) else null,
@@ -235,9 +275,75 @@ fun ButtonConfigDialog(
                         playActionAsAuditoryCue = playActionAsAuditoryCue,
                         buttonAction = action
                     )
-                )
-            }) {
-                Text(stringResource(R.string.action_save))
+
+                    if (action is WeatherButtonAction) {
+                        val hasFine = ContextCompat.checkSelfPermission(context, android.Manifest.permission.ACCESS_FINE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                        val hasCoarse = ContextCompat.checkSelfPermission(context, android.Manifest.permission.ACCESS_COARSE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                        if (!hasFine && !hasCoarse) {
+                            permissionLauncher.launch(
+                                arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION)
+                            )
+                        }
+                    }
+
+                    onSave(config)
+                }) {
+                    Text(stringResource(R.string.action_save))
+                }
+
+                Box {
+                    IconButton(onClick = { showMenu = true }) {
+                        Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.action_more))
+                    }
+                    DropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.button_action_test)) },
+                            onClick = {
+                                showMenu = false
+                                val currentAction = when (selectedActionType) {
+                                    actionTypeNavigate -> NavigateToPageButtonAction(targetPageId)
+                                    actionTypeGemini -> GeminiButtonAction(geminiPrompt)
+                                    actionTypeGeminiSearch -> GeminiSearchButtonAction(geminiPrompt)
+                                    actionTypeGeminiNano -> GeminiNanoButtonAction(geminiPrompt)
+                                    actionTypeFrequent -> FrequentActionButtonAction(rank)
+                                    actionTypeSmart -> SmartPredictionButtonAction(rank)
+                                    actionTypeWeather -> WeatherButtonAction()
+                                    actionTypeDevice -> ControlDeviceButtonAction(
+                                        actionType = deviceActionType,
+                                        volumeValue = volumeValue,
+                                        contactName = contactName,
+                                        contactPhone = contactPhone,
+                                        messageText = messageText
+                                    )
+                                    else -> SpeakTextButtonAction()
+                                }
+                                onTest(buttonConfig.copy(
+                                    label = label,
+                                    spokenText = spokenText.ifBlank { null },
+                                    buttonAction = currentAction
+                                ))
+                                android.widget.Toast.makeText(context, R.string.button_test_started, android.widget.Toast.LENGTH_SHORT).show()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.button_action_move)) },
+                            onClick = {
+                                showMenu = false
+                                onMove()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.action_delete)) },
+                            onClick = {
+                                showMenu = false
+                                onDelete()
+                            }
+                        )
+                    }
+                }
             }
         },
         dismissButton = {

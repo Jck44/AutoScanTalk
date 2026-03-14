@@ -19,6 +19,7 @@ import com.andreas_kratzer.ghosttalk.domain.pages.MoveRowUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.UpdateButtonConfigUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.UpdatePageSettingsUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.UpdateRowNameUseCase
+import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
@@ -175,5 +176,23 @@ class PageManagementDelegateTest {
         delegate.deletePage(page)
         
         coVerify { deletePageUseCase.execute(page) }
+    }
+    
+    @Test
+    fun `moveButtonToPage delegates to use case and invokes callback`() = runTest(testDispatcher) {
+        delegate.init(backgroundScope)
+        val result = MoveButtonToPageUseCase.MoveResult.Success(mockk(), mockk())
+        
+        coEvery { 
+            moveButtonToPageUseCase.execute("p1", 0, "p2", false) 
+        } returns result
+        
+        var receivedResult: MoveButtonToPageUseCase.MoveResult? = null
+        delegate.moveButtonToPage("p1", 0, "p2", false) {
+            receivedResult = it
+        }
+        
+        coVerify { moveButtonToPageUseCase.execute("p1", 0, "p2", false) }
+        assertEquals(result, receivedResult)
     }
 }

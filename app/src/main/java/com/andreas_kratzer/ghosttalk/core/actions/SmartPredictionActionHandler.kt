@@ -4,8 +4,10 @@ import com.andreas_kratzer.ghosttalk.core.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
 
-class SmartPredictionActionHandler(
-    private val log: (String) -> Unit
+import javax.inject.Inject
+
+class SmartPredictionActionHandler @Inject constructor(
+    private val actionLogger: ActionLogger
 ) : ActionHandler {
 
     override fun canHandle(action: ButtonAction): Boolean = action is SmartPredictionButtonAction
@@ -17,7 +19,7 @@ class SmartPredictionActionHandler(
         onFinish: (Int) -> Unit
     ) {
         val smartAction = action as SmartPredictionButtonAction
-        log("Smart Prediction button clicked (Rank: ${smartAction.rank}). Actual execution handled in ViewModel.")
+        actionLogger.log("Smart Prediction button clicked (Rank: ${smartAction.rank}). Actual execution handled in ViewModel.")
         onFinish(executionId)
     }
 }

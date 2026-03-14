@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="voice_quality_very_high">Very high quality</string>
+    <string name="voice_quality_high">High quality</string>
+    <string name="voice_quality_normal">Normal quality</string>
+    <string name="voice_quality_low">Low quality</string>
+    <string name="voice_gender_male">Male</string>
+    <string name="voice_gender_female">Female</string>
+    <string name="voice_format_pattern">Voice %1$d (%2$s)</string>
+</resources>

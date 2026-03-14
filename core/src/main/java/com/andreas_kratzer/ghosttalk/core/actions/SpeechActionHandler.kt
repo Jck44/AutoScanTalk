@@ -4,10 +4,12 @@ import com.andreas_kratzer.ghosttalk.core.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 
-class SpeechActionHandler(
+import javax.inject.Inject
+
+class SpeechActionHandler @Inject constructor(
     private val settings: SpeechSettings,
     private val ttsProxyLazy: dagger.Lazy<ActionTtsProxy>,
-    private val log: (String) -> Unit
+    private val actionLogger: ActionLogger
 ) : ActionHandler {
 
     override fun canHandle(action: ButtonAction): Boolean = action is SpeakTextButtonAction
@@ -32,13 +34,13 @@ class SpeechActionHandler(
             tts.speakRouted(
                 text = textToSpeak,
                 deviceAddress = targetDeviceAddress,
-                queueMode = 0, // QUEUE_FLUSH constant usually 0
+                queueMode = 0,
                 isForCues = buttonConfig.playActionAsAuditoryCue,
                 onDone = { onFinish(executionId) }
             )
-            log("Gesprochen: \"$textToSpeak\"")
+            actionLogger.log("Gesprochen: \"$textToSpeak\"")
         } else {
-            log("Sprechen (TTS nicht bereit): \"$textToSpeak\"")
+            actionLogger.log("Sprechen (TTS nicht bereit): \"$textToSpeak\"")
             onFinish(executionId)
         }
     }

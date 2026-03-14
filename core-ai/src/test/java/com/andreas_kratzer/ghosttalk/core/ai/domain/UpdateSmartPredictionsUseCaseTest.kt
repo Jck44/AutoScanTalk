@@ -1,7 +1,6 @@
 package com.andreas_kratzer.ghosttalk.core.ai.domain
 
 import android.util.Log
-import com.andreas_kratzer.ghosttalk.core.ai.domain.UpdateSmartPredictionsUseCase
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.settings.GenAiSettings
 import io.mockk.coEvery

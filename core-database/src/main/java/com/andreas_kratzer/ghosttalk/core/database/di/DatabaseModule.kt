@@ -2,7 +2,6 @@ package com.andreas_kratzer.ghosttalk.core.database.di
 
 import android.content.Context
 import com.andreas_kratzer.ghosttalk.core.database.*
-import com.andreas_kratzer.ghosttalk.core.settings.DatabaseSettings
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

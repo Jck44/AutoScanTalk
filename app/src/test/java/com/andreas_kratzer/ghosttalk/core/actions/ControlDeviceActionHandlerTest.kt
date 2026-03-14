@@ -25,7 +25,8 @@ class ControlDeviceActionHandlerTest {
     private lateinit var audioManager: AudioManager
     private lateinit var settings: ControlDeviceSettings
     private lateinit var ttsProxy: ControlDeviceTtsProxy
-    private lateinit var log: (String) -> Unit
+    private lateinit var actionLogger: ActionLogger
+    private lateinit var actionEventEmitter: ActionEventEmitter
     private lateinit var handler: ControlDeviceActionHandler
 
     @Before
@@ -34,13 +35,20 @@ class ControlDeviceActionHandlerTest {
         audioManager = mockk(relaxed = true)
         settings = mockk(relaxed = true)
         ttsProxy = mockk(relaxed = true)
-        log = mockk(relaxed = true)
+        actionLogger = mockk(relaxed = true)
+        actionEventEmitter = mockk(relaxed = true)
 
         every { context.getSystemService(Context.AUDIO_SERVICE) } returns audioManager
         
-        handler = ControlDeviceActionHandler(context, settings, object : dagger.Lazy<ControlDeviceTtsProxy> {
-            override fun get() = ttsProxy
-        }, log, { _, _ -> "Mock String" })
+        handler = ControlDeviceActionHandler(
+            context = context,
+            settings = settings,
+            ttsProxyLazy = object : dagger.Lazy<ControlDeviceTtsProxy> {
+                override fun get() = ttsProxy
+            },
+            actionLogger = actionLogger,
+            actionEventEmitter = actionEventEmitter
+        )
         
         every { ttsProxy.isReadingNotification = any() } just Runs
         
@@ -77,7 +85,7 @@ class ControlDeviceActionHandlerTest {
         verify { 
             audioManager.dispatchMediaKeyEvent(any())
         }
-        verify { log("Nächstes Lied") }
+        verify { actionLogger.log("Nächstes Lied") }
     }
 
     @Test

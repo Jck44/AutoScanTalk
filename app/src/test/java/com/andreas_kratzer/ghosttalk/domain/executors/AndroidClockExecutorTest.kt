@@ -1,7 +1,5 @@
 package com.andreas_kratzer.ghosttalk.domain.executors
 
-import com.andreas_kratzer.ghosttalk.domain.executors.AndroidClockExecutor
-
 import android.content.Context
 import android.content.Intent
 import android.provider.AlarmClock

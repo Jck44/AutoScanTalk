@@ -462,7 +462,10 @@ fun ActionConfigFields(
     contactPhone: String,
     onContactPhoneChange: (String) -> Unit,
     messageText: String,
-    onMessageTextChange: (String) -> Unit
+    onMessageTextChange: (String) -> Unit,
+    onNavigateToPage: ((String) -> Unit)? = null,
+    onCreatePage: ((String, Int, Int, String?, (String) -> Unit) -> Unit)? = null,
+    onDismissDialog: () -> Unit = {}
 ) {
     val actionTypeNavigate = stringResource(R.string.button_action_navigate_page)
     val actionTypeGemini = stringResource(R.string.button_action_gemini)
@@ -479,9 +482,9 @@ fun ActionConfigFields(
                 onPageSelected = onTargetPageIdChange,
                 availablePages = pages,
                 templates = templates,
-                onNavigateToPage = null,
-                onCreatePage = null,
-                onDismissDialog = {}
+                onNavigateToPage = onNavigateToPage,
+                onCreatePage = onCreatePage,
+                onDismissDialog = onDismissDialog
             )
         }
         actionTypeGemini, actionTypeGeminiSearch -> {

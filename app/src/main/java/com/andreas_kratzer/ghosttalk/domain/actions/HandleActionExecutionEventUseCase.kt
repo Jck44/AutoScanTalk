@@ -1,7 +1,7 @@
 package com.andreas_kratzer.ghosttalk.domain.actions
 
 import com.andreas_kratzer.ghosttalk.R
-import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
+import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutionEvent
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.data.PageRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
@@ -18,9 +18,9 @@ class HandleActionExecutionEventUseCase @Inject constructor(
         data class EmitAuthIntent(val intent: android.content.Intent) : Effect()
     }
 
-    suspend fun execute(event: ActionExecutor.ExecutionEvent): Effect? {
+    suspend fun execute(event: ActionExecutionEvent): Effect? {
         return when (event) {
-            is ActionExecutor.ExecutionEvent.NavigateToPage -> {
+            is ActionExecutionEvent.NavigateToPage -> {
                 val page = pageRepository.getPageById(event.pageId)
                 if (page != null) {
                     val idSuffix = if (settingsRepository.showPageIdInLog) " (ID: ${event.pageId})" else ""
@@ -30,9 +30,9 @@ class HandleActionExecutionEventUseCase @Inject constructor(
                     Effect.SpeakError(R.string.error_page_not_found, "Fehler: Seite$idSuffix nicht gefunden.")
                 }
             }
-            is ActionExecutor.ExecutionEvent.Log -> Effect.LogAction(event.message)
-            is ActionExecutor.ExecutionEvent.Error -> Effect.LogAction("Fehler: ${event.message}")
-            is ActionExecutor.ExecutionEvent.RecoverableAuthError -> Effect.EmitAuthIntent(event.intent)
+            is ActionExecutionEvent.Log -> Effect.LogAction(event.message)
+            is ActionExecutionEvent.Error -> Effect.LogAction("Fehler: ${event.message}")
+            is ActionExecutionEvent.RecoverableAuthError -> Effect.EmitAuthIntent(event.intent)
         }
     }
 }

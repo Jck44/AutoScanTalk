@@ -24,6 +24,8 @@ import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -32,11 +34,15 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.material3.Scaffold
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
@@ -47,12 +53,14 @@ import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.GridItem
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
-import com.andreas_kratzer.ghosttalk.ui.pages.ButtonConfigDialog
-import com.andreas_kratzer.ghosttalk.ui.pages.GridButton
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhosTTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalCurrentPageId
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalIsUserModeActive
+import com.andreas_kratzer.ghosttalk.ui.pages.ButtonConfigDialog
+import com.andreas_kratzer.ghosttalk.ui.pages.GridButton
+import com.andreas_kratzer.ghosttalk.ui.pages.TargetPageSelectionDialog
+import com.andreas_kratzer.ghosttalk.ui.pages.MoveHiddenPromptDialog
 import com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions
 import com.andreas_kratzer.ghosttalk.ui.util.GridUtils
 
@@ -82,78 +90,89 @@ fun GridEditorContent(
         var showDialog by remember { mutableStateOf(false) }
         var editingRowIndex by remember { mutableStateOf<Int?>(null) }
         var showRowEditDialog by remember { mutableStateOf(false) }
+        var showMoveDialog by remember { mutableStateOf(false) }
+        var showHiddenPrompt by remember { 
+            mutableStateOf<com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.NeedsConfirmation?>(null) 
+        }
+        val snackbarHostState = remember { SnackbarHostState() }
+        val scope = rememberCoroutineScope()
 
         val gridState = rememberLazyGridState()
         val rowReorderState = rememberReorderableState()
         val buttonReorderState = rememberReorderableState()
 
-        Column(
-            modifier = Modifier
-                .padding(paddingValues)
-                .padding(if (isLandscape) dimensions.paddingMedium else dimensions.paddingLarge),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            GridEditorControls(item = item, actions = actions)
-
-            val effectiveScanPattern = item.scanPattern ?: bookDefaultScanPattern
-            val isRowByRow = effectiveScanPattern == "row_by_row"
-
-            BoxWithConstraints(
-                modifier = Modifier.weight(1f).fillMaxWidth(),
-                contentAlignment = Alignment.TopCenter
+        Scaffold(
+            snackbarHost = { SnackbarHost(snackbarHostState) },
+            modifier = Modifier.padding(paddingValues)
+        ) { innerPadding ->
+            Column(
+                modifier = Modifier
+                    .padding(innerPadding)
+                    .padding(if (isLandscape) dimensions.paddingMedium else dimensions.paddingLarge),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                val sizeInfo = calculateGridSize(
-                    maxWidth = maxWidth,
-                    maxHeight = maxHeight,
-                    rows = item.rows,
-                    cols = item.columns,
-                    isRowByRow = isRowByRow,
-                    dimensions = dimensions
-                )
+                GridEditorControls(item = item, actions = actions)
 
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(item.columns),
-                    state = gridState,
-                    modifier = Modifier
-                        .width(sizeInfo.totalWidth)
-                        .height(sizeInfo.totalHeight),
-                    contentPadding = PaddingValues(dimensions.paddingMedium),
-                    verticalArrangement = Arrangement.spacedBy(dimensions.gridSpacing),
-                    horizontalArrangement = Arrangement.spacedBy(dimensions.gridSpacing)
+                val effectiveScanPattern = item.scanPattern ?: bookDefaultScanPattern
+                val isRowByRow = effectiveScanPattern == "row_by_row"
+
+                BoxWithConstraints(
+                    modifier = Modifier.weight(1f).fillMaxWidth(),
+                    contentAlignment = Alignment.TopCenter
                 ) {
-                    if (isRowByRow) {
-                        renderRowByRowGrid(
-                            item = item,
-                            actions = actions,
-                            gridState = gridState,
-                            rowReorderState = rowReorderState,
-                            buttonReorderState = buttonReorderState,
-                            sizeInfo = sizeInfo,
-                            dimensions = dimensions,
-                            density = density,
-                            onEditRow = { r ->
-                                editingRowIndex = r
-                                showRowEditDialog = true
-                            },
-                            onEditButton = { idx ->
-                                selectedButtonIndex = idx
-                                showDialog = true
-                            }
-                        )
-                    } else {
-                        renderLinearGrid(
-                            item = item,
-                            actions = actions,
-                            gridState = gridState,
-                            buttonReorderState = buttonReorderState,
-                            sizeInfo = sizeInfo,
-                            dimensions = dimensions,
-                            density = density,
-                            onEditButton = { idx ->
-                                selectedButtonIndex = idx
-                                showDialog = true
-                            }
-                        )
+                    val sizeInfo = calculateGridSize(
+                        maxWidth = maxWidth,
+                        maxHeight = maxHeight,
+                        rows = item.rows,
+                        cols = item.columns,
+                        isRowByRow = isRowByRow,
+                        dimensions = dimensions
+                    )
+
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(item.columns),
+                        state = gridState,
+                        modifier = Modifier
+                            .width(sizeInfo.totalWidth)
+                            .height(sizeInfo.totalHeight),
+                        contentPadding = PaddingValues(dimensions.paddingMedium),
+                        verticalArrangement = Arrangement.spacedBy(dimensions.gridSpacing),
+                        horizontalArrangement = Arrangement.spacedBy(dimensions.gridSpacing)
+                    ) {
+                        if (isRowByRow) {
+                            renderRowByRowGrid(
+                                item = item,
+                                actions = actions,
+                                gridState = gridState,
+                                rowReorderState = rowReorderState,
+                                buttonReorderState = buttonReorderState,
+                                sizeInfo = sizeInfo,
+                                dimensions = dimensions,
+                                density = density,
+                                onEditRow = { r ->
+                                    editingRowIndex = r
+                                    showRowEditDialog = true
+                                },
+                                onEditButton = { idx ->
+                                    selectedButtonIndex = idx
+                                    showDialog = true
+                                }
+                            )
+                        } else {
+                            renderLinearGrid(
+                                item = item,
+                                actions = actions,
+                                gridState = gridState,
+                                buttonReorderState = buttonReorderState,
+                                sizeInfo = sizeInfo,
+                                dimensions = dimensions,
+                                density = density,
+                                onEditButton = { idx ->
+                                    selectedButtonIndex = idx
+                                    showDialog = true
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -170,13 +189,22 @@ fun GridEditorContent(
             showRowEditDialog = showRowEditDialog,
             selectedButtonIndex = selectedButtonIndex,
             showDialog = showDialog,
+            showMoveDialog = showMoveDialog,
+            showHiddenPrompt = showHiddenPrompt,
+            snackbarHostState = snackbarHostState,
+            scope = scope,
+            onShowMoveDialog = { showMoveDialog = it },
+            onShowHiddenPrompt = { showHiddenPrompt = it },
             onDismissRowDialog = {
                 showRowEditDialog = false
                 editingRowIndex = null
             },
             onDismissButtonDialog = {
                 showDialog = false
-                selectedButtonIndex = null
+                // Note: We don't clear selectedButtonIndex here if showMoveDialog is about to be true
+                if (!showMoveDialog && showHiddenPrompt == null) {
+                    selectedButtonIndex = null
+                }
             },
             onEditPage = onEditPage
         )
@@ -362,10 +390,17 @@ private fun EditorDialogs(
     showRowEditDialog: Boolean,
     selectedButtonIndex: Int?,
     showDialog: Boolean,
+    showMoveDialog: Boolean,
+    showHiddenPrompt: com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.NeedsConfirmation?,
+    snackbarHostState: SnackbarHostState,
+    scope: kotlinx.coroutines.CoroutineScope,
+    onShowMoveDialog: (Boolean) -> Unit,
+    onShowHiddenPrompt: (com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.NeedsConfirmation?) -> Unit,
     onDismissRowDialog: () -> Unit,
     onDismissButtonDialog: () -> Unit,
     onEditPage: ((String) -> Unit)?
 ) {
+    val context = LocalContext.current
     if (showRowEditDialog && editingRowIndex != null) {
         RowEditDialog(
             initialName = item.rowNames.getOrNull(editingRowIndex) ?: stringResource(R.string.page_row_label).format(editingRowIndex + 1),
@@ -379,7 +414,6 @@ private fun EditorDialogs(
 
     if (showDialog && selectedButtonIndex != null) {
         val buttonConfig = item.buttonConfigs.getOrNull(selectedButtonIndex)
-        val buttonId = "page_button_${item.id}_${selectedButtonIndex}"
         ButtonConfigDialog(
             buttonConfig = buttonConfig ?: ButtonConfig(),
             pages = availablePages,
@@ -387,6 +421,85 @@ private fun EditorDialogs(
             onDismiss = onDismissButtonDialog,
             onSave = { newConfig ->
                 actions.updateButtonConfig(item.id, selectedButtonIndex, newConfig)
+                onDismissButtonDialog()
+            },
+            onTest = { config ->
+                actions.executeButtonAction(config)
+            },
+            onMove = {
+                onShowMoveDialog(true)
+                onDismissButtonDialog()
+                android.widget.Toast.makeText(context, R.string.button_move_select_target, android.widget.Toast.LENGTH_SHORT).show()
+            },
+            onDelete = {
+                actions.updateButtonConfig(item.id, selectedButtonIndex, null)
+                onDismissButtonDialog()
+            },
+            onNavigateToPage = onEditPage,
+            onCreatePage = { name, r, c, t, callback ->
+                val bookId = (item as? Page)?.bookId
+                if (bookId != null) {
+                    actions.createNewPage(name, r, c, bookId, t, callback)
+                }
+            },
+            currentPageId = item.id
+        )
+    }
+
+    if (showMoveDialog && selectedButtonIndex != null) {
+        TargetPageSelectionDialog(
+            availablePages = availablePages.filter { it.id != item.id },
+            onPageSelected = { targetPage ->
+                val sourceIndex = selectedButtonIndex
+                onShowMoveDialog(false)
+                // We DON'T clear selectedButtonIndex yet, because we might need it for forceMove
+                actions.moveButtonToPage(item.id, sourceIndex, targetPage.id) { result -> 
+                    when (result) {
+                        is com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.Success -> {
+                            onDismissButtonDialog()
+                            android.widget.Toast.makeText(context, R.string.button_move_success, android.widget.Toast.LENGTH_SHORT).show()
+                        }
+                        is com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.NeedsConfirmation -> {
+                            onShowHiddenPrompt(result)
+                        }
+                        is com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.TargetFull -> {
+                            onDismissButtonDialog()
+                            scope.launch {
+                                snackbarHostState.showSnackbar("Zielseite ist voll")
+                            }
+                        }
+                        else -> {
+                            onDismissButtonDialog()
+                        }
+                    }
+                }
+            },
+            onDismiss = { 
+                onShowMoveDialog(false)
+                onDismissButtonDialog()
+            }
+        )
+    }
+
+    if (showHiddenPrompt != null) {
+        val promptData = showHiddenPrompt!!
+        MoveHiddenPromptDialog(
+            requiredRows = if (promptData.requiredRows > promptData.targetPage.rows) promptData.requiredRows else 0,
+            requiredCols = if (promptData.requiredCols > promptData.targetPage.columns) promptData.requiredCols else 0,
+            onConfirm = {
+                val targetId = promptData.targetPage.id
+                onShowHiddenPrompt(null)
+                actions.moveButtonToPage(item.id, selectedButtonIndex!!, targetId, forceMove = true) { result ->
+                    onDismissButtonDialog()
+                    if (result is com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.Success) {
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Button verschoben")
+                        }
+                    }
+                }
+            },
+            onDismiss = { 
+                onShowHiddenPrompt(null)
                 onDismissButtonDialog()
             }
         )

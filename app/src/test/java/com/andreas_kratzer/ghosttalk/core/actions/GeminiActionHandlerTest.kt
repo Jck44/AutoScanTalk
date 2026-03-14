@@ -6,6 +6,9 @@ import com.andreas_kratzer.ghosttalk.core.model.GeminiNanoButtonAction
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.ai.LocalIntentRouter
 import com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase
+import com.andreas_kratzer.ghosttalk.core.actions.ActionLogger
+import com.andreas_kratzer.ghosttalk.core.actions.ActionEventEmitter
+import android.content.Context
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -22,19 +25,21 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class GeminiActionHandlerTest {
     private val scope = TestScope()
+    private val context = mockk<Context>(relaxed = true)
     private val settingsRepository = mockk<SettingsRepository>(relaxed = true)
     private val geminiUseCase = mockk<GeminiUseCase>(relaxed = true)
     private val localIntentRouter = mockk<LocalIntentRouter>(relaxed = true)
     private val ttsProxy = mockk<ActionTtsProxy>(relaxed = true)
+    private val actionLogger = mockk<ActionLogger>(relaxed = true)
+    private val actionEventEmitter = mockk<ActionEventEmitter>(relaxed = true)
     
-    private val events = mutableListOf<ActionExecutor.ExecutionEvent>()
-
     private lateinit var handler: GeminiActionHandler
 
     @Before
     fun setup() {
         handler = GeminiActionHandler(
             scope = scope,
+            context = context,
             settingsRepository = settingsRepository,
             geminiUseCaseLazy = object : dagger.Lazy<GeminiUseCase> {
                 override fun get() = geminiUseCase
@@ -43,10 +48,8 @@ class GeminiActionHandlerTest {
             ttsProxyLazy = object : dagger.Lazy<ActionTtsProxy> {
                 override fun get() = ttsProxy
             },
-            emitEvent = { _ -> },
-            log = { _ -> },
-            error = { _, _ -> },
-            getString = { _, args -> "Wait ${args[0]}s" }
+            actionLogger = actionLogger,
+            actionEventEmitter = actionEventEmitter
         )
         every { ttsProxy.isReady } returns true
     }
@@ -158,6 +161,10 @@ class GeminiActionHandlerTest {
         
         val onFinish = mockk<(Int) -> Unit>(relaxed = true)
         val ttsCallback = slot<() -> Unit>()
+        
+        // Mock localized string
+        every { context.getString(com.andreas_kratzer.ghosttalk.R.string.error_gemini_quota_reached, 45) } returns "Wait 45s"
+        
         every { ttsProxy.speakRouted(text = "Wait 45s", deviceAddress = any(), onDone = capture(ttsCallback)) } returns Unit
         
         // WHEN
@@ -178,6 +185,9 @@ class GeminiActionHandlerTest {
         every { settingsRepository.isGeminiEnabled } returns true
         every { ttsProxy.isReady } returns true
         
+        // Mock localized string
+        every { context.getString(com.andreas_kratzer.ghosttalk.R.string.error_gemini_quota_reached, 45) } returns "Wait 45s"
+
         // Mock 429 with both code and wait time
         coEvery { geminiUseCase.generateResponse(any(), any()) } throws Exception("HTTP 429: Rate limit exceeded. Wait 45 seconds.")
 
