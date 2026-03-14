@@ -4,8 +4,8 @@ import android.content.Context
 import android.speech.tts.TextToSpeech
 import android.speech.tts.Voice
 import com.andreas_kratzer.ghosttalk.core.audio.AudioDeviceManager
-import com.andreas_kratzer.ghosttalk.core.model.AudioOutputDevice
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.model.AudioOutputDevice
 import com.andreas_kratzer.ghosttalk.core.tts.GetAudioDevicesUseCase
 import com.andreas_kratzer.ghosttalk.core.tts.SetTtsLanguageUseCase
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -19,7 +19,7 @@ import java.util.Locale
 import javax.inject.Inject
 
 class TtsSettingsDelegate @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val settingsRepository: SettingsRepository,
     private val audioDeviceManager: AudioDeviceManager,
     private val getAudioDevicesUseCase: GetAudioDevicesUseCase,
