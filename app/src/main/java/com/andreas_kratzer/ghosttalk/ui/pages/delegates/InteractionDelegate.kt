@@ -3,13 +3,13 @@ package com.andreas_kratzer.ghosttalk.ui.pages.delegates
 import android.app.Application
 import android.content.Intent
 import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
-import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.data.AppStateRepository
+import com.andreas_kratzer.ghosttalk.core.model.Page
+import com.andreas_kratzer.ghosttalk.core.scanning.ScanCoordinator
+import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
 import com.andreas_kratzer.ghosttalk.domain.actions.ActionLogUseCase
 import com.andreas_kratzer.ghosttalk.domain.actions.ActivateButtonUseCase
 import com.andreas_kratzer.ghosttalk.domain.actions.HandleActionExecutionEventUseCase
-import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
-import com.andreas_kratzer.ghosttalk.core.scanning.ScanCoordinator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,7 +19,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutionEvent
 
 class InteractionDelegate @Inject constructor(
     private val application: Application,

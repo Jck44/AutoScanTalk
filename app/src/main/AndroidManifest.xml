@@ -41,7 +41,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        
+
+        <!--
+          Deaktiviert den WorkManager-Initializer für On-Demand Initialisierung.
+          tools:ignore="RemoveWorkManagerInitializer" wird hinzugefügt, um die
+          Lint-Warnung zu unterdrücken, da wir die Initialisierung korrekt in
+          GhosTTalkApplication (via Configuration.Provider) vornehmen.
+        -->
         <provider
             android:name="androidx.startup.InitializationProvider"
             android:authorities="${applicationId}.androidx-startup"
@@ -50,7 +56,8 @@
             <meta-data
                 android:name="androidx.work.WorkManagerInitializer"
                 android:value="androidx.startup"
-                tools:node="remove" />
+                tools:node="remove"
+                tools:ignore="RemoveWorkManagerInitializer" />
         </provider>
 
         <service android:name=".core.services.NotificationReaderService"

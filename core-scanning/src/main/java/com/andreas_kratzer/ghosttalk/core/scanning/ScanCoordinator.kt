@@ -108,7 +108,7 @@ class ScanCoordinator @Inject constructor(
                 if (data.isExecuting) {
                     Log.d("ScanCoordinator", "ActionExecutor is executing. Pausing scan.")
                     stopScanningTemporarily()
-                } else if (data.resolvedPage != null && data.isActive) {
+                } else if (data.resolvedPage != null) {
                     Log.d("ScanCoordinator", "Ready to resume on page ${data.resolvedPage.id}")
                     resumeScanningIfEnabled()
                 }

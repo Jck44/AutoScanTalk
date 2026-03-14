@@ -2,12 +2,10 @@ package com.andreas_kratzer.ghosttalk.core.actions
 
 import android.app.Application
 import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.WeatherButtonAction
-import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.domain.executors.WeatherExecutor
-import com.andreas_kratzer.ghosttalk.core.actions.ActionLogger
-import com.andreas_kratzer.ghosttalk.core.actions.ActionEventEmitter
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk

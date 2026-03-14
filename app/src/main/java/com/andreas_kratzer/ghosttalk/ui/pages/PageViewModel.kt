@@ -45,7 +45,7 @@ class PageViewModel @Inject constructor(
     val settingsRepository: SettingsRepository,
     internal val importExportManager: PageImportExportManager,
     private val googleAuthManager: GoogleAuthManager,
-    private val ttsHelper: TextToSpeechHelper,
+    ttsHelper: TextToSpeechHelper,
     private val logger: Logger,
     private val weatherExecutor: com.andreas_kratzer.ghosttalk.domain.executors.WeatherExecutor,
     val featureGuard: FeatureGuard,
@@ -54,10 +54,10 @@ class PageViewModel @Inject constructor(
     val screenManagementDelegate: ScreenManagementDelegate,
     smartPredictionDelegate: SmartPredictionDelegate,
     private val resolveDynamicButtonsUseCase: ResolveDynamicButtonsUseCase,
-    private val updateSmartPredictionsUseCase: UpdateSmartPredictionsUseCase,
+    updateSmartPredictionsUseCase: UpdateSmartPredictionsUseCase,
     val actionExecutor: ActionExecutor,
     private val scanCoordinator: ScanCoordinator,
-    private val geminiUseCase: GeminiUseCase
+    geminiUseCase: GeminiUseCase
 ) : AndroidViewModel(application), com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions {
 
     val activeBookId = pageManagementDelegate.activeBookId

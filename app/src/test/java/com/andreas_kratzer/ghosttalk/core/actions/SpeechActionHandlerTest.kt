@@ -2,7 +2,6 @@ package com.andreas_kratzer.ghosttalk.core.actions
 
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
-import com.andreas_kratzer.ghosttalk.core.actions.ActionLogger
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot

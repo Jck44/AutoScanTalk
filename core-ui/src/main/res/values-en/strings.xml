@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="security_pin_title">Security Check</string>
+    <string name="security_use_biometric">Unlock with fingerprint</string>
+</resources>

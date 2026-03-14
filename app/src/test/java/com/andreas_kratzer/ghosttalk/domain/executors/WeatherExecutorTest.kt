@@ -1,7 +1,4 @@
-package com.andreas_kratzer.ghosttalk.core.ai.executors
-
-import com.andreas_kratzer.ghosttalk.domain.executors.WeatherExecutor
-import com.andreas_kratzer.ghosttalk.domain.executors.LocationExecutor
+package com.andreas_kratzer.ghosttalk.domain.executors
 
 import android.content.Context
 import android.net.ConnectivityManager
@@ -17,6 +14,9 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class WeatherExecutorTest {
 
@@ -58,7 +58,7 @@ class WeatherExecutorTest {
         every { capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) } returns false
         
         val timestamp = System.currentTimeMillis()
-        val timeStr = java.text.SimpleDateFormat("HH:mm", java.util.Locale.GERMANY).format(java.util.Date(timestamp))
+        val timeStr = SimpleDateFormat("HH:mm", Locale.GERMANY).format(Date(timestamp))
         
         every { repository.getLastWeather() } returns "Sonnig, 20 °C"
         every { repository.getLastTimestamp() } returns timestamp
@@ -78,7 +78,7 @@ class WeatherExecutorTest {
         // Arrange
         val now = System.currentTimeMillis()
         val timestamp = now - (10 * 60 * 1000) // 10 mins ago (not expired)
-        val timeStr = java.text.SimpleDateFormat("HH:mm", java.util.Locale.GERMANY).format(java.util.Date(timestamp))
+        val timeStr = SimpleDateFormat("HH:mm", Locale.GERMANY).format(Date(timestamp))
         
         val network = mockk<Network>()
         val capabilities = mockk<NetworkCapabilities>()

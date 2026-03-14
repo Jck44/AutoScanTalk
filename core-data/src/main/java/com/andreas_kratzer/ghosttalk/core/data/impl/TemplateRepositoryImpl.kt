@@ -46,7 +46,7 @@ class TemplateRepositoryImpl @Inject constructor(
             val frequentButtons = (1..16).map { rank ->
                 ButtonConfig(
                     id = UUID.randomUUID().toString(),
-                    label = "Aktion ${rank}",
+                    label = "Aktion $rank",
                     buttonAction = FrequentActionButtonAction(rank),
                     auditoryCue = null
                 )

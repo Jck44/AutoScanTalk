@@ -1,14 +1,12 @@
 package com.andreas_kratzer.ghosttalk.core.actions
 
+import android.content.Context
+import com.andreas_kratzer.ghosttalk.core.ai.LocalIntentRouter
+import com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase
+import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.GeminiButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiNanoButtonAction
-import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.core.ai.LocalIntentRouter
-import com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase
-import com.andreas_kratzer.ghosttalk.core.actions.ActionLogger
-import com.andreas_kratzer.ghosttalk.core.actions.ActionEventEmitter
-import android.content.Context
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every

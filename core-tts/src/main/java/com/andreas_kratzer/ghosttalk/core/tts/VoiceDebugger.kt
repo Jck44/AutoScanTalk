@@ -36,7 +36,7 @@ class VoiceDebugger(private val context: Context) : TextToSpeech.OnInitListener 
                 val file = java.io.File(context.filesDir, "voice_dump.txt")
                 file.writeText(logOutput)
             } catch (e: Exception) {
-                Log.e("VoiceDebugger", "Failed to write voice dump file: \${e.message}")
+                Log.e("VoiceDebugger", $$"Failed to write voice dump file: ${e.message}")
             } finally {
                 tts?.shutdown()
                 tts = null

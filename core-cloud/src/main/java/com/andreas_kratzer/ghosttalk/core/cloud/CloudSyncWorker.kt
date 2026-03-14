@@ -52,7 +52,9 @@ class CloudSyncWorker @AssistedInject constructor(
                 credential
             ).setApplicationName("GhosTTalk").build()
 
-            Log.d("CloudSyncWorker", "Starting background sync for book: \$bookId with mode: \$mode")
+            Log.d("CloudSyncWorker",
+                $$"Starting background sync for book: $bookId with mode: $mode"
+            )
             cloudSyncUseCase.syncBook(drive, bookId, mode)
             Log.d("CloudSyncWorker", "Background sync completed successfully")
             settingsRepository.lastSuccessfulSyncTime = System.currentTimeMillis()
@@ -61,7 +63,7 @@ class CloudSyncWorker @AssistedInject constructor(
             Log.w("CloudSyncWorker", "UserRecoverableAuthIOException in background sync. Setup required.")
             Result.failure()
         } catch (e: Exception) {
-            Log.e("CloudSyncWorker", "Background sync failed: \${e.message}", e)
+            Log.e("CloudSyncWorker", $$"Background sync failed: ${e.message}", e)
             Result.retry()
         }
     }

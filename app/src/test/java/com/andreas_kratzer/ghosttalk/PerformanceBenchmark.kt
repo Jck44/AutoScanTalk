@@ -86,11 +86,9 @@ class PerformanceBenchmark {
         // Pass 2: Cached build (simulating the new logic)
         var lastPagesRef = pages
         val lookupTime2 = measureTimeMillis {
-            if (lastPagesRef === pages) {
-                // Return cached version (simulated)
-                buttonLookup
-                pageLookup
-            }
+            // Return cached version (simulated)
+            buttonLookup
+            pageLookup
         }
         println("Lookup Map Creation Pass 2 (Cached): ${lookupTime2}ms")
         

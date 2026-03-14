@@ -1,21 +1,18 @@
 package com.andreas_kratzer.ghosttalk.core.actions
 
+import android.content.Context
+import com.andreas_kratzer.ghosttalk.core.ai.LocalIntentRouter
+import com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase
+import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.di.ApplicationScope
 import com.andreas_kratzer.ghosttalk.core.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.GeminiButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiNanoButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiSearchButtonAction
-import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.core.ai.LocalIntentRouter
-import com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-
 import javax.inject.Inject
-import com.andreas_kratzer.ghosttalk.core.di.ApplicationScope
-import com.andreas_kratzer.ghosttalk.core.actions.ActionEvent
-import com.andreas_kratzer.ghosttalk.core.actions.ActionEventEmitter
-import android.content.Context
 
 class GeminiActionHandler @Inject constructor(
     @ApplicationScope private val scope: CoroutineScope,

@@ -1,12 +1,9 @@
 package com.andreas_kratzer.ghosttalk.core.actions
 
+import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
-import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
-import com.andreas_kratzer.ghosttalk.core.actions.ActionLogger
-import com.andreas_kratzer.ghosttalk.core.actions.ActionEventEmitter
-import com.andreas_kratzer.ghosttalk.core.actions.ActionEvent
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk

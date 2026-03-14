@@ -198,7 +198,6 @@ class SettingsViewModel @Inject constructor(
             genAiDelegate.setGeminiNanoEnabled(ctx, e, viewModelScope)
         } else {
             settingsRepository.useLocalGenerativeAi = e
-            if (e && ctx != null) testGeminiNano(ctx)
         }
     }
 
