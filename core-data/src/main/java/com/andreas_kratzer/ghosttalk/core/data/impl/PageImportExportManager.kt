@@ -18,10 +18,8 @@ import com.andreas_kratzer.ghosttalk.core.model.WeatherButtonAction
 import com.andreas_kratzer.ghosttalk.core.data.BookRepository
 import com.andreas_kratzer.ghosttalk.core.data.PageRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportAction
-import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportButton
-import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportExportData
-import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportPage
+import com.andreas_kratzer.ghosttalk.core.data.export.PageImportExportProvider
+import com.andreas_kratzer.ghosttalk.core.model.importexport.*
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -38,7 +36,7 @@ class PageImportExportManager @Inject constructor(
     private val pageRepository: PageRepository,
     private val bookRepository: BookRepository,
     private val settingsRepository: SettingsRepository
-) {
+) : PageImportExportProvider {
     private val json = Json {
         ignoreUnknownKeys = true
         prettyPrint = true
@@ -79,7 +77,7 @@ class PageImportExportManager @Inject constructor(
         json.encodeToString(exportData)
     }
 
-    suspend fun exportBookToJson(bookId: String): String = withContext(Dispatchers.IO) {
+    override suspend fun exportBookToJson(bookId: String): String = withContext(Dispatchers.IO) {
         val book = bookRepository.getBookById(bookId) ?: throw Exception("Book not found")
         val pages = pageRepository.getPagesForBook(bookId)
         val exportData = ImportExportData(
@@ -137,11 +135,11 @@ class PageImportExportManager @Inject constructor(
         }
     }
 
-    suspend fun importFromJson(
+    override suspend fun importFromJson(
         jsonString: String,
         bookId: String,
-        regenerateIds: Boolean = false,
-        restoreSyncSettings: Boolean = false
+        regenerateIds: Boolean,
+        restoreSyncSettings: Boolean
     ): Result<Int> = withContext(Dispatchers.IO) {
         try {
             val importData = json.decodeFromString<ImportExportData>(jsonString)
@@ -271,7 +269,7 @@ class PageImportExportManager @Inject constructor(
         }
     }
 
-    suspend fun extractBookIdFromJson(jsonString: String): String? = withContext(Dispatchers.Default) {
+    override suspend fun extractBookIdFromJson(jsonString: String): String? = withContext(Dispatchers.Default) {
         try {
             val root = json.parseToJsonElement(jsonString) as? JsonObject
             root?.get("bookId")?.jsonPrimitive?.content
@@ -289,7 +287,7 @@ class PageImportExportManager @Inject constructor(
         }
     }
 
-    suspend fun importCloudBackup(jsonString: String, bookId: String?): Result<String> = withContext(Dispatchers.IO) {
+    override suspend fun importCloudBackup(jsonString: String, cloudFileId: String?): Result<String> = withContext(Dispatchers.IO) {
         try {
             val importData = json.decodeFromString<ImportExportData>(jsonString)
             
@@ -300,14 +298,14 @@ class PageImportExportManager @Inject constructor(
                 regex.find(name)?.groupValues?.get(1)
             }
 
-            if (extractedId == null && bookId == null) {
+            if (extractedId == null && cloudFileId == null) {
                 return@withContext Result.failure(Exception("Konnte keine Buch-ID im Backup finden."))
             }
 
-            val targetBookId = bookId ?: extractedId!!
+            val targetBookId = cloudFileId ?: extractedId!!
             
             val existingBook = bookRepository.getBookById(targetBookId)
-            if (existingBook != null && bookId == null) {
+            if (existingBook != null && cloudFileId == null) {
                 return@withContext Result.failure(Exception("Ein Buch mit dieser ID existiert bereits lokal."))
             }
 

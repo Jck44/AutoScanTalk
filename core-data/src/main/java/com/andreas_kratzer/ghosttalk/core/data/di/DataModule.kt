@@ -2,6 +2,7 @@ package com.andreas_kratzer.ghosttalk.core.data.di
 
 import android.content.Context
 import com.andreas_kratzer.ghosttalk.core.data.*
+import com.andreas_kratzer.ghosttalk.core.data.export.PageImportExportProvider
 import com.andreas_kratzer.ghosttalk.core.data.impl.*
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsRepositoryImpl
 import com.andreas_kratzer.ghosttalk.core.database.BookDao
@@ -66,6 +67,10 @@ abstract class DataModule {
     @Binds
     @Singleton
     abstract fun bindSettingsRepository(impl: SettingsRepositoryImpl): SettingsRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindPageImportExportProvider(manager: PageImportExportManager): PageImportExportProvider
 
     companion object {
         @Provides
@@ -162,17 +167,6 @@ abstract class DataModule {
             pageRepository: PageRepository
         ): SampleDataInitializer {
             return SampleDataInitializer(bookRepository, pageRepository)
-        }
-
-        @Provides
-        @Singleton
-        fun providePageImportExportManager(
-            @ApplicationContext context: Context,
-            pageRepository: PageRepository,
-            bookRepository: BookRepository,
-            settingsRepository: SettingsRepository
-        ): PageImportExportManager {
-            return PageImportExportManager(context, pageRepository, bookRepository, settingsRepository)
         }
     }
 }

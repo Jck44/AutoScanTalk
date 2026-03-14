@@ -6,7 +6,7 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.widget.Toast
 import com.andreas_kratzer.ghosttalk.feature.settings.R
-import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
+import com.andreas_kratzer.ghosttalk.core.cloud.AuthManager
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.SignInUseCase
 import com.andreas_kratzer.ghosttalk.core.ai.domain.ActivateGeminiUseCase
@@ -31,7 +31,7 @@ import com.google.mlkit.genai.common.FeatureStatus
 class GenAiSettingsDelegate @Inject constructor(
     private val application: Application,
     private val settingsRepository: SettingsRepository,
-    private val googleAuthManager: GoogleAuthManager,
+    private val authManager: AuthManager,
     private val getGeminiToolStatusUseCase: GetGeminiToolStatusUseCase,
     private val activateGeminiUseCase: ActivateGeminiUseCase,
     private val handleGenAiExceptionUseCase: HandleGenAiExceptionUseCase,
@@ -103,7 +103,7 @@ class GenAiSettingsDelegate @Inject constructor(
     }
 
     fun setGeminiCloudEnabled(context: Context, enabled: Boolean, scope: CoroutineScope) {
-        if (enabled && googleAuthManager.userEmail.value == null) {
+        if (enabled && authManager.userEmail.value == null) {
             val activity = findActivity(context) ?: return
             scope.launch {
                 val result = signInUseCase.execute(activity)

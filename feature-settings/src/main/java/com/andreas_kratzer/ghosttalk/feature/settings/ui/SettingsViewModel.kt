@@ -7,7 +7,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.andreas_kratzer.ghosttalk.core.SecurityManager
 import com.andreas_kratzer.ghosttalk.core.model.Page
-import com.andreas_kratzer.ghosttalk.core.data.impl.PageImportExportManager
+import com.andreas_kratzer.ghosttalk.core.data.export.PageImportExportProvider
 import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.data.GetPagesUseCase
@@ -35,7 +35,7 @@ class SettingsViewModel @Inject constructor(
     val cloudSyncDelegate: CloudSyncSettingsDelegate,
     val genAiDelegate: GenAiSettingsDelegate,
     val experimentalDelegate: ExperimentalSettingsDelegate,
-    private val importExportManager: PageImportExportManager
+    private val importExportManager: PageImportExportProvider
 ) : AndroidViewModel(application) {
 
     private val _activeBookId = settingsRepository.activeBookIdFlow

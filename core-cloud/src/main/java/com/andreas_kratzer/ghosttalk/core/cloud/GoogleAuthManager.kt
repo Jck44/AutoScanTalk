@@ -20,13 +20,13 @@ import kotlinx.coroutines.flow.asStateFlow
 @javax.inject.Singleton
 class GoogleAuthManager @javax.inject.Inject constructor(
     @dagger.hilt.android.qualifiers.ApplicationContext context: Context
-) {
+) : AuthManager {
     private val appContext = context.applicationContext
     private val prefs = appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     private val credentialManager = CredentialManager.create(appContext)
     
     private val _userEmail = MutableStateFlow<String?>(prefs.getString(KEY_USER_EMAIL, null))
-    val userEmail: StateFlow<String?> = _userEmail.asStateFlow()
+    override val userEmail: StateFlow<String?> = _userEmail.asStateFlow()
 
     companion object {
         private const val TAG = "GoogleAuthManager"
@@ -34,7 +34,7 @@ class GoogleAuthManager @javax.inject.Inject constructor(
         private const val KEY_USER_EMAIL = "user_email"
     }
 
-    suspend fun signIn(activityContext: Context): Boolean {
+    override suspend fun signIn(activity: android.app.Activity): Boolean {
         Log.d(TAG, "Starting signIn process...")
         return try {
             val serverClientId = "974414517482-m4ibjmnj0js4j6tpm3a78r18og3jksdq.apps.googleusercontent.com"
@@ -53,7 +53,7 @@ class GoogleAuthManager @javax.inject.Inject constructor(
                 .build()
 
             Log.d(TAG, "Calling getCredential...")
-            val result = credentialManager.getCredential(activityContext, request)
+            val result = credentialManager.getCredential(activity, request)
             Log.d(TAG, "getCredential result received")
             handleSignInResult(result)
         } catch (e: NoCredentialException) {
@@ -115,14 +115,14 @@ class GoogleAuthManager @javax.inject.Inject constructor(
         return true
     }
 
-    suspend fun signOut() {
+    override suspend fun signOut() {
         Log.d(TAG, "Signing out...")
         credentialManager.clearCredentialState(ClearCredentialStateRequest())
         _userEmail.value = null
         prefs.edit { remove(KEY_USER_EMAIL) }
     }
 
-    fun getGoogleCredential(): GoogleAccountCredential? {
+    override fun getGoogleCredential(): GoogleAccountCredential? {
         val email = _userEmail.value
         Log.d(TAG, "getGoogleCredential: stored email is '$email'")
         

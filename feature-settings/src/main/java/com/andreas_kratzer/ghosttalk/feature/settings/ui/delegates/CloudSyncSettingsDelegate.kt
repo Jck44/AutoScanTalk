@@ -7,7 +7,7 @@ import android.content.ContextWrapper
 import android.content.Intent
 import android.widget.Toast
 import com.andreas_kratzer.ghosttalk.feature.settings.R
-import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
+import com.andreas_kratzer.ghosttalk.core.cloud.AuthManager
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.PerformManualSyncUseCase
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.RemoteBackupInfo
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.SetCloudSyncEnabledUseCase
@@ -30,7 +30,7 @@ import javax.inject.Singleton
 @Singleton
 class CloudSyncSettingsDelegate @Inject constructor(
     private val application: Application,
-    private val googleAuthManager: GoogleAuthManager,
+    private val authManager: AuthManager,
     private val settingsRepository: SettingsRepository,
     private val setCloudSyncEnabledUseCase: SetCloudSyncEnabledUseCase,
     private val performManualSyncUseCase: PerformManualSyncUseCase,
@@ -53,7 +53,7 @@ class CloudSyncSettingsDelegate @Inject constructor(
     private val _showBackupSelectionDialog = MutableStateFlow(false)
     val showBackupSelectionDialog: StateFlow<Boolean> = _showBackupSelectionDialog.asStateFlow()
 
-    val userEmail = googleAuthManager.userEmail
+    val userEmail = authManager.userEmail
 
     fun signIn(context: Context, scope: CoroutineScope) {
         val activity = findActivity(context) ?: return
@@ -116,7 +116,7 @@ class CloudSyncSettingsDelegate @Inject constructor(
 
     fun fetchAvailableBackupsForImport(scope: CoroutineScope) {
         scope.launch {
-            val credential = googleAuthManager.getGoogleCredential()
+            val credential = authManager.getGoogleCredential()
             if (credential == null) {
                 Toast.makeText(application, "Kein Cloud-Konto verbunden.", Toast.LENGTH_LONG).show()
                 return@launch
@@ -147,7 +147,7 @@ class CloudSyncSettingsDelegate @Inject constructor(
     fun importCloudBackup(backupInfo: RemoteBackupInfo, scope: CoroutineScope, onImported: (String) -> Unit = {}) {
         _showBackupSelectionDialog.value = false
         scope.launch {
-            val credential = googleAuthManager.getGoogleCredential() ?: return@launch
+            val credential = authManager.getGoogleCredential() ?: return@launch
             _isSyncing.value = true
             Toast.makeText(application, "Import wird gestartet...", Toast.LENGTH_SHORT).show()
             
