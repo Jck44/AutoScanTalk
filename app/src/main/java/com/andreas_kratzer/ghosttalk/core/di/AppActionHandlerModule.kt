@@ -25,7 +25,7 @@ interface AppActionHandlerModule {
 
     @Binds
     @IntoSet
-    fun bindGoogleHomeActionHandler(handler: GoogleHomeActionHandler): ActionHandler
+    fun bindSmartHomeActionHandler(handler: SmartHomeActionHandler): ActionHandler
 
     @Binds
     @IntoSet

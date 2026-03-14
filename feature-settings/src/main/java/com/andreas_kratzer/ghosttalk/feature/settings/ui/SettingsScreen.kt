@@ -20,6 +20,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -56,6 +57,7 @@ import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.MaintenanceSec
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.NotificationSettingsSection
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.ScanningSettingsSection
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.SecuritySettingsSection
+import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.SmartHomeSettingsSection
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.TestSettingsSection
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.VoiceSettingsSection
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhosTTalkIcons
@@ -73,6 +75,7 @@ enum class SettingsSection(val titleRes: Int, val icon: ImageVector, val isGloba
     SCANNING(R.string.settings_category_scanning, GhosTTalkIcons.SettingsAccessibility, isGlobal = false, isScoped = true),
     SECURITY(R.string.settings_category_security, GhosTTalkIcons.Security, isGlobal = true, isScoped = false),
     CLOUD(R.string.settings_category_cloud, GhosTTalkIcons.Cloud, isGlobal = true, isScoped = true),
+    SMART_HOME(R.string.settings_category_smart_home, Icons.Default.Home, isGlobal = true, isScoped = false),
     GEMINI(R.string.settings_category_gemini, GhosTTalkIcons.AutoAwesome, isGlobal = false, isScoped = true),
     NOTIFICATIONS(R.string.settings_category_notifications, GhosTTalkIcons.Notifications, isGlobal = true, isScoped = false),
     ADVANCED(R.string.settings_category_advanced, GhosTTalkIcons.Science, isGlobal = true, isScoped = true)
@@ -405,6 +408,9 @@ fun SubmenuContent(
         }
         SettingsSection.CLOUD -> {
             CloudSettingsSection(viewModel, isGlobal = isGlobal)
+        }
+        SettingsSection.SMART_HOME -> {
+            SmartHomeSettingsSection(viewModel, isGlobal = isGlobal)
         }
         SettingsSection.GEMINI -> {
             GenAiSettingsSection(viewModel, isGlobal = isGlobal)

@@ -106,7 +106,14 @@ data class ImportAction(
     val contactPhone: String? = null,
     val messageText: String? = null,
     
-    // Google Home specific
+    // Unified Smart Home
+    val smartHomeProvider: String? = null,
+    val smartHomeDeviceId: String? = null,
+    val smartHomeDeviceName: String? = null,
+    val smartHomeIntent: String? = null,
+    val smartHomeValue: String? = null,
+    
+    // Legacy Google Home specific
     val googleHomeDeviceId: String? = null,
     val googleHomeTrait: String? = null,
     val googleHomeCommand: String? = null,

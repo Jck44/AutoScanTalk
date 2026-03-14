@@ -5,6 +5,7 @@ import com.andreas_kratzer.ghosttalk.core.model.AudioOutputDevice
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.tts.GetAudioDevicesUseCase
 import com.andreas_kratzer.ghosttalk.core.tts.SetTtsLanguageUseCase
+import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
 import io.mockk.coEvery
 import io.mockk.mockk
 import io.mockk.verify
@@ -23,6 +24,7 @@ class TtsSettingsDelegateTest {
     private lateinit var audioDeviceManager: AudioDeviceManager
     private lateinit var getAudioDevicesUseCase: GetAudioDevicesUseCase
     private lateinit var setTtsLanguageUseCase: SetTtsLanguageUseCase
+    private lateinit var ttsHelper: TextToSpeechHelper
     private lateinit var delegate: TtsSettingsDelegate
 
     @Before
@@ -32,13 +34,15 @@ class TtsSettingsDelegateTest {
         audioDeviceManager = mockk(relaxed = true)
         getAudioDevicesUseCase = mockk(relaxed = true)
         setTtsLanguageUseCase = mockk(relaxed = true)
+        ttsHelper = mockk(relaxed = true)
 
         delegate = TtsSettingsDelegate(
             context,
             settingsRepository,
             audioDeviceManager,
             getAudioDevicesUseCase,
-            setTtsLanguageUseCase
+            setTtsLanguageUseCase,
+            ttsHelper
         )
     }
 

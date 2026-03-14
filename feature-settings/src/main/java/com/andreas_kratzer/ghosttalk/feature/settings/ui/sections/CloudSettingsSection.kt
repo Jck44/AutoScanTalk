@@ -188,20 +188,6 @@ fun CloudSettingsSection(
             }
         }
 
-        PreferenceCategory(stringResource(R.string.settings_category_cloud)) { 
-             val projectId by viewModel.googleHomeProjectId.collectAsState("")
-             com.andreas_kratzer.ghosttalk.core.ui.components.SettingsEditTextItem(
-                 label = stringResource(R.string.settings_google_home_project_id),
-                 value = projectId,
-                 onValueChange = { viewModel.setGoogleHomeProjectId(it) }
-             )
-             Text(
-                 text = stringResource(R.string.settings_google_home_project_id_desc),
-                 style = MaterialTheme.typography.bodySmall,
-                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                 modifier = Modifier.padding(start = 16.dp, top = 4.dp)
-             )
-        }
     }
 
     if (showBackupSelectionDialog) {

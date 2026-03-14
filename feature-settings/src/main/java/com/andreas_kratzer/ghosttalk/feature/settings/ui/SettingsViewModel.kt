@@ -11,6 +11,7 @@ import com.andreas_kratzer.ghosttalk.core.data.export.PageImportExportProvider
 import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.data.GetPagesUseCase
+import com.andreas_kratzer.ghosttalk.core.cloud.PhilipsHueManager
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.CloudSyncSettingsDelegate
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.ExperimentalSettingsDelegate
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.GenAiSettingsDelegate
@@ -25,8 +26,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
-    application: Application,
-    private val settingsRepository: SettingsRepository,
+    private val application: Application,
+    val settingsRepository: SettingsRepository,
     private val buttonUsageRepository: ButtonUsageRepository,
     val securityManager: SecurityManager,
     getPagesUseCase: GetPagesUseCase,
@@ -35,7 +36,8 @@ class SettingsViewModel @Inject constructor(
     val cloudSyncDelegate: CloudSyncSettingsDelegate,
     val genAiDelegate: GenAiSettingsDelegate,
     val experimentalDelegate: ExperimentalSettingsDelegate,
-    private val importExportManager: PageImportExportProvider
+    private val importExportManager: PageImportExportProvider,
+    private val hueManager: PhilipsHueManager
 ) : AndroidViewModel(application) {
 
     private val _activeBookId = settingsRepository.activeBookIdFlow
@@ -72,6 +74,10 @@ class SettingsViewModel @Inject constructor(
     val lastSuccessfulSyncTime = settingsRepository.lastSuccessfulSyncTimeFlow
     val syncIntervalMinutes = settingsRepository.syncIntervalMinutesFlow
     val googleHomeProjectId = settingsRepository.googleHomeProjectIdFlow
+    val hueBridgeIp = settingsRepository.hueBridgeIpFlow
+    val hueUsername = settingsRepository.hueUsernameFlow
+    val hueAccessToken = settingsRepository.hueAccessTokenFlow
+    val goveeApiKey = settingsRepository.goveeApiKeyFlow
     val isSyncing = cloudSyncDelegate.isSyncing
     val userEmail = cloudSyncDelegate.userEmail
     
@@ -171,6 +177,28 @@ class SettingsViewModel @Inject constructor(
     fun setSyncMode(m: String) { settingsRepository.syncMode = m }
     fun setSyncIntervalMinutes(minutes: Long) { settingsRepository.syncIntervalMinutes = minutes }
     fun setGoogleHomeProjectId(id: String) { settingsRepository.googleHomeProjectId = id }
+    fun setHueBridgeIp(ip: String) { settingsRepository.hueBridgeIp = ip }
+    fun setHueUsername(username: String) { settingsRepository.hueUsername = username }
+    fun setHueAccessToken(token: String) { settingsRepository.hueAccessToken = token }
+    fun setGoveeApiKey(key: String) { settingsRepository.goveeApiKey = key }
+
+    fun discoverHueBridges() {
+        viewModelScope.launch {
+            Toast.makeText(application, "Suche nach Hue Bridges...", Toast.LENGTH_SHORT).show()
+            val bridges = hueManager.discoverBridges()
+            if (bridges.isNotEmpty()) {
+                settingsRepository.hueBridgeIp = bridges.first()
+                Toast.makeText(application, "Bridge gefunden: ${bridges.first()}", Toast.LENGTH_LONG).show()
+            } else {
+                Toast.makeText(application, "Keine Hue Bridge im Netzwerk gefunden.", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    fun startHueOAuth() {
+        // This is a placeholder for now as it requires a redirect activity
+        Toast.makeText(application, "Philips Hue OAuth wird in Kürze implementiert.", Toast.LENGTH_LONG).show()
+    }
 
     fun setGeminiEnabled(ctx: Context, e: Boolean) {
         genAiDelegate.setGeminiCloudEnabled(ctx, e, viewModelScope)

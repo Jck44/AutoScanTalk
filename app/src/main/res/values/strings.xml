@@ -81,7 +81,8 @@
     <string name="button_action_notification">Benachrichtigung (Audio-Hinweis)</string>
     <string name="button_action_control_device">Gerätefunktionen</string>
     <string name="button_action_weather">Wetter vorlesen</string>
-    <string name="button_action_google_home">Google Home Steuerung</string>
+    <string name="button_action_google_home">Google Home (Veraltet)</string>
+    <string name="button_action_smart_home">Smart Home Steuerung</string>
     <string name="button_device_control_type_label">Aktion wählen</string>
     <string name="button_device_control_media_next">Nächstes Lied / Weiter</string>
     <string name="button_device_control_media_previous">Vorheriges Lied / Zurück</string>
@@ -102,6 +103,7 @@
     <string name="button_google_home_value_label">Wert</string>
     <string name="button_google_home_loading_devices">Lade Geräte…</string>
     <string name="button_google_home_no_devices">Keine Geräte gefunden</string>
+    <string name="button_smart_home_provider_label">Anbieter</string>
 
     <!-- Page Screen -->
     <string name="page_loading">Seite wird geladen…</string>

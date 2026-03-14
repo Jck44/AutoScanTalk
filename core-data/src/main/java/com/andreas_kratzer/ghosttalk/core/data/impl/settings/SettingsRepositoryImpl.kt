@@ -30,6 +30,7 @@ class SettingsRepositoryImpl(context: Context) : SettingsRepository {
     private val scanningSettings = ScanningSettingsRepository(prefs, activeBookIdFlow)
     private val securitySettings = SecuritySettingsRepository(prefs, activeBookIdFlow)
     private val cloudSettings = CloudSettingsRepository(prefs, activeBookIdFlow)
+    private val smartHomeSettings = SmartHomeSettingsRepository(prefs, activeBookIdFlow)
     private val genAiSettings = GenAiSettingsRepository(prefs, activeBookIdFlow)
     private val generalSettings = GeneralSettingsRepository(prefs, activeBookIdFlow)
     private val notificationSettings = NotificationSettingsRepository(prefs, activeBookIdFlow)
@@ -66,6 +67,7 @@ class SettingsRepositoryImpl(context: Context) : SettingsRepository {
         scanningSettings.refresh()
         securitySettings.refresh()
         cloudSettings.refresh()
+        smartHomeSettings.refresh()
         genAiSettings.refresh()
         generalSettings.refresh()
         notificationSettings.refresh()
@@ -122,7 +124,12 @@ class SettingsRepositoryImpl(context: Context) : SettingsRepository {
     override val syncIntervalMinutesFlow: StateFlow<Long> get() = cloudSettings.syncIntervalMinutesFlow
     override val syncModeFlow: StateFlow<String> get() = cloudSettings.syncModeFlow
     override val lastSuccessfulSyncTimeFlow: StateFlow<Long> get() = cloudSettings.lastSuccessfulSyncTimeFlow
-    override val googleHomeProjectIdFlow: StateFlow<String> get() = cloudSettings.googleHomeProjectIdFlow
+    override val googleHomeProjectIdFlow: StateFlow<String> get() = smartHomeSettings.googleHomeProjectIdFlow
+    override val hueBridgeIpFlow: StateFlow<String> get() = smartHomeSettings.hueBridgeIpFlow
+    override val hueUsernameFlow: StateFlow<String> get() = smartHomeSettings.hueUsernameFlow
+    override val hueAccessTokenFlow: StateFlow<String> get() = smartHomeSettings.hueAccessTokenFlow
+    override val hueRefreshTokenFlow: StateFlow<String> get() = smartHomeSettings.hueRefreshTokenFlow
+    override val goveeApiKeyFlow: StateFlow<String> get() = smartHomeSettings.goveeApiKeyFlow
     override val cuesAudioDeviceAddressFlow: StateFlow<String?> get() = voiceSettings.cuesAudioDeviceAddressFlow
     override val securityPinFlow: StateFlow<String?> get() = securitySettings.securityPinFlow
     override val securityPinHashFlow: StateFlow<String?> get() = securitySettings.securityPinHashFlow
@@ -232,8 +239,28 @@ class SettingsRepositoryImpl(context: Context) : SettingsRepository {
         set(value) { cloudSettings.syncMode = value }
 
     override var googleHomeProjectId: String
-        get() = cloudSettings.googleHomeProjectId
-        set(value) { cloudSettings.googleHomeProjectId = value }
+        get() = smartHomeSettings.googleHomeProjectId
+        set(value) { smartHomeSettings.googleHomeProjectId = value }
+
+    override var hueBridgeIp: String
+        get() = smartHomeSettings.hueBridgeIp
+        set(value) { smartHomeSettings.hueBridgeIp = value }
+
+    override var hueUsername: String
+        get() = smartHomeSettings.hueUsername
+        set(value) { smartHomeSettings.hueUsername = value }
+
+    override var hueAccessToken: String
+        get() = smartHomeSettings.hueAccessToken
+        set(value) { smartHomeSettings.hueAccessToken = value }
+
+    override var hueRefreshToken: String
+        get() = smartHomeSettings.hueRefreshToken
+        set(value) { smartHomeSettings.hueRefreshToken = value }
+
+    override var goveeApiKey: String
+        get() = smartHomeSettings.goveeApiKey
+        set(value) { smartHomeSettings.goveeApiKey = value }
 
     override var isGeminiEnabled: Boolean
         get() = genAiSettings.isGeminiEnabled

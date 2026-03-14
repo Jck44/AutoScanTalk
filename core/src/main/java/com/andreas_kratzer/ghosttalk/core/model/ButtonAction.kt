@@ -97,17 +97,24 @@ data class WeatherButtonAction(
 ) : ButtonAction()
 
 /**
- * An action to control Google Home devices directly.
+ * An action to control Smart Home devices (Google Home, Philips Hue, Govee).
  */
 @Serializable
-@SerialName("GoogleHomeButtonAction")
-data class GoogleHomeButtonAction(
+@SerialName("SmartHomeButtonAction")
+data class SmartHomeButtonAction(
+    val provider: SmartHomeProvider = SmartHomeProvider.GOOGLE_HOME,
     val deviceId: String = "",
     val deviceName: String = "",
-    val trait: String = "",
-    val command: String = "",
+    val intent: String = "",
     val value: String? = null
 ) : ButtonAction()
+
+@Serializable
+enum class SmartHomeProvider {
+    GOOGLE_HOME,
+    PHILIPS_HUE,
+    GOVEE
+}
 
 @Serializable
 enum class DeviceActionType {

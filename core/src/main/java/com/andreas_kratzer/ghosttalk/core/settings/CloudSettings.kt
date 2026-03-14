@@ -11,6 +11,4 @@ interface CloudSettings {
     val lastSuccessfulSyncTimeFlow: kotlinx.coroutines.flow.StateFlow<Long>
     var activeBookId: String
     val activeBookIdFlow: kotlinx.coroutines.flow.StateFlow<String?>
-    var googleHomeProjectId: String
-    val googleHomeProjectIdFlow: kotlinx.coroutines.flow.StateFlow<String>
 }

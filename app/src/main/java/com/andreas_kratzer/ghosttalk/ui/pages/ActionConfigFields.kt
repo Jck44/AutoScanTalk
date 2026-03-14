@@ -36,9 +36,11 @@ import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.model.DeviceActionType
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
-import com.andreas_kratzer.ghosttalk.core.model.GoogleHomeButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.SmartHomeButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.SmartHomeProvider
 import com.andreas_kratzer.ghosttalk.core.cloud.HomeDevice
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
+import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.getDisplayName
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -465,17 +467,17 @@ fun ActionConfigFields(
     onContactPhoneChange: (String) -> Unit,
     messageText: String,
     onMessageTextChange: (String) -> Unit,
-    // Google Home specific
-    googleHomeDeviceId: String = "",
-    onGoogleHomeDeviceIdChange: (String) -> Unit = {},
-    googleHomeDeviceName: String = "",
-    onGoogleHomeDeviceNameChange: (String) -> Unit = {},
-    googleHomeTrait: String = "",
-    onGoogleHomeTraitChange: (String) -> Unit = {},
-    googleHomeCommand: String = "",
-    onGoogleHomeCommandChange: (String) -> Unit = {},
-    googleHomeValue: String? = null,
-    onGoogleHomeValueChange: (String) -> Unit = {},
+    // Smart Home specific
+    smartHomeProvider: SmartHomeProvider = SmartHomeProvider.GOOGLE_HOME,
+    onSmartHomeProviderChange: (SmartHomeProvider) -> Unit = {},
+    smartHomeDeviceId: String = "",
+    onSmartHomeDeviceIdChange: (String) -> Unit = {},
+    smartHomeDeviceName: String = "",
+    onSmartHomeDeviceNameChange: (String) -> Unit = {},
+    smartHomeIntent: String = "",
+    onSmartHomeIntentChange: (String) -> Unit = {},
+    smartHomeValue: String? = null,
+    onSmartHomeValueChange: (String) -> Unit = {},
     availableHomeDevices: List<HomeDevice> = emptyList(),
     isFetchingDevices: Boolean = false,
     onFetchDevices: () -> Unit = {},
@@ -491,7 +493,7 @@ fun ActionConfigFields(
     val actionTypeFrequent = stringResource(R.string.button_action_frequent_action)
     val actionTypeSmart = stringResource(R.string.button_action_smart_prediction)
     val actionTypeDevice = stringResource(R.string.button_action_control_device)
-    val actionTypeGoogleHome = stringResource(R.string.button_action_google_home)
+    val actionTypeSmartHome = stringResource(R.string.button_action_smart_home)
 
     when (selectedActionType) {
         actionTypeNavigate -> {
@@ -538,20 +540,20 @@ fun ActionConfigFields(
                 onMessageTextChange = onMessageTextChange
             )
         }
-        actionTypeGoogleHome -> {
-            GoogleHomeActionFields(
-                deviceId = googleHomeDeviceId,
+        actionTypeSmartHome -> {
+            SmartHomeActionFields(
+                selectedProvider = smartHomeProvider,
+                onProviderSelected = onSmartHomeProviderChange,
+                deviceId = smartHomeDeviceId,
                 onDeviceSelected = { device ->
-                    onGoogleHomeDeviceIdChange(device.id)
-                    onGoogleHomeDeviceNameChange(device.name)
+                    onSmartHomeDeviceIdChange(device.id)
+                    onSmartHomeDeviceNameChange(device.name)
                 },
-                deviceName = googleHomeDeviceName,
-                selectedTrait = googleHomeTrait,
-                onTraitSelected = onGoogleHomeTraitChange,
-                selectedCommand = googleHomeCommand,
-                onCommandSelected = onGoogleHomeCommandChange,
-                value = googleHomeValue ?: "",
-                onValueChange = onGoogleHomeValueChange,
+                deviceName = smartHomeDeviceName,
+                selectedIntent = smartHomeIntent,
+                onIntentSelected = onSmartHomeIntentChange,
+                value = smartHomeValue ?: "",
+                onValueChange = onSmartHomeValueChange,
                 devices = availableHomeDevices,
                 isFetching = isFetchingDevices,
                 onRefresh = onFetchDevices
@@ -562,14 +564,14 @@ fun ActionConfigFields(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun GoogleHomeActionFields(
+fun SmartHomeActionFields(
+    selectedProvider: SmartHomeProvider,
+    onProviderSelected: (SmartHomeProvider) -> Unit,
     deviceId: String,
     onDeviceSelected: (HomeDevice) -> Unit,
     deviceName: String,
-    selectedTrait: String,
-    onTraitSelected: (String) -> Unit,
-    selectedCommand: String,
-    onCommandSelected: (String) -> Unit,
+    selectedIntent: String,
+    onIntentSelected: (String) -> Unit,
     value: String,
     onValueChange: (String) -> Unit,
     devices: List<HomeDevice>,
@@ -577,25 +579,61 @@ fun GoogleHomeActionFields(
     onRefresh: () -> Unit
 ) {
     val dimensions = LocalDimensions.current
+    var expandedProvider by remember { mutableStateOf(false) }
     var expandedDevice by remember { mutableStateOf(false) }
-    var expandedCommand by remember { mutableStateOf(false) }
+    var expandedIntent by remember { mutableStateOf(false) }
 
     val selectedDevice = devices.find { it.id == deviceId }
     
-    val availableCommands = remember(selectedDevice) {
-        selectedDevice?.traits?.flatMap { trait ->
-            when (trait) {
-                "sdm.devices.traits.OnOff" -> listOf("sdm.devices.commands.OnOff.On", "sdm.devices.commands.OnOff.Off")
-                "sdm.devices.traits.Brightness" -> listOf("sdm.devices.commands.Brightness.Brightness")
-                "sdm.devices.traits.TemperatureSetting" -> listOf("sdm.devices.commands.TemperatureSetting.SetPoint")
-                else -> emptyList()
-            }
-        }?.map { it to it.substringAfterLast(".") } ?: emptyList()
+    val availableIntents = remember(selectedDevice, selectedProvider) {
+        if (selectedProvider == SmartHomeProvider.GOOGLE_HOME) {
+            selectedDevice?.traits?.flatMap { trait ->
+                when (trait) {
+                    "sdm.devices.traits.OnOff" -> listOf("sdm.devices.commands.OnOff.On", "sdm.devices.commands.OnOff.Off")
+                    "sdm.devices.traits.Brightness" -> listOf("sdm.devices.commands.Brightness.Brightness")
+                    "sdm.devices.traits.TemperatureSetting" -> listOf("sdm.devices.commands.TemperatureSetting.SetPoint")
+                    else -> emptyList()
+                }
+            }?.map { it to it.substringAfterLast(".") } ?: emptyList()
+        } else {
+            // Skeleton for Hue / Govee
+            listOf("action.on" to "An", "action.off" to "Aus")
+        }
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)) {
+        // Step 1: Provider
+        Text(stringResource(R.string.button_smart_home_provider_label), style = MaterialTheme.typography.labelMedium)
+        ExposedDropdownMenuBox(
+            expanded = expandedProvider,
+            onExpandedChange = { expandedProvider = !expandedProvider }
+        ) {
+            OutlinedTextField(
+                readOnly = true,
+                value = selectedProvider.getDisplayName(),
+                onValueChange = { },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedProvider) },
+                shape = MaterialTheme.shapes.large,
+                modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
+            )
+            ExposedDropdownMenu(
+                expanded = expandedProvider,
+                onDismissRequest = { expandedProvider = false }
+            ) {
+                SmartHomeProvider.entries.forEach { provider ->
+                    DropdownMenuItem(
+                        text = { Text(provider.getDisplayName()) },
+                        onClick = {
+                            onProviderSelected(provider)
+                            expandedProvider = false
+                        }
+                    )
+                }
+            }
+        }
+
+        // Step 2: Device
         Text(stringResource(R.string.button_google_home_device_label), style = MaterialTheme.typography.labelMedium)
-        
         ExposedDropdownMenuBox(
             expanded = expandedDevice,
             onExpandedChange = { expandedDevice = !expandedDevice }
@@ -627,40 +665,40 @@ fun GoogleHomeActionFields(
             }
         }
 
+        // Step 3: Intent/Command
         if (deviceId.isNotEmpty()) {
             Text(stringResource(R.string.button_google_home_command_label), style = MaterialTheme.typography.labelMedium)
             ExposedDropdownMenuBox(
-                expanded = expandedCommand,
-                onExpandedChange = { expandedCommand = !expandedCommand }
+                expanded = expandedIntent,
+                onExpandedChange = { expandedIntent = !expandedIntent }
             ) {
-                val currentCommandLabel = availableCommands.find { it.first == selectedCommand }?.second ?: ""
+                val currentIntentLabel = availableIntents.find { it.first == selectedIntent }?.second ?: ""
                 OutlinedTextField(
                     readOnly = true,
-                    value = currentCommandLabel,
+                    value = currentIntentLabel,
                     onValueChange = { },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedCommand) },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedIntent) },
                     shape = MaterialTheme.shapes.large,
                     modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
                 )
                 ExposedDropdownMenu(
-                    expanded = expandedCommand,
-                    onDismissRequest = { expandedCommand = false }
+                    expanded = expandedIntent,
+                    onDismissRequest = { expandedIntent = false }
                 ) {
-                    availableCommands.forEach { (cmd, label) ->
+                    availableIntents.forEach { (intent, label) ->
                         DropdownMenuItem(
                             text = { Text(label) },
                             onClick = {
-                                val trait = selectedDevice?.traits?.find { cmd.startsWith(it) } ?: ""
-                                onTraitSelected(trait)
-                                onCommandSelected(cmd)
-                                expandedCommand = false
+                                onIntentSelected(intent)
+                                expandedIntent = false
                             }
                         )
                     }
                 }
             }
 
-            if (selectedCommand.contains("Brightness") || selectedCommand.contains("SetPoint")) {
+            // Step 4: Value (Optional)
+            if (selectedIntent.contains("Brightness") || selectedIntent.contains("SetPoint")) {
                 OutlinedTextField(
                     value = value,
                     onValueChange = onValueChange,
@@ -672,7 +710,7 @@ fun GoogleHomeActionFields(
         }
     }
 
-    LaunchedEffect(Unit) {
-        if (devices.isEmpty()) onRefresh()
+    LaunchedEffect(selectedProvider) {
+        if (selectedProvider == SmartHomeProvider.GOOGLE_HOME && devices.isEmpty()) onRefresh()
     }
 }

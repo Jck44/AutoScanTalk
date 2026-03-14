@@ -103,7 +103,11 @@ class ActionExecutorTest {
         
         var finishCallback: ((Int) -> Unit)? = null
         every { mockHandler.handle(any(), any(), any(), any()) } answers {
-            finishCallback = it.invocation.args[3] as (Int) -> Unit
+            val callback = it.invocation.args[3]
+            if (callback is Function1<*, *>) {
+                @Suppress("UNCHECKED_CAST")
+                finishCallback = callback as (Int) -> Unit
+            }
         }
 
         assertFalse(actionExecutor.isExecuting.value)

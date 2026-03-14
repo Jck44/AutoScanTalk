@@ -2,10 +2,11 @@ package com.andreas_kratzer.ghosttalk.feature.settings.ui
 
 import android.app.Application
 import com.andreas_kratzer.ghosttalk.core.SecurityManager
-import com.andreas_kratzer.ghosttalk.core.data.impl.PageImportExportManager
+import com.andreas_kratzer.ghosttalk.core.cloud.PhilipsHueManager
 import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository
-import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.data.GetPagesUseCase
+import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.data.impl.PageImportExportManager
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.CloudSyncSettingsDelegate
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.ExperimentalSettingsDelegate
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.GenAiSettingsDelegate
@@ -46,6 +47,7 @@ class SettingsViewModelTest {
     private lateinit var genAiDelegate: GenAiSettingsDelegate
     private lateinit var experimentalDelegate: ExperimentalSettingsDelegate
     private lateinit var importExportManager: PageImportExportManager
+    private lateinit var hueManager: PhilipsHueManager
     
     private lateinit var viewModel: SettingsViewModel
 
@@ -65,6 +67,7 @@ class SettingsViewModelTest {
         genAiDelegate = mockk(relaxed = true)
         experimentalDelegate = mockk(relaxed = true)
         importExportManager = mockk(relaxed = true)
+        hueManager = mockk(relaxed = true)
 
         // Mock common flows
         every { settingsRepository.activeBookId } returns "test-book"
@@ -88,7 +91,8 @@ class SettingsViewModelTest {
             cloudSyncDelegate = cloudSyncDelegate,
             genAiDelegate = genAiDelegate,
             experimentalDelegate = experimentalDelegate,
-            importExportManager = importExportManager
+            importExportManager = importExportManager,
+            hueManager = hueManager
         )
     }
 

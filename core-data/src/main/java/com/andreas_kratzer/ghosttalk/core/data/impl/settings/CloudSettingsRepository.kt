@@ -22,13 +22,11 @@ class CloudSettingsRepository(
     private val _syncIntervalMinutes = LongSetting(KEY_SYNC_INTERVAL_MINUTES, 15L)
     private val _syncMode = NonNullStringSetting(KEY_SYNC_MODE, "TWO_WAY")
     private val _lastSuccessfulSyncTime = LongSetting(KEY_LAST_SYNC_TIME, 0L)
-    private val _googleHomeProjectId = NonNullStringSetting(SettingsConstants.KEY_GOOGLE_HOME_PROJECT_ID, "")
 
     override val isCloudSyncEnabledFlow = _isCloudSyncEnabled.flow
     override val syncIntervalMinutesFlow = _syncIntervalMinutes.flow
     override val syncModeFlow = _syncMode.flow
     override val lastSuccessfulSyncTimeFlow = _lastSuccessfulSyncTime.flow
-    override val googleHomeProjectIdFlow = _googleHomeProjectId.flow
 
     override var isCloudSyncEnabled: Boolean
         get() = _isCloudSyncEnabled.value
@@ -45,10 +43,6 @@ class CloudSettingsRepository(
     override var lastSuccessfulSyncTime: Long
         get() = _lastSuccessfulSyncTime.value
         set(value) { _lastSuccessfulSyncTime.value = value }
-
-    override var googleHomeProjectId: String
-        get() = _googleHomeProjectId.value
-        set(value) { _googleHomeProjectId.value = value }
         
 
     override fun refresh() {
@@ -56,6 +50,5 @@ class CloudSettingsRepository(
         _syncIntervalMinutes.refresh()
         _syncMode.refresh()
         _lastSuccessfulSyncTime.refresh()
-        _googleHomeProjectId.refresh()
     }
 }

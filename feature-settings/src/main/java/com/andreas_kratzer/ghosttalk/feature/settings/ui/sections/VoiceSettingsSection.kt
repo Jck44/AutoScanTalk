@@ -61,7 +61,9 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
 
                 val languageOptions = mutableListOf<Pair<String, () -> Unit>>()
                 languageOptions.add(stringResource(R.string.settings_system_default) to { viewModel.setTtsLanguage("default") })
-                availableLanguages.forEach { locale ->
+                
+                // Ensure alphabetical sorting in UI
+                availableLanguages.sortedBy { it.displayName }.forEach { locale ->
                     languageOptions.add(locale.displayName to { viewModel.setTtsLanguage(locale.toLanguageTag()) })
                 }
 
@@ -71,11 +73,21 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                     options = languageOptions
                 )
 
-                // Voice Select
-                val voiceGroups = remember(availableVoices) {
-                    availableVoices.map { it.name }
+                // Voice Select - FILTERED by selected language
+                val filteredVoices = remember(availableVoices, selectedLanguage) {
+                    val targetLocale = if (selectedLanguage == "default" || selectedLanguage.isNullOrEmpty()) {
+                        Locale.getDefault()
+                    } else {
+                        Locale.forLanguageTag(selectedLanguage!!)
+                    }
+                    availableVoices.filter { it.locale.language == targetLocale.language }
+                }
+
+                val voiceGroups = remember(filteredVoices) {
+                    filteredVoices.map { it.name }
                         .distinctBy { VoiceUtils.formatVoiceName(it) }
                         .map { VoiceUtils.formatVoiceName(it) }
+                        .sorted() // Sort base names alphabetically
                 }
 
                 val voiceLabel = if (selectedVoiceName.isNullOrEmpty()) {
@@ -93,11 +105,17 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
 
                 val voiceOptions = mutableListOf<Pair<String, () -> Unit>>()
                 voiceOptions.add(Pair(stringResource(R.string.settings_voice_default), { viewModel.setTtsVoice(null) }))
-                availableVoices.forEach { voice ->
+                
+                // Sort voices alphabetically by their display name
+                filteredVoices.map { voice ->
                     val baseName = VoiceUtils.formatVoiceName(voice.name)
                     val groupIndex = voiceGroups.indexOf(baseName)
                     val display = VoiceUtils.formatVoiceDisplay(context, voice, maxOf(0, groupIndex))
-                    voiceOptions.add(Pair(display, { viewModel.setTtsVoice(voice.name) }))
+                    display to voice.name
+                }
+                .sortedBy { it.first }
+                .forEach { (display, voiceName) ->
+                    voiceOptions.add(Pair(display, { viewModel.setTtsVoice(voiceName) }))
                 }
 
                 com.andreas_kratzer.ghosttalk.core.ui.components.SettingsDropdownItem(

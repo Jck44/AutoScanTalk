@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.StateFlow
 interface SettingsRepository : SecuritySettings, KeyEventSettings, AudioSettings, 
     ControlDeviceSettings, SpeechSettings, GenAiSettings, DatabaseSettings, 
     TtsSettings, ImportExportSettings, CloudSettings, ScanningSettings, FeatureSettings,
-    GeneralSettings, UserSettings, AdvancedSettings, NotificationSettings {
+    GeneralSettings, UserSettings, AdvancedSettings, NotificationSettings, SmartHomeSettings {
     
     override var activeBookId: String
     override val activeBookIdFlow: StateFlow<String?>
