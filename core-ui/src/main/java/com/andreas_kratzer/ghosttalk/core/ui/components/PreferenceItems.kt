@@ -104,7 +104,7 @@ fun SettingsEditTextItem(
     label: String,
     value: String,
     onValueChange: (String) -> Unit,
-    keyboardOptions: KeyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+    keyboardOptions: KeyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
 ) {
     val dimensions = LocalDimensions.current
     var localValue by remember(value) { mutableStateOf(value) }

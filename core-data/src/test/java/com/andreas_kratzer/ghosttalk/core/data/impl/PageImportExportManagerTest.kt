@@ -540,9 +540,8 @@ class PageImportExportManagerTest {
         coEvery { bookRepository.getBookById(bookId) } returns com.andreas_kratzer.ghosttalk.core.model.Book(bookId, "Old Name")
         
         val result = manager.importCloudBackup(jsonString, null)
-        
         assertTrue(result.isFailure)
-        assertTrue(result.exceptionOrNull()?.message?.contains("Ein Buch mit dieser ID existiert bereits lokal") == true)
+        assertTrue(result.exceptionOrNull()?.message?.contains("existiert bereits lokal") == true)
     }
 
     @Test
@@ -686,5 +685,36 @@ class PageImportExportManagerTest {
         // For maxIndex 20: 3x7 (3*7=21 > 20)
         assertEquals(3, pageSlot.captured.rows)
         assertEquals(7, pageSlot.captured.columns)
+    }
+
+    @Test
+    fun `importCloudBackup prevents overwriting existing book`() = runTest {
+        val bookId = "existing-id"
+        val jsonString = """{"bookId":"$bookId", "bookName":"New Name", "pages":[]}"""
+        
+        // Mock that the book already exists
+        coEvery { bookRepository.getBookById(bookId.lowercase()) } returns com.andreas_kratzer.ghosttalk.core.model.Book(bookId, "Old Name")
+        
+        val result = manager.importCloudBackup(jsonString, null)
+        
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull()?.message?.contains("existiert bereits lokal") == true)
+        
+        // Verify no insert was called
+        io.mockk.coVerify(exactly = 0) { bookRepository.insertBook(any()) }
+    }
+
+    @Test
+    fun `importCloudBackup handles case-insensitive bookId collisions`() = runTest {
+        val bookId = "BOOK-123"
+        val jsonString = """{"bookId":"$bookId", "bookName":"Test", "pages":[]}"""
+        
+        // Mock that the book already exists in lowercase
+        coEvery { bookRepository.getBookById(bookId.lowercase()) } returns com.andreas_kratzer.ghosttalk.core.model.Book(bookId.lowercase(), "Existing")
+        
+        val result = manager.importCloudBackup(jsonString, null)
+        
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull()?.message?.contains("existiert bereits lokal") == true)
     }
 }

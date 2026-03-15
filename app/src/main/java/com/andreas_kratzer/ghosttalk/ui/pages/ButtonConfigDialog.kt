@@ -22,6 +22,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -38,6 +39,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.core.cloud.GoogleHomeManager
+import com.andreas_kratzer.ghosttalk.core.cloud.HomeDevice
 import com.andreas_kratzer.ghosttalk.core.model.AuditoryCue
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.ControlDeviceButtonAction
@@ -49,19 +52,17 @@ import com.andreas_kratzer.ghosttalk.core.model.GeminiSearchButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
+import com.andreas_kratzer.ghosttalk.core.model.SmartHomeButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.SmartHomeProvider
 import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.WeatherButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.SmartHomeButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.SmartHomeProvider
-import com.andreas_kratzer.ghosttalk.core.cloud.GoogleHomeManager
-import com.andreas_kratzer.ghosttalk.core.cloud.HomeDevice
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsDropdownItem
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsEditTextItem
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsToggleItem
-import kotlinx.coroutines.launch
-import java.util.UUID
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
+import com.andreas_kratzer.ghosttalk.feature.settings.domain.FeatureGuard
+import kotlinx.coroutines.launch
 
 @Composable
 fun ButtonConfigDialog(
@@ -78,7 +79,8 @@ fun ButtonConfigDialog(
     currentPageId: String? = null,
     // Google Home Support
     googleHomeManager: GoogleHomeManager? = null,
-    googleHomeProjectId: String = ""
+    googleHomeProjectId: String = "",
+    featureGuard: FeatureGuard? = null
 ) {
     val context = LocalContext.current
     var label by remember { mutableStateOf(buttonConfig.label) }
@@ -234,23 +236,53 @@ fun ButtonConfigDialog(
                     onCheckedChange = { playActionAsAuditoryCue = it }
                 )
 
+                featureGuard?.let { guard ->
+                    val currentAction = buttonConfig.buttonAction
+                    val isActionEnabled = guard.isActionEnabled(currentAction)
+                    if (!isActionEnabled) {
+                        val featureName = when (currentAction) {
+                            is GeminiButtonAction, is GeminiSearchButtonAction -> "Gemini Cloud"
+                            is GeminiNanoButtonAction -> "Gemini Nano"
+                            is SmartHomeButtonAction -> "Smart Home"
+                            is SmartPredictionButtonAction, is FrequentActionButtonAction -> "Smart Prediction"
+                            is WeatherButtonAction -> "Wetter"
+                            is ControlDeviceButtonAction -> {
+                                if (currentAction.actionType == com.andreas_kratzer.ghosttalk.core.model.DeviceActionType.READ_NOTIFICATIONS) "Benachrichtigungen" else ""
+                            }
+                            else -> ""
+                        }
+                        if (featureName.isNotEmpty()) {
+                            Text(
+                                text = stringResource(R.string.feature_disabled_warning, featureName),
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.padding(horizontal = 8.dp)
+                            )
+                        }
+                    }
+                }
+
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
                 SettingsDropdownItem(
                     label = stringResource(R.string.button_action_label),
                     selectedOption = selectedActionType,
                     options = listOf(
-                        actionTypeSpeak,
-                        actionTypeNavigate,
-                        actionTypeGemini,
-                        actionTypeGeminiSearch,
-                        actionTypeGeminiNano,
-                        actionTypeFrequent,
-                        actionTypeSmart,
-                        actionTypeWeather,
-                        actionTypeSmartHome,
-                        actionTypeDevice
-                    ).map { type -> type to { selectedActionType = type } }
+                        actionTypeSpeak to SpeakTextButtonAction(),
+                        actionTypeNavigate to NavigateToPageButtonAction(),
+                        actionTypeGemini to GeminiButtonAction(),
+                        actionTypeGeminiSearch to GeminiSearchButtonAction(),
+                        actionTypeGeminiNano to GeminiNanoButtonAction(),
+                        actionTypeFrequent to FrequentActionButtonAction(),
+                        actionTypeSmart to SmartPredictionButtonAction(),
+                        actionTypeWeather to WeatherButtonAction(),
+                        actionTypeSmartHome to SmartHomeButtonAction(),
+                        actionTypeDevice to ControlDeviceButtonAction()
+                    ).filter { (label, action) ->
+                        featureGuard?.isActionEnabled(action) ?: true
+                    }.map { (label, _) ->
+                        label to { selectedActionType = label }
+                    }
                 )
 
                 ActionConfigFields(
@@ -303,7 +335,9 @@ fun ButtonConfigDialog(
         },
         confirmButton = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Button(onClick = {
+                Button(
+                    enabled = label.isNotBlank(),
+                    onClick = {
                     val action = when (selectedActionType) {
                         actionTypeNavigate -> NavigateToPageButtonAction(targetPageId)
                         actionTypeGemini -> GeminiButtonAction(geminiPrompt)
@@ -324,14 +358,14 @@ fun ButtonConfigDialog(
                             deviceId = smartHomeDeviceId,
                             deviceName = smartHomeDeviceName,
                             intent = smartHomeIntent,
-                            value = smartHomeValue.ifBlank { null }
+                            value = if (smartHomeValue.isNotBlank()) smartHomeValue else null
                         )
                         else -> SpeakTextButtonAction()
                     }
 
                     val config = buttonConfig.copy(
                         label = label,
-                        spokenText = spokenText.ifBlank { null },
+                        spokenText = if (spokenText.isNotBlank()) spokenText else null,
                         auditoryCue = if (auditoryCueText.isNotBlank()) AuditoryCue.TextToSpeechCue(auditoryCueText) else null,
                         isActive = isActive,
                         playActionAsAuditoryCue = playActionAsAuditoryCue,
@@ -385,13 +419,13 @@ fun ButtonConfigDialog(
                                         deviceId = smartHomeDeviceId,
                                         deviceName = smartHomeDeviceName,
                                         intent = smartHomeIntent,
-                                        value = smartHomeValue.ifBlank { null }
+                                        value = if (smartHomeValue.isNotBlank()) smartHomeValue else null
                                     )
                                     else -> SpeakTextButtonAction()
                                 }
                                 onTest(buttonConfig.copy(
                                     label = label,
-                                    spokenText = spokenText.ifBlank { null },
+                                    spokenText = if (spokenText.isNotBlank()) spokenText else null,
                                     buttonAction = currentAction
                                 ))
                                 Toast.makeText(context, R.string.button_test_started, Toast.LENGTH_SHORT).show()
@@ -416,8 +450,9 @@ fun ButtonConfigDialog(
             }
         },
         dismissButton = {
+            val cancelText = stringResource(R.string.action_cancel)
             TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.action_cancel))
+                Text(cancelText)
             }
         }
     )

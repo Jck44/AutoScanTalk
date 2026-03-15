@@ -166,7 +166,7 @@
     <string name="settings_google_home_project_id_desc">Die ID deines Device Access Projekts aus der Google Cloud Console.</string>
     <string name="settings_hue_bridge_ip">Philips Hue Bridge IP</string>
     <string name="settings_hue_username">Philips Hue Benutzername (Whitelist Token)</string>
-    <string name="settings_govee_api_key">Govee API-Key</string>
+
     <string name="settings_hue_connect">Konto verknüpfen</string>
     <string name="settings_hue_disconnect">Verknüpfung aufheben</string>
     <string name="settings_hue_discover_bridges">Nach Bridges suchen</string>
@@ -176,5 +176,5 @@
     <!-- Smart Home Providers -->
     <string name="smart_home_provider_google_home">Google Home</string>
     <string name="smart_home_provider_philips_hue">Philips Hue</string>
-    <string name="smart_home_provider_govee">Govee</string>
+
 </resources>

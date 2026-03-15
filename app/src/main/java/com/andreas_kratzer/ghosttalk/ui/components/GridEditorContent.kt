@@ -451,7 +451,8 @@ private fun EditorDialogs(
             },
             currentPageId = item.id,
             googleHomeManager = googleHomeManager,
-            googleHomeProjectId = googleHomeProjectId
+            googleHomeProjectId = googleHomeProjectId,
+            featureGuard = featureGuard
         )
     }
 

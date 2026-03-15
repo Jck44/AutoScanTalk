@@ -31,7 +31,7 @@ class GoogleHomeManager @Inject constructor(
 ) {
     private val oauthTokenProvider: suspend () -> String? = {
         // Note: getToken() should handle refresh if needed via GoogleAuthManager
-        googleAuthManager.getGoogleCredential()?.getToken()
+        googleAuthManager.getGoogleCredential(listOf("https://www.googleapis.com/auth/sdm.service"))?.getToken()
     }
 
     companion object {

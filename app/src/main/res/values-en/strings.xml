@@ -190,4 +190,5 @@
     <string name="permission_location_denied_weather">Location permission required for weather data.</string>
     <string name="button_test_started">Test started</string>
     <string name="button_move_select_target">Select Target Page</string>
+    <string name="feature_disabled_warning">Feature \"%s\" is disabled and must be enabled in settings.</string>
 </resources>

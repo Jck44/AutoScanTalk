@@ -63,7 +63,7 @@ open class AudioDeviceManager @Inject constructor(
         }
     }
 
-    private fun getReadableDeviceName(device: AudioDeviceInfo): String {
+    open fun getReadableDeviceName(device: AudioDeviceInfo): String {
         val typeName = when (device.type) {
             AudioDeviceInfo.TYPE_BUILTIN_SPEAKER -> "Lautsprecher"
             AudioDeviceInfo.TYPE_BUILTIN_EARPIECE -> "Telefon-Hörmuschel"

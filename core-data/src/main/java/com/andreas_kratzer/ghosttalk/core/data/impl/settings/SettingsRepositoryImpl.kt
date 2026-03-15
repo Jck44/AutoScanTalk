@@ -129,7 +129,6 @@ class SettingsRepositoryImpl(context: Context) : SettingsRepository {
     override val hueUsernameFlow: StateFlow<String> get() = smartHomeSettings.hueUsernameFlow
     override val hueAccessTokenFlow: StateFlow<String> get() = smartHomeSettings.hueAccessTokenFlow
     override val hueRefreshTokenFlow: StateFlow<String> get() = smartHomeSettings.hueRefreshTokenFlow
-    override val goveeApiKeyFlow: StateFlow<String> get() = smartHomeSettings.goveeApiKeyFlow
     override val cuesAudioDeviceAddressFlow: StateFlow<String?> get() = voiceSettings.cuesAudioDeviceAddressFlow
     override val securityPinFlow: StateFlow<String?> get() = securitySettings.securityPinFlow
     override val securityPinHashFlow: StateFlow<String?> get() = securitySettings.securityPinHashFlow
@@ -257,10 +256,6 @@ class SettingsRepositoryImpl(context: Context) : SettingsRepository {
     override var hueRefreshToken: String
         get() = smartHomeSettings.hueRefreshToken
         set(value) { smartHomeSettings.hueRefreshToken = value }
-
-    override var goveeApiKey: String
-        get() = smartHomeSettings.goveeApiKey
-        set(value) { smartHomeSettings.goveeApiKey = value }
 
     override var isGeminiEnabled: Boolean
         get() = genAiSettings.isGeminiEnabled

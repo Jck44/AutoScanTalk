@@ -170,8 +170,8 @@ class PageImportExportManager @Inject constructor(
             val idMap = mutableMapOf<String, String>()
             
             // 2. Determine ID regeneration needs
-            val sourceBookId = importData.bookId
-            val forceRegeneration = regenerateIds || (sourceBookId != null && sourceBookId != bookId)
+            val sourceBookId = importData.bookId?.takeIf { it.isNotBlank() }
+            val forceRegeneration = regenerateIds || (sourceBookId != null && sourceBookId.lowercase() != bookId.lowercase())
 
             val regeneratedPages = mutableSetOf<String>()
             importData.pages.forEach { importPage ->
@@ -295,7 +295,7 @@ class PageImportExportManager @Inject constructor(
     override suspend fun extractBookIdFromJson(jsonString: String): String? = withContext(Dispatchers.Default) {
         try {
             val root = json.parseToJsonElement(jsonString) as? JsonObject
-            root?.get("bookId")?.jsonPrimitive?.content
+            root?.get("bookId")?.jsonPrimitive?.content?.takeIf { it.isNotBlank() }
         } catch (e: Exception) {
             null
         }
@@ -315,7 +315,7 @@ class PageImportExportManager @Inject constructor(
             val importData = json.decodeFromString<ImportExportData>(jsonString)
             
             // Extract bookId from name if missing from field (e.g. "Name [uuid]")
-            val extractedId = importData.bookId ?: run {
+            val extractedId = importData.bookId?.takeIf { it.isNotBlank() } ?: run {
                 val name = importData.bookName ?: ""
                 val regex = "\\[([a-fA-F0-9-]{36})\\]".toRegex()
                 regex.find(name)?.groupValues?.get(1)
@@ -325,11 +325,11 @@ class PageImportExportManager @Inject constructor(
                 return@withContext Result.failure(Exception("Konnte keine Buch-ID im Backup finden."))
             }
 
-            val targetBookId = cloudFileId ?: extractedId!!
+            val targetBookId = (cloudFileId ?: extractedId!!).trim().lowercase()
             
             val existingBook = bookRepository.getBookById(targetBookId)
             if (existingBook != null && cloudFileId == null) {
-                return@withContext Result.failure(Exception("Ein Buch mit dieser ID existiert bereits lokal."))
+                return@withContext Result.failure(Exception("Ein Buch mit der ID '$targetBookId' existiert bereits lokal. Import abgebrochen, um Überschreiben zu verhindern."))
             }
 
             if (existingBook == null) {

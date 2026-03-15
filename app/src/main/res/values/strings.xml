@@ -196,4 +196,5 @@
     <string name="permission_location_denied_weather">Standortberechtigung erforderlich für Wetterdaten.</string>
     <string name="button_test_started">Test gestartet</string>
     <string name="button_move_select_target">Ziel-Seite wählen</string>
+    <string name="feature_disabled_warning">Das Feature \"%s\" ist deaktiviert und muss in den Einstellungen aktiviert werden.</string>
 </resources>

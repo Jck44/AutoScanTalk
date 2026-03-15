@@ -2,7 +2,6 @@ package com.andreas_kratzer.ghosttalk.core.actions
 
 import com.andreas_kratzer.ghosttalk.core.cloud.GoogleHomeManager
 import com.andreas_kratzer.ghosttalk.core.cloud.PhilipsHueManager
-import com.andreas_kratzer.ghosttalk.core.cloud.GoveeManager
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.SmartHomeButtonAction
@@ -25,7 +24,7 @@ class SmartHomeActionHandlerTest {
     private val settingsRepository = mockk<SettingsRepository>(relaxed = true)
     private val googleHomeManager = mockk<GoogleHomeManager>(relaxed = true)
     private val hueManager = mockk<PhilipsHueManager>(relaxed = true)
-    private val goveeManager = mockk<GoveeManager>(relaxed = true)
+
     private val ttsProxy = mockk<ActionTtsProxy>(relaxed = true)
     private val actionLogger = mockk<ActionLogger>(relaxed = true)
     
@@ -40,9 +39,6 @@ class SmartHomeActionHandlerTest {
             },
             hueManagerLazy = object : dagger.Lazy<PhilipsHueManager> {
                 override fun get() = hueManager
-            },
-            goveeManagerLazy = object : dagger.Lazy<GoveeManager> {
-                override fun get() = goveeManager
             },
             ttsProxyLazy = object : dagger.Lazy<ActionTtsProxy> {
                 override fun get() = ttsProxy
@@ -132,28 +128,5 @@ class SmartHomeActionHandlerTest {
         verify { ttsProxy.speakRouted(text = match { it.contains("Hue Light") }, any(), any(), any(), any()) }
     }
 
-    @Test
-    fun `handle should delegate to GoveeManager when provider is GOVEE`() = scope.runTest {
-        // GIVEN
-        val action = SmartHomeButtonAction(
-            provider = SmartHomeProvider.GOVEE,
-            deviceId = "govee1",
-            deviceName = "Govee Strip",
-            intent = "action.off"
-        )
-        val config = ButtonConfig(id = "1", label = "Govee", buttonAction = action)
-        
-        every { settingsRepository.goveeApiKey } returns "api-key-123"
-        coEvery { goveeManager.executeCommand(any(), any(), any(), any(), any()) } returns true
-        
-        val onFinish = mockk<(Int) -> Unit>(relaxed = true)
 
-        // WHEN
-        handler.handle(config, action, 1, onFinish)
-        runCurrent()
-        
-        // THEN
-        coVerify { goveeManager.executeCommand("api-key-123", "govee1", "H6159", "action.off", null) }
-        verify { ttsProxy.speakRouted(text = match { it.contains("Govee Strip") }, any(), any(), any(), any()) }
-    }
 }

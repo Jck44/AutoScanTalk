@@ -136,6 +136,8 @@ class CloudSyncSettingsDelegate @Inject constructor(
                 } else {
                     _showBackupSelectionDialog.value = true
                 }
+            } catch (e: UserRecoverableAuthIOException) {
+                _authIntentFlow.emit(e.intent)
             } catch (e: Exception) {
                 Toast.makeText(application, "Fehler beim Laden der Backups: ${e.message}", Toast.LENGTH_LONG).show()
             } finally {

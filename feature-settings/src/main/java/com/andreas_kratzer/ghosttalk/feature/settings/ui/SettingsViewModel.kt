@@ -77,7 +77,6 @@ class SettingsViewModel @Inject constructor(
     val hueBridgeIp = settingsRepository.hueBridgeIpFlow
     val hueUsername = settingsRepository.hueUsernameFlow
     val hueAccessToken = settingsRepository.hueAccessTokenFlow
-    val goveeApiKey = settingsRepository.goveeApiKeyFlow
     val isSyncing = cloudSyncDelegate.isSyncing
     val userEmail = cloudSyncDelegate.userEmail
     
@@ -180,7 +179,7 @@ class SettingsViewModel @Inject constructor(
     fun setHueBridgeIp(ip: String) { settingsRepository.hueBridgeIp = ip }
     fun setHueUsername(username: String) { settingsRepository.hueUsername = username }
     fun setHueAccessToken(token: String) { settingsRepository.hueAccessToken = token }
-    fun setGoveeApiKey(key: String) { settingsRepository.goveeApiKey = key }
+
 
     fun discoverHueBridges() {
         viewModelScope.launch {

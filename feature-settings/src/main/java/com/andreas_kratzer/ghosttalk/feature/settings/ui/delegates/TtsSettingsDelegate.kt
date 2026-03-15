@@ -67,7 +67,9 @@ class TtsSettingsDelegate @Inject constructor(
 
     fun loadAvailableAudioDevices() {
         viewModelScopeLaunch {
-            _availableAudioDevices.value = getAudioDevicesUseCase.execute()
+            audioDeviceManager.availableDevicesFlow.collect { devices ->
+                _availableAudioDevices.value = devices
+            }
         }
     }
 
@@ -104,6 +106,10 @@ class TtsSettingsDelegate @Inject constructor(
     fun getResolvedDeviceName(addr: String?): String {
         if (addr == null) return "System-Standard"
         val device = audioDeviceManager.getAudioDeviceInfo(addr)
-        return device?.productName?.toString() ?: addr.split("|").firstOrNull() ?: "Unbekannt"
+        return if (device != null) {
+            audioDeviceManager.getReadableDeviceName(device)
+        } else {
+            addr.split("|").getOrNull(1) ?: addr.split("|").firstOrNull() ?: "Unbekannt"
+        }
     }
 }

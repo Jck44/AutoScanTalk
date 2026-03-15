@@ -39,7 +39,9 @@ fun PinEntryDialog(
     onDismiss: () -> Unit,
     onConfirm: (String) -> Unit,
     title: String = "PIN eingeben",
-    errorMessage: String? = null
+    errorMessage: String? = null,
+    isBiometricEnabled: Boolean = false,
+    onBiometricClick: (() -> Unit)? = null
 ) {
     var pin by remember { mutableStateOf("") }
 
@@ -107,7 +109,7 @@ fun PinEntryDialog(
                     listOf("1", "2", "3"),
                     listOf("4", "5", "6"),
                     listOf("7", "8", "9"),
-                    listOf("", "0", "back")
+                    listOf(if (isBiometricEnabled) "bio" else "", "0", "back")
                 )
 
                 Column(
@@ -123,13 +125,16 @@ fun PinEntryDialog(
                                     PinKey(
                                         label = key,
                                         onClick = {
-                                            if (key == "back") {
-                                                if (pin.isNotEmpty()) pin = pin.dropLast(1)
-                                            } else {
-                                                if (pin.length < 4) {
-                                                    pin += key
-                                                    if (pin.length == 4) {
-                                                        onConfirm(pin)
+                                            when (key) {
+                                                "back" -> if (pin.isNotEmpty()) pin = pin.dropLast(1)
+                                                "bio" -> onBiometricClick?.invoke()
+                                                else -> {
+                                                    if (pin.length < 4) {
+                                                        pin += key
+                                                        if (pin.length == 4) {
+                                                            onConfirm(pin)
+                                                            // Pin code is usually cleared by caller if it fails
+                                                        }
                                                     }
                                                 }
                                             }
@@ -172,6 +177,12 @@ fun PinKey(
             Icon(
                 imageVector = GhosTTalkIcons.Backspace,
                 contentDescription = "Löschen",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        } else if (label == "bio") {
+            Icon(
+                imageVector = GhosTTalkIcons.Fingerprint,
+                contentDescription = "Biometrie",
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         } else {

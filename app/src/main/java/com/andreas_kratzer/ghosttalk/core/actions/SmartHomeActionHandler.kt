@@ -1,7 +1,6 @@
 package com.andreas_kratzer.ghosttalk.core.actions
 
 import com.andreas_kratzer.ghosttalk.core.cloud.GoogleHomeManager
-import com.andreas_kratzer.ghosttalk.core.cloud.GoveeManager
 import com.andreas_kratzer.ghosttalk.core.cloud.PhilipsHueManager
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.di.ApplicationScope
@@ -21,7 +20,6 @@ class SmartHomeActionHandler @Inject constructor(
     @param:ApplicationScope private val scope: CoroutineScope,
     private val googleHomeManagerLazy: Lazy<GoogleHomeManager>,
     private val hueManagerLazy: Lazy<PhilipsHueManager>,
-    private val goveeManagerLazy: Lazy<GoveeManager>,
     private val actionLogger: ActionLogger,
     private val ttsProxyLazy: Lazy<ActionTtsProxy>,
     private val settingsRepository: SettingsRepository
@@ -42,7 +40,6 @@ class SmartHomeActionHandler @Inject constructor(
                 when (smartHomeAction.provider) {
                     SmartHomeProvider.GOOGLE_HOME -> handleGoogleHome(smartHomeAction, executionId, onFinish)
                     SmartHomeProvider.PHILIPS_HUE -> handlePhilipsHue(smartHomeAction, executionId, onFinish)
-                    SmartHomeProvider.GOVEE -> handleGovee(smartHomeAction, executionId, onFinish)
                 }
             } catch (e: Exception) {
                 actionLogger.error("Fehler in SmartHomeActionHandler", e)
@@ -103,24 +100,7 @@ class SmartHomeActionHandler @Inject constructor(
         }
     }
     
-    private suspend fun handleGovee(action: SmartHomeButtonAction, executionId: Int, onFinish: (Int) -> Unit) {
-        actionLogger.log("Steuere Govee: ${action.deviceName} (${action.intent})")
-        
-        val success = goveeManagerLazy.get().executeCommand(
-            apiKey = settingsRepository.goveeApiKey,
-            deviceId = action.deviceId,
-            model = "H6159", // TODO: Make model configurable if needed, or extract from deviceId
-            intent = action.intent,
-            value = action.value
-        )
-        
-        if (success) {
-            val message = "${action.deviceName} (Govee) wurde auf '${action.intent.substringAfterLast(".")}' gesetzt."
-            speakResponse(message, executionId, onFinish)
-        } else {
-            speakResponse("Fehler beim Steuern von ${action.deviceName} (Govee).", executionId, onFinish)
-        }
-    }
+
 
     private fun speakResponse(text: String, executionId: Int, onFinish: (Int) -> Unit) {
         val tts = ttsProxyLazy.get()

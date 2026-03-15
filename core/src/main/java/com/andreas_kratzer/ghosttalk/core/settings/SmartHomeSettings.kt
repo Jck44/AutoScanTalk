@@ -17,7 +17,4 @@ interface SmartHomeSettings {
 
     var hueRefreshToken: String
     val hueRefreshTokenFlow: StateFlow<String>
-    
-    var goveeApiKey: String
-    val goveeApiKeyFlow: StateFlow<String>
 }

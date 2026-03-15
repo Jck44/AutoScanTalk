@@ -16,14 +16,12 @@ class SmartHomeSettingsRepository(
     private val _hueUsername = NonNullStringSetting(SettingsConstants.KEY_HUE_USERNAME, "")
     private val _hueAccessToken = NonNullStringSetting(KEY_HUE_ACCESS_TOKEN, "")
     private val _hueRefreshToken = NonNullStringSetting(KEY_HUE_REFRESH_TOKEN, "")
-    private val _goveeApiKey = NonNullStringSetting(SettingsConstants.KEY_GOVEE_API_KEY, "")
 
     override val googleHomeProjectIdFlow = _googleHomeProjectId.flow
     override val hueBridgeIpFlow = _hueBridgeIp.flow
     override val hueUsernameFlow = _hueUsername.flow
     override val hueAccessTokenFlow = _hueAccessToken.flow
     override val hueRefreshTokenFlow = _hueRefreshToken.flow
-    override val goveeApiKeyFlow = _goveeApiKey.flow
 
     override var googleHomeProjectId: String
         get() = _googleHomeProjectId.value
@@ -45,9 +43,7 @@ class SmartHomeSettingsRepository(
         get() = _hueRefreshToken.value
         set(value) { _hueRefreshToken.value = value }
 
-    override var goveeApiKey: String
-        get() = _goveeApiKey.value
-        set(value) { _goveeApiKey.value = value }
+
 
     override fun refresh() {
         _googleHomeProjectId.refresh()
@@ -55,6 +51,5 @@ class SmartHomeSettingsRepository(
         _hueUsername.refresh()
         _hueAccessToken.refresh()
         _hueRefreshToken.refresh()
-        _goveeApiKey.refresh()
     }
 }

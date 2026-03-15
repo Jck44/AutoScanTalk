@@ -55,5 +55,4 @@ object SettingsConstants {
     const val KEY_HUE_USERNAME = "hue_username"
     const val KEY_HUE_ACCESS_TOKEN = "hue_access_token"
     const val KEY_HUE_REFRESH_TOKEN = "hue_refresh_token"
-    const val KEY_GOVEE_API_KEY = "govee_api_key"
 }

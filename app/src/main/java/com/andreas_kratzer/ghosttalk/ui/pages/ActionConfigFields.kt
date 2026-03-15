@@ -5,6 +5,7 @@ import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.provider.ContactsContract
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -33,12 +34,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.core.content.ContextCompat
 import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.core.cloud.HomeDevice
 import com.andreas_kratzer.ghosttalk.core.model.DeviceActionType
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
-import com.andreas_kratzer.ghosttalk.core.model.SmartHomeButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SmartHomeProvider
-import com.andreas_kratzer.ghosttalk.core.cloud.HomeDevice
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.getDisplayName
 
@@ -447,6 +447,32 @@ fun MessagingFields(
 }
 
 @Composable
+fun WeatherActionFields() {
+    val context = LocalContext.current
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val granted = permissions.entries.all { it.value }
+        if (!granted) {
+            Toast.makeText(context, R.string.permission_location_denied_weather, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        val permissions = arrayOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        )
+        val allGranted = permissions.all {
+            ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
+        }
+        if (!allGranted) {
+            permissionLauncher.launch(permissions)
+        }
+    }
+}
+
+@Composable
 fun ActionConfigFields(
     selectedActionType: String,
     pages: List<Page>,
@@ -494,6 +520,7 @@ fun ActionConfigFields(
     val actionTypeSmart = stringResource(R.string.button_action_smart_prediction)
     val actionTypeDevice = stringResource(R.string.button_action_control_device)
     val actionTypeSmartHome = stringResource(R.string.button_action_smart_home)
+    val actionTypeWeather = stringResource(R.string.button_action_weather)
 
     when (selectedActionType) {
         actionTypeNavigate -> {
@@ -559,6 +586,9 @@ fun ActionConfigFields(
                 onRefresh = onFetchDevices
             )
         }
+        actionTypeWeather -> {
+            WeatherActionFields()
+        }
     }
 }
 
@@ -596,7 +626,7 @@ fun SmartHomeActionFields(
                 }
             }?.map { it to it.substringAfterLast(".") } ?: emptyList()
         } else {
-            // Skeleton for Hue / Govee
+            // Skeleton for Hue
             listOf("action.on" to "An", "action.off" to "Aus")
         }
     }

@@ -122,7 +122,7 @@ class GoogleAuthManager @javax.inject.Inject constructor(
         prefs.edit { remove(KEY_USER_EMAIL) }
     }
 
-    override fun getGoogleCredential(): GoogleAccountCredential? {
+    override fun getGoogleCredential(scopes: List<String>?): GoogleAccountCredential? {
         val email = _userEmail.value
         Log.d(TAG, "getGoogleCredential: stored email is '$email'")
         
@@ -131,18 +131,19 @@ class GoogleAuthManager @javax.inject.Inject constructor(
             return null
         }
 
-        val scopes = listOf(
+        // Default scopes if none provided: just Drive and Gemini (Generative Language)
+        // These are the core features of the app.
+        val finalScopes = (scopes ?: listOf(
             DriveScopes.DRIVE_FILE,
-            "https://www.googleapis.com/auth/generative-language.retriever",
-            "https://www.googleapis.com/auth/calendar.events.readonly",
-            "https://www.googleapis.com/auth/tasks.readonly",
-            "https://www.googleapis.com/auth/sdm.service"
-        )
+            "https://www.googleapis.com/auth/generative-language.retriever"
+        )).distinct()
+
+        Log.d(TAG, "Creating credential with scopes: $finalScopes")
+
         val credential = GoogleAccountCredential.usingOAuth2(
-            appContext, scopes
+            appContext, finalScopes
         )
         
-        // NEW: Assign actual Account object to avoid null name issues in internal GMS code
         try {
             val account = android.accounts.Account(email, "com.google")
             credential.selectedAccount = account

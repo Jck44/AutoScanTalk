@@ -136,8 +136,11 @@ fun BookListScreen(
                         Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                             IconButton(
                                 onClick = { 
-                                    if (!isFavorite || allBooks.size > 1) {
-                                        bookViewModel.settingsRepository.favoriteBookId = if (isFavorite) null else book.id
+                                    // Feature: A book must always be marked as a favorite.
+                                    // If the clicked book is not the favorite, make it the new favorite.
+                                    // If it IS already the favorite, do nothing (to prevent deselection).
+                                    if (!isFavorite) {
+                                        bookViewModel.settingsRepository.favoriteBookId = book.id
                                     }
                                 }
                             ) {

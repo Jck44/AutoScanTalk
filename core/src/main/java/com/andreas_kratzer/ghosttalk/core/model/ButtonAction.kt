@@ -97,7 +97,7 @@ data class WeatherButtonAction(
 ) : ButtonAction()
 
 /**
- * An action to control Smart Home devices (Google Home, Philips Hue, Govee).
+ * An action to control Smart Home devices (Google Home, Philips Hue).
  */
 @Serializable
 @SerialName("SmartHomeButtonAction")
@@ -112,8 +112,7 @@ data class SmartHomeButtonAction(
 @Serializable
 enum class SmartHomeProvider {
     GOOGLE_HOME,
-    PHILIPS_HUE,
-    GOVEE
+    PHILIPS_HUE
 }
 
 @Serializable

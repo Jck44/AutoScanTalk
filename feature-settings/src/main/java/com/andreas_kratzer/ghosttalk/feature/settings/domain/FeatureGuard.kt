@@ -8,6 +8,8 @@ import com.andreas_kratzer.ghosttalk.core.model.GeminiButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiNanoButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiSearchButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.SmartHomeButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.SmartHomeProvider
 import com.andreas_kratzer.ghosttalk.core.scanning.FeatureGuardProxy
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import javax.inject.Inject
@@ -26,9 +28,18 @@ class FeatureGuard @Inject constructor(
     override fun isActionEnabled(action: ButtonAction): Boolean {
         return when (action) {
             is SmartPredictionButtonAction -> settingsRepository.isSmartPredictionEnabled
-            is GeminiButtonAction -> settingsRepository.isGeminiEnabled
-            is GeminiSearchButtonAction -> settingsRepository.isGeminiEnabled
-            is GeminiNanoButtonAction -> settingsRepository.useLocalGenerativeAi
+            is GeminiButtonAction, is GeminiSearchButtonAction -> {
+                settingsRepository.isGeminiEnabled && !settingsRepository.useLocalGenerativeAi
+            }
+            is GeminiNanoButtonAction -> {
+                settingsRepository.isGeminiEnabled && settingsRepository.useLocalGenerativeAi
+            }
+            is SmartHomeButtonAction -> {
+                when (action.provider) {
+                    SmartHomeProvider.GOOGLE_HOME -> settingsRepository.googleHomeProjectId.isNotBlank()
+                    SmartHomeProvider.PHILIPS_HUE -> settingsRepository.hueAccessToken.isNotBlank()
+                }
+            }
             is ControlDeviceButtonAction -> {
                 if (action.actionType == DeviceActionType.READ_NOTIFICATIONS) {
                     settingsRepository.isNotificationReadingEnabled

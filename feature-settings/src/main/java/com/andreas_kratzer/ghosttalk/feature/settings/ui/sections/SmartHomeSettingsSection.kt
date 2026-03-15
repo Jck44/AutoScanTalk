@@ -34,7 +34,6 @@ fun SmartHomeSettingsSection(
     val hueBridgeIp by viewModel.hueBridgeIp.collectAsState("")
     val hueUsername by viewModel.hueUsername.collectAsState("")
     val hueAccessToken by viewModel.hueAccessToken.collectAsState("")
-    val goveeApiKey by viewModel.goveeApiKey.collectAsState("")
 
     Column(
         modifier = Modifier
@@ -108,14 +107,7 @@ fun SmartHomeSettingsSection(
             }
         }
 
-        // --- Govee Section ---
-        PreferenceCategory(stringResource(R.string.smart_home_provider_govee)) {
-            SettingsEditTextItem(
-                label = stringResource(R.string.settings_govee_api_key),
-                value = goveeApiKey,
-                onValueChange = { viewModel.setGoveeApiKey(it) }
-            )
-        }
+
     }
 }
 
@@ -124,6 +116,5 @@ fun SmartHomeProvider.getDisplayName(): String {
     return when (this) {
         SmartHomeProvider.GOOGLE_HOME -> stringResource(R.string.smart_home_provider_google_home)
         SmartHomeProvider.PHILIPS_HUE -> stringResource(R.string.smart_home_provider_philips_hue)
-        SmartHomeProvider.GOVEE -> stringResource(R.string.smart_home_provider_govee)
     }
 }

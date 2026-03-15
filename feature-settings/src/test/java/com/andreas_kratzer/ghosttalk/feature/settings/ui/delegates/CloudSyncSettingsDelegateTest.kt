@@ -19,6 +19,7 @@ import io.mockk.unmockkStatic
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -120,5 +121,19 @@ class CloudSyncSettingsDelegateTest {
         testDispatcher.scheduler.advanceUntilIdle()
         
         assert(delegate.signInErrorMessage.value?.contains("fehlgeschlagen") == true)
+    }
+    
+    @Test
+    fun `fetchAvailableBackupsForImport handles success`() = runTest {
+        coEvery { googleAuthManager.getGoogleCredential() } returns mockk(relaxed = true)
+        coEvery { cloudSyncUseCase.getAvailableBackups(any()) } returns listOf(
+            com.andreas_kratzer.ghosttalk.core.cloud.domain.RemoteBackupInfo("id", "file", "book", 123L)
+        )
+        
+        delegate.fetchAvailableBackupsForImport(testScope)
+        testDispatcher.scheduler.advanceUntilIdle()
+        
+        assert(delegate.availableBackups.value.isNotEmpty())
+        assert(delegate.showBackupSelectionDialog.value)
     }
 }
