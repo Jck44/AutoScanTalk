@@ -24,6 +24,7 @@
     <string name="book_dialog_delete_title">Buch löschen?</string>
     <string name="book_dialog_delete_confirm">Möchtest du das Buch \"%s\" wirklich unwiderruflich löschen? Alle darin enthaltenen Seiten gehen verloren.</string>
     <string name="book_name_label">Name des Buches</string>
+    <string name="book_import_cloud_description">Bestehendes Buch aus Cloud laden</string>
     <string name="book_import_cloud_success">Buch erfolgreich aus der Cloud geladen.</string>
     <string name="book_import_cloud_error">Fehler beim Laden aus der Cloud: %s</string>
     
@@ -33,6 +34,7 @@
     <string name="action_cancel">Abbrechen</string>
     <string name="action_delete">Löschen</string>
     <string name="action_search">Suchen&#8230;</string>
+    <string name="error_field_required">Dieses Feld ist ein Pflichtfeld</string>
     <string name="error_book_name_required">Bitte geben Sie einen Namen für das Buch ein.</string>
     <string name="error_page_name_required">Bitte geben Sie einen Namen für die Seite ein.</string>
 
@@ -47,6 +49,10 @@
     <string name="page_name_label">Name der Seite</string>
     <string name="page_scan_pattern_override">Scan Muster (Überschreiben)</string>
     <string name="page_pattern_default">Standard (Buch)</string>
+    <string name="page_rename_description">Seite umbenennen</string>
+    <string name="page_delete_description">Seite löschen</string>
+    <string name="page_dialog_settings_title">Seiteneinstellungen</string>
+    <string name="page_row_announcement_config">Zeilen-Ansage konfigurieren:</string>
     <string name="page_row_label">Zeile %d</string>
     
     <string name="page_dialog_new_title">Neue Seite erstellen</string>
@@ -58,9 +64,13 @@
     <string name="page_export_success">Export erfolgreich!</string>
     <string name="page_export_error">Fehler beim Export: %s</string>
     <string name="action_import_json_migration">Import JSON (GoTalkNow Migration)</string>
+    <string name="action_export_json">Export JSON (Sicherung)</string>
+    <string name="action_import_json">Import JSON (Wiederherstellung)</string>
     <string name="action_more">Mehr</string>
 
     <!-- Page Editor Screen -->
+    <string name="page_editor_title">Editor: %s</string>
+    <string name="page_editor_hint">Tippe auf ein Feld, um den Button zu konfigurieren.</string>
     <string name="page_editor_row_name_label">Zeilenname</string>
     <string name="page_editor_loading">Seite nicht gefunden oder wird geladen…</string>
 
@@ -79,6 +89,8 @@
     <string name="button_action_frequent_action">Häufigste Aktion</string>
     <string name="button_action_smart_prediction">Gemini Vorhersage</string>
     <string name="button_action_notification">Benachrichtigung (Audio-Hinweis)</string>
+    <string name="button_action_volume_tts">Lautstärke anpassen (TTS)</string>
+    <string name="button_action_volume_cues">Lautstärke anpassen (Hinweise)</string>
     <string name="button_action_control_device">Gerätefunktionen</string>
     <string name="button_action_weather">Wetter vorlesen</string>
     <string name="button_action_google_home">Google Home (Veraltet)</string>
@@ -88,6 +100,7 @@
     <string name="button_device_control_media_previous">Vorheriges Lied / Zurück</string>
     <string name="button_device_control_media_play_pause">Start / Stop</string>
     <string name="button_device_control_battery">Akkustand vorlesen</string>
+    <string name="button_device_control_weather">Wetter vorlesen</string>
     <string name="button_device_control_date">Datum vorlesen</string>
     <string name="button_device_control_time">Uhrzeit vorlesen</string>
     <string name="button_no_page_selected">Keine Seite ausgewählt</string>
@@ -96,7 +109,13 @@
     <string name="button_gemini_prompt_field">Gemini Prompt (Befehl)</string>
     <string name="button_gemini_prompt_hint">Was soll Gemini tun?</string>
     <string name="button_gemini_nano_intent_label">Gemini Nano Funktion</string>
+    <string name="button_gemini_nano_intent_time">Uhrzeit (Präzise &amp; Natürlich)</string>
+    <string name="button_gemini_nano_intent_date">Datum (Natürlich)</string>
+    <string name="button_gemini_nano_intent_weather">Wetter für aktuellen Standort</string>
+    <string name="button_gemini_nano_intent_battery">Akkustand</string>
     <string name="button_gemini_nano_intent_alarm">Nächster Alarm</string>
+    <string name="button_notification_target_app">App auswählen</string>
+    <string name="button_notification_target_all">Alle erlaubten Apps</string>
     <string name="button_play_as_cue">Als Audio-Hinweis abspielen</string>
     <string name="button_google_home_device_label">Gerät</string>
     <string name="button_google_home_command_label">Befehl</string>

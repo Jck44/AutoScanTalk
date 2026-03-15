@@ -8,6 +8,7 @@
     <string name="settings_category_scanning">Scanning &amp; Operation</string>
     <string name="settings_category_security">Security &amp; PIN</string>
     <string name="settings_category_cloud">Google Drive Sync</string>
+    <string name="settings_category_smart_home">Smart Home (Experimental)</string>
     <string name="settings_category_gemini">Gemini AI Assistant</string>
     <string name="settings_category_notifications">Notifications (Auditory Cue)</string>
     <string name="settings_category_advanced">Advanced Settings</string>
@@ -159,4 +160,21 @@
     <string name="back_button_content_description">Back</string>
     <string name="page_list_title">Manage Pages</string>
     <string name="template_manage_title">Manage Templates</string>
+
+    <!-- Smart Home -->
+    <string name="settings_google_home_project_id">Google Home Project ID (Device Access)</string>
+    <string name="settings_google_home_project_id_desc">The ID of your Device Access project from the Google Cloud Console.</string>
+    <string name="settings_hue_bridge_ip">Philips Hue Bridge IP</string>
+    <string name="settings_hue_username">Philips Hue Username (Whitelist Token)</string>
+    <string name="settings_govee_api_key">Govee API Key</string>
+    <string name="settings_hue_connect">Sign in with Hue</string>
+    <string name="settings_hue_disconnect">Unlink Account</string>
+    <string name="settings_hue_discover_bridges">Search for Bridges</string>
+    <string name="settings_hue_status_connected">Connected</string>
+    <string name="settings_hue_status_disconnected">Not Connected</string>
+
+    <!-- Smart Home Providers -->
+    <string name="smart_home_provider_google_home">Google Home</string>
+    <string name="smart_home_provider_philips_hue">Philips Hue</string>
+    <string name="smart_home_provider_govee">Govee</string>
 </resources>

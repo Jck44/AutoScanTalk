@@ -25,6 +25,7 @@
     <string name="book_dialog_delete_title">Delete Book?</string>
     <string name="book_dialog_delete_confirm">Do you really want to permanently delete the book \"%s\"? All pages within it will be lost.</string>
     <string name="book_name_label">Book Name</string>
+    <string name="book_import_cloud_description">Load existing book from cloud</string>
 
     <!-- Shared Actions -->
     <string name="action_create">Create</string>
@@ -32,6 +33,7 @@
     <string name="action_cancel">Cancel</string>
     <string name="action_delete">Delete</string>
     <string name="action_search">Search&#8230;</string>
+    <string name="error_field_required">This field is required</string>
     <string name="error_book_name_required">Please enter a name for the book.</string>
     <string name="error_page_name_required">Please enter a name for the page.</string>
 
@@ -45,6 +47,10 @@
     <string name="page_name_label">Page Name</string>
     <string name="page_scan_pattern_override">Scan Pattern (Override)</string>
     <string name="page_pattern_default">Default (Book)</string>
+    <string name="page_rename_description">Rename page</string>
+    <string name="page_delete_description">Delete page</string>
+    <string name="page_dialog_settings_title">Page Settings</string>
+    <string name="page_row_announcement_config">Configure Row Announcements:</string>
     <string name="page_row_label">Row %d</string>
 
     <string name="page_dialog_new_title">Create New Page</string>
@@ -56,9 +62,13 @@
     <string name="page_export_success">Export successful!</string>
     <string name="page_export_error">Export error: %s</string>
     <string name="action_import_json_migration">Import JSON (GoTalkNow Migration)</string>
+    <string name="action_export_json">Export JSON</string>
+    <string name="action_import_json">Import JSON</string>
     <string name="action_more">More</string>
 
     <!-- Page Editor Screen -->
+    <string name="page_editor_title">Editor: %s</string>
+    <string name="page_editor_hint">Tap a field to configure the button.</string>
     <string name="page_editor_row_name_label">Row Name</string>
     <string name="page_editor_loading">Page not found or loading…</string>
 
@@ -77,6 +87,8 @@
     <string name="button_action_frequent_action">Most Frequent Action</string>
     <string name="button_action_smart_prediction">Gemini Prediction</string>
     <string name="button_action_notification">Notification (Auditory Cue)</string>
+    <string name="button_action_volume_tts">Adjust Volume (TTS)</string>
+    <string name="button_action_volume_cues">Adjust Volume (Feedback)</string>
     <string name="button_action_control_device">Device Functions</string>
     <string name="button_action_weather">Read Weather</string>
     <string name="button_action_google_home">Google Home (Deprecated)</string>
@@ -86,6 +98,7 @@
     <string name="button_device_control_media_previous">Previous Song / Back</string>
     <string name="button_device_control_media_play_pause">Start / Stop</string>
     <string name="button_device_control_battery">Read Battery Level</string>
+    <string name="button_device_control_weather">Read weather</string>
     <string name="button_device_control_date">Read Date</string>
     <string name="button_device_control_time">Read Time</string>
     <string name="button_no_page_selected">No page selected</string>
@@ -94,7 +107,13 @@
     <string name="button_gemini_prompt_field">Gemini Prompt (Command)</string>
     <string name="button_gemini_prompt_hint">What should Gemini do?</string>
     <string name="button_gemini_nano_intent_label">Gemini Nano Function</string>
+    <string name="button_gemini_nano_intent_time">Time (Precise &amp; Natural)</string>
+    <string name="button_gemini_nano_intent_date">Date (Natural)</string>
+    <string name="button_gemini_nano_intent_weather">Weather (Offline Cache)</string>
+    <string name="button_gemini_nano_intent_battery">Battery Level</string>
     <string name="button_gemini_nano_intent_alarm">Next Alarm</string>
+    <string name="button_notification_target_app">Select App</string>
+    <string name="button_notification_target_all">All allowed apps</string>
     <string name="button_play_as_cue">Play as Auditory Cue</string>
     <string name="button_google_home_device_label">Device</string>
     <string name="button_google_home_command_label">Command</string>
