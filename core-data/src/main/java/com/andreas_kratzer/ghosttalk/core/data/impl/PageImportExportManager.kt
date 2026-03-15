@@ -1,6 +1,10 @@
 package com.andreas_kratzer.ghosttalk.core.data.impl
 
 import android.content.Context
+import com.andreas_kratzer.ghosttalk.core.data.BookRepository
+import com.andreas_kratzer.ghosttalk.core.data.PageRepository
+import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.data.export.PageImportExportProvider
 import com.andreas_kratzer.ghosttalk.core.model.AuditoryCue
 import com.andreas_kratzer.ghosttalk.core.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
@@ -12,16 +16,15 @@ import com.andreas_kratzer.ghosttalk.core.model.GeminiNanoButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiSearchButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.Page
+import com.andreas_kratzer.ghosttalk.core.model.SmartHomeButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.SmartHomeProvider
 import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.WeatherButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.SmartHomeButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.SmartHomeProvider
-import com.andreas_kratzer.ghosttalk.core.data.BookRepository
-import com.andreas_kratzer.ghosttalk.core.data.PageRepository
-import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.core.data.export.PageImportExportProvider
-import com.andreas_kratzer.ghosttalk.core.model.importexport.*
+import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportAction
+import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportButton
+import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportExportData
+import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportPage
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -34,7 +37,7 @@ import javax.inject.Singleton
 
 @Singleton
 class PageImportExportManager @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val pageRepository: PageRepository,
     private val bookRepository: BookRepository,
     private val settingsRepository: SettingsRepository
