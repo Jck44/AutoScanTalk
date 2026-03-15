@@ -20,4 +20,10 @@ interface SettingsRepository : SecuritySettings, KeyEventSettings, AudioSettings
     
     override var activeBookId: String
     override val activeBookIdFlow: StateFlow<String?>
+    
+    // Audio Device Caching
+    override fun getDeviceName(persistentId: String): String?
+    override fun saveDeviceName(persistentId: String, name: String)
+    override fun cleanupDeviceCache(keepPersistentIds: Set<String>)
+    override fun getCachedDevices(): Map<String, String>
 }

@@ -13,4 +13,5 @@ interface ControlDeviceSettings {
     fun getDeviceName(persistentId: String): String?
     fun saveDeviceName(persistentId: String, name: String)
     fun cleanupDeviceCache(keepPersistentIds: Set<String>)
+    fun getCachedDevices(): Map<String, String>
 }

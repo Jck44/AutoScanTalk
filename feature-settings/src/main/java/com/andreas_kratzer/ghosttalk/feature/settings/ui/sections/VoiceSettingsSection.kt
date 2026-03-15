@@ -28,6 +28,7 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
     val selectedVoiceName by viewModel.selectedVoiceName.collectAsState(null)
     val availableVoices by viewModel.availableVoices.collectAsState()
     val availableAudioDevices by viewModel.availableAudioDevices.collectAsState()
+    val cachedAudioDevices by viewModel.cachedAudioDevices.collectAsState()
     val selectedTtsAddress by viewModel.selectedTtsAudioDeviceAddress.collectAsState(null)
     val selectedCuesAddress by viewModel.selectedCuesAudioDeviceAddress.collectAsState(null)
 
@@ -126,11 +127,23 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
             }
 
             PreferenceCategory(stringResource(R.string.settings_category_audio_hardware), modifier = Modifier.weight(1f)) {
-                // Number of audio devices
+                // TTS Audio Device Select
                 val ttsOptions = mutableListOf<Pair<String, () -> Unit>>()
                 ttsOptions.add(stringResource(R.string.settings_audio_default) to { viewModel.setTtsAudioDevice(null) })
+                val activeDeviceIds = availableAudioDevices.mapNotNull { it.address.split("|").getOrNull(1) }.toSet()
+                
+                // Add currently available devices
                 availableAudioDevices.forEach { device ->
                     ttsOptions.add(device.name to { viewModel.setTtsAudioDevice(device.address) })
+                }
+                
+                // Add cached devices that are not currently available
+                cachedAudioDevices.forEach { (persistentId, name) ->
+                    if (!activeDeviceIds.contains(persistentId)) {
+                        val displayName = "$name (Offline)"
+                        val fallbackAddress = "0|$persistentId" // Dummy ID, persistentId is used for lookup later
+                        ttsOptions.add(displayName to { viewModel.setTtsAudioDevice(fallbackAddress) })
+                    }
                 }
 
                 com.andreas_kratzer.ghosttalk.core.ui.components.SettingsDropdownItem(
@@ -142,8 +155,19 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                 // Cues Audio Device Select
                 val cuesOptions = mutableListOf<Pair<String, () -> Unit>>()
                 cuesOptions.add(stringResource(R.string.settings_audio_default) to { viewModel.setCuesAudioDevice(null) })
+                
+                // Add currently available devices
                 availableAudioDevices.forEach { device ->
                     cuesOptions.add(device.name to { viewModel.setCuesAudioDevice(device.address) })
+                }
+                
+                // Add cached devices that are not currently available
+                cachedAudioDevices.forEach { (persistentId, name) ->
+                    if (!activeDeviceIds.contains(persistentId)) {
+                        val displayName = "$name (Offline)"
+                        val fallbackAddress = "0|$persistentId"
+                        cuesOptions.add(displayName to { viewModel.setCuesAudioDevice(fallbackAddress) })
+                    }
                 }
 
                 com.andreas_kratzer.ghosttalk.core.ui.components.SettingsDropdownItem(

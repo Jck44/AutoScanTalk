@@ -256,7 +256,7 @@ class PageImportExportManager @Inject constructor(
     }
 
     private fun importAction(importAction: ImportAction, idMap: Map<String, String>): ButtonAction? {
-        val type = importAction.type?.uppercase() ?: return null
+        val type = importAction.type.uppercase() ?: return null
         return when (type) {
             "SPEAK", "SPEAKTEXT" -> SpeakTextButtonAction()
             "NAVIGATE", "NAVIGATETOPAGE" -> {

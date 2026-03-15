@@ -36,6 +36,9 @@ class TtsSettingsDelegate @Inject constructor(
     private val _availableAudioDevices = MutableStateFlow<List<AudioOutputDevice>>(emptyList())
     val availableAudioDevices: StateFlow<List<AudioOutputDevice>> = _availableAudioDevices.asStateFlow()
 
+    private val _cachedAudioDevices = MutableStateFlow<Map<String, String>>(emptyMap())
+    val cachedAudioDevices: StateFlow<Map<String, String>> = _cachedAudioDevices.asStateFlow()
+
     private var scope: CoroutineScope? = null
 
     fun initialize(scope: CoroutineScope, onVoiceMissing: (String, String?) -> Unit) {
@@ -47,6 +50,7 @@ class TtsSettingsDelegate @Inject constructor(
             loadAvailableVoices()
         }
         loadAvailableAudioDevices()
+        loadCachedAudioDevices()
     }
 
     private fun viewModelScopeLaunch(block: suspend CoroutineScope.() -> Unit) {
@@ -69,8 +73,21 @@ class TtsSettingsDelegate @Inject constructor(
         viewModelScopeLaunch {
             audioDeviceManager.availableDevicesFlow.collect { devices ->
                 _availableAudioDevices.value = devices
+                
+                // Also update cache when devices list changes
+                devices.forEach { device ->
+                    val parts = device.address.split("|", limit = 2)
+                    if (parts.size > 1) {
+                        settingsRepository.saveDeviceName(parts[1], device.name)
+                    }
+                }
+                loadCachedAudioDevices()
             }
         }
+    }
+
+    private fun loadCachedAudioDevices() {
+        _cachedAudioDevices.value = settingsRepository.getCachedDevices()
     }
 
     fun setTtsLanguage(tag: String) {
@@ -90,12 +107,27 @@ class TtsSettingsDelegate @Inject constructor(
 
     fun setTtsAudioDevice(addr: String?) {
         settingsRepository.ttsAudioDeviceAddress = addr
+        saveDeviceNameToCacheIfPresent(addr)
         speakFeedback("Ausgabegerät für Sprechen ausgewählt", addr)
     }
 
     fun setCuesAudioDevice(addr: String?) {
         settingsRepository.cuesAudioDeviceAddress = addr
+        saveDeviceNameToCacheIfPresent(addr)
         speakFeedback("Ausgabegerät für Feedback ausgewählt", addr)
+    }
+
+    private fun saveDeviceNameToCacheIfPresent(addr: String?) {
+        if (addr == null) return
+        val device = audioDeviceManager.getAudioDeviceInfo(addr)
+        if (device != null) {
+            val parts = addr.split("|", limit = 2)
+            if (parts.size > 1) {
+                val readableName = audioDeviceManager.getReadableDeviceName(device)
+                settingsRepository.saveDeviceName(parts[1], readableName)
+                loadCachedAudioDevices()
+            }
+        }
     }
 
     private fun speakFeedback(text: String, deviceAddress: String? = null) {
@@ -109,7 +141,9 @@ class TtsSettingsDelegate @Inject constructor(
         return if (device != null) {
             audioDeviceManager.getReadableDeviceName(device)
         } else {
-            addr.split("|").getOrNull(1) ?: addr.split("|").firstOrNull() ?: "Unbekannt"
+            val parts = addr.split("|")
+            val persistentId = parts.getOrNull(1) ?: parts.firstOrNull() ?: return "Unbekannt"
+            settingsRepository.getDeviceName(persistentId) ?: persistentId
         }
     }
 }

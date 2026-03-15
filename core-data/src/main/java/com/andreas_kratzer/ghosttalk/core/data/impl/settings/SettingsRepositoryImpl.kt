@@ -393,4 +393,16 @@ class SettingsRepositoryImpl(context: Context) : SettingsRepository {
         }
         editor.apply()
     }
+
+    override fun getCachedDevices(): Map<String, String> {
+        val allPrefs = prefs.all
+        val cachedDevices = mutableMapOf<String, String>()
+        allPrefs.forEach { (key, value) ->
+            if (key.startsWith("device_name_") && value is String) {
+                val persistentId = key.removePrefix("device_name_")
+                cachedDevices[persistentId] = value
+            }
+        }
+        return cachedDevices
+    }
 }

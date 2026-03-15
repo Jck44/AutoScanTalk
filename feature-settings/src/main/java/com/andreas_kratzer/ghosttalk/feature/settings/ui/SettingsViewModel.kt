@@ -48,6 +48,7 @@ class SettingsViewModel @Inject constructor(
     val availableLanguages = ttsDelegate.availableLanguages
     val availableVoices = ttsDelegate.availableVoices
     val availableAudioDevices = ttsDelegate.availableAudioDevices
+    val cachedAudioDevices = ttsDelegate.cachedAudioDevices
     
     val selectedLanguageTag = settingsRepository.ttsLanguageFlow
     val selectedVoiceName = settingsRepository.ttsVoiceNameFlow
@@ -310,10 +311,7 @@ class SettingsViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
-        val keep = mutableSetOf<String>()
-        settingsRepository.ttsAudioDeviceAddress?.split("|")?.lastOrNull()?.let { keep.add(it) }
-        settingsRepository.cuesAudioDeviceAddress?.split("|")?.lastOrNull()?.let { keep.add(it) }
-        settingsRepository.cleanupDeviceCache(keep)
+        // Aggressive cache cleanup removed to allow offline device selection
     }
 
     suspend fun exportLocalBackup(): String {
