@@ -257,6 +257,7 @@ class PageImportExportManager @Inject constructor(
 
     private fun importAction(importAction: ImportAction, idMap: Map<String, String>): ButtonAction? {
         val type = importAction.type.uppercase()
+        @Suppress("SpellCheckingInspection")
         return when (type) {
             "SPEAK", "SPEAKTEXT" -> SpeakTextButtonAction()
             "NAVIGATE", "NAVIGATETOPAGE" -> {
@@ -299,7 +300,7 @@ class PageImportExportManager @Inject constructor(
         try {
             val root = json.parseToJsonElement(jsonString) as? JsonObject
             root?.get("bookId")?.jsonPrimitive?.content?.takeIf { it.isNotBlank() }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             null
         }
     }
@@ -308,7 +309,7 @@ class PageImportExportManager @Inject constructor(
         try {
             val root = json.parseToJsonElement(jsonString) as? JsonObject
             root?.get("bookName")?.jsonPrimitive?.content
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             null
         }
     }
@@ -320,7 +321,7 @@ class PageImportExportManager @Inject constructor(
             // Extract bookId from name if missing from field (e.g. "Name [uuid]")
             val extractedId = importData.bookId?.takeIf { it.isNotBlank() } ?: run {
                 val name = importData.bookName ?: ""
-                val regex = "\\[([a-fA-F0-9-]{36})\\]".toRegex()
+                val regex = "\\[([a-fA-F0-9-]{36})]".toRegex()
                 regex.find(name)?.groupValues?.get(1)
             }
 

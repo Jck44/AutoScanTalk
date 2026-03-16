@@ -22,6 +22,8 @@
     <string name="book_dialog_delete_confirm">Do you really want to permanently delete the book \"%s\"? All pages within it will be lost.</string>
     <string name="book_name_label">Book Name</string>
     <string name="book_import_cloud_description">Load existing book from cloud</string>
+    <string name="book_import_cloud_success">Book successfully loaded from the cloud.</string>
+    <string name="book_import_cloud_error">Error loading from the cloud: %s</string>
 
     <!-- Shared Actions -->
     <string name="action_create">Create</string>
