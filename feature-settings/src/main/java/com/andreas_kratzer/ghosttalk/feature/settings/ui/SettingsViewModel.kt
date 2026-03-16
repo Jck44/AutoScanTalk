@@ -109,6 +109,8 @@ class SettingsViewModel @Inject constructor(
     val isSecurityRequiredForEdit = settingsRepository.isSecurityRequiredForEditFlow
     val isSecurityRequiredForSettings = settingsRepository.isSecurityRequiredForSettingsFlow
     val startupBehavior = settingsRepository.startupBehaviorFlow
+    
+    val isBiometricSupported: Boolean = securityManager.isBiometricSupported(application)
 
     val authIntentFlow = kotlinx.coroutines.flow.merge(
         cloudSyncDelegate.authIntentFlow,

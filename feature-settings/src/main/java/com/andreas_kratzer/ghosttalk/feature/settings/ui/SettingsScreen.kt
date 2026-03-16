@@ -404,7 +404,8 @@ fun SubmenuContent(
                 onLockClicked = onLockClicked,
                 isPinRequired = !pin.isNullOrEmpty(),
                 onPinRequiredChange = { /* Handled within SecuritySettingsSection via onClearSecurityPin and onSecurityPinChange */ },
-                securityManager = viewModel.securityManager
+                securityManager = viewModel.securityManager,
+                isBiometricSupported = viewModel.isBiometricSupported
             )
         }
         SettingsSection.CLOUD -> {

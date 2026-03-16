@@ -58,7 +58,8 @@ fun SecuritySettingsSection(
     onLockClicked: () -> Unit,
     isPinRequired: Boolean,
     onPinRequiredChange: (Boolean) -> Unit,
-    securityManager: SecurityManager
+    securityManager: SecurityManager,
+    isBiometricSupported: Boolean
 ) {
     var showSetPinDialog by remember { mutableStateOf(false) }
     var showConfirmClearDialog by remember { mutableStateOf(false) }
@@ -144,10 +145,13 @@ fun SecuritySettingsSection(
                 }
 
                 SettingsToggleItem(
-                    label = stringResource(R.string.settings_security_biometric_enabled),
+                    label = if (isBiometricSupported) 
+                        stringResource(R.string.settings_security_biometric_enabled)
+                    else 
+                        stringResource(R.string.settings_security_biometric_enabled) + " (" + stringResource(R.string.settings_security_biometric_unsupported) + ")",
                     checked = isBiometricEnabled,
                     onCheckedChange = onBiometricEnabledChange,
-                    enabled = hasPin
+                    enabled = hasPin && isBiometricSupported
                 )
 
                 SettingsToggleItem(

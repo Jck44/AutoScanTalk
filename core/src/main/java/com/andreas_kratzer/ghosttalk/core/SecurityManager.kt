@@ -1,6 +1,8 @@
 package com.andreas_kratzer.ghosttalk.core
 
+import android.content.Context
 import android.util.Base64
+import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
@@ -21,6 +23,11 @@ class SecurityManager @Inject constructor(
     val isUnlocked: StateFlow<Boolean> = _isUnlocked.asStateFlow()
 
     private var lastActivityTime: Long = 0
+
+    fun isBiometricSupported(context: Context): Boolean {
+        val biometricManager = BiometricManager.from(context)
+        return biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK) == BiometricManager.BIOMETRIC_SUCCESS
+    }
 
     fun authenticateBiometric(
         activity: FragmentActivity,

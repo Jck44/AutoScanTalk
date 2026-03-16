@@ -63,6 +63,7 @@
     <string name="settings_security_biometric_enabled">Fingerabdruck zum Entsperren nutzen</string>
     <string name="settings_security_require_for_edit">Buch-Bearbeitung schützen</string>
     <string name="settings_security_require_for_settings">Zugriff auf Einstellungen schützen</string>
+    <string name="settings_security_biometric_unsupported">Nicht vom Gerät unterstützt</string>
 
     <!-- Cloud Sync Settings -->
     <string name="settings_cloud_sync_enabled">Automatischer Sync</string>
