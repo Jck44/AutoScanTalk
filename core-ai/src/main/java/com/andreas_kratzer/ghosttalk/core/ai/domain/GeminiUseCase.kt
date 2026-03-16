@@ -152,18 +152,35 @@ class GeminiUseCase @Inject constructor(
     }
 
     private suspend fun performGeneration(token: String, prompt: String, useGoogleSearch: Boolean): String {
-        var currentJson = createInitialRequest(prompt, useGoogleSearch)
+        val contents = JSONArray().apply {
+            put(JSONObject().apply {
+                put("role", "user")
+                put("parts", JSONArray().put(JSONObject().apply {
+                    put("text", prompt)
+                }))
+            })
+        }
+        val tools = createToolsArray(useGoogleSearch)
+        
         var responseJson: String
         
-        for (turn in 1..5) { // Increased turns for more tool interaction
-            responseJson = callGeminiRest(token, currentJson)
+        for (turn in 1..8) { // Increased turns for recursive tool usage
+            val requestJson = JSONObject().apply {
+                put("contents", contents)
+                put("tools", tools)
+            }
+            
+            responseJson = callGeminiRest(token, requestJson)
             val root = JSONObject(responseJson)
             val candidate = root.getJSONArray("candidates").getJSONObject(0)
             val content = candidate.getJSONObject("content")
             val parts = content.getJSONArray("parts")
             
+            // Add the model's response to history
+            contents.put(content)
+            
             var hasFunctionCall = false
-            val functionResponses = mutableListOf<JSONObject>()
+            val functionResponseParts = JSONArray()
             
             for (i in 0 until parts.length()) {
                 val part = parts.getJSONObject(i)
@@ -172,7 +189,7 @@ class GeminiUseCase @Inject constructor(
                     val call = part.getJSONObject("functionCall")
                     val result = handleFunctionCall(token, call)
                     
-                    functionResponses.add(JSONObject().apply {
+                    functionResponseParts.put(JSONObject().apply {
                         put("functionResponse", JSONObject().apply {
                             put("name", call.getString("name"))
                             put("response", JSONObject().apply {
@@ -184,94 +201,37 @@ class GeminiUseCase @Inject constructor(
             }
             
             if (hasFunctionCall) {
-                currentJson = createFunctionResponseRequest(content, functionResponses)
+                // Add all function responses as a single content turn from 'user' (per API specs for tool use)
+                contents.put(JSONObject().apply {
+                    put("role", "user")
+                    put("parts", functionResponseParts)
+                })
             } else {
-                // Check if it's text or grounded search result
-                return if (parts.getJSONObject(0).has("text")) {
-                    parts.getJSONObject(0).getString("text")
-                } else {
-                    "Keine Antwort erhalten."
+                // Return text response if available
+                for (i in 0 until parts.length()) {
+                    val part = parts.getJSONObject(i)
+                    if (part.has("text")) {
+                        return part.getString("text")
+                    }
                 }
+                return "Keine Antwort erhalten."
             }
         }
         return "Fehler: Zu viele Interaktionsschritte."
     }
 
-    suspend fun listModels(): String = withContext(Dispatchers.IO) {
-        val token = oauthTokenProvider() ?: return@withContext "Fehler: Kein Token."
-        val url = URL(LIST_MODELS_URL)
-        val connection = url.openConnection() as HttpsURLConnection
-        connection.requestMethod = "GET"
-        connection.setRequestProperty("Authorization", "Bearer $token")
-        
-        if (connection.responseCode == 200) {
-            connection.inputStream.bufferedReader().use { it.readText() }
+    private fun createToolsArray(useGoogleSearch: Boolean): JSONArray {
+        val toolsArray = JSONArray()
+        if (useGoogleSearch) {
+            toolsArray.put(JSONObject().apply {
+                put("googleSearch", JSONObject())
+            })
         } else {
-            val error = connection.errorStream?.bufferedReader()?.use { it.readText() }
-            "Fehler beim Auflisten der Modelle (${connection.responseCode}): $error"
-        }
-    }
-
-    private fun callGeminiRest(token: String, requestJson: JSONObject): String {
-        val url = URL(BASE_URL_TEMPLATE.format(activeModelName))
-        val connection = url.openConnection() as HttpsURLConnection
-        connection.requestMethod = "POST"
-        connection.setRequestProperty("Authorization", "Bearer $token")
-        connection.setRequestProperty("Content-Type", "application/json")
-        connection.doOutput = true
-
-        connection.outputStream.use { it.write(requestJson.toString().toByteArray()) }
-
-        return if (connection.responseCode == 200) {
-            connection.inputStream.bufferedReader().use { it.readText() }
-        } else {
-            val error = connection.errorStream?.bufferedReader()?.use { it.readText() } ?: ""
-            if (connection.responseCode == 429) {
-                val waitSeconds = parseWaitTime(connection.getHeaderField("Retry-After"), error)
-                val finalWait = waitSeconds.coerceIn(1, 3600)
-                lockoutUntilTime = System.currentTimeMillis() + (finalWait * 1000)
-                logger.w(TAG, "Gemini Quota Exceeded. Locking for ${finalWait}s. Error: $error")
-            }
-            throw Exception("HTTP ${connection.responseCode}: $error")
-        }
-    }
-
-    internal fun parseWaitTime(retryAfterHeader: String?, errorBody: String?): Long {
-        // 1. Try Retry-After header
-        retryAfterHeader?.toLongOrNull()?.let { return it }
-
-        // 2. Try parsing from error message body: "Please retry in 30.34s"
-        if (errorBody != null) {
-            val regex = Regex("retry in (\\d+\\.?\\d*)s", RegexOption.IGNORE_CASE)
-            val match = regex.find(errorBody)
-            match?.groupValues?.get(1)?.toDoubleOrNull()?.let { return it.toLong() }
-        }
-
-        return 60 // Default fallback
-    }
-
-    private fun createInitialRequest(prompt: String, useGoogleSearch: Boolean): JSONObject {
-        return JSONObject().apply {
-            put("contents", JSONArray().put(JSONObject().apply {
-                put("role", "user")
-                put("parts", JSONArray().put(JSONObject().apply {
-                    put("text", prompt)
-                }))
-            }))
-            val toolsArray = JSONArray()
-            
-            if (useGoogleSearch) {
-                toolsArray.put(JSONObject().apply {
-                    put("googleSearch", JSONObject())
-                })
-            } else {
-                // NOTE: Built-in tools and custom functions cannot be combined as of now in v1beta.
-                // Prioritizing custom functions for Skills action.
-                toolsArray.put(JSONObject().apply {
-                    put("function_declarations", JSONArray().apply {
-                        put(JSONObject().apply {
-                            put("name", "search_drive")
-                            put("description", "Sucht Dateien in Google Drive.")
+            toolsArray.put(JSONObject().apply {
+                put("function_declarations", JSONArray().apply {
+                    put(JSONObject().apply {
+                        put("name", "search_drive")
+                        put("description", "Sucht Dateien in Google Drive.")
                         put("parameters", JSONObject().apply {
                             put("type", "OBJECT")
                             put("properties", JSONObject().apply {
@@ -339,25 +299,62 @@ class GeminiUseCase @Inject constructor(
                         })
                     })
                 })
-                })
-            }
-            put("tools", toolsArray)
+            })
+        }
+        return toolsArray
+    }
+
+    suspend fun listModels(): String = withContext(Dispatchers.IO) {
+        val token = oauthTokenProvider() ?: return@withContext "Fehler: Kein Token."
+        val url = URL(LIST_MODELS_URL)
+        val connection = url.openConnection() as HttpsURLConnection
+        connection.requestMethod = "GET"
+        connection.setRequestProperty("Authorization", "Bearer $token")
+        
+        if (connection.responseCode == 200) {
+            connection.inputStream.bufferedReader().use { it.readText() }
+        } else {
+            val error = connection.errorStream?.bufferedReader()?.use { it.readText() }
+            "Fehler beim Auflisten der Modelle (${connection.responseCode}): $error"
         }
     }
 
-    private fun createFunctionResponseRequest(previousContent: JSONObject, responses: List<JSONObject>): JSONObject {
-        return JSONObject().apply {
-            val contents = JSONArray()
-            contents.put(previousContent)
-            contents.put(JSONObject().apply {
-                put("role", "user")
-                put("parts", JSONArray().apply {
-                    responses.forEach { put(it) }
-                })
-            })
-            put("contents", contents)
-            // Tools are not strictly required for follow-up in some v1beta versions but good to have
+    private fun callGeminiRest(token: String, requestJson: JSONObject): String {
+        val url = URL(BASE_URL_TEMPLATE.format(activeModelName))
+        val connection = url.openConnection() as HttpsURLConnection
+        connection.requestMethod = "POST"
+        connection.setRequestProperty("Authorization", "Bearer $token")
+        connection.setRequestProperty("Content-Type", "application/json")
+        connection.doOutput = true
+
+        connection.outputStream.use { it.write(requestJson.toString().toByteArray()) }
+
+        return if (connection.responseCode == 200) {
+            connection.inputStream.bufferedReader().use { it.readText() }
+        } else {
+            val error = connection.errorStream?.bufferedReader()?.use { it.readText() } ?: ""
+            if (connection.responseCode == 429) {
+                val waitSeconds = parseWaitTime(connection.getHeaderField("Retry-After"), error)
+                val finalWait = waitSeconds.coerceIn(1, 3600)
+                lockoutUntilTime = System.currentTimeMillis() + (finalWait * 1000)
+                logger.w(TAG, "Gemini Quota Exceeded. Locking for ${finalWait}s. Error: $error")
+            }
+            throw Exception("HTTP ${connection.responseCode}: $error")
         }
+    }
+
+    internal fun parseWaitTime(retryAfterHeader: String?, errorBody: String?): Long {
+        // 1. Try Retry-After header
+        retryAfterHeader?.toLongOrNull()?.let { return it }
+
+        // 2. Try parsing from error message body: "Please retry in 30.34s"
+        if (errorBody != null) {
+            val regex = Regex("retry in (\\d+\\.?\\d*)s", RegexOption.IGNORE_CASE)
+            val match = regex.find(errorBody)
+            match?.groupValues?.get(1)?.toDoubleOrNull()?.let { return it.toLong() }
+        }
+
+        return 60 // Default fallback
     }
 
     private suspend fun handleFunctionCall(token: String, call: JSONObject): String {

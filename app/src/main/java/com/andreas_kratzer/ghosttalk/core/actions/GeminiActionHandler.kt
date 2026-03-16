@@ -100,10 +100,12 @@ class GeminiActionHandler @Inject constructor(
     }
 
     private fun speakResponse(text: String, deviceAddress: String?, executionId: Int, onFinish: (Int) -> Unit) {
-        actionLogger.log(text)
+        // Clean up common Markdown formatting characters that look/sound bad in TTS/Logs
+        val cleanedText = text.replace("**", "").replace("*", "").trim()
+        actionLogger.log(cleanedText)
         val tts = ttsProxyLazy.get()
         if (tts.isReady) {
-            tts.speakRouted(text, deviceAddress) {
+            tts.speakRouted(cleanedText, deviceAddress) {
                 onFinish(executionId)
             }
         } else {

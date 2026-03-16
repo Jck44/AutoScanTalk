@@ -29,10 +29,10 @@ class FeatureGuard @Inject constructor(
         return when (action) {
             is SmartPredictionButtonAction -> settingsRepository.isSmartPredictionEnabled
             is GeminiButtonAction, is GeminiSearchButtonAction -> {
-                settingsRepository.isGeminiEnabled && !settingsRepository.useLocalGenerativeAi
+                settingsRepository.isGeminiEnabled
             }
             is GeminiNanoButtonAction -> {
-                settingsRepository.isGeminiEnabled && settingsRepository.useLocalGenerativeAi
+                settingsRepository.useLocalGenerativeAi
             }
             is SmartHomeButtonAction -> {
                 when (action.provider) {
