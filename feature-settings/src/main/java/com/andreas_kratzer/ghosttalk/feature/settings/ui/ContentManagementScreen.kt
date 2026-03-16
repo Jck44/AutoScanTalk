@@ -21,8 +21,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.feature.settings.R 
 import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkCard
-import com.andreas_kratzer.ghosttalk.core.ui.theme.GhosTTalkIcons
+import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
+import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,12 +41,12 @@ fun ContentManagementScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.start_manage_content)) },
+                title = { Text(stringResource(CoreR.string.start_manage_content)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.back_button_content_description)
+                            contentDescription = stringResource(CoreR.string.back_button_content_description)
                         )
                     }
                 }
@@ -67,15 +68,15 @@ fun ContentManagementScreen(
                 verticalArrangement = Arrangement.spacedBy(dimensions.paddingLarge)
             ) {
             GhostTalkCard(
-                title = stringResource(R.string.page_list_title),
-                icon = GhosTTalkIcons.Description,
+                title = stringResource(CoreR.string.page_list_title),
+                icon = GhostTalkIcons.Description,
                 onClick = onNavigateToPageManager,
                 height = dynamicCardHeight
             )
             
             GhostTalkCard(
-                title = stringResource(R.string.template_manage_title),
-                icon = GhosTTalkIcons.GridView,
+                title = stringResource(CoreR.string.template_manage_title),
+                icon = GhostTalkIcons.GridView,
                 onClick = onNavigateToTemplateManager,
                 height = dynamicCardHeight
             )

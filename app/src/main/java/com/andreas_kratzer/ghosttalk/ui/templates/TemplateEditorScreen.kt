@@ -27,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 import com.andreas_kratzer.ghosttalk.ui.components.GridEditorContent
 import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
@@ -83,7 +84,7 @@ fun TemplateEditorScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_button_content_description))
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(CoreR.string.back_button_content_description))
                     }
                 }
             )

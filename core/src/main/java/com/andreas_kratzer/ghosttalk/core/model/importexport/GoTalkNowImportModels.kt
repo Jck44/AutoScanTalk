@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class ImportExportData(
     val ghosttalk_import_version: String? = "1.1",
-    val appName: String? = "GhosTTalk",
+    val appName: String? = "GhostTalk",
     val holdingTimeSeconds: Float? = null,
     val autoStartScanning: Boolean? = null,
     val scanDelayMillis: Long? = null,
@@ -96,7 +96,7 @@ data class ImportAction(
     val targetPageId: String? = null, // Legacy alias
     val ttsFeedback: String? = null,
     
-    // GhosTTalk specific expansions
+    // GhostTalk specific expansions
     val prompt: String? = null,
     val rank: Int? = null,
     val intent: String? = null,

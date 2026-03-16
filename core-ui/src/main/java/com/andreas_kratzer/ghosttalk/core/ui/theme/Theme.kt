@@ -64,7 +64,7 @@ private val LightColorScheme = lightColorScheme(
 
 
 @Composable
-fun GhosTTalkTheme(
+fun GhostTalkTheme(
     themeMode: String = "SYSTEM",
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = false, // Set to false by default for consistency with expressive design

@@ -33,6 +33,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkCard
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 
@@ -108,7 +109,7 @@ fun StartScreen(
                 )
                 
                 GhostTalkCard(
-                    title = stringResource(R.string.start_manage_content),
+                    title = stringResource(CoreR.string.start_manage_content),
                     icon = Icons.Filled.Edit,
                     onClick = onNavigateToContentManagement,
                     modifier = cardModifier.testTag("start_card_manage"),
@@ -118,7 +119,7 @@ fun StartScreen(
                 )
                 
                 GhostTalkCard(
-                    title = stringResource(R.string.settings_title_book),
+                    title = stringResource(CoreR.string.settings_title_book),
                     icon = Icons.Filled.Settings,
                     onClick = onNavigateToSettings,
                     modifier = cardModifier.testTag("start_card_settings"),

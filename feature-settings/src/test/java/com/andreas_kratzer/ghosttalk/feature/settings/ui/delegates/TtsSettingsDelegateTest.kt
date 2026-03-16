@@ -10,8 +10,10 @@ import io.mockk.coEvery
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import io.mockk.every
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
@@ -48,11 +50,13 @@ class TtsSettingsDelegateTest {
 
     @Test
     fun `loadAvailableAudioDevices updates state flow`() = runTest {
-        delegate.initialize(this) { _, _ -> }
-        val mockDevices = listOf(mockk<AudioOutputDevice>())
-        coEvery { getAudioDevicesUseCase.execute() } returns mockDevices
+        val mockDevices = listOf(
+            AudioOutputDevice(address = "0|test_address", name = "Test Device", type = 0, isBuiltIn = true)
+        )
+        val devicesFlow = MutableStateFlow(mockDevices)
+        every { audioDeviceManager.availableDevicesFlow } returns devicesFlow
 
-        delegate.loadAvailableAudioDevices()
+        delegate.initialize(backgroundScope) { _, _ -> }
         runCurrent()
 
         assertEquals(mockDevices, delegate.availableAudioDevices.value)

@@ -1,7 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">GhosTTalk</string>
+    <string name="app_name">GhostTalk</string>
     <string name="start_tagline">Your voice, powered by AI.</string>
+
+    <!-- Shared Strings -->
+    <string name="settings_title_global">App Settings</string>
+    <string name="settings_title_book">Book Settings</string>
+    <string name="start_manage_content">Manage Content</string>
+    <string name="page_list_title">Manage Pages</string>
+    <string name="template_manage_title">Manage Templates</string>
+    <string name="back_button_content_description">Back</string>
+    <string name="page_import_success">Import successful!</string>
+    <string name="page_export_success">Export successful!</string>
 
     <!-- Security Strings -->
     <string name="security_pin_title">Security Check</string>

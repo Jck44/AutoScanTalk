@@ -32,6 +32,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 import com.andreas_kratzer.ghosttalk.core.ui.components.AppBrandHeader
 import com.andreas_kratzer.ghosttalk.ui.pages.sections.ActionLogCard
 import com.andreas_kratzer.ghosttalk.ui.pages.sections.ButtonGrid
@@ -104,7 +105,7 @@ fun PageScreen(
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.back_button_content_description)
+                            contentDescription = stringResource(CoreR.string.back_button_content_description)
                         )
                     }
                 }

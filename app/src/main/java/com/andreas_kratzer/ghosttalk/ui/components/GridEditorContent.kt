@@ -52,7 +52,7 @@ import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.GridItem
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
-import com.andreas_kratzer.ghosttalk.core.ui.theme.GhosTTalkIcons
+import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalCurrentPageId
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalIsUserModeActive
@@ -315,7 +315,7 @@ private fun LazyGridScope.renderRowByRowGrid(
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = GhosTTalkIcons.Edit,
+                        imageVector = GhostTalkIcons.Edit,
                         contentDescription = stringResource(R.string.page_editor_row_name_label),
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(24.dp)

@@ -52,11 +52,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.SortOrder
 import com.andreas_kratzer.ghosttalk.domain.pages.UsageLocation
 import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkCard
-import com.andreas_kratzer.ghosttalk.core.ui.theme.GhosTTalkIcons
+import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import kotlinx.coroutines.launch
 import java.io.BufferedReader
@@ -79,9 +80,9 @@ fun PageListScreen(
     val context = LocalContext.current
     val dimensions = LocalDimensions.current
     
-    val importSuccessMsg = stringResource(R.string.page_import_success)
-    stringResource(R.string.page_export_success)
-    stringResource(R.string.page_export_error)
+    val importSuccessMsg = stringResource(CoreR.string.page_import_success)
+    val exportSuccessMsg = stringResource(CoreR.string.page_export_success)
+    val exportErrorMsg = stringResource(R.string.page_export_error)
 
     val importLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -118,12 +119,12 @@ fun PageListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.page_list_title)) },
+                title = { Text(stringResource(CoreR.string.page_list_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.back_button_content_description)
+                            contentDescription = stringResource(CoreR.string.back_button_content_description)
                         )
                     }
                 },
@@ -135,7 +136,7 @@ fun PageListScreen(
                     
                     IconButton(onClick = { showSortMenu = true }) {
                         Icon(
-                            imageVector = GhosTTalkIcons.Sort,
+                            imageVector = GhostTalkIcons.Sort,
                             contentDescription = "Sortieren"
                         )
                     }
@@ -236,7 +237,7 @@ fun PageListScreen(
                     GhostTalkCard(
                         title = page.name,
                         subtitle = stringResource(R.string.page_grid_info, page.rows, page.columns),
-                        icon = GhosTTalkIcons.Description,
+                        icon = GhostTalkIcons.Description,
                         onClick = { onEditPage(page.id) },
                         height = dynamicCardHeight,
                         modifier = Modifier,
@@ -268,11 +269,11 @@ fun PageListScreen(
                                             }
                                         },
                                         leadingIcon = {
-                                            Icon(GhosTTalkIcons.Copy, contentDescription = null)
+                                            Icon(GhostTalkIcons.Copy, contentDescription = null)
                                         }
                                     )
                                     DropdownMenuItem(
-                                        text = { Text(stringResource(R.string.action_delete)) },
+                                        text = { Text(stringResource(CoreR.string.action_delete)) },
                                         onClick = {
                                             showMenu = false
                                             pageToDelete.value = page
@@ -312,7 +313,7 @@ fun PageListScreen(
                         shape = MaterialTheme.shapes.medium,
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                     ) {
-                        Text(stringResource(R.string.action_delete))
+                        Text(stringResource(CoreR.string.action_delete))
                     }
                 },
                 dismissButton = {
@@ -321,7 +322,7 @@ fun PageListScreen(
                         shape = MaterialTheme.shapes.medium,
                         colors = ButtonDefaults.textButtonColors()
                     ) {
-                        Text(stringResource(R.string.action_cancel))
+                        Text(stringResource(CoreR.string.action_cancel))
                     }
                 }
             )
@@ -364,7 +365,7 @@ fun PageListScreen(
                         shape = MaterialTheme.shapes.medium,
                         colors = ButtonDefaults.textButtonColors()
                     ) {
-                        Text(stringResource(R.string.action_cancel))
+                        Text(stringResource(CoreR.string.action_cancel))
                     }
                 }
             )

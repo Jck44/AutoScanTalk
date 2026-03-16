@@ -39,6 +39,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 import com.andreas_kratzer.ghosttalk.core.cloud.GoogleHomeManager
 import com.andreas_kratzer.ghosttalk.core.cloud.HomeDevice
 import com.andreas_kratzer.ghosttalk.core.model.AuditoryCue
@@ -384,7 +385,7 @@ fun ButtonConfigDialog(
 
                     onSave(config)
                 }) {
-                    Text(stringResource(R.string.action_save))
+                    Text(stringResource(CoreR.string.action_save))
                 }
 
                 Box {
@@ -439,7 +440,7 @@ fun ButtonConfigDialog(
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text(stringResource(R.string.action_delete)) },
+                            text = { Text(stringResource(CoreR.string.action_delete)) },
                             onClick = {
                                 showMenu = false
                                 onDelete()
@@ -450,7 +451,7 @@ fun ButtonConfigDialog(
             }
         },
         dismissButton = {
-            val cancelText = stringResource(R.string.action_cancel)
+            val cancelText = stringResource(CoreR.string.action_cancel)
             TextButton(onClick = onDismiss) {
                 Text(cancelText)
             }

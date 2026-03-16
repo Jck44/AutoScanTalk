@@ -704,6 +704,7 @@ class PageImportExportManagerTest {
         io.mockk.coVerify(exactly = 0) { bookRepository.insertBook(any()) }
     }
 
+
     @Test
     fun `importCloudBackup handles case-insensitive bookId collisions`() = runTest {
         val bookId = "BOOK-123"
@@ -716,5 +717,34 @@ class PageImportExportManagerTest {
         
         assertTrue(result.isFailure)
         assertTrue(result.exceptionOrNull()?.message?.contains("existiert bereits lokal") == true)
+    }
+
+    @Test
+    fun `importCloudBackup prevents overwriting even with cloudFileId`() = runTest {
+        val cloudFileId = "drive-id-123"
+        val jsonString = """{"bookId":"other-id", "bookName":"Test", "pages":[]}"""
+        
+        // Mock that the book already exists with the DRIVER ID (which is used as targetBookId)
+        coEvery { bookRepository.getBookById(cloudFileId) } returns com.andreas_kratzer.ghosttalk.core.model.Book(cloudFileId, "Existing")
+        
+        val result = manager.importCloudBackup(jsonString, cloudFileId)
+        
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull()?.message?.contains("existiert bereits lokal") == true)
+    }
+
+    @Test
+    fun `importCloudBackup succeeds when book does not exist`() = runTest {
+        val bookId = "new-id"
+        val jsonString = """{"bookId":"$bookId", "bookName":"New Book", "pages":[]}"""
+        
+        coEvery { bookRepository.getBookById(bookId) } returns null
+        coEvery { bookRepository.insertBook(any()) } returns Unit
+        
+        val result = manager.importCloudBackup(jsonString, null)
+        
+        assertTrue(result.isSuccess)
+        assertEquals(bookId, result.getOrNull())
+        io.mockk.coVerify { bookRepository.insertBook(any()) }
     }
 }

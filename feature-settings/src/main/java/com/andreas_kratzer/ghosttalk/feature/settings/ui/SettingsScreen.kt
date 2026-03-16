@@ -60,8 +60,9 @@ import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.SecuritySettin
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.SmartHomeSettingsSection
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.TestSettingsSection
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.VoiceSettingsSection
-import com.andreas_kratzer.ghosttalk.core.ui.theme.GhosTTalkIcons
+import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
+import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -71,14 +72,14 @@ import java.io.OutputStreamWriter
 
 enum class SettingsSection(val titleRes: Int, val icon: ImageVector, val isGlobal: Boolean, val isScoped: Boolean) {
     GENERAL(R.string.settings_category_general, Icons.Default.Settings, isGlobal = true, isScoped = true),
-    VOICE(R.string.settings_category_voice, GhosTTalkIcons.RecordVoiceOver, isGlobal = false, isScoped = true),
-    SCANNING(R.string.settings_category_scanning, GhosTTalkIcons.SettingsAccessibility, isGlobal = false, isScoped = true),
-    SECURITY(R.string.settings_category_security, GhosTTalkIcons.Security, isGlobal = true, isScoped = false),
-    CLOUD(R.string.settings_category_cloud, GhosTTalkIcons.Cloud, isGlobal = true, isScoped = true),
+    VOICE(R.string.settings_category_voice, GhostTalkIcons.RecordVoiceOver, isGlobal = false, isScoped = true),
+    SCANNING(R.string.settings_category_scanning, GhostTalkIcons.SettingsAccessibility, isGlobal = false, isScoped = true),
+    SECURITY(R.string.settings_category_security, GhostTalkIcons.Security, isGlobal = true, isScoped = false),
+    CLOUD(R.string.settings_category_cloud, GhostTalkIcons.Cloud, isGlobal = true, isScoped = true),
     SMART_HOME(R.string.settings_category_smart_home, Icons.Default.Home, isGlobal = true, isScoped = false),
-    GEMINI(R.string.settings_category_gemini, GhosTTalkIcons.AutoAwesome, isGlobal = false, isScoped = true),
-    NOTIFICATIONS(R.string.settings_category_notifications, GhosTTalkIcons.Notifications, isGlobal = true, isScoped = false),
-    ADVANCED(R.string.settings_category_advanced, GhosTTalkIcons.Science, isGlobal = true, isScoped = true)
+    GEMINI(R.string.settings_category_gemini, GhostTalkIcons.AutoAwesome, isGlobal = false, isScoped = true),
+    NOTIFICATIONS(R.string.settings_category_notifications, GhostTalkIcons.Notifications, isGlobal = true, isScoped = false),
+    ADVANCED(R.string.settings_category_advanced, GhostTalkIcons.Science, isGlobal = true, isScoped = true)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -166,7 +167,7 @@ fun SettingsScreen(
                     viewModel.lock()
                     onNavigateToStart()
                 },
-                onLocalExport = { localExportLauncher.launch("GhosTTalk_Backup.json") },
+                onLocalExport = { localExportLauncher.launch("GhostTalk_Backup.json") },
                 onLocalImport = { localImportLauncher.launch("application/json") }
             )
         }
@@ -184,7 +185,7 @@ private fun SettingsTopBar(
         title = {
             Text(
                 text = if (selectedSection == null)
-                    stringResource(if (isGlobal) R.string.settings_title_global else R.string.settings_title_book)
+                    stringResource(if (isGlobal) CoreR.string.settings_title_global else CoreR.string.settings_title_book)
                 else
                     stringResource(selectedSection.titleRes),
                 style = MaterialTheme.typography.titleLarge
@@ -241,7 +242,7 @@ private fun SettingsMainMenu(
                     },
                     trailingContent = {
                         Icon(
-                            imageVector = GhosTTalkIcons.ArrowForward,
+                            imageVector = GhostTalkIcons.ArrowForward,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                             modifier = Modifier.size(20.dp)
@@ -317,7 +318,7 @@ private fun handleLocalImport(
                     viewModel.importLocalBackup(
                         json = jsonContent,
                         onSuccess = {
-                            Toast.makeText(context, context.getString(R.string.page_import_success), Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, context.getString(CoreR.string.page_import_success), Toast.LENGTH_SHORT).show()
                         },
                         onError = { error ->
                             Toast.makeText(context, error, Toast.LENGTH_LONG).show()
@@ -348,7 +349,7 @@ private fun handleLocalExport(
                     writer.close()
                 }
             }
-            Toast.makeText(context, context.getString(R.string.page_export_success), Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(CoreR.string.page_export_success), Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             e.printStackTrace()
             Toast.makeText(context, "Fehler beim Export: ${e.message}", Toast.LENGTH_LONG).show()

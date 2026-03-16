@@ -27,7 +27,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
  * Local definitions for Icons that are normally only in material-icons-extended.
  * This allows us to remove the large dependency.
  */
-object GhosTTalkIcons {
+object GhostTalkIcons {
 
     val Sort: ImageVector
         get() = materialIcon(name = "AutoMirrored.Filled.Sort", autoMirror = true) {

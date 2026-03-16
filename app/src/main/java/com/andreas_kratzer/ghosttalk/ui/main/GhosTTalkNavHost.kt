@@ -37,7 +37,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Composable
-fun GhosTTalkNavHost(
+fun GhostTalkNavHost(
     navController: NavHostController,
     bookViewModel: BookViewModel,
     pageViewModel: PageViewModel,

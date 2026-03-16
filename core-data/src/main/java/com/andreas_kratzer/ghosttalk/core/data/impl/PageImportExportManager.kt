@@ -256,7 +256,7 @@ class PageImportExportManager @Inject constructor(
     }
 
     private fun importAction(importAction: ImportAction, idMap: Map<String, String>): ButtonAction? {
-        val type = importAction.type.uppercase() ?: return null
+        val type = importAction.type.uppercase()
         return when (type) {
             "SPEAK", "SPEAKTEXT" -> SpeakTextButtonAction()
             "NAVIGATE", "NAVIGATETOPAGE" -> {
@@ -331,18 +331,16 @@ class PageImportExportManager @Inject constructor(
             val targetBookId = (cloudFileId ?: extractedId!!).trim().lowercase()
             
             val existingBook = bookRepository.getBookById(targetBookId)
-            if (existingBook != null && cloudFileId == null) {
+            if (existingBook != null) {
                 return@withContext Result.failure(Exception("Ein Buch mit der ID '$targetBookId' existiert bereits lokal. Import abgebrochen, um Überschreiben zu verhindern."))
             }
 
-            if (existingBook == null) {
-                val newBook = com.andreas_kratzer.ghosttalk.core.model.Book(
-                    id = targetBookId,
-                    name = importData.bookName ?: "Importiertes Buch",
-                    createdAt = System.currentTimeMillis()
-                )
-                bookRepository.insertBook(newBook)
-            }
+            val newBook = com.andreas_kratzer.ghosttalk.core.model.Book(
+                id = targetBookId,
+                name = importData.bookName ?: "Importiertes Buch",
+                createdAt = System.currentTimeMillis()
+            )
+            bookRepository.insertBook(newBook)
 
             importFromJson(jsonString, targetBookId, regenerateIds = false)
             Result.success(targetBookId)

@@ -45,11 +45,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.core.model.SortOrder
 import com.andreas_kratzer.ghosttalk.domain.pages.UsageLocation
 import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkCard
-import com.andreas_kratzer.ghosttalk.core.ui.theme.GhosTTalkIcons
+import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import kotlinx.coroutines.launch
 
@@ -72,10 +73,10 @@ fun TemplateScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.template_manage_title)) },
+                title = { Text(stringResource(CoreR.string.template_manage_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_button_content_description))
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(CoreR.string.back_button_content_description))
                     }
                 },
                 actions = {
@@ -83,7 +84,7 @@ fun TemplateScreen(
                     val templateSortOrder by templateViewModel.settingsRepository.templateSortOrderFlow.collectAsState("MANUAL")
                     
                     IconButton(onClick = { showSortMenu = true }) {
-                        Icon(GhosTTalkIcons.Sort, contentDescription = "Sortieren")
+                        Icon(GhostTalkIcons.Sort, contentDescription = "Sortieren")
                     }
                     DropdownMenu(expanded = showSortMenu, onDismissRequest = { showSortMenu = false }) {
                         SortOrder.entries.filter { it != SortOrder.MANUAL }.forEach { order ->
@@ -167,7 +168,7 @@ fun TemplateScreen(
                         GhostTalkCard(
                             title = template.name,
                             subtitle = "Raster: ${template.rows}x${template.columns} " + if (template.isBuiltIn) "(${stringResource(R.string.template_built_in_label)})" else "(${stringResource(R.string.template_custom_label)})",
-                            icon = GhosTTalkIcons.GridView,
+                            icon = GhostTalkIcons.GridView,
                             onClick = { onTemplateClick(template.id) },
                             height = dynamicCardHeight,
                             modifier = Modifier,
@@ -199,11 +200,11 @@ fun TemplateScreen(
                                                 }
                                             },
                                             leadingIcon = {
-                                                Icon(GhosTTalkIcons.Copy, contentDescription = null)
+                                                Icon(GhostTalkIcons.Copy, contentDescription = null)
                                             }
                                         )
                                         DropdownMenuItem(
-                                            text = { Text(stringResource(R.string.action_delete)) },
+                                            text = { Text(stringResource(CoreR.string.action_delete)) },
                                             onClick = {
                                                 showMenu = false
                                                 templateToDelete = template
@@ -295,7 +296,7 @@ fun TemplateScreen(
                                     shape = MaterialTheme.shapes.medium,
                                     colors = ButtonDefaults.textButtonColors()
                                 ) {
-                                    Text(stringResource(R.string.action_cancel))
+                                    Text(stringResource(CoreR.string.action_cancel))
                                 }
                             }
                         )

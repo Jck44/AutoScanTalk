@@ -28,7 +28,7 @@ import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsDropdownItem
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsToggleItem
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.BackupSelectionDialog
-import com.andreas_kratzer.ghosttalk.core.ui.theme.GhosTTalkIcons
+import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -97,7 +97,7 @@ fun CloudSettingsSection(
                     modifier = Modifier.fillMaxWidth(),
                     enabled = userEmail != null && !isSyncing
                 ) {
-                    Icon(GhosTTalkIcons.Cloud, contentDescription = null)
+                    Icon(GhostTalkIcons.Cloud, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(stringResource(R.string.settings_cloud_import_as_new))
                 }

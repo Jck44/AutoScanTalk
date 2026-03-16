@@ -45,10 +45,10 @@ import com.andreas_kratzer.ghosttalk.core.data.PageRepository
 import com.andreas_kratzer.ghosttalk.core.data.impl.SampleDataInitializer
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.ui.books.BookViewModel
-import com.andreas_kratzer.ghosttalk.ui.main.GhosTTalkNavHost
+import com.andreas_kratzer.ghosttalk.ui.main.GhostTalkNavHost
 import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
-import com.andreas_kratzer.ghosttalk.core.ui.theme.GhosTTalkTheme
+import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkTheme
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalActiveBookId
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalCurrentPageId
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalIsUserModeActive
@@ -180,7 +180,7 @@ class MainActivity : AppCompatActivity() {
             val activeBookId by pageViewModel.activeBookId.collectAsState()
             val currentPageId by pageViewModel.currentPageId.collectAsState()
             
-            GhosTTalkTheme(themeMode = themeMode) {
+            GhostTalkTheme(themeMode = themeMode) {
                 CompositionLocalProvider(
                     LocalIsUserModeActive provides isUserModeActive,
                     LocalActiveBookId provides activeBookId,
@@ -193,7 +193,7 @@ class MainActivity : AppCompatActivity() {
                     val navController = rememberNavController()
 
                     Box(modifier = Modifier.fillMaxSize()) {
-                        GhosTTalkNavHost(
+                        GhostTalkNavHost(
                             navController = navController,
                             bookViewModel = bookViewModel,
                             pageViewModel = pageViewModel,

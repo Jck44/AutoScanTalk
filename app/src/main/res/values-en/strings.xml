@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">GhosTTalk</string>
-    <string name="settings_title_global">App Settings</string>
-    <string name="settings_title_book">Book Settings</string>
-    <string name="back_button_content_description">Back</string>
+    <string name="app_name">GhostTalk</string>
     <string name="settings_pattern_linear">Button by Button</string>
     <string name="settings_pattern_row_by_row">Row by Row</string>
     <string name="settings_screen_black_overlay_text">Battery saving mode.\nReturn to app via Back button</string>
@@ -11,7 +8,6 @@
     <!-- Settings Screen Labels -->
     <string name="start_tagline">Augmentative and Alternative Communication</string>
     <string name="start_user_mode">User Mode</string>
-    <string name="start_manage_content">Manage Content</string>
     <string name="start_back_to_books">Back to Books</string>
 
     <!-- Book List Screen -->
@@ -32,13 +28,13 @@
     <string name="action_save">Save</string>
     <string name="action_cancel">Cancel</string>
     <string name="action_delete">Delete</string>
-    <string name="action_search">Search&#8230;</string>
+    <string name="action_search">Search…</string>
     <string name="error_field_required">This field is required</string>
     <string name="error_book_name_required">Please enter a name for the book.</string>
     <string name="error_page_name_required">Please enter a name for the page.</string>
 
     <!-- Page List Screen -->
-    <string name="page_list_title">Manage Pages</string>
+    <string name="page_list_show">Manage Pages</string>
     <string name="page_add_description">Add new page</string>
     <string name="page_grid_info">Grid: %1$d Rows x %2$d Columns</string>
     <string name="search_hint">Search…</string>
@@ -58,8 +54,6 @@
     <string name="page_rows_field">Rows</string>
     <string name="page_cols_field">Columns</string>
 
-    <string name="page_import_success">Import successful!</string>
-    <string name="page_export_success">Export successful!</string>
     <string name="page_export_error">Export error: %s</string>
     <string name="action_import_json_migration">Import JSON (GoTalkNow Migration)</string>
     <string name="action_export_json">Export JSON</string>
@@ -76,7 +70,7 @@
     <string name="button_dialog_edit_title">Edit Button</string>
     <string name="button_label_field">Label</string>
     <string name="button_spoken_text_field">Spoken Text (Optional)</string>
-    <string name="button_auditory_cue_field">Auditory Cue (Optional)</string>
+    <string name="button_auditory_cue_field">Auditory cue (Optional)</string>
     <string name="button_is_active_label">Is Active</string>
     <string name="button_action_label">Action</string>
     <string name="button_action_speak_text">Speak Text</string>
@@ -86,9 +80,9 @@
     <string name="button_action_gemini_nano">Use Gemini Nano (Offline)</string>
     <string name="button_action_frequent_action">Most Frequent Action</string>
     <string name="button_action_smart_prediction">Gemini Prediction</string>
-    <string name="button_action_notification">Notification (Auditory Cue)</string>
+    <string name="button_action_notification">Notification (Auditory cue)</string>
     <string name="button_action_volume_tts">Adjust Volume (TTS)</string>
-    <string name="button_action_volume_cues">Adjust Volume (Feedback)</string>
+    <string name="button_action_volume_cues">Adjust Volume (Auditory cues)</string>
     <string name="button_action_control_device">Device Functions</string>
     <string name="button_action_weather">Read Weather</string>
     <string name="button_action_google_home">Google Home (Deprecated)</string>
@@ -114,7 +108,7 @@
     <string name="button_gemini_nano_intent_alarm">Next Alarm</string>
     <string name="button_notification_target_app">Select App</string>
     <string name="button_notification_target_all">All allowed apps</string>
-    <string name="button_play_as_cue">Play as Auditory Cue</string>
+    <string name="button_play_as_cue">Play as Auditory cue</string>
     <string name="button_google_home_device_label">Device</string>
     <string name="button_google_home_command_label">Command</string>
     <string name="button_google_home_value_label">Value</string>
@@ -179,7 +173,6 @@
     <string name="duplicate_suffix">-Duplicate</string>
 
     <!-- Templates -->
-    <string name="template_manage_title">Manage Templates</string>
     <string name="template_name_label">Template Name</string>
     <string name="template_built_in_label">Default</string>
     <string name="template_custom_label">Custom</string>

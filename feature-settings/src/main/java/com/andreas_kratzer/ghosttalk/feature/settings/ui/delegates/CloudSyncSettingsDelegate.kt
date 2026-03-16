@@ -127,7 +127,7 @@ class CloudSyncSettingsDelegate @Inject constructor(
                     com.google.api.client.http.javanet.NetHttpTransport(),
                     com.google.api.client.json.gson.GsonFactory.getDefaultInstance(),
                     credential
-                ).setApplicationName("GhosTTalk").build()
+                ).setApplicationName("GhostTalk").build()
 
                 val backups = cloudSyncUseCase.getAvailableBackups(drive)
                 _availableBackups.value = backups
@@ -158,7 +158,7 @@ class CloudSyncSettingsDelegate @Inject constructor(
                     com.google.api.client.http.javanet.NetHttpTransport(),
                     com.google.api.client.json.gson.GsonFactory.getDefaultInstance(),
                     credential
-                ).setApplicationName("GhosTTalk").build()
+                ).setApplicationName("GhostTalk").build()
 
                 val result = cloudSyncUseCase.importCloudBackup(drive, backupInfo.fileId, backupInfo.fileName)
                 if (result.isSuccess) {

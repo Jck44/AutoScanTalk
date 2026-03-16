@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Settings Screen Labels -->
-    <string name="settings_title_global">App Settings</string>
-    <string name="settings_title_book">Book Settings</string>
     <string name="settings_category_general">General</string>
     <string name="settings_category_voice">Text-to-Speech</string>
     <string name="settings_category_scanning">Scanning &amp; Operation</string>
@@ -10,7 +8,7 @@
     <string name="settings_category_cloud">Google Drive Sync</string>
     <string name="settings_category_smart_home">Smart Home (Experimental)</string>
     <string name="settings_category_gemini">Gemini AI Assistant</string>
-    <string name="settings_category_notifications">Notifications (Auditory Cue)</string>
+    <string name="settings_category_notifications">Notifications (Auditory cue)</string>
     <string name="settings_category_advanced">Advanced Settings</string>
     
     <!-- General Settings -->
@@ -43,7 +41,7 @@
     <string name="settings_voice_default">Default</string>
     <string name="settings_voice_local_hint"> (Local)</string>
     <string name="settings_audio_tts">Output: Speak Out Loud</string>
-    <string name="settings_audio_cues">Output: Feedback</string>
+    <string name="settings_audio_cues">Output: Auditory cue</string>
     <string name="settings_audio_default">System-Default (Automatic)</string>
     <string name="settings_category_audio_hardware">Audio Hardware</string>
     
@@ -108,7 +106,7 @@
     
     <!-- Notification Settings -->
     <string name="settings_notifications_enable">Read notifications aloud</string>
-    <string name="settings_notifications_enable_desc">Allows automatic reading of notifications from selected apps as an auditory signal.</string>
+    <string name="settings_notifications_enable_desc">Allows automatic reading of notifications from selected apps as an auditory cue.</string>
     <string name="settings_notifications_permission_button">Grant Permission</string>
 
     <!-- Advanced / Maintenance -->
@@ -128,9 +126,6 @@
     <string name="settings_show_page_id_in_log">Show Page ID in History</string>
 
     <!-- Other UI -->
-    <string name="start_manage_content">Manage Content</string>
-    <string name="page_import_success">Import successful!</string>
-    <string name="page_export_success">Export successful!</string>
     <string name="settings_category_button_history">Action History</string>
     <string name="settings_history_empty">No actions recorded yet.</string>
     <string name="settings_category_experimental">Experimental Features</string>
@@ -156,10 +151,8 @@
     <string name="settings_cloud_sign_out">Sign Out</string>
     <string name="settings_category_cloud_import">Cloud Import</string>
     <string name="settings_cloud_import_as_new">Import book from Cloud</string>
-    <string name="settings_cloud_import_explanation">Import a book from your Google Drive as a new book (in addition to existing ones).</string>
-    <string name="back_button_content_description">Back</string>
-    <string name="page_list_title">Manage Pages</string>
-    <string name="template_manage_title">Manage Templates</string>
+    <string name="settings_cloud_import_explanation">Import a book from your Google Drive as a new book. Existing local books with the same ID will not be overwritten.</string>
+    <string name="page_list_show">Manage Pages</string>
 
     <!-- Smart Home -->
     <string name="settings_google_home_project_id">Google Home Project ID (Device Access)</string>

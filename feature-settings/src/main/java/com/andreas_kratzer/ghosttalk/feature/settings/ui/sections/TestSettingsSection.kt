@@ -22,7 +22,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.core.ui.components.PreferenceCategory
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsToggleItem
-import com.andreas_kratzer.ghosttalk.core.ui.theme.GhosTTalkIcons
+import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.feature.settings.R
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
@@ -85,7 +85,7 @@ fun TestSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                                 supportingContent = { Text(event.actionType, style = MaterialTheme.typography.bodySmall) },
                                 leadingContent = {
                                     Icon(
-                                        imageVector = GhosTTalkIcons.History,
+                                        imageVector = GhostTalkIcons.History,
                                         contentDescription = null,
                                         tint = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.size(24.dp)

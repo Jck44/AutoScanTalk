@@ -32,7 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.andreas_kratzer.ghosttalk.core.ui.theme.GhosTTalkIcons
+import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 
 @Composable
 fun PinEntryDialog(
@@ -175,13 +175,13 @@ fun PinKey(
     ) {
         if (label == "back") {
             Icon(
-                imageVector = GhosTTalkIcons.Backspace,
+                imageVector = GhostTalkIcons.Backspace,
                 contentDescription = "Löschen",
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         } else if (label == "bio") {
             Icon(
-                imageVector = GhosTTalkIcons.Fingerprint,
+                imageVector = GhostTalkIcons.Fingerprint,
                 contentDescription = "Biometrie",
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )

@@ -1,8 +1,5 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">GhostTalk</string>
-    <string name="settings_title_global">App Einstellungen</string>
-    <string name="settings_title_book">Buch Einstellungen</string>
-    <string name="back_button_content_description">Zurück</string>
     <string name="settings_pattern_linear">Button für Button</string>
     <string name="settings_pattern_row_by_row">Zeilenweise</string>
     <string name="settings_screen_black_overlay_text">Akku Sparmodus.\nÜber Zurück zur App zurückkehren</string>
@@ -10,7 +7,6 @@
     <!-- Settings Screen Labels -->
     <string name="start_tagline">Unterstützte Kommunikation</string>
     <string name="start_user_mode">Nutzer Modus</string>
-    <string name="start_manage_content">Inhalte verwalten</string>
     <string name="start_back_to_books">Zurück zu den Büchern</string>
 
     <!-- Book List Screen -->
@@ -33,14 +29,14 @@
     <string name="action_save">Speichern</string>
     <string name="action_cancel">Abbrechen</string>
     <string name="action_delete">Löschen</string>
-    <string name="action_search">Suchen&#8230;</string>
+    <string name="action_search">Suchen…</string>
     <string name="error_field_required">Dieses Feld ist ein Pflichtfeld</string>
     <string name="error_book_name_required">Bitte geben Sie einen Namen für das Buch ein.</string>
     <string name="error_page_name_required">Bitte geben Sie einen Namen für die Seite ein.</string>
 
 
     <!-- Page List Screen -->
-    <string name="page_list_title">Seiten verwalten</string>
+    <string name="page_list_show">Seiten verwalten</string>
     <string name="page_add_description">Neue Seite hinzufügen</string>
     <string name="page_grid_info" tools:ignore="PluralsCandidate">Raster: %1$d Zeilen x %2$d Spalten</string>
     <string name="search_hint">Suchen…</string>
@@ -60,8 +56,6 @@
     <string name="page_rows_field">Zeilen</string>
     <string name="page_cols_field">Spalten</string>
     
-    <string name="page_import_success">Import erfolgreich!</string>
-    <string name="page_export_success">Export erfolgreich!</string>
     <string name="page_export_error">Fehler beim Export: %s</string>
     <string name="action_import_json_migration">Import JSON (GoTalkNow Migration)</string>
     <string name="action_export_json">Export JSON (Sicherung)</string>
@@ -78,7 +72,7 @@
     <string name="button_dialog_edit_title">Button bearbeiten</string>
     <string name="button_label_field">Aufschrift (Label)</string>
     <string name="button_spoken_text_field">Gesprochener Text (Optional)</string>
-    <string name="button_auditory_cue_field">Audio-Hinweis für Benutzer (Optional)</string>
+    <string name="button_auditory_cue_field">Audio-Hinweis (Optional)</string>
     <string name="button_is_active_label">Ist Aktiv</string>
     <string name="button_action_label">Aktion</string>
     <string name="button_action_speak_text">Text Sprechen</string>
@@ -90,7 +84,7 @@
     <string name="button_action_smart_prediction">Gemini Vorhersage</string>
     <string name="button_action_notification">Benachrichtigung (Audio-Hinweis)</string>
     <string name="button_action_volume_tts">Lautstärke anpassen (TTS)</string>
-    <string name="button_action_volume_cues">Lautstärke anpassen (Hinweise)</string>
+    <string name="button_action_volume_cues">Lautstärke anpassen (Audio-Hinweise)</string>
     <string name="button_action_control_device">Gerätefunktionen</string>
     <string name="button_action_weather">Wetter vorlesen</string>
     <string name="button_action_google_home">Google Home (Veraltet)</string>
@@ -165,7 +159,7 @@
     <string name="status_loud">Status: Laut</string>
     <string name="message_emojis_not_supported">Nachricht (Emojis nicht unterstützt)</string>
     <string name="message_emojis_hint">Emojis werden automatisch entfernt, um Sendefehler zu vermeiden.</string>
-    <string name="volume_label">Lautstärke (z.B. 50, +10, -5)</string>
+    <string name="volume_label">Lautstärke (z. B. 50, +10, -5)</string>
     <string name="page_manage_target">Ziel-Seite verwalten</string>
     <string name="page_create_new_target">Neue Ziel-Seite erstellen</string>
     <string name="page_none_found">Keine Seiten gefunden</string>
@@ -185,7 +179,6 @@
     <string name="duplicate_suffix">-Duplikat</string>
 
     <!-- Vorlagen (Templates) -->
-    <string name="template_manage_title">Vorlagen verwalten</string>
     <string name="template_name_label">Name der Vorlage</string>
     <string name="template_built_in_label">Standard</string>
     <string name="template_custom_label">Benutzerdefiniert</string>

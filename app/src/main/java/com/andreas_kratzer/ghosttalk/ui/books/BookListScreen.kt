@@ -48,7 +48,8 @@ import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.ui.components.AppBrandHeader
 import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkCard
 import com.andreas_kratzer.ghosttalk.core.ui.components.SecurityEntryDialog
-import com.andreas_kratzer.ghosttalk.core.ui.theme.GhosTTalkIcons
+import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
+import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -88,7 +89,7 @@ fun BookListScreen(
                     IconButton(onClick = onNavigateToGlobalSettings) {
                         Icon(
                             imageVector = Icons.Default.Settings,
-                            contentDescription = stringResource(R.string.settings_title_global)
+                            contentDescription = stringResource(CoreR.string.settings_title_global)
                         )
                     }
                 }
@@ -145,7 +146,7 @@ fun BookListScreen(
                                 }
                             ) {
                                 Icon(
-                                    imageVector = if (isFavorite) Icons.Default.Star else GhosTTalkIcons.StarBorder,
+                                    imageVector = if (isFavorite) Icons.Default.Star else GhostTalkIcons.StarBorder,
                                     contentDescription = stringResource(R.string.book_favorite_description),
                                     tint = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -295,7 +296,7 @@ fun BookListScreen(
                         shape = MaterialTheme.shapes.medium,
                         colors = ButtonDefaults.textButtonColors()
                     ) {
-                        Text(stringResource(R.string.action_cancel))
+                        Text(stringResource(CoreR.string.action_cancel))
                     }
                 }
             )
@@ -342,7 +343,7 @@ fun BookListScreen(
 
                         shape = MaterialTheme.shapes.medium
                     ) {
-                        Text(stringResource(R.string.action_save))
+                        Text(stringResource(CoreR.string.action_save))
                     }
                 },
                 dismissButton = {
@@ -373,7 +374,7 @@ fun BookListScreen(
                             shape = MaterialTheme.shapes.medium,
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                         ) {
-                            Text(stringResource(R.string.action_delete))
+                            Text(stringResource(CoreR.string.action_delete))
                         }
                     },
                     dismissButton = {

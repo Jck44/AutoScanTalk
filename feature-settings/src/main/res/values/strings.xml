@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Settings Screen Labels -->
-    <string name="settings_title_global">App Einstellungen</string>
-    <string name="settings_title_book">Buch Einstellungen</string>
     <string name="settings_category_general">Allgemein</string>
     <string name="settings_category_voice">Text-to-Speech</string>
     <string name="settings_category_scanning">Scannen &amp; Bedienung</string>
@@ -128,9 +126,6 @@
     <string name="settings_show_page_id_in_log">Page ID im Verlauf anzeigen</string>
 
     <!-- Other UI -->
-    <string name="start_manage_content">Inhalte verwalten</string>
-    <string name="page_import_success">Import erfolgreich!</string>
-    <string name="page_export_success">Export erfolgreich!</string>
     <string name="settings_category_button_history">Aktionsverlauf</string>
     <string name="settings_history_empty">Noch keine Aktionen aufgezeichnet.</string>
     <string name="settings_category_experimental">Experimentelle Funktionen</string>
@@ -156,10 +151,8 @@
     <string name="settings_cloud_sign_out">Abmelden</string>
     <string name="settings_category_cloud_import">Cloud-Import</string>
     <string name="settings_cloud_import_as_new">Buch aus Cloud importieren</string>
-    <string name="settings_cloud_import_explanation">Importiere ein Buch aus deinem Google Drive als neues Buch (zusätzlich zu den bestehenden).</string>
-    <string name="back_button_content_description">Zurück</string>
-    <string name="page_list_title">Seiten verwalten</string>
-    <string name="template_manage_title">Vorlagen verwalten</string>
+    <string name="settings_cloud_import_explanation">Importiere ein Buch aus deinem Google Drive als neues Buch. Ein Überschreiben lokaler Bücher mit der gleichen ID wird verhindert.</string>
+    <string name="page_list_show">Seiten verwalten</string>
 
     <!-- Smart Home -->
     <string name="settings_google_home_project_id">Google Home Projekt-ID (Device Access)</string>
