@@ -19,35 +19,27 @@ class LocalIntentRouterTest {
 
     @Before
     fun setup() {
-        clockExecutor = mockk(relaxed = true)
         logger = mockk(relaxed = true)
-        
-        router = spyk(LocalIntentRouterImpl(clockExecutor, logger))
+        router = spyk(LocalIntentRouterImpl(logger))
     }
 
     @Test
-    fun `executeIntent calls speak with natural response for alarm`() = runBlocking {
+    fun `executeIntent returns not available message`() = runBlocking {
         var spokenText = ""
         val onSpeak: (String) -> Unit = { spokenText = it }
         
-        every { clockExecutor.getNextAlarm() } returns "Wecker um 08:00 Uhr"
-        coEvery { router.generateRawResponse(any(), any()) } returns "Dein nächster Wecker klingelt um 8 Uhr morgens."
-        
         router.executeIntent("alarm", onSpeak)
         
-        assert(spokenText == "Dein nächster Wecker klingelt um 8 Uhr morgens.")
+        assert(spokenText == "Dieses Tool ist für die lokale Verarbeitung aktuell nicht verfügbar.")
     }
 
     @Test
-    fun `executeIntent falls back to system executor if AI response is empty for alarm`() = runBlocking {
+    fun `routeIntent returns unknown message`() = runBlocking {
         var spokenText = ""
         val onSpeak: (String) -> Unit = { spokenText = it }
         
-        every { clockExecutor.getNextAlarm() } returns "Wecker um 08:00 Uhr"
-        coEvery { router.generateRawResponse(any(), any()) } returns ""
+        router.routeIntent(onSpeak)
         
-        router.executeIntent("alarm", onSpeak)
-        
-        assert(spokenText == "Wecker um 08:00 Uhr")
+        assert(spokenText == "Befehl konnte nicht verarbeitet werden.")
     }
 }

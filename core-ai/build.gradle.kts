@@ -46,7 +46,6 @@ dependencies {
     implementation(libs.gms.play.services.location)
     implementation(libs.gms.play.services.auth)
     
-    implementation(libs.gson)
     implementation(libs.kotlinx.coroutines.android)
 
     testImplementation(libs.junit)

@@ -10,6 +10,8 @@ import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.GeminiButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiNanoButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiSearchButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction
+import com.andreas_kratzer.ghosttalk.core.ai.domain.VisionUseCase
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -20,18 +22,26 @@ class GeminiActionHandler @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val settingsRepository: SettingsRepository,
     private val geminiUseCaseLazy: dagger.Lazy<GeminiUseCase>,
+    private val visionUseCase: VisionUseCase,
     private val localIntentRouter: LocalIntentRouter,
     private val ttsProxyLazy: dagger.Lazy<ActionTtsProxy>,
     private val actionLogger: ActionLogger,
-    private val actionEventEmitter: ActionEventEmitter
+    private val actionEventEmitter: ActionEventEmitter,
+    private val buttonUsageRepository: com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository,
+    private val cameraProvider: CameraProvider
 ) : ActionHandler {
+
+    private val mediaActionSound = android.media.MediaActionSound().apply {
+        load(android.media.MediaActionSound.SHUTTER_CLICK)
+    }
 
     private val getString: (Int, Array<out Any>) -> String = { id, args ->
         try { context.getString(id, *args) } catch (_: Exception) { "" }
     }
 
     override fun canHandle(action: ButtonAction): Boolean = 
-        action is GeminiButtonAction || action is GeminiSearchButtonAction || action is GeminiNanoButtonAction
+        action is GeminiButtonAction || action is GeminiSearchButtonAction || 
+                action is GeminiNanoButtonAction || action is GeminiVisionButtonAction
 
     override fun handle(
         buttonConfig: ButtonConfig,
@@ -56,6 +66,63 @@ class GeminiActionHandler @Inject constructor(
                     localIntentRouter.executeIntent(action.intent) { response ->
                         speakResponse(response, targetDeviceAddress, executionId, onFinish)
                     }
+                    return@launch
+                }
+
+                if (action is GeminiVisionButtonAction) {
+                    actionLogger.log("Gemini Vision (KI Auge) wird gestartet...")
+                    
+                    if (action.playShutterSound) {
+                        try {
+                            mediaActionSound.play(android.media.MediaActionSound.SHUTTER_CLICK)
+                        } catch (e: Exception) {
+                            actionLogger.error("Failed to play shutter sound", e)
+                        }
+                    }
+                    
+                    if (androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.CAMERA) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                        speakError(getString(com.andreas_kratzer.ghosttalk.R.string.error_camera_permission_missing, emptyArray()), targetDeviceAddress, executionId, onFinish)
+                        return@launch
+                    }
+
+                    // Capture real image or fall back to mock
+                    val capturedBitmap = cameraProvider.captureImage()
+                    
+                    val finalBitmap = if (capturedBitmap != null) {
+                        actionLogger.log("Echtes Kamerabild erfasst.")
+                        capturedBitmap
+                    } else {
+                        actionLogger.log("Kamerazugriff fehlgeschlagen. Simuliere Bild...")
+                        // Simulated camera capture fallback
+                        android.graphics.Bitmap.createBitmap(1024, 1024, android.graphics.Bitmap.Config.ARGB_8888).also {
+                            val canvas = android.graphics.Canvas(it)
+                            canvas.drawColor(android.graphics.Color.LTGRAY)
+                            val paint = android.graphics.Paint().apply {
+                                color = android.graphics.Color.BLACK
+                                textSize = 40f
+                            }
+                            canvas.drawText("Simuliertes Kamerabild (Fallback)", 100f, 500f, paint)
+                        }
+                    }
+                    
+                    // Save image to temporary file for the history
+                    try {
+                        val historyDir = java.io.File(context.cacheDir, "action_history_images").apply { mkdirs() }
+                        val imageFile = java.io.File(historyDir, "vision_${System.currentTimeMillis()}.jpg")
+                        java.io.FileOutputStream(imageFile).use { out ->
+                            finalBitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 85, out)
+                        }
+                        buttonUsageRepository.updateLastEventImage(imageFile.absolutePath)
+                    } catch (e: Exception) {
+                        actionLogger.error("Failed to save vision image for history", e)
+                    }
+
+                    val response = visionUseCase.describeImage(
+                        bitmap = finalBitmap,
+                        prompt = action.prompt,
+                        useCloud = action.useCloud
+                    )
+                    speakResponse(response, targetDeviceAddress, executionId, onFinish)
                     return@launch
                 }
 

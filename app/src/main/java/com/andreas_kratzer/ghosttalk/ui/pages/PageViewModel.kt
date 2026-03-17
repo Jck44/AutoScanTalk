@@ -178,24 +178,10 @@ class PageViewModel @Inject constructor(
                 }
             }
             pageManagementDelegate.setCurrentPage(page)
-            
-            // Background pre-fetch for weather if current page has a weather button
-            val hasWeatherButton = page.buttonConfigs.any { config ->
-                val action = config?.buttonAction
-                action is GeminiNanoButtonAction && 
-                        action.intent == "gemini_nano_intent_weather"
-            }
-            if (hasWeatherButton) {
-                viewModelScope.launch {
-                    try {
-                        weatherExecutor.getWeatherInfo() // This will refresh if expired
-                    } catch (e: Exception) {
-                        logger.e("PageViewModel", "Weather pre-fetch failed", e)
-                    }
-                }
-            }
         }
     }
+
+    override val availableGeminiTools = geminiUseCase.getAvailableTools()
 
     fun setUserModeActive(isActive: Boolean) = interactionDelegate.setUserModeActive(isActive)
     fun activateButtonAtIndex(index: Int) = interactionDelegate.activateButtonAtIndex(index, resolvedPage.value, activeBookId.value)

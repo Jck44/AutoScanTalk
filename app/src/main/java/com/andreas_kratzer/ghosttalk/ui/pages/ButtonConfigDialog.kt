@@ -78,6 +78,8 @@ fun ButtonConfigDialog(
     onNavigateToPage: ((String) -> Unit)? = null,
     onCreatePage: ((String, Int, Int, String?, (String) -> Unit) -> Unit)? = null,
     currentPageId: String? = null,
+    // AI Tools
+    availableGeminiTools: List<com.andreas_kratzer.ghosttalk.core.ai.domain.AiTool> = emptyList(),
     // Google Home Support
     googleHomeManager: GoogleHomeManager? = null,
     googleHomeProjectId: String = "",
@@ -113,6 +115,7 @@ fun ButtonConfigDialog(
     val actionTypeDevice = stringResource(R.string.button_action_control_device)
     val actionTypeWeather = stringResource(R.string.button_action_weather)
     val actionTypeSmartHome = stringResource(R.string.button_action_smart_home)
+    val actionTypeGeminiVision = "Gemini Vision (KI Auge)"
 
     var selectedActionType by remember {
         mutableStateOf(
@@ -121,6 +124,7 @@ fun ButtonConfigDialog(
                 is GeminiButtonAction -> actionTypeGemini
                 is GeminiSearchButtonAction -> actionTypeGeminiSearch
                 is GeminiNanoButtonAction -> actionTypeGeminiNano
+                is com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction -> actionTypeGeminiVision
                 is FrequentActionButtonAction -> actionTypeFrequent
                 is SmartPredictionButtonAction -> actionTypeSmart
                 is ControlDeviceButtonAction -> actionTypeDevice
@@ -143,9 +147,18 @@ fun ButtonConfigDialog(
                 is GeminiButtonAction -> action.prompt
                 is GeminiSearchButtonAction -> action.prompt
                 is GeminiNanoButtonAction -> action.intent
+                is com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction -> action.prompt
                 else -> ""
             }
         )
+    }
+
+    var geminiVisionUseCloud by remember {
+        mutableStateOf((buttonConfig.buttonAction as? com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction)?.useCloud ?: false)
+    }
+
+    var geminiVisionPlayShutterSound by remember {
+        mutableStateOf((buttonConfig.buttonAction as? com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction)?.playShutterSound ?: true)
     }
 
     // Frequent/Smart specific state
@@ -278,7 +291,8 @@ fun ButtonConfigDialog(
                         actionTypeSmart to SmartPredictionButtonAction(),
                         actionTypeWeather to WeatherButtonAction(),
                         actionTypeSmartHome to SmartHomeButtonAction(),
-                        actionTypeDevice to ControlDeviceButtonAction()
+                        actionTypeDevice to ControlDeviceButtonAction(),
+                        actionTypeGeminiVision to com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction()
                     ).filter { (label, action) ->
                         featureGuard?.isActionEnabled(action) ?: true
                     }.map { (label, _) ->
@@ -296,6 +310,8 @@ fun ButtonConfigDialog(
                     onGeminiPromptChange = { geminiPrompt = it },
                     rank = rank,
                     onRankChange = { rank = it },
+                    // Gemini Tools
+                    availableGeminiTools = availableGeminiTools,
                     deviceActionType = deviceActionType,
                     onDeviceActionTypeChange = { deviceActionType = it },
                     volumeValue = volumeValue,
@@ -330,7 +346,12 @@ fun ButtonConfigDialog(
                     },
                     onNavigateToPage = onNavigateToPage,
                     onCreatePage = onCreatePage,
-                    onDismissDialog = onDismiss
+                    onDismissDialog = onDismiss,
+                    useCloud = geminiVisionUseCloud,
+                    onUseCloudChange = { geminiVisionUseCloud = it },
+                    isCloudEnabled = featureGuard?.isActionEnabled(GeminiButtonAction()) ?: true,
+                    playShutterSound = geminiVisionPlayShutterSound,
+                    onPlayShutterSoundChange = { geminiVisionPlayShutterSound = it }
                 )
             }
         },
@@ -344,6 +365,7 @@ fun ButtonConfigDialog(
                         actionTypeGemini -> GeminiButtonAction(geminiPrompt)
                         actionTypeGeminiSearch -> GeminiSearchButtonAction(geminiPrompt)
                         actionTypeGeminiNano -> GeminiNanoButtonAction(geminiPrompt)
+                        actionTypeGeminiVision -> com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction(geminiPrompt, geminiVisionUseCloud, geminiVisionPlayShutterSound)
                         actionTypeFrequent -> FrequentActionButtonAction(rank)
                         actionTypeSmart -> SmartPredictionButtonAction(rank)
                         actionTypeWeather -> WeatherButtonAction()

@@ -443,6 +443,7 @@ private fun EditorDialogs(
                 onDismissButtonDialog()
             },
             onNavigateToPage = onEditPage,
+            availableGeminiTools = actions.availableGeminiTools,
             onCreatePage = { name, r, c, t, callback ->
                 val bookId = (item as? Page)?.bookId
                 if (bookId != null) {

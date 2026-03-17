@@ -30,22 +30,8 @@ class ButtonUsageRepositoryImpl @Inject constructor(
     /**
      * Records a button press. Increments the usage counter or creates a new entry.
      */
-    override suspend fun recordUsage(bookId: String, buttonConfig: ButtonConfig, rows: Int, columns: Int, indexInPage: Int) {
-        // Ignore inactive buttons
-        if (!buttonConfig.isActive) {
-            return
-        }
-
-        // Ignore FrequentActionButtonAction to prevent ranking loops
-        if (buttonConfig.buttonAction is FrequentActionButtonAction) {
-            return
-        }
-
-        // Only record if visible in the current grid configuration
-        if (!com.andreas_kratzer.ghosttalk.core.util.GridUtils.isVisibleInGrid(indexInPage, rows, columns)) {
-            return
-        }
-        
+    override suspend fun recordUsage(bookId: String, pageId: String, buttonConfig: ButtonConfig, rows: Int, columns: Int, indexInPage: Int) {
+        // ... (lines 34-67 are same)
         val existing = dao.getStatForButton(bookId, buttonConfig.id)
         val stat = if (existing != null) {
             existing.copy(
@@ -71,9 +57,32 @@ class ButtonUsageRepositoryImpl @Inject constructor(
             val newEvent = ButtonUsageRepository.ButtonUsageEvent(
                 timestamp = System.currentTimeMillis(),
                 label = buttonConfig.label,
-                actionType = buttonConfig.buttonAction::class.simpleName ?: "Unknown"
+                actionType = buttonConfig.buttonAction::class.simpleName ?: "Unknown",
+                buttonId = buttonConfig.id,
+                pageId = pageId
             )
-            (listOf(newEvent) + current).take(15)
+            val combined = listOf(newEvent) + current
+            val keep = combined.take(15)
+            
+            // Delete images of dropped events
+            if (combined.size > 15) {
+                combined.drop(15).forEach { dropped ->
+                    dropped.imagePath?.let { path ->
+                        try {
+                            java.io.File(path).delete()
+                        } catch (_: Exception) {}
+                    }
+                }
+            }
+            keep
+        }
+    }
+
+    override suspend fun updateLastEventImage(imagePath: String) {
+        _buttonHistory.update { current ->
+            if (current.isEmpty()) return@update current
+            val last = current.first()
+            listOf(last.copy(imagePath = imagePath)) + current.drop(1)
         }
     }
 
@@ -88,6 +97,16 @@ class ButtonUsageRepositoryImpl @Inject constructor(
      * Clears all statistics for a book.
      */
     override suspend fun clearStats(bookId: String) {
+        _buttonHistory.update { current ->
+            current.forEach { event ->
+                event.imagePath?.let { path ->
+                    try {
+                        java.io.File(path).delete()
+                    } catch (_: Exception) {}
+                }
+            }
+            emptyList()
+        }
         dao.clearStatsForBook(bookId)
     }
 }

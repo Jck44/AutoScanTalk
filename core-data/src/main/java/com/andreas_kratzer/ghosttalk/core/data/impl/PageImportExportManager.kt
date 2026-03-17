@@ -14,6 +14,7 @@ import com.andreas_kratzer.ghosttalk.core.model.FrequentActionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiNanoButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiSearchButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.SmartHomeButtonAction
@@ -128,6 +129,7 @@ class PageImportExportManager @Inject constructor(
             is GeminiSearchButtonAction -> ImportAction(type = "GEMINI_SEARCH", prompt = action.prompt)
             is GeminiNanoButtonAction -> ImportAction(type = "GEMINI_NANO", intent = action.intent)
             is SmartPredictionButtonAction -> ImportAction(type = "SMART_PREDICTION", rank = action.rank)
+            is GeminiVisionButtonAction -> ImportAction(type = "GEMINI_VISION", prompt = action.prompt, useCloud = action.useCloud)
             is ControlDeviceButtonAction -> ImportAction(
                 type = "DEVICE_CONTROL",
                 deviceActionType = action.actionType.name,
@@ -267,6 +269,7 @@ class PageImportExportManager @Inject constructor(
             "GEMINI" -> GeminiButtonAction(importAction.prompt ?: "")
             "GEMINI_SEARCH" -> GeminiSearchButtonAction(importAction.prompt ?: "")
             "GEMINI_NANO" -> GeminiNanoButtonAction(importAction.intent ?: "")
+            "GEMINI_VISION" -> com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction(importAction.prompt ?: "", importAction.useCloud ?: false)
             "SMART_PREDICTION" -> SmartPredictionButtonAction(importAction.rank ?: 1)
             "DEVICE_CONTROL" -> {
                 val typeName = importAction.deviceActionType ?: "READ_TIME"

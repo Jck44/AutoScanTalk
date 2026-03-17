@@ -28,8 +28,11 @@ class GeminiActionHandlerTest {
     private val geminiUseCase = mockk<GeminiUseCase>(relaxed = true)
     private val localIntentRouter = mockk<LocalIntentRouter>(relaxed = true)
     private val ttsProxy = mockk<ActionTtsProxy>(relaxed = true)
+    private val visionUseCase = mockk<com.andreas_kratzer.ghosttalk.core.ai.domain.VisionUseCase>(relaxed = true)
     private val actionLogger = mockk<ActionLogger>(relaxed = true)
     private val actionEventEmitter = mockk<ActionEventEmitter>(relaxed = true)
+    private val buttonUsageRepository = mockk<com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository>(relaxed = true)
+    private val cameraProvider = mockk<CameraProvider>(relaxed = true)
     
     private lateinit var handler: GeminiActionHandler
 
@@ -42,12 +45,15 @@ class GeminiActionHandlerTest {
             geminiUseCaseLazy = object : dagger.Lazy<GeminiUseCase> {
                 override fun get() = geminiUseCase
             },
+            visionUseCase = visionUseCase,
             localIntentRouter = localIntentRouter,
             ttsProxyLazy = object : dagger.Lazy<ActionTtsProxy> {
                 override fun get() = ttsProxy
             },
             actionLogger = actionLogger,
-            actionEventEmitter = actionEventEmitter
+            actionEventEmitter = actionEventEmitter,
+            buttonUsageRepository = buttonUsageRepository,
+            cameraProvider = cameraProvider
         )
         every { ttsProxy.isReady } returns true
     }
@@ -198,5 +204,49 @@ class GeminiActionHandlerTest {
         // THEN
         // Verify it extracts 45, not 429 or 42945
         verify { ttsProxy.speakRouted("Wait 45s", any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `VisionAction should capture image and play sound if enabled`() = scope.runTest {
+        // GIVEN
+        val action = com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction(
+            prompt = "Describe",
+            useCloud = true,
+            playShutterSound = true
+        )
+        val config = ButtonConfig(id = "1", label = "Vision", buttonAction = action, auditoryCue = null)
+        
+        // Mock cache dir for image saving
+        val tempDir = java.io.File(System.getProperty("java.io.tmpdir"), "ghosttalk_test_cache")
+        tempDir.mkdirs()
+        every { context.cacheDir } returns tempDir
+        
+        // Mock MediaActionSound to avoid "Method not mocked" error
+        io.mockk.mockkConstructor(android.media.MediaActionSound::class)
+        every { anyConstructed<android.media.MediaActionSound>().load(any()) } returns Unit
+        every { anyConstructed<android.media.MediaActionSound>().play(any()) } returns Unit
+        
+        val bitmap = mockk<android.graphics.Bitmap>(relaxed = true)
+        every { bitmap.compress(any(), any(), any()) } returns true
+        coEvery { cameraProvider.captureImage() } returns bitmap
+        coEvery { visionUseCase.describeImage(any(), any(), any()) } returns "A photo"
+        
+        val onFinish = mockk<(Int) -> Unit>(relaxed = true)
+        
+        // WHEN
+        handler.handle(config, action, 1, onFinish)
+        runCurrent()
+        
+        // THEN
+        coVerify { cameraProvider.captureImage() }
+        coVerify { visionUseCase.describeImage(bitmap, "Describe", true) }
+        coVerify { buttonUsageRepository.updateLastEventImage(any()) }
+        
+        val ttsCallback = slot<() -> Unit>()
+        verify { ttsProxy.speakRouted(text = "A photo", deviceAddress = any(), onDone = capture(ttsCallback)) }
+        
+        ttsCallback.captured.invoke()
+        runCurrent()
+        verify { onFinish(1) }
     }
 }

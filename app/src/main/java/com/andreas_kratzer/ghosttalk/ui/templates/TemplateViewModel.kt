@@ -29,8 +29,11 @@ class TemplateViewModel @Inject constructor(
     private val createTemplateUseCase: CreateTemplateUseCase,
     private val deleteTemplateUseCase: DeleteTemplateUseCase,
     private val updateButtonConfigInTemplateUseCase: UpdateButtonConfigInTemplateUseCase,
-    private val getTemplateUsagesUseCase: GetTemplateUsagesUseCase
+    private val getTemplateUsagesUseCase: GetTemplateUsagesUseCase,
+    private val geminiUseCase: com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase
 ) : ViewModel(), com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions {
+
+    override val availableGeminiTools = geminiUseCase.getAvailableTools()
 
 
     private val _searchQuery = MutableStateFlow("")

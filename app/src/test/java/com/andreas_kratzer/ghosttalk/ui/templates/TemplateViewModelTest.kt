@@ -35,6 +35,7 @@ class TemplateViewModelTest {
     private lateinit var deleteTemplateUseCase: DeleteTemplateUseCase
     private lateinit var updateButtonConfigInTemplateUseCase: UpdateButtonConfigInTemplateUseCase
     private lateinit var getTemplateUsagesUseCase: GetTemplateUsagesUseCase
+    private lateinit var geminiUseCase: com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase
     private lateinit var viewModel: TemplateViewModel
 
     @Before
@@ -46,6 +47,7 @@ class TemplateViewModelTest {
         deleteTemplateUseCase = mockk<DeleteTemplateUseCase>(relaxed = true)
         updateButtonConfigInTemplateUseCase = mockk<UpdateButtonConfigInTemplateUseCase>(relaxed = true)
         getTemplateUsagesUseCase = mockk<GetTemplateUsagesUseCase>(relaxed = true)
+        geminiUseCase = mockk<com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase>(relaxed = true)
 
         every { settingsRepository.templateSortOrderFlow } returns MutableStateFlow(SortOrder.A_Z.name)
         every { templateRepository.getAllTemplates() } returns flowOf(emptyList())
@@ -56,7 +58,8 @@ class TemplateViewModelTest {
             createTemplateUseCase,
             deleteTemplateUseCase,
             updateButtonConfigInTemplateUseCase,
-            getTemplateUsagesUseCase
+            getTemplateUsagesUseCase,
+            geminiUseCase
         )
     }
 
@@ -102,7 +105,8 @@ class TemplateViewModelTest {
             createTemplateUseCase,
             deleteTemplateUseCase,
             updateButtonConfigInTemplateUseCase,
-            getTemplateUsagesUseCase
+            getTemplateUsagesUseCase,
+            geminiUseCase
         )
         advanceUntilIdle()
 

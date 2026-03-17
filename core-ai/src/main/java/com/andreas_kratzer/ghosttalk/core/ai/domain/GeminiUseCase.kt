@@ -9,6 +9,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
+import android.graphics.Bitmap
+import android.util.Base64
+import java.io.ByteArrayOutputStream
 import java.net.URL
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -21,7 +24,8 @@ import javax.net.ssl.HttpsURLConnection
 @Singleton
 class GeminiUseCase @Inject constructor(
     private val googleAuthManager: GoogleAuthManager,
-    private val logger: com.andreas_kratzer.ghosttalk.core.util.Logger
+    private val logger: com.andreas_kratzer.ghosttalk.core.util.Logger,
+    private val aiTools: Set<@JvmSuppressWildcards AiTool>
 ) {
     private val oauthTokenProvider: suspend () -> String? = {
         googleAuthManager.getGoogleCredential()?.getToken()
@@ -69,7 +73,11 @@ class GeminiUseCase @Inject constructor(
         this.appCommandHandler = handler
     }
 
-    suspend fun generateResponse(prompt: String, useGoogleSearch: Boolean = false): String = withContext(Dispatchers.IO) {
+    suspend fun generateResponse(
+        prompt: String, 
+        useGoogleSearch: Boolean = false,
+        image: Bitmap? = null
+    ): String = withContext(Dispatchers.IO) {
         val token = oauthTokenProvider() ?: return@withContext "Fehler: Nicht angemeldet (OAuth Token fehlt)."
         
         val now = System.currentTimeMillis()
@@ -78,7 +86,7 @@ class GeminiUseCase @Inject constructor(
             throw Exception("HTTP 429: Lockout active. Please wait $remainingSeconds seconds.")
         }
         
-        logger.d(TAG, "Generating response for prompt: $prompt, useGoogleSearch: $useGoogleSearch")
+        logger.d(TAG, "Generating response for prompt: $prompt, useGoogleSearch: $useGoogleSearch, image: ${image != null}")
         
         if (!modelInitialized) {
             tryToSelectBestModel()
@@ -86,7 +94,7 @@ class GeminiUseCase @Inject constructor(
         }
         
         try {
-            val result = performGeneration(token, prompt, useGoogleSearch)
+            val result = performGeneration(token, prompt, useGoogleSearch, image)
             lastSuccess = true
             return@withContext result
         } catch (e: Exception) {
@@ -97,7 +105,7 @@ class GeminiUseCase @Inject constructor(
                 val failedModel = activeModelName
                 if (tryToSelectBestModel(excludeName = failedModel)) {
                     try {
-                        val result = performGeneration(token, prompt, useGoogleSearch)
+                        val result = performGeneration(token, prompt, useGoogleSearch, image)
                         lastSuccess = true
                         return@withContext result
                     } catch (retryEx: Exception) {
@@ -151,33 +159,54 @@ class GeminiUseCase @Inject constructor(
         return false
     }
 
-    private suspend fun performGeneration(token: String, prompt: String, useGoogleSearch: Boolean): String {
-        val contents = JSONArray().apply {
+    private suspend fun performGeneration(token: String, prompt: String, useGoogleSearch: Boolean, image: Bitmap?): String {
+        val initialContents = JSONArray().apply {
             put(JSONObject().apply {
                 put("role", "user")
-                put("parts", JSONArray().put(JSONObject().apply {
-                    put("text", prompt)
-                }))
+                put("parts", JSONArray().apply {
+                    put(JSONObject().apply {
+                        put("text", prompt)
+                    })
+                    image?.let {
+                        val stream = ByteArrayOutputStream()
+                        it.compress(Bitmap.CompressFormat.JPEG, 80, stream)
+                        val base64Image = Base64.encodeToString(stream.toByteArray(), Base64.NO_WRAP)
+                        put(JSONObject().apply {
+                            put("inline_data", JSONObject().apply {
+                                put("mime_type", "image/jpeg")
+                                put("data", base64Image)
+                            })
+                        })
+                    }
+                })
             })
         }
         val tools = createToolsArray(useGoogleSearch)
         
         var responseJson: String
         
+        // Use a mutable JSONArray for contents to allow adding model responses and tool outputs
+        val contentsHistory = initialContents
+        
         for (turn in 1..8) { // Increased turns for recursive tool usage
             val requestJson = JSONObject().apply {
-                put("contents", contents)
-                put("tools", tools)
+                put("contents", contentsHistory)
+                if (tools.length() > 0) {
+                    put("tools", tools)
+                }
             }
             
             responseJson = callGeminiRest(token, requestJson)
             val root = JSONObject(responseJson)
-            val candidate = root.getJSONArray("candidates").getJSONObject(0)
-            val content = candidate.getJSONObject("content")
-            val parts = content.getJSONArray("parts")
+            val candidates = root.optJSONArray("candidates")
+            if (candidates == null || candidates.length() == 0) return "Keine Antwort erhalten."
+            
+            val candidate = candidates.getJSONObject(0)
+            val content = candidate.optJSONObject("content") ?: return "Keine Antwort erhalten."
+            val parts = content.optJSONArray("parts") ?: return "Keine Antwort erhalten."
             
             // Add the model's response to history
-            contents.put(content)
+            contentsHistory.put(content)
             
             var hasFunctionCall = false
             val functionResponseParts = JSONArray()
@@ -202,7 +231,7 @@ class GeminiUseCase @Inject constructor(
             
             if (hasFunctionCall) {
                 // Add all function responses as a single content turn from 'user' (per API specs for tool use)
-                contents.put(JSONObject().apply {
+                contentsHistory.put(JSONObject().apply {
                     put("role", "user")
                     put("parts", functionResponseParts)
                 })
@@ -220,84 +249,31 @@ class GeminiUseCase @Inject constructor(
         return "Fehler: Zu viele Interaktionsschritte."
     }
 
+    fun getAvailableTools(): List<AiTool> {
+        return aiTools.toList()
+    }
+
+    fun getLocalCapabilities(): List<String> {
+        // Nano currently has no tools, so we return an empty list or a description
+        return emptyList()
+    }
+
     private fun createToolsArray(useGoogleSearch: Boolean): JSONArray {
         val toolsArray = JSONArray()
         if (useGoogleSearch) {
             toolsArray.put(JSONObject().apply {
                 put("googleSearch", JSONObject())
             })
-        } else {
+        } else if (aiTools.isNotEmpty()) {
             toolsArray.put(JSONObject().apply {
                 put("function_declarations", JSONArray().apply {
-                    put(JSONObject().apply {
-                        put("name", "search_drive")
-                        put("description", "Sucht Dateien in Google Drive.")
-                        put("parameters", JSONObject().apply {
-                            put("type", "OBJECT")
-                            put("properties", JSONObject().apply {
-                                put("query", JSONObject().apply {
-                                    put("type", "STRING")
-                                    put("description", "Suchbegriff")
-                                })
-                            })
-                            put("required", JSONArray().put("query"))
+                    aiTools.forEach { tool ->
+                        put(JSONObject().apply {
+                            put("name", tool.name)
+                            put("description", tool.description)
+                            put("parameters", tool.parameters)
                         })
-                    })
-                    put(JSONObject().apply {
-                        put("name", "get_weather")
-                        put("description", "Holt aktuelle Wetterdaten für einen Ort.")
-                        put("parameters", JSONObject().apply {
-                            put("type", "OBJECT")
-                            put("properties", JSONObject().apply {
-                                put("location", JSONObject().apply { 
-                                    put("type", "STRING") 
-                                    put("description", "Der Name der Stadt oder des Ortes.")
-                                })
-                            })
-                            put("required", JSONArray().put("location"))
-                        })
-                    })
-                    put(JSONObject().apply {
-                        put("name", "wikipedia_search")
-                        put("description", "Sucht eine Zusammenfassung zu einem Thema auf Wikipedia.")
-                        put("parameters", JSONObject().apply {
-                            put("type", "OBJECT")
-                            put("properties", JSONObject().apply {
-                                put("topic", JSONObject().apply { put("type", "STRING") })
-                            })
-                            put("required", JSONArray().put("topic"))
-                        })
-                    })
-                    put(JSONObject().apply {
-                        put("name", "list_calendar_events")
-                        put("description", "Listet die nächsten Termine aus dem Google Kalender auf.")
-                        put("parameters", JSONObject().apply {
-                            put("type", "OBJECT")
-                            put("properties", JSONObject())
-                        })
-                    })
-                    put(JSONObject().apply {
-                        put("name", "list_tasks")
-                        put("description", "Listet offene Aufgaben aus Google Tasks auf.")
-                        put("parameters", JSONObject().apply {
-                            put("type", "OBJECT")
-                            put("properties", JSONObject())
-                        })
-                    })
-                    put(JSONObject().apply {
-                        put("name", "play_on_spotify")
-                        put("description", "Spielt ein Lied, Album oder Künstler auf Spotify ab.")
-                        put("parameters", JSONObject().apply {
-                            put("type", "OBJECT")
-                            put("properties", JSONObject().apply {
-                                put("query", JSONObject().apply { 
-                                    put("type", "STRING")
-                                    put("description", "Titel, Künstler oder Playlist.")
-                                })
-                            })
-                            put("required", JSONArray().put("query"))
-                        })
-                    })
+                    }
                 })
             })
         }
@@ -359,145 +335,24 @@ class GeminiUseCase @Inject constructor(
 
     private suspend fun handleFunctionCall(token: String, call: JSONObject): String {
         val name = call.getString("name")
-        val args = call.optJSONObject("args")
+        val argsObj = call.optJSONObject("args")
+        val args = mutableMapOf<String, Any?>()
+        argsObj?.keys()?.forEach { key ->
+            args[key] = argsObj.get(key)
+        }
+        
         logger.d(TAG, "Executing tool: $name with args: $args")
         
+        val tool = aiTools.find { it.name == name }
+        if (tool == null) {
+            return "Funktion nicht gefunden."
+        }
+
         return try {
-            when (name) {
-                "search_drive" -> executeDriveSearch(args?.optString("query") ?: "")
-                "get_weather" -> executeWeatherFetch(args?.optString("location") ?: "Berlin")
-                "wikipedia_search" -> executeWikipediaSearch(args?.optString("topic") ?: "")
-                "list_calendar_events" -> executeCalendarFetch(token)
-                "list_tasks" -> executeTasksFetch(token)
-                "play_on_spotify" -> {
-                    val q = args?.optString("query") ?: ""
-                    appCommandHandler?.invoke("SPOTIFY_PLAY", mapOf("query" to q))
-                    "Spotify wurde mit der Suche '$q' gestartet."
-                }
-                "control_home" -> executeHomeControl(args?.optString("device") ?: "", args?.optString("action") ?: "")
-                else -> "Funktion nicht gefunden."
-            }
+            tool.execute(args)
         } catch (e: Exception) {
             logger.e(TAG, "Tool $name execution failed", e)
             "[Fehler im Tool $name: ${e.message}. Fahre fort, falls möglich.]"
-        }
-    }
-
-    private suspend fun executeDriveSearch(query: String): String {
-        return try {
-            val drive = driveProvider() ?: return "Fehler: Drive nicht verfügbar."
-            val helper = DriveServiceHelper(drive)
-            val files = if (query.isEmpty()) {
-                helper.listFiles("root")
-            } else {
-                helper.searchFiles(query)
-            }
-            if (files.isEmpty()) return "Keine Dateien gefunden."
-            "Treffer in Drive: " + files.take(3).joinToString { it.name }
-        } catch (e: Exception) {
-            "Fehler bei Drive Suche: ${e.message}"
-        }
-    }
-
-    private fun executeHomeControl(device: String, action: String): String {
-        logger.d(TAG, "Home Control: $device -> $action")
-        return "Erfolg: $device wurde auf '$action' gesetzt."
-    }
-
-    private suspend fun executeWeatherFetch(location: String): String = withContext(Dispatchers.IO) {
-        try {
-            val url = URL("https://wttr.in/${java.net.URLEncoder.encode(location, "UTF-8")}?format=3")
-            val connection = url.openConnection() as HttpsURLConnection
-            connection.requestMethod = "GET"
-            connection.readTimeout = 5000
-            connection.connectTimeout = 5000
-            
-            if (connection.responseCode == 200) {
-                connection.inputStream.bufferedReader().use { it.readText().trim() }
-            } else {
-                "Fehler beim Wetter-Abruf für $location."
-            }
-        } catch (e: Exception) {
-            logger.e(TAG, "Weather fetch failed", e)
-            "Wetter-Dienst aktuell nicht erreichbar."
-        }
-    }
-
-    private suspend fun executeWikipediaSearch(topic: String): String = withContext(Dispatchers.IO) {
-        try {
-            val encodedTopic = java.net.URLEncoder.encode(topic.replace(" ", "_"), "UTF-8")
-            val url = URL("https://de.wikipedia.org/api/rest_v1/page/summary/$encodedTopic")
-            val connection = url.openConnection() as HttpsURLConnection
-            connection.requestMethod = "GET"
-            
-            if (connection.responseCode == 200) {
-                val json = connection.inputStream.bufferedReader().use { it.readText() }
-                val root = JSONObject(json)
-                root.optString("extract", "Keine Zusammenfassung gefunden.")
-            } else {
-                "Wikipedia-Artikel zu '$topic' nicht gefunden."
-            }
-        } catch (e: Exception) {
-            "Fehler bei Wikipedia-Suche: ${e.message}"
-        }
-    }
-
-    private suspend fun executeCalendarFetch(token: String): String = withContext(Dispatchers.IO) {
-        try {
-            val url = URL("https://www.googleapis.com/calendar/v3/calendars/primary/events?maxResults=5&orderBy=startTime&singleEvents=true&timeMin=" + 
-                java.net.URLEncoder.encode(java.time.OffsetDateTime.now().toString(), "UTF-8"))
-            val connection = url.openConnection() as HttpsURLConnection
-            connection.requestMethod = "GET"
-            connection.setRequestProperty("Authorization", "Bearer $token")
-            
-            if (connection.responseCode == 200) {
-                val json = connection.inputStream.bufferedReader().use { it.readText() }
-                val root = JSONObject(json)
-                val items = root.optJSONArray("items")
-                if (items == null || items.length() == 0) return@withContext "Keine anstehenden Termine gefunden."
-                
-                val builder = StringBuilder("Anstehende Termine:\n")
-                for (i in 0 until items.length()) {
-                    val event = items.getJSONObject(i)
-                    val summary = event.optString("summary", "(Kein Titel)")
-                    val start = event.optJSONObject("start")?.optString("dateTime") ?: event.optJSONObject("start")?.optString("date") ?: ""
-                    builder.append("- $summary am $start\n")
-                }
-                builder.toString()
-            } else {
-                val error = connection.errorStream?.bufferedReader()?.use { it.readText() }
-                "Fehler beim Kalender-Zugriff ($error)."
-            }
-        } catch (e: Exception) {
-            "Kalender-Fehler: ${e.message}"
-        }
-    }
-
-    private suspend fun executeTasksFetch(token: String): String = withContext(Dispatchers.IO) {
-        try {
-            val url = URL("https://www.googleapis.com/tasks/v1/lists/@default/tasks?maxResults=5")
-            val connection = url.openConnection() as HttpsURLConnection
-            connection.requestMethod = "GET"
-            connection.setRequestProperty("Authorization", "Bearer $token")
-            
-            if (connection.responseCode == 200) {
-                val json = connection.inputStream.bufferedReader().use { it.readText() }
-                val root = JSONObject(json)
-                val items = root.optJSONArray("items")
-                if (items == null || items.length() == 0) return@withContext "Keine offenen Aufgaben gefunden."
-                
-                val builder = StringBuilder("Offene Aufgaben:\n")
-                for (i in 0 until items.length()) {
-                    val task = items.getJSONObject(i)
-                    val title = task.optString("title", "(Kein Titel)")
-                    builder.append("- $title\n")
-                }
-                builder.toString()
-            } else {
-                "Fehler beim Aufgaben-Abruf."
-            }
-        } catch (e: Exception) {
-            "Tasks-Fehler: ${e.message}"
         }
     }
 
@@ -510,21 +365,13 @@ class GeminiUseCase @Inject constructor(
             null -> ToolStatus.PENDING
         }
 
-        // Static tools
-        statusMap["wikipedia_search"] = baseStatus
-        statusMap["get_weather"] = baseStatus
-        statusMap["play_on_spotify"] = baseStatus
-        
-        // Auth-dependent tools
-        val authStatus = if (!isUserSignedIn) {
-            ToolStatus.REQUIRES_AUTH
-        } else {
-            baseStatus
+        aiTools.forEach { tool ->
+            if (tool.requiresAuth && !isUserSignedIn) {
+                statusMap[tool.name] = ToolStatus.REQUIRES_AUTH
+            } else {
+                statusMap[tool.name] = baseStatus
+            }
         }
-        
-        statusMap["search_drive"] = authStatus
-        statusMap["list_calendar_events"] = authStatus
-        statusMap["list_tasks"] = authStatus
         
         return statusMap
     }

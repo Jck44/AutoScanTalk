@@ -90,7 +90,7 @@ data class ImportButton(
 
 @Serializable
 data class ImportAction(
-    val type: String = "SPEAK", // "SPEAK", "NAVIGATE", "GEMINI", "GEMINI_SEARCH", "GEMINI_NANO", "SMART_PREDICTION", "DEVICE_CONTROL", "WEATHER"
+    val type: String = "SPEAK", // "SPEAK", "NAVIGATE", "GEMINI", "GEMINI_SEARCH", "GEMINI_NANO", "GEMINI_VISION", "SMART_PREDICTION", "DEVICE_CONTROL", "WEATHER"
     val textToSpeech: String? = null,
     val targetPageImportId: String? = null,
     val targetPageId: String? = null, // Legacy alias
@@ -100,6 +100,7 @@ data class ImportAction(
     val prompt: String? = null,
     val rank: Int? = null,
     val intent: String? = null,
+    val useCloud: Boolean? = null,
     val deviceActionType: String? = null,
     val volumeValue: String? = null,
     val contactName: String? = null,

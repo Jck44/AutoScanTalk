@@ -2,6 +2,7 @@ package com.andreas_kratzer.ghosttalk.core.ai.domain
 
 import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
 import com.andreas_kratzer.ghosttalk.core.util.Logger
+import io.mockk.every
 import io.mockk.mockk
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -10,14 +11,25 @@ import org.junit.Test
 class GeminiUseCaseTest {
 
     private lateinit var googleAuthManager: GoogleAuthManager
-    private lateinit var logger: Logger
+    private lateinit var logger: com.andreas_kratzer.ghosttalk.core.util.Logger
     private lateinit var geminiUseCase: GeminiUseCase
+    private lateinit var wikiTool: AiTool
+    private lateinit var driveTool: AiTool
 
     @Before
     fun setup() {
         googleAuthManager = mockk(relaxed = true)
         logger = mockk(relaxed = true)
-        geminiUseCase = GeminiUseCase(googleAuthManager, logger)
+        wikiTool = mockk(relaxed = true) {
+            every { name } returns "wikipedia_search"
+            every { requiresAuth } returns false
+        }
+        driveTool = mockk(relaxed = true) {
+            every { name } returns "search_drive"
+            every { requiresAuth } returns true
+        }
+
+        geminiUseCase = GeminiUseCase(googleAuthManager, logger, setOf(wikiTool, driveTool))
         GeminiUseCase.resetHealthStateForTesting()
     }
 

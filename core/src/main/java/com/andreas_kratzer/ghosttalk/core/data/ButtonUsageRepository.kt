@@ -6,8 +6,16 @@ import kotlinx.coroutines.flow.StateFlow
 interface ButtonUsageRepository : ButtonUsageProvider {
     val buttonHistory: StateFlow<List<ButtonUsageEvent>>
 
-    suspend fun recordUsage(bookId: String, buttonConfig: ButtonConfig, rows: Int, columns: Int, indexInPage: Int)
+    suspend fun recordUsage(bookId: String, pageId: String, buttonConfig: ButtonConfig, rows: Int, columns: Int, indexInPage: Int)
     suspend fun clearStats(bookId: String)
+    suspend fun updateLastEventImage(imagePath: String)
 
-    data class ButtonUsageEvent(val timestamp: Long, val label: String, val actionType: String)
+    data class ButtonUsageEvent(
+        val timestamp: Long, 
+        val label: String, 
+        val actionType: String,
+        val imagePath: String? = null,
+        val buttonId: String? = null,
+        val pageId: String? = null
+    )
 }

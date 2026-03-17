@@ -18,14 +18,30 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.BasicAlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import android.graphics.BitmapFactory
+import java.io.File
 import com.andreas_kratzer.ghosttalk.core.ui.components.PreferenceCategory
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsToggleItem
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.feature.settings.R
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
+import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -38,6 +54,8 @@ fun TestSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
     val volumeKeysActivate by viewModel.volumeKeysActivate.collectAsState(false)
     val buttonHistory by viewModel.buttonHistory.collectAsState(emptyList())
     val dimensions = LocalDimensions.current
+    
+    var previewImagePath by remember { mutableStateOf<String?>(null) }
 
     FlowRow(
         modifier = Modifier.fillMaxWidth(),
@@ -77,23 +95,15 @@ fun TestSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                 } else {
                     val sdf = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
                     Column {
-                        buttonHistory.reversed().take(20).forEachIndexed { index, event ->
-                            val timeStr = sdf.format(Date(event.timestamp))
-                            ListItem(
-                                headlineContent = { Text(event.label, style = MaterialTheme.typography.bodyLarge) },
-                                overlineContent = { Text(timeStr, style = MaterialTheme.typography.labelSmall) },
-                                supportingContent = { Text(event.actionType, style = MaterialTheme.typography.bodySmall) },
-                                leadingContent = {
-                                    Icon(
-                                        imageVector = GhostTalkIcons.History,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                },
-                                colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                        val historyToDisplay: List<ButtonUsageRepository.ButtonUsageEvent> = buttonHistory.reversed().take(15)
+                        for (index in historyToDisplay.indices) {
+                            val event: ButtonUsageRepository.ButtonUsageEvent = historyToDisplay[index]
+                            HistoryItem(
+                                event = event,
+                                timeStr = sdf.format(Date(event.timestamp)),
+                                onImageClick = { previewImagePath = it }
                             )
-                            if (index < buttonHistory.size - 1 && index < 19) {
+                            if (index < historyToDisplay.lastIndex) {
                                 HorizontalDivider(
                                     modifier = Modifier.padding(horizontal = dimensions.paddingMedium),
                                     thickness = 0.5.dp,
@@ -106,4 +116,78 @@ fun TestSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
             }
         }
     }
+
+    if (previewImagePath != null) {
+        @OptIn(ExperimentalMaterial3Api::class)
+        BasicAlertDialog(
+            onDismissRequest = { previewImagePath = null },
+            modifier = Modifier.fillMaxSize().padding(16.dp)
+        ) {
+            val bitmap = remember(previewImagePath) {
+                try {
+                    BitmapFactory.decodeFile(previewImagePath)
+                } catch (_: Exception) {
+                    null
+                }
+            }
+            Box(
+                modifier = Modifier.fillMaxSize().clickable { previewImagePath = null },
+                contentAlignment = androidx.compose.ui.Alignment.Center
+            ) {
+                if (bitmap != null) {
+                    Image(
+                        bitmap = bitmap.asImageBitmap(),
+                        contentDescription = "Full Image",
+                        modifier = Modifier.clip(MaterialTheme.shapes.large),
+                        contentScale = ContentScale.Fit
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HistoryItem(
+    event: ButtonUsageRepository.ButtonUsageEvent,
+    timeStr: String,
+    onImageClick: (String) -> Unit
+) {
+    ListItem(
+        headlineContent = { Text(event.label, style = MaterialTheme.typography.bodyLarge) },
+        overlineContent = { Text(timeStr, style = MaterialTheme.typography.labelSmall) },
+        supportingContent = { Text(event.actionType, style = MaterialTheme.typography.bodySmall) },
+        leadingContent = {
+            Icon(
+                imageVector = GhostTalkIcons.History,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.dp)
+            )
+        },
+        trailingContent = {
+            if (event.imagePath != null) {
+                val path = event.imagePath
+                val bitmap = remember(path) {
+                    try {
+                        BitmapFactory.decodeFile(path)
+                    } catch (_: Exception) {
+                        null
+                    }
+                }
+                if (bitmap != null) {
+                    Image(
+                        bitmap = bitmap.asImageBitmap(),
+                        contentDescription = "Thumbnail",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(MaterialTheme.shapes.small)
+                            .clickable { onImageClick(path!!) }
+                    )
+                }
+            }
+        },
+        colors = ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent)
+    )
 }

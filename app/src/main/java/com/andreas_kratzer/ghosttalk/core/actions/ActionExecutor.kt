@@ -43,6 +43,7 @@ class ActionExecutor @Inject constructor(
     fun executeButtonAction(
         buttonConfig: ButtonConfig, 
         bookId: String? = null,
+        pageId: String? = null,
         rows: Int = 1,
         columns: Int = 1,
         index: Int = -1
@@ -67,7 +68,7 @@ class ActionExecutor @Inject constructor(
         if (bookId != null && index != -1) {
             scope.launch {
                 try {
-                    buttonUsageRepository.recordUsage(bookId, buttonConfig, rows, columns, index)
+                    buttonUsageRepository.recordUsage(bookId, pageId ?: "", buttonConfig, rows, columns, index)
                 } catch (_: Exception) { }
             }
         }

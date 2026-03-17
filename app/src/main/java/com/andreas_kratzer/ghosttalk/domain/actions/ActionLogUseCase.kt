@@ -2,7 +2,8 @@ package com.andreas_kratzer.ghosttalk.domain.actions
 
 import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
-import com.google.gson.Gson
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.encodeToString
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -17,7 +18,6 @@ class ActionLogUseCase @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val logger: Logger
 ) : ActionLogProvider {
-    private val gson = Gson()
     private val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
 
     override suspend fun loadSavedLogs(): List<String> {
@@ -26,7 +26,7 @@ class ActionLogUseCase @Inject constructor(
         val savedJson = settingsRepository.actionLogsStorage
         return if (!savedJson.isNullOrBlank()) {
             try {
-                gson.fromJson(savedJson, Array<String>::class.java).toList()
+                Json.decodeFromString<List<String>>(savedJson)
             } catch (e: Exception) {
                 logger.e("ActionLogUseCase", "Error parsing stored action logs", e)
                 emptyList()
@@ -47,7 +47,7 @@ class ActionLogUseCase @Inject constructor(
         }
 
         if (settingsRepository.persistActionLogs) {
-            settingsRepository.actionLogsStorage = gson.toJson(updatedActions)
+            settingsRepository.actionLogsStorage = Json.encodeToString(updatedActions)
         }
         
         return updatedActions

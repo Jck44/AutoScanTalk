@@ -57,6 +57,17 @@ data class GeminiNanoButtonAction(
 ) : ButtonAction()
 
 /**
+ * An action that triggers a Gemini AI request with vision (image analysis).
+ */
+@Serializable
+@SerialName("GeminiVisionButtonAction")
+data class GeminiVisionButtonAction(
+    val prompt: String = "",
+    val useCloud: Boolean = false,
+    val playShutterSound: Boolean = true
+) : ButtonAction()
+
+/**
  * An action that resolves dynamically to the N-th most frequent action.
  */
 @Serializable

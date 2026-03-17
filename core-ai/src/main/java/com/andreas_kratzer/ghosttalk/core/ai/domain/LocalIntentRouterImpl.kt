@@ -13,23 +13,8 @@ import javax.inject.Inject
 data class LocalIntent(val id: String, val description: String)
 
 class LocalIntentRouterImpl @Inject constructor(
-    private val clockExecutor: ClockExecutor,
     private val logger: Logger
 ) : LocalIntentRouter {
-    // Note: JSON Schema constraint parsing in ML Kit Prompt API is still highly experimental.
-    // For this Phase 1 integration, we instruct the model to return plain JSON via system prompt.
-    private fun getSystemInstruction(intent: String, context: String): String {
-        return """
-            Du bist ein intelligenter Assistent für eine AAC-App (Unterstützte Kommunikation).
-            Deine Aufgabe ist es, für den Intent "$intent" eine SEHR KURZE, FREUNDLICHE und NATÜRLICHE Antwort in deutscher Sprache zu generieren.
-            Verwende dabei die bereitgestellten Daten.
-            WICHTIG: Die Antwort muss die Informationen EXAKT und VOLLSTÄNDIG enthalten (z.B. die genaue Uhrzeit).
-            Antworte NUR mit dem Text der Sprachausgabe, ohne Erklärungen oder JSON.
-            
-            Kontext-Daten:
-            $context
-        """.trimIndent()
-    }
 
     override suspend fun generateRawResponse(prompt: String, maxTokens: Int): String = withContext(Dispatchers.IO) {
         try {
@@ -48,44 +33,13 @@ class LocalIntentRouterImpl @Inject constructor(
         }
     }
 
-    fun findIntent(response: String): LocalIntent? {
-        // Simple heuristic for now: check if response contains intent keywords
-        return if (response.contains("ALARM_STATUS", ignoreCase = true)) {
-            LocalIntent("alarm", "Nächsten Alarm abrufen")
-        } else null
-    }
-
-    suspend fun executeIntent(intent: LocalIntent, onSpeak: (String) -> Unit) = executeIntent(intent.id, onSpeak)
-
     override suspend fun executeIntent(intentId: String, onSpeak: (String) -> Unit) = withContext(Dispatchers.IO) {
-        try {
-            val context = when (intentId) {
-                "alarm" -> "Nächster Alarm: ${clockExecutor.getNextAlarm()}"
-                else -> ""
-            }
-
-            val systemPrompt = getSystemInstruction(intentId, context)
-            val naturalResponse = generateRawResponse(systemPrompt)
-            
-            if (naturalResponse.isNotBlank()) {
-                onSpeak(naturalResponse)
-            } else {
-                // Fallback if AI fails
-                val fallback = when (intentId) {
-                    "alarm" -> clockExecutor.getNextAlarm()
-                    else -> "Ich kann diesen Befehl gerade nicht ausführen."
-                }
-                onSpeak(fallback)
-            }
-            
-        } catch (e: Exception) {
-            logger.e("LocalIntentRouter", "Intent execution failed", e)
-            onSpeak("Fehler bei der lokalen Verarbeitung.")
-        }
+        // Gemini Nano currently has no external tool access.
+        // It should only be used for raw text generation or future vision tasks.
+        onSpeak("Dieses Tool ist für die lokale Verarbeitung aktuell nicht verfügbar.")
     }
 
     override suspend fun routeIntent(onSpeak: (String) -> Unit) = withContext(Dispatchers.IO) {
-        // Obsolete, replaced by executeIntent
         onSpeak("Befehl konnte nicht verarbeitet werden.")
     }
 }

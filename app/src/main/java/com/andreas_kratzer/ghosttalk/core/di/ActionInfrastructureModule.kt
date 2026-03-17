@@ -20,6 +20,10 @@ interface ActionInfrastructureModule {
     @Binds
     @Singleton
     fun bindActionEventEmitter(impl: ActionCoordinator): ActionEventEmitter
+
+    @Binds
+    @Singleton
+    fun bindCameraProvider(impl: CameraProviderImpl): CameraProvider
 }
 
 @Module
