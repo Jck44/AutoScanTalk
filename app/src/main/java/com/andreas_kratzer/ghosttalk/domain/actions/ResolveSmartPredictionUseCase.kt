@@ -24,10 +24,11 @@ class ResolveSmartPredictionUseCase @Inject constructor(
         val matchingButtonInCurrent = currentPage?.buttonConfigs?.filterNotNull()?.find { it.id == predictionId }
         if (matchingButtonInCurrent != null) {
             actionExecutor.executeButtonAction(
-                matchingButtonInCurrent, 
-                activeBookId.takeIf { isUserModeActive }, 
-                currentPage.rows, 
-                currentPage.columns
+                buttonConfig = matchingButtonInCurrent, 
+                bookId = activeBookId.takeIf { isUserModeActive },
+                pageId = currentPage.id,
+                rows = currentPage.rows, 
+                columns = currentPage.columns
             )
             return@withContext
         }
@@ -38,7 +39,13 @@ class ResolveSmartPredictionUseCase @Inject constructor(
         for (p in allPages) {
             val btn = p.buttonConfigs.filterNotNull().find { it.id == predictionId }
             if (btn != null) {
-                actionExecutor.executeButtonAction(btn, activeBookId.takeIf { isUserModeActive }, p.rows, p.columns)
+                actionExecutor.executeButtonAction(
+                    buttonConfig = btn,
+                    bookId = activeBookId.takeIf { isUserModeActive },
+                    pageId = p.id,
+                    rows = p.rows,
+                    columns = p.columns
+                )
                 return@withContext
             }
         }
@@ -52,7 +59,13 @@ class ResolveSmartPredictionUseCase @Inject constructor(
                 auditoryCue = AuditoryCue.TextToSpeechCue(targetPage.name),
                 buttonAction = NavigateToPageButtonAction(targetPage.id)
             )
-            actionExecutor.executeButtonAction(navConfig, activeBookId.takeIf { isUserModeActive }, 1, 1)
+            actionExecutor.executeButtonAction(
+                buttonConfig = navConfig,
+                bookId = activeBookId.takeIf { isUserModeActive },
+                pageId = targetPage.id,
+                rows = 1,
+                columns = 1
+            )
             return@withContext
         }
     }

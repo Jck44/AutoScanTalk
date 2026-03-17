@@ -56,7 +56,7 @@ class CameraProviderImpl @Inject constructor(
                     imageCapture.takePicture(executor, object : ImageCapture.OnImageCapturedCallback() {
                         override fun onCaptureSuccess(image: ImageProxy) {
                             val rotationDegrees = image.imageInfo.rotationDegrees
-                            val bitmap = image.toBitmap()?.let { 
+                            val bitmap = image.toBitmap().let {
                                 if (rotationDegrees != 0) {
                                     it.rotate(rotationDegrees)
                                 } else {

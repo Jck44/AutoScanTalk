@@ -619,4 +619,28 @@ object GhostTalkIcons {
                 close()
             }
         }
+
+    val MoreVert: ImageVector
+        get() = materialIcon(name = "Filled.MoreVert") {
+            materialPath {
+                moveTo(12.0f, 8.0f)
+                curveToRelative(1.1f, 0.0f, 2.0f, -0.9f, 2.0f, -2.0f)
+                reflectiveCurveToRelative(-0.9f, -2.0f, -2.0f, -2.0f)
+                reflectiveCurveToRelative(-2.0f, 0.9f, -2.0f, 2.0f)
+                reflectiveCurveToRelative(0.9f, 2.0f, 2.0f, 2.0f)
+                close()
+                moveTo(12.0f, 10.0f)
+                curveToRelative(-1.1f, 0.0f, -2.0f, 0.9f, -2.0f, 2.0f)
+                reflectiveCurveToRelative(0.9f, 2.0f, 2.0f, 2.0f)
+                reflectiveCurveToRelative(2.0f, -0.9f, 2.0f, -2.0f)
+                reflectiveCurveToRelative(-0.9f, -2.0f, -2.0f, -2.0f)
+                close()
+                moveTo(12.0f, 16.0f)
+                curveToRelative(-1.1f, 0.0f, -2.0f, 0.9f, -2.0f, 2.0f)
+                reflectiveCurveToRelative(0.9f, 2.0f, 2.0f, 2.0f)
+                reflectiveCurveToRelative(2.0f, -0.9f, 2.0f, -2.0f)
+                reflectiveCurveToRelative(-0.9f, -2.0f, -2.0f, -2.0f)
+                close()
+            }
+        }
 }

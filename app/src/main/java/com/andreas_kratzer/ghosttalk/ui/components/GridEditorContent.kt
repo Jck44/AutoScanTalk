@@ -32,6 +32,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -77,7 +78,8 @@ fun GridEditorContent(
     paddingValues: PaddingValues,
     onEditPage: ((String) -> Unit)? = null,
     googleHomeManager: GoogleHomeManager? = null,
-    googleHomeProjectId: String = ""
+    googleHomeProjectId: String = "",
+    initialButtonId: String? = null
 ) {
     CompositionLocalProvider(
         LocalCurrentPageId provides item.id,
@@ -99,6 +101,16 @@ fun GridEditorContent(
         }
         val snackbarHostState = remember { SnackbarHostState() }
         val scope = rememberCoroutineScope()
+
+        LaunchedEffect(initialButtonId, item) {
+            if (initialButtonId != null && item is Page) {
+                val index = item.buttonConfigs.indexOfFirst { it?.id == initialButtonId }
+                if (index != -1) {
+                    selectedButtonIndex = index
+                    showDialog = true
+                }
+            }
+        }
 
         val gridState = rememberLazyGridState()
         val rowReorderState = rememberReorderableState()

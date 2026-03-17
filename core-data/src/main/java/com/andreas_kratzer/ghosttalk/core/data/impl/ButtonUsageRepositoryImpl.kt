@@ -86,6 +86,26 @@ class ButtonUsageRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun updateLastEventDetails(details: String) {
+        _buttonHistory.update { current ->
+            if (current.isEmpty()) return@update current
+            val last = current.first()
+            listOf(last.copy(geminiResponse = details)) + current.drop(1)
+        }
+    }
+
+    override suspend fun deleteUsageEvent(timestamp: Long) {
+        _buttonHistory.update { current ->
+            val eventToDelete = current.find { it.timestamp == timestamp }
+            eventToDelete?.imagePath?.let { path ->
+                try {
+                    java.io.File(path).delete()
+                } catch (_: Exception) {}
+            }
+            current.filter { it.timestamp != timestamp }
+        }
+    }
+
     /**
      * Returns the top N most frequently used buttons for a book.
      */

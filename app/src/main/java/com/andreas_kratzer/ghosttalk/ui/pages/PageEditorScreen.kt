@@ -35,6 +35,7 @@ import kotlinx.coroutines.delay
 @Composable
 fun PageEditorScreen(
     pageId: String,
+    initialButtonId: String? = null,
     pageViewModel: PageViewModel,
     onNavigateBack: () -> Unit,
     onEditPage: ((String) -> Unit)? = null
@@ -105,7 +106,8 @@ fun PageEditorScreen(
             paddingValues = paddingValues,
             onEditPage = onEditPage,
             googleHomeManager = pageViewModel.googleHomeManager,
-            googleHomeProjectId = googleHomeProjectId
+            googleHomeProjectId = googleHomeProjectId,
+            initialButtonId = initialButtonId
         )
     }
 }

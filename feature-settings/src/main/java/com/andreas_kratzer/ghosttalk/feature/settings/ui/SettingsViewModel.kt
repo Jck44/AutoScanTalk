@@ -18,8 +18,12 @@ import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.GenAiSettings
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.ScanningSettingsDelegate
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.TtsSettingsDelegate
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -109,6 +113,17 @@ class SettingsViewModel @Inject constructor(
     val isSecurityRequiredForEdit = settingsRepository.isSecurityRequiredForEditFlow
     val isSecurityRequiredForSettings = settingsRepository.isSecurityRequiredForSettingsFlow
     val startupBehavior = settingsRepository.startupBehaviorFlow
+    
+    private val _navigationEvent = kotlinx.coroutines.flow.MutableSharedFlow<SettingsNavigationEvent>()
+    val navigationEvents = _navigationEvent.asSharedFlow()
+
+    private val _selectedHistoryItem = kotlinx.coroutines.flow.MutableStateFlow<ButtonUsageRepository.ButtonUsageEvent?>(null)
+    val selectedHistoryItem = _selectedHistoryItem.asStateFlow()
+
+    sealed class SettingsNavigationEvent {
+        data class EditButton(val pageId: String, val buttonId: String) : SettingsNavigationEvent()
+        data class JumpToPage(val pageId: String) : SettingsNavigationEvent()
+    }
     
     val isBiometricSupported: Boolean = securityManager.isBiometricSupported(application)
 
@@ -342,5 +357,27 @@ class SettingsViewModel @Inject constructor(
         val result = importExportManager.importCloudBackup(json, null)
         result.onSuccess { bookId -> onSuccess(bookId) }
             .onFailure { e -> onError("Fehler beim globalen Import: ${e.message}") }
+    }
+
+    fun onEditButtonFromHistory(pageId: String, buttonId: String) {
+        viewModelScope.launch {
+            _navigationEvent.emit(SettingsNavigationEvent.EditButton(pageId, buttonId))
+        }
+    }
+
+    fun onJumpToPageFromHistory(pageId: String) {
+        viewModelScope.launch {
+            _navigationEvent.emit(SettingsNavigationEvent.JumpToPage(pageId))
+        }
+    }
+
+    fun onDeleteHistoryItem(event: ButtonUsageRepository.ButtonUsageEvent) {
+        viewModelScope.launch {
+            buttonUsageRepository.deleteUsageEvent(event.timestamp)
+        }
+    }
+
+    fun onShowHistoryDetail(event: ButtonUsageRepository.ButtonUsageEvent?) {
+        _selectedHistoryItem.value = event
     }
 }

@@ -129,6 +129,11 @@
     <!-- Other UI -->
     <string name="settings_category_button_history">Action History</string>
     <string name="settings_history_empty">No actions recorded yet.</string>
+    <string name="history_edit_button">Edit Button</string>
+    <string name="history_jump_to_page">Jump to Page</string>
+    <string name="history_delete">Delete Entry</string>
+    <string name="history_details_title">Action Details</string>
+    <string name="history_details_response">AI Response:</string>
     <string name="settings_category_experimental">Experimental Features</string>
     <string name="settings_volume_keys_trigger">Use volume keys as trigger</string>
     <string name="settings_category_test">Test Settings</string>

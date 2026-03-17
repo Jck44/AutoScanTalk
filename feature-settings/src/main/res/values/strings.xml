@@ -129,6 +129,11 @@
     <!-- Other UI -->
     <string name="settings_category_button_history">Aktionsverlauf</string>
     <string name="settings_history_empty">Noch keine Aktionen aufgezeichnet.</string>
+    <string name="history_edit_button">Button bearbeiten</string>
+    <string name="history_jump_to_page">Seite aufrufen</string>
+    <string name="history_delete">Eintrag löschen</string>
+    <string name="history_details_title">Aktionsdetails</string>
+    <string name="history_details_response">KI-Antwort:</string>
     <string name="settings_category_experimental">Experimentelle Funktionen</string>
     <string name="settings_volume_keys_trigger">Lautstärketasten zum Auslösen nutzen</string>
     <string name="settings_category_test">Test-Einstellungen</string>

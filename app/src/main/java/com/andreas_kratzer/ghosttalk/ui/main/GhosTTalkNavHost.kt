@@ -130,6 +130,20 @@ fun GhostTalkNavHost(
         }
     }
 
+    // Handle Settings Navigation Events
+    LaunchedEffect(Unit) {
+        settingsViewModel.navigationEvents.collect { event ->
+            when (event) {
+                is SettingsViewModel.SettingsNavigationEvent.EditButton -> {
+                    navController.navigate("page_editor/${event.pageId}?buttonId=${event.buttonId}")
+                }
+                is SettingsViewModel.SettingsNavigationEvent.JumpToPage -> {
+                    navController.navigate("page_editor/${event.pageId}")
+                }
+            }
+        }
+    }
+
     NavHost(navController = navController, startDestination = "book_list") {
         composable("book_list") {
             BookListScreen(
@@ -237,11 +251,19 @@ fun GhostTalkNavHost(
                 }
             )
         }
-        composable("page_editor/{pageId}") { backStackEntry ->
+        composable(
+            "page_editor/{pageId}?buttonId={buttonId}",
+            arguments = listOf(
+                navArgument("pageId") { type = NavType.StringType },
+                navArgument("buttonId") { type = NavType.StringType; nullable = true; defaultValue = null }
+            )
+        ) { backStackEntry ->
             val pageId = backStackEntry.arguments?.getString("pageId")
+            val buttonId = backStackEntry.arguments?.getString("buttonId")
             if (pageId != null) {
                 PageEditorScreen(
                     pageId = pageId,
+                    initialButtonId = buttonId,
                     pageViewModel = pageViewModel,
                     onNavigateBack = { navController.popBackStack() },
                     onEditPage = { targetPageId ->

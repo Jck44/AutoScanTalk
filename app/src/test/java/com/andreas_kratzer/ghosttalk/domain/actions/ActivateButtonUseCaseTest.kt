@@ -66,7 +66,16 @@ class ActivateButtonUseCaseTest {
 
         useCase.execute(0, execPage, "b1", true, emptyList(), actionExecutor, scanCoordinator)
 
-        verify { actionExecutor.executeButtonAction(execButton, bookId = "b1", rows = 2, columns = 2, index = 0) }
+        verify { 
+            actionExecutor.executeButtonAction(
+                buttonConfig = execButton, 
+                bookId = "b1", 
+                pageId = "p1", 
+                rows = 2, 
+                columns = 2, 
+                index = 0
+            ) 
+        }
     }
 
     @Test

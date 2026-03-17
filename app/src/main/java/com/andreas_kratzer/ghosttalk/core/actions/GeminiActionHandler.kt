@@ -171,6 +171,9 @@ class GeminiActionHandler @Inject constructor(
         val cleanedText = text.replace("**", "").replace("*", "").trim()
         actionLogger.log(cleanedText)
         val tts = ttsProxyLazy.get()
+        scope.launch {
+            buttonUsageRepository.updateLastEventDetails(cleanedText)
+        }
         if (tts.isReady) {
             tts.speakRouted(cleanedText, deviceAddress) {
                 onFinish(executionId)
@@ -183,6 +186,9 @@ class GeminiActionHandler @Inject constructor(
     private fun speakError(text: String, deviceAddress: String?, executionId: Int, onFinish: (Int) -> Unit) {
         actionLogger.log(text)
         val tts = ttsProxyLazy.get()
+        scope.launch {
+            buttonUsageRepository.updateLastEventDetails(text)
+        }
         if (tts.isReady) {
             tts.speakRouted(text, deviceAddress) {
                 onFinish(executionId)

@@ -36,7 +36,15 @@ class ResolveSmartPredictionUseCaseTest {
 
         useCase.execute("btn1", currentPage, "b1", true, actionExecutor)
 
-        coVerify { actionExecutor.executeButtonAction(button, bookId = "b1", rows = any(), columns = any(), index = any()) }
+        coVerify { 
+            actionExecutor.executeButtonAction(
+                buttonConfig = button, 
+                bookId = "b1", 
+                pageId = "p1",
+                rows = 4, 
+                columns = 4
+            ) 
+        }
     }
 
     @Test
@@ -48,11 +56,11 @@ class ResolveSmartPredictionUseCaseTest {
 
         coVerify { 
             actionExecutor.executeButtonAction(
-                match { it.id == "p2" && it.label == "Target" && it.buttonAction is NavigateToPageButtonAction },
+                buttonConfig = match { it.id == "p2" && it.label == "Target" && it.buttonAction is NavigateToPageButtonAction },
                 bookId = "b1",
-                rows = any(),
-                columns = any(),
-                index = any()
+                pageId = "p2",
+                rows = 1,
+                columns = 1
             ) 
         }
     }
@@ -64,6 +72,14 @@ class ResolveSmartPredictionUseCaseTest {
 
         useCase.execute("btn1", currentPage, "b1", false, actionExecutor)
 
-        coVerify { actionExecutor.executeButtonAction(button, bookId = null, rows = any(), columns = any(), index = any()) }
+        coVerify { 
+            actionExecutor.executeButtonAction(
+                buttonConfig = button, 
+                bookId = null, 
+                pageId = "p1",
+                rows = 4, 
+                columns = 4
+            ) 
+        }
     }
 }

@@ -35,7 +35,7 @@ class ButtonUsageRepositoryTest {
     fun `recordUsage creates new stat when button not yet tracked`() = runTest {
         coEvery { mockButtonUsageDao.getStatForButton("book1", "btn-1") } returns null
 
-        buttonUsageRepository.recordUsage("book1", testButton, rows = 6, columns = 6, indexInPage = 0)
+        buttonUsageRepository.recordUsage("book1", "page1", testButton, rows = 6, columns = 6, indexInPage = 0)
 
         val statSlot = slot<ButtonUsageStat>()
         coVerify { mockButtonUsageDao.upsert(capture(statSlot)) }
@@ -59,7 +59,7 @@ class ButtonUsageRepositoryTest {
         )
         coEvery { mockButtonUsageDao.getStatForButton("book1", "btn-1") } returns existing
 
-        buttonUsageRepository.recordUsage("book1", testButton, rows = 6, columns = 6, indexInPage = 0)
+        buttonUsageRepository.recordUsage("book1", "page1", testButton, rows = 6, columns = 6, indexInPage = 0)
 
         val statSlot = slot<ButtonUsageStat>()
         coVerify { mockButtonUsageDao.upsert(capture(statSlot)) }
@@ -79,7 +79,7 @@ class ButtonUsageRepositoryTest {
         )
         coEvery { mockButtonUsageDao.getStatForButton("book1", "btn-1") } returns existing
 
-        buttonUsageRepository.recordUsage("book1", testButton, rows = 6, columns = 6, indexInPage = 0)
+        buttonUsageRepository.recordUsage("book1", "page1", testButton, rows = 6, columns = 6, indexInPage = 0)
 
         val statSlot = slot<ButtonUsageStat>()
         coVerify { mockButtonUsageDao.upsert(capture(statSlot)) }
@@ -113,7 +113,7 @@ class ButtonUsageRepositoryTest {
     fun `recordUsage serializes action to JSON`() = runTest {
         coEvery { mockButtonUsageDao.getStatForButton("book1", "btn-1") } returns null
 
-        buttonUsageRepository.recordUsage("book1", testButton, rows = 6, columns = 6, indexInPage = 0)
+        buttonUsageRepository.recordUsage("book1", "page1", testButton, rows = 6, columns = 6, indexInPage = 0)
 
         val statSlot = slot<ButtonUsageStat>()
         coVerify { mockButtonUsageDao.upsert(capture(statSlot)) }
