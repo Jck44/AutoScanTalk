@@ -9,5 +9,7 @@ data class Book(
     val name: String,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),
-    val actionLogLimit: Int = 100
+    val actionLogLimit: Int = 100,
+    val limitScanCycles: Boolean = false,
+    val scanCycleLimit: Int = 2
 )

@@ -32,6 +32,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -69,7 +70,7 @@ fun BookListScreen(
     
     var showAddDialog by remember { mutableStateOf(false) }
     var bookToDelete by remember { mutableStateOf<Book?>(null) }
-    var bookToEdit by remember { mutableStateOf<Book?>(null) }
+    var bookToRename by remember { mutableStateOf<Book?>(null) }
     
     var showSecurityDialogForDelete by remember { mutableStateOf(false) }
     var showSecurityDialogForEdit by remember { mutableStateOf(false) }
@@ -166,14 +167,14 @@ fun BookListScreen(
                                     onDismissRequest = { showMenu = false }
                                 ) {
                                     androidx.compose.material3.DropdownMenuItem(
-                                        text = { Text(stringResource(R.string.book_rename_description)) },
+                                        text = { Text(stringResource(R.string.book_edit_description)) },
                                         onClick = {
                                             showMenu = false
                                             if (!isUnlocked && securityManager.isSecurityRequiredForEdit()) {
-                                                bookToEdit = book
+                                                bookToRename = book
                                                 showSecurityDialogForEdit = true
                                             } else {
-                                                bookToEdit = book
+                                                bookToRename = book
                                             }
                                         },
                                         leadingIcon = {
@@ -231,14 +232,14 @@ fun BookListScreen(
             SecurityEntryDialog(
                 onDismiss = { 
                     showSecurityDialogForEdit = false
-                    bookToEdit = null
+                    bookToRename = null
                 },
                 onConfirm = { success: Boolean ->
                     if (success) {
                         showSecurityDialogForEdit = false
-                        // bookToEdit is already set from the IconButton click
+                        // bookToRename is already set from the IconButton click
                     } else {
-                        bookToEdit = null
+                        bookToRename = null
                         showSecurityDialogForEdit = false
                     }
                 },
@@ -251,6 +252,8 @@ fun BookListScreen(
             var newBookName by remember { mutableStateOf("") }
             var isError by remember { mutableStateOf(false) }
             var logLimit by remember { mutableStateOf(100f) }
+            var limitScanCycles by remember { mutableStateOf(false) }
+            var scanCycleLimit by remember { mutableStateOf(2f) }
 
             AlertDialog(
                 onDismissRequest = { showAddDialog = false },
@@ -285,13 +288,46 @@ fun BookListScreen(
                             valueRange = 10f..500f,
                             steps = 48 // Steps of 10 roughly
                         )
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(stringResource(R.string.book_limit_scan_cycles_label))
+                            Switch(
+                                checked = limitScanCycles,
+                                onCheckedChange = { limitScanCycles = it }
+                            )
+                        }
+
+                        if (limitScanCycles) {
+                            Text(
+                                text = stringResource(R.string.book_scan_cycle_limit_label) + ": ${scanCycleLimit.toInt()}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.padding(top = 8.dp)
+                            )
+                            Slider(
+                                value = scanCycleLimit,
+                                onValueChange = { scanCycleLimit = it },
+                                valueRange = 1f..10f,
+                                steps = 8
+                            )
+                        }
                     }
                 },
                 confirmButton = {
                     Button(
                         onClick = {
                             if (newBookName.isNotBlank()) {
-                                bookViewModel.createNewBook(newBookName, logLimit.toInt())
+                                bookViewModel.createNewBook(
+                                    name = newBookName, 
+                                    actionLogLimit = logLimit.toInt(),
+                                    limitScanCycles = limitScanCycles,
+                                    scanCycleLimit = scanCycleLimit.toInt()
+                                )
                                 showAddDialog = false
                             } else {
                                 isError = true
@@ -315,16 +351,15 @@ fun BookListScreen(
             )
         }
 
-        bookToEdit?.let { book ->
+        bookToRename?.let { book ->
             var editBookName by remember { mutableStateOf(book.name) }
             var isError by remember { mutableStateOf(false) }
-            var logLimit by remember { mutableStateOf(book.actionLogLimit.toFloat()) }
 
             AlertDialog(
-                onDismissRequest = { bookToEdit = null },
+                onDismissRequest = { bookToRename = null },
                 title = { Text(stringResource(R.string.book_dialog_rename_title)) },
                 text = {
-                    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    Column {
                         OutlinedTextField(
                             value = editBookName,
                             onValueChange = { 
@@ -342,25 +377,20 @@ fun BookListScreen(
                                 }
                             }
                         )
-
-                        Text(
-                            text = stringResource(R.string.settings_action_log_limit_title) + ": ${logLimit.toInt()}",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        Slider(
-                            value = logLimit,
-                            onValueChange = { logLimit = it },
-                            valueRange = 10f..500f,
-                            steps = 48
-                        )
                     }
                 },
                 confirmButton = {
                     Button(
                         onClick = {
                             if (editBookName.isNotBlank()) {
-                                bookViewModel.updateBook(book, editBookName, logLimit.toInt())
-                                bookToEdit = null
+                                bookViewModel.updateBook(
+                                    book = book, 
+                                    newName = editBookName, 
+                                    actionLogLimit = book.actionLogLimit,
+                                    limitScanCycles = book.limitScanCycles,
+                                    scanCycleLimit = book.scanCycleLimit
+                                )
+                                bookToRename = null
                             } else {
                                 isError = true
                             }
@@ -373,7 +403,7 @@ fun BookListScreen(
                 },
                 dismissButton = {
                     Button(
-                        onClick = { bookToEdit = null },
+                        onClick = { bookToRename = null },
                         shape = MaterialTheme.shapes.medium,
                         colors = ButtonDefaults.textButtonColors()
                     ) {

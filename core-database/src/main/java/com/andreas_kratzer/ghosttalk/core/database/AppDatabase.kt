@@ -28,7 +28,7 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonPrimitive
 import java.util.UUID
 
-@Database(entities = [Page::class, Book::class, ButtonUsageStat::class, PageTemplate::class, ButtonEntity::class], version = 12, exportSchema = false)
+@Database(entities = [Page::class, Book::class, ButtonUsageStat::class, PageTemplate::class, ButtonEntity::class], version = 13, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
 
@@ -325,6 +325,13 @@ abstract class AppDatabase : RoomDatabase() {
                 db.execSQL("ALTER TABLE `books` ADD COLUMN `actionLogLimit` INTEGER NOT NULL DEFAULT 100")
             }
         }
+        
+        val MIGRATION_12_13: Migration = object : Migration(12, 13) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `books` ADD COLUMN `limitScanCycles` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE `books` ADD COLUMN `scanCycleLimit` INTEGER NOT NULL DEFAULT 2")
+            }
+        }
 
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
@@ -344,7 +351,8 @@ abstract class AppDatabase : RoomDatabase() {
                     MIGRATION_8_9,
                     MIGRATION_9_10,
                     MIGRATION_10_11,
-                    MIGRATION_11_12
+                    MIGRATION_11_12,
+                    MIGRATION_12_13
                 )
                 .build()
                 INSTANCE = instance

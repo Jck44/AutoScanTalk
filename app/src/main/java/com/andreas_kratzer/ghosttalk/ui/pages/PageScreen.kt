@@ -79,7 +79,6 @@ fun PageScreen(
         onDispose {
             pageViewModel.setUserModeActive(false)
             lifecycleOwner.lifecycle.removeObserver(observer)
-            pageViewModel.stopScanning()
         }
     }
 

@@ -38,6 +38,14 @@ abstract class BaseSettingsRepository(
         return prefs.getLong(key, defaultValue)
     }
 
+    protected fun getIntScoped(key: String, defaultValue: Int): Int {
+        val scopedKey = getScopedKey(key)
+        if (prefs.contains(scopedKey)) {
+            return prefs.getInt(scopedKey, defaultValue)
+        }
+        return prefs.getInt(key, defaultValue)
+    }
+
     protected fun getFloatScoped(key: String, defaultValue: Float): Float {
         val scopedKey = getScopedKey(key)
         if (prefs.contains(scopedKey)) {
@@ -64,6 +72,10 @@ abstract class BaseSettingsRepository(
 
     protected fun putLongScoped(key: String, value: Long) {
         prefs.edit { putLong(getScopedKey(key), value) }
+    }
+
+    protected fun putIntScoped(key: String, value: Int) {
+        prefs.edit { putInt(getScopedKey(key), value) }
     }
 
     protected fun putFloatScoped(key: String, value: Float) {
@@ -122,6 +134,24 @@ abstract class BaseSettingsRepository(
             get() = if (isScoped) getBooleanScoped(key, default) else prefs.getBoolean(key, default)
             set(v) {
                 if (isScoped) putBooleanScoped(key, v) else prefs.edit { putBoolean(key, v) }
+                _flow.value = v
+            }
+
+        fun refresh() { if (isScoped) _flow.value = value }
+    }
+
+    protected inner class IntSetting(
+        private val key: String,
+        private val default: Int,
+        private val isScoped: Boolean = true
+    ) {
+        private val _flow = MutableStateFlow(if (isScoped) getIntScoped(key, default) else prefs.getInt(key, default))
+        val flow: StateFlow<Int> = _flow.asStateFlow()
+
+        var value: Int
+            get() = if (isScoped) getIntScoped(key, default) else prefs.getInt(key, default)
+            set(v) {
+                if (isScoped) putIntScoped(key, v) else prefs.edit { putInt(key, v) }
                 _flow.value = v
             }
 

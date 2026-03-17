@@ -15,6 +15,7 @@ class RowByRowScanStrategy : ScanStrategy {
         focusedButtonIndex: MutableStateFlow<Int?>,
         focusedRowIndex: MutableStateFlow<Int?>,
         onSpeakCue: suspend (String) -> Unit,
+        onCycleCompleted: suspend () -> Unit,
         delayMillis: Long,
         featureGuard: FeatureGuardProxy
     ) {
@@ -42,6 +43,7 @@ class RowByRowScanStrategy : ScanStrategy {
                     delay(delayMillis)
                 }
             }
+            onCycleCompleted()
             currentRow = 0
         }
     }
@@ -53,6 +55,7 @@ class RowByRowScanStrategy : ScanStrategy {
         rowIndex: Int,
         focusedButtonIndex: MutableStateFlow<Int?>,
         onSpeakCue: suspend (String) -> Unit,
+        onCycleCompleted: suspend () -> Unit,
         delayMillis: Long,
         featureGuard: FeatureGuardProxy
     ) {
@@ -77,6 +80,7 @@ class RowByRowScanStrategy : ScanStrategy {
                 onSpeakCue(cueText)
                 delay(delayMillis)
             }
+            onCycleCompleted()
         }
     }
 }

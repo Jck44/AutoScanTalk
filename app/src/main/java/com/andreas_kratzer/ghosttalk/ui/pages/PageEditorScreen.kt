@@ -5,6 +5,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -59,6 +62,7 @@ fun PageEditorScreen(
     Scaffold(
         topBar = {
             TopAppBar(
+                windowInsets = WindowInsets.statusBars,
                 title = { 
                     var localName by remember(page.name) { mutableStateOf(page.name) }
                     
@@ -79,10 +83,13 @@ fun PageEditorScreen(
                     OutlinedTextField(
                         value = localName,
                         onValueChange = { localName = it },
-                        label = { Text(stringResource(R.string.page_name_label)) },
+                        placeholder = { Text(stringResource(R.string.page_name_label)) },
                         singleLine = true,
                         shape = MaterialTheme.shapes.large,
-                        modifier = Modifier.fillMaxWidth().padding(end = dimensions.paddingLarge)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(end = dimensions.paddingLarge)
+                            .padding(vertical = 4.dp) // Reduce vertical impact
                     )
                 },
                 navigationIcon = {

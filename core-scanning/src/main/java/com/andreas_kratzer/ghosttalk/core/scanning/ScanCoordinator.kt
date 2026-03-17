@@ -9,7 +9,9 @@ import com.andreas_kratzer.ghosttalk.core.settings.FeatureSettings
 import com.andreas_kratzer.ghosttalk.core.ai.domain.CheckForPredictorUseCase
 import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -46,6 +48,15 @@ class ScanCoordinator @Inject constructor(
     val focusedButtonIndex: StateFlow<Int?> = scannerEngine.focusedButtonIndex
     val focusedRowIndex: StateFlow<Int?> = scannerEngine.focusedRowIndex
     val isScanning: StateFlow<Boolean> = scannerEngine.isScanning
+    
+    private val _currentCycleCount = MutableStateFlow(0)
+    val currentCycleCount: StateFlow<Int> = _currentCycleCount.asStateFlow()
+    
+    private val _isStoppedDueToLimit = MutableStateFlow(false)
+    val isStoppedDueToLimit: StateFlow<Boolean> = _isStoppedDueToLimit.asStateFlow()
+    
+    private var scanCycleLimitEnabled = false
+    private var scanCycleLimit = 2
 
     private var lastCuePageId: String? = null
     fun init(
@@ -61,38 +72,46 @@ class ScanCoordinator @Inject constructor(
         this.isSmartPredictionLoading = isSmartPredictionLoading
         this.smartPredictions = smartPredictions
 
-        val geminiStatusFlow = combine(isSmartPredictionLoading, smartPredictions) { loading, predictions -> 
-            loading to predictions 
-        }
-
-        // Scanning trigger: observe ActionProvider, resolved page, raw page, user mode state, and Gemini status
+        // Scanning trigger: observe ActionProvider, resolved page, raw page, user mode state, and Gemini status in a single combine
         scope.launch {
             combine(
-                actionProvider.isExecuting,
-                resolvedPage,
-                currentPage,
                 isUserModeActive,
-                geminiStatusFlow
-            ) { isExecuting, resPage, rawPage, isActive, (isLoading, predictions) -> 
-                Data(isExecuting, resPage, rawPage, isActive, isLoading, predictions) 
+                actionProvider.isExecuting,
+                currentPage,
+                resolvedPage,
+                isSmartPredictionLoading,
+                smartPredictions
+            ) { array ->
+                Data(
+                    isExecuting = array[1] as Boolean,
+                    resolvedPage = array[3] as? Page,
+                    rawPage = array[2] as? Page,
+                    isActive = array[0] as Boolean,
+                    isLoading = array[4] as Boolean,
+                    predictions = (array[5] as? List<*>)?.filterIsInstance<String>()
+                )
             }.collect { data ->
                 if (!data.isActive) {
-                    Log.d("ScanCoordinator", "User mode inactive, stopping scan.")
+                    Log.d("ScanCoordinator", "User mode deactivated. Stopping scan.")
                     stopScanning()
                     return@collect
                 }
-                
-                val rawPage = data.rawPage ?: return@collect
-                val hasPredictor = checkForPredictorUseCase(rawPage)
-                
-                if (hasPredictor) {
+
+                if (data.isExecuting) {
+                    Log.d("ScanCoordinator", "ActionExecutor is executing. Pausing scan.")
+                    stopScanningTemporarily()
+                    return@collect
+                }
+
+                val rawPage = data.rawPage
+                if (rawPage != null && checkForPredictorUseCase(rawPage)) {
                     val isWaiting = isWaitingForPredictions(
                         isLoading = data.isLoading,
                         predictions = data.predictions,
                         rawPage = data.rawPage,
                         resPage = data.resolvedPage
                     )
-                    
+
                     if (isWaiting) {
                         if (rawPage.id != lastCuePageId && featureSettings.isSmartPredictionEnabled) {
                             Log.d("ScanCoordinator", "Page ${rawPage.name} has predictor and is waiting. Speaking cue.")
@@ -105,11 +124,7 @@ class ScanCoordinator @Inject constructor(
                     }
                 }
 
-                if (data.isExecuting) {
-                    Log.d("ScanCoordinator", "ActionExecutor is executing. Pausing scan.")
-                    stopScanningTemporarily()
-                } else if (data.resolvedPage != null) {
-                    Log.d("ScanCoordinator", "Ready to resume on page ${data.resolvedPage.id}")
+                if (data.resolvedPage != null) {
                     resumeScanningIfEnabled()
                 }
             }
@@ -118,6 +133,20 @@ class ScanCoordinator @Inject constructor(
         // React to scan delay changes
         scope.launch {
             scanningSettings.scanDelayFlow.collect { delay -> setScanDelay(delay) }
+        }
+
+        // React to cycle completions
+        scope.launch {
+            scannerEngine.onCycleCompleted.collect {
+                _currentCycleCount.value += 1
+                Log.d("ScanCoordinator", "Cycle completed. Count: ${_currentCycleCount.value}")
+                
+                if (scanCycleLimitEnabled && _currentCycleCount.value >= scanCycleLimit) {
+                    Log.d("ScanCoordinator", "Cycle limit reached ($scanCycleLimit). Stopping scan.")
+                    _isStoppedDueToLimit.value = true
+                    stopScanning()
+                }
+            }
         }
     }
 
@@ -175,10 +204,11 @@ class ScanCoordinator @Inject constructor(
         }
 
         if (scanningSettings.autoStartScanning) {
+            val currentIndex = focusedButtonIndex.value ?: 0
             val startIndex = if (scanningSettings.resumeScanningFromStart) {
                 0
             } else {
-                focusedButtonIndex.value ?: 0
+                currentIndex
             }
             startScanning(startIndex)
         }
@@ -187,6 +217,10 @@ class ScanCoordinator @Inject constructor(
     fun startScanning(startIndex: Int = 0) {
         if (isUserModeActive?.value != true) {
             Log.d("ScanCoordinator", "startScanning: User mode inactive, skipping.")
+            return
+        }
+        if (_isStoppedDueToLimit.value) {
+            Log.d("ScanCoordinator", "startScanning: Stopped due to limit, skipping.")
             return
         }
         val page = resolvedPage?.value ?: return
@@ -199,6 +233,29 @@ class ScanCoordinator @Inject constructor(
             rowNames = page.rowNames,
             pageId = page.id
         )
+    }
+
+    fun setScanLimitSettings(enabled: Boolean, limit: Int) {
+        Log.d("ScanCoordinator", "setScanLimitSettings: enabled=$enabled, limit=$limit")
+        scanCycleLimitEnabled = enabled
+        scanCycleLimit = limit
+        
+        // If limit was just enabled and current count already exceeds it, stop
+        if (enabled && _currentCycleCount.value >= limit && scannerEngine.isScanning.value) {
+            _isStoppedDueToLimit.value = true
+            stopScanning()
+        }
+    }
+
+    fun setCycleCount(count: Int) {
+        _currentCycleCount.value = count
+    }
+
+    fun restartScanning() {
+        Log.d("ScanCoordinator", "restartScanning: Resetting count and restarting.")
+        _currentCycleCount.value = 0
+        _isStoppedDueToLimit.value = false
+        startScanning(0)
     }
 
     fun setScanDelay(delayMillis: Long) {
@@ -217,6 +274,8 @@ class ScanCoordinator @Inject constructor(
     }
 
     fun selectCurrentRow() {
+        _currentCycleCount.value = 0 // Reset for buttons-in-row phase
+        _isStoppedDueToLimit.value = false
         scannerEngine.selectCurrentRow()
     }
 
@@ -224,11 +283,17 @@ class ScanCoordinator @Inject constructor(
         scannerEngine.setFocusedIndex(index)
     }
 
+    fun setFocusedRowIndex(index: Int?) {
+        scannerEngine.setFocusedRowIndex(index)
+    }
+
     fun onPageChanged(isSamePage: Boolean) {
         if (isSamePage) {
             scannerEngine.pauseScanning()
         } else {
             scannerEngine.stopScanning()
+            _currentCycleCount.value = 0
+            _isStoppedDueToLimit.value = false
         }
         lastCuePageId = null // Ensure cue is spoken again on explicit re-navigation
     }

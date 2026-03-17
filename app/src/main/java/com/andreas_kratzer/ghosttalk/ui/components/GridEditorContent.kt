@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -27,7 +28,6 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.core.cloud.GoogleHomeManager
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.GridItem
 import com.andreas_kratzer.ghosttalk.core.model.Page
@@ -58,7 +59,6 @@ import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalCurrentPageId
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalIsUserModeActive
 import com.andreas_kratzer.ghosttalk.ui.pages.ButtonConfigDialog
-import com.andreas_kratzer.ghosttalk.core.cloud.GoogleHomeManager
 import com.andreas_kratzer.ghosttalk.ui.pages.GridButton
 import com.andreas_kratzer.ghosttalk.ui.pages.MoveHiddenPromptDialog
 import com.andreas_kratzer.ghosttalk.ui.pages.TargetPageSelectionDialog
@@ -116,14 +116,16 @@ fun GridEditorContent(
         val rowReorderState = rememberReorderableState()
         val buttonReorderState = rememberReorderableState()
 
-        Scaffold(
-            snackbarHost = { SnackbarHost(snackbarHostState) },
-            modifier = Modifier.padding(paddingValues)
-        ) { innerPadding ->
+        Box(
+            modifier = Modifier
+                .padding(paddingValues)
+                .fillMaxSize()
+        ) {
             Column(
                 modifier = Modifier
-                    .padding(innerPadding)
-                    .padding(if (isLandscape) dimensions.paddingMedium else dimensions.paddingLarge),
+                    .fillMaxSize()
+                    .padding(horizontal = if (isLandscape) dimensions.paddingMedium else dimensions.paddingLarge)
+                    .padding(bottom = if (isLandscape) dimensions.paddingMedium else dimensions.paddingLarge),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 GridEditorControls(item = item, actions = actions)
@@ -164,11 +166,11 @@ fun GridEditorContent(
                                 sizeInfo = sizeInfo,
                                 dimensions = dimensions,
                                 density = density,
-                                onEditRow = { r ->
+                                onEditRow = { r: Int ->
                                     editingRowIndex = r
                                     showRowEditDialog = true
                                 },
-                                onEditButton = { idx ->
+                                onEditButton = { idx: Int ->
                                     selectedButtonIndex = idx
                                     showDialog = true
                                 }
@@ -182,7 +184,7 @@ fun GridEditorContent(
                                 sizeInfo = sizeInfo,
                                 dimensions = dimensions,
                                 density = density,
-                                onEditButton = { idx ->
+                                onEditButton = { idx: Int ->
                                     selectedButtonIndex = idx
                                     showDialog = true
                                 }
@@ -191,6 +193,11 @@ fun GridEditorContent(
                     }
                 }
             }
+            
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.align(Alignment.BottomCenter)
+            )
         }
 
         EditorDialogs(
@@ -208,8 +215,8 @@ fun GridEditorContent(
             showHiddenPrompt = showHiddenPrompt,
             snackbarHostState = snackbarHostState,
             scope = scope,
-            onShowMoveDialog = { showMoveDialog = it },
-            onShowHiddenPrompt = { showHiddenPrompt = it },
+            onShowMoveDialog = { value: Boolean -> showMoveDialog = value },
+            onShowHiddenPrompt = { value -> showHiddenPrompt = value },
             onDismissRowDialog = {
                 showRowEditDialog = false
                 editingRowIndex = null

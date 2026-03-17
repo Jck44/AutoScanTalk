@@ -12,6 +12,7 @@ import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.data.GetPagesUseCase
 import com.andreas_kratzer.ghosttalk.core.cloud.PhilipsHueManager
+import com.andreas_kratzer.ghosttalk.feature.settings.domain.UpdateActionLogLimitUseCase
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.CloudSyncSettingsDelegate
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.ExperimentalSettingsDelegate
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.GenAiSettingsDelegate
@@ -40,6 +41,7 @@ class SettingsViewModel @Inject constructor(
     val cloudSyncDelegate: CloudSyncSettingsDelegate,
     val genAiDelegate: GenAiSettingsDelegate,
     val experimentalDelegate: ExperimentalSettingsDelegate,
+    private val updateActionLogLimitUseCase: UpdateActionLogLimitUseCase,
     private val importExportManager: PageImportExportProvider,
     private val hueManager: PhilipsHueManager
 ) : AndroidViewModel(application) {
@@ -113,6 +115,10 @@ class SettingsViewModel @Inject constructor(
     val isSecurityRequiredForEdit = settingsRepository.isSecurityRequiredForEditFlow
     val isSecurityRequiredForSettings = settingsRepository.isSecurityRequiredForSettingsFlow
     val startupBehavior = settingsRepository.startupBehaviorFlow
+    
+    val limitScanCycles = settingsRepository.limitScanCyclesFlow
+    val scanCycleLimit = settingsRepository.scanCycleLimitFlow
+    val actionLogLimit = settingsRepository.actionLogLimitFlow
     
     private val _navigationEvent = kotlinx.coroutines.flow.MutableSharedFlow<SettingsNavigationEvent>()
     val navigationEvents = _navigationEvent.asSharedFlow()
@@ -281,6 +287,12 @@ class SettingsViewModel @Inject constructor(
         input.toLongOrNull()?.let { settingsRepository.geminiTimeout = it }
     }
     fun setGeminiRedoPrediction(e: Boolean) { settingsRepository.geminiRedoPrediction = e }
+
+    fun setLimitScanCycles(e: Boolean) = scanningDelegate.setLimitScanCycles(e)
+    fun setScanCycleLimitInput(input: String) = scanningDelegate.setScanCycleLimitInput(input)
+    fun setActionLogLimitInput(input: String) {
+        updateActionLogLimitUseCase(input)
+    }
 
     fun setSecurityPin(pin: String) {
         settingsRepository.securityPin = pin

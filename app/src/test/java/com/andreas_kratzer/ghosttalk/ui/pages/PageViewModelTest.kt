@@ -1,6 +1,7 @@
 package com.andreas_kratzer.ghosttalk.ui.pages
 
 import android.app.Application
+import androidx.lifecycle.SavedStateHandle
 import com.andreas_kratzer.ghosttalk.core.actions.ActionCoordinator
 import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
 import com.andreas_kratzer.ghosttalk.core.actions.NavigationActionHandler
@@ -50,6 +51,7 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.unmockkAll
+import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -241,9 +243,12 @@ class PageViewModelTest {
         )
 
         val scanCoordinator = mockk<ScanCoordinator>(relaxed = true)
+        every { scanCoordinator.focusedButtonIndex } returns MutableStateFlow<Int?>(null)
+        every { scanCoordinator.focusedRowIndex } returns MutableStateFlow<Int?>(null)
 
         return PageViewModel(
             application = application,
+            savedStateHandle = SavedStateHandle(),
             settingsRepository = settingsRepository,
             importExportManager = importExportManager,
             googleAuthManager = googleAuthManager,

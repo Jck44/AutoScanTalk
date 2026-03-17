@@ -4,6 +4,7 @@ import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.feature.settings.domain.UpdateBluetoothDelayUseCase
 import com.andreas_kratzer.ghosttalk.feature.settings.domain.UpdateHoldingTimeUseCase
 import com.andreas_kratzer.ghosttalk.feature.settings.domain.UpdateScanDelayUseCase
+import com.andreas_kratzer.ghosttalk.feature.settings.domain.UpdateScanCycleLimitUseCase
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -12,7 +13,8 @@ class ScanningSettingsDelegate @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val updateScanDelayUseCase: UpdateScanDelayUseCase,
     private val updateHoldingTimeUseCase: UpdateHoldingTimeUseCase,
-    private val updateBluetoothDelayUseCase: UpdateBluetoothDelayUseCase
+    private val updateBluetoothDelayUseCase: UpdateBluetoothDelayUseCase,
+    private val updateScanCycleLimitUseCase: UpdateScanCycleLimitUseCase
 ) {
     fun setAutoStartScanning(enabled: Boolean) {
         settingsRepository.autoStartScanning = enabled
@@ -36,5 +38,13 @@ class ScanningSettingsDelegate @Inject constructor(
 
     fun setBluetoothDelay(delayMs: String) {
         updateBluetoothDelayUseCase(delayMs)
+    }
+
+    fun setLimitScanCycles(enabled: Boolean) {
+        settingsRepository.limitScanCycles = enabled
+    }
+
+    fun setScanCycleLimitInput(input: String) {
+        updateScanCycleLimitUseCase(input)
     }
 }

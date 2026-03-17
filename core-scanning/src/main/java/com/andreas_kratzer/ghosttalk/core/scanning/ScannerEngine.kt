@@ -4,8 +4,11 @@ import com.andreas_kratzer.ghosttalk.core.di.ApplicationScope
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -35,6 +38,9 @@ class ScannerEngine @Inject constructor(
     private var scanJob: Job? = null
     private val _isScanning = MutableStateFlow(false)
     val isScanning: StateFlow<Boolean> = _isScanning.asStateFlow()
+
+    private val _onCycleCompleted = MutableSharedFlow<Unit>()
+    val onCycleCompleted: SharedFlow<Unit> = _onCycleCompleted.asSharedFlow()
     
     var scanDelayMillis: Long = 1000L
 
@@ -85,6 +91,7 @@ class ScannerEngine @Inject constructor(
                         focusedButtonIndex = _focusedButtonIndex,
                         focusedRowIndex = _focusedRowIndex,
                         onSpeakCue = { handleSpeakCue(it) },
+                        onCycleCompleted = { _onCycleCompleted.emit(Unit) },
                         delayMillis = scanDelayMillis,
                         featureGuard = featureGuard
                     )
@@ -98,6 +105,7 @@ class ScannerEngine @Inject constructor(
                         focusedButtonIndex = _focusedButtonIndex,
                         focusedRowIndex = _focusedRowIndex,
                         onSpeakCue = { handleSpeakCue(it) },
+                        onCycleCompleted = { _onCycleCompleted.emit(Unit) },
                         delayMillis = scanDelayMillis,
                         featureGuard = featureGuard
                     )
@@ -124,6 +132,7 @@ class ScannerEngine @Inject constructor(
                 rowIndex = currentRow,
                 focusedButtonIndex = _focusedButtonIndex,
                 onSpeakCue = { handleSpeakCue(it) },
+                onCycleCompleted = { _onCycleCompleted.emit(Unit) },
                 delayMillis = scanDelayMillis,
                 featureGuard = featureGuard
             )
@@ -146,6 +155,10 @@ class ScannerEngine @Inject constructor(
 
     fun setFocusedIndex(index: Int?) {
         _focusedButtonIndex.value = index
+    }
+
+    fun setFocusedRowIndex(index: Int?) {
+        _focusedRowIndex.value = index
     }
     
     fun clear() {

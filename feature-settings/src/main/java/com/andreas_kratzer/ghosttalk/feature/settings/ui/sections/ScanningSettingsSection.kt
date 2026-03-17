@@ -83,5 +83,25 @@ fun ScanningSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                 onValueChange = { viewModel.setBluetoothDelay(it) }
             )
         }
+
+        if (!isGlobal) {
+            val limitScanCycles by viewModel.limitScanCycles.collectAsState(false)
+            val scanCycleLimit by viewModel.scanCycleLimit.collectAsState(2)
+
+            PreferenceCategory(stringResource(R.string.settings_category_limits), modifier = Modifier.weight(1f)) {
+                SettingsToggleItem(
+                    label = stringResource(R.string.settings_limit_scan_cycles),
+                    checked = limitScanCycles,
+                    onCheckedChange = { viewModel.setLimitScanCycles(it) }
+                )
+                if (limitScanCycles) {
+                    SettingsEditTextItem(
+                        label = stringResource(R.string.settings_scan_cycle_limit),
+                        value = scanCycleLimit.toString(),
+                        onValueChange = { viewModel.setScanCycleLimitInput(it) }
+                    )
+                }
+            }
+        }
     }
 }

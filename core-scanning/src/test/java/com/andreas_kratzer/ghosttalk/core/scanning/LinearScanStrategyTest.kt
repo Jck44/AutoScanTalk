@@ -42,6 +42,7 @@ class LinearScanStrategyTest {
             focusedButtonIndex = focusedButtonIndex,
             focusedRowIndex = focusedRowIndex,
             onSpeakCue = {},
+            onCycleCompleted = {},
             delayMillis = 1000,
             featureGuard = featureGuard
         )
@@ -72,6 +73,7 @@ class LinearScanStrategyTest {
                 focusedButtonIndex = focusedButtonIndex,
                 focusedRowIndex = focusedRowIndex,
                 onSpeakCue = { cues.add(it) },
+                onCycleCompleted = {},
                 delayMillis = 1000,
                 featureGuard = featureGuard
             )
@@ -113,6 +115,7 @@ class LinearScanStrategyTest {
                 focusedButtonIndex = focusedButtonIndex,
                 focusedRowIndex = focusedRowIndex,
                 onSpeakCue = { cues.add(it) },
+                onCycleCompleted = {},
                 delayMillis = 1000,
                 featureGuard = featureGuard
             )
@@ -141,6 +144,7 @@ class LinearScanStrategyTest {
                 focusedButtonIndex = focusedButtonIndex,
                 focusedRowIndex = focusedRowIndex,
                 onSpeakCue = { },
+                onCycleCompleted = {},
                 delayMillis = 1000,
                 featureGuard = featureGuard
             )
@@ -155,6 +159,37 @@ class LinearScanStrategyTest {
         advanceTimeBy(1000)
         assertEquals(0, focusedButtonIndex.value) // Should wrap around to 0
         
+        job.cancel()
+    }
+
+    @Test
+    fun `executeScan triggers onCycleCompleted after one full cycle`() = runTest {
+        val config = ButtonConfig(id = "1", label = "B1", isActive = true, auditoryCue = null, buttonAction = SpeakTextButtonAction())
+        every { featureGuard.isButtonVisible(config) } returns true
+
+        var cycleCount = 0
+        val job = launch {
+            strategy.executeScan(
+                buttonConfigs = listOf(config),
+                rows = 1,
+                columns = 1,
+                rowNames = emptyList(),
+                startIndex = 0,
+                focusedButtonIndex = focusedButtonIndex,
+                focusedRowIndex = focusedRowIndex,
+                onSpeakCue = { },
+                onCycleCompleted = { cycleCount++ },
+                delayMillis = 100,
+                featureGuard = featureGuard
+            )
+        }
+
+        advanceTimeBy(150) // delay(100) + initial delay
+        assertEquals(1, cycleCount)
+
+        advanceTimeBy(100) // next iteration delay(100)
+        assertEquals(2, cycleCount)
+
         job.cancel()
     }
 }

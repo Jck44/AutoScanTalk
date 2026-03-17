@@ -109,6 +109,11 @@
     <string name="settings_notifications_enable">Benachrichtigungen vorlesen</string>
     <string name="settings_notifications_enable_desc">Ermöglicht das automatische Vorlesen von Benachrichtigungen ausgewählter Apps als Audio-Hinweis.</string>
     <string name="settings_notifications_permission_button">Berechtigung erteilen</string>
+    
+    <string name="settings_category_limits">Begrenzungen</string>
+    <string name="settings_limit_scan_cycles">Anzahl von Scandurchläufen begrenzen</string>
+    <string name="settings_scan_cycle_limit">Anzahl der Scandurchläufe</string>
+    <string name="settings_action_log_limit">Limit für die Aktionsliste</string>
 
     <!-- Advanced / Maintenance -->
     <string name="settings_weather_cache_timeout_label">Wetter Cache Dauer (Minuten)</string>

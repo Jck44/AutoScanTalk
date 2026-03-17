@@ -80,24 +80,39 @@ class BookViewModel @Inject constructor(
     }
 
 
-    fun createNewBook(name: String, actionLogLimit: Int = 100) {
+    fun createNewBook(
+        name: String, 
+        actionLogLimit: Int = 100,
+        limitScanCycles: Boolean = false,
+        scanCycleLimit: Int = 2
+    ) {
         val now = System.currentTimeMillis()
         val newBook = Book(
             id = UUID.randomUUID().toString(), 
             name = name, 
             createdAt = now, 
             updatedAt = now,
-            actionLogLimit = actionLogLimit
+            actionLogLimit = actionLogLimit,
+            limitScanCycles = limitScanCycles,
+            scanCycleLimit = scanCycleLimit
         )
         viewModelScope.launch(Dispatchers.IO) {
             bookRepository.insertBook(newBook)
         }
     }
 
-    fun updateBook(book: Book, newName: String, actionLogLimit: Int) {
+    fun updateBook(
+        book: Book, 
+        newName: String, 
+        actionLogLimit: Int,
+        limitScanCycles: Boolean,
+        scanCycleLimit: Int
+    ) {
         val updatedBook = book.copy(
             name = newName, 
             actionLogLimit = actionLogLimit,
+            limitScanCycles = limitScanCycles,
+            scanCycleLimit = scanCycleLimit,
             updatedAt = System.currentTimeMillis()
         )
         viewModelScope.launch(Dispatchers.IO) {

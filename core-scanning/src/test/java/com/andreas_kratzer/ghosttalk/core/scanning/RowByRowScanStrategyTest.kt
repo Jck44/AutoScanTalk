@@ -65,6 +65,7 @@ class RowByRowScanStrategyTest {
                 focusedButtonIndex = focusedButtonIndex,
                 focusedRowIndex = focusedRowIndex,
                 onSpeakCue = { cues.add(it) },
+                onCycleCompleted = {},
                 delayMillis = 1000,
                 featureGuard = featureGuard
             )
@@ -94,6 +95,7 @@ class RowByRowScanStrategyTest {
                 focusedButtonIndex = focusedButtonIndex,
                 focusedRowIndex = focusedRowIndex,
                 onSpeakCue = { cues.add(it) },
+                onCycleCompleted = {},
                 delayMillis = 1000,
                 featureGuard = featureGuard
             )
@@ -120,6 +122,7 @@ class RowByRowScanStrategyTest {
                 rowIndex = 1,
                 focusedButtonIndex = focusedButtonIndex,
                 onSpeakCue = { cues.add(it) },
+                onCycleCompleted = {},
                 delayMillis = 1000,
                 featureGuard = featureGuard
             )
@@ -152,6 +155,7 @@ class RowByRowScanStrategyTest {
             rowIndex = 0,
             focusedButtonIndex = focusedButtonIndex,
             onSpeakCue = { },
+            onCycleCompleted = {},
             delayMillis = 1000,
             featureGuard = featureGuard
         )
@@ -180,6 +184,7 @@ class RowByRowScanStrategyTest {
                 focusedButtonIndex = focusedButtonIndex,
                 focusedRowIndex = focusedRowIndex,
                 onSpeakCue = { speakCount.value++ },
+                onCycleCompleted = {},
                 delayMillis = 500,
                 featureGuard = mockk(relaxed = true) {
                     every { isButtonVisible(any()) } returns true

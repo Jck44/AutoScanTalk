@@ -109,6 +109,11 @@
     <string name="settings_notifications_enable">Read notifications aloud</string>
     <string name="settings_notifications_enable_desc">Allows automatic reading of notifications from selected apps as an auditory cue.</string>
     <string name="settings_notifications_permission_button">Grant Permission</string>
+    
+    <string name="settings_category_limits">Limits</string>
+    <string name="settings_limit_scan_cycles">Limit scan cycles</string>
+    <string name="settings_scan_cycle_limit">Number of scan cycles</string>
+    <string name="settings_action_log_limit">Action log limit</string>
 
     <!-- Advanced / Maintenance -->
     <string name="settings_weather_cache_timeout_label">Weather Cache Duration (Minutes)</string>

@@ -30,6 +30,7 @@ import androidx.compose.ui.res.stringResource
 import com.andreas_kratzer.ghosttalk.feature.settings.R
 import com.andreas_kratzer.ghosttalk.core.ui.components.PreferenceCategory
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsDropdownItem
+import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsEditTextItem
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsToggleItem
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
@@ -183,6 +184,15 @@ fun GeneralSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                             screenDimmed to { viewModel.setUserModeScreenBehavior("DIMMED") },
                             screenBlack to { viewModel.setUserModeScreenBehavior("BLACK") }
                         )
+                    )
+                }
+
+                val actionLogLimit by viewModel.actionLogLimit.collectAsState(100)
+                PreferenceCategory(stringResource(R.string.settings_category_limits), modifier = Modifier.weight(1f)) {
+                    SettingsEditTextItem(
+                        label = stringResource(R.string.settings_action_log_limit),
+                        value = actionLogLimit.toString(),
+                        onValueChange = { viewModel.setActionLogLimitInput(it) }
                     )
                 }
 

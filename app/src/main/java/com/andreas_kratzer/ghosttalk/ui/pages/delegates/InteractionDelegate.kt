@@ -132,6 +132,10 @@ class InteractionDelegate @Inject constructor(
     }
 
     fun activateFocusedButton(currentPage: Page?, activeBookId: String?) {
+        if (scanCoordinator.isStoppedDueToLimit.value) {
+            scanCoordinator.restartScanning()
+            return
+        }
         val focusedIdx = scanCoordinator.focusedButtonIndex.value
         val focusedRow = scanCoordinator.focusedRowIndex.value
         if (focusedIdx != null) {

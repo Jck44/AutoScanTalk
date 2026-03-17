@@ -11,6 +11,8 @@ interface ScanningSettings {
     var switchActivationKey: String
     var volumeKeysActivate: Boolean
     var bluetoothDelay: Long
+    var limitScanCycles: Boolean
+    var scanCycleLimit: Int
     
     val autoStartScanningFlow: StateFlow<Boolean>
     val scanDelayFlow: StateFlow<Long>
@@ -20,6 +22,8 @@ interface ScanningSettings {
     val switchActivationKeyFlow: StateFlow<String>
     val volumeKeysActivateFlow: StateFlow<Boolean>
     val bluetoothDelayFlow: StateFlow<Long>
+    val limitScanCyclesFlow: StateFlow<Boolean>
+    val scanCycleLimitFlow: StateFlow<Int>
     val cuesAudioDeviceAddressFlow: StateFlow<String?>
     var cuesAudioDeviceAddress: String?
 }

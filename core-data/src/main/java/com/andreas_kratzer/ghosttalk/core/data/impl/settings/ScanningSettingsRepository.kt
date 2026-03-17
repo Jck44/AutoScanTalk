@@ -24,6 +24,8 @@ class ScanningSettingsRepository(
     private val _volumeKeysActivate = BooleanSetting(KEY_VOLUME_KEYS_ACTIVATE, false)
     private val _defaultScanPattern = NonNullStringSetting(KEY_DEFAULT_SCAN_PATTERN, "linear")
     private val _bluetoothDelay = LongSetting(KEY_BLUETOOTH_DELAY, 100L, isScoped = false)
+    private val _limitScanCycles = BooleanSetting(SettingsConstants.KEY_LIMIT_SCAN_CYCLES, false)
+    private val _scanCycleLimit = IntSetting(SettingsConstants.KEY_SCAN_CYCLE_LIMIT, 2)
 
     val autoStartScanningFlow = _autoStartScanning.flow
     val scanDelayFlow = _scanDelay.flow
@@ -33,6 +35,8 @@ class ScanningSettingsRepository(
     val volumeKeysActivateFlow = _volumeKeysActivate.flow
     val defaultScanPatternFlow = _defaultScanPattern.flow
     val bluetoothDelayFlow = _bluetoothDelay.flow
+    val limitScanCyclesFlow = _limitScanCycles.flow
+    val scanCycleLimitFlow = _scanCycleLimit.flow
 
     var autoStartScanning: Boolean
         get() = _autoStartScanning.value
@@ -66,6 +70,14 @@ class ScanningSettingsRepository(
         get() = _bluetoothDelay.value
         set(value) { _bluetoothDelay.value = value }
 
+    var limitScanCycles: Boolean
+        get() = _limitScanCycles.value
+        set(value) { _limitScanCycles.value = value }
+
+    var scanCycleLimit: Int
+        get() = _scanCycleLimit.value
+        set(value) { _scanCycleLimit.value = value }
+
     override fun refresh() {
         _autoStartScanning.refresh()
         _scanDelay.refresh()
@@ -75,5 +87,7 @@ class ScanningSettingsRepository(
         _volumeKeysActivate.refresh()
         _defaultScanPattern.refresh()
         _bluetoothDelay.refresh()
+        _limitScanCycles.refresh()
+        _scanCycleLimit.refresh()
     }
 }

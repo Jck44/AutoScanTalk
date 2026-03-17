@@ -16,6 +16,7 @@ class LinearScanStrategy : ScanStrategy {
         focusedButtonIndex: MutableStateFlow<Int?>,
         focusedRowIndex: MutableStateFlow<Int?>,
         onSpeakCue: suspend (String) -> Unit,
+        onCycleCompleted: suspend () -> Unit,
         delayMillis: Long,
         featureGuard: FeatureGuardProxy
     ) {
@@ -55,6 +56,7 @@ class LinearScanStrategy : ScanStrategy {
                 
                 delay(delayMillis)
             }
+            onCycleCompleted()
             currentPos = 0
         }
     }

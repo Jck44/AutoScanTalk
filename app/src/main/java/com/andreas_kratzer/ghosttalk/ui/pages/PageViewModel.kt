@@ -5,11 +5,13 @@ import android.content.Intent
 import android.provider.MediaStore
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
 import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.cloud.GoogleHomeManager
+import com.andreas_kratzer.ghosttalk.core.model.Book
 import com.andreas_kratzer.ghosttalk.core.model.GeminiNanoButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.data.impl.PageImportExportManager
@@ -36,6 +38,9 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -43,7 +48,9 @@ import javax.inject.Inject
 @HiltViewModel
 class PageViewModel @Inject constructor(
     application: Application,
+    private val savedStateHandle: SavedStateHandle,
     val settingsRepository: SettingsRepository,
+    private val bookRepository: com.andreas_kratzer.ghosttalk.core.data.BookRepository,
     internal val importExportManager: PageImportExportManager,
     private val googleAuthManager: GoogleAuthManager,
     ttsHelper: TextToSpeechHelper,
@@ -103,6 +110,11 @@ class PageViewModel @Inject constructor(
 
     val focusedButtonIndex = scanCoordinator.focusedButtonIndex
     val focusedRowIndex = scanCoordinator.focusedRowIndex
+    val isStoppedDueToLimit = scanCoordinator.isStoppedDueToLimit
+
+    val activeBook: StateFlow<Book?> = activeBookId.flatMapLatest { id ->
+        if (id != null) bookRepository.getBookByIdFlow(id) else flowOf(null)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     init {
         pageManagementDelegate.init(viewModelScope)
@@ -127,6 +139,45 @@ class PageViewModel @Inject constructor(
             isSmartPredictionLoading = isSmartPredictionLoading,
             smartPredictions = smartPredictions
         )
+
+        // Observe book settings for scan limit
+        viewModelScope.launch {
+            activeBook.collect { book ->
+                if (book != null) {
+                    scanCoordinator.setScanLimitSettings(book.limitScanCycles, book.scanCycleLimit)
+                }
+            }
+        }
+
+        // Observe and persist cycle count
+        viewModelScope.launch {
+            scanCoordinator.currentCycleCount.collect { count ->
+                savedStateHandle["scanCycleCount"] = count
+            }
+        }
+
+        // RESTORE STATE FROM SavedStateHandle
+        savedStateHandle.get<String>("currentPageId")?.let { id ->
+            viewModelScope.launch {
+                pageManagementDelegate.getPageById(id)?.let { page ->
+                    pageManagementDelegate.setCurrentPage(page)
+                }
+            }
+        }
+        savedStateHandle.get<Boolean>("isUserModeActive")?.let { active ->
+            interactionDelegate.setUserModeActive(active)
+        }
+
+        // RESTORE SCAN STATE
+        savedStateHandle.get<Int>("focusedButtonIndex")?.let { index ->
+            scanCoordinator.setFocusedIndex(index)
+        }
+        savedStateHandle.get<Int>("focusedRowIndex")?.let { index ->
+            scanCoordinator.setFocusedRowIndex(index)
+        }
+        savedStateHandle.get<Int>("scanCycleCount")?.let { count ->
+            scanCoordinator.setCycleCount(count)
+        }
 
         // Set up Gemini command handlers
         geminiUseCase.setAppCommandHandler { command, args ->
@@ -178,12 +229,18 @@ class PageViewModel @Inject constructor(
                 }
             }
             pageManagementDelegate.setCurrentPage(page)
+            savedStateHandle["currentPageId"] = page.id
+            savedStateHandle["focusedButtonIndex"] = focusedButtonIndex.value
+            savedStateHandle["focusedRowIndex"] = focusedRowIndex.value
         }
     }
 
     override val availableGeminiTools = geminiUseCase.getAvailableTools()
 
-    fun setUserModeActive(isActive: Boolean) = interactionDelegate.setUserModeActive(isActive)
+    fun setUserModeActive(isActive: Boolean) {
+        interactionDelegate.setUserModeActive(isActive)
+        savedStateHandle["isUserModeActive"] = isActive
+    }
     fun activateButtonAtIndex(index: Int) = interactionDelegate.activateButtonAtIndex(index, resolvedPage.value, activeBookId.value)
     fun activateFocusedButton() = interactionDelegate.activateFocusedButton(resolvedPage.value, activeBookId.value)
     fun clearActionLogs() = interactionDelegate.clearActionLogs()
@@ -191,6 +248,7 @@ class PageViewModel @Inject constructor(
     fun resumeScanningIfEnabled() = scanCoordinator.resumeScanningIfEnabled()
     fun startScanning(startIndex: Int = 0) = scanCoordinator.startScanning(startIndex)
     fun stopScanning() = scanCoordinator.stopScanning()
+    fun restartScanning() = scanCoordinator.restartScanning()
 
     override fun updateButtonConfig(itemId: String, index: Int, newConfig: ButtonConfig?) {
         pageManagementDelegate.updateButtonConfig(itemId, index, newConfig)

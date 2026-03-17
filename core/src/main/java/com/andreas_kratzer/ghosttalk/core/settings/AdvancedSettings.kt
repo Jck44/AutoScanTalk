@@ -10,6 +10,7 @@ interface AdvancedSettings {
     val smartPredictionDelayFlow: StateFlow<Long>
     val isSmartPredictionEnabledFlow: StateFlow<Boolean>
     val weatherCacheTimeoutFlow: StateFlow<Long>
+    val actionLogLimitFlow: StateFlow<Int>
 
     var persistActionLogs: Boolean
     var actionLogsStorage: String?
@@ -18,4 +19,5 @@ interface AdvancedSettings {
     var smartPredictionDelay: Long
     var isSmartPredictionEnabled: Boolean
     var weatherCacheTimeout: Long
+    var actionLogLimit: Int
 }

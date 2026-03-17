@@ -15,6 +15,7 @@ import io.mockk.slot
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
@@ -22,7 +23,8 @@ import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class GeminiActionHandlerTest {
-    private val scope = TestScope()
+    private val testDispatcher = UnconfinedTestDispatcher()
+    private val scope = TestScope(testDispatcher)
     private val context = mockk<Context>(relaxed = true)
     private val settingsRepository = mockk<SettingsRepository>(relaxed = true)
     private val geminiUseCase = mockk<GeminiUseCase>(relaxed = true)
@@ -247,6 +249,70 @@ class GeminiActionHandlerTest {
         
         ttsCallback.captured.invoke()
         runCurrent()
+        verify { onFinish(1) }
+    }
+
+    @Test
+    fun `VisionAction should speak error if camera permission is missing`() = scope.runTest {
+        // GIVEN
+        val action = com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction("Describe", true)
+        val config = ButtonConfig(id = "1", label = "Vision", buttonAction = action, auditoryCue = null)
+        
+        // Mock permission missing
+        io.mockk.mockkStatic(androidx.core.content.ContextCompat::class)
+        every { androidx.core.content.ContextCompat.checkSelfPermission(any(), any()) } returns android.content.pm.PackageManager.PERMISSION_DENIED
+        
+        // Broaden getString mock to handle various vararg/array combinations
+        every { context.getString(any()) } returns "No Camera"
+        every { context.getString(any(), *anyVararg()) } returns "No Camera"
+        
+        val onFinish = mockk<(Int) -> Unit>(relaxed = true)
+        val ttsCallback = slot<() -> Unit>()
+        every { ttsProxy.speakRouted(text = any(), deviceAddress = any(), onDone = capture(ttsCallback)) } returns Unit
+        
+        // WHEN
+        handler.handle(config, action, 1, onFinish)
+        runCurrent()
+        
+        // THEN
+        verify { ttsProxy.speakRouted(text = "No Camera", deviceAddress = any(), onDone = any()) }
+        ttsCallback.captured.invoke() // Manually trigger to satisfy onFinish if verified
+        runCurrent()
+        
+        coVerify(exactly = 0) { cameraProvider.captureImage() }
+        
+        io.mockk.unmockkStatic(androidx.core.content.ContextCompat::class)
+    }
+
+    @Test
+    fun `CloudAction should handle timeout or slow response`() = scope.runTest {
+        // GIVEN
+        val action = GeminiButtonAction("Complex query")
+        val config = ButtonConfig(id = "1", label = "Gemini", buttonAction = action, auditoryCue = null)
+        
+        every { settingsRepository.isGeminiEnabled } returns true
+        
+        // Mock a slow response
+        coEvery { geminiUseCase.generateResponse(any(), any()) } coAnswers {
+            kotlinx.coroutines.delay(5000)
+            "Slow Response"
+        }
+        
+        val onFinish = mockk<(Int) -> Unit>(relaxed = true)
+        val ttsCallback = slot<() -> Unit>()
+        every { ttsProxy.speakRouted(text = "Slow Response", deviceAddress = any(), onDone = capture(ttsCallback)) } returns Unit
+        
+        // WHEN
+        handler.handle(config, action, 1, onFinish)
+        testScheduler.advanceTimeBy(6000)
+        runCurrent()
+        
+        // THEN
+        verify { ttsProxy.speakRouted(text = "Slow Response", deviceAddress = any(), onDone = any()) }
+        
+        ttsCallback.captured.invoke()
+        runCurrent()
+        
         verify { onFinish(1) }
     }
 }

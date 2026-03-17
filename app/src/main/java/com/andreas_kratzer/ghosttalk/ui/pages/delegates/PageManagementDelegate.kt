@@ -108,6 +108,8 @@ class PageManagementDelegate @Inject constructor(
     fun setCurrentPage(page: Page?) {
         _currentPage.value = page
         appStateRepository.setCurrentPageId(page?.id)
+        // No need to save to SavedStateHandle here if appStateRepository does it, 
+        // but since we want to be sure for PageViewModel, we'll do it in VM or here.
     }
 
     fun createNewPage(name: String, rows: Int, columns: Int, bookId: String, templateId: String? = null, onCreated: (String) -> Unit) {

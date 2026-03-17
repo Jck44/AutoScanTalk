@@ -3,13 +3,23 @@ package com.andreas_kratzer.ghosttalk.core.data.impl.settings
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
+import com.andreas_kratzer.ghosttalk.core.data.BookRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.di.ApplicationScope
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @SuppressLint("CommitPrefEdits", "ApplySharedPref", "UseKtx")
-class SettingsRepositoryImpl(context: Context) : SettingsRepository {
+class SettingsRepositoryImpl @Inject constructor(
+    @ApplicationContext context: Context,
+    private val bookRepository: BookRepository,
+    @ApplicationScope private val scope: CoroutineScope
+) : SettingsRepository {
 
     private val prefs: SharedPreferences = context.getSharedPreferences(SettingsConstants.PREFS_NAME, Context.MODE_PRIVATE)
 
@@ -85,6 +95,8 @@ class SettingsRepositoryImpl(context: Context) : SettingsRepository {
     override val scanDelayFlow: StateFlow<Long> get() = scanningSettings.scanDelayFlow
     override val resumeScanningFromStartFlow: StateFlow<Boolean> get() = scanningSettings.resumeScanningFromStartFlow
     override val defaultScanPatternFlow: StateFlow<String> get() = scanningSettings.defaultScanPatternFlow
+    override val limitScanCyclesFlow: StateFlow<Boolean> get() = scanningSettings.limitScanCyclesFlow
+    override val scanCycleLimitFlow: StateFlow<Int> get() = scanningSettings.scanCycleLimitFlow
     
     
 
@@ -109,6 +121,7 @@ class SettingsRepositoryImpl(context: Context) : SettingsRepository {
     override val showTestButtonsFlow: StateFlow<Boolean> get() = advancedSettings.showTestButtonsFlow
     override val weatherCacheTimeoutFlow: StateFlow<Long> get() = advancedSettings.weatherCacheTimeoutFlow
     override val smartPredictionDelayFlow: StateFlow<Long> get() = advancedSettings.smartPredictionDelayFlow
+    override val actionLogLimitFlow: StateFlow<Int> get() = advancedSettings.actionLogLimitFlow
     
     // --- NotificationSettings ---
     override val isNotificationReadingEnabledFlow: StateFlow<Boolean> get() = notificationSettings.isNotificationReadingEnabledFlow
@@ -160,6 +173,20 @@ class SettingsRepositoryImpl(context: Context) : SettingsRepository {
     override var resumeScanningFromStart: Boolean
         get() = scanningSettings.resumeScanningFromStart
         set(value) { scanningSettings.resumeScanningFromStart = value }
+
+    override var limitScanCycles: Boolean
+        get() = scanningSettings.limitScanCycles
+        set(value) {
+            scanningSettings.limitScanCycles = value
+            syncBookSettings()
+        }
+
+    override var scanCycleLimit: Int
+        get() = scanningSettings.scanCycleLimit
+        set(value) {
+            scanningSettings.scanCycleLimit = value
+            syncBookSettings()
+        }
 
     override var defaultStartPageId: String?
         get() = generalSettings.defaultStartPageId
@@ -315,6 +342,13 @@ class SettingsRepositoryImpl(context: Context) : SettingsRepository {
         get() = advancedSettings.weatherCacheTimeout
         set(value) { advancedSettings.weatherCacheTimeout = value }
 
+    override var actionLogLimit: Int
+        get() = advancedSettings.actionLogLimit
+        set(value) {
+            advancedSettings.actionLogLimit = value
+            syncBookSettings()
+        }
+
     override var securityPin: String?
         get() = securitySettings.securityPin
         set(value) { securitySettings.securityPin = value }
@@ -404,5 +438,22 @@ class SettingsRepositoryImpl(context: Context) : SettingsRepository {
             }
         }
         return cachedDevices
+    }
+
+    private fun syncBookSettings() {
+        scope.launch {
+            val bookId = activeBookId
+            val book = bookRepository.getBookById(bookId)
+            if (book != null) {
+                val updatedBook = book.copy(
+                    limitScanCycles = limitScanCycles,
+                    scanCycleLimit = scanCycleLimit,
+                    actionLogLimit = actionLogLimit
+                )
+                if (updatedBook != book) {
+                    bookRepository.updateBook(updatedBook)
+                }
+            }
+        }
     }
 }

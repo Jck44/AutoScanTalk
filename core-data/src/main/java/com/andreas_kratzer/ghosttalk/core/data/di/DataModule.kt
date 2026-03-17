@@ -24,12 +24,14 @@ import com.andreas_kratzer.ghosttalk.core.actions.SpeechSettings
 import com.andreas_kratzer.ghosttalk.core.actions.ControlDeviceSettings
 import android.content.SharedPreferences
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants
+import com.andreas_kratzer.ghosttalk.core.di.ApplicationScope
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.CoroutineScope
 import javax.inject.Singleton
 
 @Module
@@ -102,8 +104,12 @@ abstract class DataModule {
 
         @Provides
         @Singleton
-        fun provideSettingsRepositoryImpl(@ApplicationContext context: Context): SettingsRepositoryImpl {
-            return SettingsRepositoryImpl(context)
+        fun provideSettingsRepositoryImpl(
+            @ApplicationContext context: Context,
+            bookRepository: BookRepository,
+            @ApplicationScope scope: CoroutineScope
+        ): SettingsRepositoryImpl {
+            return SettingsRepositoryImpl(context, bookRepository, scope)
         }
 
         @Provides
