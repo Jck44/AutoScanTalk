@@ -28,17 +28,29 @@ import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 
+import com.andreas_kratzer.ghosttalk.core.model.ActionLogEntry
+import com.andreas_kratzer.ghosttalk.domain.actions.ActionLogUseCase
+import androidx.compose.foundation.clickable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+
 @Composable
 fun ActionLogCard(
-    lastActions: List<String>,
+    lastActions: List<ActionLogEntry>,
     onClearLogs: () -> Unit,
+    actionLogUseCase: ActionLogUseCase,
     modifier: Modifier = Modifier
 ) {
     val dimensions = LocalDimensions.current
+    var showDetailDialog by remember { mutableStateOf(false) }
+
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = 80.dp, max = 180.dp),
+            .heightIn(min = 80.dp, max = 180.dp)
+            .clickable { showDetailDialog = true },
         shape = MaterialTheme.shapes.large,
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         colors = CardDefaults.cardColors(
@@ -91,9 +103,10 @@ fun ActionLogCard(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxWidth().weight(1f),
-                    contentPadding = PaddingValues(bottom = 4.dp)
+                    contentPadding = PaddingValues(bottom = 4.dp),
+                    userScrollEnabled = false // Prevent scroll conflict with card click
                 ) {
-                    items(lastActions) { actionText ->
+                    items(lastActions.take(5)) { entry ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -107,14 +120,24 @@ fun ActionLogCard(
                                 modifier = Modifier.padding(end = 8.dp)
                             )
                             Text(
-                                text = actionText,
+                                text = actionLogUseCase.formatEntryForDisplay(entry),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                             )
                         }
                     }
                 }
             }
         }
+    }
+
+    if (showDetailDialog) {
+        ActionLogDialog(
+            lastActions = lastActions,
+            onDismiss = { showDetailDialog = false },
+            actionLogUseCase = actionLogUseCase
+        )
     }
 }

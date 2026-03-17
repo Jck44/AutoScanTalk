@@ -132,6 +132,7 @@
     <string name="page_last_actions_title">Recent Actions:</string>
     <string name="page_clear_logs_description">Clear History</string>
     <string name="page_no_actions_yet">No actions executed yet.</string>
+    <string name="settings_action_log_limit_title">Action log limit</string>
 
     <string name="error_gemini_quota_reached">Gemini limit reached. Please wait %d seconds.</string>
 

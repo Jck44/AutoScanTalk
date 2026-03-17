@@ -14,7 +14,7 @@ class SmartPredictionDelegate @Inject constructor(
         scope: CoroutineScope,
         currentPage: StateFlow<Page?>,
         allPages: StateFlow<List<Page>>,
-        lastActions: StateFlow<List<String>>,
+        lastActions: StateFlow<List<com.andreas_kratzer.ghosttalk.core.model.ActionLogEntry>>,
         activeBookId: StateFlow<String?>,
         isUserModeActive: StateFlow<Boolean>,
         onPredictionsUpdated: (List<String>?) -> Unit

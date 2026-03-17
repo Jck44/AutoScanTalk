@@ -31,6 +31,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.Slider
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -249,6 +250,7 @@ fun BookListScreen(
         if (showAddDialog) {
             var newBookName by remember { mutableStateOf("") }
             var isError by remember { mutableStateOf(false) }
+            var logLimit by remember { mutableStateOf(100f) }
 
             AlertDialog(
                 onDismissRequest = { showAddDialog = false },
@@ -264,7 +266,7 @@ fun BookListScreen(
                             label = { Text(stringResource(R.string.book_name_label)) },
                             singleLine = true,
                             shape = MaterialTheme.shapes.large,
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
                             isError = isError,
                             supportingText = {
                                 if (isError) {
@@ -272,13 +274,24 @@ fun BookListScreen(
                                 }
                             }
                         )
+                        
+                        Text(
+                            text = stringResource(R.string.settings_action_log_limit_title) + ": ${logLimit.toInt()}",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Slider(
+                            value = logLimit,
+                            onValueChange = { logLimit = it },
+                            valueRange = 10f..500f,
+                            steps = 48 // Steps of 10 roughly
+                        )
                     }
                 },
                 confirmButton = {
                     Button(
                         onClick = {
                             if (newBookName.isNotBlank()) {
-                                bookViewModel.createNewBook(newBookName)
+                                bookViewModel.createNewBook(newBookName, logLimit.toInt())
                                 showAddDialog = false
                             } else {
                                 isError = true
@@ -305,6 +318,7 @@ fun BookListScreen(
         bookToEdit?.let { book ->
             var editBookName by remember { mutableStateOf(book.name) }
             var isError by remember { mutableStateOf(false) }
+            var logLimit by remember { mutableStateOf(book.actionLogLimit.toFloat()) }
 
             AlertDialog(
                 onDismissRequest = { bookToEdit = null },
@@ -320,7 +334,7 @@ fun BookListScreen(
                             label = { Text(stringResource(R.string.book_name_label)) },
                             singleLine = true,
                             shape = MaterialTheme.shapes.large,
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
                             isError = isError,
                             supportingText = {
                                 if (isError) {
@@ -328,13 +342,24 @@ fun BookListScreen(
                                 }
                             }
                         )
+
+                        Text(
+                            text = stringResource(R.string.settings_action_log_limit_title) + ": ${logLimit.toInt()}",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Slider(
+                            value = logLimit,
+                            onValueChange = { logLimit = it },
+                            valueRange = 10f..500f,
+                            steps = 48
+                        )
                     }
                 },
                 confirmButton = {
                     Button(
                         onClick = {
                             if (editBookName.isNotBlank()) {
-                                bookViewModel.updateBookName(book, editBookName)
+                                bookViewModel.updateBook(book, editBookName, logLimit.toInt())
                                 bookToEdit = null
                             } else {
                                 isError = true

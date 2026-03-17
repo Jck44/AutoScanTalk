@@ -4,9 +4,12 @@ import android.app.Application
 import android.content.Intent
 import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
 import com.andreas_kratzer.ghosttalk.core.data.AppStateRepository
+import com.andreas_kratzer.ghosttalk.core.data.BookRepository
+import com.andreas_kratzer.ghosttalk.core.model.Book
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.scanning.ScanCoordinator
 import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
+import com.andreas_kratzer.ghosttalk.core.model.ActionLogEntry
 import com.andreas_kratzer.ghosttalk.domain.actions.ActionLogUseCase
 import com.andreas_kratzer.ghosttalk.domain.actions.ActivateButtonUseCase
 import com.andreas_kratzer.ghosttalk.domain.actions.HandleActionExecutionEventUseCase
@@ -22,19 +25,20 @@ import javax.inject.Inject
 
 class InteractionDelegate @Inject constructor(
     private val application: Application,
-    private val actionLogUseCase: ActionLogUseCase,
+    val actionLogUseCase: ActionLogUseCase,
     private val ttsHelper: TextToSpeechHelper,
     private val activateButtonUseCase: ActivateButtonUseCase,
     private val handleActionExecutionEventUseCase: HandleActionExecutionEventUseCase,
     private val locationExecutor: com.andreas_kratzer.ghosttalk.domain.executors.LocationExecutor,
-    private val appStateRepository: AppStateRepository
+    private val appStateRepository: AppStateRepository,
+    private val bookRepository: BookRepository
 ) {
     private lateinit var scope: CoroutineScope
     private lateinit var actionExecutor: ActionExecutor
     lateinit var scanCoordinator: ScanCoordinator
 
-    private val _lastActions = MutableStateFlow<List<String>>(emptyList())
-    val lastActions: StateFlow<List<String>> = _lastActions.asStateFlow()
+    private val _lastActions = MutableStateFlow<List<ActionLogEntry>>(emptyList())
+    val lastActions: StateFlow<List<ActionLogEntry>> = _lastActions.asStateFlow()
 
     private val _authRecoverIntent = MutableSharedFlow<Intent>()
     val authRecoverIntent = _authRecoverIntent.asSharedFlow()
@@ -51,7 +55,8 @@ class InteractionDelegate @Inject constructor(
         scope: CoroutineScope, 
         actionExecutor: ActionExecutor,
         onPageLoadRequested: (Page) -> Unit, 
-        smartPredictions: MutableStateFlow<List<String>?>
+        smartPredictions: MutableStateFlow<List<String>?>,
+        currentBookIdFlow: StateFlow<String?>
     ) {
         this.scope = scope
         this.actionExecutor = actionExecutor
@@ -59,7 +64,14 @@ class InteractionDelegate @Inject constructor(
         this._smartPredictions = smartPredictions
         
         scope.launch {
-            _lastActions.value = actionLogUseCase.loadSavedLogs()
+            _lastActions.value = actionLogUseCase.loadSavedLogEntries()
+        }
+
+        scope.launch {
+            currentBookIdFlow.collect { bookId ->
+                // Optionally we could reload logs if we separate logs by book ID in persistence,
+                // but for now they are global but limited by the book's setting when ADDING.
+            }
         }
 
         scope.launch {
@@ -67,14 +79,23 @@ class InteractionDelegate @Inject constructor(
                 val effect = handleActionExecutionEventUseCase.execute(event) ?: return@collect
                 when (effect) {
                     is HandleActionExecutionEventUseCase.Effect.LoadPage -> {
-                        logAction(effect.logMessage)
+                        scope.launch {
+                            val bookId = appStateRepository.activeBookId.value // Or pass it via event
+                            logAction(effect.logMessage, bookId)
+                        }
                         onPageLoadRequested(effect.page)
                     }
                     is HandleActionExecutionEventUseCase.Effect.LogAction -> {
-                        logAction(effect.message)
+                        scope.launch {
+                            val bookId = appStateRepository.activeBookId.value
+                            logAction(effect.message, bookId)
+                        }
                     }
                     is HandleActionExecutionEventUseCase.Effect.SpeakError -> {
-                        logAction(effect.logMessage)
+                        scope.launch {
+                            val bookId = appStateRepository.activeBookId.value
+                            logAction(effect.logMessage, bookId)
+                        }
                         ttsHelper.speak(application.getString(effect.messageResId)) {}
                     }
                     is HandleActionExecutionEventUseCase.Effect.EmitAuthIntent -> {
@@ -120,9 +141,16 @@ class InteractionDelegate @Inject constructor(
         }
     }
 
-    fun logAction(actionText: String) {
-        _lastActions.update { current ->
-            actionLogUseCase.formatAndAddEntry(actionText, current)
+    fun logAction(actionText: String, bookId: String?) {
+        scope.launch {
+            val limit = if (bookId != null) {
+                bookRepository.getBookById(bookId)?.actionLogLimit ?: 100
+            } else {
+                100
+            }
+            _lastActions.update { current ->
+                actionLogUseCase.formatAndAddEntry(actionText, current, limit)
+            }
         }
     }
 

@@ -106,7 +106,7 @@ class PageViewModel @Inject constructor(
 
     init {
         pageManagementDelegate.init(viewModelScope)
-        interactionDelegate.init(viewModelScope, actionExecutor, ::loadPage, _smartPredictions)
+        interactionDelegate.init(viewModelScope, actionExecutor, ::loadPage, _smartPredictions, activeBookId)
         interactionDelegate.scanCoordinator = scanCoordinator
         screenManagementDelegate.init(viewModelScope, isUserModeActive)
         

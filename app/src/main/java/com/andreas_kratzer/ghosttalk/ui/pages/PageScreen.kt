@@ -151,7 +151,8 @@ fun PageScreen(
                     }
                     ActionLogCard(
                         lastActions = lastActions,
-                        onClearLogs = { pageViewModel.clearActionLogs() }
+                        onClearLogs = { pageViewModel.clearActionLogs() },
+                        actionLogUseCase = pageViewModel.interactionDelegate.actionLogUseCase
                     )
                 }
             }
@@ -183,7 +184,8 @@ fun PageScreen(
                 }
                 ActionLogCard(
                     lastActions = lastActions,
-                    onClearLogs = { pageViewModel.clearActionLogs() }
+                    onClearLogs = { pageViewModel.clearActionLogs() },
+                    actionLogUseCase = pageViewModel.interactionDelegate.actionLogUseCase
                 )
             }
         }

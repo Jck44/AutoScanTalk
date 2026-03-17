@@ -132,6 +132,7 @@
     <string name="page_last_actions_title">Letzte Aktionen:</string>
     <string name="page_clear_logs_description">Verlauf leeren</string>
     <string name="page_no_actions_yet">Noch keine Aktionen ausgeführt.</string>
+    <string name="settings_action_log_limit_title">Limit für die Aktionsliste</string>
 
 
 

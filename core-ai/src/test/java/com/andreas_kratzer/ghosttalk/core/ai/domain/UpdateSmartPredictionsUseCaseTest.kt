@@ -3,6 +3,7 @@ package com.andreas_kratzer.ghosttalk.core.ai.domain
 import android.util.Log
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.settings.GenAiSettings
+import com.andreas_kratzer.ghosttalk.core.model.ActionLogEntry
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
@@ -58,7 +59,7 @@ class UpdateSmartPredictionsUseCaseTest {
             useCase.isLoading.collect { loadingStates.add(it) }
         }
 
-        useCase.execute(flowOf(page), flowOf(pages), flowOf(bookId), flowOf<List<String>>(emptyList()), flowOf(true)).take(1).toList()
+        useCase.execute(flowOf(page), flowOf(pages), flowOf(bookId), flowOf<List<ActionLogEntry>>(emptyList()), flowOf(true)).take(1).toList()
 
         // Should be false -> true -> false
         assertTrue(loadingStates.contains(true))

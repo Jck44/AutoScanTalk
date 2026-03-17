@@ -209,7 +209,8 @@ class PageViewModelTest {
             activateButtonUseCase = ActivateButtonUseCase(ttsHelper, ResolveSmartPredictionUseCase(pageRepository)),
             handleActionExecutionEventUseCase = HandleActionExecutionEventUseCase(pageRepository, settingsRepository),
             locationExecutor = locationExecutor,
-            appStateRepository = appStateRepository
+            appStateRepository = appStateRepository,
+            bookRepository = bookRepository
         )
         val smartPredictionDelegate = SmartPredictionDelegate(
             updateSmartPredictionsUseCase = updateSmartPredictionsUseCase
