@@ -51,6 +51,7 @@ fun PageScreen(
     val focusedRowIndex by pageViewModel.focusedRowIndex.collectAsState()
     val lastActions by pageViewModel.lastActions.collectAsState()
     val showTestButtons by pageViewModel.showTestButtons.collectAsState()
+    val isScanning by pageViewModel.isScanning.collectAsState()
     val dimensions = LocalDimensions.current
 
     val page = currentPage
@@ -128,6 +129,7 @@ fun PageScreen(
                         page = page,
                         focusedButtonIndex = focusedButtonIndex,
                         focusedRowIndex = focusedRowIndex,
+                        isScanning = isScanning,
                         pageViewModel = pageViewModel
                     )
                 }
@@ -168,6 +170,7 @@ fun PageScreen(
                         page = page,
                         focusedButtonIndex = focusedButtonIndex,
                         focusedRowIndex = focusedRowIndex,
+                        isScanning = isScanning,
                         pageViewModel = pageViewModel
                     )
                 }

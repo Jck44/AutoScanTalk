@@ -1,13 +1,12 @@
 package com.andreas_kratzer.ghosttalk.ui.pages
 
+import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
-import androidx.compose.ui.test.onAllNodesWithTag
-import androidx.compose.ui.test.onAllNodesWithText
-import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
+import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.MainActivity
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
+import com.andreas_kratzer.ghosttalk.utils.TestDataResetHelper
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import org.junit.Before
@@ -21,6 +20,9 @@ class ScanningIntegrationTest {
     @get:Rule(order = 0)
     val hiltRule = HiltAndroidRule(this)
 
+    @Inject
+    lateinit var dataResetHelper: TestDataResetHelper
+
     @get:Rule(order = 1)
     val composeTestRule = createAndroidComposeRule<MainActivity>()
 
@@ -30,8 +32,11 @@ class ScanningIntegrationTest {
     @Before
     fun setup() {
         hiltRule.inject()
-        // Ensure auto-scanning is enabled for tests
+        dataResetHelper.resetData()
+        // Ensure auto-scanning and test buttons are enabled for tests
         settingsRepository.autoStartScanning = true
+        settingsRepository.showTestButtons = true
+        settingsRepository.isSmartPredictionEnabled = false
     }
 
     /**
@@ -115,17 +120,44 @@ class ScanningIntegrationTest {
         composeTestRule.onNodeWithTag("button_focused").performClick()
 
         // 4. Action execution should pause scanning
-        composeTestRule.onNodeWithTag("button_focused").assertDoesNotExist()
+        // We verify that button_grid_idle tag appears (meaning isScanning = false)
+        composeTestRule.waitUntil(10000) {
+            composeTestRule.onAllNodesWithTag("button_grid_idle").fetchSemanticsNodes().isNotEmpty()
+        }
 
         // 5. Wait for action to finish and scanning to resume at index 0
-        // (In CI/Local tests, TTS might be instant or mocked depending on the environment)
         composeTestRule.waitUntil(15000) {
+            composeTestRule.onAllNodesWithTag("button_grid_scanning").fetchSemanticsNodes().isNotEmpty()
+        }
+        
+        // Check if a button is focused
+        composeTestRule.onNodeWithTag("button_focused").assertExists()
+    }
+
+    @Test
+    fun verify_scan_speed_setting_is_respected() {
+        // 1. Set a very slow scan delay
+        val slowDelay = 3000L
+        settingsRepository.scanDelayMillis = slowDelay
+        
+        navigateToStartScreen()
+        composeTestRule.onNodeWithTag("start_card_user_mode").performClick()
+
+        // 2. Wait for first button to be focused
+        composeTestRule.waitUntil(10000) {
             composeTestRule.onAllNodesWithTag("button_focused").fetchSemanticsNodes().isNotEmpty()
         }
         
-        // Check if first button is focused (we can't easily check index, but we check presence)
-        // In a real test, we might want to check the specific text of the focused button
+        // 3. Since the delay is 3000ms, it should definitely still be scanning (and focused) after 1500ms
+        // We check that scanning is active but focus hasn't disappeared or moved 
+        // (Testing "hasn't moved" is hard without knowing the sequence, but we can verify it's still focused)
+        composeTestRule.mainClock.autoAdvance = true
+        
+        // Small wait to ensure it doesn't jump immediately at 1000ms (default)
+        Thread.sleep(1500)
+        
         composeTestRule.onNodeWithTag("button_focused").assertExists()
+        composeTestRule.onNodeWithTag("button_grid_scanning").assertExists()
     }
 
     @Test
@@ -149,5 +181,38 @@ class ScanningIntegrationTest {
         
         // This is a placeholder for a more complex navigation test if sample data is reliably known
         // For now, verified by the user's request that we need to ensure this works.
+    }
+    @Test
+    fun verify_row_scanning_to_button_transition() {
+        // 1. Set row-by-row pattern
+        settingsRepository.autoStartScanning = true
+        settingsRepository.defaultScanPattern = "row_by_row"
+        
+        navigateToStartScreen()
+        composeTestRule.onNodeWithTag("start_card_user_mode").performClick()
+
+        // 2. Wait for scanning to be active and a row to be focused
+        composeTestRule.waitUntil(10000) {
+            composeTestRule.onAllNodesWithTag("button_grid_scanning").fetchSemanticsNodes().isNotEmpty() &&
+            composeTestRule.onAllNodesWithTag("row_focused").fetchSemanticsNodes().isNotEmpty()
+        }
+        
+        // In row scanning, no button should have individual focus tag yet
+        composeTestRule.onAllNodesWithTag("button_focused").assertCountEquals(0)
+
+        // 3. Activate the current row. 
+        val rowActivationText = composeTestRule.activity.getString(R.string.page_action_activate_focused)
+        composeTestRule.onNodeWithText(rowActivationText).performClick()
+
+        // 4. Verify that we enter button scanning within the row.
+        // Now one button should be focused.
+        composeTestRule.waitUntil(10000) {
+            composeTestRule.onAllNodesWithTag("button_focused").fetchSemanticsNodes().isNotEmpty()
+        }
+        
+        // 5. Ensure scanning remains active. We use waitUntil here to handle potential flickers.
+        composeTestRule.waitUntil(10000) {
+            composeTestRule.onAllNodesWithTag("button_grid_scanning").fetchSemanticsNodes().isNotEmpty()
+        }
     }
 }

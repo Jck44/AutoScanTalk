@@ -4,6 +4,7 @@ import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.feature.settings.domain.UpdateBluetoothDelayUseCase
 import com.andreas_kratzer.ghosttalk.feature.settings.domain.UpdateHoldingTimeUseCase
 import com.andreas_kratzer.ghosttalk.feature.settings.domain.UpdateScanDelayUseCase
+import com.andreas_kratzer.ghosttalk.feature.settings.domain.UpdateScanCycleLimitUseCase
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.Before
@@ -15,6 +16,7 @@ class ScanningSettingsDelegateTest {
     private lateinit var updateScanDelayUseCase: UpdateScanDelayUseCase
     private lateinit var updateHoldingTimeUseCase: UpdateHoldingTimeUseCase
     private lateinit var updateBluetoothDelayUseCase: UpdateBluetoothDelayUseCase
+    private lateinit var updateScanCycleLimitUseCase: UpdateScanCycleLimitUseCase
     private lateinit var delegate: ScanningSettingsDelegate
 
     @Before
@@ -23,11 +25,13 @@ class ScanningSettingsDelegateTest {
         updateScanDelayUseCase = mockk(relaxed = true)
         updateHoldingTimeUseCase = mockk(relaxed = true)
         updateBluetoothDelayUseCase = mockk(relaxed = true)
+        updateScanCycleLimitUseCase = mockk(relaxed = true)
         delegate = ScanningSettingsDelegate(
             settingsRepository, 
             updateScanDelayUseCase, 
             updateHoldingTimeUseCase,
-            updateBluetoothDelayUseCase
+            updateBluetoothDelayUseCase,
+            updateScanCycleLimitUseCase
         )
     }
 

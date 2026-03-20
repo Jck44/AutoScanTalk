@@ -184,7 +184,7 @@ class LinearScanStrategyTest {
             )
         }
 
-        advanceTimeBy(150) // delay(100) + initial delay
+        advanceTimeBy(250) // delay(100) + strategy delay + settling
         assertEquals(1, cycleCount)
 
         advanceTimeBy(100) // next iteration delay(100)

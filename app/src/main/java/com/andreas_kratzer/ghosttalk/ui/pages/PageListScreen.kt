@@ -47,6 +47,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -183,7 +184,8 @@ fun PageListScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { if (!showAddDialog) showAddDialog = true },
-                shape = MaterialTheme.shapes.large
+                shape = MaterialTheme.shapes.large,
+                modifier = Modifier.testTag("page_add_fab")
             ) {
                 Icon(Icons.Default.Add, contentDescription = stringResource(R.string.page_add_description))
             }
@@ -240,6 +242,7 @@ fun PageListScreen(
                         icon = GhostTalkIcons.Description,
                         onClick = { onEditPage(page.id) },
                         height = dynamicCardHeight,
+                        testTag = "page_card_${page.id}",
                         modifier = Modifier,
                         trailingAction = {
                             Row(verticalAlignment = Alignment.CenterVertically) {

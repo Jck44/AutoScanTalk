@@ -111,6 +111,7 @@ class PageViewModel @Inject constructor(
     val focusedButtonIndex = scanCoordinator.focusedButtonIndex
     val focusedRowIndex = scanCoordinator.focusedRowIndex
     val isStoppedDueToLimit = scanCoordinator.isStoppedDueToLimit
+    val isScanning = scanCoordinator.isScanning
 
     val activeBook: StateFlow<Book?> = activeBookId.flatMapLatest { id ->
         if (id != null) bookRepository.getBookByIdFlow(id) else flowOf(null)
@@ -169,15 +170,14 @@ class PageViewModel @Inject constructor(
         }
 
         // RESTORE SCAN STATE
-        savedStateHandle.get<Int>("focusedButtonIndex")?.let { index ->
-            scanCoordinator.setFocusedIndex(index)
-        }
-        savedStateHandle.get<Int>("focusedRowIndex")?.let { index ->
-            scanCoordinator.setFocusedRowIndex(index)
-        }
-        savedStateHandle.get<Int>("scanCycleCount")?.let { count ->
-            scanCoordinator.setCycleCount(count)
-        }
+        val focusedButtonIndex: Int? = savedStateHandle["focusedButtonIndex"]
+        focusedButtonIndex?.let { scanCoordinator.setFocusedIndex(it) }
+ 
+        val focusedRowIndex: Int? = savedStateHandle["focusedRowIndex"]
+        focusedRowIndex?.let { scanCoordinator.setFocusedRowIndex(it) }
+ 
+        val scanCycleCount: Int? = savedStateHandle["scanCycleCount"]
+        scanCycleCount?.let { scanCoordinator.setCycleCount(it) }
 
         // Set up Gemini command handlers
         geminiUseCase.setAppCommandHandler { command, args ->

@@ -9,9 +9,10 @@ import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
 import io.mockk.mockk
 import io.mockk.verify
 import io.mockk.every
+import io.mockk.clearMocks
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
@@ -20,7 +21,6 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class ActionScanningFlowTest {
     private val testDispatcher = UnconfinedTestDispatcher()
-    private val scope = TestScope(testDispatcher)
     private val scannerEngine = mockk<ScannerEngine>(relaxed = true)
     private val scanningSettings = mockk<ScanningSettings>(relaxed = true)
     private val featureSettings = mockk<FeatureSettings>(relaxed = true)
@@ -43,12 +43,18 @@ class ActionScanningFlowTest {
         every { scanningSettings.scanDelayFlow } returns MutableStateFlow(1000L)
         every { scanningSettings.autoStartScanning } returns true
         every { scanningSettings.defaultScanPattern } returns "linear"
+        
         every { scannerEngine.focusedButtonIndex } returns MutableStateFlow(null)
         every { scannerEngine.focusedRowIndex } returns MutableStateFlow(null)
         every { scannerEngine.isScanning } returns MutableStateFlow(false)
+        every { scannerEngine.onCycleCompleted } returns MutableSharedFlow<Unit>()
+    }
 
+    @Test
+    fun `should pause scanning when action starts and resume when it finishes`() = runTest(testDispatcher) {
+        // Use backgroundScope to avoid UncompletedCoroutinesError
         scanCoordinator = ScanCoordinator(
-            scope = scope,
+            scope = backgroundScope,
             scannerEngine = scannerEngine,
             scanningSettings = scanningSettings,
             featureSettings = featureSettings,
@@ -56,29 +62,27 @@ class ActionScanningFlowTest {
             checkForPredictorUseCase = checkForPredictorUseCase,
             ttsHelper = ttsHelper
         )
-    }
-
-    @Test
-    fun `should pause scanning when action starts and resume when it finishes`() = runTest(testDispatcher) {
+        
         val page = Page(id = "p1", bookId = "b1", name = "Test", rows = 1, columns = 1, buttonConfigs = emptyList())
+        
+        // Setup initial state
         currentPage.value = page
         resolvedPage.value = page
         isUserModeActive.value = true
+        isExecuting.value = false
 
         scanCoordinator.init(currentPage, isUserModeActive, resolvedPage, isSmartPredictionLoading, smartPredictions)
-        testDispatcher.scheduler.advanceUntilIdle()
-
+        
         // Verify initial start
-        verify { scannerEngine.startScanning(any(), any(), any(), any(), any(), any(), eq("p1")) }
+        verify(atLeast = 1) { scannerEngine.startScanning(any(), any(), any(), any(), any(), any(), eq("p1")) }
+        clearMocks(scannerEngine, answers = false)
 
         // Action starts
         isExecuting.value = true
-        testDispatcher.scheduler.advanceUntilIdle()
-        verify { scannerEngine.pauseScanning() }
+        verify(atLeast = 1) { scannerEngine.pauseScanning() }
 
         // Action finishes
         isExecuting.value = false
-        testDispatcher.scheduler.advanceUntilIdle()
-        verify { scannerEngine.startScanning(any(), any(), any(), any(), any(), any(), eq("p1")) }
+        verify(atLeast = 1) { scannerEngine.startScanning(any(), any(), any(), any(), any(), any(), eq("p1")) }
     }
 }

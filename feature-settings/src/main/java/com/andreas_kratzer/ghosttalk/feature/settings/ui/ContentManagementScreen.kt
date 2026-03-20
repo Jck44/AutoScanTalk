@@ -17,6 +17,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.feature.settings.R 
@@ -43,7 +44,10 @@ fun ContentManagementScreen(
             TopAppBar(
                 title = { Text(stringResource(CoreR.string.start_manage_content)) },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(
+                        onClick = onNavigateBack,
+                        modifier = Modifier.testTag("content_management_back_button")
+                    ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(CoreR.string.back_button_content_description)
@@ -71,14 +75,16 @@ fun ContentManagementScreen(
                 title = stringResource(CoreR.string.page_list_title),
                 icon = GhostTalkIcons.Description,
                 onClick = onNavigateToPageManager,
-                height = dynamicCardHeight
+                height = dynamicCardHeight,
+                testTag = "content_manage_pages"
             )
             
             GhostTalkCard(
                 title = stringResource(CoreR.string.template_manage_title),
                 icon = GhostTalkIcons.GridView,
                 onClick = onNavigateToTemplateManager,
-                height = dynamicCardHeight
+                height = dynamicCardHeight,
+                testTag = "content_manage_templates"
             )
         }
     }

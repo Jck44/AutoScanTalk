@@ -456,4 +456,10 @@ class SettingsRepositoryImpl @Inject constructor(
             }
         }
     }
+
+    override fun resetToDefaults() {
+        prefs.edit().clear().apply()
+        _activeBookIdFlow.value = "book-default"
+        refreshFlows()
+    }
 }

@@ -65,6 +65,7 @@ fun SettingsToggleItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable(enabled = enabled) { onCheckedChange(!checked) }
             .padding(vertical = dimensions.paddingSmall),
         verticalAlignment = Alignment.CenterVertically
     ) {

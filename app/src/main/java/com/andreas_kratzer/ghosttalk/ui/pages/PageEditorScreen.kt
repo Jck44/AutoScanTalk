@@ -27,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
@@ -90,6 +91,7 @@ fun PageEditorScreen(
                             .fillMaxWidth()
                             .padding(end = dimensions.paddingLarge)
                             .padding(vertical = 4.dp) // Reduce vertical impact
+                            .testTag("page_editor_name_field")
                     )
                 },
                 navigationIcon = {

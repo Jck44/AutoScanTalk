@@ -26,4 +26,9 @@ interface SettingsRepository : SecuritySettings, KeyEventSettings, AudioSettings
     override fun saveDeviceName(persistentId: String, name: String)
     override fun cleanupDeviceCache(keepPersistentIds: Set<String>)
     override fun getCachedDevices(): Map<String, String>
+    
+    /**
+     * Resets all settings to their default values.
+     */
+    fun resetToDefaults()
 }

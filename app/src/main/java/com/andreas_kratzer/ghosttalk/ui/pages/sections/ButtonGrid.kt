@@ -17,12 +17,14 @@ import com.andreas_kratzer.ghosttalk.ui.pages.GridButton
 import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.ui.util.GridUtils
+import androidx.compose.ui.platform.testTag
 
 @Composable
 fun ButtonGrid(
     page: Page,
     focusedButtonIndex: Int?,
     focusedRowIndex: Int?,
+    isScanning: Boolean,
     pageViewModel: PageViewModel
 ) {
     val dimensions = LocalDimensions.current
@@ -61,7 +63,8 @@ fun ButtonGrid(
             columns = GridCells.Fixed(page.columns),
             modifier = Modifier
                 .width(totalWidth)
-                .height(totalHeight),
+                .height(totalHeight)
+                .testTag(if (isScanning) "button_grid_scanning" else "button_grid_idle"),
             contentPadding = PaddingValues(dimensions.paddingMedium),
             verticalArrangement = Arrangement.spacedBy(dimensions.gridSpacing),
             horizontalArrangement = Arrangement.spacedBy(dimensions.gridSpacing),

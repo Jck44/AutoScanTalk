@@ -2,8 +2,10 @@ package com.andreas_kratzer.ghosttalk.core.data.impl.settings
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.andreas_kratzer.ghosttalk.core.data.BookRepository
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -17,6 +19,8 @@ class SettingsRepositoryTest {
     private lateinit var mockContext: Context
     private lateinit var mockPrefs: SharedPreferences
     private lateinit var mockEditor: SharedPreferences.Editor
+    private lateinit var mockBookRepository: BookRepository
+    private lateinit var testScope: CoroutineScope
 
     private val mockedPrefsStore = mutableMapOf<String, String?>()
 
@@ -123,7 +127,9 @@ class SettingsRepositoryTest {
 
         every { mockEditor.apply() } returns Unit
 
-        repository = SettingsRepositoryImpl(mockContext)
+        mockBookRepository = mockk(relaxed = true)
+        testScope = CoroutineScope(kotlinx.coroutines.test.UnconfinedTestDispatcher())
+        repository = SettingsRepositoryImpl(mockContext, mockBookRepository, testScope)
     }
 
     @Test

@@ -2,6 +2,8 @@ package com.andreas_kratzer.ghosttalk.tts
 
 import android.content.Context
 import android.util.Log
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import com.andreas_kratzer.ghosttalk.core.audio.AudioDeviceManager
 import com.andreas_kratzer.ghosttalk.core.audio.AudioSettings
 import com.andreas_kratzer.ghosttalk.core.audio.RoutedAudioPlayer
@@ -40,12 +42,17 @@ class TtsRecordingHelper @Inject constructor(
     private val _spokenTexts = MutableStateFlow<List<String>>(emptyList())
     val spokenTexts: StateFlow<List<String>> = _spokenTexts.asStateFlow()
 
+    private val testScope = CoroutineScope(Dispatchers.Main)
+
     override fun speak(text: String, queueMode: Int, onDone: (() -> Unit)?) {
         Log.d("TtsRecordingHelper", "Recording speak: $text")
         val current = _spokenTexts.value.toMutableList()
         current.add(text)
         _spokenTexts.value = current
-        onDone?.invoke()
+        testScope.launch {
+            delay(500)
+            onDone?.invoke()
+        }
     }
 
     override fun speakRouted(
@@ -59,7 +66,10 @@ class TtsRecordingHelper @Inject constructor(
         val current = _spokenTexts.value.toMutableList()
         current.add(text)
         _spokenTexts.value = current
-        onDone?.invoke()
+        testScope.launch {
+            delay(500)
+            onDone?.invoke()
+        }
     }
     
     fun clear() {

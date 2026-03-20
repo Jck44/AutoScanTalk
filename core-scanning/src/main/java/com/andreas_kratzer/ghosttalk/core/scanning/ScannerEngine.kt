@@ -79,7 +79,7 @@ class ScannerEngine @Inject constructor(
         currentPageId = pageId
 
         _isScanning.value = true
-        scanJob = scope.launch {
+        val job = scope.launch {
             try {
                 if (pattern == "row_by_row") {
                     rowByRowStrategy.executeScan(
@@ -111,9 +111,12 @@ class ScannerEngine @Inject constructor(
                     )
                 }
             } finally {
-                _isScanning.value = false
+                if (scanJob === this@launch) {
+                    _isScanning.value = false
+                }
             }
         }
+        scanJob = job
     }
 
     private suspend fun handleSpeakCue(text: String) {
@@ -123,20 +126,29 @@ class ScannerEngine @Inject constructor(
     fun selectCurrentRow() {
         val currentRow = _focusedRowIndex.value ?: return
         scanJob?.cancel()
+        scanJob = null
         
-        scanJob = scope.launch {
-            rowByRowStrategy.executeButtonScanInRow(
-                buttonConfigs = currentButtonConfigs,
-                rows = currentRows,
-                columns = currentColumns,
-                rowIndex = currentRow,
-                focusedButtonIndex = _focusedButtonIndex,
-                onSpeakCue = { handleSpeakCue(it) },
-                onCycleCompleted = { _onCycleCompleted.emit(Unit) },
-                delayMillis = scanDelayMillis,
-                featureGuard = featureGuard
-            )
+        _isScanning.value = true
+        val job = scope.launch {
+            try {
+                rowByRowStrategy.executeButtonScanInRow(
+                    buttonConfigs = currentButtonConfigs,
+                    rows = currentRows,
+                    columns = currentColumns,
+                    rowIndex = currentRow,
+                    focusedButtonIndex = _focusedButtonIndex,
+                    onSpeakCue = { handleSpeakCue(it) },
+                    onCycleCompleted = { _onCycleCompleted.emit(Unit) },
+                    delayMillis = scanDelayMillis,
+                    featureGuard = featureGuard
+                )
+            } finally {
+                if (scanJob === this@launch) {
+                    _isScanning.value = false
+                }
+            }
         }
+        scanJob = job
     }
 
     fun pauseScanning() {

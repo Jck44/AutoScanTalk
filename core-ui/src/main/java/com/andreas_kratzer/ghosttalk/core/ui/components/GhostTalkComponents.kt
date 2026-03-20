@@ -18,6 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -88,6 +89,7 @@ fun GhostTalkCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     icon: ImageVector? = null,
+    testTag: String? = null,
     subtitle: String? = null,
     containerColor: Color = MaterialTheme.colorScheme.surfaceContainerLow,
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
@@ -100,7 +102,8 @@ fun GhostTalkCard(
         onClick = onClick,
         modifier = modifier
             .fillMaxWidth()
-            .height(height ?: dimensions.cardHeight),
+            .height(height ?: dimensions.cardHeight)
+            .then(if (testTag != null) Modifier.testTag(testTag) else Modifier),
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
             containerColor = containerColor,

@@ -13,7 +13,9 @@ import org.junit.Before
 import org.junit.Test
 import android.app.Application
 import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
+import com.andreas_kratzer.ghosttalk.core.data.BookRepository
 import com.andreas_kratzer.ghosttalk.core.scanning.ScanCoordinator
+import kotlinx.coroutines.flow.MutableStateFlow
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class PageViewModelStateTest {
@@ -37,6 +39,7 @@ class PageViewModelStateTest {
         pageManagementDelegate = mockk(relaxed = true)
         interactionDelegate = mockk(relaxed = true)
         scanCoordinator = mockk(relaxed = true)
+        every { scanCoordinator.currentCycleCount } returns MutableStateFlow(0)
     }
 
     @After
@@ -64,6 +67,7 @@ class PageViewModelStateTest {
             application = application,
             savedStateHandle = savedStateHandle,
             settingsRepository = mockk(relaxed = true),
+            bookRepository = mockk(relaxed = true),
             importExportManager = mockk(relaxed = true),
             googleAuthManager = mockk(relaxed = true),
             ttsHelper = mockk(relaxed = true),

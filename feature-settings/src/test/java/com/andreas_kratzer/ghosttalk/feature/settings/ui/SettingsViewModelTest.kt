@@ -12,6 +12,7 @@ import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.ExperimentalS
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.GenAiSettingsDelegate
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.ScanningSettingsDelegate
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.TtsSettingsDelegate
+import com.andreas_kratzer.ghosttalk.feature.settings.domain.UpdateActionLogLimitUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -48,6 +49,7 @@ class SettingsViewModelTest {
     private lateinit var experimentalDelegate: ExperimentalSettingsDelegate
     private lateinit var importExportManager: PageImportExportManager
     private lateinit var hueManager: PhilipsHueManager
+    private lateinit var updateActionLogLimitUseCase: UpdateActionLogLimitUseCase
     
     private lateinit var viewModel: SettingsViewModel
 
@@ -68,6 +70,7 @@ class SettingsViewModelTest {
         experimentalDelegate = mockk(relaxed = true)
         importExportManager = mockk(relaxed = true)
         hueManager = mockk(relaxed = true)
+        updateActionLogLimitUseCase = mockk(relaxed = true)
 
         // Mock common flows
         every { settingsRepository.activeBookId } returns "test-book"
@@ -91,6 +94,7 @@ class SettingsViewModelTest {
             cloudSyncDelegate = cloudSyncDelegate,
             genAiDelegate = genAiDelegate,
             experimentalDelegate = experimentalDelegate,
+            updateActionLogLimitUseCase = updateActionLogLimitUseCase,
             importExportManager = importExportManager,
             hueManager = hueManager
         )

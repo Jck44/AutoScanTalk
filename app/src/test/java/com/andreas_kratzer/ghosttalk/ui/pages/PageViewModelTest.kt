@@ -245,11 +245,13 @@ class PageViewModelTest {
         val scanCoordinator = mockk<ScanCoordinator>(relaxed = true)
         every { scanCoordinator.focusedButtonIndex } returns MutableStateFlow<Int?>(null)
         every { scanCoordinator.focusedRowIndex } returns MutableStateFlow<Int?>(null)
+        every { scanCoordinator.currentCycleCount } returns MutableStateFlow(0)
 
         return PageViewModel(
             application = application,
             savedStateHandle = SavedStateHandle(),
             settingsRepository = settingsRepository,
+            bookRepository = bookRepository,
             importExportManager = importExportManager,
             googleAuthManager = googleAuthManager,
             ttsHelper = ttsHelper,

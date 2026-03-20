@@ -187,15 +187,6 @@ fun GeneralSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                     )
                 }
 
-                val actionLogLimit by viewModel.actionLogLimit.collectAsState(100)
-                PreferenceCategory(stringResource(R.string.settings_category_limits), modifier = Modifier.weight(1f)) {
-                    SettingsEditTextItem(
-                        label = stringResource(R.string.settings_action_log_limit),
-                        value = actionLogLimit.toString(),
-                        onValueChange = { viewModel.setActionLogLimitInput(it) }
-                    )
-                }
-
                 // Default Start Page Selector with Filter
                 Column(
                     modifier = Modifier.fillMaxWidth(),
@@ -269,6 +260,15 @@ fun GeneralSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                         }
                     }
                 }
+            }
+ 
+            val actionLogLimit by viewModel.actionLogLimit.collectAsState(100)
+            PreferenceCategory(stringResource(R.string.settings_category_limits), modifier = Modifier.weight(1f)) {
+                SettingsEditTextItem(
+                    label = stringResource(R.string.settings_action_log_limit),
+                    value = actionLogLimit.toString(),
+                    onValueChange = { viewModel.setActionLogLimitInput(it) }
+                )
             }
         }
     }

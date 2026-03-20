@@ -41,6 +41,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
@@ -88,7 +89,10 @@ fun BookListScreen(
                     )
                 },
                 actions = {
-                    IconButton(onClick = onNavigateToGlobalSettings) {
+                    IconButton(
+                        onClick = onNavigateToGlobalSettings,
+                        modifier = Modifier.testTag("book_list_settings_button")
+                    ) {
                         Icon(
                             imageVector = Icons.Default.Settings,
                             contentDescription = stringResource(CoreR.string.settings_title_global)
@@ -100,7 +104,8 @@ fun BookListScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { if (!showAddDialog) showAddDialog = true },
-                shape = MaterialTheme.shapes.large
+                shape = MaterialTheme.shapes.large,
+                modifier = Modifier.testTag("book_add_fab")
             ) {
                 Icon(Icons.Default.Add, contentDescription = stringResource(R.string.book_add_description))
             }
@@ -135,6 +140,7 @@ fun BookListScreen(
                     icon = null, // Removed left icon as requested
                     onClick = { onBookSelected(book.id) },
                     height = dynamicCardHeight,
+                    testTag = "book_card_${book.id}",
                     trailingAction = {
                         Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                             IconButton(
