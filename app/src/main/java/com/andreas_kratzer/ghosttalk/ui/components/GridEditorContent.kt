@@ -131,7 +131,7 @@ fun GridEditorContent(
                 GridEditorControls(item = item, actions = actions)
 
                 val effectiveScanPattern = item.scanPattern ?: bookDefaultScanPattern
-                val isRowByRow = effectiveScanPattern == "row_by_row"
+                val isRowByRow = effectiveScanPattern == "row_by_row" || effectiveScanPattern == "row_column"
 
                 BoxWithConstraints(
                     modifier = Modifier.weight(1f).fillMaxWidth(),

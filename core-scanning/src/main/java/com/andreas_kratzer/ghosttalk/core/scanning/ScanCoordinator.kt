@@ -198,10 +198,13 @@ class ScanCoordinator @Inject constructor(
             scannerEngine.focusedButtonIndex.value ?: scannerEngine.focusedRowIndex.value ?: 0
         }
 
+        val pattern = page.scanPattern?.takeIf { it != "default" } ?: scanningSettings.defaultScanPattern
+        val normalizedPattern = if (pattern == "row_column") "row_by_row" else pattern
+
         scannerEngine.startScanning(
             buttonConfigs = page.buttonConfigs,
             startIndex = startIndex, 
-            pattern = scanningSettings.defaultScanPattern,
+            pattern = normalizedPattern,
             rows = page.rows,
             columns = page.columns,
             rowNames = page.rowNames,
@@ -252,10 +255,13 @@ class ScanCoordinator @Inject constructor(
 
     fun startScanning(startIndex: Int = 0) {
         val page = resolvedPage?.value ?: return
+        val pattern = page.scanPattern?.takeIf { it != "default" } ?: scanningSettings.defaultScanPattern
+        val normalizedPattern = if (pattern == "row_column") "row_by_row" else pattern
+
         scannerEngine.startScanning(
             buttonConfigs = page.buttonConfigs,
             startIndex = startIndex,
-            pattern = scanningSettings.defaultScanPattern,
+            pattern = normalizedPattern,
             rows = page.rows,
             columns = page.columns,
             rowNames = page.rowNames,

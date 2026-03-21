@@ -57,7 +57,7 @@ fun ScanningSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
 
             val patternLabel = when (scanPattern) {
                 "linear" -> stringResource(R.string.settings_pattern_linear)
-                "row_column" -> stringResource(R.string.settings_pattern_row_by_row)
+                "row_by_row" -> stringResource(R.string.settings_pattern_row_by_row)
                 else -> scanPattern
             }
             
@@ -66,7 +66,7 @@ fun ScanningSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                 selectedOption = patternLabel,
                 options = listOf(
                     stringResource(R.string.settings_pattern_linear) to { viewModel.setDefaultScanPattern("linear") },
-                    stringResource(R.string.settings_pattern_row_by_row) to { viewModel.setDefaultScanPattern("row_column") }
+                    stringResource(R.string.settings_pattern_row_by_row) to { viewModel.setDefaultScanPattern("row_by_row") }
                 )
             )
         }
