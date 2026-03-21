@@ -36,3 +36,4 @@ local.properties
 /app_build_output_2.txt
 /test_stacktrace.txt
 /test_fail_output.txt
+/feature-audio/build/
