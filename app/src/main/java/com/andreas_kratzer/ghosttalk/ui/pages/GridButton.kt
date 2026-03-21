@@ -50,8 +50,6 @@ fun GridButton(
         ),
         border = if (isFocused) {
             BorderStroke(4.dp, MaterialTheme.colorScheme.primary)
-        } else if (isRowFocused) {
-            BorderStroke(3.dp, MaterialTheme.colorScheme.secondary)
         } else if (isEditorMode) {
             BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
         } else null,

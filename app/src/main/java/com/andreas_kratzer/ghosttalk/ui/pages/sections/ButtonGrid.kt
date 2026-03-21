@@ -1,13 +1,10 @@
 package com.andreas_kratzer.ghosttalk.ui.pages.sections
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -59,59 +56,56 @@ fun ButtonGrid(
         val totalWidth = (optimalWidth * page.columns) + (dimensions.gridSpacing * (page.columns - 1)) + (dimensions.paddingMedium * 2)
         val totalHeight = (optimalHeight * page.rows) + (dimensions.gridSpacing * (page.rows - 1)) + (dimensions.paddingMedium * 2)
 
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(page.columns),
+        Column(
             modifier = Modifier
                 .width(totalWidth)
                 .height(totalHeight)
-                .testTag(if (isScanning) "button_grid_scanning" else "button_grid_idle"),
-            contentPadding = PaddingValues(dimensions.paddingMedium),
-            verticalArrangement = Arrangement.spacedBy(dimensions.gridSpacing),
-            horizontalArrangement = Arrangement.spacedBy(dimensions.gridSpacing),
-            userScrollEnabled = false // Should fit, so no scrolling needed within the grid itself
+                .testTag(if (isScanning) "button_grid_scanning" else "button_grid_idle")
+                .padding(dimensions.paddingMedium),
+            verticalArrangement = Arrangement.spacedBy(dimensions.gridSpacing)
         ) {
             val rows = page.rows
             val cols = page.columns
-            val totalVisible = rows * cols
             
-            items(
-                count = totalVisible,
-                key = { visibleIndex -> 
-                    val r = visibleIndex / cols
-                    val c = visibleIndex % cols
-                    "${page.id}_${GridUtils.getGlobalIndex(r, c)}"
-                }
-            ) { visibleIndex ->
-                val r = visibleIndex / cols
-                val c = visibleIndex % cols
-                
-                // Use derivedStateOf or remember for these values to avoid unnecessary recompositions
-                val globalIndex = androidx.compose.runtime.remember(r, c) { 
-                    GridUtils.getGlobalIndex(r, c) 
-                }
-                val buttonConfig = androidx.compose.runtime.remember(page.buttonConfigs, globalIndex) {
-                    page.buttonConfigs.getOrNull(globalIndex)
-                }
-
-                val isFocused = focusedButtonIndex == globalIndex
+            for (r in 0 until rows) {
                 val isRowFocused = focusedRowIndex != null && r == focusedRowIndex
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .run {
+                            if (isRowFocused) {
+                                border(
+                                    width = 3.dp,
+                                    color = MaterialTheme.colorScheme.secondary,
+                                    shape = MaterialTheme.shapes.medium
+                                ).padding(4.dp)
+                            } else this
+                        },
+                    horizontalArrangement = Arrangement.spacedBy(dimensions.gridSpacing)
+                ) {
+                    for (c in 0 until cols) {
+                        val globalIndex = GridUtils.getGlobalIndex(r, c)
+                        val buttonConfig = page.buttonConfigs.getOrNull(globalIndex)
 
-                val isVisible = androidx.compose.runtime.remember(buttonConfig, pageViewModel.featureGuard) {
-                    buttonConfig != null && pageViewModel.featureGuard.isButtonVisible(buttonConfig)
-                }
+                        val isFocused = focusedButtonIndex == globalIndex
 
-                if (buttonConfig != null && buttonConfig.isActive && isVisible) {
-                    GridButton(
-                        buttonConfig = buttonConfig,
-                        isFocused = isFocused,
-                        isRowFocused = isRowFocused,
-                        onClick = { pageViewModel.activateButtonAtIndex(globalIndex) },
-                        modifier = Modifier.width(optimalWidth).height(optimalHeight)
-                    )
-                } else {
-                    androidx.compose.foundation.layout.Spacer(
-                        modifier = Modifier.width(optimalWidth).height(optimalHeight)
-                    )
+                        val isVisible = buttonConfig != null && pageViewModel.featureGuard.isButtonVisible(buttonConfig)
+
+                        if (buttonConfig != null && buttonConfig.isActive && isVisible) {
+                            GridButton(
+                                buttonConfig = buttonConfig,
+                                isFocused = isFocused,
+                                isRowFocused = isRowFocused,
+                                onClick = { pageViewModel.activateButtonAtIndex(globalIndex) },
+                                modifier = Modifier.weight(1f).fillMaxHeight()
+                            )
+                        } else {
+                            Spacer(
+                                modifier = Modifier.weight(1f).fillMaxHeight()
+                            )
+                        }
+                    }
                 }
             }
         }
