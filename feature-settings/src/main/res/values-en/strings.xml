@@ -33,6 +33,8 @@
     <string name="settings_startup_behavior_last_book">Selected book</string>
     <string name="settings_startup_behavior_user_mode">User Mode (selected book)</string>
     <string name="settings_bluetooth_delay">Bluetooth Delay (ms)</string>
+    <string name="settings_force_soft_keyboard">Force On-Screen Keyboard</string>
+    <string name="settings_force_soft_keyboard_desc">Shows the on-screen keyboard even if a hardware switch (keyboard emulation) is connected.</string>
 
     <!-- TTS Settings -->
     <string name="settings_tts_language">TTS Language</string>
@@ -114,6 +116,12 @@
     <string name="settings_limit_scan_cycles">Limit scan cycles</string>
     <string name="settings_scan_cycle_limit">Number of scan cycles</string>
     <string name="settings_action_log_limit">Action log limit</string>
+    <string name="settings_log_ignored_actions">Log ignored actions in history</string>
+    <string name="settings_log_stop_actions">Log stop commands in history</string>
+    <string name="book_name_label">Book Name</string>
+    <string name="book_delete_description">Delete book</string>
+    <string name="book_dialog_delete_title">Delete book?</string>
+    <string name="book_dialog_delete_confirm">Do you really want to delete the book \"%s\" irrevocably? All pages within it will be lost.</string>
 
     <!-- Advanced / Maintenance -->
     <string name="settings_weather_cache_timeout_label">Weather Cache Duration (Minutes)</string>

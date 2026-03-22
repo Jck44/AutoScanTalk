@@ -27,6 +27,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import kotlinx.coroutines.delay
 
@@ -105,10 +108,16 @@ fun SettingsEditTextItem(
     label: String,
     value: String,
     onValueChange: (String) -> Unit,
-    keyboardOptions: KeyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
+    keyboardOptions: KeyboardOptions = KeyboardOptions(
+        keyboardType = KeyboardType.Text,
+        autoCorrect = true,
+        capitalization = KeyboardCapitalization.Sentences
+    ),
+    forceKeyboard: Boolean = false
 ) {
     val dimensions = LocalDimensions.current
     var localValue by remember(value) { mutableStateOf(value) }
+    val keyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
 
     LaunchedEffect(localValue) {
         if (localValue != value) {
@@ -125,7 +134,12 @@ fun SettingsEditTextItem(
         shape = MaterialTheme.shapes.large,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = dimensions.paddingSmall),
+            .padding(vertical = dimensions.paddingSmall)
+            .onFocusChanged { 
+                if (it.isFocused && forceKeyboard) {
+                    keyboardController?.show()
+                }
+            },
         keyboardOptions = keyboardOptions,
         singleLine = true
     )

@@ -26,6 +26,7 @@ class BookViewModel @Inject constructor(
 ) : AndroidViewModel(application) {
 
     val favoriteBookId = settingsRepository.favoriteBookIdFlow
+    val forceSoftKeyboard = settingsRepository.forceSoftKeyboardFlow
 
     private val _allBooks = MutableStateFlow<List<Book>>(emptyList())
     val allBooks: StateFlow<List<Book>> = _allBooks.asStateFlow()

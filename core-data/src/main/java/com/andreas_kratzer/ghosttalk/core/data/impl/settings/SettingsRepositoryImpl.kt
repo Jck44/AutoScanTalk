@@ -111,6 +111,7 @@ class SettingsRepositoryImpl @Inject constructor(
     override val defaultStartPageIdFlow: StateFlow<String?> get() = generalSettings.defaultStartPageIdFlow
     override val startupBehaviorFlow: StateFlow<String> get() = generalSettings.startupBehaviorFlow
     override val favoriteBookIdFlow: StateFlow<String?> get() = generalSettings.favoriteBookIdFlow
+    override val forceSoftKeyboardFlow: StateFlow<Boolean> get() = generalSettings.forceSoftKeyboardFlow
 
     // --- UserSettings ---
     override val keepScreenOnUserModeFlow: StateFlow<Boolean> get() = userSettings.keepScreenOnUserModeFlow
@@ -391,6 +392,10 @@ class SettingsRepositoryImpl @Inject constructor(
     override var favoriteBookId: String?
         get() = generalSettings.favoriteBookId
         set(value) { generalSettings.favoriteBookId = value }
+
+    override var forceSoftKeyboard: Boolean
+        get() = generalSettings.forceSoftKeyboard
+        set(value) { generalSettings.forceSoftKeyboard = value }
 
     override var logIgnoredActions: Boolean
         get() = advancedSettings.logIgnoredActions

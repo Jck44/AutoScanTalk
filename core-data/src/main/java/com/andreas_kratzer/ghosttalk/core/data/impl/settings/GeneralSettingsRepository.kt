@@ -6,6 +6,7 @@ import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.K
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_FAVORITE_BOOK_ID
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_PAGE_SORT_ORDER
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_STARTUP_BEHAVIOR
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_FORCE_SOFT_KEYBOARD
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_TEMPLATE_SORT_ORDER
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_THEME_MODE
 import kotlinx.coroutines.flow.StateFlow
@@ -22,6 +23,7 @@ class GeneralSettingsRepository(
     private val _defaultStartPageId = StringSetting(KEY_DEFAULT_START_PAGE_ID)
     private val _favoriteBookId = StringSetting(KEY_FAVORITE_BOOK_ID, isScoped = false)
     private val _startupBehavior = NonNullStringSetting(KEY_STARTUP_BEHAVIOR, "BOOK_SELECTION", isScoped = false)
+    private val _forceSoftKeyboard = BooleanSetting(KEY_FORCE_SOFT_KEYBOARD, default = false, isScoped = false)
 
     val themeModeFlow = _themeMode.flow
     val pageSortOrderFlow = _pageSortOrder.flow
@@ -30,6 +32,7 @@ class GeneralSettingsRepository(
     val defaultStartPageIdFlow = _defaultStartPageId.flow
     val favoriteBookIdFlow = _favoriteBookId.flow
     val startupBehaviorFlow = _startupBehavior.flow
+    val forceSoftKeyboardFlow = _forceSoftKeyboard.flow
 
     var themeMode: String
         get() = _themeMode.value
@@ -59,6 +62,10 @@ class GeneralSettingsRepository(
         get() = _startupBehavior.value
         set(value) { _startupBehavior.value = value }
 
+    var forceSoftKeyboard: Boolean
+        get() = _forceSoftKeyboard.value
+        set(value) { _forceSoftKeyboard.value = value }
+
     override fun refresh() {
         _themeMode.refresh()
         _pageSortOrder.refresh()
@@ -67,5 +74,6 @@ class GeneralSettingsRepository(
         _defaultStartPageId.refresh()
         _favoriteBookId.refresh()
         _startupBehavior.refresh()
+        _forceSoftKeyboard.refresh()
     }
 }

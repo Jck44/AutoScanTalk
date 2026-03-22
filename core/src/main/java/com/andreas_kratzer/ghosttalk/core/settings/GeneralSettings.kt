@@ -18,4 +18,6 @@ interface GeneralSettings {
     var defaultStartPageId: String?
     var favoriteBookId: String?
     var startupBehavior: String
+    val forceSoftKeyboardFlow: StateFlow<Boolean>
+    var forceSoftKeyboard: Boolean
 }

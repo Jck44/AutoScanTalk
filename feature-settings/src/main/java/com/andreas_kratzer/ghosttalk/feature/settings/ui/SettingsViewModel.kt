@@ -139,6 +139,7 @@ class SettingsViewModel @Inject constructor(
     val limitScanCycles = settingsRepository.limitScanCyclesFlow
     val scanCycleLimit = settingsRepository.scanCycleLimitFlow
     val actionLogLimit = settingsRepository.actionLogLimitFlow
+    val forceSoftKeyboard = settingsRepository.forceSoftKeyboardFlow
 
     init {
         ttsDelegate.initialize(viewModelScope) { original, fallback ->
@@ -346,6 +347,10 @@ class SettingsViewModel @Inject constructor(
 
     fun setStartupBehavior(behavior: String) {
         settingsRepository.startupBehavior = behavior
+    }
+
+    fun setForceSoftKeyboard(enabled: Boolean) {
+        settingsRepository.forceSoftKeyboard = enabled
     }
 
     fun lock() {

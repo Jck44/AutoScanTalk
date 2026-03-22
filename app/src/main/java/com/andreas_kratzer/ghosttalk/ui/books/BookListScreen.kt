@@ -41,6 +41,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -48,6 +50,9 @@ import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.SecurityManager
 import com.andreas_kratzer.ghosttalk.core.model.Book
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import com.andreas_kratzer.ghosttalk.core.ui.components.AppBrandHeader
 import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkCard
 import com.andreas_kratzer.ghosttalk.core.ui.components.SecurityEntryDialog
@@ -169,6 +174,9 @@ fun BookListScreen(
                 title = { Text(stringResource(R.string.book_dialog_new_title)) },
                 text = {
                     Column {
+                        val forceKeyboard by bookViewModel.forceSoftKeyboard.collectAsState()
+                        val keyboardController = LocalSoftwareKeyboardController.current
+
                         OutlinedTextField(
                             value = newBookName,
                             onValueChange = { 
@@ -178,7 +186,18 @@ fun BookListScreen(
                             label = { Text(stringResource(R.string.book_name_label)) },
                             singleLine = true,
                             shape = MaterialTheme.shapes.large,
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .onFocusChanged { 
+                                    if (it.isFocused && forceKeyboard) {
+                                        keyboardController?.show()
+                                    }
+                                },
+                            keyboardOptions = KeyboardOptions(
+                                autoCorrect = true,
+                                capitalization = KeyboardCapitalization.Sentences,
+                                keyboardType = KeyboardType.Text
+                            ),
                             isError = isError,
                             supportingText = {
                                 if (isError) {

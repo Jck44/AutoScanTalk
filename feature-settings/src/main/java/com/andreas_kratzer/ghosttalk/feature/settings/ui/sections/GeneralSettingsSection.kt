@@ -58,6 +58,7 @@ fun GeneralSettingsSection(
     val startupBehavior by viewModel.startupBehavior.collectAsState("BOOK_SELECTION")
     val userEmail by viewModel.userEmail.collectAsState(null)
     val activeBook by viewModel.activeBook.collectAsState()
+    val forceKeyboard by viewModel.forceSoftKeyboard.collectAsState(false)
 
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var showDeleteSecurity by remember { mutableStateOf(false) }
@@ -143,6 +144,12 @@ fun GeneralSettingsSection(
                     checked = persistLogs,
                     onCheckedChange = { viewModel.setPersistActionLogs(it) }
                 )
+
+                SettingsToggleItem(
+                    label = stringResource(R.string.settings_force_soft_keyboard),
+                    checked = forceKeyboard,
+                    onCheckedChange = { viewModel.setForceSoftKeyboard(it) }
+                )
             }
 
             val categoryGeneral = stringResource(R.string.settings_category_general)
@@ -197,7 +204,8 @@ fun GeneralSettingsSection(
                             if (it.isNotBlank()) {
                                 viewModel.updateActiveBookName(it)
                             }
-                        }
+                        },
+                        forceKeyboard = forceKeyboard
                     )
                 }
 

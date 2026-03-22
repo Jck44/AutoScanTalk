@@ -60,4 +60,5 @@ object SettingsConstants {
     const val KEY_HUE_REFRESH_TOKEN = "hue_refresh_token"
     const val KEY_LOG_IGNORED_ACTIONS = "log_ignored_actions"
     const val KEY_LOG_STOP_ACTIONS = "log_stop_actions"
+    const val KEY_FORCE_SOFT_KEYBOARD = "force_soft_keyboard"
 }
