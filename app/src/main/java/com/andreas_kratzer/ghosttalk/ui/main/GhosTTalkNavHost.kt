@@ -248,6 +248,9 @@ fun GhostTalkNavHost(
                 onNavigateBack = { navController.popBackStack() },
                 onEditPage = { pageId: String ->
                     navController.navigate("page_editor/$pageId")
+                },
+                onEditTemplate = { templateId: String ->
+                    navController.navigate("template_editor/$templateId")
                 }
             )
         }

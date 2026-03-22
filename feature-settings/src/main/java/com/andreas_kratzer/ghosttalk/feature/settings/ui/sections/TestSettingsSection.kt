@@ -115,7 +115,7 @@ fun TestSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                                 .fillMaxWidth()
                                 .verticalScroll(scrollState)
                         ) {
-                            val historyToDisplay: List<ButtonUsageRepository.ButtonUsageEvent> = buttonHistory.reversed().take(50)
+                            val historyToDisplay: List<ButtonUsageRepository.ButtonUsageEvent> = buttonHistory.take(50)
                             for (index in historyToDisplay.indices) {
                                 val event: ButtonUsageRepository.ButtonUsageEvent = historyToDisplay[index]
                                 HistoryItem(

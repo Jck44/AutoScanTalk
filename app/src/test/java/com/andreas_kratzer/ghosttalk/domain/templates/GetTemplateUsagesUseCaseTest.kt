@@ -26,6 +26,7 @@ class GetTemplateUsagesUseCaseTest {
 
         assertEquals(1, result.size)
         assertEquals("p1", result[0].id)
+        assertEquals("", result[0].buttonLabel)
         assert(result[0] is UsageLocation.PageUsage)
     }
 

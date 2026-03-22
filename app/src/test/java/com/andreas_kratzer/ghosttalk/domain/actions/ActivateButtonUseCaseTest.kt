@@ -7,6 +7,7 @@ import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
 import com.andreas_kratzer.ghosttalk.core.scanning.ScanCoordinator
+import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
@@ -32,12 +33,16 @@ class ActivateButtonUseCaseTest {
         ttsHelper = mockk(relaxed = true)
         resolveSmartPredictionUseCase = mockk(relaxed = true)
         actionExecutor = mockk(relaxed = true)
+        scanCoordinator = mockk(relaxed = true)
         bookRepository = mockk(relaxed = true)
         useCase = ActivateButtonUseCase(ttsHelper, resolveSmartPredictionUseCase, bookRepository)
         
         every { actionExecutor.isExecuting } returns MutableStateFlow(false)
         io.mockk.mockkStatic(android.util.Log::class)
         every { android.util.Log.d(any(), any()) } returns 0
+        
+        val testBook = com.andreas_kratzer.ghosttalk.core.model.Book(id = "b1", name = "Test Book", logIgnoredActions = true)
+        coEvery { bookRepository.getBookById(any()) } returns testBook
     }
 
     @Test
@@ -70,6 +75,9 @@ class ActivateButtonUseCaseTest {
         verify { 
             actionExecutor.executeButtonAction(
                 buttonConfig = execButton, 
+                bookId = "b1",
+                pageId = "p1",
+                rows = 2,
                 columns = 2, 
                 index = 0,
                 skipLog = false

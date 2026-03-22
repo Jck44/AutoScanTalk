@@ -30,6 +30,9 @@ class ResolveSmartPredictionUseCaseTest {
         bookRepository = mockk(relaxed = true)
         actionExecutor = mockk(relaxed = true)
         useCase = ResolveSmartPredictionUseCase(pageRepository, bookRepository)
+        
+        val testBook = com.andreas_kratzer.ghosttalk.core.model.Book(id = "b1", name = "Test Book", logIgnoredActions = true)
+        coEvery { bookRepository.getBookById(any()) } returns testBook
     }
 
     @Test

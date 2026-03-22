@@ -268,7 +268,7 @@ fun TemplateScreen(
                             text = { 
                                 Column {
                                     Text("Die Vorlage \"${template.name}\" wurde zur Erstellung folgender Seiten verwendet:")
-                                    usagesToDelete.forEach { usage ->
+                                    for (usage in usagesToDelete) {
                                         Text("• Seite: ${usage.name}", modifier = Modifier.padding(start = 8.dp, top = 4.dp))
                                     }
                                     Text("\nBeim Löschen der Vorlage wird die Verknüpfung in diesen Seiten aufgehoben.", style = MaterialTheme.typography.bodySmall)

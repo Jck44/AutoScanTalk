@@ -17,12 +17,11 @@ class GetPageUsagesUseCase @Inject constructor(
         val allPages = pageRepository.getAllPagesFlow().first()
         allPages.forEach { page ->
             if (page.id != pageId) {
-                val hasUsage = page.buttonConfigs.any { config ->
+                page.buttonConfigs.forEach { config ->
                     val action = config?.buttonAction
-                    action is NavigateToPageButtonAction && action.pageId == pageId
-                }
-                if (hasUsage) {
-                    usages.add(UsageLocation.PageUsage(page.id, page.name))
+                    if (action is NavigateToPageButtonAction && action.pageId == pageId) {
+                        usages.add(UsageLocation.PageUsage(page.id, page.name, config.label))
+                    }
                 }
             }
         }
@@ -30,12 +29,11 @@ class GetPageUsagesUseCase @Inject constructor(
         // Check all templates
         val allTemplates = templateRepository.getAllTemplates().first()
         allTemplates.forEach { template ->
-            val hasUsage = template.buttonConfigs.any { config ->
+            template.buttonConfigs.forEach { config ->
                 val action = config?.buttonAction
-                action is NavigateToPageButtonAction && action.pageId == pageId
-            }
-            if (hasUsage) {
-                usages.add(UsageLocation.TemplateUsage(template.id, template.name))
+                if (action is NavigateToPageButtonAction && action.pageId == pageId) {
+                    usages.add(UsageLocation.TemplateUsage(template.id, template.name, config.label ?: ""))
+                }
             }
         }
 

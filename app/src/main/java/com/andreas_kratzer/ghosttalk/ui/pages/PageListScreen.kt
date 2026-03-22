@@ -5,12 +5,14 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -69,7 +71,8 @@ import java.io.InputStreamReader
 fun PageListScreen(
     pageViewModel: PageViewModel,
     onNavigateBack: () -> Unit,
-    onEditPage: (String) -> Unit
+    onEditPage: (String) -> Unit,
+    onEditTemplate: (String) -> Unit
 ) {
     val allPages by pageViewModel.filteredPages.collectAsState()
     val templates by pageViewModel.templates.collectAsState()
@@ -279,7 +282,11 @@ fun PageListScreen(
                                         text = { Text(stringResource(CoreR.string.action_delete)) },
                                         onClick = {
                                             showMenu = false
-                                            pageToDelete.value = page
+                                            coroutineScope.launch {
+                                                val usages = pageViewModel.getPageUsages(page.id)
+                                                usagesToDelete.value = usages
+                                                pageToDelete.value = page
+                                            }
                                         },
                                         leadingIcon = {
                                             Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
@@ -294,85 +301,100 @@ fun PageListScreen(
         }
     }
 
-    pageToDelete.value?.let { page ->
-        if (usagesToDelete.value.isEmpty()) {
-            AlertDialog(
-                onDismissRequest = { pageToDelete.value = null },
-                title = { Text(stringResource(R.string.page_dialog_delete_title)) },
-                text = { Text(stringResource(R.string.page_dialog_delete_confirm, page.name)) },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            coroutineScope.launch {
-                                val usages = pageViewModel.getPageUsages(page.id)
-                                if (usages.isNotEmpty()) {
-                                    usagesToDelete.value = usages
-                                } else {
-                                    pageViewModel.deletePage(page)
-                                    pageToDelete.value = null
+    val page = pageToDelete.value
+    if (page != null) {
+        val usages = usagesToDelete.value
+        AlertDialog(
+            onDismissRequest = { 
+                pageToDelete.value = null
+                usagesToDelete.value = emptyList()
+            },
+            title = { Text(if (usages.isEmpty()) stringResource(R.string.page_dialog_delete_title) else "Seite wird verwendet") },
+            text = { 
+                Column {
+                    if (usages.isEmpty()) {
+                        Text(stringResource(R.string.page_dialog_delete_confirm, page.name))
+                    } else {
+                        Text("Die Seite \"${page.name}\" wird an folgenden Stellen zur Navigation verwendet:")
+                        
+                        val scrollState = rememberScrollState()
+                        Box(
+                            modifier = Modifier
+                                .padding(vertical = 8.dp)
+                                .heightIn(max = 280.dp)
+                                .verticalScroll(scrollState)
+                        ) {
+                            Column {
+                                for (usage in usages) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        val typePrefix = if (usage is UsageLocation.PageUsage) "Seite" else "Vorlage"
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text("• $typePrefix: ${usage.name}", style = MaterialTheme.typography.bodyMedium)
+                                            if (usage.buttonLabel.isNotEmpty()) {
+                                                Text(
+                                                    text = "  Button: \"${usage.buttonLabel}\"",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+                                        }
+                                        IconButton(
+                                            onClick = {
+                                                pageToDelete.value = null
+                                                usagesToDelete.value = emptyList()
+                                                if (usage is UsageLocation.PageUsage) {
+                                                    onEditPage(usage.id)
+                                                } else {
+                                                    onEditTemplate(usage.id)
+                                                }
+                                            }
+                                        ) {
+                                            Icon(
+                                                imageVector = GhostTalkIcons.ArrowForward,
+                                                contentDescription = "Navigieren"
+                                            )
+                                        }
+                                    }
                                 }
                             }
-                        },
-                        shape = MaterialTheme.shapes.medium,
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                    ) {
-                        Text(stringResource(CoreR.string.action_delete))
-                    }
-                },
-                dismissButton = {
-                    Button(
-                        onClick = { pageToDelete.value = null },
-                        shape = MaterialTheme.shapes.medium,
-                        colors = ButtonDefaults.textButtonColors()
-                    ) {
-                        Text(stringResource(CoreR.string.action_cancel))
-                    }
-                }
-            )
-        } else {
-            AlertDialog(
-                onDismissRequest = { 
-                    pageToDelete.value = null
-                    usagesToDelete.value = emptyList()
-                },
-                title = { Text("Seite wird verwendet") },
-                text = { 
-                    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                        Text("Die Seite \"${page.name}\" wird an folgenden Stellen zur Navigation verwendet:")
-                        usagesToDelete.value.forEach { usage ->
-                            val typePrefix = if (usage is UsageLocation.PageUsage) "Seite" else "Vorlage"
-                            Text("• $typePrefix: ${usage.name}", modifier = Modifier.padding(start = 8.dp, top = 4.dp))
                         }
-                        Text("\nBeim Löschen werden auch alle Buttons entfernt, die auf diese Seite verweisen.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
-                    }
-                },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            pageViewModel.deletePage(page, deleteUsages = true)
-                            pageToDelete.value = null
-                            usagesToDelete.value = emptyList()
-                        },
-                        shape = MaterialTheme.shapes.medium,
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                    ) {
-                        Text("Alles Löschen")
-                    }
-                },
-                dismissButton = {
-                    Button(
-                        onClick = { 
-                            pageToDelete.value = null
-                            usagesToDelete.value = emptyList()
-                        },
-                        shape = MaterialTheme.shapes.medium,
-                        colors = ButtonDefaults.textButtonColors()
-                    ) {
-                        Text(stringResource(CoreR.string.action_cancel))
+                        
+                        Text("Beim Löschen werden auch alle Buttons entfernt, die auf diese Seite verweisen.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                     }
                 }
-            )
-        }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        pageViewModel.deletePage(page, deleteUsages = usages.isNotEmpty())
+                        pageToDelete.value = null
+                        usagesToDelete.value = emptyList()
+                    },
+                    shape = MaterialTheme.shapes.medium,
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text(if (usages.isEmpty()) stringResource(CoreR.string.action_delete) else "Alles Löschen")
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = { 
+                        pageToDelete.value = null
+                        usagesToDelete.value = emptyList()
+                    },
+                    shape = MaterialTheme.shapes.medium,
+                    colors = ButtonDefaults.textButtonColors()
+                ) {
+                    Text(stringResource(CoreR.string.action_cancel))
+                }
+            }
+        )
     }
 
     if (showAddDialog) {

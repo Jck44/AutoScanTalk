@@ -10,6 +10,6 @@ class GetTemplateUsagesUseCase @Inject constructor(
     suspend fun execute(templateId: String): List<UsageLocation> {
         val allPages = pageRepository.getAllPages()
         return allPages.filter { it.templateId == templateId }
-            .map { UsageLocation.PageUsage(it.id, it.name) }
+            .map { UsageLocation.PageUsage(it.id, it.name, "") }
     }
 }

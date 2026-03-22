@@ -17,11 +17,14 @@ import org.junit.Test
 class ButtonUsageRepositoryTest {
 
     private val mockButtonUsageDao = mockk<ButtonUsageDao>(relaxed = true)
+    private val mockSettingsRepository = mockk<com.andreas_kratzer.ghosttalk.core.data.SettingsRepository>(relaxed = true)
+    private val testScope = kotlinx.coroutines.test.TestScope()
     private lateinit var buttonUsageRepository: ButtonUsageRepositoryImpl
 
     @Before
     fun setup() {
-        buttonUsageRepository = ButtonUsageRepositoryImpl(mockButtonUsageDao)
+        coEvery { mockSettingsRepository.activeBookIdFlow } returns kotlinx.coroutines.flow.MutableStateFlow("book1")
+        buttonUsageRepository = ButtonUsageRepositoryImpl(mockButtonUsageDao, mockSettingsRepository, testScope)
     }
     
     private val testButton = ButtonConfig(
@@ -120,5 +123,20 @@ class ButtonUsageRepositoryTest {
 
         // The actionJson should contain the serialized SpeakTextButtonAction
         assertTrue(statSlot.captured.actionJson.contains("SpeakTextButtonAction"))
+    }
+
+    @Test
+    fun `recordUsage persists event in history and prunes`() = runTest {
+        coEvery { mockSettingsRepository.actionLogLimit } returns 50
+        coEvery { mockButtonUsageDao.getStatForButton("book1", "btn-1") } returns null
+
+        buttonUsageRepository.recordUsage("book1", "page1", testButton, 6, 6, 0)
+
+        val historySlot = slot<ButtonUsageHistoryEntity>()
+        coVerify { mockButtonUsageDao.insertHistoryEvent(capture(historySlot)) }
+        assertEquals("btn-1", historySlot.captured.buttonId)
+        assertEquals("Ja", historySlot.captured.label)
+
+        coVerify { mockButtonUsageDao.pruneHistory("book1", 50) }
     }
 }

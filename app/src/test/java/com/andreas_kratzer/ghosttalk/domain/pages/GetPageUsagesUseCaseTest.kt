@@ -25,7 +25,7 @@ class GetPageUsagesUseCaseTest {
         val targetPageId = "target"
         
         val page1 = createPage("p1", "Page 1", listOf(
-            ButtonConfig(buttonAction = NavigateToPageButtonAction(targetPageId))
+            ButtonConfig(buttonAction = NavigateToPageButtonAction(targetPageId), label = "Nav")
         ))
         val page2 = createPage("p2", "Page 2", emptyList())
         val targetPage = createPage(targetPageId, "Target", emptyList())
@@ -38,6 +38,7 @@ class GetPageUsagesUseCaseTest {
         assertEquals(1, result.size)
         assertTrue(result[0] is UsageLocation.PageUsage)
         assertEquals("p1", result[0].id)
+        assertEquals("Nav", result[0].buttonLabel)
     }
 
     @Test
@@ -45,7 +46,7 @@ class GetPageUsagesUseCaseTest {
         val targetPageId = "target"
         
         val template1 = PageTemplate(id = "t1", name = "Template 1", buttonConfigs = listOf(
-            ButtonConfig(buttonAction = NavigateToPageButtonAction(targetPageId))
+            ButtonConfig(buttonAction = NavigateToPageButtonAction(targetPageId), label = "TNav")
         ))
 
         coEvery { pageRepository.getAllPagesFlow() } returns flowOf(emptyList())
@@ -56,6 +57,7 @@ class GetPageUsagesUseCaseTest {
         assertEquals(1, result.size)
         assertTrue(result[0] is UsageLocation.TemplateUsage)
         assertEquals("t1", result[0].id)
+        assertEquals("TNav", result[0].buttonLabel)
     }
 
     private fun createPage(id: String, name: String, buttonConfigs: List<ButtonConfig?>) = Page(
