@@ -138,7 +138,18 @@ fun BookListScreen(
                     onClick = { onBookSelected(book.id) },
                     height = dynamicCardHeight,
                     testTag = "book_card_${book.id}",
-                    trailingAction = null
+                    trailingAction = {
+                        IconButton(
+                            onClick = { settingsRepository.favoriteBookId = book.id },
+                            modifier = Modifier.testTag("book_favorite_button_${book.id}")
+                        ) {
+                            Icon(
+                                imageVector = if (isFavorite) Icons.Default.Star else GhostTalkIcons.StarBorder,
+                                contentDescription = stringResource(R.string.book_favorite_description),
+                                tint = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
                 )
             }
         }
