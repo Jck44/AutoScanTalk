@@ -11,7 +11,6 @@ import com.andreas_kratzer.ghosttalk.MainActivity
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.utils.TestDataResetHelper
-import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import org.junit.Before

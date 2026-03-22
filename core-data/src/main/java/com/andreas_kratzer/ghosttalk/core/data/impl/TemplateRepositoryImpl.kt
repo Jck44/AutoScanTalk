@@ -1,13 +1,13 @@
 package com.andreas_kratzer.ghosttalk.core.data.impl
 
+import com.andreas_kratzer.ghosttalk.core.data.TemplateRepository
+import com.andreas_kratzer.ghosttalk.core.database.TemplateDao
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.FrequentActionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.core.settings.DatabaseSettings
-import com.andreas_kratzer.ghosttalk.core.database.TemplateDao
-import com.andreas_kratzer.ghosttalk.core.data.TemplateRepository
 import kotlinx.coroutines.flow.Flow
 import java.util.UUID
 import javax.inject.Inject

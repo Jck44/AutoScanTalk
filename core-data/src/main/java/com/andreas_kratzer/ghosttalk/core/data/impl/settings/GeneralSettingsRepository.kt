@@ -4,9 +4,9 @@ import android.content.SharedPreferences
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_APP_LANGUAGE
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_DEFAULT_START_PAGE_ID
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_FAVORITE_BOOK_ID
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_FORCE_SOFT_KEYBOARD
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_PAGE_SORT_ORDER
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_STARTUP_BEHAVIOR
-import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_FORCE_SOFT_KEYBOARD
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_TEMPLATE_SORT_ORDER
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_THEME_MODE
 import kotlinx.coroutines.flow.StateFlow

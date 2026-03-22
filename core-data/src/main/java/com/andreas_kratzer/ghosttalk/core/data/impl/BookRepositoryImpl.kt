@@ -1,8 +1,8 @@
 package com.andreas_kratzer.ghosttalk.core.data.impl
 
-import com.andreas_kratzer.ghosttalk.core.model.Book
-import com.andreas_kratzer.ghosttalk.core.database.BookDao
 import com.andreas_kratzer.ghosttalk.core.data.BookRepository
+import com.andreas_kratzer.ghosttalk.core.database.BookDao
+import com.andreas_kratzer.ghosttalk.core.model.Book
 import kotlinx.coroutines.flow.Flow
 
 class BookRepositoryImpl(private val bookDao: BookDao) : BookRepository {

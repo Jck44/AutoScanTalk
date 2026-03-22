@@ -1,15 +1,13 @@
 package com.andreas_kratzer.ghosttalk.domain.actions
 
-import com.andreas_kratzer.ghosttalk.core.util.Logger
+import com.andreas_kratzer.ghosttalk.core.data.ActionLogProvider
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.model.ActionLogEntry
+import com.andreas_kratzer.ghosttalk.core.util.Logger
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.encodeToString
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-
-import com.andreas_kratzer.ghosttalk.core.model.ActionLogEntry
-import com.andreas_kratzer.ghosttalk.core.data.ActionLogProvider
 import javax.inject.Inject
 
 /**

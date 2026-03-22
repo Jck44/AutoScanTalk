@@ -5,7 +5,18 @@ import com.andreas_kratzer.ghosttalk.core.SecuritySettings
 import com.andreas_kratzer.ghosttalk.core.actions.ControlDeviceSettings
 import com.andreas_kratzer.ghosttalk.core.actions.SpeechSettings
 import com.andreas_kratzer.ghosttalk.core.audio.AudioSettings
-import com.andreas_kratzer.ghosttalk.core.settings.*
+import com.andreas_kratzer.ghosttalk.core.settings.AdvancedSettings
+import com.andreas_kratzer.ghosttalk.core.settings.CloudSettings
+import com.andreas_kratzer.ghosttalk.core.settings.DatabaseSettings
+import com.andreas_kratzer.ghosttalk.core.settings.FeatureSettings
+import com.andreas_kratzer.ghosttalk.core.settings.GenAiSettings
+import com.andreas_kratzer.ghosttalk.core.settings.GeneralSettings
+import com.andreas_kratzer.ghosttalk.core.settings.ImportExportSettings
+import com.andreas_kratzer.ghosttalk.core.settings.NotificationSettings
+import com.andreas_kratzer.ghosttalk.core.settings.ScanningSettings
+import com.andreas_kratzer.ghosttalk.core.settings.SmartHomeSettings
+import com.andreas_kratzer.ghosttalk.core.settings.TtsSettings
+import com.andreas_kratzer.ghosttalk.core.settings.UserSettings
 import kotlinx.coroutines.flow.StateFlow
 
 /**

@@ -1,13 +1,13 @@
 package com.andreas_kratzer.ghosttalk.core.ai.domain
 
 import android.util.Log
+import com.andreas_kratzer.ghosttalk.core.ai.LocalIntentRouter
 import com.andreas_kratzer.ghosttalk.core.data.ActionLogProvider
 import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageProvider
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.core.settings.GenAiSettings
-import com.andreas_kratzer.ghosttalk.core.ai.LocalIntentRouter
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk

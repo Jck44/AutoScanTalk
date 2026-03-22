@@ -1,8 +1,8 @@
 package com.andreas_kratzer.ghosttalk.domain.templates
 
-import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.core.data.PageRepository
 import com.andreas_kratzer.ghosttalk.core.data.TemplateRepository
+import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import javax.inject.Inject
 
 class DeleteTemplateUseCase @Inject constructor(

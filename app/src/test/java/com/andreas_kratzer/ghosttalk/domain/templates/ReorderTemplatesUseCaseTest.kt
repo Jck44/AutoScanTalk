@@ -1,9 +1,9 @@
 package com.andreas_kratzer.ghosttalk.domain.templates
 
-import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
-import com.andreas_kratzer.ghosttalk.core.model.SortOrder
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.data.TemplateRepository
+import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
+import com.andreas_kratzer.ghosttalk.core.model.SortOrder
 import io.mockk.coVerify
 import io.mockk.mockk
 import io.mockk.verify

@@ -2,11 +2,11 @@ package com.andreas_kratzer.ghosttalk.domain.actions
 
 import android.util.Log
 import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
+import com.andreas_kratzer.ghosttalk.core.data.BookRepository
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
-import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
 import com.andreas_kratzer.ghosttalk.core.scanning.ScanCoordinator
-import com.andreas_kratzer.ghosttalk.core.data.BookRepository
+import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
 import javax.inject.Inject
 
 class ActivateButtonUseCase @Inject constructor(

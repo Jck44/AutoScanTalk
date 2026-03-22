@@ -1,6 +1,7 @@
 package com.andreas_kratzer.ghosttalk.core.ai.domain
 
-import com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper
+import android.graphics.Bitmap
+import android.util.Base64
 import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
 import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.gson.GsonFactory
@@ -9,8 +10,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
-import android.graphics.Bitmap
-import android.util.Base64
 import java.io.ByteArrayOutputStream
 import java.net.URL
 import javax.inject.Inject

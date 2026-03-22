@@ -2,8 +2,8 @@ package com.andreas_kratzer.ghosttalk.core.data.impl
 
 import android.content.Context
 import android.content.SharedPreferences
-import com.andreas_kratzer.ghosttalk.core.data.WeatherRepository
 import androidx.core.content.edit
+import com.andreas_kratzer.ghosttalk.core.data.WeatherRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton

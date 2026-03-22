@@ -1,9 +1,9 @@
 package com.andreas_kratzer.ghosttalk.domain.actions
 
-import com.andreas_kratzer.ghosttalk.core.util.Logger
-import com.andreas_kratzer.ghosttalk.core.util.TestLogger
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.model.ActionLogEntry
+import com.andreas_kratzer.ghosttalk.core.util.Logger
+import com.andreas_kratzer.ghosttalk.core.util.TestLogger
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify

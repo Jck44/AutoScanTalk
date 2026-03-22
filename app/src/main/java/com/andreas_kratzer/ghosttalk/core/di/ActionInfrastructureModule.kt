@@ -1,6 +1,12 @@
 package com.andreas_kratzer.ghosttalk.core.di
 
-import com.andreas_kratzer.ghosttalk.core.actions.*
+import com.andreas_kratzer.ghosttalk.core.actions.ActionCoordinator
+import com.andreas_kratzer.ghosttalk.core.actions.ActionEventEmitter
+import com.andreas_kratzer.ghosttalk.core.actions.ActionLogger
+import com.andreas_kratzer.ghosttalk.core.actions.ActionTtsProxy
+import com.andreas_kratzer.ghosttalk.core.actions.CameraProvider
+import com.andreas_kratzer.ghosttalk.core.actions.CameraProviderImpl
+import com.andreas_kratzer.ghosttalk.core.actions.ControlDeviceTtsProxy
 import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
 import dagger.Binds
 import dagger.Module

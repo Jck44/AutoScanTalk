@@ -3,10 +3,10 @@ package com.andreas_kratzer.ghosttalk.core.cloud.domain
 
 import android.content.Context
 import android.util.Log
-import com.andreas_kratzer.ghosttalk.core.model.Book
-import com.andreas_kratzer.ghosttalk.core.data.impl.PageImportExportManager
-import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.andreas_kratzer.ghosttalk.core.data.BookRepository
+import com.andreas_kratzer.ghosttalk.core.data.impl.PageImportExportManager
+import com.andreas_kratzer.ghosttalk.core.model.Book
+import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.google.api.services.drive.Drive
 import io.mockk.coEvery
 import io.mockk.coVerify

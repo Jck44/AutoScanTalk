@@ -2,14 +2,14 @@ package com.andreas_kratzer.ghosttalk.core.data.impl.settings
 
 import android.content.SharedPreferences
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_ACTION_LOGS_STORAGE
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_LOG_IGNORED_ACTIONS
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_LOG_STOP_ACTIONS
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_PERSIST_ACTION_LOGS
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SHOW_PAGE_ID_IN_LOG
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SHOW_TEST_BUTTONS
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SMART_PREDICTION_DELAY
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SMART_PREDICTION_ENABLED
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_WEATHER_CACHE_TIMEOUT
-import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_LOG_IGNORED_ACTIONS
-import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_LOG_STOP_ACTIONS
 import com.andreas_kratzer.ghosttalk.core.settings.AdvancedSettings
 import kotlinx.coroutines.flow.StateFlow
 

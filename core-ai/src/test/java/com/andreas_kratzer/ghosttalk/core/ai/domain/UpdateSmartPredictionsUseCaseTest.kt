@@ -1,9 +1,9 @@
 package com.andreas_kratzer.ghosttalk.core.ai.domain
 
 import android.util.Log
+import com.andreas_kratzer.ghosttalk.core.model.ActionLogEntry
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.settings.GenAiSettings
-import com.andreas_kratzer.ghosttalk.core.model.ActionLogEntry
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk

@@ -1,11 +1,11 @@
 package com.andreas_kratzer.ghosttalk
 
+import com.andreas_kratzer.ghosttalk.core.database.Converters
 import com.andreas_kratzer.ghosttalk.core.model.AuditoryCue
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
-import com.andreas_kratzer.ghosttalk.core.database.Converters
 import org.junit.Test
 import kotlin.system.measureTimeMillis
 

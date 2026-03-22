@@ -1,10 +1,10 @@
 package com.andreas_kratzer.ghosttalk.core.ai.domain
 
 import com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper
+import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
 import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.gson.GsonFactory
 import com.google.api.services.drive.Drive
-import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
 import org.json.JSONArray
 import org.json.JSONObject
 import javax.inject.Inject

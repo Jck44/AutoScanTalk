@@ -1,6 +1,8 @@
 package com.andreas_kratzer.ghosttalk.core.database
 
-import androidx.room.*
+import androidx.room.Entity
+import androidx.room.Index
+import androidx.room.PrimaryKey
 
 @Entity(
     tableName = "button_usage_history",
