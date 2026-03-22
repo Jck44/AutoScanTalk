@@ -18,12 +18,19 @@ class TtsScannerFeedbackProvider @Inject constructor(
         }
 
         if (ttsHelper.isReady) {
-            ttsHelper.speakRouted(
-                text = text, 
-                deviceAddress = scanningSettings.cuesAudioDeviceAddress,
-                queueMode = android.speech.tts.TextToSpeech.QUEUE_FLUSH,
-                isForCues = true
-            )
+            kotlinx.coroutines.suspendCancellableCoroutine { continuation ->
+                ttsHelper.speakRouted(
+                    text = text,
+                    deviceAddress = scanningSettings.cuesAudioDeviceAddress,
+                    queueMode = android.speech.tts.TextToSpeech.QUEUE_FLUSH,
+                    isForCues = true,
+                    onDone = {
+                        if (continuation.isActive) {
+                            continuation.resume(Unit) {}
+                        }
+                    }
+                )
+            }
         }
     }
 }

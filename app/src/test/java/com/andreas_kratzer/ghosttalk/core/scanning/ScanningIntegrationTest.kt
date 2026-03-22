@@ -60,6 +60,12 @@ class ScanningIntegrationTest {
         every { featureGuard.isButtonVisible(any()) } returns true
         every { featureGuard.isActionEnabled(any()) } returns true
         
+        // Mock flows before initialization to avoid collect errors
+        every { scanningSettings.scanDelayFlow } returns MutableStateFlow(1000L)
+        every { scanningSettings.autoStartScanning } returns true
+        every { scanningSettings.resumeScanningFromStart } returns true
+        every { scanningSettings.defaultScanPattern } returns "linear"
+        
         componentJob = SupervisorJob()
         componentScope = CoroutineScope(testDispatcher + componentJob)
 
@@ -76,7 +82,8 @@ class ScanningIntegrationTest {
             settingsRepository = settingsRepository,
             buttonUsageRepository = buttonUsageRepository,
             handlers = emptySet(),
-            actionCoordinator = actionCoordinator
+            actionCoordinator = actionCoordinator,
+            ttsHelper = ttsHelper
         )
 
         scanCoordinator = ScanCoordinator(
@@ -106,10 +113,6 @@ class ScanningIntegrationTest {
             )
 
             every { checkForPredictorUseCase(any()) } returns false
-            every { scanningSettings.autoStartScanning } returns true
-            every { scanningSettings.resumeScanningFromStart } returns true
-            every { scanningSettings.scanDelayFlow } returns MutableStateFlow(1000L)
-            every { scanningSettings.defaultScanPattern } returns "row_by_row"
             
             scanCoordinator.init(
                 currentPage = MutableStateFlow(page),
@@ -164,9 +167,7 @@ class ScanningIntegrationTest {
 
             every { checkForPredictorUseCase(any()) } returns false
             every { settingsRepository.holdingTimeMillis } returns 2000L
-            every { scanningSettings.autoStartScanning } returns true
-            every { scanningSettings.scanDelayFlow } returns MutableStateFlow(1000L)
-            every { scanningSettings.defaultScanPattern } returns "linear"
+            every { checkForPredictorUseCase(any()) } returns false
             
             scanCoordinator.init(
                 currentPage = MutableStateFlow(page),

@@ -11,5 +11,7 @@ data class Book(
     val updatedAt: Long = System.currentTimeMillis(),
     val actionLogLimit: Int = 100,
     val limitScanCycles: Boolean = false,
-    val scanCycleLimit: Int = 2
+    val scanCycleLimit: Int = 2,
+    val logIgnoredActions: Boolean = true,
+    val logStopActions: Boolean = true
 )

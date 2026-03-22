@@ -1,6 +1,8 @@
 package com.andreas_kratzer.ghosttalk.ui.pages.sections
 
 import androidx.compose.foundation.border
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -42,10 +44,13 @@ fun ButtonGrid(
         
         // Calculate optimal width and height
         var optimalWidth = buttonWidthToFit.coerceIn(dimensions.minButtonWidth, maxButtonSize)
-        var optimalHeight = buttonHeightToFit.coerceIn(dimensions.minButtonWidth, maxButtonSize)
         
-        // Cap aspect ratio to prevent extreme stretching (max 1.5:1 or 1:1.5)
-        val maxRatio = 1.5f
+        // On phones, we enforce a minimum height to ensure readability, even if it requires scrolling.
+        val minButtonHeight = if (dimensions.isTablet) dimensions.minButtonWidth else 72.dp
+        var optimalHeight = buttonHeightToFit.coerceIn(minButtonHeight, maxButtonSize)
+        
+        // Cap aspect ratio to prevent extreme stretching (max 4.0:1)
+        val maxRatio = 4.0f
         if (optimalWidth > optimalHeight * maxRatio) {
             optimalWidth = optimalHeight * maxRatio
         } else if (optimalHeight > optimalWidth * maxRatio) {
@@ -56,10 +61,17 @@ fun ButtonGrid(
         val totalWidth = (optimalWidth * page.columns) + (dimensions.gridSpacing * (page.columns - 1)) + (dimensions.paddingMedium * 2)
         val totalHeight = (optimalHeight * page.rows) + (dimensions.gridSpacing * (page.rows - 1)) + (dimensions.paddingMedium * 2)
 
+        val scrollState = rememberScrollState()
+
         Column(
             modifier = Modifier
                 .width(totalWidth)
-                .height(totalHeight)
+                .height(totalHeight.coerceAtMost(this@BoxWithConstraints.maxHeight))
+                .run {
+                    if (!dimensions.isTablet && totalHeight > this@BoxWithConstraints.maxHeight) {
+                        verticalScroll(scrollState)
+                    } else this
+                }
                 .testTag(if (isScanning) "button_grid_scanning" else "button_grid_idle")
                 .padding(dimensions.paddingMedium),
             verticalArrangement = Arrangement.spacedBy(dimensions.gridSpacing)
@@ -72,7 +84,13 @@ fun ButtonGrid(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f)
+                        .let { 
+                            if (!dimensions.isTablet && totalHeight > this@BoxWithConstraints.maxHeight) {
+                                it.height(optimalHeight)
+                            } else {
+                                it.weight(1f)
+                            }
+                        }
                         .run {
                             if (isRowFocused) {
                                 border(

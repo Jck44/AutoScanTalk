@@ -8,17 +8,23 @@ import androidx.lifecycle.viewModelScope
 import com.andreas_kratzer.ghosttalk.core.SecurityManager
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.data.export.PageImportExportProvider
+import com.andreas_kratzer.ghosttalk.core.data.BookRepository
 import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.data.GetPagesUseCase
 import com.andreas_kratzer.ghosttalk.core.cloud.PhilipsHueManager
+import com.andreas_kratzer.ghosttalk.core.model.Book
 import com.andreas_kratzer.ghosttalk.feature.settings.domain.UpdateActionLogLimitUseCase
+import com.andreas_kratzer.ghosttalk.feature.settings.domain.UpdateActiveBookNameUseCase
+import com.andreas_kratzer.ghosttalk.feature.settings.domain.DeleteBookUseCase
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.CloudSyncSettingsDelegate
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.ExperimentalSettingsDelegate
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.GenAiSettingsDelegate
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.ScanningSettingsDelegate
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.TtsSettingsDelegate
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -27,12 +33,16 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val application: Application,
     val settingsRepository: SettingsRepository,
+    private val bookRepository: BookRepository,
     private val buttonUsageRepository: ButtonUsageRepository,
     val securityManager: SecurityManager,
     getPagesUseCase: GetPagesUseCase,
@@ -41,6 +51,8 @@ class SettingsViewModel @Inject constructor(
     val cloudSyncDelegate: CloudSyncSettingsDelegate,
     val genAiDelegate: GenAiSettingsDelegate,
     val experimentalDelegate: ExperimentalSettingsDelegate,
+    private val updateActiveBookNameUseCase: UpdateActiveBookNameUseCase,
+    private val deleteBookUseCase: DeleteBookUseCase,
     private val updateActionLogLimitUseCase: UpdateActionLogLimitUseCase,
     private val importExportManager: PageImportExportProvider,
     private val hueManager: PhilipsHueManager
@@ -49,6 +61,12 @@ class SettingsViewModel @Inject constructor(
     private val _activeBookId = settingsRepository.activeBookIdFlow
     val allPages: StateFlow<List<Page>> = getPagesUseCase.execute(_activeBookId)
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    val activeBook: StateFlow<Book?> = settingsRepository.activeBookIdFlow
+        .flatMapLatest { bookId ->
+            if (bookId == null) flowOf(null) else bookRepository.getBookByIdFlow(bookId)
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     // --- Observable State from Repository ---
     val availableLanguages = ttsDelegate.availableLanguages
@@ -115,10 +133,27 @@ class SettingsViewModel @Inject constructor(
     val isSecurityRequiredForEdit = settingsRepository.isSecurityRequiredForEditFlow
     val isSecurityRequiredForSettings = settingsRepository.isSecurityRequiredForSettingsFlow
     val startupBehavior = settingsRepository.startupBehaviorFlow
+    val logIgnoredActions = settingsRepository.logIgnoredActionsFlow
+    val logStopActions = settingsRepository.logStopActionsFlow
     
     val limitScanCycles = settingsRepository.limitScanCyclesFlow
     val scanCycleLimit = settingsRepository.scanCycleLimitFlow
     val actionLogLimit = settingsRepository.actionLogLimitFlow
+
+    init {
+        ttsDelegate.initialize(viewModelScope) { original, fallback ->
+            val message = if (fallback != null) {
+                "Stimme $original nicht verfügbar. Fallback auf $fallback."
+            } else {
+                "Stimme $original nicht verfügbar. Fallback auf System-Standard."
+            }
+            Toast.makeText(application, message, Toast.LENGTH_LONG).show()
+        }
+        genAiDelegate.updateGeminiToolStatus()
+        viewModelScope.launch {
+            genAiDelegate.performGeminiNanoIntegrityCheck()
+        }
+    }
     
     private val _navigationEvent = kotlinx.coroutines.flow.MutableSharedFlow<SettingsNavigationEvent>()
     val navigationEvents = _navigationEvent.asSharedFlow()
@@ -140,20 +175,7 @@ class SettingsViewModel @Inject constructor(
     
     val signInErrorMessage = cloudSyncDelegate.signInErrorMessage
 
-    init {
-        ttsDelegate.initialize(viewModelScope) { original, fallback ->
-            val message = if (fallback != null) {
-                "Stimme $original nicht verfügbar. Fallback auf $fallback."
-            } else {
-                "Stimme $original nicht verfügbar. Fallback auf System-Standard."
-            }
-            Toast.makeText(application, message, Toast.LENGTH_LONG).show()
-        }
-        genAiDelegate.updateGeminiToolStatus()
-        viewModelScope.launch {
-            genAiDelegate.performGeminiNanoIntegrityCheck()
-        }
-    }
+    /* init block moved up */
 
     // --- Delegation Methods (UI Actions) ---
     fun refresh() {
@@ -391,5 +413,38 @@ class SettingsViewModel @Inject constructor(
 
     fun onShowHistoryDetail(event: ButtonUsageRepository.ButtonUsageEvent?) {
         _selectedHistoryItem.value = event
+    }
+
+    fun updateActiveBookName(newName: String) {
+        viewModelScope.launch {
+            updateActiveBookNameUseCase.execute(newName)
+        }
+    }
+
+    fun deleteActiveBook(onDeleted: () -> Unit) {
+        viewModelScope.launch {
+            val result = deleteBookUseCase.execute()
+            if (result.isSuccess) {
+                withContext(Dispatchers.Main) {
+                    onDeleted()
+                }
+            } else {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(application, "Fehler beim Löschen des Buches", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    fun setLogIgnoredActionsInput(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.logIgnoredActions = enabled
+        }
+    }
+
+    fun setLogStopActionsInput(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.logStopActions = enabled
+        }
     }
 }

@@ -28,6 +28,9 @@
     <string name="book_import_cloud_error">Error loading from the cloud: %s</string>
     <string name="book_limit_scan_cycles_label">Limit scan cycles</string>
     <string name="book_scan_cycle_limit_label">Number of scan cycles</string>
+    <string name="book_log_ignored_actions_label">Log ignored actions in history</string>
+    <string name="book_log_stop_actions_label">Log stop actions (e.g. on page change) in history</string>
+    <string name="book_dialog_edit_title">Edit Book</string>
 
     <!-- Shared Actions -->
     <string name="action_create">Create</string>

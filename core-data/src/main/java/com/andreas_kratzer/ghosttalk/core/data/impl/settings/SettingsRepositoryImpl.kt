@@ -10,6 +10,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import com.andreas_kratzer.ghosttalk.core.settings.AdvancedSettings
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -122,6 +123,8 @@ class SettingsRepositoryImpl @Inject constructor(
     override val weatherCacheTimeoutFlow: StateFlow<Long> get() = advancedSettings.weatherCacheTimeoutFlow
     override val smartPredictionDelayFlow: StateFlow<Long> get() = advancedSettings.smartPredictionDelayFlow
     override val actionLogLimitFlow: StateFlow<Int> get() = advancedSettings.actionLogLimitFlow
+    override val logIgnoredActionsFlow: StateFlow<Boolean> get() = advancedSettings.logIgnoredActionsFlow
+    override val logStopActionsFlow: StateFlow<Boolean> get() = advancedSettings.logStopActionsFlow
     
     // --- NotificationSettings ---
     override val isNotificationReadingEnabledFlow: StateFlow<Boolean> get() = notificationSettings.isNotificationReadingEnabledFlow
@@ -389,6 +392,20 @@ class SettingsRepositoryImpl @Inject constructor(
         get() = generalSettings.favoriteBookId
         set(value) { generalSettings.favoriteBookId = value }
 
+    override var logIgnoredActions: Boolean
+        get() = advancedSettings.logIgnoredActions
+        set(value) {
+            advancedSettings.logIgnoredActions = value
+            syncBookSettings()
+        }
+
+    override var logStopActions: Boolean
+        get() = advancedSettings.logStopActions
+        set(value) {
+            advancedSettings.logStopActions = value
+            syncBookSettings()
+        }
+
     // ── Book-specific helpers ─────────────────────────────────────────────
 
     override fun getSecurityPinForBook(bookId: String): String? {
@@ -448,7 +465,9 @@ class SettingsRepositoryImpl @Inject constructor(
                 val updatedBook = book.copy(
                     limitScanCycles = limitScanCycles,
                     scanCycleLimit = scanCycleLimit,
-                    actionLogLimit = actionLogLimit
+                    actionLogLimit = actionLogLimit,
+                    logIgnoredActions = logIgnoredActions,
+                    logStopActions = logStopActions
                 )
                 if (updatedBook != book) {
                     bookRepository.updateBook(updatedBook)

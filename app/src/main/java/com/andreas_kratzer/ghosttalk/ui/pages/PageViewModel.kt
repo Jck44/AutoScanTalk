@@ -221,6 +221,11 @@ class PageViewModel @Inject constructor(
         viewModelScope.launch {
             val isSamePage = currentPage.value?.id == page.id
             val redoPrediction = settingsRepository.geminiRedoPrediction
+            
+            // Stoppe laufende Aktionen und Audio der alten Seite
+            val skipLog = activeBook.value?.logStopActions == false
+            actionExecutor.stopActions(skipLog = skipLog)
+            
             scanCoordinator.onPageChanged(isSamePage)
             if (!isSamePage || redoPrediction) {
                 // Avoid redundant emission if predictions are already null
@@ -329,6 +334,7 @@ class PageViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
+        actionExecutor.stopActions()
         scanCoordinator.clear()
     }
 }

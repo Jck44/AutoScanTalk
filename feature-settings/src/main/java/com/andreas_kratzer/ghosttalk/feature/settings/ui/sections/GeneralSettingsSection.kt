@@ -6,7 +6,11 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
@@ -29,31 +33,45 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import com.andreas_kratzer.ghosttalk.feature.settings.R
 import com.andreas_kratzer.ghosttalk.core.ui.components.PreferenceCategory
+import com.andreas_kratzer.ghosttalk.core.ui.components.SecurityEntryDialog
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsDropdownItem
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsEditTextItem
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsToggleItem
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
+import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun GeneralSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
+fun GeneralSettingsSection(
+    viewModel: SettingsViewModel,
+    isGlobal: Boolean,
+    onNavigateBack: () -> Unit = {}
+) {
     val theme by viewModel.themeMode.collectAsState("SYSTEM")
     val persistLogs by viewModel.persistActionLogs.collectAsState(false)
     val defaultStartPageId by viewModel.defaultStartPageId.collectAsState(null)
     val allPages by viewModel.allPages.collectAsState()
-    
+
     val keepScreenOn by viewModel.keepScreenOnUserMode.collectAsState(true)
     val screenBehavior by viewModel.userModeScreenBehavior.collectAsState("NORMAL")
     val startupBehavior by viewModel.startupBehavior.collectAsState("BOOK_SELECTION")
     val userEmail by viewModel.userEmail.collectAsState(null)
+    val activeBook by viewModel.activeBook.collectAsState()
 
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+    var showDeleteSecurity by remember { mutableStateOf(false) }
     var expandedStartPage by remember { mutableStateOf(false) }
     var startPageSearchQuery by remember { mutableStateOf("") }
 
     val dimensions = LocalDimensions.current
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
+
+    val bookName = activeBook?.name ?: ""
+    val deleteBookLabel = stringResource(R.string.book_delete_description)
+    val deleteConfirmTitle = stringResource(R.string.book_dialog_delete_title)
+    val deleteConfirmMessage = stringResource(R.string.book_dialog_delete_confirm, bookName)
 
     FlowRow(
         modifier = Modifier.fillMaxWidth(),
@@ -109,7 +127,7 @@ fun GeneralSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                     "DARK" -> themeDark
                     else -> themeSystem
                 }
-                
+
                 SettingsDropdownItem(
                     label = themeModeLabel,
                     selectedOption = themeLabel,
@@ -162,7 +180,27 @@ fun GeneralSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
             val startPageLabel = stringResource(R.string.settings_start_page)
             val startPageAuto = stringResource(R.string.settings_start_page_auto)
 
+            val bookNameLabel = stringResource(R.string.book_name_label)
+            val deleteBookLabel = stringResource(R.string.book_delete_description)
+            val deleteConfirmTitle = stringResource(R.string.book_dialog_delete_title)
+            val deleteConfirmMessage = stringResource(R.string.book_dialog_delete_confirm, activeBook?.name ?: "")
+
             PreferenceCategory(categoryGeneral, modifier = Modifier.weight(1f)) {
+                // Book Rename
+                activeBook?.let { book ->
+                    var editName by remember(book.id) { mutableStateOf(book.name) }
+                    SettingsEditTextItem(
+                        label = bookNameLabel,
+                        value = editName,
+                        onValueChange = {
+                            editName = it
+                            if (it.isNotBlank()) {
+                                viewModel.updateActiveBookName(it)
+                            }
+                        }
+                    )
+                }
+
                 SettingsToggleItem(
                     label = keepScreenOnLabel,
                     checked = keepScreenOn,
@@ -202,7 +240,7 @@ fun GeneralSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                         expanded = expandedStartPage,
                         onExpandedChange = { expandedStartPage = !expandedStartPage }
                     ) {
-                        val startPageName = allPages.find { it.id == defaultStartPageId }?.name 
+                        val startPageName = allPages.find { it.id == defaultStartPageId }?.name
                             ?: startPageAuto
 
                         OutlinedTextField(
@@ -219,7 +257,7 @@ fun GeneralSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
 
                         ExposedDropdownMenu(
                             expanded = expandedStartPage,
-                            onDismissRequest = { 
+                            onDismissRequest = {
                                 expandedStartPage = false
                                 startPageSearchQuery = ""
                             }
@@ -230,7 +268,7 @@ fun GeneralSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                             if (startPageSearchQuery.isEmpty()) {
                                 DropdownMenuItem(
                                     text = { Text(startPageAuto, style = MaterialTheme.typography.bodyLarge) },
-                                    onClick = { 
+                                    onClick = {
                                         viewModel.setDefaultStartPageId(null)
                                         focusManager.clearFocus()
                                         expandedStartPage = false
@@ -241,7 +279,7 @@ fun GeneralSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                             filteredPages.forEach { page ->
                                 DropdownMenuItem(
                                     text = { Text(page.name, style = MaterialTheme.typography.bodyLarge) },
-                                    onClick = { 
+                                    onClick = {
                                         viewModel.setDefaultStartPageId(page.id)
                                         focusManager.clearFocus()
                                         startPageSearchQuery = ""
@@ -261,15 +299,65 @@ fun GeneralSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                     }
                 }
             }
- 
-            val actionLogLimit by viewModel.actionLogLimit.collectAsState(100)
-            PreferenceCategory(stringResource(R.string.settings_category_limits), modifier = Modifier.weight(1f)) {
-                SettingsEditTextItem(
-                    label = stringResource(R.string.settings_action_log_limit),
-                    value = actionLogLimit.toString(),
-                    onValueChange = { viewModel.setActionLogLimitInput(it) }
-                )
-            }
+
+                // Delete Book Button
+                if (!isGlobal) {
+                    Spacer(modifier = Modifier.height(dimensions.paddingLarge))
+                    Button(
+                        onClick = {
+                            if (viewModel.securityManager.isSecurityRequiredForDeletion()) {
+                                showDeleteSecurity = true
+                            } else {
+                                showDeleteConfirm = true
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                        shape = MaterialTheme.shapes.medium
+                    ) {
+                        Text(deleteBookLabel)
+                    }
+                }
         }
+    }
+
+    if (showDeleteSecurity) {
+        SecurityEntryDialog(
+            onDismiss = { showDeleteSecurity = false },
+            onConfirm = { success ->
+                if (success) {
+                    showDeleteSecurity = false
+                    showDeleteConfirm = true
+                }
+            },
+            securityManager = viewModel.securityManager,
+            isBiometricEnabled = viewModel.settingsRepository.isBiometricEnabled
+        )
+    }
+
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text(deleteConfirmTitle) },
+            text = { Text(deleteConfirmMessage) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteConfirm = false
+                        viewModel.deleteActiveBook {
+                            onNavigateBack() // Go back to book list
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text(stringResource(CoreR.string.action_delete))
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { showDeleteConfirm = false }) {
+                    Text(stringResource(CoreR.string.action_cancel))
+                }
+            }
+        )
     }
 }

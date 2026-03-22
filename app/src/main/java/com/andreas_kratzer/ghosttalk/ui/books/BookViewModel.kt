@@ -84,7 +84,9 @@ class BookViewModel @Inject constructor(
         name: String, 
         actionLogLimit: Int = 100,
         limitScanCycles: Boolean = false,
-        scanCycleLimit: Int = 2
+        scanCycleLimit: Int = 2,
+        logIgnoredActions: Boolean = true,
+        logStopActions: Boolean = true
     ) {
         val now = System.currentTimeMillis()
         val newBook = Book(
@@ -94,7 +96,9 @@ class BookViewModel @Inject constructor(
             updatedAt = now,
             actionLogLimit = actionLogLimit,
             limitScanCycles = limitScanCycles,
-            scanCycleLimit = scanCycleLimit
+            scanCycleLimit = scanCycleLimit,
+            logIgnoredActions = logIgnoredActions,
+            logStopActions = logStopActions
         )
         viewModelScope.launch(Dispatchers.IO) {
             bookRepository.insertBook(newBook)
@@ -106,13 +110,17 @@ class BookViewModel @Inject constructor(
         newName: String, 
         actionLogLimit: Int,
         limitScanCycles: Boolean,
-        scanCycleLimit: Int
+        scanCycleLimit: Int,
+        logIgnoredActions: Boolean,
+        logStopActions: Boolean
     ) {
         val updatedBook = book.copy(
             name = newName, 
             actionLogLimit = actionLogLimit,
             limitScanCycles = limitScanCycles,
             scanCycleLimit = scanCycleLimit,
+            logIgnoredActions = logIgnoredActions,
+            logStopActions = logStopActions,
             updatedAt = System.currentTimeMillis()
         )
         viewModelScope.launch(Dispatchers.IO) {

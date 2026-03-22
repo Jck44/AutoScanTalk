@@ -305,19 +305,33 @@ open class TextToSpeechHelper @Inject constructor(
     fun stopNotificationTTS() {
         if (isReadingNotification) {
             Log.d("TextToSpeechHelper", "Unterbreche Benachrichtigungs-Vorlesen.")
-            tts?.stop()
-            routedAudioPlayer.stopAll()
-            
-            // Pending callbacks for the notification also need to be invoked to free up scanners
-            playRequests.values.forEach { it.onDoneCallback?.let { cb -> handler.post { cb() } } }
-            directCallbacks.values.forEach { handler.post { it() } }
-            
-            playRequests.clear()
-            directCallbacks.clear()
-            
+            stopAll()
             isReadingNotification = false
         } else {
             Log.d("TextToSpeechHelper", "stopNotificationTTS aufgerufen, aber isReadingNotification ist false. Ignoriere.")
         }
+    }
+
+    /**
+     * Stoppt ALLE aktuellen Sprachausgaben und Audio-Wiedergaben.
+     * Ruft alle ausstehenden onDone-Callbacks auf, damit verbundene Abläufe (wie Scanner) nicht hängen bleiben.
+     */
+    fun stopAll() {
+        Log.d("TextToSpeechHelper", "stopAll aufgerufen. Breche alle Wiedergaben ab.")
+        tts?.stop()
+        routedAudioPlayer.stopAll()
+        
+        // Ausstehende Callbacks für geroutetes Audio auf dem Main-Thread aufrufen
+        val pendingRouted = playRequests.values.toList()
+        playRequests.clear()
+        pendingRouted.forEach { request ->
+            request.onDoneCallback?.let { cb -> handler.post { cb() } }
+            request.file.delete()
+        }
+        
+        // Ausstehende Callbacks für direktes Audio auf dem Main-Thread aufrufen
+        val pendingDirect = directCallbacks.values.toList()
+        directCallbacks.clear()
+        pendingDirect.forEach { cb -> handler.post { cb() } }
     }
 }

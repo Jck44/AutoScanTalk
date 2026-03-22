@@ -179,17 +179,16 @@ class ScanCoordinator @Inject constructor(
         val page = resolvedPage?.value ?: return
         
         // Don't start if we are waiting for predictions
-        currentPage?.value?.let { rawPage ->
-            if (checkForPredictorUseCase(rawPage)) {
-                val isWaitingData = isWaitingForPredictions(
-                    isLoading = isSmartPredictionLoading?.value ?: false,
-                    predictions = smartPredictions?.value,
-                    pageId = rawPage.id
-                )
-                val isWaitingResolution = checkForPredictorUseCase(page)
-                
-                if (isWaitingData || isWaitingResolution) return
-            }
+        val currentP = currentPage?.value
+        if (currentP != null && checkForPredictorUseCase(currentP)) {
+            val isWaitingData = isWaitingForPredictions(
+                isLoading = isSmartPredictionLoading?.value ?: false,
+                predictions = smartPredictions?.value,
+                pageId = currentP.id
+            )
+            val isWaitingResolution = checkForPredictorUseCase(page)
+            
+            if (isWaitingData || isWaitingResolution) return
         }
 
         val startIndex = if (scanningSettings.resumeScanningFromStart) {

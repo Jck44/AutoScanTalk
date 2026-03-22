@@ -7,6 +7,7 @@ import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.core.data.PageRepository
+import com.andreas_kratzer.ghosttalk.core.data.BookRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -20,13 +21,15 @@ class ResolveSmartPredictionUseCaseTest {
 
     private lateinit var pageRepository: PageRepository
     private lateinit var actionExecutor: ActionExecutor
+    private lateinit var bookRepository: BookRepository
     private lateinit var useCase: ResolveSmartPredictionUseCase
 
     @Before
     fun setup() {
         pageRepository = mockk(relaxed = true)
+        bookRepository = mockk(relaxed = true)
         actionExecutor = mockk(relaxed = true)
-        useCase = ResolveSmartPredictionUseCase(pageRepository)
+        useCase = ResolveSmartPredictionUseCase(pageRepository, bookRepository)
     }
 
     @Test
@@ -42,7 +45,8 @@ class ResolveSmartPredictionUseCaseTest {
                 bookId = "b1", 
                 pageId = "p1",
                 rows = 4, 
-                columns = 4
+                columns = 4,
+                skipLog = false
             ) 
         }
     }
@@ -60,7 +64,8 @@ class ResolveSmartPredictionUseCaseTest {
                 bookId = "b1",
                 pageId = "p2",
                 rows = 1,
-                columns = 1
+                columns = 1,
+                skipLog = false
             ) 
         }
     }
@@ -78,7 +83,8 @@ class ResolveSmartPredictionUseCaseTest {
                 bookId = null, 
                 pageId = "p1",
                 rows = 4, 
-                columns = 4
+                columns = 4,
+                skipLog = false
             ) 
         }
     }

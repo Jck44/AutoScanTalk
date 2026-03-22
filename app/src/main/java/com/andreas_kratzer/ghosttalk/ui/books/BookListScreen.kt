@@ -70,10 +70,7 @@ fun BookListScreen(
     val allBooks by bookViewModel.allBooks.collectAsState()
     
     var showAddDialog by remember { mutableStateOf(false) }
-    var bookToDelete by remember { mutableStateOf<Book?>(null) }
-    var bookToRename by remember { mutableStateOf<Book?>(null) }
     
-    var showSecurityDialogForDelete by remember { mutableStateOf(false) }
     var showSecurityDialogForEdit by remember { mutableStateOf(false) }
     val isUnlocked by securityManager.isUnlocked.collectAsState()
     
@@ -141,118 +138,12 @@ fun BookListScreen(
                     onClick = { onBookSelected(book.id) },
                     height = dynamicCardHeight,
                     testTag = "book_card_${book.id}",
-                    trailingAction = {
-                        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                            IconButton(
-                                onClick = { 
-                                    // Feature: A book must always be marked as a favorite.
-                                    // If the clicked book is not the favorite, make it the new favorite.
-                                    // If it IS already the favorite, do nothing (to prevent deselection).
-                                    if (!isFavorite) {
-                                        bookViewModel.settingsRepository.favoriteBookId = book.id
-                                    }
-                                }
-                            ) {
-                                Icon(
-                                    imageVector = if (isFavorite) Icons.Default.Star else GhostTalkIcons.StarBorder,
-                                    contentDescription = stringResource(R.string.book_favorite_description),
-                                    tint = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            
-                            androidx.compose.foundation.layout.Box {
-                                IconButton(onClick = { showMenu = true }) {
-                                    Icon(
-                                        imageVector = Icons.Default.MoreVert,
-                                        contentDescription = stringResource(R.string.action_more)
-                                    )
-                                }
-                                
-                                androidx.compose.material3.DropdownMenu(
-                                    expanded = showMenu,
-                                    onDismissRequest = { showMenu = false }
-                                ) {
-                                    androidx.compose.material3.DropdownMenuItem(
-                                        text = { Text(stringResource(R.string.book_edit_description)) },
-                                        onClick = {
-                                            showMenu = false
-                                            if (!isUnlocked && securityManager.isSecurityRequiredForEdit()) {
-                                                bookToRename = book
-                                                showSecurityDialogForEdit = true
-                                            } else {
-                                                bookToRename = book
-                                            }
-                                        },
-                                        leadingIcon = {
-                                            Icon(Icons.Default.Edit, contentDescription = null)
-                                        }
-                                    )
-                                    androidx.compose.material3.DropdownMenuItem(
-                                        text = { Text(stringResource(R.string.book_delete_description)) },
-                                        onClick = {
-                                            showMenu = false
-                                            if (!isUnlocked && securityManager.isSecurityRequiredForDeletion()) {
-                                                bookToDelete = book
-                                                showSecurityDialogForDelete = true
-                                            } else {
-                                                bookToDelete = book 
-                                            }
-                                        },
-                                        leadingIcon = {
-                                            Icon(
-                                                imageVector = Icons.Default.Delete, 
-                                                contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.error
-                                            )
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                    }
+                    trailingAction = null
                 )
             }
         }
 
-        if (showSecurityDialogForDelete) {
-            SecurityEntryDialog(
-                onDismiss = { 
-                    showSecurityDialogForDelete = false
-                    bookToDelete = null
-                },
-                onConfirm = { success: Boolean ->
-                    if (success) {
-                        showSecurityDialogForDelete = false
-                        // The confirmation dialog for deletion will now show because bookToDelete is set
-                    } else {
-                        bookToDelete = null
-                        showSecurityDialogForDelete = false
-                    }
-                },
-                securityManager = securityManager,
-                isBiometricEnabled = settingsRepository.isBiometricEnabled
-            )
-        }
-
-        if (showSecurityDialogForEdit) {
-            SecurityEntryDialog(
-                onDismiss = { 
-                    showSecurityDialogForEdit = false
-                    bookToRename = null
-                },
-                onConfirm = { success: Boolean ->
-                    if (success) {
-                        showSecurityDialogForEdit = false
-                        // bookToRename is already set from the IconButton click
-                    } else {
-                        bookToRename = null
-                        showSecurityDialogForEdit = false
-                    }
-                },
-                securityManager = securityManager,
-                isBiometricEnabled = settingsRepository.isBiometricEnabled
-            )
-        }
+        /* security dialogs for delete and edit removed as they moved to settings screen */
 
         if (showAddDialog) {
             var newBookName by remember { mutableStateOf("") }
@@ -260,12 +151,13 @@ fun BookListScreen(
             var logLimit by remember { mutableStateOf(100f) }
             var limitScanCycles by remember { mutableStateOf(false) }
             var scanCycleLimit by remember { mutableStateOf(2f) }
+            var logIgnoredActions by remember { mutableStateOf(true) }
 
             AlertDialog(
                 onDismissRequest = { showAddDialog = false },
                 title = { Text(stringResource(R.string.book_dialog_new_title)) },
                 text = {
-                    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    Column {
                         OutlinedTextField(
                             value = newBookName,
                             onValueChange = { 
@@ -275,7 +167,7 @@ fun BookListScreen(
                             label = { Text(stringResource(R.string.book_name_label)) },
                             singleLine = true,
                             shape = MaterialTheme.shapes.large,
-                            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                            modifier = Modifier.fillMaxWidth(),
                             isError = isError,
                             supportingText = {
                                 if (isError) {
@@ -283,63 +175,18 @@ fun BookListScreen(
                                 }
                             }
                         )
-                        
-                        Text(
-                            text = stringResource(R.string.settings_action_log_limit_title) + ": ${logLimit.toInt()}",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        Slider(
-                            value = logLimit,
-                            onValueChange = { logLimit = it },
-                            valueRange = 10f..500f,
-                            steps = 48 // Steps of 10 roughly
-                        )
-
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 8.dp),
-                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(stringResource(R.string.book_limit_scan_cycles_label))
-                            Switch(
-                                checked = limitScanCycles,
-                                onCheckedChange = { limitScanCycles = it }
-                            )
-                        }
-
-                        if (limitScanCycles) {
-                            Text(
-                                text = stringResource(R.string.book_scan_cycle_limit_label) + ": ${scanCycleLimit.toInt()}",
-                                style = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier.padding(top = 8.dp)
-                            )
-                            Slider(
-                                value = scanCycleLimit,
-                                onValueChange = { scanCycleLimit = it },
-                                valueRange = 1f..10f,
-                                steps = 8
-                            )
-                        }
                     }
                 },
                 confirmButton = {
                     Button(
                         onClick = {
                             if (newBookName.isNotBlank()) {
-                                bookViewModel.createNewBook(
-                                    name = newBookName, 
-                                    actionLogLimit = logLimit.toInt(),
-                                    limitScanCycles = limitScanCycles,
-                                    scanCycleLimit = scanCycleLimit.toInt()
-                                )
+                                bookViewModel.createNewBook(name = newBookName)
                                 showAddDialog = false
                             } else {
                                 isError = true
                             }
                         },
-
                         shape = MaterialTheme.shapes.medium
                     ) {
                         Text(stringResource(R.string.action_create))
@@ -355,100 +202,6 @@ fun BookListScreen(
                     }
                 }
             )
-        }
-
-        bookToRename?.let { book ->
-            var editBookName by remember { mutableStateOf(book.name) }
-            var isError by remember { mutableStateOf(false) }
-
-            AlertDialog(
-                onDismissRequest = { bookToRename = null },
-                title = { Text(stringResource(R.string.book_dialog_rename_title)) },
-                text = {
-                    Column {
-                        OutlinedTextField(
-                            value = editBookName,
-                            onValueChange = { 
-                                editBookName = it 
-                                if (it.isNotBlank()) isError = false
-                            },
-                            label = { Text(stringResource(R.string.book_name_label)) },
-                            singleLine = true,
-                            shape = MaterialTheme.shapes.large,
-                            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-                            isError = isError,
-                            supportingText = {
-                                if (isError) {
-                                    Text(stringResource(R.string.error_book_name_required))
-                                }
-                            }
-                        )
-                    }
-                },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            if (editBookName.isNotBlank()) {
-                                bookViewModel.updateBook(
-                                    book = book, 
-                                    newName = editBookName, 
-                                    actionLogLimit = book.actionLogLimit,
-                                    limitScanCycles = book.limitScanCycles,
-                                    scanCycleLimit = book.scanCycleLimit
-                                )
-                                bookToRename = null
-                            } else {
-                                isError = true
-                            }
-                        },
-
-                        shape = MaterialTheme.shapes.medium
-                    ) {
-                        Text(stringResource(CoreR.string.action_save))
-                    }
-                },
-                dismissButton = {
-                    Button(
-                        onClick = { bookToRename = null },
-                        shape = MaterialTheme.shapes.medium,
-                        colors = ButtonDefaults.textButtonColors()
-                    ) {
-                        Text(stringResource(R.string.action_cancel))
-                    }
-                }
-            )
-        }
-
-        bookToDelete?.let { book ->
-            // Only show delete confirmation if not currently showing PIN dialog
-            if (!showSecurityDialogForDelete) {
-                AlertDialog(
-                    onDismissRequest = { bookToDelete = null },
-                    title = { Text(stringResource(R.string.book_dialog_delete_title)) },
-                    text = { Text(stringResource(R.string.book_dialog_delete_confirm, book.name)) },
-                    confirmButton = {
-                        Button(
-                            onClick = {
-                                bookViewModel.deleteBook(book)
-                                bookToDelete = null
-                            },
-                            shape = MaterialTheme.shapes.medium,
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                        ) {
-                            Text(stringResource(CoreR.string.action_delete))
-                        }
-                    },
-                    dismissButton = {
-                        Button(
-                            onClick = { bookToDelete = null },
-                            shape = MaterialTheme.shapes.medium,
-                            colors = ButtonDefaults.textButtonColors()
-                        ) {
-                            Text(stringResource(R.string.action_cancel))
-                        }
-                    }
-                )
-            }
         }
         }
     }

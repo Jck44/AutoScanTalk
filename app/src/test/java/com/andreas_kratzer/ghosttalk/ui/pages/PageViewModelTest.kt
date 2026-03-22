@@ -208,7 +208,7 @@ class PageViewModelTest {
             application = application,
             actionLogUseCase = actionLogUseCase,
             ttsHelper = ttsHelper,
-            activateButtonUseCase = ActivateButtonUseCase(ttsHelper, ResolveSmartPredictionUseCase(pageRepository)),
+            activateButtonUseCase = ActivateButtonUseCase(ttsHelper, ResolveSmartPredictionUseCase(pageRepository, bookRepository), bookRepository),
             handleActionExecutionEventUseCase = HandleActionExecutionEventUseCase(pageRepository, settingsRepository),
             locationExecutor = locationExecutor,
             appStateRepository = appStateRepository,
@@ -239,7 +239,8 @@ class PageViewModelTest {
             settingsRepository = settingsRepository,
             buttonUsageRepository = buttonUsageRepository,
             handlers = setOf(navHandler),
-            actionCoordinator = actionCoordinator
+            actionCoordinator = actionCoordinator,
+            ttsHelper = ttsHelper
         )
 
         val scanCoordinator = mockk<ScanCoordinator>(relaxed = true)

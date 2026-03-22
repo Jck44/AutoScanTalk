@@ -164,6 +164,7 @@ fun SettingsScreen(
                 dimensions = dimensions,
                 isGlobal = isGlobal,
                 viewModel = viewModel,
+                onNavigateBack = onNavigateBack,
                 onLockClicked = {
                     viewModel.lock()
                     onNavigateToStart()
@@ -275,6 +276,7 @@ private fun SettingsSubMenu(
     dimensions: com.andreas_kratzer.ghosttalk.core.ui.theme.Dimensions,
     isGlobal: Boolean,
     viewModel: SettingsViewModel,
+    onNavigateBack: () -> Unit,
     onLockClicked: () -> Unit,
     onLocalExport: () -> Unit,
     onLocalImport: () -> Unit
@@ -290,6 +292,7 @@ private fun SettingsSubMenu(
             section,
             viewModel,
             isGlobal = isGlobal,
+            onNavigateBack = onNavigateBack,
             onLockClicked = onLockClicked,
             onLocalExport = onLocalExport,
             onLocalImport = onLocalImport
@@ -368,6 +371,7 @@ fun SubmenuContent(
     section: SettingsSection, 
     viewModel: SettingsViewModel,
     isGlobal: Boolean,
+    onNavigateBack: () -> Unit = {},
     onLockClicked: () -> Unit = {},
     onLocalExport: () -> Unit = {},
     onLocalImport: () -> Unit = {}
@@ -377,7 +381,7 @@ fun SubmenuContent(
             if (isGlobal) {
                 LanguageSettingsSection(viewModel)
             }
-            GeneralSettingsSection(viewModel, isGlobal = isGlobal)
+            GeneralSettingsSection(viewModel, isGlobal = isGlobal, onNavigateBack = onNavigateBack)
         }
         SettingsSection.VOICE -> {
             VoiceSettingsSection(viewModel, isGlobal = isGlobal)

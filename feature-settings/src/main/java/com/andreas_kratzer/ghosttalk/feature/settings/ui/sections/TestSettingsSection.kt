@@ -11,8 +11,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -42,6 +45,7 @@ import android.graphics.BitmapFactory
 import java.io.File
 import com.andreas_kratzer.ghosttalk.core.ui.components.PreferenceCategory
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsToggleItem
+import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsEditTextItem
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.feature.settings.R
@@ -100,28 +104,64 @@ fun TestSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                     )
                 } else {
                     val sdf = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
-                    Column {
-                        val historyToDisplay: List<ButtonUsageRepository.ButtonUsageEvent> = buttonHistory.reversed().take(15)
-                        for (index in historyToDisplay.indices) {
-                            val event: ButtonUsageRepository.ButtonUsageEvent = historyToDisplay[index]
-                            HistoryItem(
-                                event = event,
-                                timeStr = sdf.format(Date(event.timestamp)),
-                                onImageClick = { previewImagePath = it },
-                                onEditButton = { pId, bId -> viewModel.onEditButtonFromHistory(pId, bId) },
-                                onJumpToPage = { pId -> viewModel.onJumpToPageFromHistory(pId) },
-                                onDelete = { viewModel.onDeleteHistoryItem(it) },
-                                onClick = { viewModel.onShowHistoryDetail(it) }
-                            )
-                            if (index < historyToDisplay.lastIndex) {
-                                HorizontalDivider(
-                                    modifier = Modifier.padding(horizontal = dimensions.paddingMedium),
-                                    thickness = 0.5.dp,
-                                    color = MaterialTheme.colorScheme.outlineVariant
+                    val scrollState = rememberScrollState()
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 320.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .verticalScroll(scrollState)
+                        ) {
+                            val historyToDisplay: List<ButtonUsageRepository.ButtonUsageEvent> = buttonHistory.reversed().take(50)
+                            for (index in historyToDisplay.indices) {
+                                val event: ButtonUsageRepository.ButtonUsageEvent = historyToDisplay[index]
+                                HistoryItem(
+                                    event = event,
+                                    timeStr = sdf.format(Date(event.timestamp)),
+                                    onImageClick = { previewImagePath = it },
+                                    onEditButton = { pId, bId -> viewModel.onEditButtonFromHistory(pId, bId) },
+                                    onJumpToPage = { pId -> viewModel.onJumpToPageFromHistory(pId) },
+                                    onDelete = { viewModel.onDeleteHistoryItem(it) },
+                                    onClick = { viewModel.onShowHistoryDetail(it) }
                                 )
+                                if (index < historyToDisplay.lastIndex) {
+                                    HorizontalDivider(
+                                        modifier = Modifier.padding(horizontal = dimensions.paddingMedium),
+                                        thickness = 0.5.dp,
+                                        color = MaterialTheme.colorScheme.outlineVariant
+                                    )
+                                }
                             }
                         }
                     }
+                }
+            }
+
+            // Advanced Settings Category (Book-specific)
+            val logLimit by viewModel.actionLogLimit.collectAsState(100)
+            val activeBook by viewModel.activeBook.collectAsState()
+            
+            PreferenceCategory(stringResource(R.string.settings_category_advanced), modifier = Modifier.weight(1f)) {
+                SettingsEditTextItem(
+                    label = stringResource(R.string.settings_action_log_limit),
+                    value = logLimit.toString(),
+                    onValueChange = { newValue: String -> viewModel.setActionLogLimitInput(newValue) }
+                )
+                
+                activeBook?.let { book ->
+                    SettingsToggleItem(
+                        label = stringResource(R.string.settings_log_ignored_actions),
+                        checked = book.logIgnoredActions,
+                        onCheckedChange = { isChecked: Boolean -> viewModel.setLogIgnoredActionsInput(isChecked) }
+                    )
+                    SettingsToggleItem(
+                        label = stringResource(R.string.settings_log_stop_actions),
+                        checked = book.logStopActions,
+                        onCheckedChange = { isChecked: Boolean -> viewModel.setLogStopActionsInput(isChecked) }
+                    )
                 }
             }
         }

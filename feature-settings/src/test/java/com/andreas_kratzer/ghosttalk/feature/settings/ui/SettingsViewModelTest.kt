@@ -6,6 +6,7 @@ import com.andreas_kratzer.ghosttalk.core.cloud.PhilipsHueManager
 import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.core.data.GetPagesUseCase
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.data.BookRepository
 import com.andreas_kratzer.ghosttalk.core.data.impl.PageImportExportManager
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.CloudSyncSettingsDelegate
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.ExperimentalSettingsDelegate
@@ -13,6 +14,8 @@ import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.GenAiSettings
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.ScanningSettingsDelegate
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.TtsSettingsDelegate
 import com.andreas_kratzer.ghosttalk.feature.settings.domain.UpdateActionLogLimitUseCase
+import com.andreas_kratzer.ghosttalk.feature.settings.domain.UpdateActiveBookNameUseCase
+import com.andreas_kratzer.ghosttalk.feature.settings.domain.DeleteBookUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -38,6 +41,7 @@ class SettingsViewModelTest {
     
     private lateinit var application: Application
     private lateinit var settingsRepository: SettingsRepository
+    private lateinit var bookRepository: BookRepository
     private lateinit var buttonUsageRepository: ButtonUsageRepository
     private lateinit var securityManager: SecurityManager
     private lateinit var getPagesUseCase: GetPagesUseCase
@@ -50,6 +54,8 @@ class SettingsViewModelTest {
     private lateinit var importExportManager: PageImportExportManager
     private lateinit var hueManager: PhilipsHueManager
     private lateinit var updateActionLogLimitUseCase: UpdateActionLogLimitUseCase
+    private lateinit var updateActiveBookNameUseCase: UpdateActiveBookNameUseCase
+    private lateinit var deleteBookUseCase: DeleteBookUseCase
     
     private lateinit var viewModel: SettingsViewModel
 
@@ -59,6 +65,7 @@ class SettingsViewModelTest {
 
         application = mockk(relaxed = true)
         settingsRepository = mockk(relaxed = true)
+        bookRepository = mockk(relaxed = true)
         buttonUsageRepository = mockk(relaxed = true)
         securityManager = mockk(relaxed = true)
         getPagesUseCase = mockk(relaxed = true)
@@ -71,6 +78,8 @@ class SettingsViewModelTest {
         importExportManager = mockk(relaxed = true)
         hueManager = mockk(relaxed = true)
         updateActionLogLimitUseCase = mockk(relaxed = true)
+        updateActiveBookNameUseCase = mockk(relaxed = true)
+        deleteBookUseCase = mockk(relaxed = true)
 
         // Mock common flows
         every { settingsRepository.activeBookId } returns "test-book"
@@ -86,6 +95,7 @@ class SettingsViewModelTest {
         viewModel = SettingsViewModel(
             application = application,
             settingsRepository = settingsRepository,
+            bookRepository = bookRepository,
             buttonUsageRepository = buttonUsageRepository,
             securityManager = securityManager,
             getPagesUseCase = getPagesUseCase,
@@ -94,6 +104,8 @@ class SettingsViewModelTest {
             cloudSyncDelegate = cloudSyncDelegate,
             genAiDelegate = genAiDelegate,
             experimentalDelegate = experimentalDelegate,
+            updateActiveBookNameUseCase = updateActiveBookNameUseCase,
+            deleteBookUseCase = deleteBookUseCase,
             updateActionLogLimitUseCase = updateActionLogLimitUseCase,
             importExportManager = importExportManager,
             hueManager = hueManager

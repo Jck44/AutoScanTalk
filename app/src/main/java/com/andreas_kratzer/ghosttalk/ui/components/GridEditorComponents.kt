@@ -168,25 +168,34 @@ fun calculateGridSize(
     rows: Int,
     cols: Int,
     isRowByRow: Boolean,
+    horizontalPadding: Dp,
+    isTablet: Boolean,
     dimensions: com.andreas_kratzer.ghosttalk.core.ui.theme.Dimensions
 ): GridSizeInfo {
-    // Subtract extra width if row handles are present (approx 48dp handle + padding/borders)
+    // Precise width if row handles are present: 
+    // icon box (48dp) + inner Row padding (8dp left + 8dp right = 16dp total horizontally)
     val rowHandleWidth = if (isRowByRow) 64.dp else 0.dp
     
-    // Subtract a small safety margin (2dp) to prevent sub-pixel rounding issues causing scrollbars
-    val availableWidth = maxWidth - (dimensions.paddingMedium * 2) - 2.dp - rowHandleWidth
+    // Subtract a small safety margin (2dp) to prevent sub-pixel rounding issues
+    val availableWidth = maxWidth - (horizontalPadding * 2) - 2.dp - rowHandleWidth
     val availableHeight = maxHeight - (dimensions.paddingMedium * 2) - 2.dp
 
-    val buttonWidthToFit = (availableWidth - (dimensions.gridSpacing * (cols - 1))) / cols
+    var buttonWidthToFit = (availableWidth - (dimensions.gridSpacing * (cols - 1))) / cols
     // When in row-by-row mode, each row has a Row wrapper with its own padding/border (approx 16dp total height offset per row)
     val heightOffsetPerRow = if (isRowByRow) 16.dp else 0.dp
-    val buttonHeightToFit = ((availableHeight - (dimensions.gridSpacing * (rows - 1))) / rows) - heightOffsetPerRow
+    var buttonHeightToFit = ((availableHeight - (dimensions.gridSpacing * (rows - 1))) / rows) - heightOffsetPerRow
 
     val maxButtonSize = 180.dp
-    var optimalWidth = buttonWidthToFit.coerceIn(dimensions.minButtonWidth, maxButtonSize)
-    var optimalHeight = buttonHeightToFit.coerceIn(dimensions.minButtonWidth, maxButtonSize)
+    
+    // We allow the buttons to go below minButtonWidth if necessary to fit the screen width
+    var optimalWidth = buttonWidthToFit.coerceAtMost(maxButtonSize)
+    
+    // On phones, we enforce a minimum height to ensure readability, even if it requires scrolling.
+    // On tablets, we continue to fit the entire grid on the screen.
+    val minEditorButtonHeight = if (isTablet) 0.dp else 72.dp
+    var optimalHeight = buttonHeightToFit.coerceIn(minEditorButtonHeight, maxButtonSize)
 
-    val maxRatio = 1.5f
+    val maxRatio = 4.0f
     if (optimalWidth > optimalHeight * maxRatio) {
         optimalWidth = optimalHeight * maxRatio
     } else if (optimalHeight > optimalWidth * maxRatio) {
@@ -194,7 +203,7 @@ fun calculateGridSize(
     }
 
     // The container width and height must include the contentPadding and row handles
-    val totalWidth = (optimalWidth * cols) + (dimensions.gridSpacing * (cols - 1)) + (dimensions.paddingMedium * 2) + rowHandleWidth
+    val totalWidth = (optimalWidth * cols) + (dimensions.gridSpacing * (cols - 1)) + (horizontalPadding * 2) + rowHandleWidth
     val totalHeight = ((optimalHeight + heightOffsetPerRow) * rows) + (dimensions.gridSpacing * (rows - 1)) + (dimensions.paddingMedium * 2)
 
     return GridSizeInfo(

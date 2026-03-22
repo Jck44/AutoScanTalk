@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 
@@ -108,14 +109,16 @@ fun GhostTalkTheme(
         
         // Use wider buttons in landscape to save vertical space
         val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        val isTablet = minOf(maxWidth, maxHeight) >= 600.dp
         val buttonAspectRatio = if (isLandscape) 1.6f else 1.0f
-
+ 
         val dimensions = Dimensions()
-
+ 
         CompositionLocalProvider(
             LocalDimensions provides dimensions.copy(
                 buttonFontSize = buttonFontSize,
-                buttonAspectRatio = buttonAspectRatio
+                buttonAspectRatio = buttonAspectRatio,
+                isTablet = isTablet
             )
         ) {
             MaterialTheme(

@@ -27,6 +27,7 @@ class ActionExecutorTest {
     private lateinit var actionCoordinator: ActionCoordinator
     private lateinit var actionExecutor: ActionExecutor
     private lateinit var mockHandler: ActionHandler
+    private lateinit var ttsHelper: com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
 
     @Before
     fun setup() {
@@ -34,13 +35,15 @@ class ActionExecutorTest {
         buttonUsageRepository = mockk(relaxed = true)
         actionCoordinator = mockk(relaxed = true)
         mockHandler = mockk(relaxed = true)
+        ttsHelper = mockk(relaxed = true)
         
         actionExecutor = ActionExecutor(
             scope = scope,
             settingsRepository = settingsRepository,
             buttonUsageRepository = buttonUsageRepository,
             handlers = setOf(mockHandler),
-            actionCoordinator = actionCoordinator
+            actionCoordinator = actionCoordinator,
+            ttsHelper = ttsHelper
         )
     }
 

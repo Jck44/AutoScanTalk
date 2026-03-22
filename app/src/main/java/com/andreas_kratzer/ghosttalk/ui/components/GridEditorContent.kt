@@ -112,6 +112,7 @@ fun GridEditorContent(
             }
         }
 
+        val horizontalPadding = if (isLandscape) dimensions.paddingMedium else dimensions.paddingLarge
         val gridState = rememberLazyGridState()
         val rowReorderState = rememberReorderableState()
         val buttonReorderState = rememberReorderableState()
@@ -124,7 +125,7 @@ fun GridEditorContent(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = if (isLandscape) dimensions.paddingMedium else dimensions.paddingLarge)
+                    .padding(horizontal = horizontalPadding)
                     .padding(bottom = if (isLandscape) dimensions.paddingMedium else dimensions.paddingLarge),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -132,7 +133,7 @@ fun GridEditorContent(
 
                 val effectiveScanPattern = item.scanPattern ?: bookDefaultScanPattern
                 val isRowByRow = effectiveScanPattern == "row_by_row" || effectiveScanPattern == "row_column"
-
+                
                 BoxWithConstraints(
                     modifier = Modifier.weight(1f).fillMaxWidth(),
                     contentAlignment = Alignment.TopCenter
@@ -143,6 +144,8 @@ fun GridEditorContent(
                         rows = item.rows,
                         cols = item.columns,
                         isRowByRow = isRowByRow,
+                        horizontalPadding = horizontalPadding,
+                        isTablet = dimensions.isTablet,
                         dimensions = dimensions
                     )
 
@@ -151,8 +154,8 @@ fun GridEditorContent(
                         state = gridState,
                         modifier = Modifier
                             .width(sizeInfo.totalWidth)
-                            .height(sizeInfo.totalHeight),
-                        contentPadding = PaddingValues(dimensions.paddingMedium),
+                            .height(sizeInfo.totalHeight.coerceAtMost(maxHeight)),
+                        contentPadding = PaddingValues(horizontalPadding),
                         verticalArrangement = Arrangement.spacedBy(dimensions.gridSpacing),
                         horizontalArrangement = Arrangement.spacedBy(dimensions.gridSpacing)
                     ) {

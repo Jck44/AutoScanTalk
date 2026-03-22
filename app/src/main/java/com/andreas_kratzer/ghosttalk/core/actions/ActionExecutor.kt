@@ -4,6 +4,7 @@ import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.di.ApplicationScope
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -19,7 +20,8 @@ class ActionExecutor @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val buttonUsageRepository: ButtonUsageRepository,
     private val handlers: Set<@JvmSuppressWildcards ActionHandler>,
-    private val actionCoordinator: ActionCoordinator
+    private val actionCoordinator: ActionCoordinator,
+    private val ttsHelper: TextToSpeechHelper
 ) : ScannerActionProvider {
     private var timeProvider: () -> Long = { System.currentTimeMillis() }
     
@@ -46,24 +48,35 @@ class ActionExecutor @Inject constructor(
         pageId: String? = null,
         rows: Int = 1,
         columns: Int = 1,
-        index: Int = -1
+        index: Int = -1,
+        skipLog: Boolean = false
     ) {
         val currentTime = timeProvider()
         val holdingTime = settingsRepository.holdingTimeMillis
         
-        if (lastExecutionTime != -1L && currentTime - lastExecutionTime < holdingTime) {
-            log("Aktion ignoriert (Haltezeit aktiv: ${holdingTime}ms)")
-            return
+        synchronized(this) {
+            if (lastExecutionTime != -1L && currentTime - lastExecutionTime < holdingTime) {
+                if (!skipLog) {
+                    log("Aktion ignoriert (Haltezeit aktiv: ${holdingTime}ms)")
+                }
+                return
+            }
+            
+            if (_isExecuting.value) {
+                if (!skipLog) {
+                    log("Aktion ignoriert (Aktion läuft bereits)")
+                }
+                return
+            }
+
+            lastExecutionTime = currentTime
+            _isExecuting.value = true
         }
+
+        // Interrupt any ongoing scanner cues or previous actions
+        ttsHelper.stopAll()
         
-        if (_isExecuting.value) {
-            log("Aktion ignoriert (Aktion läuft bereits)")
-            return
-        }
-        
-        lastExecutionTime = currentTime
         val currentExecutionId = ++activeExecutionId
-        _isExecuting.value = true
 
         if (bookId != null && index != -1) {
             scope.launch {
@@ -98,6 +111,22 @@ class ActionExecutor @Inject constructor(
         if (executionId == activeExecutionId) {
             _isExecuting.value = false
         }
+    }
+
+    /**
+     * Stoppt die aktuelle Aktion und setzt den Ausführungsstatus zurück.
+     * Wird z.B. bei einem Seitenwechsel aufgerufen.
+     */
+    fun stopActions(skipLog: Boolean = false) {
+        if (!skipLog) {
+            log("Stoppe alle laufenden Aktionen (z.B. wegen Seitenwechsel)")
+        }
+        // Incremenet execution ID to orphan ANY current callbacks, just in case
+        activeExecutionId++
+        _isExecuting.value = false
+        
+        // Actually tell the TTS helper to stop audio
+        ttsHelper.stopAll()
     }
 
     internal fun setExecutingStateForTest(executing: Boolean) {

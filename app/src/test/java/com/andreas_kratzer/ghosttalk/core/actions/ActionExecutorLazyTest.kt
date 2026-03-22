@@ -20,6 +20,8 @@ class ActionExecutorLazyTest {
     private val scope = TestScope(testDispatcher)
     private val actionCoordinator = mockk<ActionCoordinator>(relaxed = true)
 
+    private val ttsHelper = mockk<com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper>(relaxed = true)
+
     @Before
     fun setup() {
     }
@@ -31,7 +33,8 @@ class ActionExecutorLazyTest {
             settingsRepository = mockk(relaxed = true),
             buttonUsageRepository = mockk(relaxed = true),
             handlers = emptySet(),
-            actionCoordinator = actionCoordinator
+            actionCoordinator = actionCoordinator,
+            ttsHelper = ttsHelper
         )
         val action = NavigateToPageButtonAction("p2")
         val config = ButtonConfig(id = "b1", label = "Go", buttonAction = action, auditoryCue = null)
@@ -51,7 +54,8 @@ class ActionExecutorLazyTest {
             settingsRepository = mockk(relaxed = true),
             buttonUsageRepository = mockk(relaxed = true),
             handlers = setOf(failingHandler),
-            actionCoordinator = actionCoordinator
+            actionCoordinator = actionCoordinator,
+            ttsHelper = ttsHelper
         )
 
         val action = GeminiButtonAction("Hello")

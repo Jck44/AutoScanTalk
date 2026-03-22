@@ -27,6 +27,9 @@
     <string name="book_import_cloud_error">Fehler beim Laden aus der Cloud: %s</string>
     <string name="book_limit_scan_cycles_label">Anzahl von Scandurchläufen begrenzen</string>
     <string name="book_scan_cycle_limit_label">Anzahl der Scandurchläufe</string>
+    <string name="book_log_ignored_actions_label">Ignorierte Aktionen im Verlauf protokollieren</string>
+    <string name="book_log_stop_actions_label">Stopp-Befehl (z.B. bei Seitenwechsel) im Verlauf protokollieren</string>
+    <string name="book_dialog_edit_title">Buch bearbeiten</string>
     
     <!-- Shared Actions -->
     <string name="action_create">Erstellen</string>

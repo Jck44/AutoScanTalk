@@ -44,12 +44,14 @@ class ControlDeviceIntegrationTest {
             )
         )
 
+        val ttsHelper = mockk<com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper>(relaxed = true)
         val actionExecutor = ActionExecutor(
             scope = this,
             settingsRepository = settingsRepository,
             buttonUsageRepository = buttonUsageRepository,
             handlers = handlers,
-            actionCoordinator = actionCoordinator
+            actionCoordinator = actionCoordinator,
+            ttsHelper = ttsHelper
         )
 
         val action = ControlDeviceButtonAction(DeviceActionType.MEDIA_NEXT)

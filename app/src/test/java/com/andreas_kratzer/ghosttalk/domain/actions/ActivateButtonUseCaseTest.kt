@@ -24,6 +24,7 @@ class ActivateButtonUseCaseTest {
     private lateinit var resolveSmartPredictionUseCase: ResolveSmartPredictionUseCase
     private lateinit var actionExecutor: ActionExecutor
     private lateinit var scanCoordinator: ScanCoordinator
+    private lateinit var bookRepository: com.andreas_kratzer.ghosttalk.core.data.BookRepository
     private lateinit var useCase: ActivateButtonUseCase
 
     @Before
@@ -31,8 +32,8 @@ class ActivateButtonUseCaseTest {
         ttsHelper = mockk(relaxed = true)
         resolveSmartPredictionUseCase = mockk(relaxed = true)
         actionExecutor = mockk(relaxed = true)
-        scanCoordinator = mockk(relaxed = true)
-        useCase = ActivateButtonUseCase(ttsHelper, resolveSmartPredictionUseCase)
+        bookRepository = mockk(relaxed = true)
+        useCase = ActivateButtonUseCase(ttsHelper, resolveSmartPredictionUseCase, bookRepository)
         
         every { actionExecutor.isExecuting } returns MutableStateFlow(false)
         io.mockk.mockkStatic(android.util.Log::class)
@@ -69,11 +70,9 @@ class ActivateButtonUseCaseTest {
         verify { 
             actionExecutor.executeButtonAction(
                 buttonConfig = execButton, 
-                bookId = "b1", 
-                pageId = "p1", 
-                rows = 2, 
                 columns = 2, 
-                index = 0
+                index = 0,
+                skipLog = false
             ) 
         }
     }

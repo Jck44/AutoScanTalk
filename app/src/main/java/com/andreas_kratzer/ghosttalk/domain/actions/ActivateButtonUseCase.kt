@@ -6,11 +6,13 @@ import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
 import com.andreas_kratzer.ghosttalk.core.scanning.ScanCoordinator
+import com.andreas_kratzer.ghosttalk.core.data.BookRepository
 import javax.inject.Inject
 
 class ActivateButtonUseCase @Inject constructor(
     private val ttsHelper: TextToSpeechHelper,
-    private val resolveSmartPredictionUseCase: ResolveSmartPredictionUseCase
+    private val resolveSmartPredictionUseCase: ResolveSmartPredictionUseCase,
+    private val bookRepository: BookRepository
 ) {
     suspend fun execute(
         index: Int,
@@ -48,13 +50,22 @@ class ActivateButtonUseCase @Inject constructor(
             }
         }
         
+        
+        val skipLog = if (isUserModeActive && activeBookId != null) {
+            val book = bookRepository.getBookById(activeBookId)
+            book?.logIgnoredActions == false
+        } else {
+            false
+        }
+
         actionExecutor.executeButtonAction(
             buttonConfig, 
             bookId = activeBookId.takeIf { isUserModeActive },
             pageId = page.id.takeIf { isUserModeActive },
             rows = page.rows,
             columns = page.columns,
-            index = index
+            index = index,
+            skipLog = skipLog
         )
     }
 }

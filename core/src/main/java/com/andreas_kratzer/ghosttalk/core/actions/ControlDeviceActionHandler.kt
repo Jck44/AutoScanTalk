@@ -38,8 +38,8 @@ class ControlDeviceActionHandler @Inject constructor(
     private val getString: (Int, Array<out Any?>) -> String = { id, args -> 
         // Fallback for battery/time/date which used hardcoded negative IDs in the previous version
         when (id) {
-            -1001 -> "Batteriestand ist bei $args Prozent"
-            -1002 -> "Batteriestand ist bei $args Prozent" 
+            -1001 -> "Batteriestand ist bei ${args.getOrNull(0) ?: ""} Prozent"
+            -1002 -> "Batteriestand ist bei ${args.getOrNull(0) ?: ""} Prozent" 
             else -> try { context.getString(id, *args) } catch(_: Exception) { "" }
         }
     }

@@ -114,6 +114,12 @@
     <string name="settings_limit_scan_cycles">Anzahl von Scandurchläufen begrenzen</string>
     <string name="settings_scan_cycle_limit">Anzahl der Scandurchläufe</string>
     <string name="settings_action_log_limit">Limit für die Aktionsliste</string>
+    <string name="settings_log_ignored_actions">Ignorierte Aktionen im Verlauf protokollieren</string>
+    <string name="settings_log_stop_actions">Stopp-Befehle im Verlauf protokollieren</string>
+    <string name="book_name_label">Name des Buches</string>
+    <string name="book_delete_description">Buch löschen</string>
+    <string name="book_dialog_delete_title">Buch löschen?</string>
+    <string name="book_dialog_delete_confirm">Möchtest du das Buch \"%s\" wirklich unwiderruflich löschen? Alle darin enthaltenen Seiten gehen verloren.</string>
 
     <!-- Advanced / Maintenance -->
     <string name="settings_weather_cache_timeout_label">Wetter Cache Dauer (Minuten)</string>
