@@ -1,6 +1,7 @@
 package com.andreas_kratzer.ghosttalk.core.scanning
 
 import com.andreas_kratzer.ghosttalk.core.actions.ScannerActionProvider
+import com.andreas_kratzer.ghosttalk.core.actions.ScannerController
 import com.andreas_kratzer.ghosttalk.core.ai.domain.CheckForPredictorUseCase
 import com.andreas_kratzer.ghosttalk.core.di.ApplicationScope
 import com.andreas_kratzer.ghosttalk.core.model.Page
@@ -25,7 +26,7 @@ class ScanCoordinator @Inject constructor(
     private val actionProvider: ScannerActionProvider,
     private val checkForPredictorUseCase: CheckForPredictorUseCase,
     private val ttsHelper: TextToSpeechHelper
-) {
+) : ScannerController {
     private var currentPage: StateFlow<Page?>? = null
     private var isUserModeActive: StateFlow<Boolean>? = null
     private var resolvedPage: StateFlow<Page?>? = null
@@ -50,6 +51,9 @@ class ScanCoordinator @Inject constructor(
     
     private val _isStoppedDueToLimit = MutableStateFlow(false)
     val isStoppedDueToLimit: StateFlow<Boolean> = _isStoppedDueToLimit.asStateFlow()
+
+    private val _isPausedManually = MutableStateFlow(false)
+    override val isPausedManually: StateFlow<Boolean> = _isPausedManually.asStateFlow()
     
     private var scanCycleLimitEnabled = false
     private var scanCycleLimit = 2
@@ -93,7 +97,8 @@ class ScanCoordinator @Inject constructor(
                 currentPage,
                 resolvedPage,
                 isSmartPredictionLoading,
-                smartPredictions
+                smartPredictions,
+                isPausedManually
             ) { array ->
                 Data(
                     isExecuting = array[1] as Boolean,
@@ -104,11 +109,16 @@ class ScanCoordinator @Inject constructor(
                     predictions = (array[5] as? List<*>)?.filterIsInstance<String>()
                 )
             }.collect { data ->
-                if (!data.isActive) {
-                    debugLog("User mode deactivated. Stopping scan.")
-                    stopScanning()
-                    _isStoppedDueToLimit.value = false
-                    _currentCycleCount.value = 0
+                if (!data.isActive || _isPausedManually.value) {
+                    if (!data.isActive) {
+                        debugLog("User mode deactivated. Stopping scan.")
+                        stopScanning()
+                        _isStoppedDueToLimit.value = false
+                        _currentCycleCount.value = 0
+                    } else {
+                        debugLog("Scanning is manually paused.")
+                        stopScanningTemporarily()
+                    }
                     return@collect
                 }
 
@@ -174,6 +184,7 @@ class ScanCoordinator @Inject constructor(
     fun resumeScanningIfEnabled() {
         if (!scanningSettings.autoStartScanning) return
         if (_isStoppedDueToLimit.value) return
+        if (_isPausedManually.value) return
         if (actionProvider.isExecuting.value) return
         
         val page = resolvedPage?.value ?: return
@@ -239,6 +250,7 @@ class ScanCoordinator @Inject constructor(
             lastCuePageId = null
             _isStoppedDueToLimit.value = false
             _currentCycleCount.value = 0
+            _isPausedManually.value = false
             stopScanning()
         }
     }
@@ -266,5 +278,16 @@ class ScanCoordinator @Inject constructor(
             rowNames = page.rowNames,
             pageId = page.id
         )
+    }
+
+    override fun togglePause() {
+        val newState = !_isPausedManually.value
+        _isPausedManually.value = newState
+        debugLog("Toggle pause manually. New state: $newState")
+        if (newState) {
+            stopScanningTemporarily()
+        } else {
+            resumeScanningIfEnabled()
+        }
     }
 }

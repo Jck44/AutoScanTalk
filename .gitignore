@@ -37,3 +37,4 @@ local.properties
 /test_stacktrace.txt
 /test_fail_output.txt
 /feature-audio/build/
+/.kotlin/

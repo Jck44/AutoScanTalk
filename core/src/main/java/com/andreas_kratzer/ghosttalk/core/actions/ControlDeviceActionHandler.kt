@@ -31,6 +31,7 @@ class ControlDeviceActionHandler @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val settings: ControlDeviceSettings,
     private val ttsProxyLazy: dagger.Lazy<ControlDeviceTtsProxy>,
+    private val scanControllerLazy: dagger.Lazy<ScannerController>,
     private val actionLogger: ActionLogger,
     private val actionEventEmitter: ActionEventEmitter
 ) : ActionHandler {
@@ -73,6 +74,10 @@ class ControlDeviceActionHandler @Inject constructor(
             DeviceActionType.READ_BATTERY -> handleReadBattery(buttonConfig, deviceAction, executionId, onFinish)
             DeviceActionType.READ_TIME -> handleReadTime(buttonConfig, deviceAction, executionId, onFinish)
             DeviceActionType.READ_DATE -> handleReadDate(buttonConfig, deviceAction, executionId, onFinish)
+
+            DeviceActionType.TOGGLE_SCANNING -> {
+                handleToggleScanning(executionId, onFinish)
+            }
 
             DeviceActionType.CLEAR_NOTIFICATIONS -> {
                 actionLogger.log("Benachrichtigungen löschen noch nicht unterstützt.")
@@ -387,5 +392,16 @@ class ControlDeviceActionHandler @Inject constructor(
         } else {
             onFinish(executionId)
         }
+    }
+
+    private fun handleToggleScanning(executionId: Int, onFinish: (Int) -> Unit) {
+        val scannerController = scanControllerLazy.get()
+        scannerController.togglePause()
+        
+        val isPaused = scannerController.isPausedManually.value
+        val msg = if (isPaused) "Scannen pausiert" else "Scannen fortgesetzt"
+        actionLogger.log(msg)
+        
+        onFinish(executionId)
     }
 }

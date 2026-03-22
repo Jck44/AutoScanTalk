@@ -358,7 +358,8 @@ fun ControlDeviceActionFields(
         DeviceActionType.SEND_MESSAGE to stringResource(R.string.action_send_message),
         DeviceActionType.READ_BATTERY to stringResource(R.string.button_device_control_battery),
         DeviceActionType.READ_DATE to stringResource(R.string.button_device_control_date),
-        DeviceActionType.READ_TIME to stringResource(R.string.button_device_control_time)
+        DeviceActionType.READ_TIME to stringResource(R.string.button_device_control_time),
+        DeviceActionType.TOGGLE_SCANNING to stringResource(R.string.button_device_control_toggle_scanning)
     )
 
     val currentLabel = types.find { it.first == selectedType }?.second ?: types.first().second

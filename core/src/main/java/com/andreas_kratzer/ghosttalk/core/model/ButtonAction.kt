@@ -147,5 +147,6 @@ enum class DeviceActionType {
     SEND_MESSAGE,
     READ_BATTERY,
     READ_TIME,
-    READ_DATE
+    READ_DATE,
+    TOGGLE_SCANNING
 }

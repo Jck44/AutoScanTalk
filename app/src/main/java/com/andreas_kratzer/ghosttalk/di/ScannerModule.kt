@@ -31,4 +31,10 @@ abstract class ScannerModule {
     abstract fun bindScannerActionProvider(
         actionExecutor: com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
     ): com.andreas_kratzer.ghosttalk.core.actions.ScannerActionProvider
+
+    @Binds
+    @Singleton
+    abstract fun bindScannerController(
+        scanCoordinator: com.andreas_kratzer.ghosttalk.core.scanning.ScanCoordinator
+    ): com.andreas_kratzer.ghosttalk.core.actions.ScannerController
 }

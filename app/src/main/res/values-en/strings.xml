@@ -110,6 +110,7 @@
     <string name="button_device_control_weather">Read weather</string>
     <string name="button_device_control_date">Read Date</string>
     <string name="button_device_control_time">Read Time</string>
+    <string name="button_device_control_toggle_scanning">Start / Pause Scanning</string>
     <string name="button_device_control_prefix_label">Prefix Text</string>
     <string name="button_device_control_suffix_label">Suffix Text</string>
     <string name="button_device_control_weekday_label">Include Weekday</string>

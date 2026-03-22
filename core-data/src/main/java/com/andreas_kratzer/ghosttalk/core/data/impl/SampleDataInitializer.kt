@@ -6,6 +6,8 @@ import com.andreas_kratzer.ghosttalk.core.data.PageRepository
 import com.andreas_kratzer.ghosttalk.core.model.AuditoryCue
 import com.andreas_kratzer.ghosttalk.core.model.Book
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.ControlDeviceButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.DeviceActionType
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
@@ -26,9 +28,8 @@ class SampleDataInitializer @Inject constructor(
             bookRepository.insertBook(Book(id = defaultBookId, name = "Standardbuch"))
             
             if (pageRepository.getAllPages().isEmpty()) {
-                val (samplePage, secondPage) = createSampleData(defaultBookId)
-                pageRepository.insertPage(samplePage)
-                pageRepository.insertPage(secondPage)
+                val pages = createSampleData(defaultBookId)
+                pages.forEach { pageRepository.insertPage(it) }
             }
             return@withContext defaultBookId
         } else {
@@ -37,7 +38,7 @@ class SampleDataInitializer @Inject constructor(
         }
     }
 
-    private fun createSampleData(defaultBookId: String): Pair<Page, Page> {
+    private fun createSampleData(defaultBookId: String): List<Page> {
         val secondPage = Page(
             id = "page2",
             bookId = defaultBookId,
@@ -73,6 +74,40 @@ class SampleDataInitializer @Inject constructor(
             )
         )
 
+        val testPage = Page(
+            id = "page_test",
+            bookId = defaultBookId,
+            name = "Testseite",
+            columns = 4,
+            rows = 5,
+            buttonConfigs = listOf(
+                ButtonConfig("t_btn1", "Pause/Resume", buttonAction = ControlDeviceButtonAction(DeviceActionType.TOGGLE_SCANNING)),
+                ButtonConfig("t_btn2", "Batterie", buttonAction = ControlDeviceButtonAction(DeviceActionType.READ_BATTERY)),
+                ButtonConfig("t_btn3", "Uhrzeit", buttonAction = ControlDeviceButtonAction(DeviceActionType.READ_TIME)),
+                ButtonConfig("t_btn4", "Datum", buttonAction = ControlDeviceButtonAction(DeviceActionType.READ_DATE)),
+                
+                ButtonConfig("t_btn5", "Vor", buttonAction = ControlDeviceButtonAction(DeviceActionType.MEDIA_NEXT)),
+                ButtonConfig("t_btn6", "Zurück", buttonAction = ControlDeviceButtonAction(DeviceActionType.MEDIA_PREVIOUS)),
+                ButtonConfig("t_btn7", "Play/Pause", buttonAction = ControlDeviceButtonAction(DeviceActionType.MEDIA_PLAY_PAUSE)),
+                ButtonConfig("t_btn8", "Notif. lesen", buttonAction = ControlDeviceButtonAction(DeviceActionType.READ_NOTIFICATIONS)),
+                
+                ButtonConfig("t_btn9", "Vol Notif", buttonAction = ControlDeviceButtonAction(DeviceActionType.VOLUME_NOTIFICATION, volumeValue = "50")),
+                ButtonConfig("t_btn10", "Vol Alarm", buttonAction = ControlDeviceButtonAction(DeviceActionType.VOLUME_ALARM, volumeValue = "70")),
+                ButtonConfig("t_btn11", "Vol Media", buttonAction = ControlDeviceButtonAction(DeviceActionType.VOLUME_MEDIA, volumeValue = "30")),
+                ButtonConfig("t_btn12", "Vol Call", buttonAction = ControlDeviceButtonAction(DeviceActionType.VOLUME_CALL, volumeValue = "100")),
+                
+                ButtonConfig("t_btn13", "Lautlos", buttonAction = ControlDeviceButtonAction(DeviceActionType.STATUS_SILENT)),
+                ButtonConfig("t_btn14", "Vibration", buttonAction = ControlDeviceButtonAction(DeviceActionType.STATUS_VIBRATE)),
+                ButtonConfig("t_btn15", "Laut", buttonAction = ControlDeviceButtonAction(DeviceActionType.STATUS_LOUD)),
+                ButtonConfig("t_btn16", "SMS Senden", buttonAction = ControlDeviceButtonAction(DeviceActionType.SEND_MESSAGE, contactPhone = "123456789", messageText = "Test Nachricht")),
+                
+                ButtonConfig("t_btn17", "Notif Clear", buttonAction = ControlDeviceButtonAction(DeviceActionType.CLEAR_NOTIFICATIONS)),
+                null,
+                null,
+                ButtonConfig("t_btn20", "ZURÜCK", buttonAction = NavigateToPageButtonAction(pageId = "page1"))
+            )
+        )
+
         val samplePage = Page(
             id = "page1",
             bookId = defaultBookId,
@@ -84,10 +119,17 @@ class SampleDataInitializer @Inject constructor(
                     index % 5 == 0 -> null
                     index == 2 -> ButtonConfig(
                         id = "btn_nav_page2",
-                        label = "Zur Seite 2",
+                        label = "Seite 2",
                         spokenText = "Zur zweiten Seite",
                         buttonAction = NavigateToPageButtonAction(pageId = "page2"),
                         auditoryCue = AuditoryCue.TextToSpeechCue("Zur zweiten Seite navigieren")
+                    )
+                    index == 1 -> ButtonConfig(
+                        id = "btn_nav_test",
+                        label = "Testseite",
+                        spokenText = "Zur Testseite",
+                        buttonAction = NavigateToPageButtonAction(pageId = "page_test"),
+                        auditoryCue = AuditoryCue.TextToSpeechCue("Zur Testseite navigieren")
                     )
                     else -> ButtonConfig(
                         id = "btn$index",
@@ -99,6 +141,6 @@ class SampleDataInitializer @Inject constructor(
             }
         )
         
-        return samplePage to secondPage
+        return listOf(samplePage, secondPage, testPage)
     }
 }

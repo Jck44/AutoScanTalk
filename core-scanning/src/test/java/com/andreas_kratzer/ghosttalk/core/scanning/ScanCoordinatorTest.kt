@@ -382,4 +382,50 @@ class ScanCoordinatorTest {
         assertEquals(0, scanCoordinator.currentCycleCount.value)
         verify { scannerEngine.startScanning(any(), 0, any(), any(), any(), any(), any()) }
     }
+
+    @Test
+    fun `togglePause should pause and resume scanning manualy`() = runTest(testDispatcher) {
+        val page = Page(
+            id = "p1",
+            bookId = "b1",
+            name = "Page 1",
+            buttonConfigs = listOf(ButtonConfig(label = "Button 1"))
+        )
+        every { checkForPredictorUseCase(any<Page>()) } returns false
+        every { scanningSettings.autoStartScanning } returns true
+        
+        currentPage.value = page
+        resolvedPage.value = page
+        isUserModeActive.value = true
+
+        val scanCoordinator = createCoordinator(backgroundScope)
+        advanceUntilIdle()
+        
+        // Initially scanning starts
+        verify { scannerEngine.startScanning(any(), any(), any(), any(), any(), any(), eq("p1")) }
+        clearMocks(scannerEngine, answers = false)
+
+        // When: Manually toggle pause
+        scanCoordinator.togglePause()
+        advanceUntilIdle()
+        
+        // Then: stopScanningTemporarily should be called
+        verify { scannerEngine.pauseScanning() }
+        assertEquals(true, scanCoordinator.isPausedManually.value)
+        
+        // Even if some other event (like action finishing) happens, it should NOT resume
+        isExecuting.value = true
+        advanceUntilIdle()
+        isExecuting.value = false
+        advanceUntilIdle()
+        verify(exactly = 0) { scannerEngine.startScanning(any(), any(), any(), any(), any(), any(), any()) }
+
+        // When: Toggle pause again
+        scanCoordinator.togglePause()
+        advanceUntilIdle()
+        
+        // Then: Scanning should resume
+        assertEquals(false, scanCoordinator.isPausedManually.value)
+        verify { scannerEngine.startScanning(any(), any(), any(), any(), any(), any(), eq("p1")) }
+    }
 }

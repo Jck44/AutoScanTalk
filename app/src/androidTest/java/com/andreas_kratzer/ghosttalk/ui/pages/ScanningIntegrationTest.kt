@@ -9,7 +9,13 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.andreas_kratzer.ghosttalk.MainActivity
 import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.core.data.BookRepository
+import com.andreas_kratzer.ghosttalk.core.data.PageRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.ControlDeviceButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.DeviceActionType
+import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.utils.TestDataResetHelper
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
@@ -32,6 +38,12 @@ class ScanningIntegrationTest {
 
     @Inject
     lateinit var settingsRepository: SettingsRepository
+
+    @Inject
+    lateinit var pageRepository: PageRepository
+
+    @Inject
+    lateinit var bookRepository: BookRepository
 
     @Before
     fun setup() {
@@ -218,5 +230,46 @@ class ScanningIntegrationTest {
         composeTestRule.waitUntil(10000) {
             composeTestRule.onAllNodesWithTag("button_grid_scanning").fetchSemanticsNodes().isNotEmpty()
         }
+    }
+
+    @Test
+    fun verify_toggle_scanning_action() {
+        // We use the pre-existing "Testseite" from sample data
+        settingsRepository.defaultStartPageId = "page_test"
+        
+        navigateToStartScreen()
+        
+        // 1. Click "User Mode" - this should navigate directly to "page_test" due to the setting above.
+        composeTestRule.onNodeWithTag("start_card_user_mode").performClick()
+        
+        // 2. We should now be in PageScreen for our test page.
+        composeTestRule.waitUntil(15000) {
+            composeTestRule.onAllNodesWithTag("button_grid_scanning").fetchSemanticsNodes().isNotEmpty()
+        }
+        
+        // 3. Click the toggle button (it's the first one: "Pause/Resume")
+        composeTestRule.waitUntil(10000) {
+            composeTestRule.onAllNodesWithTag("button_focused").fetchSemanticsNodes().isNotEmpty()
+        }
+        // The tag "t_btn1" is used for the toggle button in SampleDataInitializer
+        composeTestRule.onNodeWithTag("t_btn1").performClick()
+        
+        // 4. Verify scanning is paused
+        composeTestRule.waitUntil(10000) {
+            composeTestRule.onAllNodesWithTag("button_grid_idle").fetchSemanticsNodes().isNotEmpty()
+        }
+        
+        // Wait 1 second to ensure it STAYS idle
+        Thread.sleep(1000)
+        composeTestRule.onNodeWithTag("button_grid_idle").assertExists()
+        
+        // 5. Click the toggle button again to resume
+        composeTestRule.onNodeWithTag("t_btn1").performClick()
+        
+        // 6. Verify scanning resumes
+        composeTestRule.waitUntil(10000) {
+            composeTestRule.onAllNodesWithTag("button_grid_scanning").fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithTag("button_focused").assertExists()
     }
 }
