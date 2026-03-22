@@ -184,7 +184,7 @@ fun BookListScreen(
                                     }
                                 },
                             keyboardOptions = KeyboardOptions(
-                                autoCorrect = true,
+                                autoCorrectEnabled = true,
                                 capitalization = KeyboardCapitalization.Sentences,
                                 keyboardType = KeyboardType.Text
                             ),

@@ -324,7 +324,16 @@ fun ControlDeviceActionFields(
     contactName: String? = null,
     onContactSelected: (name: String, phone: String) -> Unit = { _, _ -> },
     messageText: String? = null,
-    onMessageTextChange: (String) -> Unit = {}
+    onMessageTextChange: (String) -> Unit = {},
+    // New fields
+    includeWeekday: Boolean = false,
+    onIncludeWeekdayChange: (Boolean) -> Unit = {},
+    prefixText: String = "",
+    onPrefixTextChange: (String) -> Unit = {},
+    suffixText: String = "",
+    onSuffixTextChange: (String) -> Unit = {},
+    offsetValue: String = "0",
+    onOffsetValueChange: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
     val dimensions = LocalDimensions.current
@@ -421,6 +430,51 @@ fun ControlDeviceActionFields(
                 messageText = messageText ?: "",
                 onMessageTextChange = onMessageTextChange
             )
+        }
+
+        // Date & Time parameters
+        if (selectedType == DeviceActionType.READ_DATE || selectedType == DeviceActionType.READ_TIME) {
+            OutlinedTextField(
+                value = prefixText,
+                onValueChange = onPrefixTextChange,
+                label = { Text(stringResource(R.string.button_device_control_prefix_label)) },
+                shape = MaterialTheme.shapes.large,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            OutlinedTextField(
+                value = suffixText,
+                onValueChange = onSuffixTextChange,
+                label = { Text(stringResource(R.string.button_device_control_suffix_label)) },
+                shape = MaterialTheme.shapes.large,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            if (selectedType == DeviceActionType.READ_DATE) {
+                com.andreas_kratzer.ghosttalk.core.ui.components.SettingsToggleItem(
+                    label = stringResource(R.string.button_device_control_weekday_label),
+                    checked = includeWeekday,
+                    onCheckedChange = onIncludeWeekdayChange
+                )
+                
+                OutlinedTextField(
+                    value = offsetValue,
+                    onValueChange = { if (it.isEmpty() || it == "-" || it.all { c -> c.isDigit() || c == '-' }) onOffsetValueChange(it) },
+                    label = { Text(stringResource(R.string.button_device_control_offset_days_label)) },
+                    shape = MaterialTheme.shapes.large,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            } else {
+                OutlinedTextField(
+                    value = offsetValue,
+                    onValueChange = { if (it.isEmpty() || it == "-" || it.all { c -> c.isDigit() || c == '-' }) onOffsetValueChange(it) },
+                    label = { Text(stringResource(R.string.button_device_control_offset_minutes_label)) },
+                    shape = MaterialTheme.shapes.large,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         }
     }
 }
@@ -564,6 +618,15 @@ fun ActionConfigFields(
     onContactPhoneChange: (String) -> Unit,
     messageText: String,
     onMessageTextChange: (String) -> Unit,
+    // New fields for Date/Time
+    includeWeekday: Boolean = false,
+    onIncludeWeekdayChange: (Boolean) -> Unit = {},
+    prefixText: String = "",
+    onPrefixTextChange: (String) -> Unit = {},
+    suffixText: String = "",
+    onSuffixTextChange: (String) -> Unit = {},
+    offsetValue: String = "0",
+    onOffsetValueChange: (String) -> Unit = {},
     // Smart Home specific
     smartHomeProvider: SmartHomeProvider = SmartHomeProvider.GOOGLE_HOME,
     onSmartHomeProviderChange: (SmartHomeProvider) -> Unit = {},
@@ -652,7 +715,15 @@ fun ActionConfigFields(
                     onContactPhoneChange(phone)
                 },
                 messageText = messageText,
-                onMessageTextChange = onMessageTextChange
+                onMessageTextChange = onMessageTextChange,
+                includeWeekday = includeWeekday,
+                onIncludeWeekdayChange = onIncludeWeekdayChange,
+                prefixText = prefixText,
+                onPrefixTextChange = onPrefixTextChange,
+                suffixText = suffixText,
+                onSuffixTextChange = onSuffixTextChange,
+                offsetValue = offsetValue,
+                onOffsetValueChange = onOffsetValueChange
             )
         }
         actionTypeSmartHome -> {

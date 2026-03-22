@@ -149,40 +149,112 @@ class ControlDeviceActionHandlerTest {
     }
 
     @Test
-    fun `handle READ_TIME calls tts with current time`() {
-        val action = ControlDeviceButtonAction(DeviceActionType.READ_TIME)
+    fun `handle READ_TIME with offset and prefix-suffix builds correct plain and SSML strings`() {
+        val action = ControlDeviceButtonAction(
+            actionType = DeviceActionType.READ_TIME,
+            prefixText = "Es ist jetzt",
+            suffixText = "Uhr heute",
+            offsetValue = 5
+        )
         val config = ButtonConfig(id = "b1", label = "Time", buttonAction = action, auditoryCue = null)
         
         every { ttsProxy.isReady } returns true
-        
-        val onFinish = mockk<(Int) -> Unit>(relaxed = true)
+        val ssmlSlot = slot<String>()
+        val plainSlot = slot<String>()
         val onDoneSlot = slot<() -> Unit>()
-        every { ttsProxy.speakRouted(any(), any(), capture(onDoneSlot)) } answers {
+        
+        every { ttsProxy.speakRouted(capture(ssmlSlot), any(), capture(onDoneSlot)) } answers {
             onDoneSlot.captured.invoke()
         }
+        mockkObject(actionLogger)
+        every { actionLogger.log(capture(plainSlot)) } just Runs
+
+        handler.handle(config, action, 1) {}
         
-        handler.handle(config, action, 1, onFinish)
+        val ssml = ssmlSlot.captured
+        val plain = plainSlot.captured
         
-        verify { ttsProxy.speakRouted(any(), any(), any()) }
-        verify { onFinish(1) }
+        assert(plain.startsWith("Es ist jetzt "))
+        assert(plain.endsWith(" Uhr heute"))
+        
+        // Verify SSML is simply wrapped plain text
+        assert(ssml == "<speak>$plain</speak>")
     }
 
     @Test
-    fun `handle READ_DATE calls tts with current date`() {
-        val action = ControlDeviceButtonAction(DeviceActionType.READ_DATE)
+    fun `handle READ_DATE with offset, weekday and prefix-suffix builds correct plain and SSML strings`() {
+        val action = ControlDeviceButtonAction(
+            actionType = DeviceActionType.READ_DATE,
+            prefixText = "Heute ist der",
+            suffixText = "bald ist Ostern",
+            includeWeekday = true,
+            offsetValue = 2
+        )
         val config = ButtonConfig(id = "b1", label = "Date", buttonAction = action, auditoryCue = null)
         
         every { ttsProxy.isReady } returns true
-        
-        val onFinish = mockk<(Int) -> Unit>(relaxed = true)
+        val ssmlSlot = slot<String>()
+        val plainSlot = slot<String>()
         val onDoneSlot = slot<() -> Unit>()
-        every { ttsProxy.speakRouted(any(), any(), capture(onDoneSlot)) } answers {
+        
+        every { ttsProxy.speakRouted(capture(ssmlSlot), any(), capture(onDoneSlot)) } answers {
             onDoneSlot.captured.invoke()
         }
+        every { actionLogger.log(capture(plainSlot)) } just Runs
+
+        handler.handle(config, action, 1) {}
         
-        handler.handle(config, action, 1, onFinish)
+        val ssml = ssmlSlot.captured
+        val plain = plainSlot.captured
         
-        verify { ttsProxy.speakRouted(any(), any(), any()) }
-        verify { onFinish(1) }
+        assert(plain.startsWith("Heute ist der "))
+        assert(plain.contains(","))
+        
+        // Verify SSML is simply wrapped plain text
+        assert(ssml == "<speak>$plain</speak>")
+    }
+
+    @Test
+    fun `smart space logic adds spaces when missing`() {
+        val action = ControlDeviceButtonAction(
+            actionType = DeviceActionType.READ_TIME,
+            prefixText = "Zeit:", // No space at end
+            suffixText = "jetzt", // No space at start
+            offsetValue = 0
+        )
+        val config = ButtonConfig(id = "b1", label = "Time", buttonAction = action, auditoryCue = null)
+        
+        every { ttsProxy.isReady } returns true
+        val ssmlSlot = slot<String>()
+        every { ttsProxy.speakRouted(capture(ssmlSlot), any(), any()) } just Runs
+        
+        handler.handle(config, action, 1) {}
+        
+        val ssml = ssmlSlot.captured
+        // Verify SSML includes prefix with space and suffix with space
+        assert(ssml.startsWith("<speak>Zeit: "))
+        assert(ssml.endsWith(" jetzt</speak>"))
+    }
+
+    @Test
+    fun `smart space logic does not add extra spaces if already present`() {
+        val action = ControlDeviceButtonAction(
+            actionType = DeviceActionType.READ_TIME,
+            prefixText = "Zeit: ", // Has space
+            suffixText = " jetzt", // Has space
+            offsetValue = 0
+        )
+        val config = ButtonConfig(id = "b1", label = "Time", buttonAction = action, auditoryCue = null)
+        
+        every { ttsProxy.isReady } returns true
+        val ssmlSlot = slot<String>()
+        every { ttsProxy.speakRouted(capture(ssmlSlot), any(), any()) } just Runs
+        
+        handler.handle(config, action, 1) {}
+        
+        val ssml = ssmlSlot.captured
+        // Verify no double spaces
+        assert(!ssml.contains("Zeit:  "))
+        assert(!ssml.contains("  jetzt"))
     }
 }

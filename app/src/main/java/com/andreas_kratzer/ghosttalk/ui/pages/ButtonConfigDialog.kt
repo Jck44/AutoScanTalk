@@ -188,6 +188,18 @@ fun ButtonConfigDialog(
     var messageText by remember {
         mutableStateOf((buttonConfig.buttonAction as? ControlDeviceButtonAction)?.messageText ?: "")
     }
+    var includeWeekday by remember {
+        mutableStateOf((buttonConfig.buttonAction as? ControlDeviceButtonAction)?.includeWeekday ?: false)
+    }
+    var prefixText by remember {
+        mutableStateOf((buttonConfig.buttonAction as? ControlDeviceButtonAction)?.prefixText ?: "")
+    }
+    var suffixText by remember {
+        mutableStateOf((buttonConfig.buttonAction as? ControlDeviceButtonAction)?.suffixText ?: "")
+    }
+    var offsetValue by remember {
+        mutableStateOf((buttonConfig.buttonAction as? ControlDeviceButtonAction)?.offsetValue?.toString() ?: "0")
+    }
 
     // Smart Home specific state
     var smartHomeProvider by remember {
@@ -322,6 +334,14 @@ fun ButtonConfigDialog(
                     onContactPhoneChange = { contactPhone = it },
                     messageText = messageText,
                     onMessageTextChange = { messageText = it },
+                    includeWeekday = includeWeekday,
+                    onIncludeWeekdayChange = { includeWeekday = it },
+                    prefixText = prefixText,
+                    onPrefixTextChange = { prefixText = it },
+                    suffixText = suffixText,
+                    onSuffixTextChange = { suffixText = it },
+                    offsetValue = offsetValue,
+                    onOffsetValueChange = { offsetValue = it },
                     // Smart Home
                     smartHomeProvider = smartHomeProvider,
                     onSmartHomeProviderChange = { smartHomeProvider = it },
@@ -374,7 +394,11 @@ fun ButtonConfigDialog(
                             volumeValue = volumeValue,
                             contactName = contactName,
                             contactPhone = contactPhone,
-                            messageText = messageText
+                            messageText = messageText,
+                            includeWeekday = includeWeekday,
+                            prefixText = prefixText.takeIf { it.isNotBlank() },
+                            suffixText = suffixText.takeIf { it.isNotBlank() },
+                            offsetValue = offsetValue.toIntOrNull() ?: 0
                         )
                         actionTypeSmartHome -> SmartHomeButtonAction(
                             provider = smartHomeProvider,
@@ -435,7 +459,11 @@ fun ButtonConfigDialog(
                                         volumeValue = volumeValue,
                                         contactName = contactName,
                                         contactPhone = contactPhone,
-                                        messageText = messageText
+                                        messageText = messageText,
+                                        includeWeekday = includeWeekday,
+                                        prefixText = prefixText.takeIf { it.isNotBlank() },
+                                        suffixText = suffixText.takeIf { it.isNotBlank() },
+                                        offsetValue = offsetValue.toIntOrNull() ?: 0
                                     )
                                     actionTypeSmartHome -> SmartHomeButtonAction(
                                         provider = smartHomeProvider,

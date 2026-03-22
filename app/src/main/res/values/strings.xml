@@ -110,6 +110,11 @@
     <string name="button_device_control_weather">Wetter vorlesen</string>
     <string name="button_device_control_date">Datum vorlesen</string>
     <string name="button_device_control_time">Uhrzeit vorlesen</string>
+    <string name="button_device_control_prefix_label">Vorgeschalteter Text</string>
+    <string name="button_device_control_suffix_label">Nachfolgender Text</string>
+    <string name="button_device_control_weekday_label">Wochentag einschließen</string>
+    <string name="button_device_control_offset_days_label">Tages-Offset (±)</string>
+    <string name="button_device_control_offset_minutes_label">Minuten-Offset (±)</string>
     <string name="button_no_page_selected">Keine Seite ausgewählt</string>
     <string name="button_target_page_label">Ziel-Seite</string>
     <string name="button_smart_prediction_rank_label">Vorhersage-Rang (1 = Wahrscheinlichste)</string>

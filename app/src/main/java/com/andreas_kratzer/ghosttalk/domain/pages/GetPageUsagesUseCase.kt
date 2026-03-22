@@ -32,7 +32,7 @@ class GetPageUsagesUseCase @Inject constructor(
             template.buttonConfigs.forEach { config ->
                 val action = config?.buttonAction
                 if (action is NavigateToPageButtonAction && action.pageId == pageId) {
-                    usages.add(UsageLocation.TemplateUsage(template.id, template.name, config.label ?: ""))
+                    usages.add(UsageLocation.TemplateUsage(template.id, template.name, config.label))
                 }
             }
         }

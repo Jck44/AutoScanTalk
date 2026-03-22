@@ -95,7 +95,11 @@ data class ControlDeviceButtonAction(
     val volumeValue: String? = null,      // e.g. "50", "+10", "-5"
     val contactName: String? = null,      // Display name
     val contactPhone: String? = null,     // Phone number or ID
-    val messageText: String? = null       // The message content
+    val messageText: String? = null,      // The message content
+    val includeWeekday: Boolean = false,
+    val prefixText: String? = null,
+    val suffixText: String? = null,
+    val offsetValue: Int = 0              // days for date, minutes for time
 ) : ButtonAction()
 
 /**

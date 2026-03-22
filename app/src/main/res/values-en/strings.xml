@@ -110,6 +110,11 @@
     <string name="button_device_control_weather">Read weather</string>
     <string name="button_device_control_date">Read Date</string>
     <string name="button_device_control_time">Read Time</string>
+    <string name="button_device_control_prefix_label">Prefix Text</string>
+    <string name="button_device_control_suffix_label">Suffix Text</string>
+    <string name="button_device_control_weekday_label">Include Weekday</string>
+    <string name="button_device_control_offset_days_label">Day Offset (±)</string>
+    <string name="button_device_control_offset_minutes_label">Minute Offset (±)</string>
     <string name="button_no_page_selected">No page selected</string>
     <string name="button_target_page_label">Target Page</string>
     <string name="button_smart_prediction_rank_label">Prediction Rank (1 = Most Likely)</string>

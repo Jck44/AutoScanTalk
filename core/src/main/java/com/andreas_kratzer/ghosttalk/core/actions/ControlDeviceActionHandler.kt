@@ -319,15 +319,49 @@ class ControlDeviceActionHandler @Inject constructor(
 
     // Temporary simplification: Instead of resources, we pass a logic to get them
     private fun handleReadTime(config: ButtonConfig, action: ControlDeviceButtonAction, executionId: Int, onFinish: (Int) -> Unit) {
+        val calendar = java.util.Calendar.getInstance()
+        if (action.offsetValue != 0) {
+            calendar.add(java.util.Calendar.MINUTE, action.offsetValue)
+        }
+        
         val sdf = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
-        val time = sdf.format(java.util.Date())
-        speakRoutedWithLogging("Es ist $time", "Es ist $time", config, action, executionId, onFinish)
+        val timeString = sdf.format(calendar.time)
+        
+        val prefix = action.prefixText?.takeIf { it.isNotBlank() }?.let { if (it.endsWith(" ")) it else "$it " } ?: ""
+        val suffix = action.suffixText?.takeIf { it.isNotBlank() }?.let { if (it.startsWith(" ")) it else " $it" } ?: ""
+        
+        val plain = "$prefix$timeString$suffix"
+        val ssml = "<speak>$plain</speak>"
+        
+        speakRoutedWithLogging(ssml, plain, config, action, executionId, onFinish)
     }
 
     private fun handleReadDate(config: ButtonConfig, action: ControlDeviceButtonAction, executionId: Int, onFinish: (Int) -> Unit) {
-        val sdf = java.text.SimpleDateFormat("dd.MM.yyyy", java.util.Locale.getDefault())
-        val date = sdf.format(java.util.Date())
-        speakRoutedWithLogging("Heute ist der $date", "Heute ist der $date", config, action, executionId, onFinish)
+        val calendar = java.util.Calendar.getInstance()
+        if (action.offsetValue != 0) {
+            calendar.add(java.util.Calendar.DAY_OF_YEAR, action.offsetValue)
+        }
+        
+        val mainPattern = "dd. MMMM yyyy"
+        val fullPattern = if (action.includeWeekday) "EEEE, dd. MMMM yyyy" else mainPattern
+        
+        val sdfDisplay = java.text.SimpleDateFormat(fullPattern, java.util.Locale.getDefault())
+        val dateString = sdfDisplay.format(calendar.time)
+        
+        // For SSML we use yyyyMMdd format which is more robust for say-as interpretation
+        val sdfSsml = java.text.SimpleDateFormat("yyyyMMdd", java.util.Locale.getDefault())
+        val ssmlDate = sdfSsml.format(calendar.time)
+        
+        val prefix = action.prefixText?.takeIf { it.isNotBlank() }?.let { if (it.endsWith(" ")) it else "$it " } ?: ""
+        val suffix = action.suffixText?.takeIf { it.isNotBlank() }?.let { if (it.startsWith(" ")) it else " $it" } ?: ""
+        
+        val plain = "$prefix$dateString$suffix"
+        
+        // Use the naturally formatted date string even in SSML, as most TTS engines 
+        // handle "22. März 2026" better than say-as with numeric strings.
+        val ssml = "<speak>$plain</speak>"
+        
+        speakRoutedWithLogging(ssml, plain, config, action, executionId, onFinish)
     }
 
     private fun speakRoutedWithLogging(

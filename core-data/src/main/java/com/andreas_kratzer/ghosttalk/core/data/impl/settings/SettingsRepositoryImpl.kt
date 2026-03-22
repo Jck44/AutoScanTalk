@@ -18,7 +18,7 @@ import javax.inject.Inject
 class SettingsRepositoryImpl @Inject constructor(
     @ApplicationContext context: Context,
     private val bookRepository: BookRepository,
-    @ApplicationScope private val scope: CoroutineScope
+    @param:ApplicationScope private val scope: CoroutineScope
 ) : SettingsRepository {
 
     private val prefs: SharedPreferences = context.getSharedPreferences(SettingsConstants.PREFS_NAME, Context.MODE_PRIVATE)

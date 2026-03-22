@@ -109,7 +109,7 @@ fun SettingsEditTextItem(
     onValueChange: (String) -> Unit,
     keyboardOptions: KeyboardOptions = KeyboardOptions(
         keyboardType = KeyboardType.Text,
-        autoCorrect = true,
+        autoCorrectEnabled = true,
         capitalization = KeyboardCapitalization.Sentences
     ),
     forceKeyboard: Boolean = false

@@ -5,6 +5,7 @@ import com.andreas_kratzer.ghosttalk.core.database.ButtonUsageDao
 import com.andreas_kratzer.ghosttalk.core.database.ButtonUsageHistoryEntity
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.ButtonUsageStat
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
@@ -16,10 +17,11 @@ import javax.inject.Inject
  * Repository for tracking button usage statistics per book.
  * Uses an aggregated counter approach (one row per button per book).
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 class ButtonUsageRepositoryImpl @Inject constructor(
     private val dao: ButtonUsageDao,
     private val settingsRepository: com.andreas_kratzer.ghosttalk.core.data.SettingsRepository,
-    @com.andreas_kratzer.ghosttalk.core.di.ApplicationScope private val scope: kotlinx.coroutines.CoroutineScope
+    @param:com.andreas_kratzer.ghosttalk.core.di.ApplicationScope private val scope: kotlinx.coroutines.CoroutineScope
 ) : ButtonUsageRepository {
     private val json = Json {
         ignoreUnknownKeys = true
@@ -81,7 +83,7 @@ class ButtonUsageRepositoryImpl @Inject constructor(
     }
 
     override suspend fun updateLastEventImage(imagePath: String) {
-        val bookId = settingsRepository.activeBookId ?: return
+        val bookId = settingsRepository.activeBookId
         val lastEvent = dao.getLastHistoryEvent(bookId)
         lastEvent?.let {
             dao.updateHistoryEvent(it.copy(imagePath = imagePath))
@@ -89,7 +91,7 @@ class ButtonUsageRepositoryImpl @Inject constructor(
     }
 
     override suspend fun updateLastEventDetails(details: String) {
-        val bookId = settingsRepository.activeBookId ?: return
+        val bookId = settingsRepository.activeBookId
         val lastEvent = dao.getLastHistoryEvent(bookId)
         lastEvent?.let {
             dao.updateHistoryEvent(it.copy(geminiResponse = details))
