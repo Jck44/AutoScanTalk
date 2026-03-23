@@ -5,31 +5,19 @@
     <string name="settings_screen_black_overlay_text">Akku Sparmodus.\nÜber Zurück zur App zurückkehren</string>
     
     <!-- Settings Screen Labels -->
-    <string name="start_tagline">Unterstützte Kommunikation</string>
+
     <string name="start_user_mode">Nutzer Modus</string>
     <string name="start_back_to_books">Zurück zu den Büchern</string>
 
     <!-- Book List Screen -->
     <string name="book_add_description">Neues Buch hinzufügen</string>
     <string name="book_last_modified_label">Zuletzt bearbeitet: %s</string>
-    <string name="book_edit_description">Buch umbenennen</string>
-    <string name="book_settings_description">Buch-Einstellungen</string>
-    <string name="book_delete_description">Buch löschen</string>
+
     <string name="book_favorite_description">Favorit festlegen</string>
     <string name="book_dialog_new_title">Neues Buch erstellen</string>
-    <string name="book_dialog_rename_title">Buch umbenennen</string>
-    <string name="book_dialog_settings_title">Buch-Einstellungen</string>
-    <string name="book_dialog_delete_title">Buch löschen?</string>
-    <string name="book_dialog_delete_confirm">Möchtest du das Buch \"%s\" wirklich unwiderruflich löschen? Alle darin enthaltenen Seiten gehen verloren.</string>
+
     <string name="book_name_label">Name des Buches</string>
-    <string name="book_import_cloud_description">Bestehendes Buch aus Cloud laden</string>
-    <string name="book_import_cloud_success">Buch erfolgreich aus der Cloud geladen.</string>
-    <string name="book_import_cloud_error">Fehler beim Laden aus der Cloud: %s</string>
-    <string name="book_limit_scan_cycles_label">Anzahl von Scandurchläufen begrenzen</string>
-    <string name="book_scan_cycle_limit_label">Anzahl der Scandurchläufe</string>
-    <string name="book_log_ignored_actions_label">Ignorierte Aktionen im Verlauf protokollieren</string>
-    <string name="book_log_stop_actions_label">Stopp-Befehl (z.B. bei Seitenwechsel) im Verlauf protokollieren</string>
-    <string name="book_dialog_edit_title">Buch bearbeiten</string>
+
     
     <!-- Shared Actions -->
     <string name="action_create">Erstellen</string>
@@ -37,13 +25,13 @@
     <string name="action_cancel">Abbrechen</string>
     <string name="action_delete">Löschen</string>
     <string name="action_search">Suchen…</string>
-    <string name="error_field_required">Dieses Feld ist ein Pflichtfeld</string>
+
     <string name="error_book_name_required">Bitte geben Sie einen Namen für das Buch ein.</string>
     <string name="error_page_name_required">Bitte geben Sie einen Namen für die Seite ein.</string>
 
 
     <!-- Page List Screen -->
-    <string name="page_list_show">Seiten verwalten</string>
+
     <string name="page_add_description">Neue Seite hinzufügen</string>
     <string name="page_grid_info" tools:ignore="PluralsCandidate">Raster: %1$d Zeilen x %2$d Spalten</string>
     <string name="search_hint">Suchen…</string>
@@ -52,10 +40,7 @@
     <string name="page_name_label">Name der Seite</string>
     <string name="page_scan_pattern_override">Scan Muster (Überschreiben)</string>
     <string name="page_pattern_default">Standard (Buch)</string>
-    <string name="page_rename_description">Seite umbenennen</string>
-    <string name="page_delete_description">Seite löschen</string>
-    <string name="page_dialog_settings_title">Seiteneinstellungen</string>
-    <string name="page_row_announcement_config">Zeilen-Ansage konfigurieren:</string>
+
     <string name="page_row_label">Zeile %d</string>
     
     <string name="page_dialog_new_title">Neue Seite erstellen</string>
@@ -65,13 +50,11 @@
     
     <string name="page_export_error">Fehler beim Export: %s</string>
     <string name="action_import_json_migration">Import JSON (GoTalkNow Migration)</string>
-    <string name="action_export_json">Export JSON (Sicherung)</string>
-    <string name="action_import_json">Import JSON (Wiederherstellung)</string>
+
     <string name="action_more">Mehr</string>
 
     <!-- Page Editor Screen -->
-    <string name="page_editor_title">Editor: %s</string>
-    <string name="page_editor_hint">Tippe auf ein Feld, um den Button zu konfigurieren.</string>
+
     <string name="page_editor_row_name_label">Zeilenname</string>
     <string name="page_editor_loading">Seite nicht gefunden oder wird geladen…</string>
 
@@ -90,11 +73,10 @@
     <string name="button_action_frequent_action">Häufigste Aktion</string>
     <string name="button_action_smart_prediction">Gemini Vorhersage</string>
     <string name="button_action_notification">Benachrichtigung (Audio-Hinweis)</string>
-    <string name="button_action_volume_tts">Lautstärke anpassen (TTS)</string>
-    <string name="button_action_volume_cues">Lautstärke anpassen (Audio-Hinweise)</string>
+
     <string name="button_action_control_device">Gerätefunktionen</string>
     <string name="button_action_weather">Wetter vorlesen</string>
-    <string name="button_action_google_home">Google Home (Veraltet)</string>
+
     <string name="button_action_smart_home">Smart Home Steuerung</string>
     <string name="button_action_gemini_vision">Gemini Vision (KI Auge)</string>
     <string name="button_gemini_vision_prompt_label">Bild-Beschreibung / Frage</string>
@@ -107,7 +89,7 @@
     <string name="button_device_control_media_previous">Vorheriges Lied / Zurück</string>
     <string name="button_device_control_media_play_pause">Start / Stop</string>
     <string name="button_device_control_battery">Akkustand vorlesen</string>
-    <string name="button_device_control_weather">Wetter vorlesen</string>
+
     <string name="button_device_control_date">Datum vorlesen</string>
     <string name="button_device_control_time">Uhrzeit vorlesen</string>
     <string name="button_device_control_toggle_scanning">Scannen starten / pausieren</string>
@@ -121,14 +103,7 @@
     <string name="button_smart_prediction_rank_label">Vorhersage-Rang (1 = Wahrscheinlichste)</string>
     <string name="button_gemini_prompt_field">Gemini Prompt (Befehl)</string>
     <string name="button_gemini_prompt_hint">Was soll Gemini tun?</string>
-    <string name="button_gemini_nano_intent_label">Gemini Nano Funktion</string>
-    <string name="button_gemini_nano_intent_time">Uhrzeit (Präzise &amp; Natürlich)</string>
-    <string name="button_gemini_nano_intent_date">Datum (Natürlich)</string>
-    <string name="button_gemini_nano_intent_weather">Wetter für aktuellen Standort</string>
-    <string name="button_gemini_nano_intent_battery">Akkustand</string>
-    <string name="button_gemini_nano_intent_alarm">Nächster Alarm</string>
-    <string name="button_notification_target_app">App auswählen</string>
-    <string name="button_notification_target_all">Alle erlaubten Apps</string>
+
     <string name="button_play_as_cue">Als Audio-Hinweis abspielen</string>
     <string name="button_google_home_device_label">Gerät</string>
     <string name="button_google_home_command_label">Befehl</string>
@@ -145,7 +120,7 @@
     <string name="page_last_actions_title">Letzte Aktionen:</string>
     <string name="page_clear_logs_description">Verlauf leeren</string>
     <string name="page_no_actions_yet">Noch keine Aktionen ausgeführt.</string>
-    <string name="settings_action_log_limit_title">Limit für die Aktionsliste</string>
+
 
 
 
@@ -192,7 +167,7 @@
     <string name="button_move_hidden_prompt_add_row">Zeile hinzufügen</string>
     <string name="button_move_hidden_prompt_add_col">Spalte hinzufügen</string>
     <string name="button_move_hidden_prompt_add_both">Zeile &amp; Spalte hinzufügen</string>
-    <string name="button_move_error_full">Verschieben fehlgeschlagen: Die Zielseite ist bereits komplett belegt (49 Buttons).</string>
+
     <string name="button_move_success">Button verschoben</string>
     <string name="button_action_test">Testen</string>
     <string name="action_duplicate">Duplizieren</string>

@@ -154,10 +154,6 @@ fun BookListScreen(
         if (showAddDialog) {
             var newBookName by remember { mutableStateOf("") }
             var isError by remember { mutableStateOf(false) }
-            var logLimit by remember { mutableStateOf(100f) }
-            var limitScanCycles by remember { mutableStateOf(false) }
-            var scanCycleLimit by remember { mutableStateOf(2f) }
-            var logIgnoredActions by remember { mutableStateOf(true) }
 
             AlertDialog(
                 onDismissRequest = { showAddDialog = false },

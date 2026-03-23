@@ -38,3 +38,7 @@ local.properties
 /test_fail_output.txt
 /feature-audio/build/
 /.kotlin/
+/build_warnings_check.txt
+/test_results.txt
+/test_results_v2.txt
+/verification_build.txt

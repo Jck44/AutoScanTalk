@@ -10,7 +10,6 @@ import androidx.lifecycle.viewModelScope
 import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
 import com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase
 import com.andreas_kratzer.ghosttalk.core.ai.domain.UpdateSmartPredictionsUseCase
-import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
 import com.andreas_kratzer.ghosttalk.core.cloud.GoogleHomeManager
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.data.impl.PageImportExportManager
@@ -50,7 +49,6 @@ class PageViewModel @Inject constructor(
     val settingsRepository: SettingsRepository,
     private val bookRepository: com.andreas_kratzer.ghosttalk.core.data.BookRepository,
     internal val importExportManager: PageImportExportManager,
-    private val googleAuthManager: GoogleAuthManager,
     ttsHelper: TextToSpeechHelper,
     private val logger: Logger,
     private val weatherExecutor: com.andreas_kratzer.ghosttalk.domain.executors.WeatherExecutor,

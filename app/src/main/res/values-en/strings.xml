@@ -6,31 +6,19 @@
     <string name="settings_screen_black_overlay_text">Battery saving mode.\nReturn to app via Back button</string>
 
     <!-- Settings Screen Labels -->
-    <string name="start_tagline">Augmentative and Alternative Communication</string>
+
     <string name="start_user_mode">User Mode</string>
     <string name="start_back_to_books">Back to Books</string>
 
     <!-- Book List Screen -->
     <string name="book_add_description">Add new book</string>
     <string name="book_last_modified_label">Last modified: %s</string>
-    <string name="book_edit_description">Rename Book</string>
-    <string name="book_settings_description">Book Settings</string>
-    <string name="book_delete_description">Delete book</string>
+
     <string name="book_favorite_description">Set as favorite</string>
     <string name="book_dialog_new_title">Create New Book</string>
-    <string name="book_dialog_rename_title">Rename Book</string>
-    <string name="book_dialog_settings_title">Book Settings</string>
-    <string name="book_dialog_delete_title">Delete Book?</string>
-    <string name="book_dialog_delete_confirm">Do you really want to permanently delete the book \"%s\"? All pages within it will be lost.</string>
+
     <string name="book_name_label">Book Name</string>
-    <string name="book_import_cloud_description">Load existing book from cloud</string>
-    <string name="book_import_cloud_success">Book successfully loaded from the cloud.</string>
-    <string name="book_import_cloud_error">Error loading from the cloud: %s</string>
-    <string name="book_limit_scan_cycles_label">Limit scan cycles</string>
-    <string name="book_scan_cycle_limit_label">Number of scan cycles</string>
-    <string name="book_log_ignored_actions_label">Log ignored actions in history</string>
-    <string name="book_log_stop_actions_label">Log stop actions (e.g. on page change) in history</string>
-    <string name="book_dialog_edit_title">Edit Book</string>
+
 
     <!-- Shared Actions -->
     <string name="action_create">Create</string>
@@ -38,12 +26,12 @@
     <string name="action_cancel">Cancel</string>
     <string name="action_delete">Delete</string>
     <string name="action_search">Search…</string>
-    <string name="error_field_required">This field is required</string>
+
     <string name="error_book_name_required">Please enter a name for the book.</string>
     <string name="error_page_name_required">Please enter a name for the page.</string>
 
     <!-- Page List Screen -->
-    <string name="page_list_show">Manage Pages</string>
+
     <string name="page_add_description">Add new page</string>
     <string name="page_grid_info">Grid: %1$d Rows x %2$d Columns</string>
     <string name="search_hint">Search…</string>
@@ -52,10 +40,7 @@
     <string name="page_name_label">Page Name</string>
     <string name="page_scan_pattern_override">Scan Pattern (Override)</string>
     <string name="page_pattern_default">Default (Book)</string>
-    <string name="page_rename_description">Rename page</string>
-    <string name="page_delete_description">Delete page</string>
-    <string name="page_dialog_settings_title">Page Settings</string>
-    <string name="page_row_announcement_config">Configure Row Announcements:</string>
+
     <string name="page_row_label">Row %d</string>
 
     <string name="page_dialog_new_title">Create New Page</string>
@@ -65,13 +50,11 @@
 
     <string name="page_export_error">Export error: %s</string>
     <string name="action_import_json_migration">Import JSON (GoTalkNow Migration)</string>
-    <string name="action_export_json">Export JSON</string>
-    <string name="action_import_json">Import JSON</string>
+
     <string name="action_more">More</string>
 
     <!-- Page Editor Screen -->
-    <string name="page_editor_title">Editor: %s</string>
-    <string name="page_editor_hint">Tap a field to configure the button.</string>
+
     <string name="page_editor_row_name_label">Row Name</string>
     <string name="page_editor_loading">Page not found or loading…</string>
 
@@ -90,11 +73,10 @@
     <string name="button_action_frequent_action">Most Frequent Action</string>
     <string name="button_action_smart_prediction">Gemini Prediction</string>
     <string name="button_action_notification">Notification (Auditory cue)</string>
-    <string name="button_action_volume_tts">Adjust Volume (TTS)</string>
-    <string name="button_action_volume_cues">Adjust Volume (Auditory cues)</string>
+
     <string name="button_action_control_device">Device Functions</string>
     <string name="button_action_weather">Read Weather</string>
-    <string name="button_action_google_home">Google Home (Deprecated)</string>
+
     <string name="button_action_smart_home">Smart Home Control</string>
     <string name="button_action_gemini_vision">Gemini Vision (AI Eye)</string>
     <string name="button_gemini_vision_prompt_label">Image Description / Question</string>
@@ -107,7 +89,7 @@
     <string name="button_device_control_media_previous">Previous Song / Back</string>
     <string name="button_device_control_media_play_pause">Start / Stop</string>
     <string name="button_device_control_battery">Read Battery Level</string>
-    <string name="button_device_control_weather">Read weather</string>
+
     <string name="button_device_control_date">Read Date</string>
     <string name="button_device_control_time">Read Time</string>
     <string name="button_device_control_toggle_scanning">Start / Pause Scanning</string>
@@ -121,14 +103,7 @@
     <string name="button_smart_prediction_rank_label">Prediction Rank (1 = Most Likely)</string>
     <string name="button_gemini_prompt_field">Gemini Prompt (Command)</string>
     <string name="button_gemini_prompt_hint">What should Gemini do?</string>
-    <string name="button_gemini_nano_intent_label">Gemini Nano Function</string>
-    <string name="button_gemini_nano_intent_time">Time (Precise &amp; Natural)</string>
-    <string name="button_gemini_nano_intent_date">Date (Natural)</string>
-    <string name="button_gemini_nano_intent_weather">Weather (Offline Cache)</string>
-    <string name="button_gemini_nano_intent_battery">Battery Level</string>
-    <string name="button_gemini_nano_intent_alarm">Next Alarm</string>
-    <string name="button_notification_target_app">Select App</string>
-    <string name="button_notification_target_all">All allowed apps</string>
+
     <string name="button_play_as_cue">Play as Auditory cue</string>
     <string name="button_google_home_device_label">Device</string>
     <string name="button_google_home_command_label">Command</string>
@@ -145,7 +120,7 @@
     <string name="page_last_actions_title">Recent Actions:</string>
     <string name="page_clear_logs_description">Clear History</string>
     <string name="page_no_actions_yet">No actions executed yet.</string>
-    <string name="settings_action_log_limit_title">Action log limit</string>
+
 
     <string name="error_gemini_quota_reached">Gemini limit reached. Please wait %d seconds.</string>
 
@@ -188,7 +163,7 @@
     <string name="button_move_hidden_prompt_add_row">Add Row</string>
     <string name="button_move_hidden_prompt_add_col">Add Column</string>
     <string name="button_move_hidden_prompt_add_both">Add Row &amp; Column</string>
-    <string name="button_move_error_full">Move failed: The target page is already completely full (49 buttons).</string>
+
     <string name="button_move_success">Button moved</string>
     <string name="button_action_test">Test</string>
     <string name="action_duplicate">Duplicate</string>

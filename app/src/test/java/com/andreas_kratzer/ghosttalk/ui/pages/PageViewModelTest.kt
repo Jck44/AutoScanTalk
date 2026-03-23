@@ -9,7 +9,6 @@ import com.andreas_kratzer.ghosttalk.core.ai.LocalIntentRouter
 import com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase
 import com.andreas_kratzer.ghosttalk.core.ai.domain.PredictNextActionUseCase
 import com.andreas_kratzer.ghosttalk.core.ai.domain.UpdateSmartPredictionsUseCase
-import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
 import com.andreas_kratzer.ghosttalk.core.cloud.GoogleHomeManager
 import com.andreas_kratzer.ghosttalk.core.data.BookRepository
 import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository
@@ -75,7 +74,6 @@ class PageViewModelTest {
     private lateinit var templateRepository: TemplateRepository
     private lateinit var importExportManager: PageImportExportManager
     private lateinit var scannerEngine: ScannerEngine
-    private lateinit var googleAuthManager: GoogleAuthManager
     private lateinit var geminiUseCase: GeminiUseCase
     private lateinit var ttsHelper: TextToSpeechHelper
     private lateinit var localIntentRouter: LocalIntentRouter
@@ -117,7 +115,6 @@ class PageViewModelTest {
         templateRepository = mockk<TemplateRepository>(relaxed = true)
         importExportManager = mockk<PageImportExportManager>(relaxed = true)
         scannerEngine = mockk<ScannerEngine>(relaxed = true)
-        googleAuthManager = mockk<GoogleAuthManager>(relaxed = true)
         geminiUseCase = mockk<GeminiUseCase>(relaxed = true)
         ttsHelper = mockk<TextToSpeechHelper>(relaxed = true)
         localIntentRouter = mockk<LocalIntentRouter>(relaxed = true)
@@ -253,7 +250,6 @@ class PageViewModelTest {
             settingsRepository = settingsRepository,
             bookRepository = bookRepository,
             importExportManager = importExportManager,
-            googleAuthManager = googleAuthManager,
             ttsHelper = ttsHelper,
             logger = logger,
             weatherExecutor = weatherExecutor,

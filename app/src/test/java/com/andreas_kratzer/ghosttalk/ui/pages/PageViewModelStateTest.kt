@@ -78,7 +78,6 @@ class PageViewModelStateTest {
             settingsRepository = mockk(relaxed = true),
             bookRepository = mockk(relaxed = true),
             importExportManager = mockk(relaxed = true),
-            googleAuthManager = mockk(relaxed = true),
             ttsHelper = mockk(relaxed = true),
             logger = mockk(relaxed = true),
             weatherExecutor = mockk(relaxed = true),
