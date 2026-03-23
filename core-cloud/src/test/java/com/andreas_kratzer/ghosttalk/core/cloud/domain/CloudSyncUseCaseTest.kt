@@ -4,6 +4,7 @@ package com.andreas_kratzer.ghosttalk.core.cloud.domain
 import android.content.Context
 import android.util.Log
 import com.andreas_kratzer.ghosttalk.core.data.BookRepository
+import com.andreas_kratzer.ghosttalk.core.data.SyncLogProvider
 import com.andreas_kratzer.ghosttalk.core.data.impl.PageImportExportManager
 import com.andreas_kratzer.ghosttalk.core.model.Book
 import com.andreas_kratzer.ghosttalk.core.util.Logger
@@ -34,6 +35,7 @@ class CloudSyncUseCaseTest {
     private val mockImportExportManager: PageImportExportManager = mockk(relaxed = true)
     private val mockDrive: Drive = mockk(relaxed = true)
     private val mockLogger: Logger = mockk(relaxed = true)
+    private val mockSyncLogProvider: SyncLogProvider = mockk(relaxed = true)
 
     @Before
     fun setup() {
@@ -47,7 +49,7 @@ class CloudSyncUseCaseTest {
 
         val mockBook = Book(id = "test-book", name = "Test", updatedAt = System.currentTimeMillis())
         coEvery { mockBookRepository.getBookById(any()) } returns mockBook
-        useCase = CloudSyncUseCase(mockContext, mockBookRepository, mockImportExportManager, mockLogger)
+        useCase = CloudSyncUseCase(mockContext, mockBookRepository, mockImportExportManager, mockSyncLogProvider, mockLogger)
     }
 
     @After

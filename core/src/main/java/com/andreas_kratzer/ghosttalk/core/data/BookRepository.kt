@@ -11,5 +11,5 @@ interface BookRepository {
     suspend fun insertBook(book: Book)
     suspend fun updateBook(book: Book)
     suspend fun deleteBook(book: Book)
-    suspend fun updateLastModified(bookId: String)
+    suspend fun updateLastModified(bookId: String, timestamp: Long = System.currentTimeMillis())
 }

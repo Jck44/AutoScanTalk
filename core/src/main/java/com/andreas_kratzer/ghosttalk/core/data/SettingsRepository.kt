@@ -42,4 +42,33 @@ interface SettingsRepository : SecuritySettings, KeyEventSettings, AudioSettings
      * Resets all settings to their default values.
      */
     fun resetToDefaults()
+
+    /**
+     * Refreshes all internal state flows from the current SharedPreferences values.
+     * Useful after direct manipulation of SharedPreferences (e.g., during import).
+     */
+    fun refresh()
+
+    // --- Book-specific settings access (bypassing activeBookId) ---
+    fun getDefaultStartPageIdForBook(bookId: String): String?
+    fun getPageSortOrderForBook(bookId: String): String
+    fun getTemplateSortOrderForBook(bookId: String): String
+    
+    // Scanning settings for specific book
+    fun getAutoStartScanningForBook(bookId: String): Boolean
+    fun getScanDelayMillisForBook(bookId: String): Long
+    fun getResumeScanningFromStartForBook(bookId: String): Boolean
+    fun getHoldingTimeMillisForBook(bookId: String): Long
+    fun getSwitchActivationKeyForBook(bookId: String): String
+    fun getVolumeKeysActivateForBook(bookId: String): Boolean
+    fun getDefaultScanPatternForBook(bookId: String): String
+    fun getLimitScanCyclesForBook(bookId: String): Boolean
+    fun getScanCycleLimitForBook(bookId: String): Int
+    
+    // Advanced settings for specific book
+    fun getSmartPredictionDelayForBook(bookId: String): Long
+    fun getIsSmartPredictionEnabledForBook(bookId: String): Boolean
+    fun getActionLogLimitForBook(bookId: String): Int
+    fun getLogIgnoredActionsForBook(bookId: String): Boolean
+    fun getLogStopActionsForBook(bookId: String): Boolean
 }

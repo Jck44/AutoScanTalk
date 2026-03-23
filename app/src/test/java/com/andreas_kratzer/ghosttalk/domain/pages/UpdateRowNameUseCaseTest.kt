@@ -48,7 +48,7 @@ class UpdateRowNameUseCaseTest {
             pageRepository.updatePageSettingsOnly(match { 
                 it.id == "p1" && it.rowNames == listOf("R1", "NewR2", "R3")
             })
-            bookRepository.updateLastModified("book1")
+            bookRepository.updateLastModified("book1", any())
         }
     }
 

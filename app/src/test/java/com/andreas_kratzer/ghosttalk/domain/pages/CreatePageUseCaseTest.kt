@@ -57,7 +57,7 @@ class CreatePageUseCaseTest {
                 it.buttonConfigs.size == 49
             })
         }
-        coVerify { bookRepository.updateLastModified("book1") }
+        coVerify { bookRepository.updateLastModified("book1", any()) }
     }
 
     @Test
@@ -80,7 +80,7 @@ class CreatePageUseCaseTest {
                 it.buttonConfigs[8]!!.label == "zurück zum Start"
             })
         }
-        coVerify { bookRepository.updateLastModified("book1") }
+        coVerify { bookRepository.updateLastModified("book1", any()) }
     }
 
     @Test

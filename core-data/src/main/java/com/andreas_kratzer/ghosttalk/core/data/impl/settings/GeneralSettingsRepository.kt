@@ -7,6 +7,7 @@ import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.K
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_FORCE_SOFT_KEYBOARD
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_PAGE_SORT_ORDER
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_STARTUP_BEHAVIOR
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SYNC_LOGS_STORAGE
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_TEMPLATE_SORT_ORDER
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_THEME_MODE
 import kotlinx.coroutines.flow.StateFlow
@@ -24,10 +25,12 @@ class GeneralSettingsRepository(
     private val _favoriteBookId = StringSetting(KEY_FAVORITE_BOOK_ID, isScoped = false)
     private val _startupBehavior = NonNullStringSetting(KEY_STARTUP_BEHAVIOR, "BOOK_SELECTION", isScoped = false)
     private val _forceSoftKeyboard = BooleanSetting(KEY_FORCE_SOFT_KEYBOARD, default = false, isScoped = false)
+    private val _syncLogsStorage = StringSetting(KEY_SYNC_LOGS_STORAGE, isScoped = false)
 
     val themeModeFlow = _themeMode.flow
     val pageSortOrderFlow = _pageSortOrder.flow
     val templateSortOrderFlow = _templateSortOrder.flow
+    val syncLogsStorageFlow = _syncLogsStorage.flow
     val appLanguageFlow = _appLanguage.flow
     val defaultStartPageIdFlow = _defaultStartPageId.flow
     val favoriteBookIdFlow = _favoriteBookId.flow
@@ -66,6 +69,10 @@ class GeneralSettingsRepository(
         get() = _forceSoftKeyboard.value
         set(value) { _forceSoftKeyboard.value = value }
 
+    var syncLogsStorage: String?
+        get() = _syncLogsStorage.value
+        set(value) { _syncLogsStorage.value = value }
+
     override fun refresh() {
         _themeMode.refresh()
         _pageSortOrder.refresh()
@@ -75,5 +82,6 @@ class GeneralSettingsRepository(
         _favoriteBookId.refresh()
         _startupBehavior.refresh()
         _forceSoftKeyboard.refresh()
+        _syncLogsStorage.refresh()
     }
 }

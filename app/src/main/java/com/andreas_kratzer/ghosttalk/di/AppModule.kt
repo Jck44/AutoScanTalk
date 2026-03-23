@@ -1,6 +1,7 @@
 package com.andreas_kratzer.ghosttalk.di
 
 import com.andreas_kratzer.ghosttalk.domain.actions.ActionLogUseCase
+import com.andreas_kratzer.ghosttalk.domain.actions.SyncLogUseCase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -15,6 +16,12 @@ object AppModule {
     @Singleton
     fun provideActionLogProvider(actionLogUseCase: ActionLogUseCase): com.andreas_kratzer.ghosttalk.core.data.ActionLogProvider {
         return actionLogUseCase
+    }
+
+    @Provides
+    @Singleton
+    fun provideSyncLogProvider(syncLogUseCase: SyncLogUseCase): com.andreas_kratzer.ghosttalk.core.data.SyncLogProvider {
+        return syncLogUseCase
     }
 
     @Provides

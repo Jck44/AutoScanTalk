@@ -10,6 +10,7 @@ import com.andreas_kratzer.ghosttalk.core.cloud.domain.SetCloudSyncEnabledUseCas
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.SignInUseCase
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.SignOutUseCase
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.SyncMode
+import com.andreas_kratzer.ghosttalk.core.data.SyncLogProvider
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -41,6 +42,7 @@ class CloudSyncSettingsDelegateTest {
     private lateinit var cloudSyncUseCase: CloudSyncUseCase
     private lateinit var signInUseCase: SignInUseCase
     private lateinit var signOutUseCase: SignOutUseCase
+    private lateinit var syncLogProvider: SyncLogProvider
     private lateinit var delegate: CloudSyncSettingsDelegate
 
     private val userEmailFlow = MutableStateFlow<String?>(null)
@@ -59,6 +61,7 @@ class CloudSyncSettingsDelegateTest {
         cloudSyncUseCase = mockk(relaxed = true)
         signInUseCase = mockk(relaxed = true)
         signOutUseCase = mockk(relaxed = true)
+        syncLogProvider = mockk(relaxed = true)
         
         every { googleAuthManager.userEmail } returns userEmailFlow
 
@@ -70,7 +73,8 @@ class CloudSyncSettingsDelegateTest {
             performManualSyncUseCase,
             cloudSyncUseCase,
             signInUseCase,
-            signOutUseCase
+            signOutUseCase,
+            syncLogProvider
         )
     }
 

@@ -59,7 +59,7 @@ class ReorderPagesUseCaseTest {
             pageRepository.updatePageSettingsOnly(match { it.id == "3" })
         }
         
-        coVerify { bookRepository.updateLastModified("b1") }
+        coVerify { bookRepository.updateLastModified("b1", any()) }
         verify { settingsRepository.pageSortOrder = SortOrder.MANUAL.name }
     }
 

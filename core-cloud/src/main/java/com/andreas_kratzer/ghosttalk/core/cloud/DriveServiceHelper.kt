@@ -210,4 +210,18 @@ class DriveServiceHelper(private val driveService: Drive) {
             emptyList()
         }
     }
+    /**
+     * Fetches metadata for a specific file.
+     */
+    suspend fun getFileMetadata(fileId: String): File? = withContext(Dispatchers.IO) {
+        try {
+            Log.d(TAG, "Fetching metadata for file: $fileId")
+            driveService.files().get(fileId).setFields("id, name, modifiedTime").execute()
+        } catch (e: com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException) {
+            throw e
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to get file metadata for $fileId: ${e.message}", e)
+            null
+        }
+    }
 }

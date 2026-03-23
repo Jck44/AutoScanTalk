@@ -89,6 +89,10 @@
     <string name="settings_cloud_last_sync">Letzter Sync: %s</string>
     <string name="book_import_cloud_success">Buch erfolgreich aus der Cloud geladen.</string>
     <string name="book_import_cloud_error">Fehler beim Laden aus der Cloud: %s</string>
+    <string name="settings_cloud_logs_title">Cloud Sync Protokoll</string>
+    <string name="settings_cloud_logs_clear">Protokoll löschen</string>
+    <string name="settings_cloud_logs_empty">Noch keine Sync-Einträge vorhanden.</string>
+    <string name="settings_cloud_logs_view">Verlauf anzeigen</string>
 
     <!-- Gemini Settings -->
     <string name="settings_gemini_activate_button">Gemini Initialisieren / Testen</string>

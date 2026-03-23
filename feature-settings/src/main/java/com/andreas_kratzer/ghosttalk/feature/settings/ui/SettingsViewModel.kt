@@ -107,6 +107,7 @@ class SettingsViewModel @Inject constructor(
     
     val availableBackups = cloudSyncDelegate.availableBackups
     val showBackupSelectionDialog = cloudSyncDelegate.showBackupSelectionDialog
+    val syncLogs = cloudSyncDelegate.syncLogs
     
     val isGeminiEnabled = settingsRepository.isGeminiEnabledFlow
     val useLocalGenerativeAi = settingsRepository.useLocalGenerativeAiFlow
@@ -219,6 +220,9 @@ class SettingsViewModel @Inject constructor(
     fun fetchAvailableBackupsForImport() = cloudSyncDelegate.fetchAvailableBackupsForImport(viewModelScope)
     fun importCloudBackup(backupInfo: com.andreas_kratzer.ghosttalk.core.cloud.domain.RemoteBackupInfo) = cloudSyncDelegate.importCloudBackup(backupInfo, viewModelScope)
     fun dismissBackupSelectionDialog() = cloudSyncDelegate.dismissBackupSelectionDialog()
+    
+    fun loadSyncLogs() = cloudSyncDelegate.loadSyncLogs(viewModelScope)
+    fun clearSyncLogs() = cloudSyncDelegate.clearSyncLogs(viewModelScope)
     
     fun setSyncMode(m: String) { settingsRepository.syncMode = m }
     fun setSyncIntervalMinutes(minutes: Long) { settingsRepository.syncIntervalMinutes = minutes }

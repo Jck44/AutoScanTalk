@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import com.andreas_kratzer.ghosttalk.core.data.SyncLogProvider
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -36,7 +37,8 @@ class CloudSyncSettingsDelegate @Inject constructor(
     private val performManualSyncUseCase: PerformManualSyncUseCase,
     private val cloudSyncUseCase: CloudSyncUseCase,
     private val signInUseCase: SignInUseCase,
-    private val signOutUseCase: SignOutUseCase
+    private val signOutUseCase: SignOutUseCase,
+    private val syncLogProvider: SyncLogProvider
 ) {
     private val _isSyncing = MutableStateFlow(false)
     val isSyncing: StateFlow<Boolean> = _isSyncing.asStateFlow()
@@ -52,6 +54,22 @@ class CloudSyncSettingsDelegate @Inject constructor(
 
     private val _showBackupSelectionDialog = MutableStateFlow(false)
     val showBackupSelectionDialog: StateFlow<Boolean> = _showBackupSelectionDialog.asStateFlow()
+
+    private val _syncLogs = MutableStateFlow<List<String>>(emptyList())
+    val syncLogs: StateFlow<List<String>> = _syncLogs.asStateFlow()
+
+    fun loadSyncLogs(scope: CoroutineScope) {
+        scope.launch {
+            _syncLogs.value = syncLogProvider.loadSavedLogs()
+        }
+    }
+
+    fun clearSyncLogs(scope: CoroutineScope) {
+        scope.launch {
+            syncLogProvider.clearLogs()
+            _syncLogs.value = emptyList()
+        }
+    }
 
     val userEmail = authManager.userEmail
 

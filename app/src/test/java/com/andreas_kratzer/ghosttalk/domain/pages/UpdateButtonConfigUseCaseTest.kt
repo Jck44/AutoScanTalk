@@ -47,7 +47,7 @@ class UpdateButtonConfigUseCaseTest {
         assertEquals("New", result?.buttonConfigs?.get(0)?.label)
         coVerify {
             pageRepository.updatePage(match { it.id == "p1" && it.buttonConfigs[0]?.label == "New" })
-            bookRepository.updateLastModified("book1")
+            bookRepository.updateLastModified("book1", any())
         }
     }
 

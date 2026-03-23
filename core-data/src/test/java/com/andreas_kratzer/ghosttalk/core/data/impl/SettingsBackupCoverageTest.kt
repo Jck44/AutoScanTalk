@@ -18,6 +18,7 @@ class SettingsBackupCoverageTest {
         "showTestButtons",         // Dev setting
         "persistActionLogs",       // File path (local)
         "actionLogsStorage",       // File path (local)
+        "syncLogsStorage",         // Local state (sync logs)
         "ttsAudioDeviceAddress",   // Hardware-specific
         "ttsAudioDeviceAddressFlow",
         "cuesAudioDeviceAddress",  // Hardware-specific

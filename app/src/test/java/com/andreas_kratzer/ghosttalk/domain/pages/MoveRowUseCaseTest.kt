@@ -43,7 +43,7 @@ class MoveRowUseCaseTest {
         assertEquals("Row 0", result?.rowNames?.get(1))
         
         coVerify { pageRepository.updatePage(any()) }
-        coVerify { bookRepository.updateLastModified("book1") }
+        coVerify { bookRepository.updateLastModified("book1", any()) }
     }
 
     @Test

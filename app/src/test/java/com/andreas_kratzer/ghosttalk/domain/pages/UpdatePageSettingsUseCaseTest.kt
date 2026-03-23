@@ -54,7 +54,7 @@ class UpdatePageSettingsUseCaseTest {
                 it.scanPattern == "row_by_row" && 
                 it.rowNames == newRowNames 
             })
-            bookRepository.updateLastModified("book1")
+            bookRepository.updateLastModified("book1", any())
         }
     }
 

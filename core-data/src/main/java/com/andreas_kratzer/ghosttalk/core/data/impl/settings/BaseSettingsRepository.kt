@@ -62,6 +62,40 @@ abstract class BaseSettingsRepository(
         return prefs.getStringSet(key, defaultValue)
     }
 
+    // --- Book-specific access (explicit bookId) ---
+
+    fun getStringForBook(bookId: String, key: String, defaultValue: String? = null): String? {
+        val scopedKey = "${bookId}_$key"
+        if (prefs.contains(scopedKey)) {
+            return prefs.getString(scopedKey, defaultValue)
+        }
+        return prefs.getString(key, defaultValue)
+    }
+
+    fun getBooleanForBook(bookId: String, key: String, defaultValue: Boolean): Boolean {
+        val scopedKey = "${bookId}_$key"
+        if (prefs.contains(scopedKey)) {
+            return prefs.getBoolean(scopedKey, defaultValue)
+        }
+        return prefs.getBoolean(key, defaultValue)
+    }
+
+    fun getLongForBook(bookId: String, key: String, defaultValue: Long): Long {
+        val scopedKey = "${bookId}_$key"
+        if (prefs.contains(scopedKey)) {
+            return prefs.getLong(scopedKey, defaultValue)
+        }
+        return prefs.getLong(key, defaultValue)
+    }
+
+    fun getIntForBook(bookId: String, key: String, defaultValue: Int): Int {
+        val scopedKey = "${bookId}_$key"
+        if (prefs.contains(scopedKey)) {
+            return prefs.getInt(scopedKey, defaultValue)
+        }
+        return prefs.getInt(key, defaultValue)
+    }
+
     protected fun putStringScoped(key: String, value: String?) {
         prefs.edit { putString(getScopedKey(key), value) }
     }

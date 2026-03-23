@@ -61,4 +61,5 @@ object SettingsConstants {
     const val KEY_LOG_IGNORED_ACTIONS = "log_ignored_actions"
     const val KEY_LOG_STOP_ACTIONS = "log_stop_actions"
     const val KEY_FORCE_SOFT_KEYBOARD = "force_soft_keyboard"
+    const val KEY_SYNC_LOGS_STORAGE = "sync_logs_storage"
 }

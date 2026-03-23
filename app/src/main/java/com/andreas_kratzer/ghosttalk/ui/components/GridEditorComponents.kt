@@ -192,7 +192,7 @@ fun calculateGridSize(
     
     // On phones, we enforce a minimum height to ensure readability, even if it requires scrolling.
     // On tablets, we continue to fit the entire grid on the screen.
-    val minEditorButtonHeight = if (isTablet) 0.dp else 72.dp
+    val minEditorButtonHeight = if (isTablet) 0.dp else 50.dp
     var optimalHeight = buttonHeightToFit.coerceIn(minEditorButtonHeight, maxButtonSize)
 
     val maxRatio = 4.0f

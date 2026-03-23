@@ -111,6 +111,7 @@ class SettingsRepositoryImpl @Inject constructor(
     override val startupBehaviorFlow: StateFlow<String> get() = generalSettings.startupBehaviorFlow
     override val favoriteBookIdFlow: StateFlow<String?> get() = generalSettings.favoriteBookIdFlow
     override val forceSoftKeyboardFlow: StateFlow<Boolean> get() = generalSettings.forceSoftKeyboardFlow
+    override val syncLogsStorageFlow: StateFlow<String?> get() = generalSettings.syncLogsStorageFlow
 
     // --- UserSettings ---
     override val keepScreenOnUserModeFlow: StateFlow<Boolean> get() = userSettings.keepScreenOnUserModeFlow
@@ -396,6 +397,10 @@ class SettingsRepositoryImpl @Inject constructor(
         get() = generalSettings.forceSoftKeyboard
         set(value) { generalSettings.forceSoftKeyboard = value }
 
+    override var syncLogsStorage: String?
+        get() = generalSettings.syncLogsStorage
+        set(value) { generalSettings.syncLogsStorage = value }
+
     override var logIgnoredActions: Boolean
         get() = advancedSettings.logIgnoredActions
         set(value) {
@@ -485,4 +490,61 @@ class SettingsRepositoryImpl @Inject constructor(
         _activeBookIdFlow.value = "book-default"
         refreshFlows()
     }
+
+    override fun refresh() {
+        refreshFlows()
+    }
+
+    // --- Book-specific settings implementation ---
+
+    override fun getDefaultStartPageIdForBook(bookId: String): String? =
+        generalSettings.getStringForBook(bookId, SettingsConstants.KEY_DEFAULT_START_PAGE_ID)
+
+    override fun getPageSortOrderForBook(bookId: String): String =
+        generalSettings.getStringForBook(bookId, SettingsConstants.KEY_PAGE_SORT_ORDER, "MANUAL") ?: "MANUAL"
+
+    override fun getTemplateSortOrderForBook(bookId: String): String =
+        generalSettings.getStringForBook(bookId, SettingsConstants.KEY_TEMPLATE_SORT_ORDER, "MANUAL") ?: "MANUAL"
+
+    override fun getAutoStartScanningForBook(bookId: String): Boolean =
+        scanningSettings.getBooleanForBook(bookId, SettingsConstants.KEY_AUTO_START_SCANNING, true)
+
+    override fun getScanDelayMillisForBook(bookId: String): Long =
+        scanningSettings.getLongForBook(bookId, SettingsConstants.KEY_SCAN_DELAY_MILLIS, 3000L)
+
+    override fun getResumeScanningFromStartForBook(bookId: String): Boolean =
+        scanningSettings.getBooleanForBook(bookId, SettingsConstants.KEY_RESUME_SCANNING_FROM_START, true)
+
+    override fun getHoldingTimeMillisForBook(bookId: String): Long =
+        scanningSettings.getLongForBook(bookId, SettingsConstants.KEY_HOLDING_TIME_MILLIS, 250L)
+
+    override fun getSwitchActivationKeyForBook(bookId: String): String =
+        scanningSettings.getStringForBook(bookId, SettingsConstants.KEY_SWITCH_ACTIVATION_KEY, "~3") ?: "~3"
+
+    override fun getVolumeKeysActivateForBook(bookId: String): Boolean =
+        scanningSettings.getBooleanForBook(bookId, SettingsConstants.KEY_VOLUME_KEYS_ACTIVATE, false)
+
+    override fun getDefaultScanPatternForBook(bookId: String): String =
+        scanningSettings.getStringForBook(bookId, SettingsConstants.KEY_DEFAULT_SCAN_PATTERN, "linear") ?: "linear"
+
+    override fun getLimitScanCyclesForBook(bookId: String): Boolean =
+        scanningSettings.getBooleanForBook(bookId, SettingsConstants.KEY_LIMIT_SCAN_CYCLES, false)
+
+    override fun getScanCycleLimitForBook(bookId: String): Int =
+        scanningSettings.getIntForBook(bookId, SettingsConstants.KEY_SCAN_CYCLE_LIMIT, 2)
+
+    override fun getSmartPredictionDelayForBook(bookId: String): Long =
+        advancedSettings.getLongForBook(bookId, SettingsConstants.KEY_SMART_PREDICTION_DELAY, 2000L)
+
+    override fun getIsSmartPredictionEnabledForBook(bookId: String): Boolean =
+        advancedSettings.getBooleanForBook(bookId, SettingsConstants.KEY_SMART_PREDICTION_ENABLED, false)
+
+    override fun getActionLogLimitForBook(bookId: String): Int =
+        advancedSettings.getIntForBook(bookId, SettingsConstants.KEY_ACTION_LOG_LIMIT, 100)
+
+    override fun getLogIgnoredActionsForBook(bookId: String): Boolean =
+        advancedSettings.getBooleanForBook(bookId, SettingsConstants.KEY_LOG_IGNORED_ACTIONS, false)
+
+    override fun getLogStopActionsForBook(bookId: String): Boolean =
+        advancedSettings.getBooleanForBook(bookId, SettingsConstants.KEY_LOG_STOP_ACTIONS, false)
 }

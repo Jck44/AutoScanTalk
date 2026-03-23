@@ -4,6 +4,8 @@ import android.content.Context
 import com.andreas_kratzer.ghosttalk.core.data.BookRepository
 import com.andreas_kratzer.ghosttalk.core.data.PageRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants
+import androidx.core.content.edit
 import com.andreas_kratzer.ghosttalk.core.data.export.PageImportExportProvider
 import com.andreas_kratzer.ghosttalk.core.model.AuditoryCue
 import com.andreas_kratzer.ghosttalk.core.model.ButtonAction
@@ -26,6 +28,7 @@ import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportAction
 import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportButton
 import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportExportData
 import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportPage
+import com.andreas_kratzer.ghosttalk.core.util.Logger
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -41,8 +44,10 @@ class PageImportExportManager @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val pageRepository: PageRepository,
     private val bookRepository: BookRepository,
-    private val settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository,
+    private val logger: Logger
 ) : PageImportExportProvider {
+    private val TAG = "PageImportExportManager"
     private val json = Json {
         ignoreUnknownKeys = true
         prettyPrint = true
@@ -90,19 +95,20 @@ class PageImportExportManager @Inject constructor(
             bookId = book.id,
             bookName = book.name,
             bookCreatedAt = book.createdAt,
-            actionLogLimit = book.actionLogLimit,
-            limitScanCycles = book.limitScanCycles,
-            scanCycleLimit = book.scanCycleLimit,
-            logIgnoredActions = book.logIgnoredActions,
-            logStopActions = book.logStopActions,
-            holdingTimeSeconds = settingsRepository.holdingTimeMillis / 1000f,
-            autoStartScanning = settingsRepository.autoStartScanning,
-            scanDelayMillis = settingsRepository.scanDelayMillis,
-            resumeScanningFromStart = settingsRepository.resumeScanningFromStart,
-            switchActivationKey = settingsRepository.switchActivationKey,
-            volumeKeysActivate = settingsRepository.volumeKeysActivate,
-            defaultScanPattern = settingsRepository.defaultScanPattern,
-            isSmartPredictionEnabled = settingsRepository.isSmartPredictionEnabled,
+            bookUpdatedAt = book.updatedAt,
+            actionLogLimit = settingsRepository.getActionLogLimitForBook(bookId),
+            limitScanCycles = settingsRepository.getLimitScanCyclesForBook(bookId),
+            scanCycleLimit = settingsRepository.getScanCycleLimitForBook(bookId),
+            logIgnoredActions = settingsRepository.getLogIgnoredActionsForBook(bookId),
+            logStopActions = settingsRepository.getLogStopActionsForBook(bookId),
+            holdingTimeSeconds = settingsRepository.getHoldingTimeMillisForBook(bookId) / 1000f,
+            autoStartScanning = settingsRepository.getAutoStartScanningForBook(bookId),
+            scanDelayMillis = settingsRepository.getScanDelayMillisForBook(bookId),
+            resumeScanningFromStart = settingsRepository.getResumeScanningFromStartForBook(bookId),
+            switchActivationKey = settingsRepository.getSwitchActivationKeyForBook(bookId),
+            volumeKeysActivate = settingsRepository.getVolumeKeysActivateForBook(bookId),
+            defaultScanPattern = settingsRepository.getDefaultScanPatternForBook(bookId),
+            isSmartPredictionEnabled = settingsRepository.getIsSmartPredictionEnabledForBook(bookId),
             geminiRedoPrediction = settingsRepository.geminiRedoPrediction,
             geminiTimeout = settingsRepository.geminiTimeout,
             isGeminiEnabled = settingsRepository.isGeminiEnabled,
@@ -112,9 +118,9 @@ class PageImportExportManager @Inject constructor(
             syncMode = settingsRepository.syncMode,
             ttsLanguage = settingsRepository.ttsLanguage,
             ttsVoiceName = settingsRepository.ttsVoiceName,
-            pageSortOrder = settingsRepository.pageSortOrder,
-            templateSortOrder = settingsRepository.templateSortOrder,
-            smartPredictionDelay = settingsRepository.smartPredictionDelay,
+            pageSortOrder = settingsRepository.getPageSortOrderForBook(bookId),
+            templateSortOrder = settingsRepository.getTemplateSortOrderForBook(bookId),
+            smartPredictionDelay = settingsRepository.getSmartPredictionDelayForBook(bookId),
             keepScreenOnUserMode = settingsRepository.keepScreenOnUserMode,
             userModeScreenBehavior = settingsRepository.userModeScreenBehavior,
             themeMode = settingsRepository.themeMode,
@@ -126,7 +132,7 @@ class PageImportExportManager @Inject constructor(
             startupBehavior = settingsRepository.startupBehavior,
             favoriteBookId = settingsRepository.favoriteBookId,
             weatherCacheTimeout = settingsRepository.weatherCacheTimeout,
-            defaultStartPageId = settingsRepository.defaultStartPageId,
+            defaultStartPageId = settingsRepository.getDefaultStartPageIdForBook(bookId),
             securityPinHash = settingsRepository.securityPinHash,
             securityPinSalt = settingsRepository.securityPinSalt,
             appLanguage = settingsRepository.appLanguage,
@@ -145,21 +151,25 @@ class PageImportExportManager @Inject constructor(
                     rowNames = page.rowNames,
                     orderIndex = page.orderIndex,
                     createdAt = page.createdAt,
-                    buttons = page.buttonConfigs.mapIndexed { index, config ->
-                        ImportButton(
-                            id = config?.id,
-                            index = index.toLong(),
-                            label = config?.label ?: "",
-                            spokenText = config?.spokenText,
-                            auditoryCueText = config?.auditoryCue?.let { if (it is AuditoryCue.TextToSpeechCue) it.text else "" },
-                            active = config?.isActive,
-                            playActionAsAuditoryCue = config?.playActionAsAuditoryCue,
-                            action = config?.buttonAction?.let { exportAction(it, config.spokenText) }
-                        )
-                    }.filter { it.label.isNotEmpty() || it.action != null || it.auditoryCueText != null }
+                    buttons = page.buttonConfigs.mapIndexedNotNull { index, config ->
+                        config?.let {
+                            ImportButton(
+                                index = index.toLong(),
+                                id = it.id,
+                                label = it.label,
+                                spokenText = it.spokenText,
+                                auditoryCueText = (it.auditoryCue as? AuditoryCue.TextToSpeechCue)?.text,
+                                active = it.isActive,
+                                playActionAsAuditoryCue = it.playActionAsAuditoryCue,
+                                action = exportAction(it.buttonAction)
+                            )
+                        }
+                    }
                 )
             }
         )
+
+        logger.d(TAG, "Exported book $bookId: defaultStartPageId='${exportData.defaultStartPageId}', scanDelay='${exportData.scanDelayMillis}'")
         json.encodeToString(exportData)
     }
 
@@ -201,49 +211,53 @@ class PageImportExportManager @Inject constructor(
     ): Result<Int> = withContext(Dispatchers.IO) {
         try {
             val importData = json.decodeFromString<ImportExportData>(jsonString)
-            
-            // 1. Update book and app settings if provided
-            importData.holdingTimeSeconds?.let { 
-                settingsRepository.holdingTimeMillis = (it * 1000).toLong()
+            logger.d(TAG, "Importing JSON for book $bookId: defaultStartPageId='${importData.defaultStartPageId}', bookName='${importData.bookName}'")
+
+            // 1. Clean state: Delete existing pages for this book before importing
+            // This ensures that the restored book exactly matches the backup
+            pageRepository.deletePagesForBook(bookId)
+            logger.d(TAG, "Cleared existing pages for book $bookId before import.")
+
+            // 2. Update book and app settings if provided
+            if (restoreSyncSettings) {
+                importData.holdingTimeSeconds?.let { 
+                    settingsRepository.holdingTimeMillis = (it * 1000).toLong()
+                }
+                importData.autoStartScanning?.let { settingsRepository.autoStartScanning = it }
+                importData.scanDelayMillis?.let { settingsRepository.scanDelayMillis = it }
+                importData.resumeScanningFromStart?.let { settingsRepository.resumeScanningFromStart = it }
+                importData.switchActivationKey?.let { settingsRepository.switchActivationKey = it }
+                importData.volumeKeysActivate?.let { settingsRepository.volumeKeysActivate = it }
+                importData.defaultScanPattern?.let { settingsRepository.defaultScanPattern = it }
+                importData.isSmartPredictionEnabled?.let { settingsRepository.isSmartPredictionEnabled = it }
+                importData.geminiRedoPrediction?.let { settingsRepository.geminiRedoPrediction = it }
+                importData.geminiTimeout?.let { settingsRepository.geminiTimeout = it }
+                importData.isGeminiEnabled?.let { settingsRepository.isGeminiEnabled = it }
+                importData.useLocalGenerativeAi?.let { settingsRepository.useLocalGenerativeAi = it }
+                importData.isCloudSyncEnabled?.let { settingsRepository.isCloudSyncEnabled = it }
+                importData.syncIntervalMinutes?.let { settingsRepository.syncIntervalMinutes = it }
+                importData.syncMode?.let { settingsRepository.syncMode = it }
+                importData.ttsLanguage?.let { settingsRepository.ttsLanguage = it }
+                importData.ttsVoiceName?.let { settingsRepository.ttsVoiceName = it }
+                importData.smartPredictionDelay?.let { settingsRepository.smartPredictionDelay = it }
+                importData.keepScreenOnUserMode?.let { settingsRepository.keepScreenOnUserMode = it }
+                importData.userModeScreenBehavior?.let { settingsRepository.userModeScreenBehavior = it }
+                importData.themeMode?.let { settingsRepository.themeMode = it }
+                importData.securityPinTimeoutMinutes?.let { settingsRepository.securityPinTimeoutMinutes = it }
+                importData.isPinRequiredForDeletion?.let { settingsRepository.isPinRequiredForDeletion = it }
+                importData.isBiometricEnabled?.let { settingsRepository.isBiometricEnabled = it }
+                importData.isSecurityRequiredForEdit?.let { settingsRepository.isSecurityRequiredForEdit = it }
+                importData.isSecurityRequiredForSettings?.let { settingsRepository.isSecurityRequiredForSettings = it }
+                importData.startupBehavior?.let { settingsRepository.startupBehavior = it }
+                importData.weatherCacheTimeout?.let { settingsRepository.weatherCacheTimeout = it }
+                importData.securityPinHash?.let { settingsRepository.securityPinHash = it }
+                importData.securityPinSalt?.let { settingsRepository.securityPinSalt = it }
+                importData.appLanguage?.let { settingsRepository.appLanguage = it }
+                importData.isNotificationReadingEnabled?.let { settingsRepository.isNotificationReadingEnabled = it }
+                importData.monitoredNotificationApps?.let { settingsRepository.monitoredNotificationApps = it.toSet() }
+                importData.showPageIdInLog?.let { settingsRepository.showPageIdInLog = it }
+                importData.bluetoothDelay?.let { settingsRepository.bluetoothDelay = it }
             }
-            importData.autoStartScanning?.let { settingsRepository.autoStartScanning = it }
-            importData.scanDelayMillis?.let { settingsRepository.scanDelayMillis = it }
-            importData.resumeScanningFromStart?.let { settingsRepository.resumeScanningFromStart = it }
-            importData.switchActivationKey?.let { settingsRepository.switchActivationKey = it }
-            importData.volumeKeysActivate?.let { settingsRepository.volumeKeysActivate = it }
-            importData.defaultScanPattern?.let { settingsRepository.defaultScanPattern = it }
-            importData.isSmartPredictionEnabled?.let { settingsRepository.isSmartPredictionEnabled = it }
-            importData.geminiRedoPrediction?.let { settingsRepository.geminiRedoPrediction = it }
-            importData.geminiTimeout?.let { settingsRepository.geminiTimeout = it }
-            importData.isGeminiEnabled?.let { settingsRepository.isGeminiEnabled = it }
-            importData.useLocalGenerativeAi?.let { settingsRepository.useLocalGenerativeAi = it }
-            importData.isCloudSyncEnabled?.let { settingsRepository.isCloudSyncEnabled = it }
-            importData.syncIntervalMinutes?.let { settingsRepository.syncIntervalMinutes = it }
-            importData.syncMode?.let { settingsRepository.syncMode = it }
-            importData.ttsLanguage?.let { settingsRepository.ttsLanguage = it }
-            importData.ttsVoiceName?.let { settingsRepository.ttsVoiceName = it }
-            importData.pageSortOrder?.let { settingsRepository.pageSortOrder = it }
-            importData.templateSortOrder?.let { settingsRepository.templateSortOrder = it }
-            importData.smartPredictionDelay?.let { settingsRepository.smartPredictionDelay = it }
-            importData.keepScreenOnUserMode?.let { settingsRepository.keepScreenOnUserMode = it }
-            importData.userModeScreenBehavior?.let { settingsRepository.userModeScreenBehavior = it }
-            importData.themeMode?.let { settingsRepository.themeMode = it }
-            importData.securityPinTimeoutMinutes?.let { settingsRepository.securityPinTimeoutMinutes = it }
-            importData.isPinRequiredForDeletion?.let { settingsRepository.isPinRequiredForDeletion = it }
-            importData.isBiometricEnabled?.let { settingsRepository.isBiometricEnabled = it }
-            importData.isSecurityRequiredForEdit?.let { settingsRepository.isSecurityRequiredForEdit = it }
-            importData.isSecurityRequiredForSettings?.let { settingsRepository.isSecurityRequiredForSettings = it }
-            importData.startupBehavior?.let { settingsRepository.startupBehavior = it }
-            importData.favoriteBookId?.let { settingsRepository.favoriteBookId = it }
-            importData.weatherCacheTimeout?.let { settingsRepository.weatherCacheTimeout = it }
-            importData.defaultStartPageId?.let { settingsRepository.defaultStartPageId = it }
-            importData.securityPinHash?.let { settingsRepository.securityPinHash = it }
-            importData.securityPinSalt?.let { settingsRepository.securityPinSalt = it }
-            importData.appLanguage?.let { settingsRepository.appLanguage = it }
-            importData.isNotificationReadingEnabled?.let { settingsRepository.isNotificationReadingEnabled = it }
-            importData.monitoredNotificationApps?.let { settingsRepository.monitoredNotificationApps = it.toSet() }
-            importData.showPageIdInLog?.let { settingsRepository.showPageIdInLog = it }
-            importData.bluetoothDelay?.let { settingsRepository.bluetoothDelay = it }
             importData.bookName?.let { newName ->
                 bookRepository.getBookById(bookId)?.let { book ->
                     bookRepository.updateBook(book.copy(
@@ -256,6 +270,11 @@ class PageImportExportManager @Inject constructor(
                         logStopActions = importData.logStopActions ?: book.logStopActions
                     ))
                 }
+            }
+            
+            // 1.1 Update book updated timestamp if provided from import data (e.g. from cloud)
+            importData.bookUpdatedAt?.let { timestamp ->
+                bookRepository.updateLastModified(bookId, timestamp)
             }
 
             val idMap = mutableMapOf<String, String>()
@@ -274,6 +293,35 @@ class PageImportExportManager @Inject constructor(
                     regeneratedPages.add(importPage.importId)
                 }
                 idMap[importPage.importId] = targetPageId
+            }
+            logger.d(TAG, "ID mapping complete. Mapping size: ${idMap.size}. ForceRegeneration: $forceRegeneration")
+
+            // 2.1 Update book-scoped settings with correct book ID prefix
+            val prefs = context.getSharedPreferences(SettingsConstants.PREFS_NAME, android.content.Context.MODE_PRIVATE)
+            prefs.edit {
+                importData.defaultStartPageId?.let { oldId ->
+                    val newId = idMap[oldId] ?: oldId
+                    val key = "${bookId}_${SettingsConstants.KEY_DEFAULT_START_PAGE_ID}"
+                    logger.d(TAG, "Restoring defaultStartPageId: Import JSON had '$oldId'. idMap result: '$newId'. Saving to key: '$key'")
+                    putString(key, newId)
+                }
+                importData.pageSortOrder?.let { 
+                    val key = "${bookId}_${SettingsConstants.KEY_PAGE_SORT_ORDER}"
+                    logger.d(TAG, "Restoring pageSortOrder: '$it' for key: '$key'")
+                    putString(key, it)
+                }
+                importData.templateSortOrder?.let { 
+                    val key = "${bookId}_${SettingsConstants.KEY_TEMPLATE_SORT_ORDER}"
+                    logger.d(TAG, "Restoring templateSortOrder: '$it' for key: '$key'")
+                    putString(key, it)
+                }
+            }
+
+            // 2.2 Update favorite book setting if it was the imported book
+            importData.favoriteBookId?.let { oldFavId ->
+                if (oldFavId == importData.bookId) {
+                    settingsRepository.favoriteBookId = bookId
+                }
             }
 
             importData.pages.forEach { importPage ->
@@ -337,6 +385,11 @@ class PageImportExportManager @Inject constructor(
                 )
                 pageRepository.insertPage(page)
             }
+            
+            // 4. Force refresh of settings flows to ensure UI is updated
+            settingsRepository.refresh()
+            logger.d(TAG, "Triggered settingsRepository.refresh() after import.")
+
             Result.success(importData.pages.size)
         } catch (e: Exception) {
             Result.failure(e)
@@ -406,7 +459,8 @@ class PageImportExportManager @Inject constructor(
     override suspend fun importCloudBackup(jsonString: String, cloudFileId: String?): Result<String> = withContext(Dispatchers.IO) {
         try {
             val importData = json.decodeFromString<ImportExportData>(jsonString)
-            
+
+            // 1. Update book and app settings if provided
             // Extract bookId from name if missing from field (e.g. "Name [uuid]")
             val extractedId = importData.bookId?.takeIf { it.isNotBlank() } ?: run {
                 val name = importData.bookName ?: ""

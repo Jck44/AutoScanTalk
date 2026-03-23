@@ -37,7 +37,7 @@ class MoveButtonUseCaseTest {
         assertEquals(button1, updatedPage?.buttonConfigs?.get(1))
         
         coVerify { pageRepository.updatePage(match { it.buttonConfigs[0] == button2 && it.buttonConfigs[1] == button1 }) }
-        coVerify { bookRepository.updateLastModified("book1") }
+        coVerify { bookRepository.updateLastModified("book1", any()) }
     }
 
     @Test

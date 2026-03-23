@@ -2,9 +2,11 @@ package com.andreas_kratzer.ghosttalk.core.cloud.domain
 
 import android.content.Context
 import com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper
+import com.andreas_kratzer.ghosttalk.core.data.SyncLogProvider
 import com.andreas_kratzer.ghosttalk.core.data.impl.PageImportExportManager
 import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.google.api.services.drive.Drive
+import com.google.api.services.drive.model.File as DriveFile
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -28,6 +30,7 @@ class CloudSyncUseCase @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val bookRepository: com.andreas_kratzer.ghosttalk.core.data.BookRepository,
     private val importExportManager: PageImportExportManager,
+    private val syncLogProvider: SyncLogProvider,
     private val logger: Logger
 ) {
     private val TAG = "CloudSyncUseCase"
@@ -73,7 +76,7 @@ class CloudSyncUseCase @Inject constructor(
             return@withContext false
         }
 
-        val remoteFile = try {
+        val remoteFile: DriveFile? = try {
             val driveFiles = helper.listFiles(folderId)
             driveFiles.find { it.name == fileName }
         } catch (e: Exception) {
@@ -102,8 +105,18 @@ class CloudSyncUseCase @Inject constructor(
             } else {
                 logger.d(TAG, "Uploading for the first time...")
                 val newFileId = helper.uploadFile(folderId, tempFile, "application/json")
-                logger.d(TAG, "Upload result id: $newFileId")
-                success = newFileId != null
+                if (newFileId != null) {
+                    syncLogProvider.addLogEntry("Erster Upload in die Cloud", bookId, book.name, isError = false)
+                    val metadata = helper.getFileMetadata(newFileId)
+                    val driveTime = metadata?.modifiedTime?.value
+                    if (driveTime != null) {
+                        bookRepository.updateLastModified(bookId, driveTime)
+                    }
+                    success = true
+                } else {
+                    syncLogProvider.addLogEntry("Upload fehlgeschlagen", bookId, book.name, isError = true)
+                    success = false
+                }
             }
         }
  else {
@@ -124,17 +137,29 @@ class CloudSyncUseCase @Inject constructor(
                 }
                 SyncMode.RESTORE_ONLY -> {
                     logger.d(TAG, "RESTORE_ONLY mode. Downloading and importing...")
-                    success = downloadAndImport(helper, remoteFile.id, fileName, bookId, remoteLastModified, tempFile)
+                    success = downloadAndImport(helper, remoteFile.id, fileName, book, remoteLastModified, tempFile)
                 }
                 SyncMode.TWO_WAY -> {
                     if (localLastModified > remoteLastModified + 2000) { // 2s Grace period
                         logger.d(TAG, "Local version is newer. Updating remote file...")
-                        success = helper.updateFile(remoteFile.id, tempFile, "application/json")
+                        val updateSuccess = helper.updateFile(remoteFile.id, tempFile, "application/json")
+                        if (updateSuccess) {
+                            syncLogProvider.addLogEntry("Lokale Version war neuer -> Cloud aktualisiert", bookId, book.name)
+                            val metadata = helper.getFileMetadata(remoteFile.id)
+                            val driveTime = metadata?.modifiedTime?.value ?: 0L
+                            if (driveTime > 0L) {
+                                bookRepository.updateLastModified(bookId, driveTime)
+                            }
+                        } else {
+                            syncLogProvider.addLogEntry("Update der Cloud-Datei fehlgeschlagen", bookId, book.name, isError = true)
+                        }
+                        success = updateSuccess
                     } else if (remoteLastModified > localLastModified + 2000) {
                         logger.d(TAG, "Remote version is newer. Downloading and importing...")
-                        success = downloadAndImport(helper, remoteFile.id, fileName, bookId, remoteLastModified, tempFile)
+                        success = downloadAndImport(helper, remoteFile.id, fileName, book, remoteLastModified, tempFile)
                     } else {
                         logger.d(TAG, "Local and remote versions are synchronized.")
+                        syncLogProvider.addLogEntry("Lokal und Cloud sind synchron", bookId, book.name)
                         success = true
                     }
                 }
@@ -183,7 +208,7 @@ class CloudSyncUseCase @Inject constructor(
         helper: DriveServiceHelper,
         remoteFileId: String,
         fileName: String,
-        bookId: String,
+        book: com.andreas_kratzer.ghosttalk.core.model.Book,
         remoteLastModified: Long,
         tempFile: File
     ): Boolean {
@@ -199,14 +224,16 @@ class CloudSyncUseCase @Inject constructor(
             }
             
             logger.d(TAG, "JSON content read (length: ${remoteJson.length}). Calling importExportManager...")
-            val result = importExportManager.importFromJson(remoteJson, bookId, restoreSyncSettings = false)
+            val result = importExportManager.importFromJson(remoteJson, book.id, restoreSyncSettings = false)
             
             if (result.isSuccess) {
                 logger.d(TAG, "Import successful. Updating local timestamp to $remoteLastModified")
-                tempFile.setLastModified(remoteLastModified)
+                syncLogProvider.addLogEntry("Cloud-Version war neuer -> Lokal aktualisiert", book.id, book.name)
+                bookRepository.updateLastModified(book.id, remoteLastModified)
                 true
             } else {
                 logger.e(TAG, "Import failed: ${result.exceptionOrNull()?.message}")
+                syncLogProvider.addLogEntry("Import der Cloud-Datei fehlgeschlagen: ${result.exceptionOrNull()?.message}", book.id, book.name, isError = true)
                 false
             }
         } else {
@@ -223,17 +250,17 @@ class CloudSyncUseCase @Inject constructor(
         try {
             if (helper.downloadFile(fileId, tempFile)) {
                 val json = tempFile.readText()
-                val result = importExportManager.importCloudBackup(json, null)
+                val result: Result<String> = importExportManager.importCloudBackup(json, null)
                 tempFile.delete()
                 result
             } else {
                 logger.e(TAG, "Failed to download remote file $fileId")
-                Result.failure(Exception("Download der Cloud-Datei fehlgeschlagen."))
+                Result.failure<String>(Exception("Download der Cloud-Datei fehlgeschlagen."))
             }
         } catch (e: Exception) {
             logger.e(TAG, "Error in importCloudBackup", e)
             tempFile.delete()
-            Result.failure(e)
+            Result.failure<String>(e)
         }
     }
 }

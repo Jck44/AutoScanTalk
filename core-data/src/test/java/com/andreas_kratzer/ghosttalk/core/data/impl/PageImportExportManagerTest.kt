@@ -11,15 +11,23 @@ import com.andreas_kratzer.ghosttalk.core.model.GeminiButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiNanoButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiSearchButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.Page
+import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.WeatherButtonAction
-import io.mockk.coEvery
-import io.mockk.mockk
+import io.mockk.every
 import io.mockk.slot
+import io.mockk.verify
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.mockk
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants
+import android.content.SharedPreferences
+import android.content.Context
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -28,11 +36,20 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class PageImportExportManagerTest {
 
-    private val context: android.content.Context = mockk(relaxed = true)
+    private val context: Context = mockk(relaxed = true)
     private val bookRepository: BookRepository = mockk(relaxed = true)
     private val pageRepository: PageRepository = mockk(relaxed = true)
     private val settingsRepository: SettingsRepository = mockk(relaxed = true)
-    private val manager = PageImportExportManager(context, pageRepository, bookRepository, settingsRepository)
+    private val sharedPrefs: SharedPreferences = mockk(relaxed = true)
+    private val prefsEditor: SharedPreferences.Editor = mockk(relaxed = true)
+    
+    private val manager = PageImportExportManager(context, pageRepository, bookRepository, settingsRepository, mockk(relaxed = true))
+
+    init {
+        every { context.getSharedPreferences(SettingsConstants.PREFS_NAME, any()) } returns sharedPrefs
+        every { sharedPrefs.edit() } returns prefsEditor
+        every { prefsEditor.putString(any(), any()) } returns prefsEditor
+    }
 
     @Test
     fun `importFromJson maps buttons and isActive correctly`() = runTest {
@@ -782,7 +799,6 @@ class PageImportExportManagerTest {
         coEvery { bookRepository.insertBook(any()) } returns Unit
         
         val result = manager.importCloudBackup(jsonString, complexFileName)
-        
         assertTrue(result.isSuccess)
         assertEquals(internalBookId, result.getOrNull())
         
@@ -805,7 +821,12 @@ class PageImportExportManagerTest {
         )
         
         // Setup initial settings in the mock
-        io.mockk.every { settingsRepository.defaultStartPageId } returns "old-start-page"
+        io.mockk.every { settingsRepository.getDefaultStartPageIdForBook(bookId) } returns "old-start-page"
+        io.mockk.every { settingsRepository.getActionLogLimitForBook(bookId) } returns 500
+        io.mockk.every { settingsRepository.getLimitScanCyclesForBook(bookId) } returns true
+        io.mockk.every { settingsRepository.getScanCycleLimitForBook(bookId) } returns 5
+        io.mockk.every { settingsRepository.getLogIgnoredActionsForBook(bookId) } returns false
+        io.mockk.every { settingsRepository.getLogStopActionsForBook(bookId) } returns false
         
         coEvery { bookRepository.getBookById(bookId) } returns originalBook
         coEvery { pageRepository.getPagesForBook(bookId) } returns emptyList()
@@ -819,12 +840,8 @@ class PageImportExportManagerTest {
         assertTrue("JSON should contain defaultStartPageId", jsonString.contains("\"defaultStartPageId\": \"old-start-page\""))
         
         // 2. Import back
-        // We simulate importing into an existing book with default settings
         val targetBook = com.andreas_kratzer.ghosttalk.core.model.Book(bookId, "Target")
         coEvery { bookRepository.getBookById(bookId) } returns targetBook
-        
-        // Setup initial defaultStartPageId in settingsRepository mock
-        // We use a relaxed mock, so we can just check if the setter was called.
         
         val result = manager.importFromJson(jsonString, bookId, regenerateIds = false)
         
@@ -832,11 +849,100 @@ class PageImportExportManagerTest {
         
         // Verify updateBook was called with merged settings
         val updatedBookSlot = slot<com.andreas_kratzer.ghosttalk.core.model.Book>()
-        io.mockk.coVerify { bookRepository.updateBook(capture(updatedBookSlot)) }
+        coVerify { bookRepository.updateBook(capture(updatedBookSlot)) }
         assertEquals(500, updatedBookSlot.captured.actionLogLimit)
         
-        // Verify setting was restored in settingsRepository
-        // Note: For properties, we use the setter call syntax in verify
-        io.mockk.verify { settingsRepository.defaultStartPageId = "old-start-page" }
+        // Verify setting was restored with correct book ID prefix
+        verify { prefsEditor.putString("${bookId}_${SettingsConstants.KEY_DEFAULT_START_PAGE_ID}", "old-start-page") }
+    }
+
+    @Test
+    fun `importFromJson restores defaultStartPageId correctly with ID regeneration`() = runTest {
+        // Arrange
+        val bookId = "book1"
+        val oldPageId = "old-page-id"
+        val jsonString = """
+            {
+                "bookId": "different-book-id",
+                "bookName": "Test Book",
+                "defaultStartPageId": "$oldPageId",
+                "pages": [
+                    {
+                        "importId": "$oldPageId",
+                        "name": "Start Page",
+                        "buttons": []
+                    }
+                ]
+            }
+        """.trimIndent()
+
+        coEvery { bookRepository.getBookById(any()) } returns mockk(relaxed = true)
+        coEvery { pageRepository.getPageById(any()) } returns null 
+        coEvery { pageRepository.insertPage(any()) } returns Unit
+        
+        var capturedId: String? = null
+        io.mockk.every { settingsRepository.defaultStartPageId = any() } answers { capturedId = firstArg() }
+
+        // Act
+        val result = manager.importFromJson(jsonString, bookId, regenerateIds = true)
+
+        // Assert
+        assertTrue(result.isSuccess)
+        
+        // Verify that defaultStartPageId was updated in SharedPreferences with the NEW page ID mapping
+        // and the target book ID prefix (book1)
+        val capturedNewId = slot<String>()
+        verify { 
+            prefsEditor.putString("book1_${SettingsConstants.KEY_DEFAULT_START_PAGE_ID}", capture(capturedNewId))
+        }
+        
+        // If fixed, it should be the NEW generated UUID for that page, not the old one
+        assertNotEquals(oldPageId, capturedNewId.captured)
+        
+        // Verify it was inserted (at least one page)
+        coVerify { pageRepository.insertPage(any()) }
+    }
+
+    @Test
+    fun `exportBookToJson captures book-scoped settings regardless of active book`() = runTest {
+        val targetBookId = "book-A"
+        
+        val book = com.andreas_kratzer.ghosttalk.core.model.Book(id = targetBookId, name = "Target Book")
+        coEvery { bookRepository.getBookById(targetBookId) } returns book
+        coEvery { pageRepository.getPagesForBook(targetBookId) } returns emptyList()
+        
+        // Mock SettingsRepository book-specific getters
+        every { settingsRepository.getDefaultStartPageIdForBook(targetBookId) } returns "page-123"
+        every { settingsRepository.getScanDelayMillisForBook(targetBookId) } returns 5000L
+        every { settingsRepository.getPageSortOrderForBook(targetBookId) } returns "ALPHABETICAL"
+        every { settingsRepository.getActionLogLimitForBook(targetBookId) } returns 100
+        every { settingsRepository.getLimitScanCyclesForBook(targetBookId) } returns false
+        every { settingsRepository.getScanCycleLimitForBook(targetBookId) } returns 2
+        every { settingsRepository.getLogIgnoredActionsForBook(targetBookId) } returns true
+        every { settingsRepository.getLogStopActionsForBook(targetBookId) } returns true
+        every { settingsRepository.getAutoStartScanningForBook(targetBookId) } returns true
+        every { settingsRepository.getResumeScanningFromStartForBook(targetBookId) } returns true
+        every { settingsRepository.getHoldingTimeMillisForBook(targetBookId) } returns 250L
+        every { settingsRepository.getSwitchActivationKeyForBook(targetBookId) } returns "~3"
+        every { settingsRepository.getVolumeKeysActivateForBook(targetBookId) } returns false
+        every { settingsRepository.getDefaultScanPatternForBook(targetBookId) } returns "linear"
+        every { settingsRepository.getIsSmartPredictionEnabledForBook(targetBookId) } returns false
+        every { settingsRepository.getTemplateSortOrderForBook(targetBookId) } returns "MANUAL"
+        every { settingsRepository.getSmartPredictionDelayForBook(targetBookId) } returns 2000L
+        
+        // Mock global settings
+        every { settingsRepository.geminiTimeout } returns 30000L
+        
+        val json = manager.exportBookToJson(targetBookId)
+        
+        val jsonCompact = json.replace("\\s".toRegex(), "")
+        assertTrue("JSON should contain correct start page ID", jsonCompact.contains("\"defaultStartPageId\":\"page-123\""))
+        assertTrue("JSON should contain correct scan delay", jsonCompact.contains("\"scanDelayMillis\":5000"))
+        assertTrue("JSON should contain correct sort order", jsonCompact.contains("\"pageSortOrder\":\"ALPHABETICAL\""))
+        
+        // Verify those methods were called
+        verify { settingsRepository.getDefaultStartPageIdForBook(targetBookId) }
+        verify { settingsRepository.getScanDelayMillisForBook(targetBookId) }
+        verify { settingsRepository.getPageSortOrderForBook(targetBookId) }
     }
 }

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
@@ -17,7 +18,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -28,6 +31,7 @@ import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsDropdownItem
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsToggleItem
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.BackupSelectionDialog
+import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.SyncLogDialog
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import java.text.SimpleDateFormat
@@ -50,6 +54,8 @@ fun CloudSettingsSection(
 
     val availableBackups by viewModel.availableBackups.collectAsState()
     val showBackupSelectionDialog by viewModel.showBackupSelectionDialog.collectAsState()
+    val syncLogs by viewModel.syncLogs.collectAsState()
+    var showSyncLogDialog by remember { mutableStateOf(false) }
     
     val dimensions = LocalDimensions.current
     val dateFormat = remember { SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()) }
@@ -185,9 +191,31 @@ fun CloudSettingsSection(
                         Text(stringResource(R.string.settings_cloud_restore_now))
                     }
                 }
+
+                Spacer(modifier = Modifier.height(dimensions.paddingMedium))
+
+                OutlinedButton(
+                    onClick = { 
+                        viewModel.loadSyncLogs()
+                        showSyncLogDialog = true 
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(GhostTalkIcons.History, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(stringResource(R.string.settings_cloud_logs_view))
+                }
             }
         }
 
+    }
+
+    if (showSyncLogDialog) {
+        SyncLogDialog(
+            logs = syncLogs,
+            onDismiss = { showSyncLogDialog = false },
+            onClearLogs = { viewModel.clearSyncLogs() }
+        )
     }
 
     if (showBackupSelectionDialog) {

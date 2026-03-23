@@ -32,7 +32,7 @@ class DeletePageUseCaseTest {
         useCase.execute(page)
 
         coVerify { pageRepository.deletePage(page) }
-        coVerify { bookRepository.updateLastModified("b1") }
+        coVerify { bookRepository.updateLastModified("b1", any()) }
     }
 
     @Test

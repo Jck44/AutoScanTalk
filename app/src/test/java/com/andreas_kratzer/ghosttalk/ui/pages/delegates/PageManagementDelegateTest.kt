@@ -147,7 +147,7 @@ class PageManagementDelegateTest {
         delegate.createNewPage("New Page", 2, 2, "book1", null) {}
         
         coVerify { createPageUseCaseMock.execute("New Page", 2, 2, "book1", any(), any()) }
-        coVerify { bookRepository.updateLastModified("book1") }
+        coVerify { bookRepository.updateLastModified("book1", any()) }
     }
 
     @Test
