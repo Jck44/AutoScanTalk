@@ -162,7 +162,7 @@ fun PageScreen(
                 modifier = modifier
                     .padding(paddingValues)
                     .padding(horizontal = dimensions.paddingLarge)
-                    .padding(bottom = dimensions.paddingLarge)
+                    .padding(bottom = dimensions.paddingMedium)
                     .fillMaxSize()
             ) {
                 Box(modifier = Modifier.weight(1f)) {
@@ -174,7 +174,7 @@ fun PageScreen(
                         pageViewModel = pageViewModel
                     )
                 }
-                Spacer(modifier = Modifier.height(dimensions.paddingLarge))
+                Spacer(modifier = Modifier.height(dimensions.paddingMedium))
                 if (showTestButtons) {
                     ControlButtons(
                         onStartScanning = { pageViewModel.startScanning() },

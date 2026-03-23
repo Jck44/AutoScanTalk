@@ -54,8 +54,9 @@ fun ButtonGrid(
         var optimalWidth = buttonWidthToFit.coerceIn(dimensions.minButtonWidth, maxButtonSize)
         
         // On phones, we enforce a minimum height to ensure readability, even if it requires scrolling.
-        val minButtonHeight = if (dimensions.isTablet) dimensions.minButtonWidth else 50.dp
-        var optimalHeight = buttonHeightToFit.coerceIn(minButtonHeight, maxButtonSize)
+        val minButtonHeight = if (dimensions.isTablet) dimensions.minButtonWidth else 45.dp
+        val maxButtonHeight = if (dimensions.isTablet) 180.dp else 120.dp
+        var optimalHeight = buttonHeightToFit.coerceIn(minButtonHeight, maxButtonHeight)
         
         // Cap aspect ratio to prevent extreme stretching (max 4.0:1)
         val maxRatio = 4.0f

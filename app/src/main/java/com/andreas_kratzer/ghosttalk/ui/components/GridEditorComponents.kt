@@ -178,7 +178,7 @@ fun calculateGridSize(
     
     // Subtract a small safety margin (2dp) to prevent sub-pixel rounding issues
     val availableWidth = maxWidth - (horizontalPadding * 2) - 2.dp - rowHandleWidth
-    val availableHeight = maxHeight - (dimensions.paddingMedium * 2) - 2.dp
+    val availableHeight = maxHeight - (horizontalPadding * 2) - 2.dp
 
     var buttonWidthToFit = (availableWidth - (dimensions.gridSpacing * (cols - 1))) / cols
     // When in row-by-row mode, each row has a Row wrapper with its own padding/border (approx 16dp total height offset per row)
@@ -192,8 +192,9 @@ fun calculateGridSize(
     
     // On phones, we enforce a minimum height to ensure readability, even if it requires scrolling.
     // On tablets, we continue to fit the entire grid on the screen.
-    val minEditorButtonHeight = if (isTablet) 0.dp else 50.dp
-    var optimalHeight = buttonHeightToFit.coerceIn(minEditorButtonHeight, maxButtonSize)
+    val minEditorButtonHeight = if (isTablet) 0.dp else 45.dp
+    val maxButtonHeight = if (isTablet) 180.dp else 120.dp
+    var optimalHeight = buttonHeightToFit.coerceIn(minEditorButtonHeight, maxButtonHeight)
 
     val maxRatio = 4.0f
     if (optimalWidth > optimalHeight * maxRatio) {
