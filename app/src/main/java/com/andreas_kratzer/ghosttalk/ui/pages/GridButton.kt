@@ -38,34 +38,43 @@ fun GridButton(
 ) {
     val dimensions = LocalDimensions.current
     val isActive = buttonConfig?.isActive ?: true
+    val stateTag = if (isFocused) "button_focused" else if (isRowFocused) "row_focused" else "button_idle"
     
-    Card(
+    Box(
         modifier = modifier
+            .testTag(buttonConfig?.id ?: "")
             .clickable(onClick = onClick)
-            .alpha(if (isEditorMode && !isActive) 0.5f else 1f)
-            .testTag(if (isFocused) "button_focused" else if (isRowFocused) "row_focused" else "button_idle"),
-        shape = MaterialTheme.shapes.medium,
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = if (buttonConfig != null) dimensions.cardElevation else 0.dp
-        ),
-        border = if (isFocused) {
-            BorderStroke(4.dp, MaterialTheme.colorScheme.primary)
-        } else if (isEditorMode) {
-            BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-        } else null,
-        colors = CardDefaults.cardColors(
-            containerColor = if (buttonConfig != null) {
-                if (isEditorMode) MaterialTheme.colorScheme.primaryContainer 
-                else MaterialTheme.colorScheme.surfaceVariant
-            } else {
-                MaterialTheme.colorScheme.surface
-            }
-        )
     ) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier.fillMaxSize().padding(dimensions.paddingMedium)
+        Card(
+            modifier = Modifier
+                .fillMaxSize()
+                .alpha(if (isEditorMode && !isActive) 0.5f else 1f)
+                .testTag(stateTag)
+                .clickable(onClick = onClick),
+            shape = MaterialTheme.shapes.medium,
+            elevation = CardDefaults.cardElevation(
+                defaultElevation = if (buttonConfig != null) dimensions.cardElevation else 0.dp
+            ),
+            border = if (isFocused) {
+                BorderStroke(4.dp, MaterialTheme.colorScheme.primary)
+            } else if (isEditorMode) {
+                BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+            } else null,
+            colors = CardDefaults.cardColors(
+                containerColor = if (buttonConfig != null) {
+                    if (isEditorMode) MaterialTheme.colorScheme.primaryContainer 
+                    else MaterialTheme.colorScheme.surfaceVariant
+                } else {
+                    MaterialTheme.colorScheme.surface
+                }
+            )
         ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(dimensions.paddingMedium)
+            ) {
             if (buttonConfig != null) {
                 Text(
                     text = overrideLabel ?: buttonConfig.label,
@@ -90,4 +99,5 @@ fun GridButton(
             }
         }
     }
+}
 }
