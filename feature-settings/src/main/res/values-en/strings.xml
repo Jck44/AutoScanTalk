@@ -89,6 +89,10 @@
     <string name="settings_cloud_last_sync">Last Sync: %s</string>
     <string name="book_import_cloud_success">Book successfully loaded from cloud.</string>
     <string name="book_import_cloud_error">Error loading from cloud: %s</string>
+    <string name="settings_cloud_logs_title">Cloud Sync Log</string>
+    <string name="settings_cloud_logs_clear">Clear Log</string>
+    <string name="settings_cloud_logs_empty">No sync entries existing yet.</string>
+    <string name="settings_cloud_logs_view">View History</string>
 
     <!-- Gemini Settings -->
     <string name="settings_gemini_activate_button">Initialize / Test Gemini</string>
