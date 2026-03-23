@@ -223,7 +223,7 @@ class CloudSyncUseCase @Inject constructor(
         try {
             if (helper.downloadFile(fileId, tempFile)) {
                 val json = tempFile.readText()
-                val result = importExportManager.importCloudBackup(json, fileName)
+                val result = importExportManager.importCloudBackup(json, null)
                 tempFile.delete()
                 result
             } else {

@@ -747,4 +747,96 @@ class PageImportExportManagerTest {
         assertEquals(bookId, result.getOrNull())
         io.mockk.coVerify { bookRepository.insertBook(any()) }
     }
+
+    @Test
+    fun `importCloudBackup prevents duplicate when filename is passed as ID`() = runTest {
+        val internalBookId = "real-uuid"
+        val fileNameAsId = "book_real-uuid.json"
+        
+        // JSON has the correct internal ID
+        val jsonString = """{"bookId":"$internalBookId", "bookName":"My Book", "pages":[]}"""
+        
+        // Mock that the book already exists with the INTERNAL ID
+        coEvery { bookRepository.getBookById(internalBookId) } returns com.andreas_kratzer.ghosttalk.core.model.Book(internalBookId, "Existing")
+        
+        // Import with the filename as the cloudFileId (the old buggy behavior)
+        val result = manager.importCloudBackup(jsonString, fileNameAsId)
+        
+        // It SHOULD now detect the collision by correctly resolving the ID to "real-uuid"
+        assertTrue("Should have detected collision by resolving ID correctly", result.isFailure)
+        assertTrue(result.exceptionOrNull()?.message?.contains("existiert bereits lokal") == true)
+        
+        // Verify no insert occurred
+        io.mockk.coVerify(exactly = 0) { bookRepository.insertBook(any()) }
+    }
+
+    @Test
+    fun `importCloudBackup correctly extracts UUID from filename for old backups`() = runTest {
+        val internalBookId = "12345678-1234-1234-1234-123456789012"
+        val complexFileName = "backup_v1_12345678-1234-1234-1234-123456789012_final.json"
+        
+        // JSON has NO bookId (old backup)
+        val jsonString = """{"bookName":"Old Backup", "pages":[]}"""
+        
+        coEvery { bookRepository.getBookById(internalBookId) } returns null
+        coEvery { bookRepository.insertBook(any()) } returns Unit
+        
+        val result = manager.importCloudBackup(jsonString, complexFileName)
+        
+        assertTrue(result.isSuccess)
+        assertEquals(internalBookId, result.getOrNull())
+        
+        val bookSlot = slot<com.andreas_kratzer.ghosttalk.core.model.Book>()
+        io.mockk.coVerify { bookRepository.insertBook(capture(bookSlot)) }
+        assertEquals(internalBookId, bookSlot.captured.id)
+    }
+
+    @Test
+    fun `export and import preserves new book settings`() = runTest {
+        val bookId = "test-book-settings"
+        val originalBook = com.andreas_kratzer.ghosttalk.core.model.Book(
+            id = bookId,
+            name = "Settings Test",
+            actionLogLimit = 500,
+            limitScanCycles = true,
+            scanCycleLimit = 5,
+            logIgnoredActions = false,
+            logStopActions = false
+        )
+        
+        // Setup initial settings in the mock
+        io.mockk.every { settingsRepository.defaultStartPageId } returns "old-start-page"
+        
+        coEvery { bookRepository.getBookById(bookId) } returns originalBook
+        coEvery { pageRepository.getPagesForBook(bookId) } returns emptyList()
+        coEvery { bookRepository.updateBook(any()) } returns Unit
+        
+        // 1. Export
+        val jsonString = manager.exportBookToJson(bookId)
+        
+        // Verify JSON contains the settings
+        assertTrue("JSON should contain actionLogLimit", jsonString.contains("\"actionLogLimit\": 500"))
+        assertTrue("JSON should contain defaultStartPageId", jsonString.contains("\"defaultStartPageId\": \"old-start-page\""))
+        
+        // 2. Import back
+        // We simulate importing into an existing book with default settings
+        val targetBook = com.andreas_kratzer.ghosttalk.core.model.Book(bookId, "Target")
+        coEvery { bookRepository.getBookById(bookId) } returns targetBook
+        
+        // Setup initial defaultStartPageId in settingsRepository mock
+        // We use a relaxed mock, so we can just check if the setter was called.
+        
+        val result = manager.importFromJson(jsonString, bookId, regenerateIds = false)
+        
+        assertTrue(result.isSuccess)
+        
+        // Verify updateBook was called with merged settings
+        val updatedBookSlot = slot<com.andreas_kratzer.ghosttalk.core.model.Book>()
+        io.mockk.coVerify { bookRepository.updateBook(capture(updatedBookSlot)) }
+        assertEquals(500, updatedBookSlot.captured.actionLogLimit)
+        
+        // Verify setting was restored in settingsRepository
+        // Note: For properties, we use the setter call syntax in verify
+        io.mockk.verify { settingsRepository.defaultStartPageId = "old-start-page" }
+    }
 }

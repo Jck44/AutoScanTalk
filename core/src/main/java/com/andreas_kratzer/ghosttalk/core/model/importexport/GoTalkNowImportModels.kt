@@ -44,6 +44,16 @@ data class ImportExportData(
     val defaultStartPageId: String? = null,
     val securityPinHash: String? = null,
     val securityPinSalt: String? = null,
+    val actionLogLimit: Int? = null,
+    val limitScanCycles: Boolean? = null,
+    val scanCycleLimit: Int? = null,
+    val logIgnoredActions: Boolean? = null,
+    val logStopActions: Boolean? = null,
+    val appLanguage: String? = null,
+    val isNotificationReadingEnabled: Boolean? = null,
+    val monitoredNotificationApps: List<String>? = null,
+    val showPageIdInLog: Boolean? = null,
+    val bluetoothDelay: Long? = null,
     val templates: List<ImportTemplate>? = null,
     val pages: List<ImportPage> = emptyList()
 )

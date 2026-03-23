@@ -90,7 +90,50 @@ class PageImportExportManager @Inject constructor(
             bookId = book.id,
             bookName = book.name,
             bookCreatedAt = book.createdAt,
+            actionLogLimit = book.actionLogLimit,
+            limitScanCycles = book.limitScanCycles,
+            scanCycleLimit = book.scanCycleLimit,
+            logIgnoredActions = book.logIgnoredActions,
+            logStopActions = book.logStopActions,
             holdingTimeSeconds = settingsRepository.holdingTimeMillis / 1000f,
+            autoStartScanning = settingsRepository.autoStartScanning,
+            scanDelayMillis = settingsRepository.scanDelayMillis,
+            resumeScanningFromStart = settingsRepository.resumeScanningFromStart,
+            switchActivationKey = settingsRepository.switchActivationKey,
+            volumeKeysActivate = settingsRepository.volumeKeysActivate,
+            defaultScanPattern = settingsRepository.defaultScanPattern,
+            isSmartPredictionEnabled = settingsRepository.isSmartPredictionEnabled,
+            geminiRedoPrediction = settingsRepository.geminiRedoPrediction,
+            geminiTimeout = settingsRepository.geminiTimeout,
+            isGeminiEnabled = settingsRepository.isGeminiEnabled,
+            useLocalGenerativeAi = settingsRepository.useLocalGenerativeAi,
+            isCloudSyncEnabled = settingsRepository.isCloudSyncEnabled,
+            syncIntervalMinutes = settingsRepository.syncIntervalMinutes,
+            syncMode = settingsRepository.syncMode,
+            ttsLanguage = settingsRepository.ttsLanguage,
+            ttsVoiceName = settingsRepository.ttsVoiceName,
+            pageSortOrder = settingsRepository.pageSortOrder,
+            templateSortOrder = settingsRepository.templateSortOrder,
+            smartPredictionDelay = settingsRepository.smartPredictionDelay,
+            keepScreenOnUserMode = settingsRepository.keepScreenOnUserMode,
+            userModeScreenBehavior = settingsRepository.userModeScreenBehavior,
+            themeMode = settingsRepository.themeMode,
+            securityPinTimeoutMinutes = settingsRepository.securityPinTimeoutMinutes,
+            isPinRequiredForDeletion = settingsRepository.isPinRequiredForDeletion,
+            isBiometricEnabled = settingsRepository.isBiometricEnabled,
+            isSecurityRequiredForEdit = settingsRepository.isSecurityRequiredForEdit,
+            isSecurityRequiredForSettings = settingsRepository.isSecurityRequiredForSettings,
+            startupBehavior = settingsRepository.startupBehavior,
+            favoriteBookId = settingsRepository.favoriteBookId,
+            weatherCacheTimeout = settingsRepository.weatherCacheTimeout,
+            defaultStartPageId = settingsRepository.defaultStartPageId,
+            securityPinHash = settingsRepository.securityPinHash,
+            securityPinSalt = settingsRepository.securityPinSalt,
+            appLanguage = settingsRepository.appLanguage,
+            isNotificationReadingEnabled = settingsRepository.isNotificationReadingEnabled,
+            monitoredNotificationApps = settingsRepository.monitoredNotificationApps.toList(),
+            showPageIdInLog = settingsRepository.showPageIdInLog,
+            bluetoothDelay = settingsRepository.bluetoothDelay,
             pages = pages.map { page ->
                 ImportPage(
                     importId = page.id,
@@ -163,11 +206,54 @@ class PageImportExportManager @Inject constructor(
             importData.holdingTimeSeconds?.let { 
                 settingsRepository.holdingTimeMillis = (it * 1000).toLong()
             }
+            importData.autoStartScanning?.let { settingsRepository.autoStartScanning = it }
+            importData.scanDelayMillis?.let { settingsRepository.scanDelayMillis = it }
+            importData.resumeScanningFromStart?.let { settingsRepository.resumeScanningFromStart = it }
+            importData.switchActivationKey?.let { settingsRepository.switchActivationKey = it }
+            importData.volumeKeysActivate?.let { settingsRepository.volumeKeysActivate = it }
+            importData.defaultScanPattern?.let { settingsRepository.defaultScanPattern = it }
+            importData.isSmartPredictionEnabled?.let { settingsRepository.isSmartPredictionEnabled = it }
+            importData.geminiRedoPrediction?.let { settingsRepository.geminiRedoPrediction = it }
+            importData.geminiTimeout?.let { settingsRepository.geminiTimeout = it }
+            importData.isGeminiEnabled?.let { settingsRepository.isGeminiEnabled = it }
+            importData.useLocalGenerativeAi?.let { settingsRepository.useLocalGenerativeAi = it }
+            importData.isCloudSyncEnabled?.let { settingsRepository.isCloudSyncEnabled = it }
+            importData.syncIntervalMinutes?.let { settingsRepository.syncIntervalMinutes = it }
+            importData.syncMode?.let { settingsRepository.syncMode = it }
+            importData.ttsLanguage?.let { settingsRepository.ttsLanguage = it }
+            importData.ttsVoiceName?.let { settingsRepository.ttsVoiceName = it }
+            importData.pageSortOrder?.let { settingsRepository.pageSortOrder = it }
+            importData.templateSortOrder?.let { settingsRepository.templateSortOrder = it }
+            importData.smartPredictionDelay?.let { settingsRepository.smartPredictionDelay = it }
+            importData.keepScreenOnUserMode?.let { settingsRepository.keepScreenOnUserMode = it }
+            importData.userModeScreenBehavior?.let { settingsRepository.userModeScreenBehavior = it }
+            importData.themeMode?.let { settingsRepository.themeMode = it }
+            importData.securityPinTimeoutMinutes?.let { settingsRepository.securityPinTimeoutMinutes = it }
+            importData.isPinRequiredForDeletion?.let { settingsRepository.isPinRequiredForDeletion = it }
+            importData.isBiometricEnabled?.let { settingsRepository.isBiometricEnabled = it }
+            importData.isSecurityRequiredForEdit?.let { settingsRepository.isSecurityRequiredForEdit = it }
+            importData.isSecurityRequiredForSettings?.let { settingsRepository.isSecurityRequiredForSettings = it }
+            importData.startupBehavior?.let { settingsRepository.startupBehavior = it }
+            importData.favoriteBookId?.let { settingsRepository.favoriteBookId = it }
+            importData.weatherCacheTimeout?.let { settingsRepository.weatherCacheTimeout = it }
+            importData.defaultStartPageId?.let { settingsRepository.defaultStartPageId = it }
+            importData.securityPinHash?.let { settingsRepository.securityPinHash = it }
+            importData.securityPinSalt?.let { settingsRepository.securityPinSalt = it }
+            importData.appLanguage?.let { settingsRepository.appLanguage = it }
+            importData.isNotificationReadingEnabled?.let { settingsRepository.isNotificationReadingEnabled = it }
+            importData.monitoredNotificationApps?.let { settingsRepository.monitoredNotificationApps = it.toSet() }
+            importData.showPageIdInLog?.let { settingsRepository.showPageIdInLog = it }
+            importData.bluetoothDelay?.let { settingsRepository.bluetoothDelay = it }
             importData.bookName?.let { newName ->
                 bookRepository.getBookById(bookId)?.let { book ->
                     bookRepository.updateBook(book.copy(
                         name = newName,
-                        createdAt = importData.bookCreatedAt ?: book.createdAt
+                        createdAt = importData.bookCreatedAt ?: book.createdAt,
+                        actionLogLimit = importData.actionLogLimit ?: book.actionLogLimit,
+                        limitScanCycles = importData.limitScanCycles ?: book.limitScanCycles,
+                        scanCycleLimit = importData.scanCycleLimit ?: book.scanCycleLimit,
+                        logIgnoredActions = importData.logIgnoredActions ?: book.logIgnoredActions,
+                        logStopActions = importData.logStopActions ?: book.logStopActions
                     ))
                 }
             }
@@ -328,11 +414,16 @@ class PageImportExportManager @Inject constructor(
                 regex.find(name)?.groupValues?.get(1)
             }
 
-            if (extractedId == null && cloudFileId == null) {
+            val targetBookId = extractedId ?: run {
+                val uuidRegex = "[a-fA-F0-9-]{36}".toRegex()
+                cloudFileId?.let { 
+                    uuidRegex.find(it)?.value ?: it.removePrefix("book_").removeSuffix(".json")
+                }
+            }?.trim()?.lowercase()
+            
+            if (targetBookId == null) {
                 return@withContext Result.failure(Exception("Konnte keine Buch-ID im Backup finden."))
             }
-
-            val targetBookId = (cloudFileId ?: extractedId!!).trim().lowercase()
             
             val existingBook = bookRepository.getBookById(targetBookId)
             if (existingBook != null) {
