@@ -149,6 +149,7 @@ fun GridEditorContent(
                         dimensions = dimensions
                     )
 
+                    val gridSpacingPx = with(LocalDensity.current) { dimensions.gridSpacing.toPx() }
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(item.columns),
                         state = gridState,
@@ -169,6 +170,7 @@ fun GridEditorContent(
                                 sizeInfo = sizeInfo,
                                 dimensions = dimensions,
                                 density = density,
+                                gridSpacingPx = gridSpacingPx,
                                 onEditRow = { r: Int ->
                                     editingRowIndex = r
                                     showRowEditDialog = true
@@ -187,6 +189,7 @@ fun GridEditorContent(
                                 sizeInfo = sizeInfo,
                                 dimensions = dimensions,
                                 density = density,
+                                gridSpacingPx = gridSpacingPx,
                                 onEditButton = { idx: Int ->
                                     selectedButtonIndex = idx
                                     showDialog = true
@@ -290,11 +293,18 @@ private fun LazyGridScope.renderRowByRowGrid(
     sizeInfo: GridSizeInfo,
     dimensions: com.andreas_kratzer.ghosttalk.core.ui.theme.Dimensions,
     density: Float,
+    gridSpacingPx: Float,
     onEditRow: (Int) -> Unit,
     onEditButton: (Int) -> Unit
 ) {
     val rowTargetIndex = rowReorderState.findTargetIndexForGrid(gridState)
-    val buttonTargetIndex = buttonReorderState.findTargetButtonIndex(gridState, item.columns, true, density)
+    val buttonTargetIndex = buttonReorderState.findTargetButtonIndex(
+        gridState = gridState,
+        numCols = item.columns,
+        isRowByRow = true,
+        density = density,
+        gridSpacingPx = gridSpacingPx
+    )
 
     for (r in 0 until item.rows) {
         item(span = { GridItemSpan(item.columns) }) {
@@ -310,7 +320,7 @@ private fun LazyGridScope.renderRowByRowGrid(
                     .border(
                         width = if (isRowTarget) 3.dp else 2.dp,
                         color = if (isRowTarget) MaterialTheme.colorScheme.primary 
-                                else MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                                 else MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
                         shape = MaterialTheme.shapes.medium
                     )
                     .height(IntrinsicSize.Min),
@@ -352,14 +362,20 @@ private fun LazyGridScope.renderRowByRowGrid(
                     for (c in 0 until item.columns) {
                         val globalIndex = GridUtils.getGlobalIndex(r, c)
                         EditorButtonCell(
-                            index = globalIndex,
+                            index = globalIndex, // In RowByRow, buttons are NOT grid items, so we use globalIndex
                             buttonConfig = item.buttonConfigs.getOrNull(globalIndex),
                             reorderState = buttonReorderState,
                             isTarget = buttonTargetIndex == globalIndex,
                             width = sizeInfo.optimalWidth,
                             height = sizeInfo.optimalHeight,
                             onDragEnd = { fromIdx ->
-                                val to = buttonReorderState.findTargetButtonIndex(gridState, item.columns, true, density)
+                                val to = buttonReorderState.findTargetButtonIndex(
+                                    gridState = gridState,
+                                    numCols = item.columns,
+                                    isRowByRow = true,
+                                    density = density,
+                                    gridSpacingPx = gridSpacingPx
+                                )
                                 if (to != null && to != fromIdx) {
                                     actions.moveButton(item.id, fromIdx, to)
                                 }
@@ -381,23 +397,39 @@ private fun LazyGridScope.renderLinearGrid(
     sizeInfo: GridSizeInfo,
     dimensions: com.andreas_kratzer.ghosttalk.core.ui.theme.Dimensions,
     density: Float,
+    gridSpacingPx: Float,
     onEditButton: (Int) -> Unit
 ) {
-    val buttonTargetIndex = buttonReorderState.findTargetButtonIndex(gridState, item.columns, false, density)
+    val buttonTargetIndex = buttonReorderState.findTargetButtonIndex(
+        gridState = gridState,
+        numCols = item.columns,
+        isRowByRow = false,
+        density = density,
+        gridSpacingPx = gridSpacingPx
+    )
     
     items(item.rows * item.columns) { localIndex ->
         val globalIndex = GridUtils.localToGlobalIndex(localIndex, item.columns)
         EditorButtonCell(
-            index = globalIndex,
+            index = localIndex, // In Linear Grid, buttons ARE grid items, so we use localIndex to match LazyGridState
             buttonConfig = item.buttonConfigs.getOrNull(globalIndex),
             reorderState = buttonReorderState,
             isTarget = buttonTargetIndex == globalIndex,
             width = sizeInfo.optimalWidth,
             height = sizeInfo.optimalHeight,
-            onDragEnd = { fromIdx ->
-                val to = buttonReorderState.findTargetButtonIndex(gridState, item.columns, false, density)
-                if (to != null && to != fromIdx) {
-                    actions.moveButton(item.id, fromIdx, to)
+            onDragEnd = { fromLocalIdx ->
+                val toGlobal = buttonReorderState.findTargetButtonIndex(
+                    gridState = gridState,
+                    numCols = item.columns,
+                    isRowByRow = false,
+                    density = density,
+                    gridSpacingPx = gridSpacingPx
+                )
+                if (toGlobal != null) {
+                    val fromGlobal = GridUtils.localToGlobalIndex(fromLocalIdx, item.columns)
+                    if (toGlobal != fromGlobal) {
+                        actions.moveButton(item.id, fromGlobal, toGlobal)
+                    }
                 }
             },
             onClick = { onEditButton(globalIndex) }
