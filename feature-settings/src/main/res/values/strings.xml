@@ -12,7 +12,7 @@
     <string name="settings_category_advanced">Erweiterte Einstellungen</string>
 
     <!-- General Settings -->
-    <string name="settings_start_page">Standard Startseite</string>
+    <string name="settings_start_page">Startseite</string>
     <string name="settings_start_page_auto">Automatisch (Erste Seite)</string>
     <string name="settings_scan_pattern">Scan Muster (Standard)</string>
     <string name="settings_pattern_linear">Button für Button</string>
@@ -26,7 +26,8 @@
     <string name="settings_screen_behavior">Bildschirm-Verhalten</string>
     <string name="settings_screen_behavior_normal">Normal</string>
     <string name="settings_screen_behavior_dimmed">Gedimmt (Akku sparen)</string>
-    <string name="settings_screen_behavior_black">Schwarz (für OLED)</string>
+    <string name="settings_screen_behavior_on">An</string>
+    <string name="settings_screen_behavior_black">Schwarz (OLED)</string>
     <string name="settings_screen_black_overlay_text">Akku Sparmodus.\nÜber Zurück zur App zurückkehren</string>
     <string name="settings_startup_behavior">App öffnen in:</string>
     <string name="settings_startup_behavior_book_list">Buchauswahl</string>

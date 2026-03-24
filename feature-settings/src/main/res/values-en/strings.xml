@@ -12,7 +12,7 @@
     <string name="settings_category_advanced">Advanced Settings</string>
     
     <!-- General Settings -->
-    <string name="settings_start_page">Default Start Page</string>
+    <string name="settings_start_page">Start Page</string>
     <string name="settings_start_page_auto">Automatic (First Page)</string>
     <string name="settings_scan_pattern">Scan Pattern (Default)</string>
     <string name="settings_pattern_linear">Button by Button</string>
@@ -26,7 +26,8 @@
     <string name="settings_screen_behavior">Screen Behavior</string>
     <string name="settings_screen_behavior_normal">Normal</string>
     <string name="settings_screen_behavior_dimmed">Dimmed (Save Battery)</string>
-    <string name="settings_screen_behavior_black">Black (for OLED)</string>
+    <string name="settings_screen_behavior_on">On</string>
+    <string name="settings_screen_behavior_black">Black (OLED)</string>
     <string name="settings_screen_black_overlay_text">Battery saving mode.\nReturn to app via Back button</string>
     <string name="settings_startup_behavior">Open app in:</string>
     <string name="settings_startup_behavior_book_list">Book selection</string>

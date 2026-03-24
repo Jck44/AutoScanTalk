@@ -181,7 +181,7 @@ fun GeneralSettingsSection(
             val categoryGeneral = stringResource(R.string.settings_category_general)
             val keepScreenOnLabel = stringResource(R.string.settings_keep_screen_on)
             val screenBehaviorLabel = stringResource(R.string.settings_screen_behavior)
-            val screenNormal = stringResource(R.string.settings_screen_behavior_normal)
+            val screenOn = stringResource(R.string.settings_screen_behavior_on)
             val screenDimmed = stringResource(R.string.settings_screen_behavior_dimmed)
             val screenBlack = stringResource(R.string.settings_screen_behavior_black)
             val startPageLabel = stringResource(R.string.settings_start_page)
@@ -193,7 +193,7 @@ fun GeneralSettingsSection(
             val deleteConfirmMessage = stringResource(R.string.book_dialog_delete_confirm, activeBook?.name ?: "")
 
             PreferenceCategory(categoryGeneral, modifier = Modifier.weight(1f)) {
-                // Book Rename
+                // 1. Book Rename
                 activeBook?.let { book ->
                     var editName by remember(book.id) { mutableStateOf(book.name) }
                     SettingsEditTextItem(
@@ -209,31 +209,7 @@ fun GeneralSettingsSection(
                     )
                 }
 
-                SettingsToggleItem(
-                    label = keepScreenOnLabel,
-                    checked = keepScreenOn,
-                    onCheckedChange = { viewModel.setKeepScreenOnUserMode(it) }
-                )
-
-                if (keepScreenOn) {
-                    val behaviorLabel = when (screenBehavior) {
-                        "DIMMED" -> screenDimmed
-                        "BLACK" -> screenBlack
-                        else -> screenNormal
-                    }
-
-                    SettingsDropdownItem(
-                        label = screenBehaviorLabel,
-                        selectedOption = behaviorLabel,
-                        options = listOf(
-                            screenNormal to { viewModel.setUserModeScreenBehavior("NORMAL") },
-                            screenDimmed to { viewModel.setUserModeScreenBehavior("DIMMED") },
-                            screenBlack to { viewModel.setUserModeScreenBehavior("BLACK") }
-                        )
-                    )
-                }
-
-                // Default Start Page Selector with Filter
+                // 2. Default Start Page Selector with Filter
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)
@@ -306,26 +282,50 @@ fun GeneralSettingsSection(
                         }
                     }
                 }
-            }
 
-                // Delete Book Button
-                if (!isGlobal) {
-                    Spacer(modifier = Modifier.height(dimensions.paddingLarge))
-                    Button(
-                        onClick = {
-                            if (viewModel.securityManager.isSecurityRequiredForDeletion()) {
-                                showDeleteSecurity = true
-                            } else {
-                                showDeleteConfirm = true
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                        shape = MaterialTheme.shapes.medium
-                    ) {
-                        Text(deleteBookLabel)
-                    }
+                // 3. Combined Screen Behavior
+                val behaviorLabel = when {
+                    screenBehavior == "DIMMED" -> screenDimmed
+                    screenBehavior == "BLACK" -> screenBlack
+                    else -> screenOn
                 }
+
+                SettingsDropdownItem(
+                    label = screenBehaviorLabel,
+                    selectedOption = behaviorLabel,
+                    options = listOf(
+                        screenOn to {
+                            viewModel.setKeepScreenOnUserMode(true)
+                            viewModel.setUserModeScreenBehavior("NORMAL")
+                        },
+                        screenDimmed to {
+                            viewModel.setKeepScreenOnUserMode(true)
+                            viewModel.setUserModeScreenBehavior("DIMMED")
+                        },
+                        screenBlack to {
+                            viewModel.setKeepScreenOnUserMode(true)
+                            viewModel.setUserModeScreenBehavior("BLACK")
+                        }
+                    )
+                )
+
+                // 4. Delete Book Button (moved into category)
+                Spacer(modifier = Modifier.height(dimensions.paddingLarge))
+                Button(
+                    onClick = {
+                        if (viewModel.securityManager.isSecurityRequiredForDeletion()) {
+                            showDeleteSecurity = true
+                        } else {
+                            showDeleteConfirm = true
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Text(deleteBookLabel)
+                }
+            }
         }
     }
 
