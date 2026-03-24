@@ -3,6 +3,7 @@ package com.andreas_kratzer.ghosttalk.core.data.impl
 import com.andreas_kratzer.ghosttalk.core.data.BookRepository
 import com.andreas_kratzer.ghosttalk.core.data.PageRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsMapper
 import com.andreas_kratzer.ghosttalk.core.model.AuditoryCue
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.ControlDeviceButtonAction
@@ -43,7 +44,9 @@ class PageImportExportManagerTest {
     private val sharedPrefs: SharedPreferences = mockk(relaxed = true)
     private val prefsEditor: SharedPreferences.Editor = mockk(relaxed = true)
     
-    private val manager = PageImportExportManager(context, pageRepository, bookRepository, settingsRepository, mockk(relaxed = true))
+    private val settingsMapper = SettingsMapper(settingsRepository)
+    private val actionMapper = ActionMapper()
+    private val manager = PageImportExportManager(context, pageRepository, bookRepository, settingsRepository, settingsMapper, actionMapper, mockk(relaxed = true))
 
     init {
         every { context.getSharedPreferences(SettingsConstants.PREFS_NAME, any()) } returns sharedPrefs

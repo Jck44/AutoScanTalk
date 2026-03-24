@@ -1,0 +1,283 @@
+package com.andreas_kratzer.ghosttalk.ui.pages.actions
+
+import android.Manifest
+import android.app.NotificationManager
+import android.content.Context
+import android.content.pm.PackageManager
+import android.provider.ContactsContract
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.core.model.DeviceActionType
+import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ControlDeviceActionFields(
+    selectedType: DeviceActionType,
+    onTypeSelected: (DeviceActionType) -> Unit,
+    volumeValue: String? = null,
+    onVolumeValueChange: (String) -> Unit = {},
+    contactName: String? = null,
+    onContactSelected: (name: String, phone: String) -> Unit = { _, _ -> },
+    messageText: String? = null,
+    onMessageTextChange: (String) -> Unit = {},
+    includeWeekday: Boolean = false,
+    onIncludeWeekdayChange: (Boolean) -> Unit = {},
+    prefixText: String = "",
+    onPrefixTextChange: (String) -> Unit = {},
+    suffixText: String = "",
+    onSuffixTextChange: (String) -> Unit = {},
+    offsetValue: String = "0",
+    onOffsetValueChange: (String) -> Unit = {}
+) {
+    val context = LocalContext.current
+    val dimensions = LocalDimensions.current
+    var expandedType by remember { mutableStateOf(false) }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { _ -> }
+
+    val types = listOf(
+        DeviceActionType.READ_NOTIFICATIONS to stringResource(R.string.button_action_notification),
+        DeviceActionType.MEDIA_PLAY_PAUSE to stringResource(R.string.button_device_control_media_play_pause),
+        DeviceActionType.MEDIA_NEXT to stringResource(R.string.button_device_control_media_next),
+        DeviceActionType.MEDIA_PREVIOUS to stringResource(R.string.button_device_control_media_previous),
+        DeviceActionType.VOLUME_MEDIA to stringResource(R.string.volume_media),
+        DeviceActionType.VOLUME_NOTIFICATION to stringResource(R.string.volume_notification),
+        DeviceActionType.VOLUME_ALARM to stringResource(R.string.volume_alarm),
+        DeviceActionType.VOLUME_CALL to stringResource(R.string.volume_call),
+        DeviceActionType.STATUS_SILENT to stringResource(R.string.status_silent),
+        DeviceActionType.STATUS_VIBRATE to stringResource(R.string.status_vibrate),
+        DeviceActionType.STATUS_LOUD to stringResource(R.string.status_loud),
+        DeviceActionType.SEND_MESSAGE to stringResource(R.string.action_send_message),
+        DeviceActionType.READ_BATTERY to stringResource(R.string.button_device_control_battery),
+        DeviceActionType.READ_DATE to stringResource(R.string.button_device_control_date),
+        DeviceActionType.READ_TIME to stringResource(R.string.button_device_control_time),
+        DeviceActionType.TOGGLE_SCANNING to stringResource(R.string.button_device_control_toggle_scanning)
+    )
+
+    val currentLabel = types.find { it.first == selectedType }?.second ?: types.first().second
+
+    Column(verticalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)) {
+        Text(stringResource(R.string.button_device_control_type_label), style = MaterialTheme.typography.labelMedium)
+
+        ExposedDropdownMenuBox(
+            expanded = expandedType,
+            onExpandedChange = { expandedType = !expandedType }
+        ) {
+            OutlinedTextField(
+                readOnly = true,
+                value = currentLabel,
+                onValueChange = { },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedType) },
+                shape = MaterialTheme.shapes.large,
+                modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
+            )
+            ExposedDropdownMenu(
+                expanded = expandedType,
+                onDismissRequest = { expandedType = false }
+            ) {
+                types.forEach { (type, label) ->
+                    DropdownMenuItem(
+                        text = { Text(label) },
+                        onClick = {
+                            onTypeSelected(type)
+                            expandedType = false
+                            
+                            // Permission check for Silent mode
+                            if (type == DeviceActionType.STATUS_SILENT) {
+                                val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                                if (!nm.isNotificationPolicyAccessGranted) {
+                                    val intent = android.content.Intent(android.provider.Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)
+                                    context.startActivity(intent)
+                                }
+                            }
+
+                            // Permission check for Messaging
+                            if (type == DeviceActionType.SEND_MESSAGE) {
+                                permissionLauncher.launch(
+                                    arrayOf(Manifest.permission.SEND_SMS, Manifest.permission.READ_CONTACTS)
+                                )
+                            }
+                        }
+                    )
+                }
+            }
+        }
+
+        // Volume parameters
+        if (selectedType.name.startsWith("VOLUME_")) {
+            OutlinedTextField(
+                value = volumeValue ?: "50",
+                onValueChange = { newValue ->
+                    if (newValue.isEmpty() || newValue.all { it.isDigit() }) {
+                        onVolumeValueChange(newValue)
+                    }
+                },
+                label = { Text(stringResource(R.string.volume_label)) },
+                singleLine = true,
+                shape = MaterialTheme.shapes.large,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+
+        // Messaging parameters
+        if (selectedType == DeviceActionType.SEND_MESSAGE) {
+            MessagingFields(
+                contactName = contactName ?: stringResource(R.string.contact_picker_title),
+                onContactSelected = onContactSelected,
+                messageText = messageText ?: "",
+                onMessageTextChange = onMessageTextChange
+            )
+        }
+
+        // Date & Time parameters
+        if (selectedType == DeviceActionType.READ_DATE || selectedType == DeviceActionType.READ_TIME) {
+            OutlinedTextField(
+                value = prefixText,
+                onValueChange = onPrefixTextChange,
+                label = { Text(stringResource(R.string.button_device_control_prefix_label)) },
+                shape = MaterialTheme.shapes.large,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            OutlinedTextField(
+                value = suffixText,
+                onValueChange = onSuffixTextChange,
+                label = { Text(stringResource(R.string.button_device_control_suffix_label)) },
+                shape = MaterialTheme.shapes.large,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            if (selectedType == DeviceActionType.READ_DATE) {
+                com.andreas_kratzer.ghosttalk.core.ui.components.SettingsToggleItem(
+                    label = stringResource(R.string.button_device_control_weekday_label),
+                    checked = includeWeekday,
+                    onCheckedChange = onIncludeWeekdayChange
+                )
+                
+                OutlinedTextField(
+                    value = offsetValue,
+                    onValueChange = { if (it.isEmpty() || it == "-" || it.all { c -> c.isDigit() || c == '-' }) onOffsetValueChange(it) },
+                    label = { Text(stringResource(R.string.button_device_control_offset_days_label)) },
+                    shape = MaterialTheme.shapes.large,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            } else {
+                OutlinedTextField(
+                    value = offsetValue,
+                    onValueChange = { if (it.isEmpty() || it == "-" || it.all { c -> c.isDigit() || c == '-' }) onOffsetValueChange(it) },
+                    label = { Text(stringResource(R.string.button_device_control_offset_minutes_label)) },
+                    shape = MaterialTheme.shapes.large,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun MessagingFields(
+    contactName: String,
+    onContactSelected: (String, String) -> Unit,
+    messageText: String,
+    onMessageTextChange: (String) -> Unit
+) {
+    val dimensions = LocalDimensions.current
+    val context = LocalContext.current
+
+    val contactLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickContact()
+    ) { uri ->
+        uri?.let {
+            val projection = arrayOf(
+                ContactsContract.Contacts._ID,
+                ContactsContract.Contacts.DISPLAY_NAME_PRIMARY
+            )
+            context.contentResolver.query(it, projection, null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val id = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts._ID))
+                    val name = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME_PRIMARY))
+                    
+                    // Now get the first phone number for this contact
+                    context.contentResolver.query(
+                        ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                        arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER),
+                        "${ContactsContract.CommonDataKinds.Phone.CONTACT_ID} = ?",
+                        arrayOf(id),
+                        null
+                    )?.use { phoneCursor ->
+                        if (phoneCursor.moveToFirst()) {
+                            val phone = phoneCursor.getString(phoneCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER))
+                            onContactSelected(name, phone)
+                        } else {
+                            onContactSelected(name, "")
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    val smsPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { _ -> }
+
+    // Proactive check
+    fun checkSmsPermission() {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
+            smsPermissionLauncher.launch(Manifest.permission.SEND_SMS)
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        checkSmsPermission()
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)) {
+        // Contact Selection
+        OutlinedButton(
+            onClick = { 
+                checkSmsPermission()
+                contactLauncher.launch(null)
+            },
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.medium
+        ) {
+            Text(contactName)
+        }
+
+        // Message Text (Filtering Emojis)
+        OutlinedTextField(
+            value = messageText,
+            onValueChange = { newValue ->
+                // Filter out Emojis / Surrogate pairs / Non-BMP characters
+                val filtered = newValue.filter { char ->
+                    char.code <= 0xFFFF && !char.isSurrogate()
+                }
+                onMessageTextChange(filtered)
+            },
+            label = { Text(stringResource(R.string.message_emojis_not_supported)) },
+            shape = MaterialTheme.shapes.large,
+            modifier = Modifier.fillMaxWidth(),
+            supportingText = {
+                Text(stringResource(R.string.message_emojis_hint))
+            }
+        )
+    }
+}

@@ -87,7 +87,8 @@ fun GenAiSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                 SettingsEditTextItem(
                     label = "Gemini Timeout (ms)",
                     value = geminiTimeout.toString(),
-                    onValueChange = { newValue -> viewModel.setGeminiTimeoutInput(newValue) }
+                    onValueChange = { newValue -> viewModel.setGeminiTimeoutInput(newValue) },
+                    numericOnly = true
                 )
                 
                 Spacer(modifier = Modifier.height(dimensions.paddingMedium))

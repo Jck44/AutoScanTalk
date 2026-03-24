@@ -148,7 +148,8 @@ fun TestSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                 SettingsEditTextItem(
                     label = stringResource(R.string.settings_action_log_limit),
                     value = logLimit.toString(),
-                    onValueChange = { newValue: String -> viewModel.setActionLogLimitInput(newValue) }
+                    onValueChange = { newValue: String -> viewModel.setActionLogLimitInput(newValue) },
+                    numericOnly = true
                 )
                 
                 activeBook?.let { book ->

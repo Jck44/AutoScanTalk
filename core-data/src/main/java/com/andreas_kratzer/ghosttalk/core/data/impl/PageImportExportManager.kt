@@ -5,6 +5,8 @@ import com.andreas_kratzer.ghosttalk.core.data.BookRepository
 import com.andreas_kratzer.ghosttalk.core.data.PageRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsMapper
+import com.andreas_kratzer.ghosttalk.core.data.impl.ActionMapper
 import androidx.core.content.edit
 import com.andreas_kratzer.ghosttalk.core.data.export.PageImportExportProvider
 import com.andreas_kratzer.ghosttalk.core.model.AuditoryCue
@@ -45,6 +47,8 @@ class PageImportExportManager @Inject constructor(
     private val pageRepository: PageRepository,
     private val bookRepository: BookRepository,
     private val settingsRepository: SettingsRepository,
+    private val settingsMapper: SettingsMapper,
+    private val actionMapper: ActionMapper,
     private val logger: Logger
 ) : PageImportExportProvider {
     private val TAG = "PageImportExportManager"
@@ -79,7 +83,7 @@ class PageImportExportManager @Inject constructor(
                             auditoryCueText = config?.auditoryCue?.let { if (it is AuditoryCue.TextToSpeechCue) it.text else "" },
                             active = config?.isActive,
                             playActionAsAuditoryCue = config?.playActionAsAuditoryCue,
-                            action = config?.buttonAction?.let { exportAction(it, config.spokenText) }
+                            action = config?.buttonAction?.let { actionMapper.exportAction(it, config.spokenText) }
                         )
                     }.filter { it.label.isNotEmpty() || it.action != null || it.auditoryCueText != null }
                 )
@@ -91,55 +95,12 @@ class PageImportExportManager @Inject constructor(
     override suspend fun exportBookToJson(bookId: String): String = withContext(Dispatchers.IO) {
         val book = bookRepository.getBookById(bookId) ?: throw Exception("Book not found")
         val pages = pageRepository.getPagesForBook(bookId)
-        val exportData = ImportExportData(
+        
+        val baseExportData = ImportExportData(
             bookId = book.id,
             bookName = book.name,
             bookCreatedAt = book.createdAt,
             bookUpdatedAt = book.updatedAt,
-            actionLogLimit = settingsRepository.getActionLogLimitForBook(bookId),
-            limitScanCycles = settingsRepository.getLimitScanCyclesForBook(bookId),
-            scanCycleLimit = settingsRepository.getScanCycleLimitForBook(bookId),
-            logIgnoredActions = settingsRepository.getLogIgnoredActionsForBook(bookId),
-            logStopActions = settingsRepository.getLogStopActionsForBook(bookId),
-            holdingTimeSeconds = settingsRepository.getHoldingTimeMillisForBook(bookId) / 1000f,
-            autoStartScanning = settingsRepository.getAutoStartScanningForBook(bookId),
-            scanDelayMillis = settingsRepository.getScanDelayMillisForBook(bookId),
-            resumeScanningFromStart = settingsRepository.getResumeScanningFromStartForBook(bookId),
-            switchActivationKey = settingsRepository.getSwitchActivationKeyForBook(bookId),
-            volumeKeysActivate = settingsRepository.getVolumeKeysActivateForBook(bookId),
-            defaultScanPattern = settingsRepository.getDefaultScanPatternForBook(bookId),
-            isSmartPredictionEnabled = settingsRepository.getIsSmartPredictionEnabledForBook(bookId),
-            geminiRedoPrediction = settingsRepository.geminiRedoPrediction,
-            geminiTimeout = settingsRepository.geminiTimeout,
-            isGeminiEnabled = settingsRepository.isGeminiEnabled,
-            useLocalGenerativeAi = settingsRepository.useLocalGenerativeAi,
-            isCloudSyncEnabled = settingsRepository.isCloudSyncEnabled,
-            syncIntervalMinutes = settingsRepository.syncIntervalMinutes,
-            syncMode = settingsRepository.syncMode,
-            ttsLanguage = settingsRepository.ttsLanguage,
-            ttsVoiceName = settingsRepository.ttsVoiceName,
-            pageSortOrder = settingsRepository.getPageSortOrderForBook(bookId),
-            templateSortOrder = settingsRepository.getTemplateSortOrderForBook(bookId),
-            smartPredictionDelay = settingsRepository.getSmartPredictionDelayForBook(bookId),
-            keepScreenOnUserMode = settingsRepository.keepScreenOnUserMode,
-            userModeScreenBehavior = settingsRepository.userModeScreenBehavior,
-            themeMode = settingsRepository.themeMode,
-            securityPinTimeoutMinutes = settingsRepository.securityPinTimeoutMinutes,
-            isPinRequiredForDeletion = settingsRepository.isPinRequiredForDeletion,
-            isBiometricEnabled = settingsRepository.isBiometricEnabled,
-            isSecurityRequiredForEdit = settingsRepository.isSecurityRequiredForEdit,
-            isSecurityRequiredForSettings = settingsRepository.isSecurityRequiredForSettings,
-            startupBehavior = settingsRepository.startupBehavior,
-            favoriteBookId = settingsRepository.favoriteBookId,
-            weatherCacheTimeout = settingsRepository.weatherCacheTimeout,
-            defaultStartPageId = settingsRepository.getDefaultStartPageIdForBook(bookId),
-            securityPinHash = settingsRepository.securityPinHash,
-            securityPinSalt = settingsRepository.securityPinSalt,
-            appLanguage = settingsRepository.appLanguage,
-            isNotificationReadingEnabled = settingsRepository.isNotificationReadingEnabled,
-            monitoredNotificationApps = settingsRepository.monitoredNotificationApps.toList(),
-            showPageIdInLog = settingsRepository.showPageIdInLog,
-            bluetoothDelay = settingsRepository.bluetoothDelay,
             pages = pages.map { page ->
                 ImportPage(
                     importId = page.id,
@@ -161,7 +122,7 @@ class PageImportExportManager @Inject constructor(
                                 auditoryCueText = (it.auditoryCue as? AuditoryCue.TextToSpeechCue)?.text,
                                 active = it.isActive,
                                 playActionAsAuditoryCue = it.playActionAsAuditoryCue,
-                                action = exportAction(it.buttonAction)
+                                action = actionMapper.exportAction(it.buttonAction)
                             )
                         }
                     }
@@ -169,38 +130,10 @@ class PageImportExportManager @Inject constructor(
             }
         )
 
+        val exportData = settingsMapper.exportSettings(bookId, baseExportData)
+
         logger.d(TAG, "Exported book $bookId: defaultStartPageId='${exportData.defaultStartPageId}', scanDelay='${exportData.scanDelayMillis}'")
         json.encodeToString(exportData)
-    }
-
-    private fun exportAction(action: ButtonAction, spokenText: String? = null): ImportAction {
-        return when (action) {
-            is SpeakTextButtonAction -> ImportAction(type = "SPEAK", textToSpeech = spokenText)
-            is NavigateToPageButtonAction -> ImportAction(type = "NAVIGATE", targetPageId = action.pageId, targetPageImportId = action.pageId)
-            is FrequentActionButtonAction -> ImportAction(type = "SMART_PREDICTION", rank = action.rank)
-            is GeminiButtonAction -> ImportAction(type = "GEMINI", prompt = action.prompt)
-            is GeminiSearchButtonAction -> ImportAction(type = "GEMINI_SEARCH", prompt = action.prompt)
-            is GeminiNanoButtonAction -> ImportAction(type = "GEMINI_NANO", intent = action.intent)
-            is SmartPredictionButtonAction -> ImportAction(type = "SMART_PREDICTION", rank = action.rank)
-            is GeminiVisionButtonAction -> ImportAction(type = "GEMINI_VISION", prompt = action.prompt, useCloud = action.useCloud)
-            is ControlDeviceButtonAction -> ImportAction(
-                type = "DEVICE_CONTROL",
-                deviceActionType = action.actionType.name,
-                volumeValue = action.volumeValue,
-                contactName = action.contactName,
-                contactPhone = action.contactPhone,
-                messageText = action.messageText
-            )
-            is WeatherButtonAction -> ImportAction(type = "WEATHER")
-            is SmartHomeButtonAction -> ImportAction(
-                type = "SMART_HOME",
-                smartHomeProvider = action.provider.name,
-                smartHomeDeviceId = action.deviceId,
-                smartHomeDeviceName = action.deviceName,
-                smartHomeIntent = action.intent,
-                smartHomeValue = action.value
-            )
-        }
     }
 
     override suspend fun importFromJson(
@@ -220,43 +153,7 @@ class PageImportExportManager @Inject constructor(
 
             // 2. Update book and app settings if provided
             if (restoreSyncSettings) {
-                importData.holdingTimeSeconds?.let { 
-                    settingsRepository.holdingTimeMillis = (it * 1000).toLong()
-                }
-                importData.autoStartScanning?.let { settingsRepository.autoStartScanning = it }
-                importData.scanDelayMillis?.let { settingsRepository.scanDelayMillis = it }
-                importData.resumeScanningFromStart?.let { settingsRepository.resumeScanningFromStart = it }
-                importData.switchActivationKey?.let { settingsRepository.switchActivationKey = it }
-                importData.volumeKeysActivate?.let { settingsRepository.volumeKeysActivate = it }
-                importData.defaultScanPattern?.let { settingsRepository.defaultScanPattern = it }
-                importData.isSmartPredictionEnabled?.let { settingsRepository.isSmartPredictionEnabled = it }
-                importData.geminiRedoPrediction?.let { settingsRepository.geminiRedoPrediction = it }
-                importData.geminiTimeout?.let { settingsRepository.geminiTimeout = it }
-                importData.isGeminiEnabled?.let { settingsRepository.isGeminiEnabled = it }
-                importData.useLocalGenerativeAi?.let { settingsRepository.useLocalGenerativeAi = it }
-                importData.isCloudSyncEnabled?.let { settingsRepository.isCloudSyncEnabled = it }
-                importData.syncIntervalMinutes?.let { settingsRepository.syncIntervalMinutes = it }
-                importData.syncMode?.let { settingsRepository.syncMode = it }
-                importData.ttsLanguage?.let { settingsRepository.ttsLanguage = it }
-                importData.ttsVoiceName?.let { settingsRepository.ttsVoiceName = it }
-                importData.smartPredictionDelay?.let { settingsRepository.smartPredictionDelay = it }
-                importData.keepScreenOnUserMode?.let { settingsRepository.keepScreenOnUserMode = it }
-                importData.userModeScreenBehavior?.let { settingsRepository.userModeScreenBehavior = it }
-                importData.themeMode?.let { settingsRepository.themeMode = it }
-                importData.securityPinTimeoutMinutes?.let { settingsRepository.securityPinTimeoutMinutes = it }
-                importData.isPinRequiredForDeletion?.let { settingsRepository.isPinRequiredForDeletion = it }
-                importData.isBiometricEnabled?.let { settingsRepository.isBiometricEnabled = it }
-                importData.isSecurityRequiredForEdit?.let { settingsRepository.isSecurityRequiredForEdit = it }
-                importData.isSecurityRequiredForSettings?.let { settingsRepository.isSecurityRequiredForSettings = it }
-                importData.startupBehavior?.let { settingsRepository.startupBehavior = it }
-                importData.weatherCacheTimeout?.let { settingsRepository.weatherCacheTimeout = it }
-                importData.securityPinHash?.let { settingsRepository.securityPinHash = it }
-                importData.securityPinSalt?.let { settingsRepository.securityPinSalt = it }
-                importData.appLanguage?.let { settingsRepository.appLanguage = it }
-                importData.isNotificationReadingEnabled?.let { settingsRepository.isNotificationReadingEnabled = it }
-                importData.monitoredNotificationApps?.let { settingsRepository.monitoredNotificationApps = it.toSet() }
-                importData.showPageIdInLog?.let { settingsRepository.showPageIdInLog = it }
-                importData.bluetoothDelay?.let { settingsRepository.bluetoothDelay = it }
+                settingsMapper.importSettings(importData)
             }
             importData.bookName?.let { newName ->
                 bookRepository.getBookById(bookId)?.let { book ->
@@ -331,7 +228,7 @@ class PageImportExportManager @Inject constructor(
                 val buttons = MutableList<ButtonConfig?>(49) { null }
                 
                 importPage.buttons.forEach { importButton ->
-                    val action = importButton.action?.let { importAction(it, idMap) }
+                    val action = importButton.action?.let { actionMapper.importAction(it, idMap) }
                     
                     if (importButton.label.isEmpty() && action == null && importButton.auditoryCueText == null) {
                         return@forEach
@@ -393,48 +290,6 @@ class PageImportExportManager @Inject constructor(
             Result.success(importData.pages.size)
         } catch (e: Exception) {
             Result.failure(e)
-        }
-    }
-
-    private fun importAction(importAction: ImportAction, idMap: Map<String, String>): ButtonAction? {
-        val type = importAction.type.uppercase()
-        @Suppress("SpellCheckingInspection")
-        return when (type) {
-            "SPEAK", "SPEAKTEXT" -> SpeakTextButtonAction()
-            "NAVIGATE", "NAVIGATETOPAGE" -> {
-                val oldId = importAction.targetPageId ?: importAction.targetPageImportId ?: ""
-                NavigateToPageButtonAction(idMap[oldId] ?: oldId)
-            }
-            "GEMINI" -> GeminiButtonAction(importAction.prompt ?: "")
-            "GEMINI_SEARCH" -> GeminiSearchButtonAction(importAction.prompt ?: "")
-            "GEMINI_NANO" -> GeminiNanoButtonAction(importAction.intent ?: "")
-            "GEMINI_VISION" -> com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction(importAction.prompt ?: "", importAction.useCloud ?: false)
-            "SMART_PREDICTION" -> SmartPredictionButtonAction(importAction.rank ?: 1)
-            "DEVICE_CONTROL" -> {
-                val typeName = importAction.deviceActionType ?: "READ_TIME"
-                ControlDeviceButtonAction(
-                    actionType = try { DeviceActionType.valueOf(typeName) } catch(_: Exception) { DeviceActionType.READ_TIME },
-                    volumeValue = importAction.volumeValue,
-                    contactName = importAction.contactName,
-                    contactPhone = importAction.contactPhone,
-                    messageText = importAction.messageText
-                )
-            }
-            "WEATHER" -> WeatherButtonAction()
-            "GOOGLE_HOME" -> SmartHomeButtonAction(
-                provider = SmartHomeProvider.GOOGLE_HOME,
-                deviceId = importAction.googleHomeDeviceId ?: "",
-                intent = importAction.googleHomeCommand ?: "",
-                value = importAction.googleHomeValue
-            )
-            "SMART_HOME" -> SmartHomeButtonAction(
-                provider = SmartHomeProvider.valueOf(importAction.smartHomeProvider ?: "GOOGLE_HOME"),
-                deviceId = importAction.smartHomeDeviceId ?: "",
-                deviceName = importAction.smartHomeDeviceName ?: "",
-                intent = importAction.smartHomeIntent ?: "",
-                value = importAction.smartHomeValue
-            )
-            else -> null
         }
     }
 

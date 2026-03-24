@@ -107,16 +107,23 @@ fun SettingsEditTextItem(
     label: String,
     value: String,
     onValueChange: (String) -> Unit,
-    keyboardOptions: KeyboardOptions = KeyboardOptions(
-        keyboardType = KeyboardType.Text,
-        autoCorrectEnabled = true,
-        capitalization = KeyboardCapitalization.Sentences
-    ),
-    forceKeyboard: Boolean = false
+    keyboardOptions: KeyboardOptions? = null,
+    forceKeyboard: Boolean = false,
+    numericOnly: Boolean = false
 ) {
     val dimensions = LocalDimensions.current
     var localValue by remember(value) { mutableStateOf(value) }
     val keyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
+
+    val defaultKeyboardOptions = if (numericOnly) {
+        KeyboardOptions(keyboardType = KeyboardType.Number)
+    } else {
+        KeyboardOptions(
+            keyboardType = KeyboardType.Text,
+            autoCorrectEnabled = true,
+            capitalization = KeyboardCapitalization.Sentences
+        )
+    }
 
     LaunchedEffect(localValue) {
         if (localValue != value) {
@@ -127,7 +134,15 @@ fun SettingsEditTextItem(
 
     OutlinedTextField(
         value = localValue,
-        onValueChange = { newValue -> localValue = newValue },
+        onValueChange = { newValue -> 
+            if (numericOnly) {
+                if (newValue.isEmpty() || newValue.all { it.isDigit() }) {
+                    localValue = newValue
+                }
+            } else {
+                localValue = newValue
+            }
+        },
         label = { Text(label, style = MaterialTheme.typography.bodyMedium) },
         textStyle = MaterialTheme.typography.bodyLarge,
         shape = MaterialTheme.shapes.large,
@@ -139,7 +154,7 @@ fun SettingsEditTextItem(
                     keyboardController?.show()
                 }
             },
-        keyboardOptions = keyboardOptions,
+        keyboardOptions = keyboardOptions ?: defaultKeyboardOptions,
         singleLine = true
     )
 }

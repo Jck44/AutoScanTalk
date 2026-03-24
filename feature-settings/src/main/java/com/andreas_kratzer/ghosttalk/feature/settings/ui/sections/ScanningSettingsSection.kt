@@ -41,7 +41,8 @@ fun ScanningSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
             SettingsEditTextItem(
                 label = stringResource(R.string.settings_scan_delay), 
                 value = scanDelay.toString(),
-                onValueChange = { viewModel.setScanDelayInput(it) }
+                onValueChange = { viewModel.setScanDelayInput(it) },
+                numericOnly = true
             )
             SettingsToggleItem(stringResource(R.string.settings_restart_scan), resumeFromStart) { viewModel.setResumeScanningFromStart(it) }
 
@@ -58,7 +59,8 @@ fun ScanningSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                     SettingsEditTextItem(
                         label = stringResource(R.string.settings_scan_cycle_limit),
                         value = scanCycleLimit.toString(),
-                        onValueChange = { viewModel.setScanCycleLimitInput(it) }
+                        onValueChange = { viewModel.setScanCycleLimitInput(it) },
+                        numericOnly = true
                     )
                 }
             }
@@ -93,12 +95,14 @@ fun ScanningSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
             SettingsEditTextItem(
                 label = stringResource(R.string.settings_holding_time), 
                 value = holdingTime.toString(),
-                onValueChange = { viewModel.setHoldingTimeInput(it) }
+                onValueChange = { viewModel.setHoldingTimeInput(it) },
+                numericOnly = true
             )
             SettingsEditTextItem(
                 label = stringResource(R.string.settings_bluetooth_delay), 
                 value = bluetoothDelay.toString(),
-                onValueChange = { viewModel.setBluetoothDelay(it) }
+                onValueChange = { viewModel.setBluetoothDelay(it) },
+                numericOnly = true
             )
         }
 

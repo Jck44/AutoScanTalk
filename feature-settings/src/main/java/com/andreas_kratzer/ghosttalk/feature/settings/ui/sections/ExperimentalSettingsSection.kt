@@ -17,7 +17,8 @@ fun ExperimentalSettingsSection(viewModel: SettingsViewModel) {
         SettingsEditTextItem(
             label = stringResource(R.string.settings_weather_cache_timeout_label),
             value = weatherTimeout.toString(),
-            onValueChange = { viewModel.setWeatherCacheTimeoutInput(it) }
+            onValueChange = { viewModel.setWeatherCacheTimeoutInput(it) },
+            numericOnly = true
         )
     }
 }

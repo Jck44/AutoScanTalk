@@ -137,10 +137,17 @@ fun SecuritySettingsSection(
 
                     OutlinedTextField(
                         value = localTimeout,
-                        onValueChange = { localTimeout = it },
+                        onValueChange = { newValue ->
+                            if (newValue.isEmpty() || newValue.all { it.isDigit() }) {
+                                localTimeout = newValue
+                            }
+                        },
                         modifier = Modifier.width(80.dp),
                         singleLine = true,
-                        shape = MaterialTheme.shapes.large
+                        shape = MaterialTheme.shapes.large,
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                        )
                     )
                 }
 
