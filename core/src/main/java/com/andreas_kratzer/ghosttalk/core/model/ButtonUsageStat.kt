@@ -15,6 +15,7 @@ import androidx.room.Index
 data class ButtonUsageStat(
     val bookId: String,
     val buttonConfigId: String,
+    val pageId: String, // Store pageId where button was used
     val label: String,
     val actionJson: String,
     val usageCount: Long = 0,

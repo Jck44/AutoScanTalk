@@ -60,11 +60,19 @@ fun MaintenanceSection(
         if (!isGlobal) {
             PreferenceCategory(stringResource(R.string.settings_category_maintenance)) {
                 Button(
-                    onClick = { viewModel.clearButtonUsageStats(viewModel.activeBookId) },
+                    onClick = { viewModel.setShowActionHistoryDialog(true) },
                     shape = MaterialTheme.shapes.medium,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(stringResource(R.string.settings_clear_usage_stats))
+                    Text(stringResource(R.string.settings_action_history_title))
+                }
+                Spacer(modifier = Modifier.height(LocalDimensions.current.paddingSmall))
+                Button(
+                    onClick = { viewModel.setShowUsageStatsDialog(true) },
+                    shape = MaterialTheme.shapes.medium,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(stringResource(R.string.settings_usage_stats_title))
                 }
             }
         }

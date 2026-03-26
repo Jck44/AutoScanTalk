@@ -51,6 +51,7 @@ class ButtonUsageRepositoryImpl @Inject constructor(
             existing.copy(
                 label = buttonConfig.label,
                 actionJson = json.encodeToString(buttonConfig.buttonAction),
+                pageId = pageId, // Update pageId (last used location)
                 usageCount = existing.usageCount + 1,
                 lastUsedAt = System.currentTimeMillis()
             )
@@ -58,6 +59,7 @@ class ButtonUsageRepositoryImpl @Inject constructor(
             ButtonUsageStat(
                 bookId = bookId,
                 buttonConfigId = buttonConfig.id,
+                pageId = pageId,
                 label = buttonConfig.label,
                 actionJson = json.encodeToString(buttonConfig.buttonAction),
                 usageCount = 1,

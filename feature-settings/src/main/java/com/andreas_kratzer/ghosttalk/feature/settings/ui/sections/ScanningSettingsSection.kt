@@ -37,13 +37,35 @@ fun ScanningSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
         maxItemsInEachRow = 2
     ) {
         PreferenceCategory(stringResource(R.string.settings_category_scanning), modifier = Modifier.weight(1f)) {
-            SettingsToggleItem(stringResource(R.string.settings_auto_scan), autoStart) { viewModel.setAutoStartScanning(it) }
             SettingsEditTextItem(
                 label = stringResource(R.string.settings_scan_delay), 
                 value = scanDelay.toString(),
                 onValueChange = { viewModel.setScanDelayInput(it) },
                 numericOnly = true
             )
+            SettingsEditTextItem(
+                label = stringResource(R.string.settings_holding_time), 
+                value = holdingTime.toString(),
+                onValueChange = { viewModel.setHoldingTimeInput(it) },
+                numericOnly = true
+            )
+
+            val patternLabel = when (scanPattern) {
+                "linear" -> stringResource(R.string.settings_pattern_linear)
+                "row_by_row" -> stringResource(R.string.settings_pattern_row_by_row)
+                else -> scanPattern
+            }
+
+            com.andreas_kratzer.ghosttalk.core.ui.components.SettingsDropdownItem(
+                label = stringResource(R.string.settings_scan_pattern),
+                selectedOption = patternLabel,
+                options = listOf(
+                    stringResource(R.string.settings_pattern_linear) to { viewModel.setDefaultScanPattern("linear") },
+                    stringResource(R.string.settings_pattern_row_by_row) to { viewModel.setDefaultScanPattern("row_by_row") }
+                )
+            )
+
+            SettingsToggleItem(stringResource(R.string.settings_auto_scan), autoStart) { viewModel.setAutoStartScanning(it) }
             SettingsToggleItem(stringResource(R.string.settings_restart_scan), resumeFromStart) { viewModel.setResumeScanningFromStart(it) }
 
             if (!isGlobal) {
@@ -75,29 +97,6 @@ fun ScanningSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
             )
 
-            val patternLabel = when (scanPattern) {
-                "linear" -> stringResource(R.string.settings_pattern_linear)
-                "row_by_row" -> stringResource(R.string.settings_pattern_row_by_row)
-                else -> scanPattern
-            }
-            
-            com.andreas_kratzer.ghosttalk.core.ui.components.SettingsDropdownItem(
-                label = stringResource(R.string.settings_scan_pattern),
-                selectedOption = patternLabel,
-                options = listOf(
-                    stringResource(R.string.settings_pattern_linear) to { viewModel.setDefaultScanPattern("linear") },
-                    stringResource(R.string.settings_pattern_row_by_row) to { viewModel.setDefaultScanPattern("row_by_row") }
-                )
-            )
-        }
-
-        PreferenceCategory(stringResource(R.string.settings_category_advanced), modifier = Modifier.weight(1f)) {
-            SettingsEditTextItem(
-                label = stringResource(R.string.settings_holding_time), 
-                value = holdingTime.toString(),
-                onValueChange = { viewModel.setHoldingTimeInput(it) },
-                numericOnly = true
-            )
             SettingsEditTextItem(
                 label = stringResource(R.string.settings_bluetooth_delay), 
                 value = bluetoothDelay.toString(),
@@ -105,7 +104,5 @@ fun ScanningSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                 numericOnly = true
             )
         }
-
-        /* moved up */
     }
 }

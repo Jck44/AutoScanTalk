@@ -14,7 +14,7 @@
     <!-- General Settings -->
     <string name="settings_start_page">Start Page</string>
     <string name="settings_start_page_auto">Automatic (First Page)</string>
-    <string name="settings_scan_pattern">Scan Pattern (Default)</string>
+    <string name="settings_scan_pattern">Default Scan Pattern</string>
     <string name="settings_pattern_linear">Button by Button</string>
     <string name="settings_pattern_row_by_row">Row by Row</string>
     <string name="settings_app_language">App Language (Menus &amp; UI)</string>
@@ -49,8 +49,8 @@
     <string name="settings_category_audio_hardware">Audio Hardware</string>
     
     <!-- Scanning Settings -->
-    <string name="settings_auto_scan">Auto-Scan on Start</string>
-    <string name="settings_restart_scan">Restart Scan After Action</string>
+    <string name="settings_auto_scan">Start Scan Automatically</string>
+    <string name="settings_restart_scan">Scan from Start After Action</string>
     <string name="settings_scan_delay">Scan Speed (ms)</string>
     <string name="settings_holding_time">Holding Time / Debounce (ms)</string>
     
@@ -130,7 +130,13 @@
 
     <!-- Advanced / Maintenance -->
     <string name="settings_weather_cache_timeout_label">Weather Cache Duration (Minutes)</string>
-    <string name="settings_clear_usage_stats">Clear usage statistics</string>
+    <string name="settings_usage_stats_title">Usage Statistics</string>
+    <string name="settings_usage_stats_empty">No usage data recorded yet.</string>
+    <string name="settings_usage_stats_label">Clicks: %d</string>
+    <string name="settings_top_buttons_title">Button Usage Statistics</string>
+    <string name="settings_clear_usage_stats">Clear Statistics</string>
+    <string name="settings_clear_usage_stats_confirm">Do you really want to clear all usage statistics for this book?</string>
+    <string name="settings_action_history_title">Action History</string>
     <string name="settings_category_local_backup">Local Backup</string>
     <string name="settings_local_backup_create">Create Backup</string>
     <string name="settings_local_backup_restore">Restore Backup</string>
@@ -156,7 +162,7 @@
     <string name="settings_volume_keys_trigger">Use volume keys as trigger</string>
     <string name="settings_category_test">Test Settings</string>
     <string name="settings_category_hardware">Hardware &amp; Buttons</string>
-    <string name="settings_switch_key">External Switch Key</string>
+    <string name="settings_switch_key">External Switch Key (Sequence)</string>
     <string name="settings_category_google_account">Google Account</string>
     <string name="settings_google_account_status_not_signed_in">Not signed in</string>
     <string name="settings_google_account_sign_in">Sign In</string>

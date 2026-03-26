@@ -14,7 +14,7 @@
     <!-- General Settings -->
     <string name="settings_start_page">Startseite</string>
     <string name="settings_start_page_auto">Automatisch (Erste Seite)</string>
-    <string name="settings_scan_pattern">Scan Muster (Standard)</string>
+    <string name="settings_scan_pattern">Standard Scan Muster</string>
     <string name="settings_pattern_linear">Button für Button</string>
     <string name="settings_pattern_row_by_row">Zeilenweise</string>
     <string name="settings_app_language">App-Sprache (Menüs &amp; UI)</string>
@@ -49,8 +49,8 @@
     <string name="settings_category_audio_hardware">Audio-Hardware</string>
 
     <!-- Scanning Settings -->
-    <string name="settings_auto_scan">Auto-Scan beim Start</string>
-    <string name="settings_restart_scan">Scan nach Aktion neu starten</string>
+    <string name="settings_auto_scan">Scannen automatisch starten</string>
+    <string name="settings_restart_scan">Nach Aktion von Anfang scannen</string>
     <string name="settings_scan_delay">Scangeschwindigkeit (ms)</string>
     <string name="settings_holding_time">Haltezeit / Doppelklick-Schutz (ms)</string>
 
@@ -130,7 +130,13 @@
 
     <!-- Advanced / Maintenance -->
     <string name="settings_weather_cache_timeout_label">Wetter Cache Dauer (Minuten)</string>
-    <string name="settings_clear_usage_stats">Nutzungsstatistiken leeren</string>
+    <string name="settings_usage_stats_title">Nutzungsstatistiken</string>
+    <string name="settings_usage_stats_empty">Noch keine Nutzungsdaten vorhanden.</string>
+    <string name="settings_usage_stats_label">Klicks: %d</string>
+    <string name="settings_top_buttons_title">Button Nutzungsstatistik</string>
+    <string name="settings_clear_usage_stats">Statistiken leeren</string>
+    <string name="settings_clear_usage_stats_confirm">Möchtest du alle Nutzungsstatistiken für dieses Buch wirklich leeren?</string>
+    <string name="settings_action_history_title">Aktionsverlauf</string>
     <string name="settings_category_local_backup">Lokale Datensicherung</string>
     <string name="settings_local_backup_create">Sicherung erstellen</string>
     <string name="settings_local_backup_restore">Sicherung wiederherstellen</string>
@@ -156,7 +162,7 @@
     <string name="settings_volume_keys_trigger">Lautstärketasten zum Auslösen nutzen</string>
     <string name="settings_category_test">Test-Einstellungen</string>
     <string name="settings_category_hardware">Hardware &amp; Tasten</string>
-    <string name="settings_switch_key">Externer Taster (Taste)</string>
+    <string name="settings_switch_key">Externer Taster (Tastenfolge)</string>
     <string name="settings_category_google_account">Google Konto</string>
     <string name="settings_google_account_status_not_signed_in">Nicht angemeldet</string>
     <string name="settings_google_account_sign_in">Anmelden</string>

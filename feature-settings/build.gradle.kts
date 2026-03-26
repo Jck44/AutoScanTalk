@@ -65,6 +65,7 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.biometric)
     implementation(libs.androidx.fragment)
+    implementation(libs.kotlinx.serialization.json)
     
     implementation(libs.hilt.android)
     implementation(libs.hilt.lifecycle.viewmodel.compose)

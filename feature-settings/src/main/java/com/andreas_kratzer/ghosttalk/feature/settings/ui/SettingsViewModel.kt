@@ -143,6 +143,15 @@ class SettingsViewModel @Inject constructor(
     val scanCycleLimit = settingsRepository.scanCycleLimitFlow
     val actionLogLimit = settingsRepository.actionLogLimitFlow
     val forceSoftKeyboard = settingsRepository.forceSoftKeyboardFlow
+    
+    private val _showActionHistoryDialog = MutableStateFlow(false)
+    val showActionHistoryDialog = _showActionHistoryDialog.asStateFlow()
+
+    private val _showUsageStatsDialog = MutableStateFlow(false)
+    val showUsageStatsDialog = _showUsageStatsDialog.asStateFlow()
+
+    private val _topButtonUsage = MutableStateFlow<List<com.andreas_kratzer.ghosttalk.core.model.ButtonUsageStat>>(emptyList())
+    val topButtonUsage = _topButtonUsage.asStateFlow()
 
     init {
         ttsDelegate.initialize(viewModelScope) { original, fallback ->
@@ -190,6 +199,7 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             genAiDelegate.performGeminiNanoIntegrityCheck()
         }
+        refreshTopButtonUsage()
     }
 
     fun setTtsLanguage(tag: String) = ttsDelegate.setTtsLanguage(tag)
@@ -307,7 +317,28 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun clearButtonUsageStats(bookId: String) {
-        viewModelScope.launch { buttonUsageRepository.clearStats(bookId) }
+        viewModelScope.launch { 
+            buttonUsageRepository.clearStats(bookId)
+            refreshTopButtonUsage()
+        }
+    }
+
+    fun setShowActionHistoryDialog(show: Boolean) {
+        _showActionHistoryDialog.value = show
+    }
+
+    fun setShowUsageStatsDialog(show: Boolean) {
+        _showUsageStatsDialog.value = show
+        if (show) {
+            refreshTopButtonUsage()
+        }
+    }
+
+    fun refreshTopButtonUsage() {
+        viewModelScope.launch {
+            val stats = buttonUsageRepository.getTopActions(activeBookId, 20) // Fetch top 20 as requested
+            _topButtonUsage.value = stats
+        }
     }
 
     fun setKeepScreenOnUserMode(e: Boolean) { settingsRepository.keepScreenOnUserMode = e }
@@ -406,12 +437,16 @@ class SettingsViewModel @Inject constructor(
 
     fun onEditButtonFromHistory(pageId: String, buttonId: String) {
         viewModelScope.launch {
+            _showActionHistoryDialog.value = false
+            _showUsageStatsDialog.value = false
             _navigationEvent.emit(SettingsNavigationEvent.EditButton(pageId, buttonId))
         }
     }
 
     fun onJumpToPageFromHistory(pageId: String) {
         viewModelScope.launch {
+            _showActionHistoryDialog.value = false
+            _showUsageStatsDialog.value = false
             _navigationEvent.emit(SettingsNavigationEvent.JumpToPage(pageId))
         }
     }

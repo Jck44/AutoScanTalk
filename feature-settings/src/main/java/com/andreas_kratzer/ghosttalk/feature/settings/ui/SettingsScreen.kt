@@ -61,6 +61,8 @@ import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.SecuritySettin
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.SmartHomeSettingsSection
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.TestSettingsSection
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.VoiceSettingsSection
+import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.ActionHistoryDialog
+import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.UsageStatisticsDialog
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
@@ -173,6 +175,23 @@ fun SettingsScreen(
                 onLocalImport = { localImportLauncher.launch("application/json") }
             )
         }
+    }
+
+    val showActionHistory by viewModel.showActionHistoryDialog.collectAsState()
+    val showUsageStats by viewModel.showUsageStatsDialog.collectAsState()
+
+    if (showActionHistory) {
+        ActionHistoryDialog(
+            viewModel = viewModel,
+            onDismiss = { viewModel.setShowActionHistoryDialog(false) }
+        )
+    }
+
+    if (showUsageStats) {
+        UsageStatisticsDialog(
+            viewModel = viewModel,
+            onDismiss = { viewModel.setShowUsageStatsDialog(false) }
+        )
     }
 }
 
