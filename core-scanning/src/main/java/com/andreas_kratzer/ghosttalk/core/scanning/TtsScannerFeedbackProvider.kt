@@ -3,6 +3,7 @@ package com.andreas_kratzer.ghosttalk.core.scanning
 import com.andreas_kratzer.ghosttalk.core.settings.ScanningSettings
 import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
 import kotlinx.coroutines.delay
+import kotlin.coroutines.resume
 import javax.inject.Inject
 
 class TtsScannerFeedbackProvider @Inject constructor(
@@ -26,7 +27,7 @@ class TtsScannerFeedbackProvider @Inject constructor(
                     isForCues = true,
                     onDone = {
                         if (continuation.isActive) {
-                            continuation.resume(Unit) {}
+                            continuation.resume(Unit)
                         }
                     }
                 )

@@ -101,6 +101,8 @@ class PageViewModelTest {
     private lateinit var resolveDynamicButtonsUseCase: ResolveDynamicButtonsUseCase
     private lateinit var updateSmartPredictionsUseCase: UpdateSmartPredictionsUseCase
     private lateinit var getPageUsagesUseCase: GetPageUsagesUseCase
+    private lateinit var updateMultipleButtonsUseCase: com.andreas_kratzer.ghosttalk.domain.pages.UpdateMultipleButtonsUseCase
+    private lateinit var identifyActivePageLinksUseCase: com.andreas_kratzer.ghosttalk.domain.pages.IdentifyActivePageLinksUseCase
 
     private lateinit var viewModel: PageViewModel
 
@@ -142,6 +144,8 @@ class PageViewModelTest {
         resolveDynamicButtonsUseCase = mockk<ResolveDynamicButtonsUseCase>(relaxed = true)
         updateSmartPredictionsUseCase = mockk<UpdateSmartPredictionsUseCase>(relaxed = true)
         getPageUsagesUseCase = mockk<GetPageUsagesUseCase>(relaxed = true)
+        updateMultipleButtonsUseCase = mockk<com.andreas_kratzer.ghosttalk.domain.pages.UpdateMultipleButtonsUseCase>(relaxed = true)
+        identifyActivePageLinksUseCase = mockk<com.andreas_kratzer.ghosttalk.domain.pages.IdentifyActivePageLinksUseCase>(relaxed = true)
 
         // Mock common flows with explicit types to avoid Nothing exceptions
         every { settingsRepository.activeBookIdFlow } returns MutableStateFlow<String>("b1")
@@ -198,6 +202,8 @@ class PageViewModelTest {
             exportPageUseCase = exportPageUseCase,
             getFilteredPagesUseCase = GetFilteredPagesUseCase(settingsRepository),
             getPageUsagesUseCase = getPageUsagesUseCase,
+            updateMultipleButtonsUseCase = updateMultipleButtonsUseCase,
+            identifyActivePageLinksUseCase = identifyActivePageLinksUseCase,
             appStateRepository = appStateRepository
         )
         val interactionDelegate = InteractionDelegate(

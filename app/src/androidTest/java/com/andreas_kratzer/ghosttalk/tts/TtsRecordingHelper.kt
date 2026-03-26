@@ -38,9 +38,10 @@ class TtsRecordingHelper @Inject constructor(
     TestRoutedAudioPlayer(context, TestAudioDeviceManager(context), settingsRepository as AudioSettings),
     voiceManager
 ) {
-    
     private val _spokenTexts = MutableStateFlow<List<String>>(emptyList())
     val spokenTexts: StateFlow<List<String>> = _spokenTexts.asStateFlow()
+
+    override val isReady: Boolean = true
 
     private val testScope = CoroutineScope(Dispatchers.Main)
 

@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import kotlinx.coroutines.flow.Flow
 
@@ -18,6 +19,9 @@ interface TemplateDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTemplate(template: PageTemplate)
+
+    @Update
+    suspend fun updateTemplate(template: PageTemplate)
 
     @Delete
     suspend fun deleteTemplate(template: PageTemplate)

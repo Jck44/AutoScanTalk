@@ -90,6 +90,9 @@ class TtsIntegrationTest {
         composeTestRule.onAllNodesWithTag("button_idle").onFirst().performClick()
 
         // 4. Verify TTS recording
+        composeTestRule.waitUntil(10000) {
+            recordingHelper.spokenTexts.value.isNotEmpty()
+        }
         val spoken = recordingHelper.spokenTexts.value
         assertEquals("Expected exactly one TTS announcement for a button click", 1, spoken.size)
     }

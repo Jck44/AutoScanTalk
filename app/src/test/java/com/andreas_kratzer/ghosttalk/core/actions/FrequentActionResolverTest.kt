@@ -46,8 +46,8 @@ class FrequentActionResolverTest {
         )
 
         val stats = listOf(
-            ButtonUsageStat("b1", "orig1", "Yes", """{"type":"SpeakTextButtonAction","data":{"textToSpeech":"Yes"}}""", 10),
-            ButtonUsageStat("b1", "orig2", "No", """{"type":"SpeakTextButtonAction","data":{"textToSpeech":"No"}}""", 5)
+            ButtonUsageStat("b1", "orig1", "p1", "Yes", """{"type":"SpeakTextButtonAction","data":{"textToSpeech":"Yes"}}""", 10L),
+            ButtonUsageStat("b1", "orig2", "p1", "No", """{"type":"SpeakTextButtonAction","data":{"textToSpeech":"No"}}""", 5L)
         )
         coEvery { buttonUsageRepository.getTopActions("b1", 2) } returns stats
 
@@ -74,7 +74,7 @@ class FrequentActionResolverTest {
         )
 
         val stats = listOf(
-            ButtonUsageStat("b1", "orig1", "Yes", """{"type":"SpeakTextButtonAction","data":{"textToSpeech":"Yes"}}""", 10)
+            ButtonUsageStat("b1", "orig1", "p1", "Yes", """{"type":"SpeakTextButtonAction","data":{"textToSpeech":"Yes"}}""", 10L)
         )
         // Only 1 stat available
         coEvery { buttonUsageRepository.getTopActions("b1", 2) } returns stats

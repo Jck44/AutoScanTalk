@@ -38,7 +38,8 @@ class GetPageUsagesUseCaseTest {
         assertEquals(1, result.size)
         assertTrue(result[0] is UsageLocation.PageUsage)
         assertEquals("p1", result[0].id)
-        assertEquals("Nav", result[0].buttonLabel)
+        assertEquals("Nav", (result[0] as UsageLocation.PageUsage).buttonLabel)
+        assertEquals(0, (result[0] as UsageLocation.PageUsage).index)
     }
 
     @Test
@@ -57,7 +58,8 @@ class GetPageUsagesUseCaseTest {
         assertEquals(1, result.size)
         assertTrue(result[0] is UsageLocation.TemplateUsage)
         assertEquals("t1", result[0].id)
-        assertEquals("TNav", result[0].buttonLabel)
+        assertEquals("TNav", (result[0] as UsageLocation.TemplateUsage).buttonLabel)
+        assertEquals(0, (result[0] as UsageLocation.TemplateUsage).index)
     }
 
     private fun createPage(id: String, name: String, buttonConfigs: List<ButtonConfig?>) = Page(

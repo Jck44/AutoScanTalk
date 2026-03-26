@@ -13,10 +13,12 @@ import com.andreas_kratzer.ghosttalk.domain.pages.DeletePageUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.ExportPageUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.GetFilteredPagesUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.GetPageUsagesUseCase
+import com.andreas_kratzer.ghosttalk.domain.pages.IdentifyActivePageLinksUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.ImportPageUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.MoveRowUseCase
+import com.andreas_kratzer.ghosttalk.domain.pages.UpdateMultipleButtonsUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.UpdateButtonConfigUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.UpdatePageSettingsUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.UpdateRowNameUseCase
@@ -45,6 +47,8 @@ class PageManagementDelegate @Inject constructor(
     private val exportPageUseCase: ExportPageUseCase,
     private val getFilteredPagesUseCase: GetFilteredPagesUseCase,
     private val getPageUsagesUseCase: GetPageUsagesUseCase,
+    private val updateMultipleButtonsUseCase: UpdateMultipleButtonsUseCase,
+    private val identifyActivePageLinksUseCase: IdentifyActivePageLinksUseCase,
     private val appStateRepository: AppStateRepository
 ) {
     private lateinit var scope: CoroutineScope
@@ -73,6 +77,9 @@ class PageManagementDelegate @Inject constructor(
     private val _templates = MutableStateFlow<List<PageTemplate>>(emptyList())
     val templates: StateFlow<List<PageTemplate>> = _templates.asStateFlow()
 
+    private val _activeTargetPageIds = MutableStateFlow<Set<String>>(emptySet())
+    val activeTargetPageIds: StateFlow<Set<String>> = _activeTargetPageIds.asStateFlow()
+
     fun init(scope: CoroutineScope) {
         this.scope = scope
 
@@ -93,6 +100,14 @@ class PageManagementDelegate @Inject constructor(
         scope.launch {
             getPagesUseCase.execute(appStateRepository.activeBookId).collect { pages ->
                 _allPages.value = pages
+            }
+        }
+
+        scope.launch {
+            kotlinx.coroutines.flow.combine(_allPages, _templates) { pages, templates ->
+                identifyActivePageLinksUseCase.execute(pages, templates)
+            }.collect { ids ->
+                _activeTargetPageIds.value = ids
             }
         }
     }
@@ -219,6 +234,12 @@ class PageManagementDelegate @Inject constructor(
 
     suspend fun getPageUsages(pageId: String): List<UsageLocation> {
         return getPageUsagesUseCase.execute(pageId)
+    }
+
+    fun activateButtons(usages: List<UsageLocation>, isActive: Boolean) {
+        scope.launch {
+            updateMultipleButtonsUseCase.execute(usages, isActive)
+        }
     }
 
     suspend fun getPageById(id: String): Page? = pageRepository.getPageById(id)

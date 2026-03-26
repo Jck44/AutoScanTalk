@@ -52,6 +52,13 @@
     <string name="action_import_json_migration">Import JSON (GoTalkNow Migration)</string>
 
     <string name="action_more">More</string>
+    <string name="action_page_deactivate">Deactivate</string>
+    <string name="page_deactivate_dialog_title">Deactivate Navigations?</string>
+    <string name="page_deactivate_dialog_message">All buttons that navigate to this page will be deactivated (isActive = false). Do you want to continue?</string>
+    <string name="action_page_activate">Activate</string>
+    <string name="page_activate_dialog_title">Activate Navigations</string>
+    <string name="page_activate_select_all">Select All</string>
+    <string name="page_activate_deselect_all">Deselect All</string>
 
     <!-- Page Editor Screen -->
 

@@ -30,7 +30,7 @@ open class TextToSpeechHelper @Inject constructor(
 
     private var tts: TextToSpeech? = null
     private var initialized = false
-    val isReady: Boolean get() = initialized
+    open val isReady: Boolean get() = initialized
     private val handler = Handler(Looper.getMainLooper())
     private var pendingLanguageTag: String? = null
     private var pendingVoiceName: String? = null

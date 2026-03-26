@@ -146,7 +146,10 @@ class ScanningIntegrationTest {
             composeTestRule.onAllNodesWithTag("button_grid_scanning").fetchSemanticsNodes().isNotEmpty()
         }
         
-        // Check if a button is focused
+        // Check if a button is focused (with a small wait)
+        composeTestRule.waitUntil(10000) {
+            composeTestRule.onAllNodesWithTag("button_focused").fetchSemanticsNodes().isNotEmpty()
+        }
         composeTestRule.onNodeWithTag("button_focused").assertExists()
     }
 

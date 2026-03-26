@@ -20,6 +20,7 @@ import com.andreas_kratzer.ghosttalk.core.scanning.ScanCoordinator
 import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
 import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.andreas_kratzer.ghosttalk.domain.actions.ResolveDynamicButtonsUseCase
+import com.andreas_kratzer.ghosttalk.domain.pages.UsageLocation
 import com.andreas_kratzer.ghosttalk.feature.settings.domain.FeatureGuard
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.InteractionDelegate
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.PageManagementDelegate
@@ -72,6 +73,7 @@ class PageViewModel @Inject constructor(
     val unfilteredPages = pageManagementDelegate.unfilteredPages
     val currentPage = pageManagementDelegate.currentPage
     val templates = pageManagementDelegate.templates
+    val activeTargetPageIds = pageManagementDelegate.activeTargetPageIds
 
     val lastActions = interactionDelegate.lastActions
     val authRecoverIntent = interactionDelegate.authRecoverIntent
@@ -318,6 +320,9 @@ class PageViewModel @Inject constructor(
     suspend fun getPageUsages(pageId: String) = pageManagementDelegate.getPageUsages(pageId)
     fun importFromJson(jsonString: String, bookId: String, regenerateIds: Boolean? = true, onSuccess: () -> Unit, onError: (String) -> Unit) =
         pageManagementDelegate.importFromJson(jsonString, bookId, regenerateIds, restoreSyncSettings = true, onSuccess, onError)
+
+    fun activateButtons(usages: List<UsageLocation>, isActive: Boolean) =
+        pageManagementDelegate.activateButtons(usages, isActive)
 
     fun duplicatePage(pageId: String, suffix: String, onResult: (String?) -> Unit) {
         viewModelScope.launch {

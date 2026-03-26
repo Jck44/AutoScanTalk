@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.ui.draw.alpha
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
@@ -39,6 +40,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -80,6 +82,13 @@ fun PageListScreen(
     var showAddDialog by remember { mutableStateOf(false) }
     val pageToDelete = remember { mutableStateOf<Page?>(null) }
     val usagesToDelete = remember { mutableStateOf<List<UsageLocation>>(emptyList()) }
+    val activeTargetPageIds by pageViewModel.activeTargetPageIds.collectAsState()
+    
+    var pageToActivate by remember { mutableStateOf<Page?>(null) }
+    var activationUsages by remember { mutableStateOf<List<UsageLocation>>(emptyList()) }
+    
+    var pageToDeactivate by remember { mutableStateOf<Page?>(null) }
+    
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
     val dimensions = LocalDimensions.current
@@ -118,6 +127,159 @@ fun PageListScreen(
 
     BackHandler {
         onNavigateBack()
+    }
+
+    if (pageToActivate != null) {
+        ActivatePageDialog(
+            pageName = pageToActivate?.name ?: "",
+            usages = activationUsages,
+            onDismiss = {
+                pageToActivate = null
+                activationUsages = emptyList()
+            },
+            onConfirm = { selectedUsages ->
+                pageViewModel.activateButtons(selectedUsages, true)
+                pageToActivate = null
+                activationUsages = emptyList()
+            }
+        )
+    }
+
+    if (pageToDeactivate != null) {
+        AlertDialog(
+            onDismissRequest = { pageToDeactivate = null },
+            title = { Text(stringResource(R.string.page_deactivate_dialog_title)) },
+            text = { Text(stringResource(R.string.page_deactivate_dialog_message)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val page = pageToDeactivate ?: return@TextButton
+                        coroutineScope.launch {
+                            val usages = pageViewModel.getPageUsages(page.id)
+                            pageViewModel.activateButtons(usages, false)
+                            pageToDeactivate = null
+                        }
+                    }
+                ) {
+                    Text(stringResource(R.string.action_page_deactivate))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pageToDeactivate = null }) {
+                    Text(stringResource(CoreR.string.action_cancel))
+                }
+            }
+        )
+    }
+
+    if (showAddDialog) {
+        AddPageDialog(
+            templates = templates,
+            onDismiss = { showAddDialog = false },
+            onConfirm = { name, rows, cols, templateId ->
+                val targetBookId = activeBookId ?: "book-default"
+                pageViewModel.createNewPage(name, rows, cols, targetBookId, templateId) { newId ->
+                    showAddDialog = false
+                    onEditPage(newId)
+                }
+            }
+        )
+    }
+
+    val page = pageToDelete.value
+    if (page != null) {
+        val usages = usagesToDelete.value
+        AlertDialog(
+            onDismissRequest = { 
+                pageToDelete.value = null
+                usagesToDelete.value = emptyList()
+            },
+            title = { Text(if (usages.isEmpty()) stringResource(R.string.page_dialog_delete_title) else "Seite wird verwendet") },
+            text = { 
+                Column {
+                    if (usages.isEmpty()) {
+                        Text(stringResource(R.string.page_dialog_delete_confirm, page.name))
+                    } else {
+                        Text("Die Seite \"${page.name}\" wird an folgenden Stellen zur Navigation verwendet:")
+                        
+                        val scrollState = rememberScrollState()
+                        Box(
+                            modifier = Modifier
+                                .padding(vertical = 8.dp)
+                                .heightIn(max = 280.dp)
+                                .verticalScroll(scrollState)
+                        ) {
+                            Column {
+                                for (usage in usages) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        val typePrefix = if (usage is UsageLocation.PageUsage) "Seite" else "Vorlage"
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text("• $typePrefix: ${usage.name}", style = MaterialTheme.typography.bodyMedium)
+                                            if (usage.buttonLabel.isNotEmpty()) {
+                                                Text(
+                                                    text = "  Button: \"${usage.buttonLabel}\"",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+                                        }
+                                        IconButton(
+                                            onClick = {
+                                                pageToDelete.value = null
+                                                usagesToDelete.value = emptyList()
+                                                if (usage is UsageLocation.PageUsage) {
+                                                    onEditPage(usage.id)
+                                                } else {
+                                                    onEditTemplate(usage.id)
+                                                }
+                                            }
+                                        ) {
+                                            Icon(
+                                                imageVector = GhostTalkIcons.ArrowForward,
+                                                contentDescription = "Navigieren"
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        Text("Beim Löschen werden auch alle Buttons entfernt, die auf diese Seite verweisen.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        pageViewModel.deletePage(page, deleteUsages = usages.isNotEmpty())
+                        pageToDelete.value = null
+                        usagesToDelete.value = emptyList()
+                    },
+                    shape = MaterialTheme.shapes.medium,
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text(if (usages.isEmpty()) stringResource(CoreR.string.action_delete) else "Alles Löschen")
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = { 
+                        pageToDelete.value = null
+                        usagesToDelete.value = emptyList()
+                    },
+                    shape = MaterialTheme.shapes.medium,
+                    colors = ButtonDefaults.textButtonColors()
+                ) {
+                    Text(stringResource(CoreR.string.action_cancel))
+                }
+            }
+        )
     }
 
     Scaffold(
@@ -239,6 +401,7 @@ fun PageListScreen(
             ) {
                 items(allPages.size, key = { index -> allPages[index].id }) { index ->
                     val page = allPages[index]
+                    val isReferenced = activeTargetPageIds.contains(page.id)
                     GhostTalkCard(
                         title = page.name,
                         subtitle = stringResource(R.string.page_grid_info, page.rows, page.columns),
@@ -246,7 +409,9 @@ fun PageListScreen(
                         onClick = { onEditPage(page.id) },
                         height = dynamicCardHeight,
                         testTag = "page_card_${page.id}",
-                        modifier = Modifier,
+                        modifier = Modifier.then(
+                            if (!isReferenced) Modifier.alpha(0.6f) else Modifier
+                        ),
                         trailingAction = {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 var showMenu by remember { mutableStateOf(false) }
@@ -276,6 +441,30 @@ fun PageListScreen(
                                         },
                                         leadingIcon = {
                                             Icon(GhostTalkIcons.Copy, contentDescription = null)
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.action_page_deactivate)) },
+                                        onClick = {
+                                            showMenu = false
+                                            pageToDeactivate = page
+                                        },
+                                        leadingIcon = {
+                                            Icon(Icons.Default.Clear, contentDescription = null)
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.action_page_activate)) },
+                                        onClick = {
+                                            showMenu = false
+                                            coroutineScope.launch {
+                                                val usages = pageViewModel.getPageUsages(page.id)
+                                                activationUsages = usages
+                                                pageToActivate = page
+                                            }
+                                        },
+                                        leadingIcon = {
+                                            Icon(Icons.Default.Check, contentDescription = null)
                                         }
                                     )
                                     DropdownMenuItem(
@@ -396,19 +585,5 @@ fun PageListScreen(
             }
         )
     }
-
-    if (showAddDialog) {
-        AddPageDialog(
-            templates = templates,
-            onDismiss = { showAddDialog = false },
-            onConfirm = { name, rows, cols, templateId ->
-                val targetBookId = activeBookId ?: "book-default"
-                pageViewModel.createNewPage(name, rows, cols, targetBookId, templateId) { newId ->
-                    showAddDialog = false
-                    onEditPage(newId)
-                }
-            }
-        )
-        }
     }
 }

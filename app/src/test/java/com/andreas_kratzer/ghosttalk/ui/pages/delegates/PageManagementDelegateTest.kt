@@ -1,5 +1,6 @@
 package com.andreas_kratzer.ghosttalk.ui.pages.delegates
 
+import com.andreas_kratzer.ghosttalk.core.data.AppStateRepository
 import com.andreas_kratzer.ghosttalk.core.data.BookRepository
 import com.andreas_kratzer.ghosttalk.core.data.GetPagesUseCase
 import com.andreas_kratzer.ghosttalk.core.data.PageRepository
@@ -12,13 +13,16 @@ import com.andreas_kratzer.ghosttalk.domain.pages.DeletePageUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.ExportPageUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.GetFilteredPagesUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.GetPageUsagesUseCase
+import com.andreas_kratzer.ghosttalk.domain.pages.IdentifyActivePageLinksUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.ImportPageUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.MoveRowUseCase
+import com.andreas_kratzer.ghosttalk.domain.pages.UpdateMultipleButtonsUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.UpdateButtonConfigUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.UpdatePageSettingsUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.UpdateRowNameUseCase
+import com.andreas_kratzer.ghosttalk.domain.pages.UsageLocation
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -56,8 +60,10 @@ class PageManagementDelegateTest {
     private lateinit var importPageUseCase: ImportPageUseCase
     private lateinit var exportPageUseCase: ExportPageUseCase
     private lateinit var getFilteredPagesUseCase: GetFilteredPagesUseCase
-    private lateinit var getPageUsagesUseCase: GetPageUsagesUseCase
-    private lateinit var appStateRepository: com.andreas_kratzer.ghosttalk.core.data.AppStateRepository
+    private val getPageUsagesUseCase: GetPageUsagesUseCase = mockk(relaxed = true)
+    private val updateMultipleButtonsUseCase: UpdateMultipleButtonsUseCase = mockk(relaxed = true)
+    private val identifyActivePageLinksUseCase: IdentifyActivePageLinksUseCase = mockk(relaxed = true)
+    private val appStateRepository: AppStateRepository = mockk(relaxed = true)
 
     private lateinit var delegate: PageManagementDelegate
 
@@ -80,9 +86,7 @@ class PageManagementDelegateTest {
         moveButtonToPageUseCase = mockk(relaxed = true)
         importPageUseCase = mockk(relaxed = true)
         exportPageUseCase = mockk(relaxed = true)
-        getPageUsagesUseCase = mockk(relaxed = true)
         getFilteredPagesUseCase = GetFilteredPagesUseCase(settingsRepository)
-        appStateRepository = mockk(relaxed = true)
 
         every { settingsRepository.pageSortOrderFlow } returns MutableStateFlow(SortOrder.A_Z.name)
         every { getPagesUseCase.execute(any()) } returns MutableStateFlow(emptyList())
@@ -105,6 +109,8 @@ class PageManagementDelegateTest {
             exportPageUseCase,
             getFilteredPagesUseCase,
             getPageUsagesUseCase,
+            updateMultipleButtonsUseCase,
+            identifyActivePageLinksUseCase,
             appStateRepository
         )
     }

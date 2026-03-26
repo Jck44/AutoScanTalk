@@ -29,6 +29,10 @@ class TemplateRepositoryImpl @Inject constructor(
         templateDao.insertTemplate(template)
     }
 
+    override suspend fun update(template: PageTemplate) {
+        templateDao.updateTemplate(template)
+    }
+
     override suspend fun delete(template: PageTemplate) {
         if (template.isBuiltIn) return
         templateDao.deleteTemplate(template)
