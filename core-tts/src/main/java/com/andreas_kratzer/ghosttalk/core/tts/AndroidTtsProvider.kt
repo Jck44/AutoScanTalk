@@ -71,6 +71,7 @@ open class AndroidTtsProvider @Inject constructor(
                 override fun onStart(utteranceId: String?) {}
 
                 override fun onDone(utteranceId: String?) {
+                    if (utteranceId == null) return
                     val request = playRequests.remove(utteranceId)
                     if (request != null) {
                         handler.postDelayed({
@@ -96,6 +97,7 @@ open class AndroidTtsProvider @Inject constructor(
 
                 @Deprecated("Deprecated in Java")
                 override fun onError(utteranceId: String?) {
+                    if (utteranceId == null) return
                     val request = playRequests.remove(utteranceId)
                     request?.file?.delete()
                     request?.onDoneCallback?.let { handler.post { it() } }

@@ -92,6 +92,11 @@
     <string name="settings_cloud_signed_in_as">Angemeldet als %s</string>
     <string name="settings_cloud_last_sync">Letzter Sync: %s</string>
     <string name="settings_elevenlabs_api_key">ElevenLabs API-Schlüssel</string>
+    <string name="settings_elevenlabs_api_key_description">Der API-Schlüssel wird benötigt, um die Stimmen von ElevenLabs zu nutzen.</string>
+    <string name="settings_elevenlabs_test_button">Verbindung testen</string>
+    <string name="settings_elevenlabs_test_success">Verbindung erfolgreich! Eine Testansage wurde gesendet.</string>
+    <string name="settings_elevenlabs_test_failure">Verbindung fehlgeschlagen: %s</string>
+    <string name="settings_elevenlabs_test_sample_text">Dies ist eine Testansage von ElevenLabs.</string>
     <string name="book_import_cloud_success">Buch erfolgreich aus der Cloud geladen.</string>
     <string name="book_import_cloud_error">Fehler beim Laden aus der Cloud: %s</string>
     <string name="settings_cloud_logs_title">Cloud Sync Protokoll</string>
@@ -208,11 +213,6 @@
     <string name="settings_hue_status_connected">Verbunden</string>
     <string name="settings_hue_status_disconnected">Nicht verbunden</string>
 
-    <string name="settings_elevenlabs_api_key_description">Der API-Schlüssel wird benötigt, um die Stimmen von ElevenLabs zu nutzen.</string>
-    <string name="settings_elevenlabs_test_button">Verbindung testen</string>
-    <string name="settings_elevenlabs_test_success">Verbindung erfolgreich! Eine Testansage wurde gesendet.</string>
-    <string name="settings_elevenlabs_test_failure">Verbindung fehlgeschlagen: %s</string>
-    <string name="settings_elevenlabs_test_sample_text">Dies ist eine Testansage von ElevenLabs.</string>
     <string name="settings_elevenlabs_model">Modell</string>
     <string name="settings_elevenlabs_model_multilingual">Multilingual v2 (Beste Qualität)</string>
     <string name="settings_elevenlabs_model_turbo">Turbo v2.5 (Schnell, ~200ms)</string>

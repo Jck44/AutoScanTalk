@@ -89,7 +89,6 @@ fun GridEditorContent(
         val configuration = LocalConfiguration.current
         val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
         val density = LocalDensity.current.density
-        val isExecuting by actions.isExecuting.collectAsStateWithLifecycle()
 
         var selectedButtonIndex by remember { mutableStateOf<Int?>(null) }
         var showDialog by remember { mutableStateOf(false) }
@@ -214,7 +213,6 @@ fun GridEditorContent(
             availablePages = availablePages,
             templates = templates,
             featureGuard = featureGuard,
-            isExecuting = isExecuting,
             editingRowIndex = editingRowIndex,
             showRowEditDialog = showRowEditDialog,
             selectedButtonIndex = selectedButtonIndex,

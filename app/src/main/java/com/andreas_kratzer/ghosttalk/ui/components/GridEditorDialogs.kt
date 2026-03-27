@@ -24,7 +24,6 @@ fun EditorDialogs(
     availablePages: List<Page>,
     templates: List<PageTemplate>,
     featureGuard: com.andreas_kratzer.ghosttalk.feature.settings.domain.FeatureGuard,
-    isExecuting: Boolean,
     editingRowIndex: Int?,
     showRowEditDialog: Boolean,
     selectedButtonIndex: Int?,
@@ -45,6 +44,9 @@ fun EditorDialogs(
     googleHomeProjectId: String = ""
 ) {
     val context = LocalContext.current
+    val moveSuccessText = stringResource(R.string.button_move_success)
+    val duplicateSuccessText = stringResource(R.string.button_duplicate_success)
+    
     if (showRowEditDialog && editingRowIndex != null) {
         RowEditDialog(
             initialName = item.rowNames.getOrNull(editingRowIndex) ?: stringResource(R.string.page_row_label).format(editingRowIndex + 1),
@@ -185,7 +187,7 @@ fun EditorDialogs(
                         onDismissButtonDialog()
                         if (result is com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.Success) {
                             scope.launch {
-                                snackbarHostState.showSnackbar(context.getString(R.string.button_duplicate_success))
+                                snackbarHostState.showSnackbar(duplicateSuccessText)
                             }
                         }
                     }
@@ -194,7 +196,7 @@ fun EditorDialogs(
                         onDismissButtonDialog()
                         if (result is com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.Success) {
                             scope.launch {
-                                snackbarHostState.showSnackbar(context.getString(R.string.button_move_success))
+                                snackbarHostState.showSnackbar(moveSuccessText)
                             }
                         }
                     }
