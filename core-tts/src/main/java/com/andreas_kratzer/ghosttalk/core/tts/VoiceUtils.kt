@@ -1,7 +1,6 @@
 package com.andreas_kratzer.ghosttalk.core.tts
 
 import android.content.Context
-import com.andreas_kratzer.ghosttalk.core.tts.R
 
 object VoiceUtils {
     /**

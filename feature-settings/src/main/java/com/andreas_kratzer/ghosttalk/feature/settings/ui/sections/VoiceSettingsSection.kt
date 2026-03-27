@@ -13,12 +13,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import com.andreas_kratzer.ghosttalk.feature.settings.R
-import com.andreas_kratzer.ghosttalk.core.ui.components.PreferenceCategory
-import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
-import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
-import com.andreas_kratzer.ghosttalk.core.tts.TtsVoice
 import com.andreas_kratzer.ghosttalk.core.tts.VoiceUtils
+import com.andreas_kratzer.ghosttalk.core.ui.components.PreferenceCategory
+import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
+import com.andreas_kratzer.ghosttalk.feature.settings.R
+import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
 import java.util.Locale
 
 @OptIn(ExperimentalLayoutApi::class)

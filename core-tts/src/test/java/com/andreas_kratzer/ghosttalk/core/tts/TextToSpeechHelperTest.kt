@@ -1,9 +1,6 @@
 package com.andreas_kratzer.ghosttalk.core.tts
 
 import android.content.Context
-import android.os.Bundle
-import android.speech.tts.TextToSpeech
-import com.andreas_kratzer.ghosttalk.core.audio.RoutedAudioPlayer
 import com.andreas_kratzer.ghosttalk.core.settings.TtsSettings
 import io.mockk.every
 import io.mockk.mockk

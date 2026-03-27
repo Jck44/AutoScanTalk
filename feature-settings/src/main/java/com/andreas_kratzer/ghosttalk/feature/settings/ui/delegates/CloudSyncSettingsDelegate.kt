@@ -6,16 +6,17 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
 import android.widget.Toast
-import com.andreas_kratzer.ghosttalk.feature.settings.R
 import com.andreas_kratzer.ghosttalk.core.cloud.AuthManager
+import com.andreas_kratzer.ghosttalk.core.cloud.domain.CloudSyncUseCase
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.PerformManualSyncUseCase
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.RemoteBackupInfo
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.SetCloudSyncEnabledUseCase
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.SignInUseCase
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.SignOutUseCase
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.SyncMode
-import com.andreas_kratzer.ghosttalk.core.cloud.domain.CloudSyncUseCase
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.data.SyncLogProvider
+import com.andreas_kratzer.ghosttalk.feature.settings.R
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -24,7 +25,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import com.andreas_kratzer.ghosttalk.core.data.SyncLogProvider
 import javax.inject.Inject
 import javax.inject.Singleton
 

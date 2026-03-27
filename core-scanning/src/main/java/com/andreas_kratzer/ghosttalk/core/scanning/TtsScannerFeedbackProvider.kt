@@ -3,8 +3,8 @@ package com.andreas_kratzer.ghosttalk.core.scanning
 import com.andreas_kratzer.ghosttalk.core.settings.ScanningSettings
 import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
 import kotlinx.coroutines.delay
-import kotlin.coroutines.resume
 import javax.inject.Inject
+import kotlin.coroutines.resume
 
 class TtsScannerFeedbackProvider @Inject constructor(
     private val ttsHelper: TextToSpeechHelper,

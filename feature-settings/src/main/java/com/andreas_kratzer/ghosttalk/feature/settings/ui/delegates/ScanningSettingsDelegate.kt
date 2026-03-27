@@ -3,8 +3,8 @@ package com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.feature.settings.domain.UpdateBluetoothDelayUseCase
 import com.andreas_kratzer.ghosttalk.feature.settings.domain.UpdateHoldingTimeUseCase
-import com.andreas_kratzer.ghosttalk.feature.settings.domain.UpdateScanDelayUseCase
 import com.andreas_kratzer.ghosttalk.feature.settings.domain.UpdateScanCycleLimitUseCase
+import com.andreas_kratzer.ghosttalk.feature.settings.domain.UpdateScanDelayUseCase
 import javax.inject.Inject
 import javax.inject.Singleton
 

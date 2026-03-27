@@ -1,23 +1,19 @@
 package com.andreas_kratzer.ghosttalk.core.tts
 
-import com.andreas_kratzer.ghosttalk.core.tts.TtsVoice
-
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import android.speech.tts.TextToSpeech
 import android.speech.tts.Voice
 import android.util.Log
-import android.widget.Toast
 import com.andreas_kratzer.ghosttalk.core.audio.RoutedAudioPlayer
 import com.andreas_kratzer.ghosttalk.core.settings.TtsSettings
-import java.io.File
-import java.util.Locale
-import java.util.concurrent.ConcurrentHashMap
-import android.speech.tts.UtteranceProgressListener
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.io.File
+import java.util.Locale
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
 

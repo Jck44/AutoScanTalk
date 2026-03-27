@@ -19,8 +19,8 @@ import com.andreas_kratzer.ghosttalk.domain.pages.ImportPageUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.MoveRowUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.UpdateMultipleButtonsUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.UpdateButtonConfigUseCase
+import com.andreas_kratzer.ghosttalk.domain.pages.UpdateMultipleButtonsUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.UpdatePageSettingsUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.UpdateRowNameUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.UsageLocation

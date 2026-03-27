@@ -11,7 +11,14 @@ import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.core.model.SmartHomeProvider
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
-import com.andreas_kratzer.ghosttalk.ui.pages.actions.*
+import com.andreas_kratzer.ghosttalk.ui.pages.actions.ControlDeviceActionFields
+import com.andreas_kratzer.ghosttalk.ui.pages.actions.GeminiActionFields
+import com.andreas_kratzer.ghosttalk.ui.pages.actions.GeminiNanoActionFields
+import com.andreas_kratzer.ghosttalk.ui.pages.actions.GeminiVisionActionFields
+import com.andreas_kratzer.ghosttalk.ui.pages.actions.NavigationActionFields
+import com.andreas_kratzer.ghosttalk.ui.pages.actions.RankActionFields
+import com.andreas_kratzer.ghosttalk.ui.pages.actions.SmartHomeActionFields
+import com.andreas_kratzer.ghosttalk.ui.pages.actions.WeatherActionFields
 
 @Composable
 fun ActionConfigFields(

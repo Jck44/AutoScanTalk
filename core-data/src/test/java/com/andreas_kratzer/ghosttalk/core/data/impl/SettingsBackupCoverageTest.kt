@@ -2,8 +2,8 @@ package com.andreas_kratzer.ghosttalk.core.data.impl
 
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportExportData
-import org.junit.Test
 import org.junit.Assert.fail
+import org.junit.Test
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier
 

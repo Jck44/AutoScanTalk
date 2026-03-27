@@ -1,13 +1,12 @@
 package com.andreas_kratzer.ghosttalk.feature.settings.domain
 
+
 import com.andreas_kratzer.ghosttalk.core.ai.domain.CheckForPredictorUseCase
-import com.andreas_kratzer.ghosttalk.core.scanning.FeatureGuardProxy
-
-
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
+import com.andreas_kratzer.ghosttalk.core.scanning.FeatureGuardProxy
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.Assert.assertFalse

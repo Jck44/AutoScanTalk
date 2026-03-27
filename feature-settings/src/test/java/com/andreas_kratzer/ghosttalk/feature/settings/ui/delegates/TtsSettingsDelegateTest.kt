@@ -1,19 +1,18 @@
 package com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates
 
 import com.andreas_kratzer.ghosttalk.core.audio.AudioDeviceManager
-import com.andreas_kratzer.ghosttalk.core.model.AudioOutputDevice
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.model.AudioOutputDevice
 import com.andreas_kratzer.ghosttalk.core.tts.GetAudioDevicesUseCase
 import com.andreas_kratzer.ghosttalk.core.tts.SetTtsLanguageUseCase
 import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
-import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
-import io.mockk.every
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test

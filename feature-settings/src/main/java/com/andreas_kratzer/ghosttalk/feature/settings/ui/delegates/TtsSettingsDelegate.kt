@@ -1,14 +1,13 @@
 package com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates
 
 import android.content.Context
-import android.speech.tts.TextToSpeech
-import com.andreas_kratzer.ghosttalk.core.tts.TtsVoice
 import com.andreas_kratzer.ghosttalk.core.audio.AudioDeviceManager
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.model.AudioOutputDevice
 import com.andreas_kratzer.ghosttalk.core.tts.GetAudioDevicesUseCase
 import com.andreas_kratzer.ghosttalk.core.tts.SetTtsLanguageUseCase
 import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
+import com.andreas_kratzer.ghosttalk.core.tts.TtsVoice
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

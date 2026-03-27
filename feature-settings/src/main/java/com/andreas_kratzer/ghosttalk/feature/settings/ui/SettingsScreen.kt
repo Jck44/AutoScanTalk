@@ -41,14 +41,18 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.andreas_kratzer.ghosttalk.feature.settings.R 
+import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
+import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
+import com.andreas_kratzer.ghosttalk.feature.settings.R
+import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.ActionHistoryDialog
+import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.UsageStatisticsDialog
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.CloudSettingsSection
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.ExperimentalSettingsSection
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.GenAiSettingsSection
@@ -60,17 +64,12 @@ import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.SecuritySettin
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.SmartHomeSettingsSection
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.TestSettingsSection
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.VoiceSettingsSection
-import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.ActionHistoryDialog
-import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.UsageStatisticsDialog
-import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
-import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
-import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.BufferedReader
 import java.io.InputStreamReader
-import java.io.OutputStreamWriter
+import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 
 enum class SettingsSection(val titleRes: Int, val icon: ImageVector, val isGlobal: Boolean, val isScoped: Boolean) {
     GENERAL(R.string.settings_category_general, Icons.Default.Settings, isGlobal = true, isScoped = true),

@@ -1,7 +1,6 @@
 package com.andreas_kratzer.ghosttalk.core.data
 
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.core.model.ButtonUsageStat
 import com.andreas_kratzer.ghosttalk.core.model.GroupedButtonUsageStat
 import kotlinx.coroutines.flow.StateFlow
 
