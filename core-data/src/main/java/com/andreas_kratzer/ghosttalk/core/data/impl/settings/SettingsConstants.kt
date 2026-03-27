@@ -58,8 +58,12 @@ object SettingsConstants {
     const val KEY_HUE_USERNAME = "hue_username"
     const val KEY_HUE_ACCESS_TOKEN = "hue_access_token"
     const val KEY_HUE_REFRESH_TOKEN = "hue_refresh_token"
+    const val KEY_HUE_CLIENT_ID = "hue_client_id"
+    const val KEY_HUE_CLIENT_SECRET = "hue_client_secret"
     const val KEY_LOG_IGNORED_ACTIONS = "log_ignored_actions"
     const val KEY_LOG_STOP_ACTIONS = "log_stop_actions"
     const val KEY_FORCE_SOFT_KEYBOARD = "force_soft_keyboard"
     const val KEY_SYNC_LOGS_STORAGE = "sync_logs_storage"
+    const val KEY_TTS_ENGINE = "tts_engine"
+    const val KEY_ELEVENLABS_API_KEY = "elevenlabs_api_key"
 }

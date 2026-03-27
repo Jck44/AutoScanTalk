@@ -11,4 +11,7 @@ interface TtsSettings {
     
     var appLanguage: String?
     val appLanguageFlow: StateFlow<String?>
+
+    var ttsEngine: String?
+    val ttsEngineFlow: StateFlow<String?>
 }

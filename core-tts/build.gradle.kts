@@ -49,6 +49,7 @@ dependencies {
     ksp(libs.hilt.compiler)
     
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.okhttp)
 
     testImplementation(libs.junit)
     testImplementation(libs.mockk)

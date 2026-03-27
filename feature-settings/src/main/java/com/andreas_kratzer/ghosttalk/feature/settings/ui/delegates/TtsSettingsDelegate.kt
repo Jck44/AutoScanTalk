@@ -2,7 +2,7 @@ package com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates
 
 import android.content.Context
 import android.speech.tts.TextToSpeech
-import android.speech.tts.Voice
+import com.andreas_kratzer.ghosttalk.core.tts.TtsVoice
 import com.andreas_kratzer.ghosttalk.core.audio.AudioDeviceManager
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.model.AudioOutputDevice
@@ -30,8 +30,8 @@ class TtsSettingsDelegate @Inject constructor(
     private val _availableLanguages = MutableStateFlow<List<Locale>>(emptyList())
     val availableLanguages: StateFlow<List<Locale>> = _availableLanguages.asStateFlow()
 
-    private val _availableVoices = MutableStateFlow<List<Voice>>(emptyList())
-    val availableVoices: StateFlow<List<Voice>> = _availableVoices.asStateFlow()
+    private val _availableVoices = MutableStateFlow<List<TtsVoice>>(emptyList())
+    val availableVoices: StateFlow<List<TtsVoice>> = _availableVoices.asStateFlow()
 
     private val _availableAudioDevices = MutableStateFlow<List<AudioOutputDevice>>(emptyList())
     val availableAudioDevices: StateFlow<List<AudioOutputDevice>> = _availableAudioDevices.asStateFlow()
@@ -44,10 +44,16 @@ class TtsSettingsDelegate @Inject constructor(
     fun initialize(scope: CoroutineScope, onVoiceMissing: (String, String?) -> Unit) {
         this.scope = scope
         
+        // Reactively update available voices when the provider or its voices change
+        viewModelScopeLaunch {
+            ttsHelper.availableVoicesFlow.collect { voices ->
+                _availableVoices.value = voices
+            }
+        }
+        
         // Use the existing ttsHelper instead of creating a new TextToSpeech instance
         viewModelScopeLaunch {
             loadAvailableLanguages()
-            loadAvailableVoices()
         }
         loadAvailableAudioDevices()
         loadCachedAudioDevices()
@@ -63,10 +69,6 @@ class TtsSettingsDelegate @Inject constructor(
         _availableLanguages.value = ttsHelper.getAvailableLanguages()
             .distinctBy { it.language }
             .sortedBy { it.displayName }
-    }
-
-    fun loadAvailableVoices() {
-        _availableVoices.value = ttsHelper.getAvailableVoices(settingsRepository.ttsLanguage).toList()
     }
 
     fun loadAvailableAudioDevices() {
@@ -94,7 +96,6 @@ class TtsSettingsDelegate @Inject constructor(
         setTtsLanguageUseCase(tag)
         // Ensure voice is applied immediately before feedback to avoid race condition
         ttsHelper.setLanguageAndVoice(tag, settingsRepository.ttsVoiceName)
-        loadAvailableVoices()
         speakFeedback("Sprache ausgewählt")
     }
 

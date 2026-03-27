@@ -17,4 +17,10 @@ interface SmartHomeSettings {
 
     var hueRefreshToken: String
     val hueRefreshTokenFlow: StateFlow<String>
+
+    var hueClientId: String
+    val hueClientIdFlow: StateFlow<String>
+
+    var hueClientSecret: String
+    val hueClientSecretFlow: StateFlow<String>
 }

@@ -5,10 +5,10 @@
     <string name="settings_category_voice">Text-to-Speech</string>
     <string name="settings_category_scanning">Scannen &amp; Bedienung</string>
     <string name="settings_category_security">Sicherheit &amp; PIN</string>
-    <string name="settings_category_cloud">Google Drive Sync</string>
+    <string name="settings_category_cloud">Konten &amp; Import</string>
     <string name="settings_category_smart_home">Smart Home (Experimentell)</string>
     <string name="settings_category_gemini">Gemini KI-Assistent</string>
-    <string name="settings_category_notifications">Benachrichtigungen (Audio-Hinweis)</string>
+    <string name="settings_category_notifications">Berechtigungen</string>
     <string name="settings_category_advanced">Erweiterte Einstellungen</string>
 
     <!-- General Settings -->
@@ -17,8 +17,8 @@
     <string name="settings_scan_pattern">Standard Scan Muster</string>
     <string name="settings_pattern_linear">Button für Button</string>
     <string name="settings_pattern_row_by_row">Zeilenweise</string>
-    <string name="settings_app_language">App-Sprache (Menüs &amp; UI)</string>
-    <string name="settings_theme_mode">App-Design (Hell/Dunkel)</string>
+    <string name="settings_app_language">App Sprache</string>
+    <string name="settings_theme_mode">App Design</string>
     <string name="settings_theme_system">System-Standard</string>
     <string name="settings_theme_light">Hell</string>
     <string name="settings_theme_dark">Dunkel</string>
@@ -39,6 +39,9 @@
 
     <!-- TTS Settings -->
     <string name="settings_tts_language">TTS Sprache</string>
+    <string name="settings_tts_engine">Sprach-Engine</string>
+    <string name="settings_tts_engine_google">Google TTS (System)</string>
+    <string name="settings_tts_engine_elevenlabs">ElevenLabs TTS (Cloud)</string>
     <string name="settings_system_default">System-Standard</string>
     <string name="settings_select_voice">Stimme wählen</string>
     <string name="settings_voice_default">Standard</string>
@@ -88,6 +91,8 @@
     <string name="settings_cloud_backup_date_format">Sicherungsdatum: %1$s</string>
     <string name="settings_cloud_signed_in_as">Angemeldet als %s</string>
     <string name="settings_cloud_last_sync">Letzter Sync: %s</string>
+    <string name="settings_elevenlabs_api_key">ElevenLabs API-Schlüssel</string>
+    <string name="settings_elevenlabs_api_key_desc">Erforderlich für ElevenLabs TTS. Zu finden unter elevenlabs.io -> Profile -> API Keys.</string>
     <string name="book_import_cloud_success">Buch erfolgreich aus der Cloud geladen.</string>
     <string name="book_import_cloud_error">Fehler beim Laden aus der Cloud: %s</string>
     <string name="settings_cloud_logs_title">Cloud Sync Protokoll</string>
@@ -114,8 +119,15 @@
 
     <!-- Notification Settings -->
     <string name="settings_notifications_enable">Benachrichtigungen vorlesen</string>
-    <string name="settings_notifications_enable_desc">Ermöglicht das automatische Vorlesen von Benachrichtigungen ausgewählter Apps als Audio-Hinweis.</string>
-    <string name="settings_notifications_permission_button">Berechtigung erteilen</string>
+    <string name="settings_notifications_enable_desc">Erlaubt den Zugriff auf Benachrichtigungen, um diese vorzulesen (Audio-Hinweis).</string>
+    <string name="settings_notifications_permission_button">Berechtigung</string>
+    <string name="settings_permission_camera">Kamera</string>
+    <string name="settings_permission_camera_desc">Wird für Fotos zur Beschreibung der Umgebung über Gemini benötigt.</string>
+    <string name="settings_permission_location">Standort</string>
+    <string name="settings_permission_location_desc">Wird für Funktionen wie das Abrufen von Wetterinformationen benötigt.</string>
+    <string name="settings_permission_active">Erteilt</string>
+    <string name="settings_permission_inactive">Nicht erteilt</string>
+    <string name="settings_permission_request">Anfordern</string>
     
     <string name="settings_category_limits">Begrenzungen</string>
     <string name="settings_limit_scan_cycles">Anzahl von Scandurchläufen begrenzen</string>
@@ -169,6 +181,7 @@
     <string name="settings_google_account_sign_out">Abmelden</string>
     <string name="settings_category_ui">Benutzeroberfläche</string>
     <string name="settings_category_maintenance">Erweiterte Wartung</string>
+    <string name="settings_category_behavior">Verhalten</string>
     <string name="settings_gemini_nano_deactivated_title">Gemini Nano deaktiviert</string>
     <string name="settings_gemini_nano_deactivated_message">Das On-Device KI-Modell wurde auf diesem Gerät deaktiviert oder ist nicht verfügbar.</string>
     <string name="settings_category_gemini_nano">Gemini Nano (Lokale KI)</string>
@@ -176,11 +189,11 @@
     <string name="gemini_download_confirm">Herunterladen</string>
     <string name="gemini_download_background">Im Hintergrund fortsetzen</string>
     <string name="gemini_download_cancel">Abbrechen</string>
-    <string name="settings_category_cloud_account">Cloud-Konto</string>
+    <string name="settings_category_cloud_account">Google Konto</string>
     <string name="settings_cloud_sign_in">Anmelden</string>
     <string name="settings_cloud_sign_out">Abmelden</string>
-    <string name="settings_category_cloud_import">Cloud-Import</string>
-    <string name="settings_cloud_import_as_new">Buch aus Cloud importieren</string>
+    <string name="settings_category_cloud_import">Google Drive Import</string>
+    <string name="settings_cloud_import_as_new">Cloud-Import</string>
     <string name="settings_cloud_import_explanation">Importiere ein Buch aus deinem Google Drive als neues Buch. Ein Überschreiben lokaler Bücher mit der gleichen ID wird verhindert.</string>
     <string name="page_list_show">Seiten verwalten</string>
 
@@ -195,6 +208,13 @@
     <string name="settings_hue_discover_bridges">Nach Bridges suchen</string>
     <string name="settings_hue_status_connected">Verbunden</string>
     <string name="settings_hue_status_disconnected">Nicht verbunden</string>
+
+    <string name="settings_elevenlabs_api_key_description">Der API-Schlüssel wird benötigt, um die Stimmen von ElevenLabs zu nutzen.</string>
+    <string name="settings_elevenlabs_test_button">Verbindung testen</string>
+    <string name="settings_elevenlabs_test_success">Verbindung erfolgreich! Eine Testansage wurde gesendet.</string>
+    <string name="settings_elevenlabs_test_failure">Verbindung fehlgeschlagen: %s</string>
+    <string name="settings_elevenlabs_test_sample_text">Dies ist eine Testansage von ElevenLabs.</string>
+    <string name="settings_voice_engine">Sprach-Engine</string>
 
     <!-- Smart Home Providers -->
     <string name="smart_home_provider_google_home">Google Home</string>

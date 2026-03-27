@@ -5,6 +5,7 @@ import com.andreas_kratzer.ghosttalk.core.database.ButtonUsageDao
 import com.andreas_kratzer.ghosttalk.core.database.ButtonUsageHistoryEntity
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.ButtonUsageStat
+import com.andreas_kratzer.ghosttalk.core.model.GroupedButtonUsageStat
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
@@ -109,6 +110,23 @@ class ButtonUsageRepositoryImpl @Inject constructor(
      */
     override suspend fun getTopActions(bookId: String, limit: Int): List<ButtonUsageStat> {
         return dao.getTopButtons(bookId, limit)
+    }
+
+    override suspend fun getGroupedUsageStats(bookId: String): List<GroupedButtonUsageStat> {
+        val allStats = dao.getAllStatsForBook(bookId)
+        
+        return allStats
+            .groupBy { it.label.lowercase() to it.actionJson }
+            .map { (key, children) ->
+                GroupedButtonUsageStat(
+                    label = children.maxByOrNull { it.lastUsedAt }?.label ?: children.first().label,
+                    actionJson = key.second,
+                    totalCount = children.sumOf { it.usageCount },
+                    lastUsedAt = children.maxOf { it.lastUsedAt },
+                    children = children.sortedByDescending { it.usageCount }
+                )
+            }
+            .sortedByDescending { it.totalCount }
     }
 
     /**

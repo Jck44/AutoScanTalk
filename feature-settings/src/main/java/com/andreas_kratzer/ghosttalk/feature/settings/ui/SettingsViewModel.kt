@@ -22,8 +22,12 @@ import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.ExperimentalS
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.GenAiSettingsDelegate
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.ScanningSettingsDelegate
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.TtsSettingsDelegate
+import com.andreas_kratzer.ghosttalk.feature.settings.R
+import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -57,7 +61,8 @@ class SettingsViewModel @Inject constructor(
     private val deleteBookUseCase: DeleteBookUseCase,
     private val updateActionLogLimitUseCase: UpdateActionLogLimitUseCase,
     private val importExportManager: PageImportExportProvider,
-    private val hueManager: PhilipsHueManager
+    private val hueManager: PhilipsHueManager,
+    private val ttsHelper: TextToSpeechHelper
 ) : AndroidViewModel(application) {
 
     private val _activeBookId = settingsRepository.activeBookIdFlow
@@ -104,6 +109,8 @@ class SettingsViewModel @Inject constructor(
     val hueBridgeIp = settingsRepository.hueBridgeIpFlow
     val hueUsername = settingsRepository.hueUsernameFlow
     val hueAccessToken = settingsRepository.hueAccessTokenFlow
+    val hueClientId = settingsRepository.hueClientIdFlow
+    val hueClientSecret = settingsRepository.hueClientSecretFlow
     val isSyncing = cloudSyncDelegate.isSyncing
     val userEmail = cloudSyncDelegate.userEmail
     
@@ -143,6 +150,8 @@ class SettingsViewModel @Inject constructor(
     val scanCycleLimit = settingsRepository.scanCycleLimitFlow
     val actionLogLimit = settingsRepository.actionLogLimitFlow
     val forceSoftKeyboard = settingsRepository.forceSoftKeyboardFlow
+    val ttsEngine = settingsRepository.ttsEngineFlow
+    val elevenLabsApiKey = settingsRepository.elevenLabsApiKeyFlow
     
     private val _showActionHistoryDialog = MutableStateFlow(false)
     val showActionHistoryDialog = _showActionHistoryDialog.asStateFlow()
@@ -150,7 +159,7 @@ class SettingsViewModel @Inject constructor(
     private val _showUsageStatsDialog = MutableStateFlow(false)
     val showUsageStatsDialog = _showUsageStatsDialog.asStateFlow()
 
-    private val _topButtonUsage = MutableStateFlow<List<com.andreas_kratzer.ghosttalk.core.model.ButtonUsageStat>>(emptyList())
+    private val _topButtonUsage = MutableStateFlow<List<com.andreas_kratzer.ghosttalk.core.model.GroupedButtonUsageStat>>(emptyList())
     val topButtonUsage = _topButtonUsage.asStateFlow()
 
     init {
@@ -193,7 +202,6 @@ class SettingsViewModel @Inject constructor(
     // --- Delegation Methods (UI Actions) ---
     fun refresh() {
         ttsDelegate.loadAvailableLanguages()
-        ttsDelegate.loadAvailableVoices()
         ttsDelegate.loadAvailableAudioDevices()
         genAiDelegate.updateGeminiToolStatus()
         viewModelScope.launch {
@@ -242,6 +250,49 @@ class SettingsViewModel @Inject constructor(
     fun setHueBridgeIp(ip: String) { settingsRepository.hueBridgeIp = ip }
     fun setHueUsername(username: String) { settingsRepository.hueUsername = username }
     fun setHueAccessToken(token: String) { settingsRepository.hueAccessToken = token }
+    fun setHueClientId(id: String) { settingsRepository.hueClientId = id }
+    fun setHueClientSecret(secret: String) { settingsRepository.hueClientSecret = secret }
+
+    fun setTtsEngine(engine: String?) { 
+        settingsRepository.ttsEngine = engine
+    }
+    fun setElevenLabsApiKey(key: String) { settingsRepository.elevenLabsApiKey = key }
+
+    fun testElevenLabsConnection() {
+        viewModelScope.launch {
+            val currentEngine = settingsRepository.ttsEngine
+            // Temporary switch engine to elevenlabs for the test
+            settingsRepository.ttsEngine = "elevenlabs"
+            
+            withContext(Dispatchers.Main) {
+                Toast.makeText(application, "ElevenLabs Verbindung wird getestet...", Toast.LENGTH_SHORT).show()
+            }
+            
+            // Give the helper time to switch the provider
+            // The engine flow collection happens in TextToSpeechHelper's scope
+            delay(800)
+            
+            val sampleText = application.getString(R.string.settings_elevenlabs_test_sample_text)
+            ttsHelper.speak(sampleText, onDone = {
+                // Restore engine
+                settingsRepository.ttsEngine = currentEngine
+                viewModelScope.launch {
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(application, application.getString(R.string.settings_elevenlabs_test_success), Toast.LENGTH_LONG).show()
+                    }
+                }
+            }, onError = { error ->
+                // Restore engine
+                settingsRepository.ttsEngine = currentEngine
+                viewModelScope.launch {
+                    withContext(Dispatchers.Main) {
+                        val message = application.getString(R.string.settings_elevenlabs_test_failure, error)
+                        Toast.makeText(application, message, Toast.LENGTH_LONG).show()
+                    }
+                }
+            })
+        }
+    }
 
 
     fun discoverHueBridges() {
@@ -258,8 +309,20 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun startHueOAuth() {
-        // This is a placeholder for now as it requires a redirect activity
-        Toast.makeText(application, "Philips Hue OAuth wird in Kürze implementiert.", Toast.LENGTH_LONG).show()
+        if (hueClientId.value.isBlank()) {
+            Toast.makeText(application, "Bitte zuerst die Client ID eintragen.", Toast.LENGTH_LONG).show()
+            return
+        }
+
+        val authUrl = "https://api.meethue.com/v2/oauth2/authorize" +
+                "?client_id=${hueClientId}" +
+                "&response_type=code" +
+                "&state=hue_auth_state" // In a real app, use a random state
+
+        val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(authUrl)).apply {
+            addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        application.startActivity(intent)
     }
 
     fun setGeminiEnabled(ctx: Context, e: Boolean) {
@@ -336,8 +399,8 @@ class SettingsViewModel @Inject constructor(
 
     fun refreshTopButtonUsage() {
         viewModelScope.launch {
-            val stats = buttonUsageRepository.getTopActions(activeBookId, 20) // Fetch top 20 as requested
-            _topButtonUsage.value = stats
+            val stats = buttonUsageRepository.getGroupedUsageStats(activeBookId)
+            _topButtonUsage.value = stats.take(50) // Show top 50 groups
         }
     }
 

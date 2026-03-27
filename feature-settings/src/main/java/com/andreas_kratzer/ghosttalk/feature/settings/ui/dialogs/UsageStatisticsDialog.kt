@@ -1,5 +1,6 @@
 package com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.core.model.ButtonUsageStat
+import com.andreas_kratzer.ghosttalk.core.model.GroupedButtonUsageStat
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.feature.settings.R
@@ -131,18 +133,95 @@ fun UsageStatisticsDialog(
 
 @Composable
 private fun UsageStatItem(
+    stat: GroupedButtonUsageStat,
+    onEditButton: (String, String) -> Unit,
+    onJumpToPage: (String) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val dimensions = LocalDimensions.current
+
+    Column(modifier = Modifier.animateContentSize()) {
+        ListItem(
+            modifier = Modifier.clickable { expanded = !expanded },
+            headlineContent = { Text(stat.label, style = MaterialTheme.typography.bodyLarge) },
+            supportingContent = {
+                Text(
+                    text = stringResource(R.string.settings_usage_stats_label, stat.totalCount),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            },
+            leadingContent = {
+                Icon(
+                    imageVector = if (expanded) GhostTalkIcons.KeyboardArrowUp else GhostTalkIcons.KeyboardArrowDown,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier.size(24.dp)
+                )
+            },
+            trailingContent = {
+                UsageStatMoreMenu(
+                    stat = stat.children.first(), // Default to first child for group menu
+                    onEditButton = onEditButton,
+                    onJumpToPage = onJumpToPage
+                )
+            },
+            colors = ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent)
+        )
+
+        if (expanded) {
+            stat.children.forEach { child ->
+                ChildUsageStatItem(
+                    stat = child,
+                    onEditButton = onEditButton,
+                    onJumpToPage = onJumpToPage,
+                    modifier = Modifier.padding(start = dimensions.paddingExtraLarge)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ChildUsageStatItem(
+    stat: ButtonUsageStat,
+    onEditButton: (String, String) -> Unit,
+    onJumpToPage: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    ListItem(
+        modifier = modifier,
+        headlineContent = { 
+            Text(
+                text = "ID: ${stat.buttonConfigId.take(8)}...", 
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            ) 
+        },
+        supportingContent = {
+            Text(
+                text = "${stat.usageCount} Klicks • Seite: ${stat.pageId.take(12)}...",
+                style = MaterialTheme.typography.labelSmall
+            )
+        },
+        trailingContent = {
+            UsageStatMoreMenu(
+                stat = stat,
+                onEditButton = onEditButton,
+                onJumpToPage = onJumpToPage
+            )
+        },
+        colors = ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent)
+    )
+}
+
+@Composable
+private fun UsageStatMoreMenu(
     stat: ButtonUsageStat,
     onEditButton: (String, String) -> Unit,
     onJumpToPage: (String) -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
-    
-    // Extract pageId from actionJson if possible
-    // Note: This assumes the action JSON contains the targetPageId for navigation actions.
-    // For general buttons, we might not have a pageId context in the stat itself unless we store it.
-    // However, ButtonUsageHistoryEntity has it. ButtonUsageStat doesn't seem to have pageId.
-    // Wait, let me check ButtonUsageStat.kt again.
-    
     val targetPageId = remember(stat.actionJson) {
         try {
             val jsonElement = Json.parseToJsonElement(stat.actionJson).jsonObject
@@ -152,63 +231,42 @@ private fun UsageStatItem(
         }
     }
 
-    ListItem(
-        headlineContent = { Text(stat.label, style = MaterialTheme.typography.bodyLarge) },
-        supportingContent = { 
-            Text(
-                text = stringResource(R.string.settings_usage_stats_label, stat.usageCount),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.primary
-            )
-        },
-        leadingContent = {
+    Box {
+        IconButton(onClick = { showMenu = true }) {
             Icon(
-                imageVector = GhostTalkIcons.Description, // Placeholder
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.secondary,
-                modifier = Modifier.size(24.dp)
+                imageVector = GhostTalkIcons.MoreVert,
+                contentDescription = "Actions",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
-        },
-        trailingContent = {
-            Box {
-                IconButton(onClick = { showMenu = true }) {
-                    Icon(
-                        imageVector = GhostTalkIcons.MoreVert,
-                        contentDescription = "Actions",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+        }
+        DropdownMenu(
+            expanded = showMenu,
+            onDismissRequest = { showMenu = false }
+        ) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.history_edit_button)) },
+                onClick = {
+                    showMenu = false
+                    onEditButton(stat.pageId, stat.buttonConfigId)
+                },
+                leadingIcon = {
+                    Icon(GhostTalkIcons.Edit, contentDescription = null)
                 }
-                DropdownMenu(
-                    expanded = showMenu,
-                    onDismissRequest = { showMenu = false }
-                ) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.history_edit_button)) },
-                        onClick = {
-                            showMenu = false
-                            onEditButton(stat.pageId, stat.buttonConfigId)
-                        },
-                        leadingIcon = {
-                            Icon(GhostTalkIcons.Edit, contentDescription = null)
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.history_jump_to_page)) },
-                        onClick = {
-                            showMenu = false
-                            if (targetPageId != null) {
-                                onJumpToPage(targetPageId)
-                            } else {
-                                onJumpToPage(stat.pageId)
-                            }
-                        },
-                        leadingIcon = {
-                            Icon(GhostTalkIcons.ArrowForward, contentDescription = null)
-                        }
-                    )
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.history_jump_to_page)) },
+                onClick = {
+                    showMenu = false
+                    if (targetPageId != null) {
+                        onJumpToPage(targetPageId)
+                    } else {
+                        onJumpToPage(stat.pageId)
+                    }
+                },
+                leadingIcon = {
+                    Icon(GhostTalkIcons.ArrowForward, contentDescription = null)
                 }
-            }
-        },
-        colors = ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent)
-    )
+            )
+        }
+    }
 }

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -18,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -32,7 +34,6 @@ import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsToggleItem
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.BackupSelectionDialog
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.SyncLogDialog
-import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -41,7 +42,9 @@ import java.util.Locale
 @Composable
 fun CloudSettingsSection(
     viewModel: SettingsViewModel,
-    isGlobal: Boolean
+    isGlobal: Boolean,
+    onLocalExport: () -> Unit,
+    onLocalImport: () -> Unit
 ) {
     val context = LocalContext.current
     val userEmail by viewModel.userEmail.collectAsState()
@@ -70,6 +73,8 @@ fun CloudSettingsSection(
             Spacer(modifier = Modifier.height(8.dp))
         }
 
+        val elevenLabsApiKey by viewModel.elevenLabsApiKey.collectAsState("")
+
         PreferenceCategory(stringResource(R.string.settings_category_cloud_account)) {
             if (userEmail != null) {
                 Text(
@@ -90,6 +95,35 @@ fun CloudSettingsSection(
                 ) {
                     Text(stringResource(R.string.settings_cloud_sign_in))
                 }
+            }
+
+            Spacer(modifier = Modifier.height(dimensions.paddingMedium))
+
+            com.andreas_kratzer.ghosttalk.core.ui.components.SettingsEditTextItem(
+                label = stringResource(R.string.settings_elevenlabs_api_key),
+                value = elevenLabsApiKey ?: "",
+                onValueChange = { viewModel.setElevenLabsApiKey(it) }
+            )
+            Text(
+                text = stringResource(R.string.settings_elevenlabs_api_key_description),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            Button(
+                onClick = { viewModel.testElevenLabsConnection() },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+            ) {
+                Icon(GhostTalkIcons.RecordVoiceOver, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(stringResource(R.string.settings_elevenlabs_test_button))
             }
         }
 
@@ -208,6 +242,40 @@ fun CloudSettingsSection(
             }
         }
 
+        Spacer(modifier = Modifier.height(dimensions.paddingLarge))
+
+        PreferenceCategory(stringResource(R.string.settings_category_local_backup)) {
+            if (!isGlobal) {
+                Text(
+                    text = stringResource(R.string.settings_local_backup_describe_create),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(dimensions.paddingSmall))
+                Button(
+                    onClick = onLocalExport,
+                    shape = MaterialTheme.shapes.medium,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(stringResource(R.string.settings_local_backup_create))
+                }
+                Spacer(modifier = Modifier.height(dimensions.paddingLarge))
+            }
+
+            Text(
+                text = stringResource(if (isGlobal) R.string.settings_local_backup_describe_global_import else R.string.settings_local_backup_describe_restore),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(dimensions.paddingSmall))
+            OutlinedButton(
+                onClick = onLocalImport,
+                shape = MaterialTheme.shapes.medium,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(if (isGlobal) R.string.settings_local_backup_import else R.string.settings_local_backup_restore))
+            }
+        }
     }
 
     if (showSyncLogDialog) {

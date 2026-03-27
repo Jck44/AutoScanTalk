@@ -55,6 +55,7 @@ class ButtonUsageRepositoryTest {
         val existing = ButtonUsageStat(
             bookId = "book1",
             buttonConfigId = "btn-1",
+            pageId = "page1",
             label = "Ja",
             actionJson = "{}",
             usageCount = 5,
@@ -75,6 +76,7 @@ class ButtonUsageRepositoryTest {
         val existing = ButtonUsageStat(
             bookId = "book1",
             buttonConfigId = "btn-1",
+            pageId = "page1",
             label = "Old Label",
             actionJson = "{}",
             usageCount = 3,
@@ -93,8 +95,8 @@ class ButtonUsageRepositoryTest {
     @Test
     fun `getTopActions delegates to dao`() = runTest {
         val stats = listOf(
-            ButtonUsageStat("book1", "btn-1", "Ja", "{}", 10),
-            ButtonUsageStat("book1", "btn-2", "Nein", "{}", 5)
+            ButtonUsageStat("book1", "btn-1", "page1", "Ja", "{}", 10),
+            ButtonUsageStat("book1", "btn-2", "page1", "Nein", "{}", 5)
         )
         coEvery { mockButtonUsageDao.getTopButtons("book1", 5) } returns stats
 

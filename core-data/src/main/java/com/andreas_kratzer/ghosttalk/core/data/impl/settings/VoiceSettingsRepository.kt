@@ -16,11 +16,13 @@ class VoiceSettingsRepository(
     private val _ttsVoiceName = StringSetting(KEY_TTS_VOICE_NAME)
     private val _ttsAudioDeviceAddress = StringSetting(KEY_TTS_AUDIO_DEVICE, isScoped = true)
     private val _cuesAudioDeviceAddress = StringSetting(KEY_CUES_AUDIO_DEVICE, isScoped = true)
+    private val _ttsEngine = StringSetting(SettingsConstants.KEY_TTS_ENGINE)
 
     val ttsLanguageFlow = _ttsLanguage.flow
     val ttsVoiceNameFlow = _ttsVoiceName.flow
     val ttsAudioDeviceAddressFlow = _ttsAudioDeviceAddress.flow
     val cuesAudioDeviceAddressFlow = _cuesAudioDeviceAddress.flow
+    val ttsEngineFlow = _ttsEngine.flow
 
     var ttsLanguage: String?
         get() = _ttsLanguage.value
@@ -38,10 +40,15 @@ class VoiceSettingsRepository(
         get() = _cuesAudioDeviceAddress.value
         set(value) { _cuesAudioDeviceAddress.value = value }
 
+    var ttsEngine: String?
+        get() = _ttsEngine.value
+        set(value) { _ttsEngine.value = value }
+
     override fun refresh() {
         _ttsLanguage.refresh()
         _ttsVoiceName.refresh()
         _ttsAudioDeviceAddress.refresh()
         _cuesAudioDeviceAddress.refresh()
+        _ttsEngine.refresh()
     }
 }

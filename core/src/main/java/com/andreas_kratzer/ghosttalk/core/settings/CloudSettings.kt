@@ -11,4 +11,7 @@ interface CloudSettings {
     val lastSuccessfulSyncTimeFlow: kotlinx.coroutines.flow.StateFlow<Long>
     var activeBookId: String
     val activeBookIdFlow: kotlinx.coroutines.flow.StateFlow<String?>
+
+    var elevenLabsApiKey: String?
+    val elevenLabsApiKeyFlow: kotlinx.coroutines.flow.StateFlow<String?>
 }

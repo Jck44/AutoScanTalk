@@ -7,7 +7,6 @@ import com.andreas_kratzer.ghosttalk.core.audio.RoutedAudioPlayer
 import com.andreas_kratzer.ghosttalk.core.settings.TtsSettings
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.mockkConstructor
 import io.mockk.unmockkAll
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -20,6 +19,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import java.io.File
+import javax.inject.Provider
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class TextToSpeechHelperTest {
@@ -29,19 +29,21 @@ class TextToSpeechHelperTest {
 
     private val mockContext = mockk<Context>(relaxed = true)
     private val mockSettingsRepository = mockk<TtsSettings>(relaxed = true)
-    private val mockAudioPlayer = mockk<RoutedAudioPlayer>(relaxed = true)
-    private val mockVoiceManager = mockk<TtsVoiceManager>(relaxed = true)
+    private val mockAndroidProvider = mockk<AndroidTtsProvider>(relaxed = true)
+    private val mockElevenLabsProvider = mockk<ElevenLabsTtsProvider>(relaxed = true)
+    
+    private val androidProviderWrapper = Provider { mockAndroidProvider }
+    private val elevenLabsProviderWrapper = Provider { mockElevenLabsProvider }
 
     private lateinit var helper: TextToSpeechHelper
 
+    private val ttsEngineFlow = MutableStateFlow("google")
+
     @Before
     fun setup() {
-        mockkConstructor(TextToSpeech::class)
-        // Ensure any new TextToSpeech instance uses our mock behavior
-        every { anyConstructed<TextToSpeech>().setLanguage(any()) } returns TextToSpeech.LANG_AVAILABLE
-        
         every { mockSettingsRepository.ttsLanguageFlow } returns MutableStateFlow("de-DE")
         every { mockSettingsRepository.ttsVoiceNameFlow } returns MutableStateFlow("default")
+        every { mockSettingsRepository.ttsEngineFlow } returns ttsEngineFlow
         
         every { mockContext.cacheDir } returns File("/tmp")
 
@@ -49,8 +51,8 @@ class TextToSpeechHelperTest {
             mockContext,
             testScope,
             mockSettingsRepository,
-            mockAudioPlayer,
-            mockVoiceManager
+            androidProviderWrapper,
+            elevenLabsProviderWrapper
         )
     }
 
@@ -60,78 +62,52 @@ class TextToSpeechHelperTest {
     }
 
     @Test
-    fun `isReady is false initially`() {
-        assertFalse(helper.isReady)
-    }
-
-    @Test
-    fun `onInit success sets initialized to true`() {
-        helper.onInit(TextToSpeech.SUCCESS)
+    fun `isReady delegates to current provider`() {
+        every { mockAndroidProvider.isReady } returns true
         assertTrue(helper.isReady)
-    }
-
-    @Test
-    fun `onInit failure resets state`() {
-        helper.onInit(TextToSpeech.ERROR)
+        
+        every { mockAndroidProvider.isReady } returns false
         assertFalse(helper.isReady)
     }
 
     @Test
-    fun `speak invokes onDone immediately if not initialized`() {
-        val onDone = mockk<() -> Unit>(relaxed = true)
-        helper.speak("Hello", onDone = onDone)
-        verify { onDone.invoke() }
+    fun `speak delegates to current provider`() {
+        helper.speak("Hello")
+        verify { mockAndroidProvider.speak("Hello", any(), any()) }
     }
 
     @Test
-    fun `speak with QUEUE_FLUSH stops audio player`() {
-        helper.onInit(TextToSpeech.SUCCESS)
-        helper.speak("Hello", queueMode = TextToSpeech.QUEUE_FLUSH)
-        
-        verify { mockAudioPlayer.stopAll() }
-    }
-
-    @Test
-    fun `speak with deviceAddress uses synthesizeToFile`() {
-        helper.onInit(TextToSpeech.SUCCESS)
+    fun `speakRouted delegates to current provider`() {
         helper.speakRouted("Hello", "device_addr")
-        
-        verify { anyConstructed<TextToSpeech>().synthesizeToFile(any(), any(), any<File>(), any()) }
+        verify { mockAndroidProvider.speakRouted("Hello", "device_addr", any(), any(), any()) }
     }
 
     @Test
-    fun `speak without deviceAddress uses speak`() {
-        helper.onInit(TextToSpeech.SUCCESS)
-        helper.speakRouted("Hello", null)
+    fun `switching engine updates current provider`() {
+        // Switch to elevenlabs
+        ttsEngineFlow.value = "elevenlabs"
         
-        verify { anyConstructed<TextToSpeech>().speak("Hello", any(), any<Bundle>(), any()) }
+        helper.speak("Cloud Hello")
+        verify { mockElevenLabsProvider.speak("Cloud Hello", any(), any()) }
+        verify(exactly = 0) { mockAndroidProvider.speak("Cloud Hello", any(), any()) }
     }
 
+    @Test
+    fun `stopAll delegates to current provider`() {
+        helper.stopAll()
+        verify { mockAndroidProvider.stopAll() }
+    }
 
     @Test
     fun `stopNotificationTTS stops only if reading notification`() {
-        helper.onInit(TextToSpeech.SUCCESS)
-        
         // Case 1: Not reading
         helper.isReadingNotification = false
         helper.stopNotificationTTS()
-        verify(exactly = 0) { anyConstructed<TextToSpeech>().stop() }
+        verify(exactly = 0) { mockAndroidProvider.stopAll() }
         
         // Case 2: Is reading
         helper.isReadingNotification = true
         helper.stopNotificationTTS()
-        verify(exactly = 1) { anyConstructed<TextToSpeech>().stop() }
-        verify(exactly = 1) { mockAudioPlayer.stopAll() }
-    }
-
-    @Test
-    fun `setLanguageAndVoice handles unsupported language`() {
-        helper.onInit(TextToSpeech.SUCCESS)
-        every { anyConstructed<TextToSpeech>().setLanguage(any()) } returns TextToSpeech.LANG_NOT_SUPPORTED
-        
-        helper.setLanguageAndVoice("unsupported-LANG")
-        
-        // Should still call setLanguage
-        verify { anyConstructed<TextToSpeech>().language = any() }
+        verify(exactly = 1) { mockAndroidProvider.stopAll() }
     }
 }

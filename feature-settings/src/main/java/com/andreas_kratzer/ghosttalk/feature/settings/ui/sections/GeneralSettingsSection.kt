@@ -40,13 +40,15 @@ import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsToggleItem
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun GeneralSettingsSection(
     viewModel: SettingsViewModel,
     isGlobal: Boolean,
-    onNavigateBack: () -> Unit = {}
+    onNavigateBack: () -> Unit = {},
+    onBookDeleted: () -> Unit = onNavigateBack
 ) {
     val theme by viewModel.themeMode.collectAsState("SYSTEM")
     val persistLogs by viewModel.persistActionLogs.collectAsState(false)
@@ -56,7 +58,6 @@ fun GeneralSettingsSection(
     val keepScreenOn by viewModel.keepScreenOnUserMode.collectAsState(true)
     val screenBehavior by viewModel.userModeScreenBehavior.collectAsState("NORMAL")
     val startupBehavior by viewModel.startupBehavior.collectAsState("BOOK_SELECTION")
-    val userEmail by viewModel.userEmail.collectAsState(null)
     val activeBook by viewModel.activeBook.collectAsState()
     val forceKeyboard by viewModel.forceSoftKeyboard.collectAsState(false)
 
@@ -81,48 +82,34 @@ fun GeneralSettingsSection(
         maxItemsInEachRow = 2
     ) {
         if (isGlobal) {
-            val categoryTitle = stringResource(R.string.settings_category_google_account)
-            val accountStatusNotSignedIn = stringResource(R.string.settings_google_account_status_not_signed_in)
-            val signInText = stringResource(R.string.settings_google_account_sign_in)
-            val signOutText = stringResource(R.string.settings_google_account_sign_out)
-
-            PreferenceCategory(categoryTitle, modifier = Modifier.weight(1f)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = userEmail ?: accountStatusNotSignedIn,
-                        modifier = Modifier.weight(1f),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    if (userEmail == null) {
-                        Button(
-                            onClick = { viewModel.signIn(context) },
-                            shape = MaterialTheme.shapes.medium
-                        ) {
-                            Text(signInText)
-                        }
-                    } else {
-                        OutlinedButton(
-                            onClick = { viewModel.signOut() },
-                            shape = MaterialTheme.shapes.medium
-                        ) {
-                            Text(signOutText)
-                        }
-                    }
-                }
-            }
-
+            // 1. Benutzeroberfläche (Sprache, Design)
             val categoryUi = stringResource(R.string.settings_category_ui)
-            val themeModeLabel = stringResource(R.string.settings_theme_mode)
-            val themeSystem = stringResource(R.string.settings_theme_system)
-            val themeLight = stringResource(R.string.settings_theme_light)
-            val themeDark = stringResource(R.string.settings_theme_dark)
-            val persistLogsLabel = stringResource(R.string.settings_persist_logs)
-
             PreferenceCategory(categoryUi, modifier = Modifier.weight(1f)) {
+                // App Sprache
+                val selectedAppLanguage by viewModel.selectedAppLanguage.collectAsState("default")
+                val appLanguageLabel = stringResource(R.string.settings_app_language)
+                val systemDefault = stringResource(R.string.settings_system_default)
+                
+                val currentLanguageLabel = if (selectedAppLanguage == "default" || selectedAppLanguage == null) {
+                    systemDefault
+                } else Locale.forLanguageTag(selectedAppLanguage!!).displayName
+
+                SettingsDropdownItem(
+                    label = appLanguageLabel,
+                    selectedOption = currentLanguageLabel,
+                    options = listOf(
+                        systemDefault to { viewModel.setAppLanguage("default") }
+                    ) + listOf("de", "en").map { code ->
+                        Locale.forLanguageTag(code).getDisplayName(Locale.forLanguageTag(code)) to { viewModel.setAppLanguage(code) }
+                    }
+                )
+
+                // App Design
+                val themeModeLabel = stringResource(R.string.settings_theme_mode)
+                val themeSystem = stringResource(R.string.settings_theme_system)
+                val themeLight = stringResource(R.string.settings_theme_light)
+                val themeDark = stringResource(R.string.settings_theme_dark)
+                
                 val themeLabel = when (theme) {
                     "LIGHT" -> themeLight
                     "DARK" -> themeDark
@@ -138,27 +125,28 @@ fun GeneralSettingsSection(
                         themeDark to { viewModel.setThemeMode("DARK") }
                     )
                 )
+            }
 
-                SettingsToggleItem(
-                    label = persistLogsLabel,
-                    checked = persistLogs,
-                    onCheckedChange = { viewModel.setPersistActionLogs(it) }
-                )
-
+            // 2. Verhalten (Tastatur, Logs, Startup)
+            val categoryBehavior = stringResource(R.string.settings_category_behavior)
+            PreferenceCategory(categoryBehavior, modifier = Modifier.weight(1f)) {
                 SettingsToggleItem(
                     label = stringResource(R.string.settings_force_soft_keyboard),
                     checked = forceKeyboard,
                     onCheckedChange = { viewModel.setForceSoftKeyboard(it) }
                 )
-            }
 
-            val categoryGeneral = stringResource(R.string.settings_category_general)
-            val startupBehaviorLabel = stringResource(R.string.settings_startup_behavior)
-            val startupBookList = stringResource(R.string.settings_startup_behavior_book_list)
-            val startupLastBook = stringResource(R.string.settings_startup_behavior_last_book)
-            val startupUserMode = stringResource(R.string.settings_startup_behavior_user_mode)
+                SettingsToggleItem(
+                    label = stringResource(R.string.settings_persist_logs),
+                    checked = persistLogs,
+                    onCheckedChange = { viewModel.setPersistActionLogs(it) }
+                )
 
-            PreferenceCategory(categoryGeneral, modifier = Modifier.weight(1f)) {
+                val startupBehaviorLabel = stringResource(R.string.settings_startup_behavior)
+                val startupBookList = stringResource(R.string.settings_startup_behavior_book_list)
+                val startupLastBook = stringResource(R.string.settings_startup_behavior_last_book)
+                val startupUserMode = stringResource(R.string.settings_startup_behavior_user_mode)
+
                 val startupLabel = when (startupBehavior) {
                     "SELECTED_BOOK" -> startupLastBook
                     "USER_MODE" -> startupUserMode
@@ -353,7 +341,7 @@ fun GeneralSettingsSection(
                     onClick = {
                         showDeleteConfirm = false
                         viewModel.deleteActiveBook {
-                            onNavigateBack() // Go back to book list
+                            onBookDeleted() 
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)

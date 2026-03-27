@@ -213,6 +213,11 @@ fun GhostTalkNavHost(
                 viewModel = settingsViewModel,
                 isGlobal = isGlobal,
                 onNavigateBack = { navController.popBackStack() },
+                onBookDeleted = {
+                    navController.navigate("book_list") {
+                        popUpTo("book_list") { inclusive = true }
+                    }
+                },
                 onNavigateToStart = {
                     navController.navigate("start") {
                         popUpTo("start") { inclusive = true }

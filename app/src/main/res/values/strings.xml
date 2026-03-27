@@ -54,7 +54,7 @@
     <string name="action_more">Mehr</string>
     <string name="action_page_deactivate">Deaktivieren</string>
     <string name="page_deactivate_dialog_title">Navigationen deaktivieren?</string>
-    <string name="page_deactivate_dialog_message">Alle Buttons, die zu dieser Seite navigieren, werden deaktiviert (isActive = false). Möchtest du fortfahren?</string>
+    <string name="page_deactivate_dialog_message">Alle Buttons, die zu dieser Seite navigieren, werden deaktiviert. Möchtest du fortfahren?</string>
     <string name="action_page_activate">Aktivieren</string>
     <string name="page_activate_dialog_title">Navigationen aktivieren</string>
     <string name="page_activate_select_all">Alle auswählen</string>

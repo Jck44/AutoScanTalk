@@ -61,7 +61,10 @@ class SettingsMapper @Inject constructor(
             isNotificationReadingEnabled = settingsRepository.isNotificationReadingEnabled,
             monitoredNotificationApps = settingsRepository.monitoredNotificationApps.toList(),
             showPageIdInLog = settingsRepository.showPageIdInLog,
-            bluetoothDelay = settingsRepository.bluetoothDelay
+            bluetoothDelay = settingsRepository.bluetoothDelay,
+            hueClientId = settingsRepository.hueClientId,
+            hueClientSecret = settingsRepository.hueClientSecret,
+            ttsEngine = settingsRepository.ttsEngine
         )
     }
 
@@ -106,5 +109,8 @@ class SettingsMapper @Inject constructor(
         data.monitoredNotificationApps?.let { settingsRepository.monitoredNotificationApps = it.toSet() }
         data.showPageIdInLog?.let { settingsRepository.showPageIdInLog = it }
         data.bluetoothDelay?.let { settingsRepository.bluetoothDelay = it }
+        data.hueClientId?.let { settingsRepository.hueClientId = it }
+        data.hueClientSecret?.let { settingsRepository.hueClientSecret = it }
+        data.ttsEngine?.let { settingsRepository.ttsEngine = it }
     }
 }

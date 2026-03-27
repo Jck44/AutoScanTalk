@@ -54,6 +54,9 @@ data class ImportExportData(
     val monitoredNotificationApps: List<String>? = null,
     val showPageIdInLog: Boolean? = null,
     val bluetoothDelay: Long? = null,
+    val hueClientId: String? = null,
+    val hueClientSecret: String? = null,
+    val ttsEngine: String? = null,
     val templates: List<ImportTemplate>? = null,
     val pages: List<ImportPage> = emptyList()
 )

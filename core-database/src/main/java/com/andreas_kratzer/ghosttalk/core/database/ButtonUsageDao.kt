@@ -10,7 +10,21 @@ import com.andreas_kratzer.ghosttalk.core.model.ButtonUsageStat
 @Dao
 interface ButtonUsageDao {
 
-    @Query("SELECT * FROM button_usage_stats WHERE bookId = :bookId ORDER BY usageCount DESC LIMIT :limit")
+    @Query("""
+        SELECT 
+            bookId, 
+            MIN(buttonConfigId) as buttonConfigId, 
+            MIN(pageId) as pageId, 
+            MAX(label) as label, 
+            actionJson, 
+            SUM(usageCount) as usageCount, 
+            MAX(lastUsedAt) as lastUsedAt 
+        FROM button_usage_stats 
+        WHERE bookId = :bookId 
+        GROUP BY LOWER(label), actionJson 
+        ORDER BY usageCount DESC 
+        LIMIT :limit
+    """)
     suspend fun getTopButtons(bookId: String, limit: Int): List<ButtonUsageStat>
 
     @Query("SELECT * FROM button_usage_stats WHERE bookId = :bookId AND buttonConfigId = :buttonId")
@@ -18,6 +32,9 @@ interface ButtonUsageDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(stat: ButtonUsageStat)
+
+    @Query("SELECT * FROM button_usage_stats WHERE bookId = :bookId")
+    suspend fun getAllStatsForBook(bookId: String): List<ButtonUsageStat>
 
     @Query("DELETE FROM button_usage_stats WHERE bookId = :bookId")
     suspend fun clearStatsForBook(bookId: String)

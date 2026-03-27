@@ -37,6 +37,8 @@ class TtsSettingsDelegateTest {
         getAudioDevicesUseCase = mockk(relaxed = true)
         setTtsLanguageUseCase = mockk(relaxed = true)
         ttsHelper = mockk(relaxed = true)
+        every { ttsHelper.availableVoicesFlow } returns MutableStateFlow(emptyList())
+        every { ttsHelper.getAvailableLanguages() } returns emptyList()
 
         delegate = TtsSettingsDelegate(
             context,

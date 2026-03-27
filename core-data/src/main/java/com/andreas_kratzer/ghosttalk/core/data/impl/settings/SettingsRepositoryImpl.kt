@@ -146,6 +146,8 @@ class SettingsRepositoryImpl @Inject constructor(
     override val hueUsernameFlow: StateFlow<String> get() = smartHomeSettings.hueUsernameFlow
     override val hueAccessTokenFlow: StateFlow<String> get() = smartHomeSettings.hueAccessTokenFlow
     override val hueRefreshTokenFlow: StateFlow<String> get() = smartHomeSettings.hueRefreshTokenFlow
+    override val hueClientIdFlow: StateFlow<String> get() = smartHomeSettings.hueClientIdFlow
+    override val hueClientSecretFlow: StateFlow<String> get() = smartHomeSettings.hueClientSecretFlow
     override val cuesAudioDeviceAddressFlow: StateFlow<String?> get() = voiceSettings.cuesAudioDeviceAddressFlow
     override val securityPinFlow: StateFlow<String?> get() = securitySettings.securityPinFlow
     override val securityPinHashFlow: StateFlow<String?> get() = securitySettings.securityPinHashFlow
@@ -155,6 +157,8 @@ class SettingsRepositoryImpl @Inject constructor(
     override val isBiometricEnabledFlow: StateFlow<Boolean> get() = securitySettings.isBiometricEnabledFlow
     override val isSecurityRequiredForEditFlow: StateFlow<Boolean> get() = securitySettings.isSecurityRequiredForEditFlow
     override val isSecurityRequiredForSettingsFlow: StateFlow<Boolean> get() = securitySettings.isSecurityRequiredForSettingsFlow
+    override val elevenLabsApiKeyFlow: StateFlow<String?> get() = cloudSettings.elevenLabsApiKeyFlow
+    override val ttsEngineFlow: StateFlow<String?> get() = voiceSettings.ttsEngineFlow
 
     // ── Public API: Properties ───────────────────────────────────────────
 
@@ -288,6 +292,14 @@ class SettingsRepositoryImpl @Inject constructor(
         get() = smartHomeSettings.hueRefreshToken
         set(value) { smartHomeSettings.hueRefreshToken = value }
 
+    override var hueClientId: String
+        get() = smartHomeSettings.hueClientId
+        set(value) { smartHomeSettings.hueClientId = value }
+
+    override var hueClientSecret: String
+        get() = smartHomeSettings.hueClientSecret
+        set(value) { smartHomeSettings.hueClientSecret = value }
+
     override var isGeminiEnabled: Boolean
         get() = genAiSettings.isGeminiEnabled
         set(value) { genAiSettings.isGeminiEnabled = value }
@@ -400,6 +412,14 @@ class SettingsRepositoryImpl @Inject constructor(
     override var syncLogsStorage: String?
         get() = generalSettings.syncLogsStorage
         set(value) { generalSettings.syncLogsStorage = value }
+
+    override var elevenLabsApiKey: String?
+        get() = cloudSettings.elevenLabsApiKey
+        set(value) { cloudSettings.elevenLabsApiKey = value }
+
+    override var ttsEngine: String?
+        get() = voiceSettings.ttsEngine
+        set(value) { voiceSettings.ttsEngine = value }
 
     override var logIgnoredActions: Boolean
         get() = advancedSettings.logIgnoredActions

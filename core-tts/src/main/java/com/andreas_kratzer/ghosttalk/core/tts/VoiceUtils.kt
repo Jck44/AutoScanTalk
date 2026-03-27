@@ -1,7 +1,7 @@
 package com.andreas_kratzer.ghosttalk.core.tts
 
 import android.content.Context
-import android.speech.tts.Voice
+import com.andreas_kratzer.ghosttalk.core.tts.R
 
 object VoiceUtils {
     /**
@@ -25,44 +25,57 @@ object VoiceUtils {
     }
 
     /**
-     * Formats a Voice object into a beautiful display name like "Stimme 1 (Weiblich, Hohe Qualität)".
+     * Formats a TtsVoice object into a beautiful display name like "Stimme 1 (Weiblich, Hohe Qualität)".
      * @param voiceIndex The index of the voice group (same base names get same index)
      */
-    fun formatVoiceDisplay(context: Context, voice: Voice, voiceIndex: Int): String {
+    fun formatVoiceDisplay(context: Context, voice: TtsVoice, voiceIndex: Int): String {
         val traits = mutableListOf<String>()
         
         // Quality
         val qualityStr = when (voice.quality) {
-            Voice.QUALITY_VERY_HIGH -> context.getString(R.string.voice_quality_very_high)
-            Voice.QUALITY_HIGH -> context.getString(R.string.voice_quality_high)
-            Voice.QUALITY_NORMAL -> context.getString(R.string.voice_quality_normal)
-            Voice.QUALITY_LOW -> context.getString(R.string.voice_quality_low)
+            TtsVoice.QUALITY_VERY_HIGH -> context.getString(R.string.voice_quality_very_high)
+            TtsVoice.QUALITY_HIGH -> context.getString(R.string.voice_quality_high)
+            TtsVoice.QUALITY_NORMAL -> context.getString(R.string.voice_quality_normal)
+            TtsVoice.QUALITY_LOW -> context.getString(R.string.voice_quality_low)
             else -> null
         }
         qualityStr?.let { traits.add(it) }
-
+ 
         // Gender (heuristics)
-        val lowerName = voice.name.lowercase()
-        val genderStr = when {
-            lowerName.contains("female") || lowerName.contains("-f-") || lowerName.contains("-w-") -> 
-                context.getString(R.string.voice_gender_female)
-            lowerName.contains("male") || lowerName.contains("-m-") -> 
-                context.getString(R.string.voice_gender_male)
-            else -> null
+        val genderStr = when (voice.gender) {
+            TtsVoice.Gender.FEMALE -> context.getString(R.string.voice_gender_female)
+            TtsVoice.Gender.MALE -> context.getString(R.string.voice_gender_male)
+            else -> {
+                val lowerName = voice.name.lowercase()
+                when {
+                    lowerName.contains("female") || lowerName.contains("-f-") || lowerName.contains("-w-") -> 
+                        context.getString(R.string.voice_gender_female)
+                    lowerName.contains("male") || lowerName.contains("-m-") -> 
+                        context.getString(R.string.voice_gender_male)
+                    else -> null
+                }
+            }
         }
         genderStr?.let { traits.add(it) }
-
-        // Network hint
-        if (voice.isNetworkConnectionRequired) {
+ 
+        // Provider specific info
+        if (voice.provider == "elevenlabs") {
+            traits.add("Cloud")
+        } else if (voice.isNetworkRequired) {
             traits.add("Online")
         } else {
-            // Note: settings_voice_local_hint is in feature-settings or core-ui.
-            // For now, use a fallback if not found, or pass it in.
-            // Actually, I'll move settings_voice_local_hint to core-ui or core-tts if it's shared.
             traits.add("Lokal") 
         }
-
+ 
         val traitsCombined = traits.joinToString(", ")
+        
+        if (voice.provider == "elevenlabs") {
+            return if (traitsCombined.isNotEmpty()) {
+                "${voice.name} ($traitsCombined)"
+            } else {
+                voice.name
+            }
+        }
         
         return context.getString(R.string.voice_format_pattern, voiceIndex + 1, traitsCombined)
     }

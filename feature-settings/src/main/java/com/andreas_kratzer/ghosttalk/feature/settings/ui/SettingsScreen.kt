@@ -53,9 +53,8 @@ import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.CloudSettingsS
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.ExperimentalSettingsSection
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.GenAiSettingsSection
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.GeneralSettingsSection
-import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.LanguageSettingsSection
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.MaintenanceSection
-import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.NotificationSettingsSection
+import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.PermissionsSettingsSection
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.ScanningSettingsSection
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.SecuritySettingsSection
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.SmartHomeSettingsSection
@@ -89,6 +88,7 @@ enum class SettingsSection(val titleRes: Int, val icon: ImageVector, val isGloba
 @Composable
 fun SettingsScreen(
     onNavigateBack: () -> Unit,
+    onBookDeleted: () -> Unit = onNavigateBack,
     onNavigateToStart: () -> Unit = {},
     isGlobal: Boolean = false,
     viewModel: SettingsViewModel = hiltViewModel()
@@ -167,6 +167,7 @@ fun SettingsScreen(
                 isGlobal = isGlobal,
                 viewModel = viewModel,
                 onNavigateBack = onNavigateBack,
+                onBookDeleted = onBookDeleted,
                 onLockClicked = {
                     viewModel.lock()
                     onNavigateToStart()
@@ -296,6 +297,7 @@ private fun SettingsSubMenu(
     isGlobal: Boolean,
     viewModel: SettingsViewModel,
     onNavigateBack: () -> Unit,
+    onBookDeleted: () -> Unit,
     onLockClicked: () -> Unit,
     onLocalExport: () -> Unit,
     onLocalImport: () -> Unit
@@ -312,6 +314,7 @@ private fun SettingsSubMenu(
             viewModel,
             isGlobal = isGlobal,
             onNavigateBack = onNavigateBack,
+            onBookDeleted = onBookDeleted,
             onLockClicked = onLockClicked,
             onLocalExport = onLocalExport,
             onLocalImport = onLocalImport
@@ -391,16 +394,14 @@ fun SubmenuContent(
     viewModel: SettingsViewModel,
     isGlobal: Boolean,
     onNavigateBack: () -> Unit = {},
+    onBookDeleted: () -> Unit = {},
     onLockClicked: () -> Unit = {},
     onLocalExport: () -> Unit = {},
     onLocalImport: () -> Unit = {}
 ) {
     when (section) {
         SettingsSection.GENERAL -> {
-            if (isGlobal) {
-                LanguageSettingsSection(viewModel)
-            }
-            GeneralSettingsSection(viewModel, isGlobal = isGlobal, onNavigateBack = onNavigateBack)
+            GeneralSettingsSection(viewModel, isGlobal = isGlobal, onNavigateBack = onNavigateBack, onBookDeleted = onBookDeleted)
         }
         SettingsSection.VOICE -> {
             VoiceSettingsSection(viewModel, isGlobal = isGlobal)
@@ -438,7 +439,12 @@ fun SubmenuContent(
             )
         }
         SettingsSection.CLOUD -> {
-            CloudSettingsSection(viewModel, isGlobal = isGlobal)
+            CloudSettingsSection(
+                viewModel = viewModel,
+                isGlobal = isGlobal,
+                onLocalExport = onLocalExport,
+                onLocalImport = onLocalImport
+            )
         }
         SettingsSection.SMART_HOME -> {
             SmartHomeSettingsSection(viewModel, isGlobal = isGlobal)
@@ -447,7 +453,7 @@ fun SubmenuContent(
             GenAiSettingsSection(viewModel, isGlobal = isGlobal)
         }
         SettingsSection.NOTIFICATIONS -> {
-            NotificationSettingsSection(viewModel)
+            PermissionsSettingsSection(viewModel)
         }
         SettingsSection.ADVANCED -> {
             if (isGlobal) {

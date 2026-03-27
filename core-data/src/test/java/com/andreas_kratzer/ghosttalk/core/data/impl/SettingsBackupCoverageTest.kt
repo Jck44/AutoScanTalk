@@ -36,7 +36,9 @@ class SettingsBackupCoverageTest {
         "securityPin",             // Deprecated (use Hash/Salt)
         "securityPinFlow",
         "forceSoftKeyboard",       // UI specific
-        "forceSoftKeyboardFlow"
+        "forceSoftKeyboardFlow",
+        "elevenLabsApiKey",         // Security / Secret
+        "elevenLabsApiKeyFlow"
     )
 
     private val propertyMappings = mapOf(

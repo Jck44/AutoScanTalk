@@ -17,6 +17,7 @@ import com.andreas_kratzer.ghosttalk.feature.settings.R
 import com.andreas_kratzer.ghosttalk.core.ui.components.PreferenceCategory
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
+import com.andreas_kratzer.ghosttalk.core.tts.TtsVoice
 import com.andreas_kratzer.ghosttalk.core.tts.VoiceUtils
 import java.util.Locale
 
@@ -53,7 +54,28 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
         maxItemsInEachRow = 2
     ) {
         if (!isGlobal) {
+            val ttsEngine by viewModel.ttsEngine.collectAsState("google")
+            
             PreferenceCategory(stringResource(R.string.settings_category_voice), modifier = Modifier.weight(1f)) {
+                // Engine Select
+                val engineOptions = listOf(
+                    "google" to R.string.settings_tts_engine_google,
+                    "elevenlabs" to R.string.settings_tts_engine_elevenlabs
+                ).map { (id, resId) ->
+                    stringResource(resId) to { viewModel.setTtsEngine(id) }
+                }
+
+                val currentEngineLabel = when (ttsEngine) {
+                    "elevenlabs" -> stringResource(R.string.settings_tts_engine_elevenlabs)
+                    else -> stringResource(R.string.settings_tts_engine_google)
+                }
+
+                com.andreas_kratzer.ghosttalk.core.ui.components.SettingsDropdownItem(
+                    label = stringResource(R.string.settings_tts_engine),
+                    selectedOption = currentEngineLabel,
+                    options = engineOptions
+                )
+
                 // Language Select
                 val context = androidx.compose.ui.platform.LocalContext.current
                 val currentLangLabel = if (selectedLanguage == "default" || selectedLanguage.isNullOrEmpty()) {
@@ -75,13 +97,18 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                 )
 
                 // Voice Select - FILTERED by selected language
-                val filteredVoices = remember(availableVoices, selectedLanguage) {
-                    val targetLocale = if (selectedLanguage == "default" || selectedLanguage.isNullOrEmpty()) {
-                        Locale.getDefault()
+                val filteredVoices = remember(availableVoices, selectedLanguage, ttsEngine) {
+                    if (ttsEngine == "elevenlabs") {
+                        // ElevenLabs voices are currently multilingual or not strictly tied to system locales in our mapping
+                        availableVoices
                     } else {
-                        Locale.forLanguageTag(selectedLanguage!!)
+                        val targetLocale = if (selectedLanguage == "default" || selectedLanguage.isNullOrEmpty()) {
+                            Locale.getDefault()
+                        } else {
+                            Locale.forLanguageTag(selectedLanguage!!)
+                        }
+                        availableVoices.filter { it.locale.language == targetLocale.language }
                     }
-                    availableVoices.filter { it.locale.language == targetLocale.language }
                 }
 
                 val voiceGroups = remember(filteredVoices) {
@@ -94,7 +121,7 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                 val voiceLabel = if (selectedVoiceName.isNullOrEmpty()) {
                     stringResource(R.string.settings_voice_default)
                 } else {
-                    val currentVoice = availableVoices.find { it.name == selectedVoiceName }
+                    val currentVoice = availableVoices.find { it.id == selectedVoiceName }
                     if (currentVoice != null) {
                         val baseName = VoiceUtils.formatVoiceName(currentVoice.name)
                         val groupIndex = voiceGroups.indexOf(baseName)
@@ -112,11 +139,11 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                     val baseName = VoiceUtils.formatVoiceName(voice.name)
                     val groupIndex = voiceGroups.indexOf(baseName)
                     val display = VoiceUtils.formatVoiceDisplay(context, voice, maxOf(0, groupIndex))
-                    display to voice.name
+                    display to voice.id
                 }
                 .sortedBy { it.first }
-                .forEach { (display, voiceName) ->
-                    voiceOptions.add(Pair(display, { viewModel.setTtsVoice(voiceName) }))
+                .forEach { (display, voiceId) ->
+                    voiceOptions.add(Pair(display, { viewModel.setTtsVoice(voiceId) }))
                 }
 
                 com.andreas_kratzer.ghosttalk.core.ui.components.SettingsDropdownItem(

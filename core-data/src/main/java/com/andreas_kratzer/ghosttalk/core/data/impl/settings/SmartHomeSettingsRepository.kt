@@ -16,12 +16,16 @@ class SmartHomeSettingsRepository(
     private val _hueUsername = NonNullStringSetting(SettingsConstants.KEY_HUE_USERNAME, "")
     private val _hueAccessToken = NonNullStringSetting(KEY_HUE_ACCESS_TOKEN, "")
     private val _hueRefreshToken = NonNullStringSetting(KEY_HUE_REFRESH_TOKEN, "")
+    private val _hueClientId = NonNullStringSetting(SettingsConstants.KEY_HUE_CLIENT_ID, "")
+    private val _hueClientSecret = NonNullStringSetting(SettingsConstants.KEY_HUE_CLIENT_SECRET, "")
 
     override val googleHomeProjectIdFlow = _googleHomeProjectId.flow
     override val hueBridgeIpFlow = _hueBridgeIp.flow
     override val hueUsernameFlow = _hueUsername.flow
     override val hueAccessTokenFlow = _hueAccessToken.flow
     override val hueRefreshTokenFlow = _hueRefreshToken.flow
+    override val hueClientIdFlow = _hueClientId.flow
+    override val hueClientSecretFlow = _hueClientSecret.flow
 
     override var googleHomeProjectId: String
         get() = _googleHomeProjectId.value
@@ -43,6 +47,14 @@ class SmartHomeSettingsRepository(
         get() = _hueRefreshToken.value
         set(value) { _hueRefreshToken.value = value }
 
+    override var hueClientId: String
+        get() = _hueClientId.value
+        set(value) { _hueClientId.value = value }
+
+    override var hueClientSecret: String
+        get() = _hueClientSecret.value
+        set(value) { _hueClientSecret.value = value }
+
 
 
     override fun refresh() {
@@ -51,5 +63,7 @@ class SmartHomeSettingsRepository(
         _hueUsername.refresh()
         _hueAccessToken.refresh()
         _hueRefreshToken.refresh()
+        _hueClientId.refresh()
+        _hueClientSecret.refresh()
     }
 }

@@ -5,10 +5,10 @@
     <string name="settings_category_voice">Text-to-Speech</string>
     <string name="settings_category_scanning">Scanning &amp; Operation</string>
     <string name="settings_category_security">Security &amp; PIN</string>
-    <string name="settings_category_cloud">Google Drive Sync</string>
+    <string name="settings_category_cloud">Accounts &amp; Import</string>
     <string name="settings_category_smart_home">Smart Home (Experimental)</string>
     <string name="settings_category_gemini">Gemini AI Assistant</string>
-    <string name="settings_category_notifications">Notifications (Auditory cue)</string>
+    <string name="settings_category_notifications">Permissions</string>
     <string name="settings_category_advanced">Advanced Settings</string>
     
     <!-- General Settings -->
@@ -17,11 +17,17 @@
     <string name="settings_scan_pattern">Default Scan Pattern</string>
     <string name="settings_pattern_linear">Button by Button</string>
     <string name="settings_pattern_row_by_row">Row by Row</string>
-    <string name="settings_app_language">App Language (Menus &amp; UI)</string>
-    <string name="settings_theme_mode">App Theme (Light/Dark)</string>
+    <string name="settings_app_language">App Language</string>
+    <string name="settings_theme_mode">App Design</string>
     <string name="settings_theme_system">System Default</string>
     <string name="settings_theme_light">Light</string>
     <string name="settings_theme_dark">Dark</string>
+    <string name="settings_elevenlabs_api_key_description">The API key is required to use ElevenLabs voices.</string>
+    <string name="settings_elevenlabs_test_button">Test Connection</string>
+    <string name="settings_elevenlabs_test_success">Connection successful! A test announcement has been sent.</string>
+    <string name="settings_elevenlabs_test_failure">Connection failed: %s</string>
+    <string name="settings_elevenlabs_test_sample_text">This is a test announcement from ElevenLabs.</string>
+    <string name="settings_voice_engine">Voice Engine</string>
     <string name="settings_keep_screen_on">Keep screen on in User Mode</string>
     <string name="settings_screen_behavior">Screen Behavior</string>
     <string name="settings_screen_behavior_normal">Normal</string>
@@ -39,6 +45,9 @@
 
     <!-- TTS Settings -->
     <string name="settings_tts_language">TTS Language</string>
+    <string name="settings_tts_engine">Speech Engine</string>
+    <string name="settings_tts_engine_google">Google TTS (System)</string>
+    <string name="settings_tts_engine_elevenlabs">ElevenLabs TTS (Cloud)</string>
     <string name="settings_system_default">System Default</string>
     <string name="settings_select_voice">Select Voice</string>
     <string name="settings_voice_default">Default</string>
@@ -88,6 +97,8 @@
     <string name="settings_cloud_backup_date_format">Backup date: %1$s</string>
     <string name="settings_cloud_signed_in_as">Signed in as %s</string>
     <string name="settings_cloud_last_sync">Last Sync: %s</string>
+    <string name="settings_elevenlabs_api_key">ElevenLabs API Key</string>
+    <string name="settings_elevenlabs_api_key_desc">Required for ElevenLabs TTS. Found at elevenlabs.io -> Profile -> API Keys.</string>
     <string name="book_import_cloud_success">Book successfully loaded from cloud.</string>
     <string name="book_import_cloud_error">Error loading from cloud: %s</string>
     <string name="settings_cloud_logs_title">Cloud Sync Log</string>
@@ -112,10 +123,17 @@
     <string name="settings_gemini_tool_status_failed">Not available</string>
     <string name="settings_gemini_tool_status_pending">Pending…</string>
     
-    <!-- Notification Settings -->
+    <!-- Permissions -->
     <string name="settings_notifications_enable">Read notifications aloud</string>
     <string name="settings_notifications_enable_desc">Allows automatic reading of notifications from selected apps as an auditory cue.</string>
     <string name="settings_notifications_permission_button">Grant Permission</string>
+    <string name="settings_permission_camera">Camera</string>
+    <string name="settings_permission_camera_desc">Required for photos to describe the environment via Gemini.</string>
+    <string name="settings_permission_location">Location</string>
+    <string name="settings_permission_location_desc">Required for features such as retrieving weather information.</string>
+    <string name="settings_permission_active">Granted</string>
+    <string name="settings_permission_inactive">Not granted</string>
+    <string name="settings_permission_request">Request</string>
     
     <string name="settings_category_limits">Limits</string>
     <string name="settings_limit_scan_cycles">Limit scan cycles</string>
@@ -169,6 +187,7 @@
     <string name="settings_google_account_sign_out">Sign Out</string>
     <string name="settings_category_ui">User Interface</string>
     <string name="settings_category_maintenance">Advanced Maintenance</string>
+    <string name="settings_category_behavior">Behavior</string>
     <string name="settings_gemini_nano_deactivated_title">Gemini Nano deactivated</string>
     <string name="settings_gemini_nano_deactivated_message">The on-device AI model has been deactivated or is not available on this device.</string>
     <string name="settings_category_gemini_nano">Gemini Nano (Local AI)</string>
@@ -176,11 +195,11 @@
     <string name="gemini_download_confirm">Download</string>
     <string name="gemini_download_background">Continue in background</string>
     <string name="gemini_download_cancel">Cancel</string>
-    <string name="settings_category_cloud_account">Cloud Account</string>
+    <string name="settings_category_cloud_account">Google Account</string>
     <string name="settings_cloud_sign_in">Sign In</string>
     <string name="settings_cloud_sign_out">Sign Out</string>
-    <string name="settings_category_cloud_import">Cloud Import</string>
-    <string name="settings_cloud_import_as_new">Import book from Cloud</string>
+    <string name="settings_category_cloud_import">Google Drive Import</string>
+    <string name="settings_cloud_import_as_new">Cloud Import</string>
     <string name="settings_cloud_import_explanation">Import a book from your Google Drive as a new book. Existing local books with the same ID will not be overwritten.</string>
     <string name="page_list_show">Manage Pages</string>
 

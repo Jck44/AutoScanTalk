@@ -34,6 +34,8 @@ fun SmartHomeSettingsSection(
     val hueBridgeIp by viewModel.hueBridgeIp.collectAsState("")
     val hueUsername by viewModel.hueUsername.collectAsState("")
     val hueAccessToken by viewModel.hueAccessToken.collectAsState("")
+    val hueClientId by viewModel.hueClientId.collectAsState("")
+    val hueClientSecret by viewModel.hueClientSecret.collectAsState("")
 
     Column(
         modifier = Modifier
@@ -98,6 +100,16 @@ fun SmartHomeSettingsSection(
                     label = stringResource(R.string.settings_hue_bridge_ip),
                     value = hueBridgeIp,
                     onValueChange = { viewModel.setHueBridgeIp(it) }
+                )
+                SettingsEditTextItem(
+                    label = "Hue Remote Client ID",
+                    value = hueClientId,
+                    onValueChange = { viewModel.setHueClientId(it) }
+                )
+                SettingsEditTextItem(
+                    label = "Hue Remote Client Secret",
+                    value = hueClientSecret,
+                    onValueChange = { viewModel.setHueClientSecret(it) }
                 )
                 SettingsEditTextItem(
                     label = stringResource(R.string.settings_hue_username),

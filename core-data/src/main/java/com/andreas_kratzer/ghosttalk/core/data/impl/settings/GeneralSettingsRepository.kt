@@ -24,7 +24,7 @@ class GeneralSettingsRepository(
     private val _defaultStartPageId = StringSetting(KEY_DEFAULT_START_PAGE_ID)
     private val _favoriteBookId = StringSetting(KEY_FAVORITE_BOOK_ID, isScoped = false)
     private val _startupBehavior = NonNullStringSetting(KEY_STARTUP_BEHAVIOR, "BOOK_SELECTION", isScoped = false)
-    private val _forceSoftKeyboard = BooleanSetting(KEY_FORCE_SOFT_KEYBOARD, default = false, isScoped = false)
+    private val _forceSoftKeyboard = BooleanSetting(KEY_FORCE_SOFT_KEYBOARD, default = true, isScoped = false)
     private val _syncLogsStorage = StringSetting(KEY_SYNC_LOGS_STORAGE, isScoped = false)
 
     val themeModeFlow = _themeMode.flow
