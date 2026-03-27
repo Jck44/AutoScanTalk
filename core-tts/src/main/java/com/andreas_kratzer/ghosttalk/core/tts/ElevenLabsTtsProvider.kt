@@ -146,7 +146,10 @@ open class ElevenLabsTtsProvider @Inject constructor(
                         }
                     } catch (e: Exception) {
                         Log.e("ElevenLabsTtsProvider", "Error saving/playing audio: ${e.message}")
-                        handler.post { onDone?.invoke() }
+                        handler.post { 
+                            onError?.invoke(e.message ?: "Playback error")
+                            onDone?.invoke() 
+                        }
                     }
                 }
             }

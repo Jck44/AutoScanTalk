@@ -40,6 +40,7 @@ import com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.MoveRowUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.UpdateButtonConfigUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.UpdatePageSettingsUseCase
+import com.andreas_kratzer.ghosttalk.domain.pages.DuplicateButtonToPageUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.UpdateRowNameUseCase
 import com.andreas_kratzer.ghosttalk.feature.settings.domain.FeatureGuard
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.InteractionDelegate
@@ -94,6 +95,7 @@ class PageViewModelTest {
     private lateinit var moveRowUseCase: MoveRowUseCase
     private lateinit var moveButtonUseCase: MoveButtonUseCase
     private lateinit var moveButtonToPageUseCase: com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase
+    private lateinit var duplicateButtonToPageUseCase: DuplicateButtonToPageUseCase
     private lateinit var importPageUseCase: ImportPageUseCase
     private lateinit var exportPageUseCase: ExportPageUseCase
     private lateinit var predictNextActionUseCase: PredictNextActionUseCase
@@ -137,6 +139,7 @@ class PageViewModelTest {
         moveRowUseCase = mockk<MoveRowUseCase>(relaxed = true)
         moveButtonUseCase = mockk<MoveButtonUseCase>(relaxed = true)
         moveButtonToPageUseCase = mockk<com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase>(relaxed = true)
+        duplicateButtonToPageUseCase = mockk<DuplicateButtonToPageUseCase>(relaxed = true)
         importPageUseCase = mockk<ImportPageUseCase>(relaxed = true)
         exportPageUseCase = mockk<ExportPageUseCase>(relaxed = true)
         predictNextActionUseCase = mockk<PredictNextActionUseCase>(relaxed = true)
@@ -198,6 +201,7 @@ class PageViewModelTest {
             moveRowUseCase = moveRowUseCase,
             moveButtonUseCase = moveButtonUseCase,
             moveButtonToPageUseCase = moveButtonToPageUseCase,
+            duplicateButtonToPageUseCase = duplicateButtonToPageUseCase,
             importPageUseCase = importPageUseCase,
             exportPageUseCase = exportPageUseCase,
             getFilteredPagesUseCase = GetFilteredPagesUseCase(settingsRepository),

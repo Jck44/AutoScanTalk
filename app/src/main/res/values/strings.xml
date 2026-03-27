@@ -176,6 +176,8 @@
     <string name="button_move_hidden_prompt_add_both">Zeile &amp; Spalte hinzufügen</string>
 
     <string name="button_move_success">Button verschoben</string>
+    <string name="button_duplicate_select_target">Ziel-Seite für Duplikat wählen</string>
+    <string name="button_duplicate_success">Button dupliziert</string>
     <string name="button_action_test">Testen</string>
     <string name="action_duplicate">Duplizieren</string>
     <string name="duplicate_suffix">-Duplikat</string>

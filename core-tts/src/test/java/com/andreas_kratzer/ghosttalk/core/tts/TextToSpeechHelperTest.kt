@@ -73,13 +73,13 @@ class TextToSpeechHelperTest {
     @Test
     fun `speak delegates to current provider`() {
         helper.speak("Hello")
-        verify { mockAndroidProvider.speak("Hello", any(), any()) }
+        verify { mockAndroidProvider.speak("Hello", any(), any(), any()) }
     }
 
     @Test
     fun `speakRouted delegates to current provider`() {
         helper.speakRouted("Hello", "device_addr")
-        verify { mockAndroidProvider.speakRouted("Hello", "device_addr", any(), any(), any()) }
+        verify { mockAndroidProvider.speakRouted("Hello", "device_addr", any(), any(), any(), any()) }
     }
 
     @Test
@@ -88,8 +88,8 @@ class TextToSpeechHelperTest {
         ttsEngineFlow.value = "elevenlabs"
         
         helper.speak("Cloud Hello")
-        verify { mockElevenLabsProvider.speak("Cloud Hello", any(), any()) }
-        verify(exactly = 0) { mockAndroidProvider.speak("Cloud Hello", any(), any()) }
+        verify { mockElevenLabsProvider.speak("Cloud Hello", any(), any(), any()) }
+        verify(exactly = 0) { mockAndroidProvider.speak("Cloud Hello", any(), any(), any()) }
     }
 
     @Test
@@ -109,5 +109,27 @@ class TextToSpeechHelperTest {
         helper.isReadingNotification = true
         helper.stopNotificationTTS()
         verify(exactly = 1) { mockAndroidProvider.stopAll() }
+    }
+
+    @Test
+    fun `fallback to android when elevenlabs fails`() {
+        // Switch to elevenlabs
+        ttsEngineFlow.value = "elevenlabs"
+        
+        // Capture the error callback from ElevenLabs.speak
+        val errorSlot = io.mockk.slot<(String) -> Unit>()
+        every { 
+            mockElevenLabsProvider.speak(any(), any(), any(), capture(errorSlot)) 
+        } answers {
+            // Simulate error by calling the captured error callback
+            errorSlot.captured.invoke("API Error")
+        }
+        
+        helper.speak("Fallback Test")
+        
+        // Verify ElevenLabs was tried
+        verify { mockElevenLabsProvider.speak("Fallback Test", any(), any(), any()) }
+        // Verify Android TTS was called as fallback
+        verify { mockAndroidProvider.speak("Fallback Test", any(), any(), any()) }
     }
 }

@@ -10,6 +10,7 @@ import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.domain.pages.CreatePageUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.DeletePageUseCase
+import com.andreas_kratzer.ghosttalk.domain.pages.DuplicateButtonToPageUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.ExportPageUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.GetFilteredPagesUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.GetPageUsagesUseCase
@@ -43,6 +44,7 @@ class PageManagementDelegate @Inject constructor(
     private val moveRowUseCase: MoveRowUseCase,
     private val moveButtonUseCase: MoveButtonUseCase,
     private val moveButtonToPageUseCase: MoveButtonToPageUseCase,
+    private val duplicateButtonToPageUseCase: DuplicateButtonToPageUseCase,
     private val importPageUseCase: ImportPageUseCase,
     private val exportPageUseCase: ExportPageUseCase,
     private val getFilteredPagesUseCase: GetFilteredPagesUseCase,
@@ -200,6 +202,24 @@ class PageManagementDelegate @Inject constructor(
                 if (_currentPage.value?.id == fromPageId) {
                     setCurrentPage(result.fromPage)
                 } else if (_currentPage.value?.id == toPageId) {
+                    setCurrentPage(result.toPage)
+                }
+            }
+            onResult(result)
+        }
+    }
+
+    fun duplicateButtonToPage(
+        fromPageId: String,
+        fromIndex: Int,
+        toPageId: String,
+        forceMove: Boolean = false,
+        onResult: (MoveButtonToPageUseCase.MoveResult) -> Unit
+    ) {
+        scope.launch {
+            val result = duplicateButtonToPageUseCase.execute(fromPageId, fromIndex, toPageId, forceMove)
+            if (result is MoveButtonToPageUseCase.MoveResult.Success) {
+                if (_currentPage.value?.id == toPageId) {
                     setCurrentPage(result.toPage)
                 }
             }

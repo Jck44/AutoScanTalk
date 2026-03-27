@@ -30,10 +30,13 @@ fun EditorDialogs(
     selectedButtonIndex: Int?,
     showDialog: Boolean,
     showMoveDialog: Boolean,
+    showDuplicateDialog: Boolean,
+    isDuplicating: Boolean,
     showHiddenPrompt: com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.NeedsConfirmation?,
     snackbarHostState: SnackbarHostState,
     scope: CoroutineScope,
     onShowMoveDialog: (Boolean) -> Unit,
+    onShowDuplicateDialog: (Boolean) -> Unit,
     onShowHiddenPrompt: (com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.NeedsConfirmation?) -> Unit,
     onDismissRowDialog: () -> Unit,
     onDismissButtonDialog: () -> Unit,
@@ -71,6 +74,11 @@ fun EditorDialogs(
                 onShowMoveDialog(true)
                 onDismissButtonDialog()
                 android.widget.Toast.makeText(context, R.string.button_move_select_target, android.widget.Toast.LENGTH_SHORT).show()
+            },
+            onDuplicate = {
+                onShowDuplicateDialog(true)
+                onDismissButtonDialog()
+                android.widget.Toast.makeText(context, R.string.button_duplicate_select_target, android.widget.Toast.LENGTH_SHORT).show()
             },
             onDelete = {
                 actions.updateButtonConfig(item.id, selectedButtonIndex, null)
@@ -126,6 +134,44 @@ fun EditorDialogs(
         )
     }
 
+    if (showDuplicateDialog && selectedButtonIndex != null) {
+        TargetPageSelectionDialog(
+            availablePages = availablePages, // Allow duplicating to same page too? The requirement says "in gleicher Art und Weise eine Zielseite ausgewählt werden". For Move we filter it out.
+            // Actually, if I duplicate to the same page, I need to make sure I find a DIFFERENT slot.
+            // MoveButtonToPageUseCase.execute fails if fromPageId == toPageId.
+            // DuplicateButtonToPageUseCase.execute should also probably handle same page if we want that.
+            // BUT for now I'll follow the "gleiche Art und Weise" which likely means other pages.
+            onPageSelected = { targetPage ->
+                val sourceIndex = selectedButtonIndex
+                onShowDuplicateDialog(false)
+                actions.duplicateButtonToPage(item.id, sourceIndex, targetPage.id) { result -> 
+                    when (result) {
+                        is com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.Success -> {
+                            onDismissButtonDialog()
+                            android.widget.Toast.makeText(context, R.string.button_duplicate_success, android.widget.Toast.LENGTH_SHORT).show()
+                        }
+                        is com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.NeedsConfirmation -> {
+                            onShowHiddenPrompt(result)
+                        }
+                        is com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.TargetFull -> {
+                            onDismissButtonDialog()
+                            scope.launch {
+                                snackbarHostState.showSnackbar("Zielseite ist voll")
+                            }
+                        }
+                        else -> {
+                            onDismissButtonDialog()
+                        }
+                    }
+                }
+            },
+            onDismiss = { 
+                onShowDuplicateDialog(false)
+                onDismissButtonDialog()
+            }
+        )
+    }
+
     if (showHiddenPrompt != null) {
         val promptData = showHiddenPrompt
         MoveHiddenPromptDialog(
@@ -134,11 +180,22 @@ fun EditorDialogs(
             onConfirm = {
                 val targetId = promptData.targetPage.id
                 onShowHiddenPrompt(null)
-                actions.moveButtonToPage(item.id, selectedButtonIndex!!, targetId, forceMove = true) { result ->
-                    onDismissButtonDialog()
-                    if (result is com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.Success) {
-                        scope.launch {
-                            snackbarHostState.showSnackbar("Button verschoben")
+                if (isDuplicating) {
+                    actions.duplicateButtonToPage(item.id, selectedButtonIndex!!, targetId, forceMove = true) { result ->
+                        onDismissButtonDialog()
+                        if (result is com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.Success) {
+                            scope.launch {
+                                snackbarHostState.showSnackbar(context.getString(R.string.button_duplicate_success))
+                            }
+                        }
+                    }
+                } else {
+                    actions.moveButtonToPage(item.id, selectedButtonIndex!!, targetId, forceMove = true) { result ->
+                        onDismissButtonDialog()
+                        if (result is com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.Success) {
+                            scope.launch {
+                                snackbarHostState.showSnackbar(context.getString(R.string.button_move_success))
+                            }
                         }
                     }
                 }

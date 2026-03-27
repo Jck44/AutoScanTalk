@@ -15,6 +15,7 @@ import com.andreas_kratzer.ghosttalk.domain.pages.GetFilteredPagesUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.GetPageUsagesUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.IdentifyActivePageLinksUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.ImportPageUseCase
+import com.andreas_kratzer.ghosttalk.domain.pages.DuplicateButtonToPageUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.MoveRowUseCase
@@ -57,6 +58,7 @@ class PageManagementDelegateTest {
     private lateinit var moveRowUseCase: MoveRowUseCase
     private lateinit var moveButtonUseCase: MoveButtonUseCase
     private lateinit var moveButtonToPageUseCase: MoveButtonToPageUseCase
+    private lateinit var duplicateButtonToPageUseCase: DuplicateButtonToPageUseCase
     private lateinit var importPageUseCase: ImportPageUseCase
     private lateinit var exportPageUseCase: ExportPageUseCase
     private lateinit var getFilteredPagesUseCase: GetFilteredPagesUseCase
@@ -84,6 +86,7 @@ class PageManagementDelegateTest {
         moveRowUseCase = mockk(relaxed = true)
         moveButtonUseCase = mockk(relaxed = true)
         moveButtonToPageUseCase = mockk(relaxed = true)
+        duplicateButtonToPageUseCase = mockk(relaxed = true)
         importPageUseCase = mockk(relaxed = true)
         exportPageUseCase = mockk(relaxed = true)
         getFilteredPagesUseCase = GetFilteredPagesUseCase(settingsRepository)
@@ -105,6 +108,7 @@ class PageManagementDelegateTest {
             moveRowUseCase,
             moveButtonUseCase,
             moveButtonToPageUseCase,
+            duplicateButtonToPageUseCase,
             importPageUseCase,
             exportPageUseCase,
             getFilteredPagesUseCase,
@@ -199,6 +203,24 @@ class PageManagementDelegateTest {
         }
         
         coVerify { moveButtonToPageUseCase.execute("p1", 0, "p2", false) }
+        assertEquals(result, receivedResult)
+    }
+
+    @Test
+    fun `duplicateButtonToPage delegates to use case and invokes callback`() = runTest(testDispatcher) {
+        delegate.init(backgroundScope)
+        val result = MoveButtonToPageUseCase.MoveResult.Success(mockk(), mockk())
+        
+        coEvery { 
+            duplicateButtonToPageUseCase.execute("p1", 0, "p2", false) 
+        } returns result
+        
+        var receivedResult: MoveButtonToPageUseCase.MoveResult? = null
+        delegate.duplicateButtonToPage("p1", 0, "p2", false) {
+            receivedResult = it
+        }
+        
+        coVerify { duplicateButtonToPageUseCase.execute("p1", 0, "p2", false) }
         assertEquals(result, receivedResult)
     }
 }

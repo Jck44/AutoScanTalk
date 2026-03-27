@@ -316,6 +316,16 @@ class PageViewModel @Inject constructor(
         pageManagementDelegate.moveButtonToPage(fromPageId, fromIndex, toPageId, forceMove, onResult)
     }
 
+    override fun duplicateButtonToPage(
+        fromPageId: String,
+        fromIndex: Int,
+        toPageId: String,
+        forceMove: Boolean,
+        onResult: (com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult) -> Unit
+    ) {
+        pageManagementDelegate.duplicateButtonToPage(fromPageId, fromIndex, toPageId, forceMove, onResult)
+    }
+
     fun deletePage(page: Page, deleteUsages: Boolean = false) = pageManagementDelegate.deletePage(page, deleteUsages)
     suspend fun getPageUsages(pageId: String) = pageManagementDelegate.getPageUsages(pageId)
     fun importFromJson(jsonString: String, bookId: String, regenerateIds: Boolean? = true, onSuccess: () -> Unit, onError: (String) -> Unit) =

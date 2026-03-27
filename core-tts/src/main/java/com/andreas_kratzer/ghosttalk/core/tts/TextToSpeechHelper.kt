@@ -84,7 +84,24 @@ open class TextToSpeechHelper @Inject constructor(
     }
 
     open fun speak(text: String, queueMode: Int = 0, onDone: (() -> Unit)? = null, onError: ((String) -> Unit)? = null) {
-        currentProvider.speak(text, queueMode, onDone, onError)
+        val provider = currentProvider
+        if (provider is ElevenLabsTtsProvider) {
+            var fallbackTriggered = false
+            provider.speak(
+                text = text,
+                queueMode = queueMode,
+                onDone = {
+                    if (!fallbackTriggered) onDone?.invoke()
+                },
+                onError = { error ->
+                    Log.w("TextToSpeechHelper", "ElevenLabs speak failed, falling back to Android TTS: $error")
+                    fallbackTriggered = true
+                    androidTtsProvider.get().speak(text, queueMode, onDone, onError)
+                }
+            )
+        } else {
+            provider.speak(text, queueMode, onDone, onError)
+        }
     }
 
     open fun speakRouted(
@@ -95,7 +112,26 @@ open class TextToSpeechHelper @Inject constructor(
         onDone: (() -> Unit)? = null,
         onError: ((String) -> Unit)? = null
     ) {
-        currentProvider.speakRouted(text, deviceAddress, queueMode, isForCues, onDone, onError)
+        val provider = currentProvider
+        if (provider is ElevenLabsTtsProvider) {
+            var fallbackTriggered = false
+            provider.speakRouted(
+                text = text,
+                deviceAddress = deviceAddress,
+                queueMode = queueMode,
+                isForCues = isForCues,
+                onDone = {
+                    if (!fallbackTriggered) onDone?.invoke()
+                },
+                onError = { error ->
+                    Log.w("TextToSpeechHelper", "ElevenLabs speakRouted failed, falling back to Android TTS: $error")
+                    fallbackTriggered = true
+                    androidTtsProvider.get().speakRouted(text, deviceAddress, queueMode, isForCues, onDone, onError)
+                }
+            )
+        } else {
+            provider.speakRouted(text, deviceAddress, queueMode, isForCues, onDone, onError)
+        }
     }
 
     fun getAvailableLanguages(): List<Locale> {

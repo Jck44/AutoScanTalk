@@ -96,6 +96,8 @@ fun GridEditorContent(
         var editingRowIndex by remember { mutableStateOf<Int?>(null) }
         var showRowEditDialog by remember { mutableStateOf(false) }
         var showMoveDialog by remember { mutableStateOf(false) }
+        var showDuplicateDialog by remember { mutableStateOf(false) }
+        var isDuplicating by remember { mutableStateOf(false) }
         var showHiddenPrompt by remember { 
             mutableStateOf<com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.NeedsConfirmation?>(null) 
         }
@@ -218,10 +220,19 @@ fun GridEditorContent(
             selectedButtonIndex = selectedButtonIndex,
             showDialog = showDialog,
             showMoveDialog = showMoveDialog,
+            showDuplicateDialog = showDuplicateDialog,
+            isDuplicating = isDuplicating,
             showHiddenPrompt = showHiddenPrompt,
             snackbarHostState = snackbarHostState,
             scope = scope,
-            onShowMoveDialog = { value: Boolean -> showMoveDialog = value },
+            onShowMoveDialog = { value: Boolean -> 
+                showMoveDialog = value 
+                if (value) isDuplicating = false
+            },
+            onShowDuplicateDialog = { value: Boolean -> 
+                showDuplicateDialog = value
+                if (value) isDuplicating = true
+            },
             onShowHiddenPrompt = { value -> showHiddenPrompt = value },
             onDismissRowDialog = {
                 showRowEditDialog = false
@@ -229,8 +240,8 @@ fun GridEditorContent(
             },
             onDismissButtonDialog = {
                 showDialog = false
-                // Note: We don't clear selectedButtonIndex here if showMoveDialog is about to be true
-                if (!showMoveDialog && showHiddenPrompt == null) {
+                // Note: We don't clear selectedButtonIndex here if showMoveDialog or showDuplicateDialog is about to be true
+                if (!showMoveDialog && !showDuplicateDialog && showHiddenPrompt == null) {
                     selectedButtonIndex = null
                 }
             },

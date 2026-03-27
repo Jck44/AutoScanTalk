@@ -74,6 +74,7 @@ fun ButtonConfigDialog(
     onDismiss: () -> Unit,
     onTest: (ButtonConfig) -> Unit,
     onMove: () -> Unit,
+    onDuplicate: () -> Unit,
     onDelete: () -> Unit,
     onNavigateToPage: ((String) -> Unit)? = null,
     onCreatePage: ((String, Int, Int, String?, (String) -> Unit) -> Unit)? = null,
@@ -487,6 +488,13 @@ fun ButtonConfigDialog(
                             onClick = {
                                 showMenu = false
                                 onMove()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.action_duplicate)) },
+                            onClick = {
+                                showMenu = false
+                                onDuplicate()
                             }
                         )
                         DropdownMenuItem(

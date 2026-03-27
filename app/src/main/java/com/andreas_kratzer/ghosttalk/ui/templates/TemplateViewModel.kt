@@ -171,6 +171,16 @@ class TemplateViewModel @Inject constructor(
         // Not implemented for templates
     }
 
+    override fun duplicateButtonToPage(
+        fromPageId: String,
+        fromIndex: Int,
+        toPageId: String,
+        forceMove: Boolean,
+        onResult: (com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult) -> Unit
+    ) {
+        // Not implemented for templates
+    }
+
     override fun createNewPage(
         name: String,
         rows: Int,

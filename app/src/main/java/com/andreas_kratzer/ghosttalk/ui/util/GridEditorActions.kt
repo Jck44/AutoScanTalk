@@ -28,5 +28,12 @@ interface GridEditorActions {
         forceMove: Boolean = false,
         onResult: (com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult) -> Unit
     )
+    fun duplicateButtonToPage(
+        fromPageId: String,
+        fromIndex: Int,
+        toPageId: String,
+        forceMove: Boolean = false,
+        onResult: (com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult) -> Unit
+    )
     val availableGeminiTools: List<com.andreas_kratzer.ghosttalk.core.ai.domain.AiTool>
 }
