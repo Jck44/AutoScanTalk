@@ -69,16 +69,30 @@ class ElevenLabsTtsProvider @Inject constructor(
             stopAll()
         }
 
+        val elevenLabsModel = cloudSettings.elevenLabsModel
+        val cachedFile = getCacheFile(text, currentVoiceId, elevenLabsModel)
+
+        if (cachedFile.exists() && cachedFile.length() > 0) {
+            Log.d("ElevenLabsTtsProvider", "Playing cached audio for ${cachedFile.name}")
+            handler.post {
+                routedAudioPlayer.playAudioFile(cachedFile, deviceAddress) {
+                    onDone?.invoke()
+                }
+            }
+            return
+        }
+
         val requestBody = """
             {
                 "text": "$text",
-                "model_id": "eleven_multilingual_v2",
+                "model_id": "$elevenLabsModel",
                 "voice_settings": {
                     "stability": 0.5,
                     "similarity_boost": 0.75
                 }
             }
         """.trimIndent().toRequestBody("application/json".toMediaType())
+
 
         val request = Request.Builder()
             .url("https://api.elevenlabs.io/v1/text-to-speech/$currentVoiceId")
@@ -119,15 +133,14 @@ class ElevenLabsTtsProvider @Inject constructor(
                     }
 
                     try {
-                        val tempFile = File(context.cacheDir, "elevenlabs_${System.currentTimeMillis()}.mp3")
-                        FileOutputStream(tempFile).use { output ->
+                        java.io.FileOutputStream(cachedFile).use { output ->
                             body.byteStream().copyTo(output)
                         }
-                        Log.i("ElevenLabsTtsProvider", "Saved audio file size: ${tempFile.length()} bytes")
+                        Log.i("ElevenLabsTtsProvider", "Saved audio file size: ${cachedFile.length()} bytes")
 
                         handler.post {
-                            routedAudioPlayer.playAudioFile(tempFile, deviceAddress) {
-                                tempFile.delete()
+                            routedAudioPlayer.playAudioFile(cachedFile, deviceAddress) {
+                                // Keep the file in cacheDir
                                 onDone?.invoke()
                             }
                         }
@@ -138,6 +151,73 @@ class ElevenLabsTtsProvider @Inject constructor(
                 }
             }
         })
+    }
+
+    override fun prefetch(text: String) {
+        val apiKey = cloudSettings.elevenLabsApiKey
+        if (apiKey.isNullOrEmpty()) return
+
+        val elevenLabsModel = cloudSettings.elevenLabsModel
+        val cachedFile = getCacheFile(text, currentVoiceId, elevenLabsModel)
+
+        if (cachedFile.exists() && cachedFile.length() > 0) {
+            return
+        }
+
+        val requestBody = """
+            {
+                "text": "$text",
+                "model_id": "$elevenLabsModel",
+                "voice_settings": {
+                    "stability": 0.5,
+                    "similarity_boost": 0.75
+                }
+            }
+        """.trimIndent().toRequestBody("application/json".toMediaType())
+
+        val request = Request.Builder()
+            .url("https://api.elevenlabs.io/v1/text-to-speech/$currentVoiceId")
+            .addHeader("xi-api-key", apiKey)
+            .post(requestBody)
+            .tag("PREFETCH")
+            .build()
+
+        httpClient.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: java.io.IOException) {}
+            override fun onResponse(call: Call, response: Response) {
+                response.use { resp ->
+                    if (!resp.isSuccessful) return
+                    val body = resp.body ?: return
+                    try {
+                        java.io.FileOutputStream(cachedFile).use { output ->
+                            body.byteStream().copyTo(output)
+                        }
+                        Log.i("ElevenLabsTtsProvider", "Prefetched audio: ${cachedFile.name}")
+                    } catch (e: Exception) {
+                        Log.e("ElevenLabsTtsProvider", "Error prefetching audio: ${e.message}")
+                    }
+                }
+            }
+        })
+    }
+    
+    private fun getCacheFile(text: String, voiceId: String, modelId: String): java.io.File {
+        val tgtDir = java.io.File(context.cacheDir, "elevenlabs")
+        if (!tgtDir.exists()) tgtDir.mkdirs()
+        
+        var base64Text = android.util.Base64.encodeToString(text.toByteArray(Charsets.UTF_8), android.util.Base64.URL_SAFE or android.util.Base64.NO_WRAP or android.util.Base64.NO_PADDING)
+        
+        if (base64Text.length > 100) {
+            val digest = java.security.MessageDigest.getInstance("MD5")
+            val hash = digest.digest(text.toByteArray()).joinToString("") { "%02x".format(it) }.take(8)
+            base64Text = "${base64Text.take(100)}-$hash"
+        }
+        
+        val safeVoiceId = voiceId.replace(Regex("[^a-zA-Z0-9_-]"), "")
+        val safeModelId = modelId.replace(Regex("[^a-zA-Z0-9_-]"), "")
+        
+        val fileName = "tts_eleven#${base64Text}#${safeVoiceId}#${safeModelId}.mp3"
+        return java.io.File(tgtDir, fileName)
     }
 
     init {

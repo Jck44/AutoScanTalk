@@ -128,7 +128,7 @@ fun SettingsScreen(
     }
 
     val localExportLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("application/json")
+        contract = ActivityResultContracts.CreateDocument("application/zip")
     ) { uri ->
         uri?.let {
             handleLocalExport(context, it, viewModel, coroutineScope)
@@ -172,8 +172,8 @@ fun SettingsScreen(
                     viewModel.lock()
                     onNavigateToStart()
                 },
-                onLocalExport = { localExportLauncher.launch("GhostTalk_Backup.json") },
-                onLocalImport = { localImportLauncher.launch("application/json") }
+                onLocalExport = { localExportLauncher.launch("GhostTalk_Backup.zip") },
+                onLocalImport = { localImportLauncher.launch("*/*") }
             )
         }
     }
@@ -330,24 +330,15 @@ private fun handleLocalImport(
     coroutineScope: kotlinx.coroutines.CoroutineScope,
     isGlobal: Boolean
 ) {
-    try {
-        context.contentResolver.openInputStream(uri)?.use { inputStream ->
-            val reader = BufferedReader(InputStreamReader(inputStream))
-            val jsonContent = reader.readText()
-            coroutineScope.launch {
-                if (isGlobal) {
-                    viewModel.importGlobalManualBackup(
-                        json = jsonContent,
-                        onSuccess = { _ ->
-                            Toast.makeText(context, "Buch erfolgreich importiert.", Toast.LENGTH_SHORT).show()
-                        },
-                        onError = { error ->
-                            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
-                        }
-                    )
-                } else {
-                    viewModel.importLocalBackup(
-                        json = jsonContent,
+    coroutineScope.launch {
+        try {
+            val fileName = uri.path?.lowercase() ?: ""
+            val isZip = fileName.endsWith(".zip") || context.contentResolver.getType(uri) == "application/zip"
+
+            if (isZip) {
+                context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                    viewModel.importLocalBackupZip(
+                        inputStream = inputStream,
                         onSuccess = {
                             Toast.makeText(context, context.getString(CoreR.string.page_import_success), Toast.LENGTH_SHORT).show()
                         },
@@ -356,11 +347,38 @@ private fun handleLocalImport(
                         }
                     )
                 }
+            } else {
+                // Legacy JSON import
+                context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                    val reader = BufferedReader(InputStreamReader(inputStream))
+                    val jsonContent = reader.readText()
+                    if (isGlobal) {
+                        viewModel.importGlobalManualBackup(
+                            json = jsonContent,
+                            onSuccess = { _ ->
+                                Toast.makeText(context, "Buch erfolgreich importiert.", Toast.LENGTH_SHORT).show()
+                            },
+                            onError = { error ->
+                                Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+                            }
+                        )
+                    } else {
+                        viewModel.importLocalBackup(
+                            json = jsonContent,
+                            onSuccess = {
+                                Toast.makeText(context, context.getString(CoreR.string.page_import_success), Toast.LENGTH_SHORT).show()
+                            },
+                            onError = { error ->
+                                Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+                            }
+                        )
+                    }
+                }
             }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Toast.makeText(context, "Fehler beim Import: ${e.message}", Toast.LENGTH_LONG).show()
         }
-    } catch (e: Exception) {
-        e.printStackTrace()
-        Toast.makeText(context, "Fehler beim Import: ${e.message}", Toast.LENGTH_LONG).show()
     }
 }
 
@@ -372,12 +390,9 @@ private fun handleLocalExport(
 ) {
     coroutineScope.launch {
         try {
-            val jsonContent = viewModel.exportLocalBackup()
             withContext(Dispatchers.IO) {
                 context.contentResolver.openOutputStream(uri)?.use { outputStream ->
-                    val writer = OutputStreamWriter(outputStream)
-                    writer.write(jsonContent)
-                    writer.close()
+                    viewModel.exportLocalBackupZip(outputStream)
                 }
             }
             Toast.makeText(context, context.getString(CoreR.string.page_export_success), Toast.LENGTH_SHORT).show()

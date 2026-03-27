@@ -13,6 +13,7 @@ interface ScanStrategy {
         focusedButtonIndex: MutableStateFlow<Int?>,
         focusedRowIndex: MutableStateFlow<Int?>,
         onSpeakCue: suspend (String) -> Unit,
+        onPrefetchCue: suspend (String) -> Unit,
         onCycleCompleted: suspend () -> Unit,
         delayMillis: Long,
         featureGuard: FeatureGuardProxy

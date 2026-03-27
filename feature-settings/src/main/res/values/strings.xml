@@ -214,6 +214,10 @@
     <string name="settings_elevenlabs_test_success">Verbindung erfolgreich! Eine Testansage wurde gesendet.</string>
     <string name="settings_elevenlabs_test_failure">Verbindung fehlgeschlagen: %s</string>
     <string name="settings_elevenlabs_test_sample_text">Dies ist eine Testansage von ElevenLabs.</string>
+    <string name="settings_elevenlabs_model">Modell</string>
+    <string name="settings_elevenlabs_model_multilingual">Multilingual v2 (Beste Qualität)</string>
+    <string name="settings_elevenlabs_model_turbo">Turbo v2.5 (Schnell, ~200ms)</string>
+    <string name="settings_elevenlabs_model_flash">Flash v2.5 (Am schnellsten, ~75ms)</string>
     <string name="settings_voice_engine">Sprach-Engine</string>
 
     <!-- Smart Home Providers -->

@@ -38,6 +38,13 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import java.util.UUID
+import java.io.File
+import java.io.InputStream
+import java.io.OutputStream
+import java.io.FileOutputStream
+import java.util.zip.ZipEntry
+import java.util.zip.ZipInputStream
+import java.util.zip.ZipOutputStream
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -348,6 +355,74 @@ class PageImportExportManager @Inject constructor(
 
             importFromJson(jsonString, targetBookId, regenerateIds = false)
             Result.success(targetBookId)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun exportBookToZip(bookId: String, outputStream: OutputStream) = withContext(Dispatchers.IO) {
+        ZipOutputStream(outputStream).use { zip ->
+            // 1. Write the backup.json
+            val jsonContent = exportBookToJson(bookId)
+            zip.putNextEntry(ZipEntry("backup.json"))
+            zip.write(jsonContent.toByteArray(Charsets.UTF_8))
+            zip.closeEntry()
+
+            // 2. Write the elevenlabs cache files
+            val cacheDir = File(context.cacheDir, "elevenlabs")
+            if (cacheDir.exists() && cacheDir.isDirectory) {
+                cacheDir.listFiles()?.forEach { file ->
+                    if (file.isFile && file.name.endsWith(".mp3")) {
+                        zip.putNextEntry(ZipEntry("tts_cache/${file.name}"))
+                        file.inputStream().use { input ->
+                            input.copyTo(zip)
+                        }
+                        zip.closeEntry()
+                    }
+                }
+            }
+        }
+    }
+
+    override suspend fun importFromZip(
+        inputStream: InputStream,
+        bookId: String,
+        regenerateIds: Boolean,
+        restoreSyncSettings: Boolean
+    ): Result<Int> = withContext(Dispatchers.IO) {
+        try {
+            var jsonContent: String? = null
+            val zipIn = ZipInputStream(inputStream)
+            var entry = zipIn.nextEntry
+            
+            val ttsCacheDir = File(context.cacheDir, "elevenlabs")
+            if (!ttsCacheDir.exists()) ttsCacheDir.mkdirs()
+
+            while (entry != null) {
+                if (entry.name == "backup.json") {
+                    val bytes = zipIn.readBytes()
+                    jsonContent = String(bytes, Charsets.UTF_8)
+                } else if (entry.name.startsWith("tts_cache/")) {
+                    val fileName = entry.name.substringAfter("tts_cache/")
+                    if (fileName.isNotEmpty()) {
+                        val targetFile = File(ttsCacheDir, fileName)
+                        val out = FileOutputStream(targetFile)
+                        try {
+                            zipIn.copyTo(out)
+                        } finally {
+                            out.close()
+                        }
+                    }
+                }
+                zipIn.closeEntry()
+                entry = zipIn.nextEntry
+            }
+
+            if (jsonContent == null) {
+                return@withContext Result.failure(Exception("Keine backup.json im ZIP gefunden."))
+            }
+
+            importFromJson(jsonContent, bookId, regenerateIds, restoreSyncSettings)
         } catch (e: Exception) {
             Result.failure(e)
         }

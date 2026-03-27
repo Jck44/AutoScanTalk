@@ -24,6 +24,8 @@ import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.ScanningSetti
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.TtsSettingsDelegate
 import com.andreas_kratzer.ghosttalk.feature.settings.R
 import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
+import com.andreas_kratzer.ghosttalk.core.tts.AudioCacheRepository
+import com.andreas_kratzer.ghosttalk.core.tts.CachedAudioItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -62,7 +64,8 @@ class SettingsViewModel @Inject constructor(
     private val updateActionLogLimitUseCase: UpdateActionLogLimitUseCase,
     private val importExportManager: PageImportExportProvider,
     private val hueManager: PhilipsHueManager,
-    private val ttsHelper: TextToSpeechHelper
+    private val ttsHelper: TextToSpeechHelper,
+    private val audioCacheRepository: AudioCacheRepository
 ) : AndroidViewModel(application) {
 
     private val _activeBookId = settingsRepository.activeBookIdFlow
@@ -152,6 +155,7 @@ class SettingsViewModel @Inject constructor(
     val forceSoftKeyboard = settingsRepository.forceSoftKeyboardFlow
     val ttsEngine = settingsRepository.ttsEngineFlow
     val elevenLabsApiKey = settingsRepository.elevenLabsApiKeyFlow
+    val elevenLabsModel = settingsRepository.elevenLabsModelFlow
     
     private val _showActionHistoryDialog = MutableStateFlow(false)
     val showActionHistoryDialog = _showActionHistoryDialog.asStateFlow()
@@ -257,6 +261,7 @@ class SettingsViewModel @Inject constructor(
         settingsRepository.ttsEngine = engine
     }
     fun setElevenLabsApiKey(key: String) { settingsRepository.elevenLabsApiKey = key }
+    fun setElevenLabsModel(model: String) { settingsRepository.elevenLabsModel = model }
 
     fun testElevenLabsConnection() {
         viewModelScope.launch {
@@ -474,6 +479,25 @@ class SettingsViewModel @Inject constructor(
         return importExportManager.exportBookToJson(activeBookId)
     }
 
+    suspend fun exportLocalBackupZip(outputStream: java.io.OutputStream) {
+        importExportManager.exportBookToZip(activeBookId, outputStream)
+    }
+
+    suspend fun importLocalBackupZip(
+        inputStream: java.io.InputStream,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        val result = importExportManager.importFromZip(
+            inputStream = inputStream,
+            bookId = activeBookId,
+            regenerateIds = false,
+            restoreSyncSettings = false
+        )
+        result.onSuccess { onSuccess() }
+            .onFailure { e -> onError("Fehler beim ZIP-Import: ${e.message}") }
+    }
+
     suspend fun importLocalBackup(json: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
         val importBookId = importExportManager.extractBookIdFromJson(json)
         
@@ -554,6 +578,32 @@ class SettingsViewModel @Inject constructor(
     fun setLogStopActionsInput(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.logStopActions = enabled
+        }
+    }
+
+    // --- Audio Cache Management ---
+    private val _audioCacheItems = MutableStateFlow<List<CachedAudioItem>>(emptyList())
+    val audioCacheItems: StateFlow<List<CachedAudioItem>> = _audioCacheItems.asStateFlow()
+
+    fun loadAudioCache() {
+        viewModelScope.launch {
+            _audioCacheItems.value = audioCacheRepository.getCachedAudios()
+        }
+    }
+
+    fun deleteAudioCacheItem(item: CachedAudioItem) {
+        viewModelScope.launch {
+            if (audioCacheRepository.deleteFile(item.file)) {
+                loadAudioCache()
+            }
+        }
+    }
+
+    fun clearAudioCache() {
+        viewModelScope.launch {
+            if (audioCacheRepository.deleteAll()) {
+                loadAudioCache()
+            }
         }
     }
 }

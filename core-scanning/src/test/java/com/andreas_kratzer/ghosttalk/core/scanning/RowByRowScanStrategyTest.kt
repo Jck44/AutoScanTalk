@@ -65,6 +65,7 @@ class RowByRowScanStrategyTest {
                 focusedButtonIndex = focusedButtonIndex,
                 focusedRowIndex = focusedRowIndex,
                 onSpeakCue = { cues.add(it) },
+                onPrefetchCue = {},
                 onCycleCompleted = {},
                 delayMillis = 1000,
                 featureGuard = featureGuard
@@ -95,6 +96,7 @@ class RowByRowScanStrategyTest {
                 focusedButtonIndex = focusedButtonIndex,
                 focusedRowIndex = focusedRowIndex,
                 onSpeakCue = { cues.add(it) },
+                onPrefetchCue = {},
                 onCycleCompleted = {},
                 delayMillis = 1000,
                 featureGuard = featureGuard
@@ -122,6 +124,7 @@ class RowByRowScanStrategyTest {
                 rowIndex = 1,
                 focusedButtonIndex = focusedButtonIndex,
                 onSpeakCue = { cues.add(it) },
+                onPrefetchCue = {},
                 onCycleCompleted = {},
                 delayMillis = 1000,
                 featureGuard = featureGuard
@@ -155,6 +158,7 @@ class RowByRowScanStrategyTest {
             rowIndex = 0,
             focusedButtonIndex = focusedButtonIndex,
             onSpeakCue = { },
+            onPrefetchCue = {},
             onCycleCompleted = {},
             delayMillis = 1000,
             featureGuard = featureGuard
@@ -184,6 +188,7 @@ class RowByRowScanStrategyTest {
                 focusedButtonIndex = focusedButtonIndex,
                 focusedRowIndex = focusedRowIndex,
                 onSpeakCue = { speakCount.value++ },
+                onPrefetchCue = {},
                 onCycleCompleted = {},
                 delayMillis = 500,
                 featureGuard = mockk(relaxed = true) {

@@ -55,6 +55,7 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
     ) {
         if (!isGlobal) {
             val ttsEngine by viewModel.ttsEngine.collectAsState("google")
+            val elevenLabsModel by viewModel.elevenLabsModel.collectAsState("eleven_multilingual_v2")
             
             PreferenceCategory(stringResource(R.string.settings_category_voice), modifier = Modifier.weight(1f)) {
                 // Engine Select
@@ -75,6 +76,28 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                     selectedOption = currentEngineLabel,
                     options = engineOptions
                 )
+
+                if (ttsEngine == "elevenlabs") {
+                    val modelOptions = listOf(
+                        "eleven_multilingual_v2" to R.string.settings_elevenlabs_model_multilingual,
+                        "eleven_turbo_v2_5" to R.string.settings_elevenlabs_model_turbo,
+                        "eleven_flash_v2_5" to R.string.settings_elevenlabs_model_flash
+                    ).map { (id, resId) ->
+                        stringResource(resId) to { viewModel.setElevenLabsModel(id) }
+                    }
+
+                    val currentModelLabel = when (elevenLabsModel) {
+                        "eleven_turbo_v2_5" -> stringResource(R.string.settings_elevenlabs_model_turbo)
+                        "eleven_flash_v2_5" -> stringResource(R.string.settings_elevenlabs_model_flash)
+                        else -> stringResource(R.string.settings_elevenlabs_model_multilingual)
+                    }
+
+                    com.andreas_kratzer.ghosttalk.core.ui.components.SettingsDropdownItem(
+                        label = stringResource(R.string.settings_elevenlabs_model),
+                        selectedOption = currentModelLabel,
+                        options = modelOptions
+                    )
+                }
 
                 // Language Select
                 val context = androidx.compose.ui.platform.LocalContext.current

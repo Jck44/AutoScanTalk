@@ -66,4 +66,5 @@ object SettingsConstants {
     const val KEY_SYNC_LOGS_STORAGE = "sync_logs_storage"
     const val KEY_TTS_ENGINE = "tts_engine"
     const val KEY_ELEVENLABS_API_KEY = "elevenlabs_api_key"
+    const val KEY_ELEVENLABS_MODEL = "elevenlabs_model"
 }

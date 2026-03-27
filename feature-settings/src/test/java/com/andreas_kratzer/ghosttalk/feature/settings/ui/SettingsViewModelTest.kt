@@ -57,6 +57,7 @@ class SettingsViewModelTest {
     private lateinit var updateActiveBookNameUseCase: UpdateActiveBookNameUseCase
     private lateinit var deleteBookUseCase: DeleteBookUseCase
     private lateinit var ttsHelper: com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
+    private lateinit var audioCacheRepository: com.andreas_kratzer.ghosttalk.core.tts.AudioCacheRepository
     
     private lateinit var viewModel: SettingsViewModel
 
@@ -82,6 +83,7 @@ class SettingsViewModelTest {
         updateActiveBookNameUseCase = mockk(relaxed = true)
         deleteBookUseCase = mockk(relaxed = true)
         ttsHelper = mockk(relaxed = true)
+        audioCacheRepository = mockk(relaxed = true)
 
         // Mock common flows
         every { settingsRepository.activeBookId } returns "test-book"
@@ -111,7 +113,8 @@ class SettingsViewModelTest {
             updateActionLogLimitUseCase = updateActionLogLimitUseCase,
             importExportManager = importExportManager,
             hueManager = hueManager,
-            ttsHelper = ttsHelper
+            ttsHelper = ttsHelper,
+            audioCacheRepository = audioCacheRepository
         )
     }
 

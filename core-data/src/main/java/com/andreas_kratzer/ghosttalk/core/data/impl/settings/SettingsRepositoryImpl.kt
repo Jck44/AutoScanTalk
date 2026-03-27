@@ -158,6 +158,7 @@ class SettingsRepositoryImpl @Inject constructor(
     override val isSecurityRequiredForEditFlow: StateFlow<Boolean> get() = securitySettings.isSecurityRequiredForEditFlow
     override val isSecurityRequiredForSettingsFlow: StateFlow<Boolean> get() = securitySettings.isSecurityRequiredForSettingsFlow
     override val elevenLabsApiKeyFlow: StateFlow<String?> get() = cloudSettings.elevenLabsApiKeyFlow
+    override val elevenLabsModelFlow: StateFlow<String> get() = cloudSettings.elevenLabsModelFlow
     override val ttsEngineFlow: StateFlow<String?> get() = voiceSettings.ttsEngineFlow
 
     // ── Public API: Properties ───────────────────────────────────────────
@@ -416,6 +417,11 @@ class SettingsRepositoryImpl @Inject constructor(
     override var elevenLabsApiKey: String?
         get() = cloudSettings.elevenLabsApiKey
         set(value) { cloudSettings.elevenLabsApiKey = value }
+
+    override var elevenLabsModel: String
+        get() = cloudSettings.elevenLabsModel
+        set(value) { cloudSettings.elevenLabsModel = value }
+
 
     override var ttsEngine: String?
         get() = voiceSettings.ttsEngine

@@ -263,6 +263,11 @@ class AndroidTtsProvider @Inject constructor(
         }
     }
 
+    override fun prefetch(text: String) {
+        // No-Op for Android TTS as local synthesis is nearly instantaneous 
+        // and doesn't suffer from network latency.
+    }
+
     override fun stopAll() {
         tts?.stop()
         routedAudioPlayer.stopAll()

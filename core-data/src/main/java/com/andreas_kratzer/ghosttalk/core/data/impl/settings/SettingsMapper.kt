@@ -64,7 +64,8 @@ class SettingsMapper @Inject constructor(
             bluetoothDelay = settingsRepository.bluetoothDelay,
             hueClientId = settingsRepository.hueClientId,
             hueClientSecret = settingsRepository.hueClientSecret,
-            ttsEngine = settingsRepository.ttsEngine
+            ttsEngine = settingsRepository.ttsEngine,
+            elevenLabsModel = settingsRepository.elevenLabsModel
         )
     }
 
@@ -112,5 +113,6 @@ class SettingsMapper @Inject constructor(
         data.hueClientId?.let { settingsRepository.hueClientId = it }
         data.hueClientSecret?.let { settingsRepository.hueClientSecret = it }
         data.ttsEngine?.let { settingsRepository.ttsEngine = it }
+        data.elevenLabsModel?.let { settingsRepository.elevenLabsModel = it }
     }
 }

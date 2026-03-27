@@ -42,6 +42,7 @@ class LinearScanStrategyTest {
             focusedButtonIndex = focusedButtonIndex,
             focusedRowIndex = focusedRowIndex,
             onSpeakCue = {},
+            onPrefetchCue = {},
             onCycleCompleted = {},
             delayMillis = 1000,
             featureGuard = featureGuard
@@ -73,6 +74,7 @@ class LinearScanStrategyTest {
                 focusedButtonIndex = focusedButtonIndex,
                 focusedRowIndex = focusedRowIndex,
                 onSpeakCue = { cues.add(it) },
+                onPrefetchCue = {},
                 onCycleCompleted = {},
                 delayMillis = 1000,
                 featureGuard = featureGuard
@@ -115,6 +117,7 @@ class LinearScanStrategyTest {
                 focusedButtonIndex = focusedButtonIndex,
                 focusedRowIndex = focusedRowIndex,
                 onSpeakCue = { cues.add(it) },
+                onPrefetchCue = {},
                 onCycleCompleted = {},
                 delayMillis = 1000,
                 featureGuard = featureGuard
@@ -144,6 +147,7 @@ class LinearScanStrategyTest {
                 focusedButtonIndex = focusedButtonIndex,
                 focusedRowIndex = focusedRowIndex,
                 onSpeakCue = { },
+                onPrefetchCue = {},
                 onCycleCompleted = {},
                 delayMillis = 1000,
                 featureGuard = featureGuard
@@ -178,6 +182,7 @@ class LinearScanStrategyTest {
                 focusedButtonIndex = focusedButtonIndex,
                 focusedRowIndex = focusedRowIndex,
                 onSpeakCue = { },
+                onPrefetchCue = {},
                 onCycleCompleted = { cycleCount++ },
                 delayMillis = 100,
                 featureGuard = featureGuard

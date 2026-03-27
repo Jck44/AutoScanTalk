@@ -133,6 +133,10 @@ open class TextToSpeechHelper @Inject constructor(
         }
     }
 
+    fun prefetch(text: String) {
+        currentProvider.prefetch(text)
+    }
+
     fun stopAll() {
         currentProvider.stopAll()
     }

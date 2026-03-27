@@ -14,4 +14,6 @@ interface CloudSettings {
 
     var elevenLabsApiKey: String?
     val elevenLabsApiKeyFlow: kotlinx.coroutines.flow.StateFlow<String?>
+    var elevenLabsModel: String
+    val elevenLabsModelFlow: kotlinx.coroutines.flow.StateFlow<String>
 }

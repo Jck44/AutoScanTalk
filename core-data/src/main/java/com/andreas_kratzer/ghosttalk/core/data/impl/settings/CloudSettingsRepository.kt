@@ -23,12 +23,14 @@ class CloudSettingsRepository(
     private val _syncMode = NonNullStringSetting(KEY_SYNC_MODE, "TWO_WAY")
     private val _lastSuccessfulSyncTime = LongSetting(KEY_LAST_SYNC_TIME, 0L)
     private val _elevenLabsApiKey = StringSetting(SettingsConstants.KEY_ELEVENLABS_API_KEY)
+    private val _elevenLabsModel = NonNullStringSetting(SettingsConstants.KEY_ELEVENLABS_MODEL, "eleven_multilingual_v2")
 
     override val isCloudSyncEnabledFlow = _isCloudSyncEnabled.flow
     override val syncIntervalMinutesFlow = _syncIntervalMinutes.flow
     override val syncModeFlow = _syncMode.flow
     override val lastSuccessfulSyncTimeFlow = _lastSuccessfulSyncTime.flow
     override val elevenLabsApiKeyFlow = _elevenLabsApiKey.flow
+    override val elevenLabsModelFlow = _elevenLabsModel.flow
 
     override var isCloudSyncEnabled: Boolean
         get() = _isCloudSyncEnabled.value
@@ -50,6 +52,10 @@ class CloudSettingsRepository(
         get() = _elevenLabsApiKey.value
         set(value) { _elevenLabsApiKey.value = value }
         
+    override var elevenLabsModel: String
+        get() = _elevenLabsModel.value
+        set(value) { _elevenLabsModel.value = value }
+        
 
     override fun refresh() {
         _isCloudSyncEnabled.refresh()
@@ -57,5 +63,6 @@ class CloudSettingsRepository(
         _syncMode.refresh()
         _lastSuccessfulSyncTime.refresh()
         _elevenLabsApiKey.refresh()
+        _elevenLabsModel.refresh()
     }
 }

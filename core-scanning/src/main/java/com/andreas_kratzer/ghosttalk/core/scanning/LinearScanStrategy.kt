@@ -5,6 +5,9 @@ import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.util.GridUtils
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 
 class LinearScanStrategy : ScanStrategy {
     override suspend fun executeScan(
@@ -16,6 +19,7 @@ class LinearScanStrategy : ScanStrategy {
         focusedButtonIndex: MutableStateFlow<Int?>,
         focusedRowIndex: MutableStateFlow<Int?>,
         onSpeakCue: suspend (String) -> Unit,
+        onPrefetchCue: suspend (String) -> Unit,
         onCycleCompleted: suspend () -> Unit,
         delayMillis: Long,
         featureGuard: FeatureGuardProxy
@@ -52,6 +56,17 @@ class LinearScanStrategy : ScanStrategy {
                 
                 val cue = buttonConfig.auditoryCue
                 val cueText = (cue as? AuditoryCue.TextToSpeechCue)?.text?.takeIf { it.isNotBlank() } ?: buttonConfig.label
+                
+                // Prefetch the next item
+                val nextIndex = if (i + 1 < activeButtonsWithGlobalIndices.size) i + 1 else 0
+                val (_, nextButtonConfig) = activeButtonsWithGlobalIndices[nextIndex]
+                val nextCue = nextButtonConfig.auditoryCue
+                val nextCueText = (nextCue as? AuditoryCue.TextToSpeechCue)?.text?.takeIf { it.isNotBlank() } ?: nextButtonConfig.label
+                
+                CoroutineScope(Dispatchers.IO).launch {
+                    onPrefetchCue(nextCueText)
+                }
+
                 onSpeakCue(cueText)
                 
                 delay(delayMillis)

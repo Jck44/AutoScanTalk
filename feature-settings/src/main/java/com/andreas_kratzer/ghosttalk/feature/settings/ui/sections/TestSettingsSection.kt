@@ -46,6 +46,8 @@ import java.io.File
 import com.andreas_kratzer.ghosttalk.core.ui.components.PreferenceCategory
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsToggleItem
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsEditTextItem
+import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsClickableItem
+import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.AudioCacheDialog
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.feature.settings.R
@@ -113,6 +115,26 @@ fun TestSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                         label = stringResource(R.string.settings_log_stop_actions),
                         checked = book.logStopActions,
                         onCheckedChange = { isChecked: Boolean -> viewModel.setLogStopActionsInput(isChecked) }
+                    )
+                }
+                
+                var showAudioCacheDialog by remember { mutableStateOf(false) }
+                SettingsClickableItem(
+                    label = "Audio-Cache",
+                    value = "Gecachte Audios verwalten",
+                    onClick = { 
+                        viewModel.loadAudioCache()
+                        showAudioCacheDialog = true 
+                    }
+                )
+
+                if (showAudioCacheDialog) {
+                    val cacheItems by viewModel.audioCacheItems.collectAsState()
+                    AudioCacheDialog(
+                        cacheItems = cacheItems,
+                        onDismiss = { showAudioCacheDialog = false },
+                        onDelete = { viewModel.deleteAudioCacheItem(it) },
+                        onClearAll = { viewModel.clearAudioCache() }
                     )
                 }
             }

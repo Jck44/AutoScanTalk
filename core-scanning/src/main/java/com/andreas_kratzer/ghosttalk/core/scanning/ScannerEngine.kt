@@ -91,6 +91,7 @@ class ScannerEngine @Inject constructor(
                         focusedButtonIndex = _focusedButtonIndex,
                         focusedRowIndex = _focusedRowIndex,
                         onSpeakCue = { handleSpeakCue(it) },
+                        onPrefetchCue = { handlePrefetchCue(it) },
                         onCycleCompleted = { _onCycleCompleted.emit(Unit) },
                         delayMillis = scanDelayMillis,
                         featureGuard = featureGuard
@@ -105,6 +106,7 @@ class ScannerEngine @Inject constructor(
                         focusedButtonIndex = _focusedButtonIndex,
                         focusedRowIndex = _focusedRowIndex,
                         onSpeakCue = { handleSpeakCue(it) },
+                        onPrefetchCue = { handlePrefetchCue(it) },
                         onCycleCompleted = { _onCycleCompleted.emit(Unit) },
                         delayMillis = scanDelayMillis,
                         featureGuard = featureGuard
@@ -123,6 +125,10 @@ class ScannerEngine @Inject constructor(
         feedbackProvider.speakCue(text)
     }
 
+    private suspend fun handlePrefetchCue(text: String) {
+        feedbackProvider.prefetchCue(text)
+    }
+
     fun selectCurrentRow() {
         val currentRow = _focusedRowIndex.value ?: return
         scanJob?.cancel()
@@ -138,6 +144,7 @@ class ScannerEngine @Inject constructor(
                     rowIndex = currentRow,
                     focusedButtonIndex = _focusedButtonIndex,
                     onSpeakCue = { handleSpeakCue(it) },
+                    onPrefetchCue = { handlePrefetchCue(it) },
                     onCycleCompleted = { _onCycleCompleted.emit(Unit) },
                     delayMillis = scanDelayMillis,
                     featureGuard = featureGuard

@@ -34,4 +34,8 @@ class TtsScannerFeedbackProvider @Inject constructor(
             }
         }
     }
+
+    override suspend fun prefetchCue(text: String) {
+        ttsHelper.prefetch(text)
+    }
 }

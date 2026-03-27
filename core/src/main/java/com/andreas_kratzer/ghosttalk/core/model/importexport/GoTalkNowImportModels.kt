@@ -57,6 +57,7 @@ data class ImportExportData(
     val hueClientId: String? = null,
     val hueClientSecret: String? = null,
     val ttsEngine: String? = null,
+    val elevenLabsModel: String? = null,
     val templates: List<ImportTemplate>? = null,
     val pages: List<ImportPage> = emptyList()
 )
