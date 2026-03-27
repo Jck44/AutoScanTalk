@@ -26,7 +26,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class ElevenLabsTtsProvider @Inject constructor(
+open class ElevenLabsTtsProvider @Inject constructor(
     private val context: Context,
     private val cloudSettings: CloudSettings,
     private val routedAudioPlayer: RoutedAudioPlayer,

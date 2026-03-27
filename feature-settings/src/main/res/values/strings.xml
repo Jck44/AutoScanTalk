@@ -92,7 +92,6 @@
     <string name="settings_cloud_signed_in_as">Angemeldet als %s</string>
     <string name="settings_cloud_last_sync">Letzter Sync: %s</string>
     <string name="settings_elevenlabs_api_key">ElevenLabs API-Schlüssel</string>
-    <string name="settings_elevenlabs_api_key_desc">Erforderlich für ElevenLabs TTS. Zu finden unter elevenlabs.io -> Profile -> API Keys.</string>
     <string name="book_import_cloud_success">Buch erfolgreich aus der Cloud geladen.</string>
     <string name="book_import_cloud_error">Fehler beim Laden aus der Cloud: %s</string>
     <string name="settings_cloud_logs_title">Cloud Sync Protokoll</string>

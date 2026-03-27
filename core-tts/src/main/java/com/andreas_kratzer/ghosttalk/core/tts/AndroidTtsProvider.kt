@@ -22,7 +22,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class AndroidTtsProvider @Inject constructor(
+open class AndroidTtsProvider @Inject constructor(
     private val context: Context,
     private val settingsRepository: TtsSettings,
     private val routedAudioPlayer: RoutedAudioPlayer,

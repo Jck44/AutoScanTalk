@@ -8,7 +8,12 @@ import com.andreas_kratzer.ghosttalk.core.audio.RoutedAudioPlayer
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.model.AudioOutputDevice
 import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
+import com.andreas_kratzer.ghosttalk.core.tts.TtsVoice
 import com.andreas_kratzer.ghosttalk.core.tts.TtsVoiceManager
+import com.andreas_kratzer.ghosttalk.core.tts.AndroidTtsProvider
+import com.andreas_kratzer.ghosttalk.core.tts.ElevenLabsTtsProvider
+import com.andreas_kratzer.ghosttalk.core.tts.TtsProvider
+import io.mockk.mockk
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -19,6 +24,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.io.File
 import javax.inject.Inject
+import javax.inject.Provider
 import javax.inject.Singleton
 
 /**
@@ -28,15 +34,13 @@ import javax.inject.Singleton
 @Singleton
 class TtsRecordingHelper @Inject constructor(
     @ApplicationContext context: Context,
-    settingsRepository: SettingsRepository,
-    voiceManager: TtsVoiceManager
+    settingsRepository: SettingsRepository
 ) : TextToSpeechHelper(
     context, 
     CoroutineScope(Dispatchers.Main),
     settingsRepository, 
-    // Manual No-Op implementation for RoutedAudioPlayer to avoid MockK in AndroidTest
-    TestRoutedAudioPlayer(context, TestAudioDeviceManager(context), settingsRepository as AudioSettings),
-    voiceManager
+    Provider { mockk<AndroidTtsProvider>(relaxed = true) },
+    Provider { mockk<ElevenLabsTtsProvider>(relaxed = true) }
 ) {
     private val _spokenTexts = MutableStateFlow<List<String>>(emptyList())
     val spokenTexts: StateFlow<List<String>> = _spokenTexts.asStateFlow()
@@ -45,7 +49,7 @@ class TtsRecordingHelper @Inject constructor(
 
     private val testScope = CoroutineScope(Dispatchers.Main)
 
-    override fun speak(text: String, queueMode: Int, onDone: (() -> Unit)?) {
+    override fun speak(text: String, queueMode: Int, onDone: (() -> Unit)?, onError: ((String) -> Unit)?) {
         Log.d("TtsRecordingHelper", "Recording speak: $text")
         val current = _spokenTexts.value.toMutableList()
         current.add(text)
@@ -61,7 +65,8 @@ class TtsRecordingHelper @Inject constructor(
         deviceAddress: String?,
         queueMode: Int,
         isForCues: Boolean,
-        onDone: (() -> Unit)?
+        onDone: (() -> Unit)?,
+        onError: ((String) -> Unit)?
     ) {
         Log.d("TtsRecordingHelper", "Recording speakRouted: $text")
         val current = _spokenTexts.value.toMutableList()
