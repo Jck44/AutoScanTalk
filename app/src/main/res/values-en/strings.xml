@@ -175,6 +175,8 @@
     <string name="button_action_test">Test</string>
     <string name="action_duplicate">Duplicate</string>
     <string name="duplicate_suffix">-Duplicate</string>
+    <string name="button_duplicate_select_target">Select Target Page for Duplicate</string>
+    <string name="button_duplicate_success">Button duplicated</string>
 
     <!-- Templates -->
     <string name="template_name_label">Template Name</string>
