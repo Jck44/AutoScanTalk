@@ -96,61 +96,65 @@ fun CloudSettingsSection(
                     Text(stringResource(R.string.settings_cloud_sign_in))
                 }
             }
+        }
 
+        if (isGlobal) {
             Spacer(modifier = Modifier.height(dimensions.paddingMedium))
 
-            com.andreas_kratzer.ghosttalk.core.ui.components.SettingsEditTextItem(
-                label = stringResource(R.string.settings_elevenlabs_api_key),
-                value = elevenLabsApiKey ?: "",
-                onValueChange = { viewModel.setElevenLabsApiKey(it) }
-            )
-            Text(
-                text = stringResource(R.string.settings_elevenlabs_api_key_description),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 4.dp)
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Button(
-                onClick = { viewModel.testElevenLabsConnection() },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+            PreferenceCategory(stringResource(R.string.settings_category_elevenlabs)) {
+                com.andreas_kratzer.ghosttalk.core.ui.components.SettingsEditTextItem(
+                    label = stringResource(R.string.settings_elevenlabs_api_key),
+                    value = elevenLabsApiKey ?: "",
+                    onValueChange = { viewModel.setElevenLabsApiKey(it) }
                 )
-            ) {
-                Icon(GhostTalkIcons.RecordVoiceOver, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(stringResource(R.string.settings_elevenlabs_test_button))
-            }
-
-            Spacer(modifier = Modifier.height(dimensions.paddingSmall))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)
-            ) {
-                val activity = context as? android.app.Activity ?: (context as? android.content.ContextWrapper)?.baseContext as? android.app.Activity
+                Text(
+                    text = stringResource(R.string.settings_elevenlabs_api_key_description),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
                 
-                OutlinedButton(
-                    onClick = { activity?.let { viewModel.saveApiKeyToGoogle(it) } },
-                    modifier = Modifier.weight(1f),
-                    enabled = userEmail != null && !elevenLabsApiKey.isNullOrEmpty()
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                Button(
+                    onClick = { viewModel.testElevenLabsConnection() },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
                 ) {
-                    Icon(GhostTalkIcons.CloudUpload, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(stringResource(R.string.settings_cloud_backup_now), style = MaterialTheme.typography.labelSmall)
+                    Icon(GhostTalkIcons.RecordVoiceOver, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(stringResource(R.string.settings_elevenlabs_test_button))
                 }
-                OutlinedButton(
-                    onClick = { activity?.let { viewModel.importApiKeyFromGoogle(it) } },
-                    modifier = Modifier.weight(1f),
-                    enabled = userEmail != null
+
+                Spacer(modifier = Modifier.height(dimensions.paddingSmall))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)
                 ) {
-                    Icon(GhostTalkIcons.CloudDownload, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(stringResource(R.string.settings_cloud_restore_now), style = MaterialTheme.typography.labelSmall)
+                    val activity = context as? android.app.Activity ?: (context as? android.content.ContextWrapper)?.baseContext as? android.app.Activity
+                    
+                    OutlinedButton(
+                        onClick = { activity?.let { viewModel.saveApiKeyToGoogle(it) } },
+                        modifier = Modifier.weight(1f),
+                        enabled = userEmail != null && !elevenLabsApiKey.isNullOrEmpty()
+                    ) {
+                        Icon(GhostTalkIcons.CloudUpload, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(stringResource(R.string.settings_cloud_backup_now), style = MaterialTheme.typography.labelSmall)
+                    }
+                    OutlinedButton(
+                        onClick = { activity?.let { viewModel.importApiKeyFromGoogle(it) } },
+                        modifier = Modifier.weight(1f),
+                        enabled = userEmail != null
+                    ) {
+                        Icon(GhostTalkIcons.CloudDownload, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(stringResource(R.string.settings_cloud_restore_now), style = MaterialTheme.typography.labelSmall)
+                    }
                 }
             }
         }
@@ -178,7 +182,7 @@ fun CloudSettingsSection(
             }
         } else {
             // Book-Scoped Mode: Show Sync Settings and manual buttons
-            PreferenceCategory(stringResource(R.string.settings_category_cloud)) {
+            PreferenceCategory(stringResource(R.string.settings_category_cloud_sync)) {
                 SettingsToggleItem(
                     label = stringResource(R.string.settings_cloud_sync_enabled),
                     checked = isCloudSyncEnabled,

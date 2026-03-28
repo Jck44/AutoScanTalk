@@ -72,7 +72,7 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 
-enum class SettingsSection(val titleRes: Int, val icon: ImageVector, val isGlobal: Boolean, val isScoped: Boolean) {
+enum class SettingsSection(private val titleRes: Int, val icon: ImageVector, val isGlobal: Boolean, val isScoped: Boolean) {
     GENERAL(R.string.settings_category_general, Icons.Default.Settings, isGlobal = true, isScoped = true),
     VOICE(R.string.settings_category_voice, GhostTalkIcons.RecordVoiceOver, isGlobal = false, isScoped = true),
     SCANNING(R.string.settings_category_scanning, GhostTalkIcons.SettingsAccessibility, isGlobal = false, isScoped = true),
@@ -81,7 +81,15 @@ enum class SettingsSection(val titleRes: Int, val icon: ImageVector, val isGloba
     SMART_HOME(R.string.settings_category_smart_home, Icons.Default.Home, isGlobal = true, isScoped = false),
     GEMINI(R.string.settings_category_gemini, GhostTalkIcons.AutoAwesome, isGlobal = false, isScoped = true),
     NOTIFICATIONS(R.string.settings_category_notifications, GhostTalkIcons.Notifications, isGlobal = true, isScoped = false),
-    ADVANCED(R.string.settings_category_advanced, GhostTalkIcons.Science, isGlobal = true, isScoped = true)
+    ADVANCED(R.string.settings_category_advanced, GhostTalkIcons.Science, isGlobal = true, isScoped = true);
+
+    fun getTitleRes(isGlobal: Boolean): Int {
+        return if (this == CLOUD && !isGlobal) {
+            R.string.settings_category_cloud_book
+        } else {
+            titleRes
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -228,7 +236,7 @@ private fun SettingsTopBar(
                 text = if (selectedSection == null)
                     stringResource(if (isGlobal) CoreR.string.settings_title_global else CoreR.string.settings_title_book)
                 else
-                    stringResource(selectedSection.titleRes),
+                    stringResource(selectedSection.getTitleRes(isGlobal)),
                 style = MaterialTheme.typography.titleLarge
             )
         },
@@ -273,7 +281,7 @@ private fun SettingsMainMenu(
                 ListItem(
                     headlineContent = {
                         Text(
-                            text = stringResource(section.titleRes),
+                            text = stringResource(section.getTitleRes(isGlobal)),
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.Medium
                         )

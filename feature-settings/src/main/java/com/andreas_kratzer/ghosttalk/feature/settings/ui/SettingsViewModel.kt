@@ -153,6 +153,8 @@ class SettingsViewModel @Inject constructor(
     val ttsEngine = settingsRepository.ttsEngineFlow
     val elevenLabsApiKey = settingsRepository.elevenLabsApiKeyFlow
     val elevenLabsModel = settingsRepository.elevenLabsModelFlow
+    val elevenLabsStability = settingsRepository.elevenLabsStabilityFlow
+    val elevenLabsSimilarityBoost = settingsRepository.elevenLabsSimilarityBoostFlow
     
     private val _showActionHistoryDialog = MutableStateFlow(false)
     val showActionHistoryDialog = _showActionHistoryDialog.asStateFlow()
@@ -329,7 +331,7 @@ class SettingsViewModel @Inject constructor(
     fun setHueClientSecret(secret: String) { settingsRepository.hueClientSecret = secret }
 
     fun setTtsEngine(engine: String?) { 
-        settingsRepository.ttsEngine = engine
+        ttsDelegate.setTtsEngine(engine)
     }
     fun setElevenLabsApiKey(key: String) = ttsDelegate.setElevenLabsApiKey(key)
 
@@ -374,7 +376,9 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun setElevenLabsModel(model: String) { settingsRepository.elevenLabsModel = model }
+    fun setElevenLabsModel(model: String) { ttsDelegate.setElevenLabsModel(model) }
+    fun setElevenLabsStability(value: Float) = ttsDelegate.setElevenLabsStability(value)
+    fun setElevenLabsSimilarityBoost(value: Float) = ttsDelegate.setElevenLabsSimilarityBoost(value)
 
     fun testElevenLabsConnection() {
         viewModelScope.launch {

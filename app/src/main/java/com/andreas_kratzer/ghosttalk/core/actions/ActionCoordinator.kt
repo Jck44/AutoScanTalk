@@ -19,19 +19,19 @@ class ActionCoordinator @Inject constructor(
     private val _events = MutableSharedFlow<ActionExecutionEvent>()
     val events: SharedFlow<ActionExecutionEvent> = _events.asSharedFlow()
 
-    override fun log(message: String) {
+    override fun log(message: String, action: com.andreas_kratzer.ghosttalk.core.model.ButtonAction?, label: String?) {
         logger.d("ActionExecutor", "Log: $message")
-        scope.launch { _events.emit(ActionExecutionEvent.Log(message)) }
+        scope.launch { _events.emit(ActionExecutionEvent.Log(message, action, label)) }
     }
 
-    override fun error(message: String, throwable: Throwable?) {
+    override fun error(message: String, throwable: Throwable?, action: com.andreas_kratzer.ghosttalk.core.model.ButtonAction?, label: String?) {
         logger.e("ActionExecutor", message, throwable)
-        scope.launch { _events.emit(ActionExecutionEvent.Log("Error: $message")) }
+        scope.launch { _events.emit(ActionExecutionEvent.Error(message, throwable, action, label)) }
     }
 
     override suspend fun emitEvent(event: ActionEvent) {
         val executionEvent = when (event) {
-            is ActionEvent.NavigateToPage -> ActionExecutionEvent.NavigateToPage(event.pageId)
+            is ActionEvent.NavigateToPage -> ActionExecutionEvent.NavigateToPage(event.pageId, event.action, event.label)
             is ActionEvent.RecoverableAuthError -> ActionExecutionEvent.RecoverableAuthError(event.intent)
         }
         _events.emit(executionEvent)

@@ -79,21 +79,21 @@ class InteractionDelegate @Inject constructor(
                 when (effect) {
                     is HandleActionExecutionEventUseCase.Effect.LoadPage -> {
                         scope.launch {
-                            val bookId = appStateRepository.activeBookId.value // Or pass it via event
-                            logAction(effect.logMessage, bookId)
+                            val bookId = appStateRepository.activeBookId.value
+                            logAction(effect.logMessage, bookId, effect.action, effect.label)
                         }
                         onPageLoadRequested(effect.page)
                     }
                     is HandleActionExecutionEventUseCase.Effect.LogAction -> {
                         scope.launch {
                             val bookId = appStateRepository.activeBookId.value
-                            logAction(effect.message, bookId)
+                            logAction(effect.message, bookId, effect.action, effect.label)
                         }
                     }
                     is HandleActionExecutionEventUseCase.Effect.SpeakError -> {
                         scope.launch {
                             val bookId = appStateRepository.activeBookId.value
-                            logAction(effect.logMessage, bookId)
+                            logAction(effect.logMessage, bookId, effect.action, effect.label)
                         }
                         ttsHelper.speak(application.getString(effect.messageResId)) {}
                     }
@@ -144,21 +144,22 @@ class InteractionDelegate @Inject constructor(
         }
     }
 
-    fun logAction(actionText: String, bookId: String?) {
+    fun logAction(actionText: String, bookId: String?, action: com.andreas_kratzer.ghosttalk.core.model.ButtonAction? = null, label: String? = null) {
         scope.launch {
             val limit = if (bookId != null) {
-                bookRepository.getBookById(bookId)?.actionLogLimit ?: 100
+                bookRepository.getBookById(bookId)?.actionLogLimit ?: 20
             } else {
-                100
+                20
             }
-            _lastActions.update { current ->
-                actionLogUseCase.formatAndAddEntry(actionText, current, limit)
-            }
+            val entries = actionLogUseCase.formatAndAddEntry(actionText, _lastActions.value, limit, action, label)
+            _lastActions.value = entries
         }
     }
 
     fun clearActionLogs() {
-        _lastActions.value = emptyList()
-        actionLogUseCase.clearLogs()
+        scope.launch {
+            _lastActions.value = emptyList()
+            actionLogUseCase.clearLogs()
+        }
     }
 }

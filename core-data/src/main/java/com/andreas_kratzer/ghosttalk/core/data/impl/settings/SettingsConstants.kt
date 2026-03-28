@@ -67,4 +67,10 @@ object SettingsConstants {
     const val KEY_TTS_ENGINE = "tts_engine"
     const val KEY_ELEVENLABS_API_KEY = "elevenlabs_api_key"
     const val KEY_ELEVENLABS_MODEL = "elevenlabs_model"
+    const val KEY_GOOGLE_TTS_LANGUAGE = "google_tts_language"
+    const val KEY_GOOGLE_TTS_VOICE_NAME = "google_tts_voice_name"
+    const val KEY_ELEVENLABS_TTS_LANGUAGE = "elevenlabs_tts_language"
+    const val KEY_ELEVENLABS_TTS_VOICE_NAME = "elevenlabs_tts_voice_name"
+    const val KEY_ELEVENLABS_STABILITY = "elevenlabs_stability"
+    const val KEY_ELEVENLABS_SIMILARITY_BOOST = "elevenlabs_similarity_boost"
 }

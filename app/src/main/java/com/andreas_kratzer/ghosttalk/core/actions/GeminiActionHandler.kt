@@ -59,18 +59,18 @@ class GeminiActionHandler @Inject constructor(
             try {
                 if (action is GeminiNanoButtonAction) {
                     if (!settingsRepository.useLocalGenerativeAi) {
-                        speakError("Lokale KI ist in den Einstellungen deaktiviert.", targetDeviceAddress, executionId, onFinish)
+                        speakError("Lokale KI ist in den Einstellungen deaktiviert.", targetDeviceAddress, executionId, buttonConfig.label, action, onFinish)
                         return@launch
                     }
-                    actionLogger.log("Lokale Intent-Ausführung: ${action.intent}")
+                    actionLogger.log("Lokale Intent-Ausführung: ${action.intent}", action, buttonConfig.label)
                     localIntentRouter.executeIntent(action.intent) { response ->
-                        speakResponse(response, targetDeviceAddress, executionId, onFinish)
+                        speakResponse(response, targetDeviceAddress, executionId, buttonConfig.label, action, onFinish)
                     }
                     return@launch
                 }
 
                 if (action is GeminiVisionButtonAction) {
-                    actionLogger.log("Gemini Vision (KI Auge) wird gestartet...")
+                    actionLogger.log("Gemini Vision (KI Auge) wird gestartet...", action, buttonConfig.label)
                     
                     if (action.playShutterSound) {
                         try {
@@ -81,7 +81,7 @@ class GeminiActionHandler @Inject constructor(
                     }
                     
                     if (androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.CAMERA) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
-                        speakError(getString(com.andreas_kratzer.ghosttalk.R.string.error_camera_permission_missing, emptyArray()), targetDeviceAddress, executionId, onFinish)
+                        speakError(getString(com.andreas_kratzer.ghosttalk.R.string.error_camera_permission_missing, emptyArray()), targetDeviceAddress, executionId, buttonConfig.label, action, onFinish)
                         return@launch
                     }
 
@@ -89,10 +89,10 @@ class GeminiActionHandler @Inject constructor(
                     val capturedBitmap = cameraProvider.captureImage()
                     
                     val finalBitmap = if (capturedBitmap != null) {
-                        actionLogger.log("Echtes Kamerabild erfasst.")
+                        actionLogger.log("Echtes Kamerabild erfasst.", action, buttonConfig.label)
                         capturedBitmap
                     } else {
-                        actionLogger.log("Kamerazugriff fehlgeschlagen. Simuliere Bild...")
+                        actionLogger.log("Kamerazugriff fehlgeschlagen. Simuliere Bild...", action, buttonConfig.label)
                         // Simulated camera capture fallback
                         android.graphics.Bitmap.createBitmap(1024, 1024, android.graphics.Bitmap.Config.ARGB_8888).also {
                             val canvas = android.graphics.Canvas(it)
@@ -122,17 +122,17 @@ class GeminiActionHandler @Inject constructor(
                         prompt = action.prompt,
                         useCloud = action.useCloud
                     )
-                    speakResponse(response, targetDeviceAddress, executionId, onFinish)
+                    speakResponse(response, targetDeviceAddress, executionId, buttonConfig.label, action, onFinish)
                     return@launch
                 }
 
                 if (!settingsRepository.isGeminiEnabled) {
-                    speakError("Gemini ist in den Einstellungen deaktiviert.", targetDeviceAddress, executionId, onFinish)
+                    speakError("Gemini ist in den Einstellungen deaktiviert.", targetDeviceAddress, executionId, buttonConfig.label, action, onFinish)
                     onFinish(executionId)
                     return@launch
                 }
 
-                actionLogger.log("Gemini wird angefragt...")
+                actionLogger.log("Gemini wird angefragt...", action, buttonConfig.label)
                 val prompt = when(action) {
                     is GeminiButtonAction -> action.prompt
                     is GeminiSearchButtonAction -> action.prompt
@@ -149,16 +149,16 @@ class GeminiActionHandler @Inject constructor(
                     if (msg.contains("429")) {
                         val seconds = msg.substringAfter("429").filter { it.isDigit() }.toIntOrNull() ?: 60
                         val localizedError = getString(com.andreas_kratzer.ghosttalk.R.string.error_gemini_quota_reached, arrayOf(seconds))
-                        actionLogger.log(localizedError)
-                        speakError(localizedError, targetDeviceAddress, executionId, onFinish)
+                        actionLogger.log(localizedError, action, buttonConfig.label)
+                        speakError(localizedError, targetDeviceAddress, executionId, buttonConfig.label, action, onFinish)
                     } else {
                         actionLogger.error("Gemini Fehler: $msg", e)
-                        speakError("Gemini Fehler: $msg", targetDeviceAddress, executionId, onFinish)
+                        speakError("Gemini Fehler: $msg", targetDeviceAddress, executionId, buttonConfig.label, action, onFinish)
                     }
                     return@launch
                 }
 
-                speakResponse(response, targetDeviceAddress, executionId, onFinish)
+                speakResponse(response, targetDeviceAddress, executionId, buttonConfig.label, action, onFinish)
             } catch (e: Exception) {
                 actionLogger.error("Unerwarteter Gemini Fehler", e)
                 onFinish(executionId)
@@ -166,10 +166,10 @@ class GeminiActionHandler @Inject constructor(
         }
     }
 
-    private fun speakResponse(text: String, deviceAddress: String?, executionId: Int, onFinish: (Int) -> Unit) {
+    private fun speakResponse(text: String, deviceAddress: String?, executionId: Int, label: String, action: ButtonAction, onFinish: (Int) -> Unit) {
         // Clean up common Markdown formatting characters that look/sound bad in TTS/Logs
         val cleanedText = text.replace("**", "").replace("*", "").trim()
-        actionLogger.log(cleanedText)
+        actionLogger.log(cleanedText, action, label)
         val tts = ttsProxyLazy.get()
         scope.launch {
             buttonUsageRepository.updateLastEventDetails(cleanedText)
@@ -183,8 +183,8 @@ class GeminiActionHandler @Inject constructor(
         }
     }
 
-    private fun speakError(text: String, deviceAddress: String?, executionId: Int, onFinish: (Int) -> Unit) {
-        actionLogger.log(text)
+    private fun speakError(text: String, deviceAddress: String?, executionId: Int, label: String, action: ButtonAction, onFinish: (Int) -> Unit) {
+        actionLogger.log(text, action, label)
         val tts = ttsProxyLazy.get()
         scope.launch {
             buttonUsageRepository.updateLastEventDetails(text)

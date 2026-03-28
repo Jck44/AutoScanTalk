@@ -31,7 +31,9 @@ class NavigationActionHandler @Inject constructor(
         
         val performNavigation = {
             scope.launch {
-                actionEventEmitter.emitEvent(ActionEvent.NavigateToPage(navAction.pageId))
+                actionEventEmitter.emitEvent(
+                    ActionEvent.NavigateToPage(navAction.pageId, action, buttonConfig.label)
+                )
                 onFinish(executionId)
             }
         }
@@ -46,9 +48,9 @@ class NavigationActionHandler @Inject constructor(
                     isForCues = true,
                     onDone = { performNavigation() }
                 )
-                actionLogger.log("Navigations-Feedback: \"$feedback\"")
+                actionLogger.log("Navigations-Feedback: \"$feedback\"", action, buttonConfig.label)
             } else {
-                actionLogger.log("Nav-Feedback (TTS nicht bereit): \"$feedback\"")
+                actionLogger.log("Nav-Feedback (TTS nicht bereit): \"$feedback\"", action, buttonConfig.label)
                 performNavigation()
             }
         } else {

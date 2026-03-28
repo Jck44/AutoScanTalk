@@ -67,7 +67,7 @@ open class TextToSpeechHelper @Inject constructor(
         }
     }
 
-    private fun switchProvider(engineId: String?) {
+    fun switchProvider(engineId: String?) {
         val nextProvider = when (engineId) {
             "elevenlabs" -> elevenLabsTtsProvider.get()
             else -> androidTtsProvider.get()

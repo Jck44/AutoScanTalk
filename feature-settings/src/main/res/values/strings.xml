@@ -8,7 +8,10 @@
     <string name="settings_category_cloud">Konten &amp; Import</string>
     <string name="settings_category_smart_home">Smart Home (Experimentell)</string>
     <string name="settings_category_gemini">Gemini KI-Assistent</string>
+    <string name="settings_category_elevenlabs">Eleven Labs</string>
     <string name="settings_category_notifications">Berechtigungen</string>
+    <string name="settings_category_cloud_book">Sicherung</string>
+    <string name="settings_category_cloud_sync">Synchronisierung</string>
     <string name="settings_category_advanced">Erweiterte Einstellungen</string>
 
     <!-- General Settings -->
@@ -248,6 +251,11 @@
     <string name="settings_elevenlabs_model_multilingual">Multilingual v2 (Beste Qualität)</string>
     <string name="settings_elevenlabs_model_turbo">Turbo v2.5 (Schnell, ~200ms)</string>
     <string name="settings_elevenlabs_model_flash">Flash v2.5 (Am schnellsten, ~75ms)</string>
+    <string name="settings_elevenlabs_model_v3">Multilingual v3 (Beste Qualität &amp; Emotionen)</string>
+    <string name="elevenlabs_stability">Stabilität</string>
+    <string name="elevenlabs_stability_desc">Bestimmt, wie ausdrucksstark oder neutral die Stimme klingt.</string>
+    <string name="elevenlabs_similarity_boost">Ähnlichkeits-Boost</string>
+    <string name="elevenlabs_similarity_boost_desc">Verstärkt den ursprünglichen Charakter der Stimme.</string>
     <string name="settings_voice_engine">Sprach-Engine</string>
 
     <!-- Smart Home Providers -->

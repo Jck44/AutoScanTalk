@@ -88,7 +88,13 @@ class SettingsMapper @Inject constructor(
             hueClientSecret = settingsRepository.hueClientSecret,
             ttsEngine = settingsRepository.ttsEngine,
             elevenLabsModel = settingsRepository.elevenLabsModel,
-            elevenLabsApiKey = encryptedKey
+            elevenLabsApiKey = encryptedKey,
+            googleTtsLanguage = settingsRepository.googleTtsLanguage,
+            googleTtsVoiceName = settingsRepository.googleTtsVoiceName,
+            elevenLabsTtsLanguage = settingsRepository.elevenLabsTtsLanguage,
+            elevenLabsTtsVoiceName = settingsRepository.elevenLabsTtsVoiceName,
+            elevenLabsStability = settingsRepository.elevenLabsStability,
+            elevenLabsSimilarityBoost = settingsRepository.elevenLabsSimilarityBoost
         )
     }
 
@@ -137,6 +143,12 @@ class SettingsMapper @Inject constructor(
         data.hueClientSecret?.let { settingsRepository.hueClientSecret = it }
         data.ttsEngine?.let { settingsRepository.ttsEngine = it }
         data.elevenLabsModel?.let { settingsRepository.elevenLabsModel = it }
+        data.googleTtsLanguage?.let { settingsRepository.googleTtsLanguage = it }
+        data.googleTtsVoiceName?.let { settingsRepository.googleTtsVoiceName = it }
+        data.elevenLabsTtsLanguage?.let { settingsRepository.elevenLabsTtsLanguage = it }
+        data.elevenLabsTtsVoiceName?.let { settingsRepository.elevenLabsTtsVoiceName = it }
+        data.elevenLabsStability?.let { settingsRepository.elevenLabsStability = it }
+        data.elevenLabsSimilarityBoost?.let { settingsRepository.elevenLabsSimilarityBoost = it }
         
         data.elevenLabsApiKey?.let { encryptedKey ->
             val userEmail = authManager.userEmail.value

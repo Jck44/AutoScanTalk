@@ -111,7 +111,7 @@ class SpeechActionHandlerTest {
 
         handler.handle(config, action, 1, finishCallback)
 
-        verify { actionLogger.log("Sprechen (TTS nicht bereit): \"Test\"") }
+        verify { actionLogger.log("Sprechen (TTS nicht bereit): \"Test\"", action, "Test") }
         verify { finishCallback(1) }
     }
 
@@ -131,6 +131,6 @@ class SpeechActionHandlerTest {
         onCompleteSlot.captured.invoke()
 
         verify { finishCallback(1) }
-        verify { actionLogger.log("Gesprochen: \"Test\"") }
+        verify { actionLogger.log("Gesprochen: \"Test\"", action, "Test") }
     }
 }

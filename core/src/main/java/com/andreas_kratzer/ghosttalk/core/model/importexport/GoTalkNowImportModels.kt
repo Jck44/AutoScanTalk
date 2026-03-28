@@ -59,6 +59,12 @@ data class ImportExportData(
     val ttsEngine: String? = null,
     val elevenLabsModel: String? = null,
     val elevenLabsApiKey: String? = null,
+    val googleTtsLanguage: String? = null,
+    val googleTtsVoiceName: String? = null,
+    val elevenLabsTtsLanguage: String? = null,
+    val elevenLabsTtsVoiceName: String? = null,
+    val elevenLabsStability: Float? = null,
+    val elevenLabsSimilarityBoost: Float? = null,
     val templates: List<ImportTemplate>? = null,
     val pages: List<ImportPage> = emptyList()
 )

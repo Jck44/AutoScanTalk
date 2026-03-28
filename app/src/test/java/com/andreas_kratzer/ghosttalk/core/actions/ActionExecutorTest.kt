@@ -61,7 +61,7 @@ class ActionExecutorTest {
         actionExecutor.executeButtonAction(button)
         
         verify(exactly = 1) { mockHandler.handle(button, action, any(), any()) }
-        verify { actionCoordinator.log(match { it.contains("Haltezeit aktiv") }) }
+        verify { actionCoordinator.log(match { it.contains("Haltezeit aktiv") }, any(), any()) }
     }
 
     @Test
@@ -73,7 +73,7 @@ class ActionExecutorTest {
         actionExecutor.executeButtonAction(button)
         
         verify(exactly = 0) { mockHandler.handle(any(), any(), any(), any()) }
-        verify { actionCoordinator.log(match { it.contains("Aktion läuft bereits") }) }
+        verify { actionCoordinator.log(match { it.contains("Aktion läuft bereits") }, any(), any()) }
     }
 
     @Test
@@ -95,7 +95,7 @@ class ActionExecutorTest {
         
         actionExecutor.executeButtonAction(button)
         
-        verify { actionCoordinator.log(match { it.contains("Kein Handler für Aktion gefunden") }) }
+        verify { actionCoordinator.log(match { it.contains("Kein Handler für Aktion gefunden") }, any(), any()) }
     }
 
     @Test

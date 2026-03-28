@@ -199,4 +199,7 @@
     <string name="button_gemini_vision_shutter_sound_label">Kamerasound beim Auslösen abspielen</string>
     <string name="sort_active_first">Aktive zuerst</string>
     <string name="sort_inactive_first">Inaktive zuerst</string>
+    <string name="action_previous_action">Vorherige Aktion</string>
+    <string name="action_previous_action_rank">Aktions-Nummer (1=letzte, 2=vorletzte...)</string>
+    <string name="action_previous_action_empty">Keine vorherige Aktion gefunden</string>
 </resources>

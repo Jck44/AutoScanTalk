@@ -55,46 +55,46 @@ class ControlDeviceActionHandler @Inject constructor(
     ) {
         val deviceAction = action as ControlDeviceButtonAction
         when (deviceAction.actionType) {
-            DeviceActionType.MEDIA_NEXT -> handleMediaKey(KeyEvent.KEYCODE_MEDIA_NEXT, "Nächstes Lied", executionId, onFinish)
-            DeviceActionType.MEDIA_PREVIOUS -> handleMediaKey(KeyEvent.KEYCODE_MEDIA_PREVIOUS, "Vorheriges Lied", executionId, onFinish)
-            DeviceActionType.MEDIA_PLAY_PAUSE -> handleMediaKey(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, "Start / Stop", executionId, onFinish)
+            DeviceActionType.MEDIA_NEXT -> handleMediaKey(KeyEvent.KEYCODE_MEDIA_NEXT, "Nächstes Lied", action, buttonConfig.label, executionId, onFinish)
+            DeviceActionType.MEDIA_PREVIOUS -> handleMediaKey(KeyEvent.KEYCODE_MEDIA_PREVIOUS, "Vorheriges Lied", action, buttonConfig.label, executionId, onFinish)
+            DeviceActionType.MEDIA_PLAY_PAUSE -> handleMediaKey(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, "Start / Stop", action, buttonConfig.label, executionId, onFinish)
             DeviceActionType.READ_NOTIFICATIONS -> handleReadNotifications(buttonConfig, deviceAction, executionId, onFinish)
             
-            DeviceActionType.VOLUME_NOTIFICATION -> handleVolume(AudioManager.STREAM_NOTIFICATION, deviceAction, executionId, onFinish)
-            DeviceActionType.VOLUME_ALARM -> handleVolume(AudioManager.STREAM_ALARM, deviceAction, executionId, onFinish)
-            DeviceActionType.VOLUME_MEDIA -> handleVolume(AudioManager.STREAM_MUSIC, deviceAction, executionId, onFinish)
-            DeviceActionType.VOLUME_CALL -> handleVolume(AudioManager.STREAM_VOICE_CALL, deviceAction, executionId, onFinish)
+            DeviceActionType.VOLUME_NOTIFICATION -> handleVolume(AudioManager.STREAM_NOTIFICATION, deviceAction, buttonConfig.label, executionId, onFinish)
+            DeviceActionType.VOLUME_ALARM -> handleVolume(AudioManager.STREAM_ALARM, deviceAction, buttonConfig.label, executionId, onFinish)
+            DeviceActionType.VOLUME_MEDIA -> handleVolume(AudioManager.STREAM_MUSIC, deviceAction, buttonConfig.label, executionId, onFinish)
+            DeviceActionType.VOLUME_CALL -> handleVolume(AudioManager.STREAM_VOICE_CALL, deviceAction, buttonConfig.label, executionId, onFinish)
             
-            DeviceActionType.STATUS_SILENT -> handleStatus(AudioManager.RINGER_MODE_SILENT, executionId, onFinish)
-            DeviceActionType.STATUS_VIBRATE -> handleStatus(AudioManager.RINGER_MODE_VIBRATE, executionId, onFinish)
-            DeviceActionType.STATUS_LOUD -> handleStatus(AudioManager.RINGER_MODE_NORMAL, executionId, onFinish)
+            DeviceActionType.STATUS_SILENT -> handleStatus(AudioManager.RINGER_MODE_SILENT, action, buttonConfig.label, executionId, onFinish)
+            DeviceActionType.STATUS_VIBRATE -> handleStatus(AudioManager.RINGER_MODE_VIBRATE, action, buttonConfig.label, executionId, onFinish)
+            DeviceActionType.STATUS_LOUD -> handleStatus(AudioManager.RINGER_MODE_NORMAL, action, buttonConfig.label, executionId, onFinish)
             
-            DeviceActionType.SEND_MESSAGE -> handleSendMessage(deviceAction, executionId, onFinish)
+            DeviceActionType.SEND_MESSAGE -> handleSendMessage(deviceAction, buttonConfig.label, executionId, onFinish)
             
             DeviceActionType.READ_BATTERY -> handleReadBattery(buttonConfig, deviceAction, executionId, onFinish)
             DeviceActionType.READ_TIME -> handleReadTime(buttonConfig, deviceAction, executionId, onFinish)
             DeviceActionType.READ_DATE -> handleReadDate(buttonConfig, deviceAction, executionId, onFinish)
 
             DeviceActionType.TOGGLE_SCANNING -> {
-                handleToggleScanning(executionId, onFinish)
+                handleToggleScanning(action, buttonConfig.label, executionId, onFinish)
             }
 
             DeviceActionType.CLEAR_NOTIFICATIONS -> {
-                actionLogger.log("Benachrichtigungen löschen noch nicht unterstützt.")
+                actionLogger.log("Benachrichtigungen löschen noch nicht unterstützt.", action, buttonConfig.label)
                 onFinish(executionId)
             }
         }
     }
 
-    private fun handleMediaKey(keyCode: Int, description: String, executionId: Int, onFinish: (Int) -> Unit) {
+    private fun handleMediaKey(keyCode: Int, description: String, action: ButtonAction, label: String?, executionId: Int, onFinish: (Int) -> Unit) {
         val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
         audioManager.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, keyCode))
         audioManager.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_UP, keyCode))
-        actionLogger.log(description)
+        actionLogger.log(description, action, label)
         onFinish(executionId)
     }
 
-    private fun handleVolume(streamType: Int, action: ControlDeviceButtonAction, executionId: Int, onFinish: (Int) -> Unit) {
+    private fun handleVolume(streamType: Int, action: ControlDeviceButtonAction, label: String?, executionId: Int, onFinish: (Int) -> Unit) {
         val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
         val valueStr = action.volumeValue ?: "50"
         
@@ -112,16 +112,16 @@ class ControlDeviceActionHandler @Inject constructor(
         }
         
         audioManager.setStreamVolume(streamType, targetVolume, AudioManager.FLAG_SHOW_UI)
-        actionLogger.log("Lautstärke auf ${((targetVolume.toDouble() / maxVolume) * 100).toInt()}% gesetzt")
+        actionLogger.log("Lautstärke auf ${((targetVolume.toDouble() / maxVolume) * 100).toInt()}% gesetzt", action, label)
         onFinish(executionId)
     }
 
-    private fun handleStatus(ringerMode: Int, executionId: Int, onFinish: (Int) -> Unit) {
+    private fun handleStatus(ringerMode: Int, action: ButtonAction, label: String?, executionId: Int, onFinish: (Int) -> Unit) {
         val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         
         if (ringerMode == AudioManager.RINGER_MODE_SILENT && !notificationManager.isNotificationPolicyAccessGranted) {
-            actionLogger.log("Berechtigung für 'Nicht stören' fehlt.")
+            actionLogger.log("Berechtigung für 'Nicht stören' fehlt.", action, label)
         } else {
             audioManager.ringerMode = ringerMode
             val modeName = when(ringerMode) {
@@ -129,17 +129,17 @@ class ControlDeviceActionHandler @Inject constructor(
                 AudioManager.RINGER_MODE_VIBRATE -> "Vibration"
                 else -> "Laut"
             }
-            actionLogger.log("Modus auf $modeName gesetzt")
+            actionLogger.log("Modus auf $modeName gesetzt", action, label)
         }
         onFinish(executionId)
     }
 
-    private fun handleSendMessage(action: ControlDeviceButtonAction, executionId: Int, onFinish: (Int) -> Unit) {
+    private fun handleSendMessage(action: ControlDeviceButtonAction, label: String?, executionId: Int, onFinish: (Int) -> Unit) {
         val phone = action.contactPhone
         val message = action.messageText ?: ""
 
         if (phone.isNullOrBlank()) {
-            actionLogger.log("Kein Kontakt ausgewählt.")
+            actionLogger.log("Kein Kontakt ausgewählt.", action, label)
             onFinish(executionId)
             return
         }
@@ -171,7 +171,7 @@ class ControlDeviceActionHandler @Inject constructor(
                     SmsManager.RESULT_ERROR_RADIO_OFF -> "SMS-Fehler: Funk aus / Flugmodus"
                     else -> "SMS-Fehler: Code $resultCode"
                 }
-                actionLogger.log(result)
+                actionLogger.log(result, action, label)
                 try {
                     context.unregisterReceiver(this)
                 } catch (_: Exception) {
@@ -183,7 +183,7 @@ class ControlDeviceActionHandler @Inject constructor(
 
         // Timeout fallback if system never responds
         timeoutHandler.postDelayed({
-            actionLogger.log("SMS-Timeout: Keine Rückmeldung vom System.")
+            actionLogger.log("SMS-Timeout: Keine Rückmeldung vom System.", action, label)
             try {
                 context.unregisterReceiver(receiver)
             } catch (_: Exception) {}
@@ -193,7 +193,7 @@ class ControlDeviceActionHandler @Inject constructor(
         context.registerReceiver(receiver, IntentFilter(sentAction), Context.RECEIVER_NOT_EXPORTED)
 
         try {
-            actionLogger.log("Sende SMS an $phone...")
+            actionLogger.log("Sende SMS an $phone...", action, label)
             val smsManager = context.getSystemService(SmsManager::class.java)
             val parts = smsManager.divideMessage(message)
             
@@ -210,9 +210,8 @@ class ControlDeviceActionHandler @Inject constructor(
             }
         } catch (e: Exception) {
             timeoutHandler.removeCallbacksAndMessages(null)
-            actionLogger.log("SMS-Sendeversuch fehlgeschlagen: ${e.message}")
+            actionLogger.log("SMS-Sendeversuch fehlgeschlagen: ${e.message}", action, label)
             try {
-                context.unregisterReceiver(receiver)
             } catch (_: Exception) {}
             onFinish(executionId)
         }
@@ -234,7 +233,7 @@ class ControlDeviceActionHandler @Inject constructor(
         val tts = ttsProxyLazy.get()
         if (service == null || !settings.isNotificationReadingEnabled) {
             val msg = "Vorlesen von Benachrichtigungen nicht aktiv oder Berechtigung fehlt."
-            actionLogger.log(msg)
+            actionLogger.log(msg, action, buttonConfig.label)
             if (tts.isReady) {
                 tts.speakRouted(msg, targetDeviceAddress) {
                     onFinish(executionId)
@@ -246,13 +245,13 @@ class ControlDeviceActionHandler @Inject constructor(
         val activeNotifs = try {
             service.activeNotifications
         } catch (e: Exception) {
-            actionLogger.log("Fehler beim Abrufen der Benachrichtigungen: ${e.message}")
+            actionLogger.log("Fehler beim Abrufen der Benachrichtigungen: ${e.message}", action, buttonConfig.label)
             null
         }
         
         if (activeNotifs == null || activeNotifs.isEmpty()) {
             val msg = "Keine Benachrichtigungen vorhanden."
-            actionLogger.log(msg)
+            actionLogger.log(msg, action, buttonConfig.label)
             if (tts.isReady) {
                 tts.speakRouted(msg, targetDeviceAddress) {
                     onFinish(executionId)
@@ -269,7 +268,7 @@ class ControlDeviceActionHandler @Inject constructor(
 
         if (filtered.isEmpty()) {
             val msg = "Keine passenden Benachrichtigungen gefunden."
-            actionLogger.log(msg)
+            actionLogger.log(msg, action, buttonConfig.label)
             if (tts.isReady) {
                 tts.speakRouted(msg, targetDeviceAddress) {
                     onFinish(executionId)
@@ -287,7 +286,7 @@ class ControlDeviceActionHandler @Inject constructor(
 
         if (messagesToRead.isEmpty()) {
             val msg = "Benachrichtigungen enthalten keinen Text."
-            actionLogger.log(msg)
+            actionLogger.log(msg, action, buttonConfig.label)
             if (tts.isReady) {
                 tts.speakRouted(msg, targetDeviceAddress) {
                     onFinish(executionId)
@@ -297,7 +296,7 @@ class ControlDeviceActionHandler @Inject constructor(
         }
 
         val combinedMessage = messagesToRead.joinToString(". ")
-        actionLogger.log("Lese Benachrichtigungen: $combinedMessage")
+        actionLogger.log("Lese Benachrichtigungen: $combinedMessage", action, buttonConfig.label)
         
         tts.isReadingNotification = true
         if (tts.isReady) {
@@ -377,7 +376,7 @@ class ControlDeviceActionHandler @Inject constructor(
         executionId: Int,
         onFinish: (Int) -> Unit
     ) {
-        actionLogger.log(plainText)
+        actionLogger.log(plainText, action, config.label)
         val targetDeviceAddress = if (config.playActionAsAuditoryCue) {
             settings.cuesAudioDeviceAddress
         } else {
@@ -394,13 +393,13 @@ class ControlDeviceActionHandler @Inject constructor(
         }
     }
 
-    private fun handleToggleScanning(executionId: Int, onFinish: (Int) -> Unit) {
+    private fun handleToggleScanning(action: ButtonAction, label: String?, executionId: Int, onFinish: (Int) -> Unit) {
         val scannerController = scanControllerLazy.get()
         scannerController.togglePause()
         
         val isPaused = scannerController.isPausedManually.value
         val msg = if (isPaused) "Scannen pausiert" else "Scannen fortgesetzt"
-        actionLogger.log(msg)
+        actionLogger.log(msg, action, label)
         
         onFinish(executionId)
     }

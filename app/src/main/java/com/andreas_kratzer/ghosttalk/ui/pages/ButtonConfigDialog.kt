@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -45,6 +46,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.cloud.GoogleHomeManager
@@ -62,6 +64,7 @@ import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.core.model.SmartHomeButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SmartHomeProvider
+import com.andreas_kratzer.ghosttalk.core.model.PreviousActionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.WeatherButtonAction
@@ -125,6 +128,7 @@ fun ButtonConfigDialog(
     val actionTypeWeather = stringResource(R.string.button_action_weather)
     val actionTypeSmartHome = stringResource(R.string.button_action_smart_home)
     val actionTypeGeminiVision = "Gemini Vision (KI Auge)"
+    val actionTypePrevious = stringResource(R.string.action_previous_action)
 
     var selectedActionType by remember {
         mutableStateOf(
@@ -136,6 +140,7 @@ fun ButtonConfigDialog(
                 is com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction -> actionTypeGeminiVision
                 is FrequentActionButtonAction -> actionTypeFrequent
                 is SmartPredictionButtonAction -> actionTypeSmart
+                is PreviousActionButtonAction -> actionTypePrevious
                 is ControlDeviceButtonAction -> actionTypeDevice
                 is WeatherButtonAction -> actionTypeWeather
                 is SmartHomeButtonAction -> actionTypeSmartHome
@@ -176,6 +181,7 @@ fun ButtonConfigDialog(
             when(val action = buttonConfig.buttonAction) {
                 is FrequentActionButtonAction -> action.rank
                 is SmartPredictionButtonAction -> action.rank
+                is PreviousActionButtonAction -> action.rank
                 else -> 1
             }
         )
@@ -233,14 +239,23 @@ fun ButtonConfigDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        modifier = Modifier
+            .widthIn(max = 800.dp)
+            .fillMaxWidth(0.9f),
+        properties = DialogProperties(usePlatformDefaultWidth = false),
         title = { Text(stringResource(R.string.button_dialog_edit_title)) },
         text = {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(LocalDimensions.current.paddingSmall)
             ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f, fill = false)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(LocalDimensions.current.paddingSmall)
+                ) {
                 SettingsEditTextItem(
                     label = stringResource(R.string.button_label_field),
                     value = label,
@@ -309,6 +324,7 @@ fun ButtonConfigDialog(
                         actionTypeGeminiSearch to GeminiSearchButtonAction(),
                         actionTypeGeminiNano to GeminiNanoButtonAction(),
                         actionTypeFrequent to FrequentActionButtonAction(),
+                        actionTypePrevious to PreviousActionButtonAction(),
                         actionTypeSmart to SmartPredictionButtonAction(),
                         actionTypeWeather to WeatherButtonAction(),
                         actionTypeSmartHome to SmartHomeButtonAction(),
@@ -383,24 +399,24 @@ fun ButtonConfigDialog(
                     onPlayShutterSoundChange = { geminiVisionPlayShutterSound = it }
                 )
             }
-        },
-        confirmButton = {
+
+            HorizontalDivider(modifier = Modifier.padding(top = 16.dp, bottom = 8.dp))
+
+            // Action Bar (Fixed at the bottom)
             BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
                 val availableWidth = maxWidth
-                // Approximate button widths based on content + padding
-                // Save (~80dp), Cancel (~80dp), Test (~80dp), Move (~100dp), Duplicate (~100dp), Delete (~90dp)
-                // Thresholds are conservative to ensure they fit without wrapping or crowding
-                val showTestAsButton = availableWidth > 400.dp
-                val showMoveAsButton = availableWidth > 500.dp
-                val showDuplicateAsButton = availableWidth > 600.dp
-                val showDeleteAsButton = availableWidth > 700.dp
+                // Low thresholds for "Wandering out"
+                val showTest = availableWidth > 380.dp
+                val showMove = availableWidth > 480.dp
+                val showDuplicate = availableWidth > 580.dp
+                val showDelete = availableWidth > 680.dp
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.End
                 ) {
-                    // Always show Cancel (as Secondary)
+                    // Always show Cancel
                     OutlinedButton(onClick = onDismiss) {
                         Text(stringResource(CoreR.string.action_cancel))
                     }
@@ -408,7 +424,7 @@ fun ButtonConfigDialog(
                     Spacer(modifier = Modifier.width(8.dp))
 
                     // Test Button
-                    if (showTestAsButton) {
+                    if (showTest) {
                         OutlinedButton(onClick = {
                             val currentAction = when (selectedActionType) {
                                 actionTypeNavigate -> NavigateToPageButtonAction(targetPageId)
@@ -416,6 +432,7 @@ fun ButtonConfigDialog(
                                 actionTypeGeminiSearch -> GeminiSearchButtonAction(geminiPrompt)
                                 actionTypeGeminiNano -> GeminiNanoButtonAction(geminiPrompt)
                                 actionTypeFrequent -> FrequentActionButtonAction(rank)
+                                actionTypePrevious -> PreviousActionButtonAction(rank)
                                 actionTypeSmart -> SmartPredictionButtonAction(rank)
                                 actionTypeWeather -> WeatherButtonAction()
                                 actionTypeDevice -> ControlDeviceButtonAction(
@@ -452,7 +469,7 @@ fun ButtonConfigDialog(
                     }
 
                     // Move Button
-                    if (showMoveAsButton) {
+                    if (showMove) {
                         OutlinedButton(onClick = onMove) {
                             Text(stringResource(R.string.button_action_move))
                         }
@@ -460,7 +477,7 @@ fun ButtonConfigDialog(
                     }
 
                     // Duplicate Button
-                    if (showDuplicateAsButton) {
+                    if (showDuplicate) {
                         OutlinedButton(onClick = onDuplicate) {
                             Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
                             Text(stringResource(R.string.action_duplicate))
@@ -469,7 +486,7 @@ fun ButtonConfigDialog(
                     }
 
                     // Delete Button
-                    if (showDeleteAsButton) {
+                    if (showDelete) {
                         OutlinedButton(
                             onClick = onDelete,
                             colors = ButtonDefaults.outlinedButtonColors(
@@ -482,7 +499,7 @@ fun ButtonConfigDialog(
                         Spacer(modifier = Modifier.width(8.dp))
                     }
 
-                    // Save Button (Primary)
+                    // Save Button (Always visible)
                     Button(
                         enabled = label.isNotBlank(),
                         onClick = {
@@ -493,6 +510,7 @@ fun ButtonConfigDialog(
                                 actionTypeGeminiNano -> GeminiNanoButtonAction(geminiPrompt)
                                 actionTypeGeminiVision -> com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction(geminiPrompt, geminiVisionUseCloud, geminiVisionPlayShutterSound)
                                 actionTypeFrequent -> FrequentActionButtonAction(rank)
+                                actionTypePrevious -> PreviousActionButtonAction(rank)
                                 actionTypeSmart -> SmartPredictionButtonAction(rank)
                                 actionTypeWeather -> WeatherButtonAction()
                                 actionTypeDevice -> ControlDeviceButtonAction(
@@ -541,8 +559,8 @@ fun ButtonConfigDialog(
                         Text(stringResource(CoreR.string.action_save))
                     }
 
-                    // Overflow Menu (only if items are hidden)
-                    val hasHiddenItems = !showTestAsButton || !showMoveAsButton || !showDuplicateAsButton || !showDeleteAsButton
+                    // Overflow Menu
+                    val hasHiddenItems = !showTest || !showMove || !showDuplicate || !showDelete
                     if (hasHiddenItems) {
                         Box {
                             IconButton(onClick = { showMenu = true }) {
@@ -552,7 +570,7 @@ fun ButtonConfigDialog(
                                 expanded = showMenu,
                                 onDismissRequest = { showMenu = false }
                             ) {
-                                if (!showTestAsButton) {
+                                if (!showTest) {
                                     DropdownMenuItem(
                                         text = { Text(stringResource(R.string.button_action_test)) },
                                         leadingIcon = { Icon(Icons.Default.PlayArrow, contentDescription = null) },
@@ -564,6 +582,7 @@ fun ButtonConfigDialog(
                                                 actionTypeGeminiSearch -> GeminiSearchButtonAction(geminiPrompt)
                                                 actionTypeGeminiNano -> GeminiNanoButtonAction(geminiPrompt)
                                                 actionTypeFrequent -> FrequentActionButtonAction(rank)
+                                                actionTypePrevious -> PreviousActionButtonAction(rank)
                                                 actionTypeSmart -> SmartPredictionButtonAction(rank)
                                                 actionTypeWeather -> WeatherButtonAction()
                                                 actionTypeDevice -> ControlDeviceButtonAction(
@@ -595,7 +614,7 @@ fun ButtonConfigDialog(
                                         }
                                     )
                                 }
-                                if (!showMoveAsButton) {
+                                if (!showMove) {
                                     DropdownMenuItem(
                                         text = { Text(stringResource(R.string.button_action_move)) },
                                         onClick = {
@@ -604,7 +623,7 @@ fun ButtonConfigDialog(
                                         }
                                     )
                                 }
-                                if (!showDuplicateAsButton) {
+                                if (!showDuplicate) {
                                     DropdownMenuItem(
                                         text = { Text(stringResource(R.string.action_duplicate)) },
                                         leadingIcon = { Icon(Icons.Default.Add, contentDescription = null) },
@@ -614,7 +633,7 @@ fun ButtonConfigDialog(
                                         }
                                     )
                                 }
-                                if (!showDeleteAsButton) {
+                                if (!showDelete) {
                                     DropdownMenuItem(
                                         text = { 
                                             Text(
@@ -640,7 +659,9 @@ fun ButtonConfigDialog(
                     }
                 }
             }
-        },
-        dismissButton = null
-    )
+        }
+    },
+    confirmButton = { },
+    dismissButton = { }
+)
 }

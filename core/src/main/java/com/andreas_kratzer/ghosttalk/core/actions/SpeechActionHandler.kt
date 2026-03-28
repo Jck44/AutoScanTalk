@@ -38,9 +38,9 @@ class SpeechActionHandler @Inject constructor(
                 isForCues = buttonConfig.playActionAsAuditoryCue,
                 onDone = { onFinish(executionId) }
             )
-            actionLogger.log("Gesprochen: \"$textToSpeak\"")
+            actionLogger.log("Gesprochen: \"$textToSpeak\"", action, buttonConfig.label)
         } else {
-            actionLogger.log("Sprechen (TTS nicht bereit): \"$textToSpeak\"")
+            actionLogger.log("Sprechen (TTS nicht bereit): \"$textToSpeak\"", action, buttonConfig.label)
             onFinish(executionId)
         }
     }

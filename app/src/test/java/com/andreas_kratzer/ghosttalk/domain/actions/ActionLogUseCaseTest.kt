@@ -2,6 +2,7 @@ package com.andreas_kratzer.ghosttalk.domain.actions
 
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.model.ActionLogEntry
+import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.andreas_kratzer.ghosttalk.core.util.TestLogger
 import io.mockk.every
@@ -21,7 +22,7 @@ class ActionLogUseCaseTest {
     private val useCase = ActionLogUseCase(settingsRepository, logger)
 
     @Test
-    fun `formatAndAddEntry adds entry with current timestamp`() {
+    fun `formatAndAddEntry adds entry with current timestamp`() = runTest {
         every { settingsRepository.persistActionLogs } returns false
 
         val result = useCase.formatAndAddEntry("Button pressed", emptyList(), 100)
@@ -32,7 +33,7 @@ class ActionLogUseCaseTest {
     }
 
     @Test
-    fun `formatAndAddEntry limits list to given limit`() {
+    fun `formatAndAddEntry limits list to given limit`() = runTest {
         every { settingsRepository.persistActionLogs } returns false
         val existingLogs = (1..10).map { ActionLogEntry("Entry $it", System.currentTimeMillis()) }
 
@@ -43,7 +44,17 @@ class ActionLogUseCaseTest {
     }
 
     @Test
-    fun `formatAndAddEntry persists when enabled`() {
+    fun `formatAndAddEntry caps at global MAX_LOG_SIZE even if larger limit requested`() = runTest {
+        every { settingsRepository.persistActionLogs } returns false
+        val existingLogs = (1..30).map { ActionLogEntry("Entry $it", System.currentTimeMillis()) }
+
+        val result = useCase.formatAndAddEntry("New Entry", existingLogs, 100)
+
+        assertEquals(20, result.size) // Capped at MAX_LOG_SIZE (20)
+    }
+
+    @Test
+    fun `formatAndAddEntry persists when enabled`() = runTest {
         every { settingsRepository.persistActionLogs } returns true
 
         useCase.formatAndAddEntry("Persisted", emptyList(), 100)
@@ -95,7 +106,30 @@ class ActionLogUseCaseTest {
     }
 
     @Test
-    fun `clearLogs resets storage when persistence enabled`() {
+    fun `formatAndAddEntry stores ButtonAction when provided`() = runTest {
+        every { settingsRepository.persistActionLogs } returns true
+        val action = SpeakTextButtonAction()
+        
+        val result = useCase.formatAndAddEntry("Button pressed", emptyList(), 100, action)
+        
+        assertEquals(1, result.size)
+        assertEquals(action, result[0].action)
+        verify { settingsRepository.actionLogsStorage = any() }
+    }
+
+    @Test
+    fun `loadSavedLogEntries decodes ButtonAction correctly`() = runTest {
+        every { settingsRepository.persistActionLogs } returns true
+        every { settingsRepository.actionLogsStorage } returns """[{"message":"Speak","timestamp":123456,"action":{"type":"SpeakTextButtonAction","version":1}}]"""
+
+        val result = useCase.loadSavedLogEntries()
+
+        assertEquals(1, result.size)
+        assertTrue(result[0].action is SpeakTextButtonAction)
+    }
+
+    @Test
+    fun `clearLogs resets storage when persistence enabled`() = runTest {
         every { settingsRepository.persistActionLogs } returns true
 
         useCase.clearLogs()

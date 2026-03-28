@@ -14,6 +14,7 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -214,6 +215,51 @@ fun SettingsDropdownItem(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun SettingsSliderItem(
+    label: String,
+    value: Float,
+    onValueChange: (Float) -> Unit,
+    modifier: Modifier = Modifier,
+    valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
+    description: String? = null
+) {
+    val dimensions = LocalDimensions.current
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = dimensions.paddingSmall)
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(bottom = dimensions.paddingSmall)
+        )
+        if (description != null) {
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = dimensions.paddingSmall)
+            )
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Slider(
+                value = value,
+                onValueChange = onValueChange,
+                valueRange = valueRange,
+                modifier = Modifier.weight(1f)
+            )
+            Text(
+                text = "${(value * 100).toInt()}%",
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(start = dimensions.paddingMedium)
+            )
         }
     }
 }

@@ -24,6 +24,8 @@ class CloudSettingsRepository(
     private val _lastSuccessfulSyncTime = LongSetting(KEY_LAST_SYNC_TIME, 0L)
     private val _elevenLabsApiKey = StringSetting(SettingsConstants.KEY_ELEVENLABS_API_KEY)
     private val _elevenLabsModel = NonNullStringSetting(SettingsConstants.KEY_ELEVENLABS_MODEL, "eleven_multilingual_v2")
+    private val _elevenLabsStability = FloatSetting(SettingsConstants.KEY_ELEVENLABS_STABILITY, 0.5f)
+    private val _elevenLabsSimilarityBoost = FloatSetting(SettingsConstants.KEY_ELEVENLABS_SIMILARITY_BOOST, 0.75f)
 
     override val isCloudSyncEnabledFlow = _isCloudSyncEnabled.flow
     override val syncIntervalMinutesFlow = _syncIntervalMinutes.flow
@@ -31,6 +33,8 @@ class CloudSettingsRepository(
     override val lastSuccessfulSyncTimeFlow = _lastSuccessfulSyncTime.flow
     override val elevenLabsApiKeyFlow = _elevenLabsApiKey.flow
     override val elevenLabsModelFlow = _elevenLabsModel.flow
+    override val elevenLabsStabilityFlow = _elevenLabsStability.flow
+    override val elevenLabsSimilarityBoostFlow = _elevenLabsSimilarityBoost.flow
 
     override var isCloudSyncEnabled: Boolean
         get() = _isCloudSyncEnabled.value
@@ -55,6 +59,14 @@ class CloudSettingsRepository(
     override var elevenLabsModel: String
         get() = _elevenLabsModel.value
         set(value) { _elevenLabsModel.value = value }
+
+    override var elevenLabsStability: Float
+        get() = _elevenLabsStability.value
+        set(value) { _elevenLabsStability.value = value }
+
+    override var elevenLabsSimilarityBoost: Float
+        get() = _elevenLabsSimilarityBoost.value
+        set(value) { _elevenLabsSimilarityBoost.value = value }
         
 
     override fun refresh() {
@@ -64,5 +76,7 @@ class CloudSettingsRepository(
         _lastSuccessfulSyncTime.refresh()
         _elevenLabsApiKey.refresh()
         _elevenLabsModel.refresh()
+        _elevenLabsStability.refresh()
+        _elevenLabsSimilarityBoost.refresh()
     }
 }

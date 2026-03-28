@@ -72,6 +72,7 @@ class SmartHomeActionHandlerTest {
         
         // THEN
         coVerify { googleHomeManager.executeCommand("project-id", "device123", any(), "action.devices.commands.OnOff", any()) }
+        verify { actionLogger.log(any(), action, "Home") }
         verify { ttsProxy.speakRouted(text = match { it.contains("Licht") }, any(), any(), any(), any()) }
     }
 

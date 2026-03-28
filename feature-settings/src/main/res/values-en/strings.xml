@@ -102,6 +102,11 @@
     <string name="settings_elevenlabs_model_multilingual">Multilingual v2 (Best quality)</string>
     <string name="settings_elevenlabs_model_turbo">Turbo v2.5 (Fast, ~200ms)</string>
     <string name="settings_elevenlabs_model_flash">Flash v2.5 (Fastest, ~75ms)</string>
+    <string name="settings_elevenlabs_model_v3">Multilingual v3 (Best quality &amp; emotions)</string>
+    <string name="elevenlabs_stability">Stability</string>
+    <string name="elevenlabs_stability_desc">Determines how expressive or neutral the voice sounds.</string>
+    <string name="elevenlabs_similarity_boost">Similarity Boost</string>
+    <string name="elevenlabs_similarity_boost_desc">Enhances the original character of the voice.</string>
     <string name="book_import_cloud_success">Book successfully loaded from cloud.</string>
     <string name="book_import_cloud_error">Error loading from cloud: %s</string>
     <string name="settings_cloud_logs_title">Cloud Sync Log</string>

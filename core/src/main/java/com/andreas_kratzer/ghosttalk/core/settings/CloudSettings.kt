@@ -1,19 +1,26 @@
 package com.andreas_kratzer.ghosttalk.core.settings
 
+import kotlinx.coroutines.flow.StateFlow
+
 interface CloudSettings {
     var isCloudSyncEnabled: Boolean
-    val isCloudSyncEnabledFlow: kotlinx.coroutines.flow.StateFlow<Boolean>
+    val isCloudSyncEnabledFlow: StateFlow<Boolean>
     var syncIntervalMinutes: Long
-    val syncIntervalMinutesFlow: kotlinx.coroutines.flow.StateFlow<Long>
+    val syncIntervalMinutesFlow: StateFlow<Long>
     var syncMode: String
-    val syncModeFlow: kotlinx.coroutines.flow.StateFlow<String>
+    val syncModeFlow: StateFlow<String>
     var lastSuccessfulSyncTime: Long
-    val lastSuccessfulSyncTimeFlow: kotlinx.coroutines.flow.StateFlow<Long>
+    val lastSuccessfulSyncTimeFlow: StateFlow<Long>
     var activeBookId: String
-    val activeBookIdFlow: kotlinx.coroutines.flow.StateFlow<String?>
+    val activeBookIdFlow: StateFlow<String?>
 
     var elevenLabsApiKey: String?
-    val elevenLabsApiKeyFlow: kotlinx.coroutines.flow.StateFlow<String?>
+    val elevenLabsApiKeyFlow: StateFlow<String?>
     var elevenLabsModel: String
-    val elevenLabsModelFlow: kotlinx.coroutines.flow.StateFlow<String>
+    val elevenLabsModelFlow: StateFlow<String>
+
+    var elevenLabsStability: Float
+    val elevenLabsStabilityFlow: StateFlow<Float>
+    var elevenLabsSimilarityBoost: Float
+    val elevenLabsSimilarityBoostFlow: StateFlow<Float>
 }

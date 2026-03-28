@@ -90,7 +90,7 @@ class ControlDeviceActionHandlerTest {
         verify { 
             audioManager.dispatchMediaKeyEvent(any())
         }
-        verify { actionLogger.log("Nächstes Lied") }
+        verify { actionLogger.log("Nächstes Lied", action, "Next") }
     }
 
     @Test
@@ -172,7 +172,7 @@ class ControlDeviceActionHandlerTest {
             onDoneSlot.captured.invoke()
         }
         mockkObject(actionLogger)
-        every { actionLogger.log(capture(plainSlot)) } just Runs
+        every { actionLogger.log(capture(plainSlot), any(), any()) } just Runs
 
         handler.handle(config, action, 1) {}
         
@@ -205,7 +205,7 @@ class ControlDeviceActionHandlerTest {
         every { ttsProxy.speakRouted(capture(ssmlSlot), any(), capture(onDoneSlot)) } answers {
             onDoneSlot.captured.invoke()
         }
-        every { actionLogger.log(capture(plainSlot)) } just Runs
+        every { actionLogger.log(capture(plainSlot), any(), any()) } just Runs
 
         handler.handle(config, action, 1) {}
         

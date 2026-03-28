@@ -14,7 +14,8 @@ import com.andreas_kratzer.ghosttalk.R
 @Composable
 fun RankActionFields(
     rank: String,
-    onRankChanged: (String) -> Unit
+    onRankChanged: (String) -> Unit,
+    labelOverride: String? = null
 ) {
     OutlinedTextField(
         value = rank,
@@ -23,7 +24,7 @@ fun RankActionFields(
                 onRankChanged(newValue)
             }
         },
-        label = { Text(stringResource(R.string.button_smart_prediction_rank_label)) },
+        label = { Text(labelOverride ?: stringResource(R.string.button_smart_prediction_rank_label)) },
         singleLine = true,
         shape = MaterialTheme.shapes.large,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),

@@ -94,6 +94,12 @@ class TtsSettingsDelegate @Inject constructor(
 
     fun setTtsLanguage(tag: String) {
         setTtsLanguageUseCase(tag)
+        // Save to engine-specific setting
+        if (settingsRepository.ttsEngine == "elevenlabs") {
+            settingsRepository.elevenLabsTtsLanguage = tag
+        } else {
+            settingsRepository.googleTtsLanguage = tag
+        }
         // Ensure voice is applied immediately before feedback to avoid race condition
         ttsHelper.setLanguageAndVoice(tag, settingsRepository.ttsVoiceName)
         speakFeedback("Sprache ausgewählt")
@@ -101,6 +107,12 @@ class TtsSettingsDelegate @Inject constructor(
 
     fun setTtsVoice(name: String?) {
         settingsRepository.ttsVoiceName = name
+        // Save to engine-specific setting
+        if (settingsRepository.ttsEngine == "elevenlabs") {
+            settingsRepository.elevenLabsTtsVoiceName = name
+        } else {
+            settingsRepository.googleTtsVoiceName = name
+        }
         // Ensure voice is applied immediately before feedback to avoid race condition
         ttsHelper.setLanguageAndVoice(settingsRepository.ttsLanguage, name)
         speakFeedback("Stimme ausgewählt")
@@ -150,6 +162,53 @@ class TtsSettingsDelegate @Inject constructor(
 
     fun setElevenLabsApiKey(key: String) {
         settingsRepository.elevenLabsApiKey = key
+    }
+
+    fun setTtsEngine(engine: String?) {
+        settingsRepository.ttsEngine = engine
+        // Ensure switch is immediate for upcoming feedback
+        ttsHelper.switchProvider(engine)
+        
+        // Restore engine-specific settings
+        val (savedLang, savedVoice) = if (engine == "elevenlabs") {
+            settingsRepository.elevenLabsTtsLanguage to settingsRepository.elevenLabsTtsVoiceName
+        } else {
+            settingsRepository.googleTtsLanguage to settingsRepository.googleTtsVoiceName
+        }
+        
+        settingsRepository.ttsLanguage = savedLang
+        settingsRepository.ttsVoiceName = savedVoice
+        
+        // Apply immediately
+        ttsHelper.setLanguageAndVoice(savedLang, savedVoice)
+
+        val engineName = when (engine) {
+            "elevenlabs" -> "ElevenLabs"
+            else -> "Google"
+        }
+        speakFeedback("$engineName Sprach-Engine ausgewählt")
+    }
+
+    fun setElevenLabsModel(model: String) {
+        settingsRepository.elevenLabsModel = model
+        val modelName = when (model) {
+            "eleven_multilingual_v2" -> "Multilingual v2"
+            "eleven_v3" -> "Multilingual v3"
+            "eleven_turbo_v2_5" -> "Turbo v2.5"
+            "eleven_flash_v2_5" -> "Flash v2.5"
+            else -> "Modell"
+        }
+        speakFeedback("ElevenLabs $modelName ausgewählt")
+    }
+
+    fun setElevenLabsStability(value: Float) {
+        settingsRepository.elevenLabsStability = value
+        // No audio feedback for sliders to avoid noise during dragging
+    }
+
+    fun setElevenLabsSimilarityBoost(value: Float) {
+        settingsRepository.elevenLabsSimilarityBoost = value
+        // No audio feedback for sliders to avoid noise during dragging
     }
 
     suspend fun saveApiKeyToGoogle(activity: android.app.Activity): PasswordManagerResult {

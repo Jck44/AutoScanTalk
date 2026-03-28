@@ -90,8 +90,8 @@ open class ElevenLabsTtsProvider @Inject constructor(
                 "text": "$text",
                 "model_id": "$elevenLabsModel",
                 "voice_settings": {
-                    "stability": 0.5,
-                    "similarity_boost": 0.75
+                    "stability": ${cloudSettings.elevenLabsStability},
+                    "similarity_boost": ${cloudSettings.elevenLabsSimilarityBoost}
                 }
             }
         """.trimIndent().toRequestBody("application/json".toMediaType())
@@ -175,8 +175,8 @@ open class ElevenLabsTtsProvider @Inject constructor(
                 "text": "$text",
                 "model_id": "$elevenLabsModel",
                 "voice_settings": {
-                    "stability": 0.5,
-                    "similarity_boost": 0.75
+                    "stability": ${cloudSettings.elevenLabsStability},
+                    "similarity_boost": ${cloudSettings.elevenLabsSimilarityBoost}
                 }
             }
         """.trimIndent().toRequestBody("application/json".toMediaType())

@@ -15,6 +15,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.andreas_kratzer.ghosttalk.core.tts.VoiceUtils
 import com.andreas_kratzer.ghosttalk.core.ui.components.PreferenceCategory
+import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsDropdownItem
+import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsSliderItem
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.feature.settings.R
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
@@ -79,6 +81,7 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                 if (ttsEngine == "elevenlabs") {
                     val modelOptions = listOf(
                         "eleven_multilingual_v2" to R.string.settings_elevenlabs_model_multilingual,
+                        "eleven_v3" to R.string.settings_elevenlabs_model_v3,
                         "eleven_turbo_v2_5" to R.string.settings_elevenlabs_model_turbo,
                         "eleven_flash_v2_5" to R.string.settings_elevenlabs_model_flash
                     ).map { (id, resId) ->
@@ -86,6 +89,7 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                     }
 
                     val currentModelLabel = when (elevenLabsModel) {
+                        "eleven_v3" -> stringResource(R.string.settings_elevenlabs_model_v3)
                         "eleven_turbo_v2_5" -> stringResource(R.string.settings_elevenlabs_model_turbo)
                         "eleven_flash_v2_5" -> stringResource(R.string.settings_elevenlabs_model_flash)
                         else -> stringResource(R.string.settings_elevenlabs_model_multilingual)
@@ -95,6 +99,23 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                         label = stringResource(R.string.settings_elevenlabs_model),
                         selectedOption = currentModelLabel,
                         options = modelOptions
+                    )
+
+                    val stability by viewModel.elevenLabsStability.collectAsState(0.5f)
+                    val similarityBoost by viewModel.elevenLabsSimilarityBoost.collectAsState(0.75f)
+
+                    SettingsSliderItem(
+                        label = stringResource(R.string.elevenlabs_stability),
+                        value = stability,
+                        onValueChange = { viewModel.setElevenLabsStability(it) },
+                        description = stringResource(R.string.elevenlabs_stability_desc)
+                    )
+
+                    SettingsSliderItem(
+                        label = stringResource(R.string.elevenlabs_similarity_boost),
+                        value = similarityBoost,
+                        onValueChange = { viewModel.setElevenLabsSimilarityBoost(it) },
+                        description = stringResource(R.string.elevenlabs_similarity_boost_desc)
                     )
                 }
 

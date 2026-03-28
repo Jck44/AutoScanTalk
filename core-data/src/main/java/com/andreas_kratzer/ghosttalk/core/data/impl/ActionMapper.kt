@@ -9,6 +9,7 @@ import com.andreas_kratzer.ghosttalk.core.model.GeminiNanoButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiSearchButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.PreviousActionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SmartHomeButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SmartHomeProvider
 import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
@@ -55,6 +56,7 @@ class ActionMapper @Inject constructor() {
                 smartHomeIntent = action.intent,
                 smartHomeValue = action.value
             )
+            is PreviousActionButtonAction -> ImportAction(type = "PREVIOUS_ACTION", rank = action.rank)
         }
     }
 
@@ -100,6 +102,7 @@ class ActionMapper @Inject constructor() {
                 intent = importAction.smartHomeIntent ?: "",
                 value = importAction.smartHomeValue
             )
+            "PREVIOUS_ACTION" -> PreviousActionButtonAction(importAction.rank ?: 1)
             else -> null
         }
     }

@@ -159,7 +159,13 @@ class SettingsRepositoryImpl @Inject constructor(
     override val isSecurityRequiredForSettingsFlow: StateFlow<Boolean> get() = securitySettings.isSecurityRequiredForSettingsFlow
     override val elevenLabsApiKeyFlow: StateFlow<String?> get() = cloudSettings.elevenLabsApiKeyFlow
     override val elevenLabsModelFlow: StateFlow<String> get() = cloudSettings.elevenLabsModelFlow
+    override val elevenLabsStabilityFlow: StateFlow<Float> get() = cloudSettings.elevenLabsStabilityFlow
+    override val elevenLabsSimilarityBoostFlow: StateFlow<Float> get() = cloudSettings.elevenLabsSimilarityBoostFlow
     override val ttsEngineFlow: StateFlow<String?> get() = voiceSettings.ttsEngineFlow
+    override val googleTtsLanguageFlow: StateFlow<String?> get() = voiceSettings.googleTtsLanguageFlow
+    override val googleTtsVoiceNameFlow: StateFlow<String?> get() = voiceSettings.googleTtsVoiceNameFlow
+    override val elevenLabsTtsLanguageFlow: StateFlow<String?> get() = voiceSettings.elevenLabsTtsLanguageFlow
+    override val elevenLabsTtsVoiceNameFlow: StateFlow<String?> get() = voiceSettings.elevenLabsTtsVoiceNameFlow
 
     // ── Public API: Properties ───────────────────────────────────────────
 
@@ -422,10 +428,34 @@ class SettingsRepositoryImpl @Inject constructor(
         get() = cloudSettings.elevenLabsModel
         set(value) { cloudSettings.elevenLabsModel = value }
 
+    override var elevenLabsStability: Float
+        get() = cloudSettings.elevenLabsStability
+        set(value) { cloudSettings.elevenLabsStability = value }
+
+    override var elevenLabsSimilarityBoost: Float
+        get() = cloudSettings.elevenLabsSimilarityBoost
+        set(value) { cloudSettings.elevenLabsSimilarityBoost = value }
+
 
     override var ttsEngine: String?
         get() = voiceSettings.ttsEngine
         set(value) { voiceSettings.ttsEngine = value }
+
+    override var googleTtsLanguage: String?
+        get() = voiceSettings.googleTtsLanguage
+        set(value) { voiceSettings.googleTtsLanguage = value }
+
+    override var googleTtsVoiceName: String?
+        get() = voiceSettings.googleTtsVoiceName
+        set(value) { voiceSettings.googleTtsVoiceName = value }
+
+    override var elevenLabsTtsLanguage: String?
+        get() = voiceSettings.elevenLabsTtsLanguage
+        set(value) { voiceSettings.elevenLabsTtsLanguage = value }
+
+    override var elevenLabsTtsVoiceName: String?
+        get() = voiceSettings.elevenLabsTtsVoiceName
+        set(value) { voiceSettings.elevenLabsTtsVoiceName = value }
 
     override var logIgnoredActions: Boolean
         get() = advancedSettings.logIgnoredActions

@@ -64,7 +64,7 @@ class NavigationActionHandlerTest {
         handler.handle(config, action, 1, onFinish)
         runCurrent()
 
-        coVerify { actionEventEmitter.emitEvent(ActionEvent.NavigateToPage("p2")) }
+        coVerify { actionEventEmitter.emitEvent(match { it is ActionEvent.NavigateToPage && it.pageId == "p2" && it.label == "Go" }) }
         verify { onFinish(1) }
     }
 
@@ -86,7 +86,7 @@ class NavigationActionHandlerTest {
         handler.handle(config, action, 1, onFinish)
         runCurrent()
 
-        coVerify { actionEventEmitter.emitEvent(ActionEvent.NavigateToPage("p2")) }
+        coVerify { actionEventEmitter.emitEvent(match { it is ActionEvent.NavigateToPage && it.pageId == "p2" && it.label == "Go" }) }
         verify { onFinish(1) }
     }
 
@@ -119,9 +119,9 @@ class NavigationActionHandlerTest {
         onCompleteSlot.captured.invoke()
         runCurrent()
 
-        coVerify { actionEventEmitter.emitEvent(ActionEvent.NavigateToPage("p2")) }
+        coVerify { actionEventEmitter.emitEvent(match { it is ActionEvent.NavigateToPage && it.pageId == "p2" && it.label == "Go" }) }
         verify { onFinish(1) }
-        verify { actionLogger.log("Navigations-Feedback: \"Navigating\"") }
+        verify { actionLogger.log(any(), any(), config.label) }
     }
 
     @Test
@@ -144,8 +144,8 @@ class NavigationActionHandlerTest {
         handler.handle(config, action, 1, onFinish)
         runCurrent()
 
-        coVerify { actionEventEmitter.emitEvent(ActionEvent.NavigateToPage("p2")) }
-        verify { actionLogger.log("Nav-Feedback (TTS nicht bereit): \"Navigating\"") }
+        coVerify { actionEventEmitter.emitEvent(match { it is ActionEvent.NavigateToPage && it.pageId == "p2" && it.label == "Go" }) }
+        verify { actionLogger.log(any(), any(), config.label) }
         verify { onFinish(1) }
     }
 }

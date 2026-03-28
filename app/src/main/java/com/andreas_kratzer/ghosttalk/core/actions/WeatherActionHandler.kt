@@ -30,7 +30,7 @@ class WeatherActionHandler @Inject constructor(
         executionId: Int,
         onFinish: (Int) -> Unit
     ) {
-        actionLogger.log(context.getString(com.andreas_kratzer.ghosttalk.R.string.action_weather_fetching))
+        actionLogger.log(context.getString(com.andreas_kratzer.ghosttalk.R.string.action_weather_fetching), action, buttonConfig.label)
         
         val targetDeviceAddress = if (buttonConfig.playActionAsAuditoryCue) {
             settingsRepository.cuesAudioDeviceAddress
@@ -47,7 +47,7 @@ class WeatherActionHandler @Inject constructor(
                             result.condition,
                             result.temperature.toString()
                         )
-                        actionLogger.log(report)
+                        actionLogger.log(report, action, buttonConfig.label)
                         val tts = ttsProxyLazy.get()
                         if (tts.isReady) {
                             tts.speakRouted(report, targetDeviceAddress) {
@@ -57,13 +57,13 @@ class WeatherActionHandler @Inject constructor(
                     }
                     is WeatherExecutor.WeatherResult.Error -> {
                         val errorMessage = context.getString(com.andreas_kratzer.ghosttalk.R.string.action_weather_error, result.message)
-                        actionLogger.log(errorMessage)
+                        actionLogger.log(errorMessage, action, buttonConfig.label)
                         onFinish(executionId)
                     }
                 }
             } catch (e: Exception) {
                 val errorMessage = context.getString(com.andreas_kratzer.ghosttalk.R.string.action_weather_error, e.message ?: "Unknown error")
-                actionLogger.log(errorMessage)
+                actionLogger.log(errorMessage, action, buttonConfig.label)
                 onFinish(executionId)
             }
         }

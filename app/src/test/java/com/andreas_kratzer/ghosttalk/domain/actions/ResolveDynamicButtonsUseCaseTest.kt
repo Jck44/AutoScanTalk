@@ -1,10 +1,13 @@
 package com.andreas_kratzer.ghosttalk.domain.actions
 
 import com.andreas_kratzer.ghosttalk.core.actions.FrequentActionResolver
+import com.andreas_kratzer.ghosttalk.core.data.ActionLogProvider
+import com.andreas_kratzer.ghosttalk.core.model.ActionLogEntry
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.FrequentActionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.Page
+import com.andreas_kratzer.ghosttalk.core.model.PreviousActionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import io.mockk.coEvery
@@ -21,12 +24,14 @@ import org.junit.Test
 class ResolveDynamicButtonsUseCaseTest {
 
     private lateinit var frequentActionResolver: FrequentActionResolver
+    private lateinit var actionLogProvider: ActionLogProvider
     private lateinit var resolveDynamicButtonsUseCase: ResolveDynamicButtonsUseCase
 
     @Before
     fun setup() {
         frequentActionResolver = mockk()
-        resolveDynamicButtonsUseCase = ResolveDynamicButtonsUseCase(frequentActionResolver)
+        actionLogProvider = mockk()
+        resolveDynamicButtonsUseCase = ResolveDynamicButtonsUseCase(frequentActionResolver, actionLogProvider)
     }
 
     @Test
@@ -123,5 +128,64 @@ class ResolveDynamicButtonsUseCaseTest {
         // Should keep the placeholder while waiting
         assertEquals("Smart Placeholder", result.buttonConfigs[0]?.label)
         assertTrue(result.buttonConfigs[0]?.buttonAction is SmartPredictionButtonAction)
+    }
+
+    @Test
+    fun `execute resolves previous action from history`() = runTest {
+        // Given
+        val bookId = "book1"
+        val previousAction = SpeakTextButtonAction()
+        val history = listOf(
+            ActionLogEntry("Last", System.currentTimeMillis(), previousAction),
+            ActionLogEntry("Older", System.currentTimeMillis() - 1000, NavigateToPageButtonAction("other"))
+        )
+        
+        val buttonConfig = ButtonConfig(
+            id = "prev1",
+            label = "Wiederholen",
+            auditoryCue = null,
+            buttonAction = PreviousActionButtonAction(rank = 1)
+        )
+        val page = Page(id = "page1", bookId = bookId, name = "Page 1", buttonConfigs = listOf(buttonConfig))
+
+        coEvery { frequentActionResolver.resolve(any(), any()) } returns page
+        coEvery { actionLogProvider.loadSavedLogEntries() } returns history
+
+        // When
+        val result = resolveDynamicButtonsUseCase.execute(page, bookId, emptyList(), listOf(page))
+
+        // Then
+        val resolvedAction = result.buttonConfigs[0]?.buttonAction
+        assertTrue(resolvedAction is SpeakTextButtonAction)
+        assertEquals("Last", result.buttonConfigs[0]?.label)
+    }
+
+    @Test
+    fun `execute resolves and keeps name of previous action for non-speak actions`() = runTest {
+        // Given
+        val bookId = "book1"
+        val previousAction = NavigateToPageButtonAction("targetPage")
+        val history = listOf(
+            ActionLogEntry("Go Home", System.currentTimeMillis(), previousAction)
+        )
+
+        val buttonConfig = ButtonConfig(
+            id = "prev1",
+            label = "Wiederholen",
+            auditoryCue = null,
+            buttonAction = PreviousActionButtonAction(rank = 1)
+        )
+        val page = Page(id = "page1", bookId = bookId, name = "Page 1", buttonConfigs = listOf(buttonConfig))
+
+        coEvery { frequentActionResolver.resolve(any(), any()) } returns page
+        coEvery { actionLogProvider.loadSavedLogEntries() } returns history
+
+        // When
+        val result = resolveDynamicButtonsUseCase.execute(page, bookId, emptyList(), listOf(page))
+
+        // Then
+        val resolvedAction = result.buttonConfigs[0]?.buttonAction
+        assertTrue(resolvedAction is NavigateToPageButtonAction)
+        assertEquals("Go Home", result.buttonConfigs[0]?.label)
     }
 }

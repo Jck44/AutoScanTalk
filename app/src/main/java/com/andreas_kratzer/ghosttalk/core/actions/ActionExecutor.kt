@@ -38,8 +38,8 @@ class ActionExecutor @Inject constructor(
     private var lastExecutionTime = -1L
     private var activeExecutionId = 0
 
-    private fun log(message: String) {
-        actionCoordinator.log(message)
+    private fun log(message: String, action: com.andreas_kratzer.ghosttalk.core.model.ButtonAction? = null, label: String? = null) {
+        actionCoordinator.log(message, action, label)
     }
 
     fun executeButtonAction(
@@ -57,14 +57,14 @@ class ActionExecutor @Inject constructor(
         synchronized(this) {
             if (lastExecutionTime != -1L && currentTime - lastExecutionTime < holdingTime) {
                 if (!skipLog) {
-                    log("Aktion ignoriert (Haltezeit aktiv: ${holdingTime}ms)")
+                    log("Aktion ignoriert (Haltezeit aktiv: ${holdingTime}ms)", buttonConfig.buttonAction)
                 }
                 return
             }
             
             if (_isExecuting.value) {
                 if (!skipLog) {
-                    log("Aktion ignoriert (Aktion läuft bereits)")
+                    log("Aktion ignoriert (Aktion läuft bereits)", buttonConfig.buttonAction)
                 }
                 return
             }

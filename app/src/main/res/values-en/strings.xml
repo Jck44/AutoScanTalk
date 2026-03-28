@@ -195,4 +195,7 @@
     <string name="button_gemini_vision_shutter_sound_label">Play shutter sound when triggered</string>
     <string name="sort_active_first">Active first</string>
     <string name="sort_inactive_first">Inactive first</string>
+    <string name="action_previous_action">Previous Action</string>
+    <string name="action_previous_action_rank">Action Rank (1=last, 2=second to last...)</string>
+    <string name="action_previous_action_empty">No previous action found</string>
 </resources>

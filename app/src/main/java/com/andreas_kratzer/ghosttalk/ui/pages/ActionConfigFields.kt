@@ -86,6 +86,7 @@ fun ActionConfigFields(
     val actionTypeDevice = stringResource(R.string.button_action_control_device)
     val actionTypeSmartHome = stringResource(R.string.button_action_smart_home)
     val actionTypeWeather = stringResource(R.string.button_action_weather)
+    val actionTypePrevious = stringResource(R.string.action_previous_action)
 
     val dimensions = LocalDimensions.current
 
@@ -127,6 +128,13 @@ fun ActionConfigFields(
                 RankActionFields(
                     rank = rank.toString(),
                     onRankChanged = { onRankChange(it.toIntOrNull() ?: 1) }
+                )
+            }
+            actionTypePrevious -> {
+                RankActionFields(
+                    rank = rank.toString(),
+                    onRankChanged = { onRankChange(it.toIntOrNull() ?: 1) },
+                    labelOverride = stringResource(R.string.action_previous_action_rank)
                 )
             }
             actionTypeDevice -> {

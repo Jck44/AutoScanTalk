@@ -86,6 +86,15 @@ data class SmartPredictionButtonAction(
 ) : ButtonAction()
 
 /**
+ * An action that resolves dynamically to the N-th previous action.
+ */
+@Serializable
+@SerialName("PreviousActionButtonAction")
+data class PreviousActionButtonAction(
+    val rank: Int = 1 // 1 = last, 2 = second to last, ...
+) : ButtonAction()
+
+/**
  * An action to control device functions (Media, Volume, System Status, etc.)
  */
 @Serializable

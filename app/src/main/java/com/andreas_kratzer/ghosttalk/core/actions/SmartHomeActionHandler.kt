@@ -38,18 +38,18 @@ class SmartHomeActionHandler @Inject constructor(
         scope.launch {
             try {
                 when (smartHomeAction.provider) {
-                    SmartHomeProvider.GOOGLE_HOME -> handleGoogleHome(smartHomeAction, executionId, onFinish)
-                    SmartHomeProvider.PHILIPS_HUE -> handlePhilipsHue(smartHomeAction, executionId, onFinish)
+                    SmartHomeProvider.GOOGLE_HOME -> handleGoogleHome(smartHomeAction, buttonConfig.label, executionId, onFinish)
+                    SmartHomeProvider.PHILIPS_HUE -> handlePhilipsHue(smartHomeAction, buttonConfig.label, executionId, onFinish)
                 }
             } catch (e: Exception) {
-                actionLogger.error("Fehler in SmartHomeActionHandler", e)
-                speakResponse("Ein unerwarteter Fehler ist aufgetreten.", executionId, onFinish)
+                actionLogger.error("Fehler in SmartHomeActionHandler", e, smartHomeAction, buttonConfig.label)
+                speakResponse("Ein unerwarteter Fehler ist aufgetreten.", executionId, buttonConfig.label, smartHomeAction, onFinish)
             }
         }
     }
 
-    private suspend fun handleGoogleHome(action: SmartHomeButtonAction, executionId: Int, onFinish: (Int) -> Unit) {
-        actionLogger.log("Steuere Google Home Gerät: ${action.deviceName} (${action.intent})")
+    private suspend fun handleGoogleHome(action: SmartHomeButtonAction, label: String, executionId: Int, onFinish: (Int) -> Unit) {
+        actionLogger.log("Steuere Google Home Gerät: ${action.deviceName} (${action.intent})", action, label)
         
         val params = mutableMapOf<String, Any>()
         action.value?.let { params["value"] = it }
@@ -64,14 +64,14 @@ class SmartHomeActionHandler @Inject constructor(
         
         if (success) {
             val message = "${action.deviceName} wurde auf '${action.intent.substringAfterLast(".")}' gesetzt."
-            speakResponse(message, executionId, onFinish)
+            speakResponse(message, executionId, label, action, onFinish)
         } else {
-            speakResponse("Fehler beim Steuern von ${action.deviceName}.", executionId, onFinish)
+            speakResponse("Fehler beim Steuern von ${action.deviceName}.", executionId, label, action, onFinish)
         }
     }
 
-    private suspend fun handlePhilipsHue(action: SmartHomeButtonAction, executionId: Int, onFinish: (Int) -> Unit) {
-        actionLogger.log("Steuere Philips Hue: ${action.deviceName} (${action.intent})")
+    private suspend fun handlePhilipsHue(action: SmartHomeButtonAction, label: String, executionId: Int, onFinish: (Int) -> Unit) {
+        actionLogger.log("Steuere Philips Hue: ${action.deviceName} (${action.intent})", action, label)
         
         // Use OAuth tokens if available, otherwise fallback to local bridge
         val success = if (settingsRepository.hueAccessToken.isNotEmpty()) {
@@ -94,15 +94,16 @@ class SmartHomeActionHandler @Inject constructor(
         
         if (success) {
             val message = "${action.deviceName} (Hue) wurde auf '${action.intent.substringAfterLast(".")}' gesetzt."
-            speakResponse(message, executionId, onFinish)
+            speakResponse(message, executionId, label, action, onFinish)
         } else {
-            speakResponse("Fehler beim Steuern von ${action.deviceName} (Hue).", executionId, onFinish)
+            speakResponse("Fehler beim Steuern von ${action.deviceName} (Hue).", executionId, label, action, onFinish)
         }
     }
     
 
 
-    private fun speakResponse(text: String, executionId: Int, onFinish: (Int) -> Unit) {
+    private fun speakResponse(text: String, executionId: Int, label: String, action: ButtonAction, onFinish: (Int) -> Unit) {
+        actionLogger.log(text, action, label)
         val tts = ttsProxyLazy.get()
         if (tts.isReady) {
             tts.speakRouted(text, null) {

@@ -84,7 +84,7 @@ class WeatherActionHandlerTest {
         
         handler.handle(config, action, 1, onFinish)
         
-        verify { actionLogger.log("Wetterdaten werden abgerufen...") }
+        verify { actionLogger.log("Wetterdaten werden abgerufen...", action, config.label) }
         verify { ttsProxy.speakRouted("Das aktuelle Wetter: Regen bei 15 Grad", any(), any(), any(), any()) }
         verify { onFinish(1) }
     }
@@ -101,7 +101,7 @@ class WeatherActionHandlerTest {
         
         handler.handle(config, action, 1, onFinish)
         
-        verify { actionLogger.log("Fehler: Timeout") }
+        verify { actionLogger.log("Fehler: Timeout", action, config.label) }
         verify { onFinish(1) }
     }
 }

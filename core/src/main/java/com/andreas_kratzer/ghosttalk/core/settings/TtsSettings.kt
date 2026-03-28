@@ -14,4 +14,14 @@ interface TtsSettings {
 
     var ttsEngine: String?
     val ttsEngineFlow: StateFlow<String?>
+
+    var googleTtsLanguage: String?
+    val googleTtsLanguageFlow: StateFlow<String?>
+    var googleTtsVoiceName: String?
+    val googleTtsVoiceNameFlow: StateFlow<String?>
+
+    var elevenLabsTtsLanguage: String?
+    val elevenLabsTtsLanguageFlow: StateFlow<String?>
+    var elevenLabsTtsVoiceName: String?
+    val elevenLabsTtsVoiceNameFlow: StateFlow<String?>
 }
