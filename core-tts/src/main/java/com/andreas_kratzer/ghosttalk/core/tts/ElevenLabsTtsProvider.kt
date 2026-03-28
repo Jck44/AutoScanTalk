@@ -73,7 +73,8 @@ open class ElevenLabsTtsProvider @Inject constructor(
         }
 
         val elevenLabsModel = cloudSettings.elevenLabsModel
-        val cachedFile = getCacheFile(text, currentVoiceId, elevenLabsModel)
+        val languageCode = getIsoLanguageCode(cloudSettings.elevenLabsTtsLanguage)
+        val cachedFile = getCacheFile(text, currentVoiceId, elevenLabsModel, languageCode)
 
         if (cachedFile.exists() && cachedFile.length() > 0) {
             Log.d("ElevenLabsTtsProvider", "Playing cached audio for ${cachedFile.name}")
@@ -84,17 +85,15 @@ open class ElevenLabsTtsProvider @Inject constructor(
             }
             return
         }
-
-        val requestBody = """
-            {
-                "text": "$text",
-                "model_id": "$elevenLabsModel",
-                "voice_settings": {
-                    "stability": ${cloudSettings.elevenLabsStability},
-                    "similarity_boost": ${cloudSettings.elevenLabsSimilarityBoost}
-                }
-            }
-        """.trimIndent().toRequestBody("application/json".toMediaType())
+        val requestBody = JSONObject().apply {
+            put("text", text)
+            put("model_id", elevenLabsModel)
+            put("voice_settings", JSONObject().apply {
+                put("stability", cloudSettings.elevenLabsStability)
+                put("similarity_boost", cloudSettings.elevenLabsSimilarityBoost)
+            })
+            languageCode?.let { put("language_code", it) }
+        }.toString().toRequestBody("application/json".toMediaType())
 
 
         val request = Request.Builder()
@@ -164,22 +163,22 @@ open class ElevenLabsTtsProvider @Inject constructor(
         if (apiKey.isNullOrEmpty()) return
 
         val elevenLabsModel = cloudSettings.elevenLabsModel
-        val cachedFile = getCacheFile(text, currentVoiceId, elevenLabsModel)
+        val languageCode = getIsoLanguageCode(cloudSettings.elevenLabsTtsLanguage)
+        val cachedFile = getCacheFile(text, currentVoiceId, elevenLabsModel, languageCode)
 
         if (cachedFile.exists() && cachedFile.length() > 0) {
             return
         }
 
-        val requestBody = """
-            {
-                "text": "$text",
-                "model_id": "$elevenLabsModel",
-                "voice_settings": {
-                    "stability": ${cloudSettings.elevenLabsStability},
-                    "similarity_boost": ${cloudSettings.elevenLabsSimilarityBoost}
-                }
-            }
-        """.trimIndent().toRequestBody("application/json".toMediaType())
+        val requestBody = JSONObject().apply {
+            put("text", text)
+            put("model_id", elevenLabsModel)
+            put("voice_settings", JSONObject().apply {
+                put("stability", cloudSettings.elevenLabsStability)
+                put("similarity_boost", cloudSettings.elevenLabsSimilarityBoost)
+            })
+            languageCode?.let { put("language_code", it) }
+        }.toString().toRequestBody("application/json".toMediaType())
 
         val request = Request.Builder()
             .url("https://api.elevenlabs.io/v1/text-to-speech/$currentVoiceId")
@@ -209,11 +208,12 @@ open class ElevenLabsTtsProvider @Inject constructor(
     
     override fun isCached(text: String): Boolean {
         val elevenLabsModel = cloudSettings.elevenLabsModel
-        val cachedFile = getCacheFile(text, currentVoiceId, elevenLabsModel)
+        val languageCode = getIsoLanguageCode(cloudSettings.elevenLabsTtsLanguage)
+        val cachedFile = getCacheFile(text, currentVoiceId, elevenLabsModel, languageCode)
         return cachedFile.exists() && cachedFile.length() > 0
     }
     
-    private fun getCacheFile(text: String, voiceId: String, modelId: String): java.io.File {
+    private fun getCacheFile(text: String, voiceId: String, modelId: String, languageCode: String?): java.io.File {
         val tgtDir = java.io.File(context.filesDir, "elevenlabs")
         if (!tgtDir.exists()) tgtDir.mkdirs()
         
@@ -227,9 +227,17 @@ open class ElevenLabsTtsProvider @Inject constructor(
         
         val safeVoiceId = voiceId.replace(Regex("[^a-zA-Z0-9_-]"), "")
         val safeModelId = modelId.replace(Regex("[^a-zA-Z0-9_-]"), "")
+        val safeLang = languageCode?.replace(Regex("[^a-z]"), "") ?: "auto"
         
-        val fileName = "tts_eleven#${base64Text}#${safeVoiceId}#${safeModelId}.mp3"
+        val fileName = "tts_eleven#${base64Text}#${safeVoiceId}#${safeModelId}#${safeLang}.mp3"
         return java.io.File(tgtDir, fileName)
+    }
+
+    private fun getIsoLanguageCode(languageTag: String?): String? {
+        if (languageTag.isNullOrEmpty() || languageTag == "default" || languageTag == "Basis (System)") return null
+        // Extract first 2 letters (e.g., "de" from "de-DE")
+        val code = languageTag.split("-").firstOrNull()?.lowercase()
+        return if (code?.length == 2) code else null
     }
 
     init {

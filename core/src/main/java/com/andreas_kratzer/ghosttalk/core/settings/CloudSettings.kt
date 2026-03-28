@@ -23,4 +23,7 @@ interface CloudSettings {
     val elevenLabsStabilityFlow: StateFlow<Float>
     var elevenLabsSimilarityBoost: Float
     val elevenLabsSimilarityBoostFlow: StateFlow<Float>
+
+    var elevenLabsTtsLanguage: String?
+    val elevenLabsTtsLanguageFlow: StateFlow<String?>
 }

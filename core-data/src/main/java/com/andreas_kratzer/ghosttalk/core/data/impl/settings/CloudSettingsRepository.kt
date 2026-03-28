@@ -26,6 +26,7 @@ class CloudSettingsRepository(
     private val _elevenLabsModel = NonNullStringSetting(SettingsConstants.KEY_ELEVENLABS_MODEL, "eleven_multilingual_v2")
     private val _elevenLabsStability = FloatSetting(SettingsConstants.KEY_ELEVENLABS_STABILITY, 0.5f)
     private val _elevenLabsSimilarityBoost = FloatSetting(SettingsConstants.KEY_ELEVENLABS_SIMILARITY_BOOST, 0.75f)
+    private val _elevenLabsTtsLanguage = StringSetting(SettingsConstants.KEY_ELEVENLABS_TTS_LANGUAGE)
 
     override val isCloudSyncEnabledFlow = _isCloudSyncEnabled.flow
     override val syncIntervalMinutesFlow = _syncIntervalMinutes.flow
@@ -35,6 +36,7 @@ class CloudSettingsRepository(
     override val elevenLabsModelFlow = _elevenLabsModel.flow
     override val elevenLabsStabilityFlow = _elevenLabsStability.flow
     override val elevenLabsSimilarityBoostFlow = _elevenLabsSimilarityBoost.flow
+    override val elevenLabsTtsLanguageFlow = _elevenLabsTtsLanguage.flow
 
     override var isCloudSyncEnabled: Boolean
         get() = _isCloudSyncEnabled.value
@@ -67,6 +69,10 @@ class CloudSettingsRepository(
     override var elevenLabsSimilarityBoost: Float
         get() = _elevenLabsSimilarityBoost.value
         set(value) { _elevenLabsSimilarityBoost.value = value }
+
+    override var elevenLabsTtsLanguage: String?
+        get() = _elevenLabsTtsLanguage.value
+        set(value) { _elevenLabsTtsLanguage.value = value }
         
 
     override fun refresh() {
@@ -78,5 +84,6 @@ class CloudSettingsRepository(
         _elevenLabsModel.refresh()
         _elevenLabsStability.refresh()
         _elevenLabsSimilarityBoost.refresh()
+        _elevenLabsTtsLanguage.refresh()
     }
 }
