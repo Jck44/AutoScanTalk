@@ -120,7 +120,9 @@
     <string name="backup_progress_complete">Backup erfolgreich erstellt.</string>
     <string name="restore_progress_extracting">Dateien werden entpackt: %s</string>
     <string name="restore_progress_importing">Daten werden importiert...</string>
-    <string name="restore_progress_complete">Wiederherstellung erfolgreich.</string>
+    <string name="restore_progress_complete">Wiederherstellung abgeschlossen.</string>
+    <string name="cloud_progress_uploading">Cloud-Backup: Datei wird hochgeladen…</string>
+    <string name="cloud_progress_downloading">Cloud-Restore: Datei wird heruntergeladen…</string>
     <string name="book_import_cloud_success">Buch erfolgreich aus der Cloud geladen.</string>
     <string name="book_import_cloud_error">Fehler beim Laden aus der Cloud: %s</string>
     <string name="settings_cloud_logs_title">Cloud Sync Protokoll</string>

@@ -244,4 +244,6 @@
     <string name="restore_progress_extracting">Extracting files: %s</string>
     <string name="restore_progress_importing">Importing data...</string>
     <string name="restore_progress_complete">Restore completed successfully.</string>
+    <string name="cloud_progress_uploading">Cloud Backup: Uploading file…</string>
+    <string name="cloud_progress_downloading">Cloud Restore: Downloading file…</string>
 </resources>

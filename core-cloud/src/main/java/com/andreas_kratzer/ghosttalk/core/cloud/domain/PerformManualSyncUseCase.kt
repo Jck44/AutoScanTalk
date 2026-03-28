@@ -26,7 +26,8 @@ class PerformManualSyncUseCase @Inject constructor(
     }
 
     suspend fun execute(
-        mode: SyncMode
+        mode: SyncMode,
+        onProgress: (Float, String) -> Unit = { _, _ -> }
     ): Result = withContext(Dispatchers.IO) {
         Log.d(TAG, "Starting manual sync execution. Mode: $mode")
         val credential = googleAuthManager.getGoogleCredential()
@@ -43,7 +44,7 @@ class PerformManualSyncUseCase @Inject constructor(
             ).setApplicationName("GhosTTalk").build()
             
             Log.d(TAG, "Calling cloudSyncUseCase.syncBook...")
-            val success = cloudSyncUseCase.syncBook(drive, settingsRepository.activeBookId, mode)
+            val success = cloudSyncUseCase.syncBook(drive, settingsRepository.activeBookId, mode, onProgress)
             Log.d(TAG, "syncBook result: $success")
             
             if (success) {

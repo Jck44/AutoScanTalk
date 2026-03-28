@@ -39,7 +39,8 @@ class CloudSyncUseCase @Inject constructor(
     suspend fun syncBook(
         drive: Drive,
         bookId: String,
-        syncMode: SyncMode
+        syncMode: SyncMode,
+        onProgress: (Float, String) -> Unit = { _, _ -> }
     ): Boolean = withContext(Dispatchers.IO) {
         val zipFileName = "book_$bookId.zip"
         val jsonFileName = "book_$bookId.json"
@@ -107,7 +108,9 @@ class CloudSyncUseCase @Inject constructor(
         if (remoteFile == null || syncMode != SyncMode.RESTORE_ONLY) {
              if (mimeType == "application/zip") {
                 tempFile.outputStream().use { os ->
-                    importExportManager.exportBookToZip(bookId, os) { _, _ -> }
+                    importExportManager.exportBookToZip(bookId, os) { p, s -> 
+                        onProgress(p * 0.3f, s) // ZIP export is 0-30%
+                    }
                 }
             } else {
                 val localJson = importExportManager.exportBookToJson(bookId)
@@ -126,7 +129,9 @@ class CloudSyncUseCase @Inject constructor(
                 success = false
             } else {
                 logger.d(TAG, "Uploading for the first time...")
-                val newFileId = helper.uploadFile(folderId, tempFile, mimeType, book.name)
+                val newFileId = helper.uploadFile(folderId, tempFile, mimeType, book.name) { p ->
+                    onProgress(0.3f + p * 0.7f, "Uploading to Drive...") // Upload is 30-100%
+                }
                 if (newFileId != null) {
                     syncLogProvider.addLogEntry("Erster Upload in die Cloud (ZIP)", bookId, book.name, isError = false)
                     val metadata = helper.getFileMetadata(newFileId)
@@ -155,28 +160,32 @@ class CloudSyncUseCase @Inject constructor(
                 SyncMode.BACKUP_ONLY -> {
                     logger.d(TAG, "BACKUP_ONLY mode. Overwriting/Migrating to remote ZIP...")
                     success = if (remoteZipFile != null) {
-                        helper.updateFile(remoteZipFile.id, tempFile, "application/zip", book.name)
+                        helper.updateFile(remoteZipFile.id, tempFile, "application/zip", book.name) { p ->
+                            onProgress(0.3f + p * 0.7f, "Uploading to Drive...")
+                        }
                     } else {
-                        // If it was JSON, we delete or just upload new ZIP
-                        // For simplicity, we create a new ZIP and let the user decide later about cleanup
-                        // or better: rename/update existing if it was JSON? No, mimeType change is tricky.
-                        // We'll upload a new ZIP.
-                        helper.uploadFile(folderId, tempFile, "application/zip", book.name) != null
+                        helper.uploadFile(folderId, tempFile, "application/zip", book.name) { p ->
+                            onProgress(0.3f + p * 0.7f, "Uploading to Drive...")
+                        } != null
                     }
                     logger.d(TAG, "Update/Migration result: $success")
                 }
                 SyncMode.RESTORE_ONLY -> {
                     logger.d(TAG, "RESTORE_ONLY mode. Downloading and importing...")
-                    success = downloadAndImport(helper, remoteFile!!.id, remoteFile.name, book, remoteLastModified)
+                    success = downloadAndImport(helper, remoteFile!!.id, remoteFile.name, book, remoteLastModified, onProgress)
                 }
                 SyncMode.TWO_WAY -> {
                     if (localLastModified > remoteLastModified + 2000) { // 2s Grace period
                         logger.d(TAG, "Local version is newer. Updating remote file...")
                         val updateSuccess = if (remoteZipFile != null) {
-                            helper.updateFile(remoteZipFile.id, tempFile, "application/zip", book.name)
+                            helper.updateFile(remoteZipFile.id, tempFile, "application/zip", book.name) { p ->
+                                onProgress(0.3f + p * 0.7f, "Uploading to Drive...")
+                            }
                         } else {
                             // Migrate JSON to ZIP
-                            helper.uploadFile(folderId, tempFile, "application/zip", book.name) != null
+                            helper.uploadFile(folderId, tempFile, "application/zip", book.name) { p ->
+                                onProgress(0.3f + p * 0.7f, "Uploading to Drive...")
+                            } != null
                         }
                         if (updateSuccess) {
                             syncLogProvider.addLogEntry("Lokale Version war neuer -> Cloud aktualisiert (ZIP)", bookId, book.name)
@@ -191,7 +200,7 @@ class CloudSyncUseCase @Inject constructor(
                         success = updateSuccess
                     } else if (remoteLastModified > localLastModified + 2000) {
                         logger.d(TAG, "Remote version is newer. Downloading and importing...")
-                        success = downloadAndImport(helper, remoteFile.id, remoteFile.name, book, remoteLastModified)
+                        success = downloadAndImport(helper, remoteFile.id, remoteFile.name, book, remoteLastModified, onProgress)
                     } else {
                         logger.d(TAG, "Local and remote versions are synchronized.")
                         syncLogProvider.addLogEntry("Lokal und Cloud sind synchron", bookId, book.name)
@@ -249,11 +258,14 @@ class CloudSyncUseCase @Inject constructor(
         remoteFileId: String,
         fileName: String,
         book: com.andreas_kratzer.ghosttalk.core.model.Book,
-        remoteLastModified: Long
+        remoteLastModified: Long,
+        onProgress: (Float, String) -> Unit
     ): Boolean {
         logger.d(TAG, "downloadAndImport: Starting for $remoteFileId ($fileName)")
         val downloadFile = File(context.cacheDir, "download_$fileName")
-        return if (helper.downloadFile(remoteFileId, downloadFile)) {
+        return if (helper.downloadFile(remoteFileId, downloadFile) { p -> 
+            onProgress(p * 0.7f, "Downloading from Drive...") // Download is 0-70%
+        }) {
             logger.d(TAG, "Download successful. File size: ${downloadFile.length()}.")
             
             val result = if (fileName.endsWith(".zip")) {
@@ -263,7 +275,9 @@ class CloudSyncUseCase @Inject constructor(
                         bookId = book.id,
                         regenerateIds = false,
                         restoreSyncSettings = false
-                    ) { _, _ -> }
+                    ) { p, s -> 
+                        onProgress(0.7f + p * 0.3f, s) // ZIP import is 70-100%
+                    }
                 }
             } else {
                 val remoteJson = try {
@@ -293,19 +307,28 @@ class CloudSyncUseCase @Inject constructor(
         }
     }
     
-    suspend fun importCloudBackup(drive: Drive, fileId: String, fileName: String): Result<String> = withContext(Dispatchers.IO) {
+    suspend fun importCloudBackup(
+        drive: Drive, 
+        fileId: String, 
+        fileName: String,
+        onProgress: (Float, String) -> Unit = { _, _ -> }
+    ): Result<String> = withContext(Dispatchers.IO) {
         logger.d(TAG, "importCloudBackup: Starting for $fileName (ID: $fileId)")
         val helper = DriveServiceHelper(drive)
         val tempFile = File(context.cacheDir, "import_cloud_$fileId${if (fileName.endsWith(".zip")) ".zip" else ".json"}")
         
         try {
-            if (helper.downloadFile(fileId, tempFile)) {
+            if (helper.downloadFile(fileId, tempFile) { p -> 
+                onProgress(p * 0.7f, "Downloading from Drive...")
+            }) {
                 val result: Result<String> = if (fileName.endsWith(".zip")) {
                     tempFile.inputStream().use { inputStream ->
                         importExportManager.importCloudBackupFromZip(
                             inputStream = inputStream,
                             cloudFileId = fileId
-                        ) { _, _ -> }
+                        ) { p, s -> 
+                            onProgress(0.7f + p * 0.3f, s)
+                        }
                     }
                 } else {
                     val json = tempFile.readText()

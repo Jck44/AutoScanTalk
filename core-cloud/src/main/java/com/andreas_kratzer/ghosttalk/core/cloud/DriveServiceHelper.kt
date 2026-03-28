@@ -72,7 +72,8 @@ class DriveServiceHelper(private val driveService: Drive) {
         parentFolderId: String,
         file: java.io.File,
         mimeType: String,
-        description: String? = null
+        description: String? = null,
+        onProgress: (Float) -> Unit = {}
     ): String? = withContext(Dispatchers.IO) {
         val metadata = File().apply {
             name = file.name
@@ -82,7 +83,18 @@ class DriveServiceHelper(private val driveService: Drive) {
         val mediaContent = FileContent(mimeType, file)
         try {
             Log.d(TAG, "Uploading file: ${file.name} to folder $parentFolderId")
-            val googleFile = driveService.files().create(metadata, mediaContent).setFields("id").execute()
+            val request = driveService.files().create(metadata, mediaContent)
+            request.mediaHttpUploader.apply {
+                isDirectUploadEnabled = false
+                setProgressListener { uploader ->
+                    if (uploader.uploadState == com.google.api.client.googleapis.media.MediaHttpUploader.UploadState.MEDIA_IN_PROGRESS) {
+                        onProgress(uploader.progress.toFloat())
+                    } else if (uploader.uploadState == com.google.api.client.googleapis.media.MediaHttpUploader.UploadState.MEDIA_COMPLETE) {
+                        onProgress(1.0f)
+                    }
+                }
+            }
+            val googleFile = request.setFields("id").execute()
             Log.d(TAG, "File uploaded successfully: ${googleFile.id}")
             googleFile.id
         } catch (e: com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException) {
@@ -103,7 +115,8 @@ class DriveServiceHelper(private val driveService: Drive) {
         fileId: String,
         file: java.io.File,
         mimeType: String,
-        description: String? = null
+        description: String? = null,
+        onProgress: (Float) -> Unit = {}
     ): Boolean = withContext(Dispatchers.IO) {
         val metadata = File().apply {
             name = file.name
@@ -112,7 +125,18 @@ class DriveServiceHelper(private val driveService: Drive) {
         val mediaContent = FileContent(mimeType, file)
         try {
             Log.d(TAG, "Updating file: $fileId (${file.name})")
-            driveService.files().update(fileId, metadata, mediaContent).execute()
+            val request = driveService.files().update(fileId, metadata, mediaContent)
+            request.mediaHttpUploader.apply {
+                isDirectUploadEnabled = false
+                setProgressListener { uploader ->
+                    if (uploader.uploadState == com.google.api.client.googleapis.media.MediaHttpUploader.UploadState.MEDIA_IN_PROGRESS) {
+                        onProgress(uploader.progress.toFloat())
+                    } else if (uploader.uploadState == com.google.api.client.googleapis.media.MediaHttpUploader.UploadState.MEDIA_COMPLETE) {
+                        onProgress(1.0f)
+                    }
+                }
+            }
+            request.execute()
             Log.d(TAG, "File updated successfully: $fileId")
             true
         } catch (e: com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException) {
@@ -129,11 +153,23 @@ class DriveServiceHelper(private val driveService: Drive) {
     /**
      * Downloads a file from Drive.
      */
-    suspend fun downloadFile(fileId: String, targetFile: java.io.File): Boolean = withContext(Dispatchers.IO) {
+    suspend fun downloadFile(
+        fileId: String, 
+        targetFile: java.io.File,
+        onProgress: (Float) -> Unit = {}
+    ): Boolean = withContext(Dispatchers.IO) {
         try {
             Log.d(TAG, "Downloading file: $fileId to ${targetFile.absolutePath}")
+            val request = driveService.files().get(fileId)
+            request.mediaHttpDownloader.setProgressListener { downloader ->
+                if (downloader.downloadState == com.google.api.client.googleapis.media.MediaHttpDownloader.DownloadState.MEDIA_IN_PROGRESS) {
+                    onProgress(downloader.progress.toFloat())
+                } else if (downloader.downloadState == com.google.api.client.googleapis.media.MediaHttpDownloader.DownloadState.MEDIA_COMPLETE) {
+                    onProgress(1.0f)
+                }
+            }
             FileOutputStream(targetFile).use { outputStream ->
-                driveService.files().get(fileId).executeMediaAndDownloadTo(outputStream)
+                request.executeMediaAndDownloadTo(outputStream)
             }
             Log.d(TAG, "File downloaded successfully: $fileId")
             true

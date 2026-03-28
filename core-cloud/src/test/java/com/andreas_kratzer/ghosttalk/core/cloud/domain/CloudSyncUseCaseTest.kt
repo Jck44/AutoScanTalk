@@ -73,14 +73,14 @@ class CloudSyncUseCaseTest {
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("folder_1") } returns listOf(remoteFile)
         
         coEvery { mockImportExportManager.exportBookToZip(bookId, any(), any()) } returns Unit
-        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().updateFile(any(), any(), any(), any()) } returns true
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().updateFile(any(), any(), any(), any(), any()) } returns true
 
         useCase.syncBook(mockDrive, bookId, SyncMode.BACKUP_ONLY)
         advanceUntilIdle()
 
         // Verify that updateFile was called (overwriting remote) and downloadFile was NOT called
-        coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().updateFile("file_1", any(), any(), any()) }
-        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile(any(), any()) }
+        coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().updateFile("file_1", any(), any(), any(), any()) }
+        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile(any(), any(), any()) }
     }
 
     @Test
@@ -96,7 +96,7 @@ class CloudSyncUseCaseTest {
             modifiedTime = com.google.api.client.util.DateTime(System.currentTimeMillis() - 100000L) // Remote is older
         }
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("folder_1") } returns listOf(remoteFile)
-        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile(any(), any()) } answers {
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile(any(), any(), any()) } answers {
             val file = args[1] as File
             file.writeText("{\"restored\": true}")
             true
@@ -106,8 +106,8 @@ class CloudSyncUseCaseTest {
         advanceUntilIdle()
 
         // Verify that downloadFile was called (overwriting local) and updateFile was NOT called
-        coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile("file_1", any()) }
-        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().updateFile(any(), any(), any(), any()) }
+        coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile("file_1", any(), any()) }
+        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().updateFile(any(), any(), any(), any(), any()) }
         // Verify import was called with restoreSyncSettings = false
         coVerify(exactly = 1) { mockImportExportManager.importFromJson(any(), bookId, restoreSyncSettings = false) }
     }
@@ -128,7 +128,7 @@ class CloudSyncUseCaseTest {
         
         // Mock importExportManager to return data
         coEvery { mockImportExportManager.exportBookToZip(bookId, any(), any()) } returns Unit
-        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().updateFile(any(), any(), any(), any()) } returns true
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().updateFile(any(), any(), any(), any(), any()) } returns true
 
         // Ensure tempFile has a newer timestamp by mocking its lastModified if needed, 
         // but it will have 'now' roughly. Remote is 10s older.
@@ -136,7 +136,7 @@ class CloudSyncUseCaseTest {
         useCase.syncBook(mockDrive, bookId, SyncMode.TWO_WAY)
         advanceUntilIdle()
 
-        coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().updateFile("file_1", any(), any(), any()) }
+        coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().updateFile("file_1", any(), any(), any(), any()) }
     }
 
     @Test
@@ -152,7 +152,7 @@ class CloudSyncUseCaseTest {
             modifiedTime = com.google.api.client.util.DateTime(now + 10000L) // Remote is newer
         }
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("folder_1") } returns listOf(remoteFile)
-        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile(any(), any()) } answers {
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile(any(), any(), any()) } answers {
             val file = args[1] as File
             file.writeText("{\"downloaded\": true}")
             true
@@ -162,7 +162,7 @@ class CloudSyncUseCaseTest {
         useCase.syncBook(mockDrive, bookId, SyncMode.TWO_WAY)
         advanceUntilIdle()
 
-        coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile("file_1", any()) }
+        coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile("file_1", any(), any()) }
         coVerify(exactly = 1) { mockImportExportManager.importFromZip(any(), bookId, any(), any(), any()) }
     }
 
@@ -183,8 +183,8 @@ class CloudSyncUseCaseTest {
         useCase.syncBook(mockDrive, bookId, SyncMode.TWO_WAY)
         advanceUntilIdle()
 
-        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile(any(), any()) }
-        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().updateFile(any(), any(), any(), any()) }
+        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile(any(), any(), any()) }
+        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().updateFile(any(), any(), any(), any(), any()) }
     }
 
     @Test

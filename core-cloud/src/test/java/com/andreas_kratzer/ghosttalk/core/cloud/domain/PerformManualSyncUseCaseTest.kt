@@ -50,7 +50,7 @@ class PerformManualSyncUseCaseTest {
     fun `execute returns Error if no credentials found`() = runTest {
         every { googleAuthManager.getGoogleCredential() } returns null
 
-        val result = useCase.execute(SyncMode.TWO_WAY)
+        val result = useCase.execute(SyncMode.TWO_WAY, { _, _ -> })
 
         assertTrue(result is PerformManualSyncUseCase.Result.Error)
         assertEquals("Keine Google-Anmeldedaten gefunden.", (result as PerformManualSyncUseCase.Result.Error).message)
@@ -60,12 +60,12 @@ class PerformManualSyncUseCaseTest {
     fun `execute returns Success on successful sync`() = runTest {
         every { googleAuthManager.getGoogleCredential() } returns mockk()
         every { settingsRepository.activeBookId } returns "book1"
-        coEvery { cloudSyncUseCase.syncBook(any(), any(), any()) } returns true
+        coEvery { cloudSyncUseCase.syncBook(any(), any(), any(), any()) } returns true
 
         val result = useCase.execute(SyncMode.TWO_WAY)
 
         assertTrue(result is PerformManualSyncUseCase.Result.Success)
-        coVerify { cloudSyncUseCase.syncBook(any(), "book1", SyncMode.TWO_WAY) }
+        coVerify { cloudSyncUseCase.syncBook(any(), "book1", SyncMode.TWO_WAY, any()) }
         verify { settingsRepository.lastSuccessfulSyncTime = any() }
     }
 
@@ -77,7 +77,7 @@ class PerformManualSyncUseCaseTest {
         every { googleAuthManager.getGoogleCredential() } returns mockk()
         val ioException = mockk<UserRecoverableAuthIOException>(relaxed = true)
         every { ioException.intent } returns intent
-        coEvery { cloudSyncUseCase.syncBook(any(), any(), any()) } throws ioException
+        coEvery { cloudSyncUseCase.syncBook(any(), any(), any(), any()) } throws ioException
 
         val result = useCase.execute(SyncMode.TWO_WAY)
 

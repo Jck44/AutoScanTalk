@@ -100,13 +100,13 @@ class CloudSyncSettingsDelegate @Inject constructor(
 
     fun performManualSync(
         mode: SyncMode,
-        scope: CoroutineScope
+        scope: CoroutineScope,
+        onProgress: (Float, String) -> Unit = { _, _ -> }
     ) {
         scope.launch {
             _isSyncing.value = true
-            Toast.makeText(application, R.string.settings_cloud_sync_started, Toast.LENGTH_SHORT).show()
             
-            when (val result = performManualSyncUseCase.execute(mode)) {
+            when (val result = performManualSyncUseCase.execute(mode, onProgress)) {
                 is PerformManualSyncUseCase.Result.Success -> {
                     val messageRes = when (mode) {
                         SyncMode.BACKUP_ONLY -> R.string.settings_cloud_backup_success
@@ -164,7 +164,12 @@ class CloudSyncSettingsDelegate @Inject constructor(
         }
     }
 
-    fun importCloudBackup(backupInfo: RemoteBackupInfo, scope: CoroutineScope, onImported: (String) -> Unit = {}) {
+    fun importCloudBackup(
+        backupInfo: RemoteBackupInfo, 
+        scope: CoroutineScope, 
+        onProgress: (Float, String) -> Unit = { _, _ -> },
+        onImported: (String) -> Unit = {}
+    ) {
         _showBackupSelectionDialog.value = false
         scope.launch {
             val credential = authManager.getGoogleCredential() ?: return@launch
@@ -178,7 +183,7 @@ class CloudSyncSettingsDelegate @Inject constructor(
                     credential
                 ).setApplicationName("GhostTalk").build()
 
-                val result = cloudSyncUseCase.importCloudBackup(drive, backupInfo.fileId, backupInfo.fileName)
+                val result = cloudSyncUseCase.importCloudBackup(drive, backupInfo.fileId, backupInfo.fileName, onProgress)
                 if (result.isSuccess) {
                     val bookId = result.getOrThrow()
                     settingsRepository.activeBookId = bookId

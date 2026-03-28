@@ -272,11 +272,48 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun setCloudSyncEnabled(ctx: Context, e: Boolean) = cloudSyncDelegate.setCloudSyncEnabled(ctx, e, viewModelScope)
-    fun syncNow() = cloudSyncDelegate.performManualSync(com.andreas_kratzer.ghosttalk.core.cloud.domain.SyncMode.TWO_WAY, viewModelScope)
-    fun backupNow() = cloudSyncDelegate.performManualSync(com.andreas_kratzer.ghosttalk.core.cloud.domain.SyncMode.BACKUP_ONLY, viewModelScope)
-    fun restoreNow() = cloudSyncDelegate.performManualSync(com.andreas_kratzer.ghosttalk.core.cloud.domain.SyncMode.RESTORE_ONLY, viewModelScope)
+    
+    fun syncNow() {
+        _isBackupRestoreRunning.value = true
+        _backupRestoreProgress.value = 0f
+        cloudSyncDelegate.performManualSync(com.andreas_kratzer.ghosttalk.core.cloud.domain.SyncMode.TWO_WAY, viewModelScope) { p, s -> 
+            handleCloudProgress(p, s)
+        }
+    }
+    
+    fun backupNow() {
+        _isBackupRestoreRunning.value = true
+        _backupRestoreProgress.value = 0f
+        cloudSyncDelegate.performManualSync(com.andreas_kratzer.ghosttalk.core.cloud.domain.SyncMode.BACKUP_ONLY, viewModelScope) { p, s -> 
+            handleCloudProgress(p, s)
+        }
+    }
+    
+    fun restoreNow() {
+        _isBackupRestoreRunning.value = true
+        _backupRestoreProgress.value = 0f
+        cloudSyncDelegate.performManualSync(com.andreas_kratzer.ghosttalk.core.cloud.domain.SyncMode.RESTORE_ONLY, viewModelScope) { p, s -> 
+            handleCloudProgress(p, s)
+        }
+    }
+    
     fun fetchAvailableBackupsForImport() = cloudSyncDelegate.fetchAvailableBackupsForImport(viewModelScope)
-    fun importCloudBackup(backupInfo: com.andreas_kratzer.ghosttalk.core.cloud.domain.RemoteBackupInfo) = cloudSyncDelegate.importCloudBackup(backupInfo, viewModelScope)
+    
+    fun importCloudBackup(backupInfo: com.andreas_kratzer.ghosttalk.core.cloud.domain.RemoteBackupInfo) {
+        _isBackupRestoreRunning.value = true
+        _backupRestoreProgress.value = 0f
+        cloudSyncDelegate.importCloudBackup(backupInfo, viewModelScope, { p, s -> 
+            handleCloudProgress(p, s)
+        }) { _ ->
+            // On completion, dialog is hidden by the CloudSyncSettingsDelegate's isSyncing flow logic if we wanted, 
+            // but we'll use a finally block in the delegate. 
+            // Actually, we'll manually unset isBackupRestoreRunning here after a delay.
+            viewModelScope.launch {
+                delay(1000)
+                _isBackupRestoreRunning.value = false
+            }
+        }
+    }
     fun dismissBackupSelectionDialog() = cloudSyncDelegate.dismissBackupSelectionDialog()
     
     fun loadSyncLogs() = cloudSyncDelegate.loadSyncLogs(viewModelScope)
@@ -785,5 +822,29 @@ class SettingsViewModel @Inject constructor(
         prefetchJob?.cancel()
         _isPrefetching.value = false
         _currentPrefetchText.value = null
+    }
+
+    private fun handleCloudProgress(progress: Float, status: String) {
+        _backupRestoreProgress.value = progress
+        _backupRestoreStatus.value = when {
+            status == "Uploading to Drive..." -> application.getString(R.string.cloud_progress_uploading)
+            status == "Downloading from Drive..." -> application.getString(R.string.cloud_progress_downloading)
+            status == "Exporting database..." -> application.getString(R.string.backup_progress_exporting)
+            status.startsWith("Compressing audio:") -> application.getString(R.string.backup_progress_compressing, status.substringAfter(": "))
+            status.startsWith("Extracting:") -> application.getString(R.string.restore_progress_extracting, status.substringAfter(": "))
+            status == "Importing data..." -> application.getString(R.string.restore_progress_importing)
+            status == "Import complete." -> application.getString(R.string.restore_progress_complete)
+            status == "Backup complete." -> application.getString(R.string.backup_progress_complete)
+            else -> status
+        }
+        
+        // Hide dialog when complete
+        if (progress >= 1.0f) {
+            viewModelScope.launch {
+                delay(1000)
+                _isBackupRestoreRunning.value = false
+                _backupRestoreStatus.value = null
+            }
+        }
     }
 }
