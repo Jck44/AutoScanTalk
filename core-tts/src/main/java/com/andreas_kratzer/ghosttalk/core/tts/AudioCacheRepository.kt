@@ -22,7 +22,7 @@ class AudioCacheRepository @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
     suspend fun getCachedAudios(): List<CachedAudioItem> = withContext(Dispatchers.IO) {
-        val cacheDir = File(context.cacheDir, "elevenlabs")
+        val cacheDir = File(context.filesDir, "elevenlabs")
         if (!cacheDir.exists()) return@withContext emptyList()
 
         val files = cacheDir.listFiles() ?: return@withContext emptyList()
@@ -56,7 +56,7 @@ class AudioCacheRepository @Inject constructor(
     }
 
     suspend fun deleteAll(): Boolean = withContext(Dispatchers.IO) {
-        val cacheDir = File(context.cacheDir, "elevenlabs")
+        val cacheDir = File(context.filesDir, "elevenlabs")
         if (cacheDir.exists()) {
             cacheDir.listFiles()?.forEach { it.delete() }
             true

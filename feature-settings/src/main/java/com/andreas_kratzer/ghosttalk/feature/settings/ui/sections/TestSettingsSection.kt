@@ -4,6 +4,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -86,14 +89,16 @@ fun TestSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                 }
                 
                 var showAudioCacheDialog by remember { mutableStateOf(false) }
-                SettingsClickableItem(
-                    label = "Audio-Cache",
-                    value = "Gecachte Audios verwalten",
+                Button(
                     onClick = { 
                         viewModel.loadAudioCache()
                         showAudioCacheDialog = true 
-                    }
-                )
+                    },
+                    shape = MaterialTheme.shapes.medium,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Gecachte Audios verwalten")
+                }
 
                 if (showAudioCacheDialog) {
                     val cacheItems by viewModel.audioCacheItems.collectAsState()

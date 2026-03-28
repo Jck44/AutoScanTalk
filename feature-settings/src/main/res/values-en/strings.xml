@@ -221,5 +221,27 @@
     <!-- Smart Home Providers -->
     <string name="smart_home_provider_google_home">Google Home</string>
     <string name="smart_home_provider_philips_hue">Philips Hue</string>
-
+    <string name="settings_clear_tts_cache_summary">Deletes all previously downloaded ElevenLabs MP3 files.</string>
+    <string name="settings_prefetch_tts_title">Prefetch TTS MP3 Cache</string>
+    <string name="settings_prefetch_tts_summary">Downloads required speech files for selected pages in advance.</string>
+    <string name="prefetch_dialog_select_pages">Select Pages</string>
+    <string name="prefetch_stats_title">Summary</string>
+    <string name="prefetch_stats_unique">Unique strings: %d</string>
+    <string name="prefetch_stats_duplicates">Duplicates (skipped): %d</string>
+    <string name="prefetch_stats_words">Total word count: %d</string>
+    <string name="prefetch_stats_chars">Total character count: %d</string>
+    <string name="prefetch_stats_cached">Already in cache: %d</string>
+    <string name="prefetch_progress_count">Progress: %1$d / %2$d</string>
+    <string name="prefetch_cancel">Cancel</string>
+    <string name="prefetch_start">Start</string>
+    <string name="prefetch_in_progress">Prefetching in progress...</string>
+    <string name="prefetch_complete">Prefetching complete.</string>
+    <string name="prefetch_select_all">Select all</string>
+    <string name="prefetch_deselect_all">Deselect all</string>
+    <string name="backup_progress_exporting">Exporting data...</string>
+    <string name="backup_progress_compressing">Compressing audio: %s</string>
+    <string name="backup_progress_complete">Backup created successfully.</string>
+    <string name="restore_progress_extracting">Extracting files: %s</string>
+    <string name="restore_progress_importing">Importing data...</string>
+    <string name="restore_progress_complete">Restore completed successfully.</string>
 </resources>

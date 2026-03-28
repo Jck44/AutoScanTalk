@@ -24,4 +24,7 @@
     <string name="action_delete">Delete</string>
     <string name="action_create">Create</string>
     <string name="action_save">Save</string>
+    <string name="dialog_confirm">Confirm</string>
+    <string name="dialog_close">Close</string>
+    <string name="dialog_back">Back</string>
 </resources>

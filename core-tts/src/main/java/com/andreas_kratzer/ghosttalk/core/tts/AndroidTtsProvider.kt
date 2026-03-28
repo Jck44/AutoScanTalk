@@ -85,7 +85,7 @@ open class AndroidTtsProvider @Inject constructor(
                                 }
                             }
                         }, 50)
-                    } else if (utteranceId != null && utteranceId.startsWith("direct_")) {
+                    } else if (utteranceId.startsWith("direct_")) {
                         val callback = directCallbacks.remove(utteranceId)
                         callback?.let { handler.post { it() } }
                     }
@@ -98,7 +98,7 @@ open class AndroidTtsProvider @Inject constructor(
                     request?.file?.delete()
                     request?.onDoneCallback?.let { handler.post { it() } }
                     
-                    if (utteranceId != null && utteranceId.startsWith("direct_")) {
+                    if (utteranceId.startsWith("direct_")) {
                         directCallbacks.remove(utteranceId)?.let { handler.post { it() } }
                     }
                 }
@@ -185,10 +185,11 @@ open class AndroidTtsProvider @Inject constructor(
     private fun applySettings() {
         if (!initialized || tts == null) return
 
-        val locale = if (pendingLanguageTag.isNullOrEmpty() || pendingLanguageTag == "default") {
+        val tag = pendingLanguageTag
+        val locale = if (tag.isNullOrEmpty() || tag == "default") {
             settingsRepository.appLanguage?.let { Locale.forLanguageTag(it) } ?: Locale.getDefault()
         } else {
-            Locale.forLanguageTag(pendingLanguageTag)
+            Locale.forLanguageTag(tag)
         }
 
         tts?.setLanguage(locale)
@@ -207,8 +208,9 @@ open class AndroidTtsProvider @Inject constructor(
                     }.firstOrNull()
                     
                     if (localFallback != null) {
+                        val fallbackName = localFallback.name ?: ""
                         tts?.voice = localFallback
-                        fallbackListener?.onVoiceFallback(pendingVoiceName ?: "", localFallback.name, "No Network")
+                        fallbackListener?.onVoiceFallback(pendingVoiceName ?: "", fallbackName, "No Network")
                     } else {
                         tts?.language = locale
                         fallbackListener?.onVoiceFallback(pendingVoiceName ?: "", null, "No Network, No Local Voice")
@@ -240,10 +242,12 @@ open class AndroidTtsProvider @Inject constructor(
             languageTag
         }
         return voiceManager.getAvailableVoices(tts, resolvedTag).map { voice ->
+            val vName = voice.name ?: ""
+            val vLocale = voice.locale ?: Locale.getDefault()
             TtsVoice(
-                id = voice.name,
-                name = voice.name,
-                locale = voice.locale,
+                id = vName,
+                name = vName,
+                locale = vLocale,
                 isNetworkRequired = voice.isNetworkConnectionRequired,
                 quality = when (voice.quality) {
                     Voice.QUALITY_VERY_HIGH -> TtsVoice.QUALITY_VERY_HIGH
@@ -252,8 +256,8 @@ open class AndroidTtsProvider @Inject constructor(
                     else -> TtsVoice.QUALITY_NORMAL
                 },
                 gender = when {
-                    voice.name.lowercase().contains("female") || voice.name.lowercase().contains("-f-") -> TtsVoice.Gender.FEMALE
-                    voice.name.lowercase().contains("male") || voice.name.lowercase().contains("-m-") -> TtsVoice.Gender.MALE
+                    vName.lowercase().contains("female") || vName.lowercase().contains("-f-") -> TtsVoice.Gender.FEMALE
+                    vName.lowercase().contains("male") || vName.lowercase().contains("-m-") -> TtsVoice.Gender.MALE
                     else -> TtsVoice.Gender.UNKNOWN
                 },
                 provider = "android"
@@ -261,9 +265,8 @@ open class AndroidTtsProvider @Inject constructor(
         }
     }
 
-    override fun prefetch(text: String) {
-        // No-Op for Android TTS as local synthesis is nearly instantaneous 
-        // and doesn't suffer from network latency.
+    override suspend fun prefetch(text: String) {
+        // Android TTS does not need prefetching
     }
 
     override fun stopAll() {
@@ -281,8 +284,9 @@ open class AndroidTtsProvider @Inject constructor(
     }
 
     override fun shutdown() {
-        tts?.stop()
         tts?.shutdown()
         initialized = false
     }
+
+    override fun isCached(text: String): Boolean = true
 }

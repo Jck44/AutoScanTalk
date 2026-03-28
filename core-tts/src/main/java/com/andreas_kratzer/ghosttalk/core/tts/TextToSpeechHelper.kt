@@ -60,7 +60,9 @@ open class TextToSpeechHelper @Inject constructor(
             ) { lang, voice -> lang to voice }
                 .collect { (newLanguage, newVoice) ->
                     Log.d("TextToSpeechHelper", "Settings updated: lang=$newLanguage, voice=$newVoice")
-                    currentProvider.setLanguageAndVoice(newLanguage, newVoice)
+                    // Keep both providers in sync so fallback works with correct language
+                    androidTtsProvider.get().setLanguageAndVoice(newLanguage, newVoice)
+                    elevenLabsTtsProvider.get().setLanguageAndVoice(newLanguage, newVoice)
                 }
         }
     }
@@ -74,11 +76,11 @@ open class TextToSpeechHelper @Inject constructor(
         if (nextProvider != currentProvider) {
             currentProvider.stopAll()
             currentProvider = nextProvider
-            // Apply current settings to new provider
-            currentProvider.setLanguageAndVoice(
-                settingsRepository.ttsLanguage,
-                settingsRepository.ttsVoiceName
-            )
+            // Ensure both are synced on switch
+            val lang = settingsRepository.ttsLanguage
+            val voice = settingsRepository.ttsVoiceName
+            androidTtsProvider.get().setLanguageAndVoice(lang, voice)
+            elevenLabsTtsProvider.get().setLanguageAndVoice(lang, voice)
         }
     }
 
@@ -157,7 +159,7 @@ open class TextToSpeechHelper @Inject constructor(
         set(value) {
             field = value
             // Delegate to providers if they support it
-            (androidTtsProvider.get() as? AndroidTtsProvider)?.fallbackListener = value
+            androidTtsProvider.get().fallbackListener = value
         }
 
     fun stopNotificationTTS() {
@@ -168,8 +170,12 @@ open class TextToSpeechHelper @Inject constructor(
         }
     }
 
-    fun prefetch(text: String) {
+    suspend fun prefetch(text: String) {
         currentProvider.prefetch(text)
+    }
+
+    fun isCached(text: String): Boolean {
+        return currentProvider.isCached(text)
     }
 
     fun stopAll() {

@@ -159,7 +159,7 @@ open class ElevenLabsTtsProvider @Inject constructor(
         })
     }
 
-    override fun prefetch(text: String) {
+    override suspend fun prefetch(text: String) {
         val apiKey = cloudSettings.elevenLabsApiKey
         if (apiKey.isNullOrEmpty()) return
 
@@ -188,27 +188,33 @@ open class ElevenLabsTtsProvider @Inject constructor(
             .tag("PREFETCH")
             .build()
 
-        httpClient.newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: java.io.IOException) {}
-            override fun onResponse(call: Call, response: Response) {
-                response.use { resp ->
-                    if (!resp.isSuccessful) return
-                    val body = resp.body ?: return
-                    try {
-                        java.io.FileOutputStream(cachedFile).use { output ->
-                            body.byteStream().copyTo(output)
-                        }
-                        Log.i("ElevenLabsTtsProvider", "Prefetched audio: ${cachedFile.name}")
-                    } catch (e: Exception) {
-                        Log.e("ElevenLabsTtsProvider", "Error prefetching audio: ${e.message}")
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                httpClient.newCall(request).execute().use { resp ->
+                    if (!resp.isSuccessful) {
+                        Log.e("ElevenLabsTtsProvider", "Prefetch failed: ${resp.code} ${resp.message} for text: ${text.take(20)}...")
+                        return@withContext
                     }
+                    val body = resp.body ?: return@withContext
+                    java.io.FileOutputStream(cachedFile).use { output ->
+                        body.byteStream().copyTo(output)
+                    }
+                    Log.i("ElevenLabsTtsProvider", "Prefetched audio: ${cachedFile.name}")
                 }
+            } catch (e: Exception) {
+                Log.e("ElevenLabsTtsProvider", "Error prefetching audio: ${e.message}")
             }
-        })
+        }
+    }
+    
+    override fun isCached(text: String): Boolean {
+        val elevenLabsModel = cloudSettings.elevenLabsModel
+        val cachedFile = getCacheFile(text, currentVoiceId, elevenLabsModel)
+        return cachedFile.exists() && cachedFile.length() > 0
     }
     
     private fun getCacheFile(text: String, voiceId: String, modelId: String): java.io.File {
-        val tgtDir = java.io.File(context.cacheDir, "elevenlabs")
+        val tgtDir = java.io.File(context.filesDir, "elevenlabs")
         if (!tgtDir.exists()) tgtDir.mkdirs()
         
         var base64Text = android.util.Base64.encodeToString(text.toByteArray(Charsets.UTF_8), android.util.Base64.URL_SAFE or android.util.Base64.NO_WRAP or android.util.Base64.NO_PADDING)
@@ -227,6 +233,7 @@ open class ElevenLabsTtsProvider @Inject constructor(
     }
 
     init {
+        migrateCacheToFilesDir()
         // Fetch voices immediately on initialization
         fetchVoices()
         
@@ -236,6 +243,33 @@ open class ElevenLabsTtsProvider @Inject constructor(
                     fetchVoices()
                 }
             }
+        }
+    }
+
+    private fun migrateCacheToFilesDir() {
+        val oldDir = File(context.cacheDir, "elevenlabs")
+        val newDir = File(context.filesDir, "elevenlabs")
+
+        if (oldDir.exists() && oldDir.isDirectory) {
+            Log.i("ElevenLabsTtsProvider", "Starting migration of ElevenLabs cache to filesDir...")
+            if (!newDir.exists()) newDir.mkdirs()
+
+            val files = oldDir.listFiles()
+            if (files != null) {
+                var count = 0
+                for (file in files) {
+                    val destFile = File(newDir, file.name)
+                    if (!destFile.exists()) {
+                        if (file.renameTo(destFile)) {
+                            count++
+                        }
+                    } else {
+                        file.delete()
+                    }
+                }
+                Log.i("ElevenLabsTtsProvider", "Migrated $count files to filesDir")
+            }
+            oldDir.delete()
         }
     }
 

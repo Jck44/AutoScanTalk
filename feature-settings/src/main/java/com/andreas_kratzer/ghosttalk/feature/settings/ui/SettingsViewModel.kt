@@ -160,8 +160,45 @@ class SettingsViewModel @Inject constructor(
     private val _showUsageStatsDialog = MutableStateFlow(false)
     val showUsageStatsDialog = _showUsageStatsDialog.asStateFlow()
 
+    private val _showPrefetchDialog = MutableStateFlow(false)
+    val showPrefetchDialog = _showPrefetchDialog.asStateFlow()
+
     private val _topButtonUsage = MutableStateFlow<List<com.andreas_kratzer.ghosttalk.core.model.GroupedButtonUsageStat>>(emptyList())
     val topButtonUsage = _topButtonUsage.asStateFlow()
+
+    // --- TTS Prefetch State ---
+    private val _selectedPagesForPrefetch = MutableStateFlow<Set<String>>(emptySet())
+    val selectedPagesForPrefetch = _selectedPagesForPrefetch.asStateFlow()
+
+    private val _isPrefetching = MutableStateFlow(false)
+    val isPrefetching = _isPrefetching.asStateFlow()
+
+    private val _prefetchProgress = MutableStateFlow(0f)
+    val prefetchProgress = _prefetchProgress.asStateFlow()
+
+    private val _prefetchCurrentCount = MutableStateFlow(0)
+    val prefetchCurrentCount = _prefetchCurrentCount.asStateFlow()
+
+    private val _prefetchTotalCount = MutableStateFlow(0)
+    val prefetchTotalCount = _prefetchTotalCount.asStateFlow()
+
+    private val _currentPrefetchText = MutableStateFlow<String?>(null)
+    val currentPrefetchText = _currentPrefetchText.asStateFlow()
+
+    private val _prefetchStats = MutableStateFlow<com.andreas_kratzer.ghosttalk.core.model.PrefetchStats?>(null)
+    val prefetchStats = _prefetchStats.asStateFlow()
+
+    // --- Backup & Restore State ---
+    private val _isBackupRestoreRunning = MutableStateFlow(false)
+    val isBackupRestoreRunning = _isBackupRestoreRunning.asStateFlow()
+
+    private val _backupRestoreProgress = MutableStateFlow(0f)
+    val backupRestoreProgress = _backupRestoreProgress.asStateFlow()
+
+    private val _backupRestoreStatus = MutableStateFlow<String?>(null)
+    val backupRestoreStatus = _backupRestoreStatus.asStateFlow()
+    
+    private var prefetchJob: kotlinx.coroutines.Job? = null
 
     init {
         ttsDelegate.initialize(viewModelScope) { original, fallback ->
@@ -399,6 +436,10 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    fun setShowPrefetchDialog(show: Boolean) {
+        _showPrefetchDialog.value = show
+    }
+
     fun refreshTopButtonUsage() {
         viewModelScope.launch {
             val stats = buttonUsageRepository.getGroupedUsageStats(activeBookId)
@@ -477,7 +518,25 @@ class SettingsViewModel @Inject constructor(
     }
 
     suspend fun exportLocalBackupZip(outputStream: java.io.OutputStream) {
-        importExportManager.exportBookToZip(activeBookId, outputStream)
+        _isBackupRestoreRunning.value = true
+        _backupRestoreProgress.value = 0f
+        _backupRestoreStatus.value = application.getString(R.string.backup_progress_exporting)
+        
+        try {
+            importExportManager.exportBookToZip(activeBookId, outputStream) { progress, status ->
+                _backupRestoreProgress.value = progress
+                _backupRestoreStatus.value = when {
+                    status == "Exporting database..." -> application.getString(R.string.backup_progress_exporting)
+                    status.startsWith("Compressing audio:") -> application.getString(R.string.backup_progress_compressing, status.substringAfter(": "))
+                    status == "Backup complete." -> application.getString(R.string.backup_progress_complete)
+                    else -> status
+                }
+            }
+        } finally {
+            delay(1000) // Show complete message briefly
+            _isBackupRestoreRunning.value = false
+            _backupRestoreStatus.value = null
+        }
     }
 
     suspend fun importLocalBackupZip(
@@ -485,14 +544,32 @@ class SettingsViewModel @Inject constructor(
         onSuccess: () -> Unit,
         onError: (String) -> Unit
     ) {
-        val result = importExportManager.importFromZip(
-            inputStream = inputStream,
-            bookId = activeBookId,
-            regenerateIds = false,
-            restoreSyncSettings = false
-        )
-        result.onSuccess { onSuccess() }
-            .onFailure { e -> onError("Fehler beim ZIP-Import: ${e.message}") }
+        _isBackupRestoreRunning.value = true
+        _backupRestoreProgress.value = 0f
+        _backupRestoreStatus.value = application.getString(R.string.restore_progress_importing)
+
+        try {
+            val result = importExportManager.importFromZip(
+                inputStream = inputStream,
+                bookId = activeBookId,
+                regenerateIds = false,
+                restoreSyncSettings = false
+            ) { progress, status ->
+                _backupRestoreProgress.value = progress
+                _backupRestoreStatus.value = when {
+                    status == "Importing data..." -> application.getString(R.string.restore_progress_importing)
+                    status.startsWith("Extracting:") -> application.getString(R.string.restore_progress_extracting, status.substringAfter(": "))
+                    status == "Import complete." -> application.getString(R.string.restore_progress_complete)
+                    else -> status
+                }
+            }
+            result.onSuccess { onSuccess() }
+                .onFailure { e -> onError("Fehler beim ZIP-Import: ${e.message}") }
+        } finally {
+            delay(1000)
+            _isBackupRestoreRunning.value = false
+            _backupRestoreStatus.value = null
+        }
     }
 
     suspend fun importLocalBackup(json: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
@@ -602,5 +679,111 @@ class SettingsViewModel @Inject constructor(
                 loadAudioCache()
             }
         }
+    }
+
+    // --- TTS Prefetch Actions ---
+    fun togglePageSelectionForPrefetch(pageId: String) {
+        val current = _selectedPagesForPrefetch.value.toMutableSet()
+        if (current.contains(pageId)) {
+            current.remove(pageId)
+        } else {
+            current.add(pageId)
+        }
+        _selectedPagesForPrefetch.value = current
+        _prefetchStats.value = null // Reset stats when selection changes
+    }
+
+    fun selectAllPagesForPrefetch(pages: List<Page>) {
+        _selectedPagesForPrefetch.value = pages.map { it.id }.toSet()
+        _prefetchStats.value = null
+    }
+
+    fun deselectAllPagesForPrefetch() {
+        _selectedPagesForPrefetch.value = emptySet()
+        _prefetchStats.value = null
+    }
+
+    fun calculatePrefetchStats(allPages: List<Page>): com.andreas_kratzer.ghosttalk.core.model.PrefetchStats {
+        val selectedIds = _selectedPagesForPrefetch.value
+        val selectedPages = allPages.filter { it.id in selectedIds }
+        
+        val allButtons = selectedPages.flatMap { it.buttonConfigs.filterNotNull() }
+        val textsToSpeak = allButtons.mapNotNull { config ->
+            val text = config.spokenText?.takeIf { it.isNotBlank() }
+                ?: if (config.buttonAction is com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction) config.label else null
+            
+            text?.takeIf { it.isNotBlank() }
+        }
+
+        val totalButtons = textsToSpeak.size
+        val uniqueTexts = textsToSpeak.distinct()
+        val uniqueStringsCount = uniqueTexts.size
+        val duplicateCount = totalButtons - uniqueStringsCount
+        
+        val totalWords = uniqueTexts.sumOf { it.split(Regex("\\s+")).filter { s -> s.isNotBlank() }.size }
+        val totalCharacters = uniqueTexts.sumOf { it.length }
+        
+        val alreadyCached = uniqueTexts.count { ttsHelper.isCached(it) }
+
+        val stats = com.andreas_kratzer.ghosttalk.core.model.PrefetchStats(
+            totalButtons = totalButtons,
+            uniqueStrings = uniqueStringsCount,
+            duplicateStrings = duplicateCount,
+            totalWords = totalWords,
+            totalCharacters = totalCharacters,
+            alreadyCached = alreadyCached
+        )
+        
+        _prefetchStats.value = stats
+        return stats
+    }
+
+    fun startPrefetch(allPages: List<Page>) {
+        val stats = _prefetchStats.value ?: calculatePrefetchStats(allPages)
+        val selectedIds = _selectedPagesForPrefetch.value
+        val selectedPages = allPages.filter { it.id in selectedIds }
+        
+        val uniqueTexts = selectedPages.flatMap { it.buttonConfigs.filterNotNull() }
+            .mapNotNull { config ->
+                config.spokenText?.takeIf { it.isNotBlank() }
+                    ?: if (config.buttonAction is com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction) config.label else null
+            }
+            .filter { it.isNotBlank() }
+            .distinct()
+            .filter { !ttsHelper.isCached(it) }
+
+        if (uniqueTexts.isEmpty()) {
+            _prefetchProgress.value = 1f
+            _prefetchCurrentCount.value = 0
+            _prefetchTotalCount.value = 0
+            return
+        }
+
+        prefetchJob?.cancel()
+        prefetchJob = viewModelScope.launch {
+            _isPrefetching.value = true
+            _prefetchProgress.value = 0f
+            _prefetchCurrentCount.value = 0
+            _prefetchTotalCount.value = uniqueTexts.size
+            
+            uniqueTexts.forEachIndexed { index, text ->
+                _currentPrefetchText.value = text
+                ttsHelper.prefetch(text) // This now suspends until finished
+                _prefetchCurrentCount.value = index + 1
+                _prefetchProgress.value = (index + 1).toFloat() / uniqueTexts.size
+                delay(100) // Small delay to allow UI to breathe
+            }
+            
+            _isPrefetching.value = false
+            _currentPrefetchText.value = null
+            // Refresh stats to show everything is cached now
+            calculatePrefetchStats(allPages)
+        }
+    }
+
+    fun cancelPrefetch() {
+        prefetchJob?.cancel()
+        _isPrefetching.value = false
+        _currentPrefetchText.value = null
     }
 }

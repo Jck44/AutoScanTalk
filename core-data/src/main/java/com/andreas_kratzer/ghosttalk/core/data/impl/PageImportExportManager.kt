@@ -345,27 +345,36 @@ class PageImportExportManager @Inject constructor(
         }
     }
 
-    override suspend fun exportBookToZip(bookId: String, outputStream: OutputStream) = withContext(Dispatchers.IO) {
+    override suspend fun exportBookToZip(
+        bookId: String, 
+        outputStream: OutputStream,
+        onProgress: (Float, String) -> Unit
+    ) = withContext(Dispatchers.IO) {
         ZipOutputStream(outputStream).use { zip ->
-            // 1. Write the backup.json
+            // 1. Write the backup.json (0-10%)
+            onProgress(0.05f, "Exporting database...")
             val jsonContent = exportBookToJson(bookId)
             zip.putNextEntry(ZipEntry("backup.json"))
             zip.write(jsonContent.toByteArray(Charsets.UTF_8))
             zip.closeEntry()
+            onProgress(0.1f, "Database exported.")
 
-            // 2. Write the elevenlabs cache files
-            val cacheDir = File(context.cacheDir, "elevenlabs")
+            // 2. Write the elevenlabs cache files (10-100%)
+            val cacheDir = File(context.filesDir, "elevenlabs")
             if (cacheDir.exists() && cacheDir.isDirectory) {
-                cacheDir.listFiles()?.forEach { file ->
-                    if (file.isFile && file.name.endsWith(".mp3")) {
-                        zip.putNextEntry(ZipEntry("tts_cache/${file.name}"))
-                        file.inputStream().use { input ->
-                            input.copyTo(zip)
-                        }
-                        zip.closeEntry()
+                val files = cacheDir.listFiles()?.filter { it.isFile && it.name.endsWith(".mp3") } ?: emptyList()
+                val totalFiles = files.size
+                files.forEachIndexed { index, file ->
+                    val fileProgress = 0.1f + (index.toFloat() / totalFiles) * 0.9f
+                    onProgress(fileProgress, "Compressing audio: ${file.name}")
+                    zip.putNextEntry(ZipEntry("tts_cache/${file.name}"))
+                    file.inputStream().use { input ->
+                        input.copyTo(zip)
                     }
+                    zip.closeEntry()
                 }
             }
+            onProgress(1f, "Backup complete.")
         }
     }
 
@@ -373,17 +382,27 @@ class PageImportExportManager @Inject constructor(
         inputStream: InputStream,
         bookId: String,
         regenerateIds: Boolean,
-        restoreSyncSettings: Boolean
+        restoreSyncSettings: Boolean,
+        onProgress: (Float, String) -> Unit
     ): Result<Int> = withContext(Dispatchers.IO) {
         try {
             var jsonContent: String? = null
             val zipIn = ZipInputStream(inputStream)
-            var entry = zipIn.nextEntry
             
-            val ttsCacheDir = File(context.cacheDir, "elevenlabs")
+            val ttsCacheDir = File(context.filesDir, "elevenlabs")
             if (!ttsCacheDir.exists()) ttsCacheDir.mkdirs()
 
+            // Since we don't know the number of entries in advance easily with ZipInputStream
+            // We'll just report progress based on entries processed if we can, 
+            // but usually we'd need a ZipFile for that.
+            // Let's at least report filenames.
+            
+            var entry = zipIn.nextEntry
+            var entriesProcessed = 0
             while (entry != null) {
+                entriesProcessed++
+                onProgress(0.1f, "Extracting: ${entry.name}") // Qualitative progress
+                
                 if (entry.name == "backup.json") {
                     val bytes = zipIn.readBytes()
                     jsonContent = String(bytes, Charsets.UTF_8)
@@ -407,7 +426,54 @@ class PageImportExportManager @Inject constructor(
                 return@withContext Result.failure(Exception("Keine backup.json im ZIP gefunden."))
             }
 
-            importFromJson(jsonContent, bookId, regenerateIds, restoreSyncSettings)
+            onProgress(0.9f, "Importing data...")
+            val result = importFromJson(jsonContent, bookId, regenerateIds, restoreSyncSettings)
+            onProgress(1.0f, "Import complete.")
+            result
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun importCloudBackupFromZip(
+        inputStream: InputStream,
+        cloudFileId: String?,
+        onProgress: (Float, String) -> Unit
+    ): Result<String> = withContext(Dispatchers.IO) {
+        try {
+            var jsonContent: String? = null
+            val zipIn = ZipInputStream(inputStream)
+            
+            val ttsCacheDir = File(context.filesDir, "elevenlabs")
+            if (!ttsCacheDir.exists()) ttsCacheDir.mkdirs()
+
+            var entry = zipIn.nextEntry
+            while (entry != null) {
+                onProgress(0.1f, "Extracting: ${entry.name}")
+                if (entry.name == "backup.json") {
+                    val bytes = zipIn.readBytes()
+                    jsonContent = String(bytes, Charsets.UTF_8)
+                } else if (entry.name.startsWith("tts_cache/")) {
+                    val fileName = entry.name.substringAfter("tts_cache/")
+                    if (fileName.isNotEmpty()) {
+                        val targetFile = File(ttsCacheDir, fileName)
+                        FileOutputStream(targetFile).use { out ->
+                            zipIn.copyTo(out)
+                        }
+                    }
+                }
+                zipIn.closeEntry()
+                entry = zipIn.nextEntry
+            }
+
+            if (jsonContent == null) {
+                return@withContext Result.failure(Exception("Keine backup.json im ZIP gefunden."))
+            }
+
+            onProgress(0.9f, "Importing book...")
+            val result = importCloudBackup(jsonContent, cloudFileId)
+            onProgress(1.0f, "Import complete.")
+            result
         } catch (e: Exception) {
             Result.failure(e)
         }

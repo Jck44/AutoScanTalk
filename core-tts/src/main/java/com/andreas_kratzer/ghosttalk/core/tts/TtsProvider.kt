@@ -9,7 +9,7 @@ interface TtsProvider {
     
     fun speak(text: String, queueMode: Int, onDone: (() -> Unit)?, onError: ((String) -> Unit)? = null)
     fun speakRouted(text: String, deviceAddress: String?, queueMode: Int, isForCues: Boolean, onDone: (() -> Unit)?, onError: ((String) -> Unit)? = null)
-    fun prefetch(text: String)
+    suspend fun prefetch(text: String)
     fun stopAll()
     fun shutdown()
     
@@ -17,4 +17,5 @@ interface TtsProvider {
     fun setVoice(voiceName: String?)
     fun getAvailableLanguages(): List<Locale>
     fun getAvailableVoices(languageTag: String?): List<TtsVoice>
+    fun isCached(text: String): Boolean
 }

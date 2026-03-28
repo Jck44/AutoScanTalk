@@ -52,6 +52,7 @@ import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.feature.settings.R
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.ActionHistoryDialog
+import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.BackupRestoreProgressDialog
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.UsageStatisticsDialog
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.CloudSettingsSection
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.ExperimentalSettingsSection
@@ -191,6 +192,25 @@ fun SettingsScreen(
         UsageStatisticsDialog(
             viewModel = viewModel,
             onDismiss = { viewModel.setShowUsageStatsDialog(false) }
+        )
+    }
+
+    val showPrefetch by viewModel.showPrefetchDialog.collectAsState()
+    if (showPrefetch) {
+        com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.TtsPrefetchDialog(
+            viewModel = viewModel,
+            onDismiss = { viewModel.setShowPrefetchDialog(false) }
+        )
+    }
+
+    val isBackupRestoreRunning by viewModel.isBackupRestoreRunning.collectAsState()
+    val backupRestoreProgress by viewModel.backupRestoreProgress.collectAsState()
+    val backupRestoreStatus by viewModel.backupRestoreStatus.collectAsState()
+
+    if (isBackupRestoreRunning) {
+        BackupRestoreProgressDialog(
+            progress = backupRestoreProgress,
+            status = backupRestoreStatus
         )
     }
 }
