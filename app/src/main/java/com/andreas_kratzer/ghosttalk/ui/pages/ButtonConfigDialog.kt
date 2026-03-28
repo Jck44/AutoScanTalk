@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
@@ -400,89 +401,96 @@ fun ButtonConfigDialog(
                 )
             }
 
-            HorizontalDivider(modifier = Modifier.padding(top = 16.dp, bottom = 8.dp))
+            HorizontalDivider(modifier = Modifier.padding(top = 8.dp, bottom = 4.dp))
 
             // Action Bar (Fixed at the bottom)
             BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
                 val availableWidth = maxWidth
-                // Low thresholds for "Wandering out"
-                val showTest = availableWidth > 380.dp
-                val showMove = availableWidth > 480.dp
-                val showDuplicate = availableWidth > 580.dp
-                val showDelete = availableWidth > 680.dp
+                // Conservative thresholds for "Wandering out"
+                val showTest = availableWidth > 420.dp
+                val showMove = availableWidth > 550.dp
+                val showDuplicate = availableWidth > 680.dp
+                val showDelete = availableWidth > 810.dp
 
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.End
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
                 ) {
                     // Always show Cancel
-                    OutlinedButton(onClick = onDismiss) {
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.widthIn(min = 96.dp)
+                    ) {
                         Text(stringResource(CoreR.string.action_cancel))
                     }
-                    
-                    Spacer(modifier = Modifier.width(8.dp))
 
                     // Test Button
                     if (showTest) {
-                        OutlinedButton(onClick = {
-                            val currentAction = when (selectedActionType) {
-                                actionTypeNavigate -> NavigateToPageButtonAction(targetPageId)
-                                actionTypeGemini -> GeminiButtonAction(geminiPrompt)
-                                actionTypeGeminiSearch -> GeminiSearchButtonAction(geminiPrompt)
-                                actionTypeGeminiNano -> GeminiNanoButtonAction(geminiPrompt)
-                                actionTypeFrequent -> FrequentActionButtonAction(rank)
-                                actionTypePrevious -> PreviousActionButtonAction(rank)
-                                actionTypeSmart -> SmartPredictionButtonAction(rank)
-                                actionTypeWeather -> WeatherButtonAction()
-                                actionTypeDevice -> ControlDeviceButtonAction(
-                                    actionType = deviceActionType,
-                                    volumeValue = volumeValue,
-                                    contactName = contactName,
-                                    contactPhone = contactPhone,
-                                    messageText = messageText,
-                                    includeWeekday = includeWeekday,
-                                    prefixText = prefixText.takeIf { it.isNotBlank() },
-                                    suffixText = suffixText.takeIf { it.isNotBlank() },
-                                    offsetValue = offsetValue.toIntOrNull() ?: 0
-                                )
-                                actionTypeSmartHome -> SmartHomeButtonAction(
-                                    provider = smartHomeProvider,
-                                    deviceId = smartHomeDeviceId,
-                                    deviceName = smartHomeDeviceName,
-                                    intent = smartHomeIntent,
-                                    value = if (smartHomeValue.isNotBlank()) smartHomeValue else null
-                                )
-                                else -> SpeakTextButtonAction()
-                            }
-                            onTest(buttonConfig.copy(
-                                label = label,
-                                spokenText = if (spokenText.isNotBlank()) spokenText else null,
-                                buttonAction = currentAction
-                            ))
-                            Toast.makeText(context, R.string.button_test_started, Toast.LENGTH_SHORT).show()
-                        }) {
+                        OutlinedButton(
+                            onClick = {
+                                val currentAction = when (selectedActionType) {
+                                    actionTypeNavigate -> NavigateToPageButtonAction(targetPageId)
+                                    actionTypeGemini -> GeminiButtonAction(geminiPrompt)
+                                    actionTypeGeminiSearch -> GeminiSearchButtonAction(geminiPrompt)
+                                    actionTypeGeminiNano -> GeminiNanoButtonAction(geminiPrompt)
+                                    actionTypeFrequent -> FrequentActionButtonAction(rank)
+                                    actionTypePrevious -> PreviousActionButtonAction(rank)
+                                    actionTypeSmart -> SmartPredictionButtonAction(rank)
+                                    actionTypeWeather -> WeatherButtonAction()
+                                    actionTypeDevice -> ControlDeviceButtonAction(
+                                        actionType = deviceActionType,
+                                        volumeValue = volumeValue,
+                                        contactName = contactName,
+                                        contactPhone = contactPhone,
+                                        messageText = messageText,
+                                        includeWeekday = includeWeekday,
+                                        prefixText = prefixText.takeIf { it.isNotBlank() },
+                                        suffixText = suffixText.takeIf { it.isNotBlank() },
+                                        offsetValue = offsetValue.toIntOrNull() ?: 0
+                                    )
+                                    actionTypeSmartHome -> SmartHomeButtonAction(
+                                        provider = smartHomeProvider,
+                                        deviceId = smartHomeDeviceId,
+                                        deviceName = smartHomeDeviceName,
+                                        intent = smartHomeIntent,
+                                        value = if (smartHomeValue.isNotBlank()) smartHomeValue else null
+                                    )
+                                    else -> SpeakTextButtonAction()
+                                }
+                                onTest(buttonConfig.copy(
+                                    label = label,
+                                    spokenText = if (spokenText.isNotBlank()) spokenText else null,
+                                    buttonAction = currentAction
+                                ))
+                                Toast.makeText(context, R.string.button_test_started, Toast.LENGTH_SHORT).show()
+                            },
+                            modifier = Modifier.widthIn(min = 96.dp)
+                        ) {
                             Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
                             Text(stringResource(R.string.button_action_test))
                         }
-                        Spacer(modifier = Modifier.width(8.dp))
                     }
 
                     // Move Button
                     if (showMove) {
-                        OutlinedButton(onClick = onMove) {
+                        OutlinedButton(
+                            onClick = onMove,
+                            modifier = Modifier.widthIn(min = 96.dp)
+                        ) {
                             Text(stringResource(R.string.button_action_move))
                         }
-                        Spacer(modifier = Modifier.width(8.dp))
                     }
 
                     // Duplicate Button
                     if (showDuplicate) {
-                        OutlinedButton(onClick = onDuplicate) {
+                        OutlinedButton(
+                            onClick = onDuplicate,
+                            modifier = Modifier.widthIn(min = 96.dp)
+                        ) {
                             Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
                             Text(stringResource(R.string.action_duplicate))
                         }
-                        Spacer(modifier = Modifier.width(8.dp))
                     }
 
                     // Delete Button
@@ -491,17 +499,18 @@ fun ButtonConfigDialog(
                             onClick = onDelete,
                             colors = ButtonDefaults.outlinedButtonColors(
                                 contentColor = MaterialTheme.colorScheme.error
-                            )
+                            ),
+                            modifier = Modifier.widthIn(min = 96.dp)
                         ) {
                             Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
                             Text(stringResource(CoreR.string.action_delete))
                         }
-                        Spacer(modifier = Modifier.width(8.dp))
                     }
 
                     // Save Button (Always visible)
                     Button(
                         enabled = label.isNotBlank(),
+                        modifier = Modifier.widthIn(min = 100.dp),
                         onClick = {
                             val action = when (selectedActionType) {
                                 actionTypeNavigate -> NavigateToPageButtonAction(targetPageId)
@@ -563,8 +572,15 @@ fun ButtonConfigDialog(
                     val hasHiddenItems = !showTest || !showMove || !showDuplicate || !showDelete
                     if (hasHiddenItems) {
                         Box {
-                            IconButton(onClick = { showMenu = true }) {
-                                Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.action_more))
+                            IconButton(
+                                onClick = { showMenu = true },
+                                modifier = Modifier.size(48.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.MoreVert, 
+                                    contentDescription = stringResource(R.string.action_more),
+                                    modifier = Modifier.size(28.dp)
+                                )
                             }
                             DropdownMenu(
                                 expanded = showMenu,
