@@ -8,21 +8,29 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -377,142 +385,262 @@ fun ButtonConfigDialog(
             }
         },
         confirmButton = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Button(
-                    enabled = label.isNotBlank(),
-                    onClick = {
-                    val action = when (selectedActionType) {
-                        actionTypeNavigate -> NavigateToPageButtonAction(targetPageId)
-                        actionTypeGemini -> GeminiButtonAction(geminiPrompt)
-                        actionTypeGeminiSearch -> GeminiSearchButtonAction(geminiPrompt)
-                        actionTypeGeminiNano -> GeminiNanoButtonAction(geminiPrompt)
-                        actionTypeGeminiVision -> com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction(geminiPrompt, geminiVisionUseCloud, geminiVisionPlayShutterSound)
-                        actionTypeFrequent -> FrequentActionButtonAction(rank)
-                        actionTypeSmart -> SmartPredictionButtonAction(rank)
-                        actionTypeWeather -> WeatherButtonAction()
-                        actionTypeDevice -> ControlDeviceButtonAction(
-                            actionType = deviceActionType,
-                            volumeValue = volumeValue,
-                            contactName = contactName,
-                            contactPhone = contactPhone,
-                            messageText = messageText,
-                            includeWeekday = includeWeekday,
-                            prefixText = prefixText.takeIf { it.isNotBlank() },
-                            suffixText = suffixText.takeIf { it.isNotBlank() },
-                            offsetValue = offsetValue.toIntOrNull() ?: 0
-                        )
-                        actionTypeSmartHome -> SmartHomeButtonAction(
-                            provider = smartHomeProvider,
-                            deviceId = smartHomeDeviceId,
-                            deviceName = smartHomeDeviceName,
-                            intent = smartHomeIntent,
-                            value = if (smartHomeValue.isNotBlank()) smartHomeValue else null
-                        )
-                        else -> SpeakTextButtonAction()
+            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                val availableWidth = maxWidth
+                // Approximate button widths based on content + padding
+                // Save (~80dp), Cancel (~80dp), Test (~80dp), Move (~100dp), Duplicate (~100dp), Delete (~90dp)
+                // Thresholds are conservative to ensure they fit without wrapping or crowding
+                val showTestAsButton = availableWidth > 400.dp
+                val showMoveAsButton = availableWidth > 500.dp
+                val showDuplicateAsButton = availableWidth > 600.dp
+                val showDeleteAsButton = availableWidth > 700.dp
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    // Always show Cancel (as Secondary)
+                    OutlinedButton(onClick = onDismiss) {
+                        Text(stringResource(CoreR.string.action_cancel))
                     }
+                    
+                    Spacer(modifier = Modifier.width(8.dp))
 
-                    val config = buttonConfig.copy(
-                        label = label,
-                        spokenText = if (spokenText.isNotBlank()) spokenText else null,
-                        auditoryCue = if (auditoryCueText.isNotBlank()) AuditoryCue.TextToSpeechCue(auditoryCueText) else null,
-                        isActive = isActive,
-                        playActionAsAuditoryCue = playActionAsAuditoryCue,
-                        buttonAction = action
-                    )
-
-                    if (action is WeatherButtonAction) {
-                        val hasFine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-                        val hasCoarse = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
-                        if (!hasFine && !hasCoarse) {
-                            permissionLauncher.launch(
-                                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
-                            )
+                    // Test Button
+                    if (showTestAsButton) {
+                        OutlinedButton(onClick = {
+                            val currentAction = when (selectedActionType) {
+                                actionTypeNavigate -> NavigateToPageButtonAction(targetPageId)
+                                actionTypeGemini -> GeminiButtonAction(geminiPrompt)
+                                actionTypeGeminiSearch -> GeminiSearchButtonAction(geminiPrompt)
+                                actionTypeGeminiNano -> GeminiNanoButtonAction(geminiPrompt)
+                                actionTypeFrequent -> FrequentActionButtonAction(rank)
+                                actionTypeSmart -> SmartPredictionButtonAction(rank)
+                                actionTypeWeather -> WeatherButtonAction()
+                                actionTypeDevice -> ControlDeviceButtonAction(
+                                    actionType = deviceActionType,
+                                    volumeValue = volumeValue,
+                                    contactName = contactName,
+                                    contactPhone = contactPhone,
+                                    messageText = messageText,
+                                    includeWeekday = includeWeekday,
+                                    prefixText = prefixText.takeIf { it.isNotBlank() },
+                                    suffixText = suffixText.takeIf { it.isNotBlank() },
+                                    offsetValue = offsetValue.toIntOrNull() ?: 0
+                                )
+                                actionTypeSmartHome -> SmartHomeButtonAction(
+                                    provider = smartHomeProvider,
+                                    deviceId = smartHomeDeviceId,
+                                    deviceName = smartHomeDeviceName,
+                                    intent = smartHomeIntent,
+                                    value = if (smartHomeValue.isNotBlank()) smartHomeValue else null
+                                )
+                                else -> SpeakTextButtonAction()
+                            }
+                            onTest(buttonConfig.copy(
+                                label = label,
+                                spokenText = if (spokenText.isNotBlank()) spokenText else null,
+                                buttonAction = currentAction
+                            ))
+                            Toast.makeText(context, R.string.button_test_started, Toast.LENGTH_SHORT).show()
+                        }) {
+                            Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
+                            Text(stringResource(R.string.button_action_test))
                         }
+                        Spacer(modifier = Modifier.width(8.dp))
                     }
 
-                    onSave(config)
-                }) {
-                    Text(stringResource(CoreR.string.action_save))
-                }
-
-                Box {
-                    IconButton(onClick = { showMenu = true }) {
-                        Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.action_more))
+                    // Move Button
+                    if (showMoveAsButton) {
+                        OutlinedButton(onClick = onMove) {
+                            Text(stringResource(R.string.button_action_move))
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
                     }
-                    DropdownMenu(
-                        expanded = showMenu,
-                        onDismissRequest = { showMenu = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.button_action_test)) },
-                            onClick = {
-                                showMenu = false
-                                val currentAction = when (selectedActionType) {
-                                    actionTypeNavigate -> NavigateToPageButtonAction(targetPageId)
-                                    actionTypeGemini -> GeminiButtonAction(geminiPrompt)
-                                    actionTypeGeminiSearch -> GeminiSearchButtonAction(geminiPrompt)
-                                    actionTypeGeminiNano -> GeminiNanoButtonAction(geminiPrompt)
-                                    actionTypeFrequent -> FrequentActionButtonAction(rank)
-                                    actionTypeSmart -> SmartPredictionButtonAction(rank)
-                                    actionTypeWeather -> WeatherButtonAction()
-                                    actionTypeDevice -> ControlDeviceButtonAction(
-                                        actionType = deviceActionType,
-                                        volumeValue = volumeValue,
-                                        contactName = contactName,
-                                        contactPhone = contactPhone,
-                                        messageText = messageText,
-                                        includeWeekday = includeWeekday,
-                                        prefixText = prefixText.takeIf { it.isNotBlank() },
-                                        suffixText = suffixText.takeIf { it.isNotBlank() },
-                                        offsetValue = offsetValue.toIntOrNull() ?: 0
+
+                    // Duplicate Button
+                    if (showDuplicateAsButton) {
+                        OutlinedButton(onClick = onDuplicate) {
+                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
+                            Text(stringResource(R.string.action_duplicate))
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
+
+                    // Delete Button
+                    if (showDeleteAsButton) {
+                        OutlinedButton(
+                            onClick = onDelete,
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.error
+                            )
+                        ) {
+                            Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
+                            Text(stringResource(CoreR.string.action_delete))
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
+
+                    // Save Button (Primary)
+                    Button(
+                        enabled = label.isNotBlank(),
+                        onClick = {
+                            val action = when (selectedActionType) {
+                                actionTypeNavigate -> NavigateToPageButtonAction(targetPageId)
+                                actionTypeGemini -> GeminiButtonAction(geminiPrompt)
+                                actionTypeGeminiSearch -> GeminiSearchButtonAction(geminiPrompt)
+                                actionTypeGeminiNano -> GeminiNanoButtonAction(geminiPrompt)
+                                actionTypeGeminiVision -> com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction(geminiPrompt, geminiVisionUseCloud, geminiVisionPlayShutterSound)
+                                actionTypeFrequent -> FrequentActionButtonAction(rank)
+                                actionTypeSmart -> SmartPredictionButtonAction(rank)
+                                actionTypeWeather -> WeatherButtonAction()
+                                actionTypeDevice -> ControlDeviceButtonAction(
+                                    actionType = deviceActionType,
+                                    volumeValue = volumeValue,
+                                    contactName = contactName,
+                                    contactPhone = contactPhone,
+                                    messageText = messageText,
+                                    includeWeekday = includeWeekday,
+                                    prefixText = prefixText.takeIf { it.isNotBlank() },
+                                    suffixText = suffixText.takeIf { it.isNotBlank() },
+                                    offsetValue = offsetValue.toIntOrNull() ?: 0
+                                )
+                                actionTypeSmartHome -> SmartHomeButtonAction(
+                                    provider = smartHomeProvider,
+                                    deviceId = smartHomeDeviceId,
+                                    deviceName = smartHomeDeviceName,
+                                    intent = smartHomeIntent,
+                                    value = if (smartHomeValue.isNotBlank()) smartHomeValue else null
+                                )
+                                else -> SpeakTextButtonAction()
+                            }
+
+                            val config = buttonConfig.copy(
+                                label = label,
+                                spokenText = if (spokenText.isNotBlank()) spokenText else null,
+                                auditoryCue = if (auditoryCueText.isNotBlank()) AuditoryCue.TextToSpeechCue(auditoryCueText) else null,
+                                isActive = isActive,
+                                playActionAsAuditoryCue = playActionAsAuditoryCue,
+                                buttonAction = action
+                            )
+
+                            if (action is WeatherButtonAction) {
+                                val hasFine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                                val hasCoarse = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                                if (!hasFine && !hasCoarse) {
+                                    permissionLauncher.launch(
+                                        arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
                                     )
-                                    actionTypeSmartHome -> SmartHomeButtonAction(
-                                        provider = smartHomeProvider,
-                                        deviceId = smartHomeDeviceId,
-                                        deviceName = smartHomeDeviceName,
-                                        intent = smartHomeIntent,
-                                        value = if (smartHomeValue.isNotBlank()) smartHomeValue else null
-                                    )
-                                    else -> SpeakTextButtonAction()
                                 }
-                                onTest(buttonConfig.copy(
-                                    label = label,
-                                    spokenText = if (spokenText.isNotBlank()) spokenText else null,
-                                    buttonAction = currentAction
-                                ))
-                                Toast.makeText(context, R.string.button_test_started, Toast.LENGTH_SHORT).show()
                             }
-                        )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.button_action_move)) },
-                            onClick = {
-                                showMenu = false
-                                onMove()
+
+                            onSave(config)
+                        }
+                    ) {
+                        Text(stringResource(CoreR.string.action_save))
+                    }
+
+                    // Overflow Menu (only if items are hidden)
+                    val hasHiddenItems = !showTestAsButton || !showMoveAsButton || !showDuplicateAsButton || !showDeleteAsButton
+                    if (hasHiddenItems) {
+                        Box {
+                            IconButton(onClick = { showMenu = true }) {
+                                Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.action_more))
                             }
-                        )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.action_duplicate)) },
-                            onClick = {
-                                showMenu = false
-                                onDuplicate()
+                            DropdownMenu(
+                                expanded = showMenu,
+                                onDismissRequest = { showMenu = false }
+                            ) {
+                                if (!showTestAsButton) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.button_action_test)) },
+                                        leadingIcon = { Icon(Icons.Default.PlayArrow, contentDescription = null) },
+                                        onClick = {
+                                            showMenu = false
+                                            val currentAction = when (selectedActionType) {
+                                                actionTypeNavigate -> NavigateToPageButtonAction(targetPageId)
+                                                actionTypeGemini -> GeminiButtonAction(geminiPrompt)
+                                                actionTypeGeminiSearch -> GeminiSearchButtonAction(geminiPrompt)
+                                                actionTypeGeminiNano -> GeminiNanoButtonAction(geminiPrompt)
+                                                actionTypeFrequent -> FrequentActionButtonAction(rank)
+                                                actionTypeSmart -> SmartPredictionButtonAction(rank)
+                                                actionTypeWeather -> WeatherButtonAction()
+                                                actionTypeDevice -> ControlDeviceButtonAction(
+                                                    actionType = deviceActionType,
+                                                    volumeValue = volumeValue,
+                                                    contactName = contactName,
+                                                    contactPhone = contactPhone,
+                                                    messageText = messageText,
+                                                    includeWeekday = includeWeekday,
+                                                    prefixText = prefixText.takeIf { it.isNotBlank() },
+                                                    suffixText = suffixText.takeIf { it.isNotBlank() },
+                                                    offsetValue = offsetValue.toIntOrNull() ?: 0
+                                                )
+                                                actionTypeSmartHome -> SmartHomeButtonAction(
+                                                    provider = smartHomeProvider,
+                                                    deviceId = smartHomeDeviceId,
+                                                    deviceName = smartHomeDeviceName,
+                                                    intent = smartHomeIntent,
+                                                    value = if (smartHomeValue.isNotBlank()) smartHomeValue else null
+                                                )
+                                                else -> SpeakTextButtonAction()
+                                            }
+                                            onTest(buttonConfig.copy(
+                                                label = label,
+                                                spokenText = if (spokenText.isNotBlank()) spokenText else null,
+                                                buttonAction = currentAction
+                                            ))
+                                            Toast.makeText(context, R.string.button_test_started, Toast.LENGTH_SHORT).show()
+                                        }
+                                    )
+                                }
+                                if (!showMoveAsButton) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.button_action_move)) },
+                                        onClick = {
+                                            showMenu = false
+                                            onMove()
+                                        }
+                                    )
+                                }
+                                if (!showDuplicateAsButton) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.action_duplicate)) },
+                                        leadingIcon = { Icon(Icons.Default.Add, contentDescription = null) },
+                                        onClick = {
+                                            showMenu = false
+                                            onDuplicate()
+                                        }
+                                    )
+                                }
+                                if (!showDeleteAsButton) {
+                                    DropdownMenuItem(
+                                        text = { 
+                                            Text(
+                                                stringResource(CoreR.string.action_delete),
+                                                color = MaterialTheme.colorScheme.error
+                                            ) 
+                                        },
+                                        leadingIcon = { 
+                                            Icon(
+                                                Icons.Default.Delete, 
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.error
+                                            ) 
+                                        },
+                                        onClick = {
+                                            showMenu = false
+                                            onDelete()
+                                        }
+                                    )
+                                }
                             }
-                        )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(CoreR.string.action_delete)) },
-                            onClick = {
-                                showMenu = false
-                                onDelete()
-                            }
-                        )
+                        }
                     }
                 }
             }
         },
-        dismissButton = {
-            val cancelText = stringResource(CoreR.string.action_cancel)
-            TextButton(onClick = onDismiss) {
-                Text(cancelText)
-            }
-        }
+        dismissButton = null
     )
 }
