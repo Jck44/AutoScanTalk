@@ -11,4 +11,14 @@ interface AuthManager {
     fun getGoogleCredential(scopes: List<String>? = null): com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential?
     suspend fun signIn(activity: android.app.Activity): Boolean
     suspend fun signOut()
+
+    /**
+     * Saves the ElevenLabs API Key to the Google Password Manager.
+     */
+    suspend fun saveApiKeyToPasswordManager(activity: android.app.Activity, apiKey: String): Result<Unit>
+
+    /**
+     * Retrieves the ElevenLabs API Key from the Google Password Manager.
+     */
+    suspend fun getApiKeyFromPasswordManager(activity: android.app.Activity): Result<String?>
 }

@@ -331,7 +331,49 @@ class SettingsViewModel @Inject constructor(
     fun setTtsEngine(engine: String?) { 
         settingsRepository.ttsEngine = engine
     }
-    fun setElevenLabsApiKey(key: String) { settingsRepository.elevenLabsApiKey = key }
+    fun setElevenLabsApiKey(key: String) = ttsDelegate.setElevenLabsApiKey(key)
+
+    fun saveApiKeyToGoogle(activity: android.app.Activity) {
+        viewModelScope.launch {
+            val result = ttsDelegate.saveApiKeyToGoogle(activity)
+            handlePasswordManagerResult(result, isImport = false)
+        }
+    }
+
+    fun importApiKeyFromGoogle(activity: android.app.Activity) {
+        viewModelScope.launch {
+            val result = ttsDelegate.importApiKeyFromGoogle(activity)
+            handlePasswordManagerResult(result, isImport = true)
+        }
+    }
+
+    private fun handlePasswordManagerResult(
+        result: com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.PasswordManagerResult,
+        isImport: Boolean
+    ) {
+        val message = when (result) {
+            is com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.PasswordManagerResult.Success -> {
+                if (isImport) {
+                    application.getString(R.string.elevenlabs_api_key_imported_google)
+                } else {
+                    application.getString(R.string.elevenlabs_api_key_saved_google)
+                }
+            }
+            is com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.PasswordManagerResult.NoKeyFound -> 
+                application.getString(R.string.elevenlabs_api_key_not_found_google)
+            is com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.PasswordManagerResult.NoManager -> 
+                application.getString(R.string.elevenlabs_api_key_no_manager_google)
+            is com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.PasswordManagerResult.Cancelled -> 
+                null // Don't show anything on cancel
+            is com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.PasswordManagerResult.Error -> 
+                application.getString(R.string.elevenlabs_api_key_error_google, result.message)
+        }
+
+        if (message != null) {
+            Toast.makeText(application, message, Toast.LENGTH_LONG).show()
+        }
+    }
+
     fun setElevenLabsModel(model: String) { settingsRepository.elevenLabsModel = model }
 
     fun testElevenLabsConnection() {

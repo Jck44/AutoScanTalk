@@ -31,7 +31,7 @@ class GetFilteredPagesUseCaseTest {
         every { settingsRepository.pageSortOrderFlow } returns MutableStateFlow(SortOrder.A_Z.name)
 
         // Act
-        val result = useCase.execute(allPagesFlow, searchQueryFlow).first()
+        val result = useCase.execute(allPagesFlow, searchQueryFlow, flowOf(emptySet())).first()
 
         // Assert
         assertEquals(1, result.size)
@@ -52,7 +52,7 @@ class GetFilteredPagesUseCaseTest {
         every { settingsRepository.pageSortOrderFlow } returns MutableStateFlow(SortOrder.A_Z.name)
 
         // Act
-        val result = useCase.execute(allPagesFlow, searchQueryFlow).first()
+        val result = useCase.execute(allPagesFlow, searchQueryFlow, flowOf(emptySet())).first()
 
         // Assert
         assertEquals("Apple", result[0].name)
@@ -74,12 +74,35 @@ class GetFilteredPagesUseCaseTest {
         every { settingsRepository.pageSortOrderFlow } returns MutableStateFlow(SortOrder.Z_A.name)
 
         // Act
-        val result = useCase.execute(allPagesFlow, searchQueryFlow).first()
+        val result = useCase.execute(allPagesFlow, searchQueryFlow, flowOf(emptySet())).first()
 
         // Assert
         assertEquals("Cherry", result[0].name)
         assertEquals("Banana", result[1].name)
         assertEquals("Apple", result[2].name)
+    }
+
+    @Test
+    fun `execute sorts pages by ACTIVE_FIRST`() = runTest {
+        // Arrange
+        val pages = listOf(
+            createPage("1", "Apple"),
+            createPage("2", "Cherry"),
+            createPage("3", "Banana")
+        )
+        val allPagesFlow = flowOf(pages)
+        val searchQueryFlow = flowOf("")
+        val activeIdsFlow = flowOf(setOf("2"))
+        
+        every { settingsRepository.pageSortOrderFlow } returns MutableStateFlow(SortOrder.ACTIVE_FIRST.name)
+
+        // Act
+        val result = useCase.execute(allPagesFlow, searchQueryFlow, activeIdsFlow).first()
+
+        // Assert
+        assertEquals("Cherry", result[0].name) // Active first
+        assertEquals("Apple", result[1].name)  // Then A-Z
+        assertEquals("Banana", result[2].name)
     }
 
     private fun createPage(id: String, name: String) = Page(

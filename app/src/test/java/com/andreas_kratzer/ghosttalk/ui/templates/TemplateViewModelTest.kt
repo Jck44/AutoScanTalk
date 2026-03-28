@@ -30,6 +30,7 @@ class TemplateViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var templateRepository: TemplateRepository
+    private lateinit var pageRepository: com.andreas_kratzer.ghosttalk.core.data.PageRepository
     private lateinit var settingsRepository: SettingsRepository
     private lateinit var createTemplateUseCase: CreateTemplateUseCase
     private lateinit var deleteTemplateUseCase: DeleteTemplateUseCase
@@ -42,6 +43,7 @@ class TemplateViewModelTest {
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         templateRepository = mockk(relaxed = true)
+        pageRepository = mockk(relaxed = true)
         settingsRepository = mockk(relaxed = true)
         createTemplateUseCase = mockk<CreateTemplateUseCase>(relaxed = true)
         deleteTemplateUseCase = mockk<DeleteTemplateUseCase>(relaxed = true)
@@ -51,9 +53,11 @@ class TemplateViewModelTest {
 
         every { settingsRepository.templateSortOrderFlow } returns MutableStateFlow(SortOrder.A_Z.name)
         every { templateRepository.getAllTemplates() } returns flowOf(emptyList())
+        every { pageRepository.getUsedTemplateIdsFlow() } returns flowOf(emptySet())
 
         viewModel = TemplateViewModel(
             templateRepository,
+            pageRepository,
             settingsRepository,
             createTemplateUseCase,
             deleteTemplateUseCase,
@@ -101,6 +105,7 @@ class TemplateViewModelTest {
 
         viewModel = TemplateViewModel(
             templateRepository,
+            pageRepository,
             settingsRepository,
             createTemplateUseCase,
             deleteTemplateUseCase,

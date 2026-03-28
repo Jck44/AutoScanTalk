@@ -86,12 +86,12 @@ class PageManagementDelegate @Inject constructor(
         this.scope = scope
 
         scope.launch {
-            getFilteredPagesUseCase.execute(_allPages, _searchQuery)
+            getFilteredPagesUseCase.execute(_allPages, _searchQuery, _activeTargetPageIds)
                 .collect { _filteredPages.value = it }
         }
 
         scope.launch {
-            getFilteredPagesUseCase.execute(_allPages, MutableStateFlow(""))
+            getFilteredPagesUseCase.execute(_allPages, MutableStateFlow(""), _activeTargetPageIds)
                 .collect { _unfilteredPages.value = it }
         }
 

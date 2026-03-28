@@ -6,6 +6,7 @@ import com.andreas_kratzer.ghosttalk.core.model.SortOrder
 import com.andreas_kratzer.ghosttalk.ui.util.filterAndSort
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOf
 import javax.inject.Inject
 
 class GetFilteredPagesUseCase @Inject constructor(
@@ -13,19 +14,21 @@ class GetFilteredPagesUseCase @Inject constructor(
 ) {
     fun execute(
         allPages: Flow<List<Page>>,
-        searchQuery: Flow<String>
+        searchQuery: Flow<String>,
+        activePageIds: Flow<Set<String>> = flowOf(emptySet())
     ): Flow<List<Page>> {
         return combine(
             allPages,
             settingsRepository.pageSortOrderFlow,
-            searchQuery
-        ) { pages, sortOrderStr, query ->
+            searchQuery,
+            activePageIds
+        ) { pages, sortOrderStr, query, activeIds ->
             val sortOrder = try {
                 SortOrder.valueOf(sortOrderStr)
             } catch (_: Exception) {
                 SortOrder.MANUAL
             }
-            pages.filterAndSort(query, sortOrder)
+            pages.filterAndSort(query, sortOrder, activeIds)
         }
     }
 }

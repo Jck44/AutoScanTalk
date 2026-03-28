@@ -24,7 +24,8 @@ class TtsSettingsDelegate @Inject constructor(
     private val audioDeviceManager: AudioDeviceManager,
     private val getAudioDevicesUseCase: GetAudioDevicesUseCase,
     private val setTtsLanguageUseCase: SetTtsLanguageUseCase,
-    private val ttsHelper: TextToSpeechHelper
+    private val ttsHelper: TextToSpeechHelper,
+    private val authManager: com.andreas_kratzer.ghosttalk.core.cloud.AuthManager
 ) {
     private val _availableLanguages = MutableStateFlow<List<Locale>>(emptyList())
     val availableLanguages: StateFlow<List<Locale>> = _availableLanguages.asStateFlow()
@@ -146,4 +147,59 @@ class TtsSettingsDelegate @Inject constructor(
             settingsRepository.getDeviceName(persistentId) ?: persistentId
         }
     }
+
+    fun setElevenLabsApiKey(key: String) {
+        settingsRepository.elevenLabsApiKey = key
+    }
+
+    suspend fun saveApiKeyToGoogle(activity: android.app.Activity): PasswordManagerResult {
+        val key = settingsRepository.elevenLabsApiKey
+        if (key.isNullOrEmpty()) return PasswordManagerResult.Error("API Key is empty")
+        
+        return authManager.saveApiKeyToPasswordManager(activity, key).fold(
+            onSuccess = { PasswordManagerResult.Success },
+            onFailure = { e -> e.toPasswordManagerResult() }
+        )
+    }
+
+    suspend fun importApiKeyFromGoogle(activity: android.app.Activity): PasswordManagerResult {
+        return authManager.getApiKeyFromPasswordManager(activity).fold(
+            onSuccess = { key ->
+                if (!key.isNullOrEmpty()) {
+                    settingsRepository.elevenLabsApiKey = key
+                    PasswordManagerResult.Success
+                } else {
+                    PasswordManagerResult.NoKeyFound
+                }
+            },
+            onFailure = { e -> e.toPasswordManagerResult() }
+        )
+    }
+
+    private fun Throwable.toPasswordManagerResult(): PasswordManagerResult {
+        return when (this) {
+            is androidx.credentials.exceptions.GetCredentialCancellationException,
+            is androidx.credentials.exceptions.CreateCredentialCancellationException -> {
+                PasswordManagerResult.Cancelled
+            }
+            is androidx.credentials.exceptions.NoCredentialException -> {
+                PasswordManagerResult.NoKeyFound
+            }
+            is androidx.credentials.exceptions.GetCredentialProviderConfigurationException,
+            is androidx.credentials.exceptions.CreateCredentialProviderConfigurationException -> {
+                PasswordManagerResult.NoManager
+            }
+            else -> {
+                PasswordManagerResult.Error(this.message ?: "Unknown error")
+            }
+        }
+    }
+}
+
+sealed class PasswordManagerResult {
+    object Success : PasswordManagerResult()
+    object NoKeyFound : PasswordManagerResult()
+    object NoManager : PasswordManagerResult()
+    object Cancelled : PasswordManagerResult()
+    data class Error(val message: String) : PasswordManagerResult()
 }

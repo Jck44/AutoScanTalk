@@ -125,6 +125,34 @@ fun CloudSettingsSection(
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(stringResource(R.string.settings_elevenlabs_test_button))
             }
+
+            Spacer(modifier = Modifier.height(dimensions.paddingSmall))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)
+            ) {
+                val activity = context as? android.app.Activity ?: (context as? android.content.ContextWrapper)?.baseContext as? android.app.Activity
+                
+                OutlinedButton(
+                    onClick = { activity?.let { viewModel.saveApiKeyToGoogle(it) } },
+                    modifier = Modifier.weight(1f),
+                    enabled = userEmail != null && !elevenLabsApiKey.isNullOrEmpty()
+                ) {
+                    Icon(GhostTalkIcons.CloudUpload, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(stringResource(R.string.settings_cloud_backup_now), style = MaterialTheme.typography.labelSmall)
+                }
+                OutlinedButton(
+                    onClick = { activity?.let { viewModel.importApiKeyFromGoogle(it) } },
+                    modifier = Modifier.weight(1f),
+                    enabled = userEmail != null
+                ) {
+                    Icon(GhostTalkIcons.CloudDownload, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(stringResource(R.string.settings_cloud_restore_now), style = MaterialTheme.typography.labelSmall)
+                }
+            }
         }
 
         if (isGlobal) {

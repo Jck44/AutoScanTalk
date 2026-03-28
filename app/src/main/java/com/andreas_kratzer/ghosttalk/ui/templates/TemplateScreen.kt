@@ -42,6 +42,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
@@ -94,6 +95,8 @@ fun TemplateScreen(
                                 SortOrder.OLDEST -> "Älteste zuerst"
                                 SortOrder.A_Z -> "A -> Z"
                                 SortOrder.Z_A -> "Z -> A"
+                                SortOrder.ACTIVE_FIRST -> stringResource(R.string.sort_active_first)
+                                SortOrder.INACTIVE_FIRST -> stringResource(R.string.sort_inactive_first)
                             }
                             DropdownMenuItem(
                                 text = { Text(label) },
@@ -171,7 +174,13 @@ fun TemplateScreen(
                             icon = GhostTalkIcons.GridView,
                             onClick = { onTemplateClick(template.id) },
                             height = dynamicCardHeight,
-                            modifier = Modifier,
+                            modifier = Modifier.then(
+                                if (!templateViewModel.pageRepository.getUsedTemplateIdsFlow().collectAsState(emptySet()).value.contains(template.id)) {
+                                    Modifier.alpha(0.6f)
+                                } else {
+                                    Modifier
+                                }
+                            ),
                             trailingAction = {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     var showMenu by remember { mutableStateOf(false) }

@@ -172,7 +172,7 @@ class CloudSyncUseCase @Inject constructor(
                 }
                 SyncMode.RESTORE_ONLY -> {
                     logger.d(TAG, "RESTORE_ONLY mode. Downloading and importing...")
-                    success = downloadAndImport(helper, remoteFile!!.id, remoteFile.name, book, remoteLastModified, onProgress)
+                    success = downloadAndImport(helper, remoteFile.id, remoteFile.name, book, remoteLastModified, onProgress)
                 }
                 SyncMode.TWO_WAY -> {
                     if (localLastModified > remoteLastModified + 2000) { // 2s Grace period

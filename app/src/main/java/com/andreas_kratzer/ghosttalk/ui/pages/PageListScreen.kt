@@ -314,6 +314,8 @@ fun PageListScreen(
                                 SortOrder.OLDEST -> "Älteste zuerst"
                                 SortOrder.A_Z -> "A -> Z"
                                 SortOrder.Z_A -> "Z -> A"
+                                SortOrder.ACTIVE_FIRST -> stringResource(R.string.sort_active_first)
+                                SortOrder.INACTIVE_FIRST -> stringResource(R.string.sort_inactive_first)
                             }
                             DropdownMenuItem(
                                 text = { Text(label) },

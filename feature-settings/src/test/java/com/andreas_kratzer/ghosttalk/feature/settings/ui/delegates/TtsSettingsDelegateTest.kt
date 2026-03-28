@@ -26,6 +26,7 @@ class TtsSettingsDelegateTest {
     private lateinit var getAudioDevicesUseCase: GetAudioDevicesUseCase
     private lateinit var setTtsLanguageUseCase: SetTtsLanguageUseCase
     private lateinit var ttsHelper: TextToSpeechHelper
+    private lateinit var authManager: com.andreas_kratzer.ghosttalk.core.cloud.AuthManager
     private lateinit var delegate: TtsSettingsDelegate
 
     @Before
@@ -36,6 +37,7 @@ class TtsSettingsDelegateTest {
         getAudioDevicesUseCase = mockk(relaxed = true)
         setTtsLanguageUseCase = mockk(relaxed = true)
         ttsHelper = mockk(relaxed = true)
+        authManager = mockk(relaxed = true)
         every { ttsHelper.availableVoicesFlow } returns MutableStateFlow(emptyList())
         every { ttsHelper.getAvailableLanguages() } returns emptyList()
 
@@ -45,7 +47,8 @@ class TtsSettingsDelegateTest {
             audioDeviceManager,
             getAudioDevicesUseCase,
             setTtsLanguageUseCase,
-            ttsHelper
+            ttsHelper,
+            authManager
         )
     }
 

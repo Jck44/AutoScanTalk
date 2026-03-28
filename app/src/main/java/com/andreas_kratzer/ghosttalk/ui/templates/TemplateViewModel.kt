@@ -25,6 +25,7 @@ import javax.inject.Inject
 @HiltViewModel
 class TemplateViewModel @Inject constructor(
     private val templateRepository: TemplateRepository,
+    internal val pageRepository: com.andreas_kratzer.ghosttalk.core.data.PageRepository,
     val settingsRepository: SettingsRepository,
     private val createTemplateUseCase: CreateTemplateUseCase,
     private val deleteTemplateUseCase: DeleteTemplateUseCase,
@@ -46,10 +47,11 @@ class TemplateViewModel @Inject constructor(
     val templates: StateFlow<List<PageTemplate>> = combine(
         templateRepository.getAllTemplates(),
         settingsRepository.templateSortOrderFlow,
-        _searchQuery
-    ) { templates: List<PageTemplate>, sortOrderStr: String, query: String ->
+        _searchQuery,
+        pageRepository.getUsedTemplateIdsFlow()
+    ) { templates: List<PageTemplate>, sortOrderStr: String, query: String, activeIds: Set<String> ->
         val sortOrder = try { SortOrder.valueOf(sortOrderStr) } catch (_: Exception) { SortOrder.MANUAL }
-        templates.filterAndSort(query, sortOrder)
+        templates.filterAndSort(query, sortOrder, activeIds)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.Eagerly,

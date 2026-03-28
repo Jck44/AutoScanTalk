@@ -109,10 +109,10 @@ class CloudSyncSettingsDelegateTest {
 
     @Test
     fun `performManualSync calls use case`() = runTest {
-        coEvery { performManualSyncUseCase.execute(any()) } returns PerformManualSyncUseCase.Result.Success
+        coEvery { performManualSyncUseCase.execute(any(), any()) } returns PerformManualSyncUseCase.Result.Success
         delegate.performManualSync(SyncMode.TWO_WAY, testScope)
         testDispatcher.scheduler.advanceUntilIdle()
-        coVerify { performManualSyncUseCase.execute(SyncMode.TWO_WAY) }
+        coVerify { performManualSyncUseCase.execute(SyncMode.TWO_WAY, any()) }
     }
 
     @Test

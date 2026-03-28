@@ -5,5 +5,7 @@ enum class SortOrder {
     NEWEST,
     OLDEST,
     A_Z,
-    Z_A
+    Z_A,
+    ACTIVE_FIRST,
+    INACTIVE_FIRST
 }

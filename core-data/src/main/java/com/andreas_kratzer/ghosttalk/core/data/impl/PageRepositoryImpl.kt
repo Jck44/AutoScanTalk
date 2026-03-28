@@ -7,6 +7,7 @@ import com.andreas_kratzer.ghosttalk.core.database.PageDao
 import com.andreas_kratzer.ghosttalk.core.database.toButtonEntities
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 class PageRepositoryImpl(
     private val pageDao: PageDao,
@@ -85,5 +86,11 @@ class PageRepositoryImpl(
         buttonDao.insertButtons(newButtons)
         
         return newPageId
+    }
+
+    override fun getUsedTemplateIdsFlow(): Flow<Set<String>> {
+        return pageDao.getAllPagesFlow().map { pages ->
+            pages.mapNotNull { it.templateId }.toSet()
+        }
     }
 }

@@ -197,4 +197,6 @@
     <string name="permission_camera_denied">Kameraberechtigung ist erforderlich für die KI-Bilderkennung.</string>
     <string name="error_camera_permission_missing">Kamera-Berechtigung fehlt.</string>
     <string name="button_gemini_vision_shutter_sound_label">Kamerasound beim Auslösen abspielen</string>
+    <string name="sort_active_first">Aktive zuerst</string>
+    <string name="sort_inactive_first">Inaktive zuerst</string>
 </resources>

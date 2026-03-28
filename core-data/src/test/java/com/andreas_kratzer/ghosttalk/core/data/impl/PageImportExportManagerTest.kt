@@ -42,12 +42,14 @@ class PageImportExportManagerTest {
     private val settingsRepository: SettingsRepository = mockk(relaxed = true)
     private val sharedPrefs: SharedPreferences = mockk(relaxed = true)
     private val prefsEditor: SharedPreferences.Editor = mockk(relaxed = true)
+    private val authManager: com.andreas_kratzer.ghosttalk.core.cloud.AuthManager = mockk(relaxed = true)
     
-    private val settingsMapper = SettingsMapper(settingsRepository)
+    private val settingsMapper = SettingsMapper(settingsRepository, authManager)
     private val actionMapper = ActionMapper()
     private val manager = PageImportExportManager(context, pageRepository, bookRepository, settingsRepository, settingsMapper, actionMapper, mockk(relaxed = true))
 
     init {
+        every { authManager.userEmail } returns kotlinx.coroutines.flow.MutableStateFlow("test@example.com")
         every { context.getSharedPreferences(SettingsConstants.PREFS_NAME, any()) } returns sharedPrefs
         every { sharedPrefs.edit() } returns prefsEditor
         every { prefsEditor.putString(any(), any()) } returns prefsEditor

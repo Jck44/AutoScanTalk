@@ -138,6 +138,11 @@
     <string name="settings_gemini_local_enable">Gemini Nano (offline)</string>
     <string name="settings_gemini_local_desc">Schneller, komplett offline und kostenlos. Nutzt ein kleines KI-Modell auf deinem Gerät für Smart Home und Uhrzeit. Keine Internetverbindung nötig.</string>
     <string name="settings_smart_prediction_enable">Gemini Vorhersage (Experimentell)</string>
+    <string name="elevenlabs_api_key_saved_google">API-Key im Google Passwort-Manager gespeichert.</string>
+    <string name="elevenlabs_api_key_imported_google">API-Key aus Google Passwort-Manager importiert.</string>
+    <string name="elevenlabs_api_key_not_found_google">Kein API-Key im Google Passwort-Manager gefunden.</string>
+    <string name="elevenlabs_api_key_error_google">Fehler beim Zugriff auf Google Passwort-Manager: %s</string>
+    <string name="elevenlabs_api_key_no_manager_google">Google Passwort-Manager ist auf diesem Gerät nicht verfügbar oder nicht aktuell.</string>
     <string name="settings_smart_prediction_hint">Ermöglicht Buttons, die dynamisch die nächste wahrscheinliche Aktion vorhersagen.</string>
     <string name="settings_gemini_redo_prediction">Bei Navigation auf die gleiche Seite erneut Prediction machen</string>
     <string name="settings_gemini_redo_prediction_hint">Erzwingt eine neue KI-Vorhersage, auch wenn dieselbe Seite erneut aufgerufen wird.</string>

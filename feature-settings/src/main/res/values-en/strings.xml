@@ -246,4 +246,9 @@
     <string name="restore_progress_complete">Restore completed successfully.</string>
     <string name="cloud_progress_uploading">Cloud Backup: Uploading file…</string>
     <string name="cloud_progress_downloading">Cloud Restore: Downloading file…</string>
+    <string name="elevenlabs_api_key_saved_google">API Key saved to Google Password Manager.</string>
+    <string name="elevenlabs_api_key_imported_google">API Key imported from Google Password Manager.</string>
+    <string name="elevenlabs_api_key_not_found_google">No API Key found in Google Password Manager.</string>
+    <string name="elevenlabs_api_key_error_google">Error accessing Google Password Manager: %s</string>
+    <string name="elevenlabs_api_key_no_manager_google">Google Password Manager is not available or not up to date on this device.</string>
 </resources>

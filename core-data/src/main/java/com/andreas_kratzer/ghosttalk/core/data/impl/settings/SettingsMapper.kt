@@ -1,7 +1,10 @@
 package com.andreas_kratzer.ghosttalk.core.data.impl.settings
 
+import android.util.Log
+import com.andreas_kratzer.ghosttalk.core.cloud.AuthManager
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportExportData
+import com.andreas_kratzer.ghosttalk.core.util.EncryptionUtils
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -11,12 +14,31 @@ import javax.inject.Singleton
  */
 @Singleton
 class SettingsMapper @Inject constructor(
-    private val settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository,
+    private val authManager: AuthManager
 ) {
+    private val TAG = "SettingsMapper"
+
     /**
      * Populates an [ImportExportData] object with settings for a specific book.
      */
     fun exportSettings(bookId: String, data: ImportExportData): ImportExportData {
+        val apiKey = settingsRepository.elevenLabsApiKey
+        val encryptedKey = if (!apiKey.isNullOrEmpty()) {
+            val userEmail = authManager.userEmail.value
+            if (!userEmail.isNullOrEmpty()) {
+                try {
+                    EncryptionUtils.encrypt(apiKey, userEmail)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to encrypt ElevenLabs API Key", e)
+                    null
+                }
+            } else {
+                Log.w(TAG, "No user logged in, API key will not be included in backup (plain text avoided)")
+                null
+            }
+        } else null
+
         return data.copy(
             actionLogLimit = settingsRepository.getActionLogLimitForBook(bookId),
             limitScanCycles = settingsRepository.getLimitScanCyclesForBook(bookId),
@@ -65,7 +87,8 @@ class SettingsMapper @Inject constructor(
             hueClientId = settingsRepository.hueClientId,
             hueClientSecret = settingsRepository.hueClientSecret,
             ttsEngine = settingsRepository.ttsEngine,
-            elevenLabsModel = settingsRepository.elevenLabsModel
+            elevenLabsModel = settingsRepository.elevenLabsModel,
+            elevenLabsApiKey = encryptedKey
         )
     }
 
@@ -114,5 +137,20 @@ class SettingsMapper @Inject constructor(
         data.hueClientSecret?.let { settingsRepository.hueClientSecret = it }
         data.ttsEngine?.let { settingsRepository.ttsEngine = it }
         data.elevenLabsModel?.let { settingsRepository.elevenLabsModel = it }
+        
+        data.elevenLabsApiKey?.let { encryptedKey ->
+            val userEmail = authManager.userEmail.value
+            if (!userEmail.isNullOrEmpty()) {
+                try {
+                    val decryptedKey = EncryptionUtils.decrypt(encryptedKey, userEmail)
+                    settingsRepository.elevenLabsApiKey = decryptedKey
+                    Log.i(TAG, "Successfully decrypted and restored ElevenLabs API Key from backup")
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to decrypt ElevenLabs API Key. Account mismatch or corrupted data.", e)
+                }
+            } else {
+                Log.w(TAG, "Found encrypted API key in backup but no user is logged in. Restore skipped.")
+            }
+        }
     }
 }

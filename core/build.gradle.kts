@@ -47,6 +47,12 @@ dependencies {
     ksp(libs.hilt.compiler)
     implementation(libs.kotlinx.serialization.json)
     
+    // Auth & Credentials (for AuthManager interface)
+    api(libs.google.api.client.android)
+    api(libs.androidx.credentials)
+    api(libs.googleid)
+    api(libs.gms.play.services.auth)
+    
     // Room
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)

@@ -4,9 +4,12 @@ import android.content.Context
 import android.util.Log
 import androidx.core.content.edit
 import androidx.credentials.ClearCredentialStateRequest
+import androidx.credentials.CreatePasswordRequest
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.GetCredentialResponse
+import androidx.credentials.GetPasswordOption
+import androidx.credentials.PasswordCredential
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.credentials.exceptions.NoCredentialException
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
@@ -48,9 +51,9 @@ class GoogleAuthManager @javax.inject.Inject constructor(
             val signInWithGoogleOption = GetSignInWithGoogleOption.Builder(serverClientId)
                 .build()
 
-            val request = GetCredentialRequest.Builder()
-                .addCredentialOption(signInWithGoogleOption)
-                .build()
+            val request = GetCredentialRequest(
+                listOf(signInWithGoogleOption)
+            )
 
             Log.d(TAG, "Calling getCredential...")
             val result = credentialManager.getCredential(activity, request)
@@ -95,19 +98,6 @@ class GoogleAuthManager @javax.inject.Inject constructor(
             return false
         }
 
-        // NEW: Check if account exists in system
-        try {
-            val am = android.accounts.AccountManager.get(appContext)
-            val accounts = am.getAccountsByType("com.google")
-            val exists = accounts.any { it.name.equals(email, ignoreCase = true) }
-            Log.d(TAG, "System account check for '$email': Found = $exists")
-            if (!exists) {
-                Log.e(TAG, "Other system accounts found: ${accounts.map { it.name }}")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error checking system accounts", e)
-        }
-
         _userEmail.value = email
         prefs.edit { putString(KEY_USER_EMAIL, email) }
         Log.i(TAG, "Sign-in verified. User email stored: $email")
@@ -122,6 +112,50 @@ class GoogleAuthManager @javax.inject.Inject constructor(
         prefs.edit { remove(KEY_USER_EMAIL) }
     }
 
+    override suspend fun saveApiKeyToPasswordManager(activity: android.app.Activity, apiKey: String): Result<Unit> {
+        val email = _userEmail.value ?: return Result.failure(IllegalStateException("User not signed in"))
+        Log.d(TAG, "Saving API Key to Password Manager for $email")
+
+        return try {
+            val createPasswordRequest = CreatePasswordRequest(
+                id = email,
+                password = apiKey
+            )
+            credentialManager.createCredential(activity, createPasswordRequest)
+            Log.i(TAG, "Successfully saved ElevenLabs API Key to Google Password Manager")
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to save API Key to Password Manager: ${e.message}")
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getApiKeyFromPasswordManager(activity: android.app.Activity): Result<String?> {
+        Log.d(TAG, "Retrieving API Key from Password Manager")
+        
+        return try {
+            val getPasswordOption = GetPasswordOption()
+
+            val request = GetCredentialRequest(
+                listOf(getPasswordOption)
+            )
+
+            val result = credentialManager.getCredential(activity, request)
+            val credential = result.credential
+            
+            if (credential is PasswordCredential) {
+                Log.i(TAG, "Successfully retrieved password credential from Manager")
+                Result.success(credential.password)
+            } else {
+                Log.w(TAG, "Retrieved credential is not a PasswordCredential")
+                Result.success(null)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to retrieve API Key from Password Manager: ${e.message}")
+            Result.failure(e)
+        }
+    }
+
     override fun getGoogleCredential(scopes: List<String>?): GoogleAccountCredential? {
         val email = _userEmail.value
         Log.d(TAG, "getGoogleCredential: stored email is '$email'")
@@ -131,8 +165,6 @@ class GoogleAuthManager @javax.inject.Inject constructor(
             return null
         }
 
-        // Default scopes if none provided: just Drive and Gemini (Generative Language)
-        // These are the core features of the app.
         val finalScopes = (scopes ?: listOf(
             DriveScopes.DRIVE_FILE,
             "https://www.googleapis.com/auth/generative-language.retriever"

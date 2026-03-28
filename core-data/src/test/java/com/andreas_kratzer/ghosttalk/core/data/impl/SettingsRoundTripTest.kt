@@ -27,7 +27,9 @@ class SettingsRoundTripTest {
         val context = mockk<android.content.Context>(relaxed = true)
         val sharedPrefs = mockk<android.content.SharedPreferences>(relaxed = true)
         val prefsEditor = mockk<android.content.SharedPreferences.Editor>(relaxed = true)
+        val authManager = mockk<com.andreas_kratzer.ghosttalk.core.cloud.AuthManager>(relaxed = true)
         
+        every { authManager.userEmail } returns kotlinx.coroutines.flow.MutableStateFlow("test@example.com")
         every { context.getSharedPreferences(any(), any()) } returns sharedPrefs
         every { sharedPrefs.edit() } returns prefsEditor
         every { prefsEditor.putString(any(), any()) } returns prefsEditor
@@ -35,7 +37,7 @@ class SettingsRoundTripTest {
         every { prefsEditor.putBoolean(any(), any()) } returns prefsEditor
         every { prefsEditor.putInt(any(), any()) } returns prefsEditor
 
-        val settingsMapper = SettingsMapper(settingsRepository)
+        val settingsMapper = SettingsMapper(settingsRepository, authManager)
         val actionMapper = ActionMapper()
         val manager = PageImportExportManager(context, pageRepository, bookRepository, settingsRepository, settingsMapper, actionMapper, logger)
 
