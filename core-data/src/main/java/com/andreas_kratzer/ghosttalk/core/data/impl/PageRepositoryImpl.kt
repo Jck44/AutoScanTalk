@@ -93,4 +93,8 @@ class PageRepositoryImpl(
             pages.mapNotNull { it.templateId }.toSet()
         }
     }
+
+    override suspend fun deleteEmptyButtons(): Int {
+        return buttonDao.deleteEmptyButtons()
+    }
 }

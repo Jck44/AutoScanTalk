@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.andreas_kratzer.ghosttalk.core.SecurityManager
 import com.andreas_kratzer.ghosttalk.core.cloud.PhilipsHueManager
 import com.andreas_kratzer.ghosttalk.core.data.BookRepository
+import com.andreas_kratzer.ghosttalk.core.data.PageRepository
 import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.core.data.GetPagesUseCase
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
@@ -62,7 +63,8 @@ class SettingsViewModel @Inject constructor(
     private val importExportManager: PageImportExportProvider,
     private val hueManager: PhilipsHueManager,
     private val ttsHelper: TextToSpeechHelper,
-    private val audioCacheRepository: AudioCacheRepository
+    private val audioCacheRepository: AudioCacheRepository,
+    private val pageRepository: PageRepository
 ) : AndroidViewModel(application) {
 
     private val _activeBookId = settingsRepository.activeBookIdFlow
@@ -890,6 +892,17 @@ class SettingsViewModel @Inject constructor(
                 delay(1000)
                 _isBackupRestoreRunning.value = false
                 _backupRestoreStatus.value = null
+            }
+        }
+    }
+
+    fun deleteEmptyButtons(onResult: (Int) -> Unit) {
+        viewModelScope.launch {
+            val count = withContext(Dispatchers.IO) {
+                pageRepository.deleteEmptyButtons()
+            }
+            withContext(Dispatchers.Main) {
+                onResult(count)
             }
         }
     }

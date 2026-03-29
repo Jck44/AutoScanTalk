@@ -262,4 +262,11 @@
     <string name="smart_home_provider_google_home">Google Home</string>
     <string name="smart_home_provider_philips_hue">Philips Hue</string>
 
+    <!-- Maintenance / Cleanup -->
+    <string name="settings_maintenance_delete_empty_buttons_title">Leere Buttons löschen</string>
+    <string name="settings_maintenance_delete_empty_buttons_desc">Löscht alle Buttons ohne Beschriftung aus allen Seiten.</string>
+    <string name="settings_maintenance_delete_empty_buttons_confirm_title">Buttons löschen?</string>
+    <string name="settings_maintenance_delete_empty_buttons_confirm_text">Sind Sie sicher, dass Sie alle Buttons ohne Beschriftung löschen wollen? Dies kann nicht rückgängig gemacht werden.</string>
+    <string name="settings_maintenance_delete_empty_buttons_success">%d Buttons wurden gelöscht.</string>
+
 </resources>

@@ -15,4 +15,7 @@ interface ButtonDao {
     
     @Query("SELECT * FROM buttons WHERE pageId = :pageId")
     suspend fun getButtonsForPage(pageId: String): List<ButtonEntity>
+
+    @Query("DELETE FROM buttons WHERE label = ''")
+    suspend fun deleteEmptyButtons(): Int
 }

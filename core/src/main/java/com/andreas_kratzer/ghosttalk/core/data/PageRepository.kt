@@ -17,4 +17,5 @@ interface PageRepository {
     suspend fun deletePagesForBook(bookId: String)
     suspend fun duplicatePage(pageId: String, duplicateSuffix: String): String?
     fun getUsedTemplateIdsFlow(): Flow<Set<String>>
+    suspend fun deleteEmptyButtons(): Int
 }

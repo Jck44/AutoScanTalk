@@ -260,4 +260,12 @@
     <string name="elevenlabs_api_key_not_found_google">No API Key found in Google Password Manager.</string>
     <string name="elevenlabs_api_key_error_google">Error accessing Google Password Manager: %s</string>
     <string name="elevenlabs_api_key_no_manager_google">Google Password Manager is not available or not up to date on this device.</string>
+
+    <!-- Maintenance / Cleanup -->
+    <string name="settings_maintenance_delete_empty_buttons_title">Delete empty buttons</string>
+    <string name="settings_maintenance_delete_empty_buttons_desc">Deletes all buttons without a label from all pages.</string>
+    <string name="settings_maintenance_delete_empty_buttons_confirm_title">Delete buttons?</string>
+    <string name="settings_maintenance_delete_empty_buttons_confirm_text">Are you sure you want to delete all buttons without a label? This cannot be undone.</string>
+    <string name="settings_maintenance_delete_empty_buttons_success">%d buttons were deleted.</string>
+
 </resources>
