@@ -8,7 +8,10 @@
     <string name="settings_category_cloud">Accounts &amp; Import</string>
     <string name="settings_category_smart_home">Smart Home (Experimental)</string>
     <string name="settings_category_gemini">Gemini AI Assistant</string>
+    <string name="settings_category_elevenlabs">Eleven Labs</string>
     <string name="settings_category_notifications">Permissions</string>
+    <string name="settings_category_cloud_book">Backup</string>
+    <string name="settings_category_cloud_sync">Synchronization</string>
     <string name="settings_category_advanced">Advanced Settings</string>
     
     <!-- General Settings -->
@@ -230,6 +233,7 @@
     <string name="settings_prefetch_tts_title">Prefetch TTS MP3 Cache</string>
     <string name="settings_prefetch_tts_summary">Downloads required speech files for selected pages in advance.</string>
     <string name="prefetch_dialog_select_pages">Select Pages</string>
+    <string name="prefetch_dialog_title">TTS Prefetching</string>
     <string name="prefetch_stats_title">Summary</string>
     <string name="prefetch_stats_unique">Unique strings: %d</string>
     <string name="prefetch_stats_duplicates">Duplicates (skipped): %d</string>

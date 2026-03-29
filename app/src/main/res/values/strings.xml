@@ -25,6 +25,8 @@
     <string name="action_cancel">Abbrechen</string>
     <string name="action_delete">Löschen</string>
     <string name="action_search">Suchen…</string>
+    <string name="action_edit">Bearbeiten</string>
+    <string name="action_refresh">Aktualisieren</string>
 
     <string name="error_book_name_required">Bitte geben Sie einen Namen für das Buch ein.</string>
     <string name="error_page_name_required">Bitte geben Sie einen Namen für die Seite ein.</string>
@@ -110,6 +112,22 @@
     <string name="button_smart_prediction_rank_label">Vorhersage-Rang (1 = Wahrscheinlichste)</string>
     <string name="button_gemini_prompt_field">Gemini Prompt (Befehl)</string>
     <string name="button_gemini_prompt_hint">Was soll Gemini tun?</string>
+
+    <!-- Navigation & Smart Home Extra Strings -->
+    <string name="button_navigation_search_label">Seite suchen</string>
+    <string name="button_navigation_select_page">Seite auswählen</string>
+    <string name="page_create_new">Neue Seite erstellen</string>
+    <string name="button_google_home_provider_label">Anbieter</string>
+    <string name="button_google_home_intent_onoff">An / Aus</string>
+    <string name="button_google_home_intent_brightness">Helligkeit</string>
+    <string name="button_google_home_intent_color">Farbe</string>
+    <string name="button_google_home_intent_thermostat">Thermostat</string>
+    <string name="button_google_home_intent_label">Befehl</string>
+    <string name="button_google_home_intent_select">Befehl auswählen</string>
+    <string name="button_google_home_value_onoff_label">Status (0 = Aus, 1 = An)</string>
+    <string name="button_google_home_value_onoff_hint">0 oder 1</string>
+    <string name="button_google_home_value_number_label">Wert</string>
+    <string name="button_google_home_value_number_hint">z.B. 50</string>
 
     <string name="button_play_as_cue">Als Audio-Hinweis abspielen</string>
     <string name="button_google_home_device_label">Gerät</string>
