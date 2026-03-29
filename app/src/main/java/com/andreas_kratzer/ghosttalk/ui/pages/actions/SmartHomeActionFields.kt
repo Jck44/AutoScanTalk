@@ -18,6 +18,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.res.stringResource
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.cloud.HomeDevice
@@ -39,7 +40,8 @@ fun SmartHomeActionFields(
     onValueChange: (String) -> Unit,
     devices: List<HomeDevice>,
     isFetching: Boolean,
-    onRefresh: () -> Unit
+    onRefresh: () -> Unit,
+    onAutoSave: () -> Unit = {}
 ) {
     val dimensions = LocalDimensions.current
     var expandedProvider by remember { mutableStateOf(false) }
@@ -89,6 +91,7 @@ fun SmartHomeActionFields(
                         onClick = {
                             onProviderSelected(provider)
                             expandedProvider = false
+                            onAutoSave()
                         }
                     )
                 }
@@ -122,6 +125,7 @@ fun SmartHomeActionFields(
                         onClick = {
                             onDeviceSelected(device)
                             expandedDevice = false
+                            onAutoSave()
                         }
                     )
                 }
@@ -154,6 +158,7 @@ fun SmartHomeActionFields(
                             onClick = {
                                 onIntentSelected(intent)
                                 expandedIntent = false
+                                onAutoSave()
                             }
                         )
                     }
@@ -172,7 +177,9 @@ fun SmartHomeActionFields(
                     label = { Text(stringResource(R.string.button_google_home_value_label)) },
                     shape = MaterialTheme.shapes.large,
                     keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth().onFocusChanged { 
+                        if (!it.isFocused) onAutoSave()
+                    }
                 )
             }
         }

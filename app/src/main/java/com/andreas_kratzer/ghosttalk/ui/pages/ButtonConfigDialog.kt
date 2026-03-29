@@ -238,6 +238,51 @@ fun ButtonConfigDialog(
     var isFetchingDevices by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
+    val handleAutoSave = {
+        if (label.isNotBlank()) {
+            val action = when (selectedActionType) {
+                actionTypeNavigate -> NavigateToPageButtonAction(targetPageId)
+                actionTypeGemini -> GeminiButtonAction(geminiPrompt)
+                actionTypeGeminiSearch -> GeminiSearchButtonAction(geminiPrompt)
+                actionTypeGeminiNano -> GeminiNanoButtonAction(geminiPrompt)
+                actionTypeGeminiVision -> com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction(geminiPrompt, geminiVisionUseCloud, geminiVisionPlayShutterSound)
+                actionTypeFrequent -> FrequentActionButtonAction(rank)
+                actionTypePrevious -> PreviousActionButtonAction(rank)
+                actionTypeSmart -> SmartPredictionButtonAction(rank)
+                actionTypeWeather -> WeatherButtonAction()
+                actionTypeDevice -> ControlDeviceButtonAction(
+                    actionType = deviceActionType,
+                    volumeValue = volumeValue,
+                    contactName = contactName,
+                    contactPhone = contactPhone,
+                    messageText = messageText,
+                    includeWeekday = includeWeekday,
+                    prefixText = prefixText.takeIf { it.isNotBlank() },
+                    suffixText = suffixText.takeIf { it.isNotBlank() },
+                    offsetValue = offsetValue.toIntOrNull() ?: 0
+                )
+                actionTypeSmartHome -> SmartHomeButtonAction(
+                    provider = smartHomeProvider,
+                    deviceId = smartHomeDeviceId,
+                    deviceName = smartHomeDeviceName,
+                    intent = smartHomeIntent,
+                    value = if (smartHomeValue.isNotBlank()) smartHomeValue else null
+                )
+                else -> SpeakTextButtonAction()
+            }
+
+            val config = buttonConfig.copy(
+                label = label,
+                spokenText = if (spokenText.isNotBlank()) spokenText else null,
+                auditoryCue = if (auditoryCueText.isNotBlank()) AuditoryCue.TextToSpeechCue(auditoryCueText) else null,
+                isActive = isActive,
+                playActionAsAuditoryCue = playActionAsAuditoryCue,
+                buttonAction = action
+            )
+            onSave(config)
+        }
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         modifier = Modifier
@@ -260,31 +305,36 @@ fun ButtonConfigDialog(
                 SettingsEditTextItem(
                     label = stringResource(R.string.button_label_field),
                     value = label,
-                    onValueChange = { label = it }
+                    onValueChange = { label = it },
+                    onFocusLost = handleAutoSave
                 )
                 
                 SettingsEditTextItem(
                     label = stringResource(R.string.button_spoken_text_field),
                     value = spokenText,
-                    onValueChange = { spokenText = it }
+                    onValueChange = { spokenText = it },
+                    onFocusLost = handleAutoSave
                 )
 
                 SettingsEditTextItem(
                     label = stringResource(R.string.button_auditory_cue_field),
                     value = auditoryCueText,
-                    onValueChange = { auditoryCueText = it }
+                    onValueChange = { auditoryCueText = it },
+                    onFocusLost = handleAutoSave
                 )
 
                 SettingsToggleItem(
                     label = stringResource(R.string.button_is_active_label),
                     checked = isActive,
-                    onCheckedChange = { isActive = it }
+                    onCheckedChange = { isActive = it },
+                    onValueChangeFinished = handleAutoSave
                 )
 
                 SettingsToggleItem(
                     label = stringResource(R.string.button_play_as_cue),
                     checked = playActionAsAuditoryCue,
-                    onCheckedChange = { playActionAsAuditoryCue = it }
+                    onCheckedChange = { playActionAsAuditoryCue = it },
+                    onValueChangeFinished = handleAutoSave
                 )
 
                 featureGuard?.let { guard ->
@@ -333,9 +383,22 @@ fun ButtonConfigDialog(
                         actionTypeGeminiVision to com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction()
                     ).filter { (label, action) ->
                         featureGuard?.isActionEnabled(action) ?: true
-                    }.map { (label, _) ->
-                        label to { selectedActionType = label }
-                    }
+                    }.map { (label, action) ->
+                        label to { 
+                            selectedActionType = label
+                            // Permission check for Weather
+                            if (action is WeatherButtonAction) {
+                                val hasFine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                                val hasCoarse = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                                if (!hasFine && !hasCoarse) {
+                                    permissionLauncher.launch(
+                                        arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+                                    )
+                                }
+                            }
+                        }
+                    },
+                    onValueChangeFinished = handleAutoSave
                 )
 
                 ActionConfigFields(
@@ -394,10 +457,17 @@ fun ButtonConfigDialog(
                     onCreatePage = onCreatePage,
                     onDismissDialog = onDismiss,
                     useCloud = geminiVisionUseCloud,
-                    onUseCloudChange = { geminiVisionUseCloud = it },
+                    onUseCloudChange = { 
+                        geminiVisionUseCloud = it
+                        handleAutoSave()
+                    },
                     isCloudEnabled = featureGuard?.isActionEnabled(GeminiButtonAction()) ?: true,
                     playShutterSound = geminiVisionPlayShutterSound,
-                    onPlayShutterSoundChange = { geminiVisionPlayShutterSound = it }
+                    onPlayShutterSoundChange = { 
+                        geminiVisionPlayShutterSound = it
+                        handleAutoSave()
+                    },
+                    onAutoSave = handleAutoSave
                 )
             }
 
@@ -417,12 +487,12 @@ fun ButtonConfigDialog(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
                 ) {
-                    // Always show Cancel
+                    // Always show Close
                     OutlinedButton(
                         onClick = onDismiss,
                         modifier = Modifier.widthIn(min = 96.dp)
                     ) {
-                        Text(stringResource(CoreR.string.action_cancel))
+                        Text(stringResource(CoreR.string.dialog_close))
                     }
 
                     // Test Button
@@ -505,67 +575,6 @@ fun ButtonConfigDialog(
                             Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
                             Text(stringResource(CoreR.string.action_delete))
                         }
-                    }
-
-                    // Save Button (Always visible)
-                    Button(
-                        enabled = label.isNotBlank(),
-                        modifier = Modifier.widthIn(min = 100.dp),
-                        onClick = {
-                            val action = when (selectedActionType) {
-                                actionTypeNavigate -> NavigateToPageButtonAction(targetPageId)
-                                actionTypeGemini -> GeminiButtonAction(geminiPrompt)
-                                actionTypeGeminiSearch -> GeminiSearchButtonAction(geminiPrompt)
-                                actionTypeGeminiNano -> GeminiNanoButtonAction(geminiPrompt)
-                                actionTypeGeminiVision -> com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction(geminiPrompt, geminiVisionUseCloud, geminiVisionPlayShutterSound)
-                                actionTypeFrequent -> FrequentActionButtonAction(rank)
-                                actionTypePrevious -> PreviousActionButtonAction(rank)
-                                actionTypeSmart -> SmartPredictionButtonAction(rank)
-                                actionTypeWeather -> WeatherButtonAction()
-                                actionTypeDevice -> ControlDeviceButtonAction(
-                                    actionType = deviceActionType,
-                                    volumeValue = volumeValue,
-                                    contactName = contactName,
-                                    contactPhone = contactPhone,
-                                    messageText = messageText,
-                                    includeWeekday = includeWeekday,
-                                    prefixText = prefixText.takeIf { it.isNotBlank() },
-                                    suffixText = suffixText.takeIf { it.isNotBlank() },
-                                    offsetValue = offsetValue.toIntOrNull() ?: 0
-                                )
-                                actionTypeSmartHome -> SmartHomeButtonAction(
-                                    provider = smartHomeProvider,
-                                    deviceId = smartHomeDeviceId,
-                                    deviceName = smartHomeDeviceName,
-                                    intent = smartHomeIntent,
-                                    value = if (smartHomeValue.isNotBlank()) smartHomeValue else null
-                                )
-                                else -> SpeakTextButtonAction()
-                            }
-
-                            val config = buttonConfig.copy(
-                                label = label,
-                                spokenText = if (spokenText.isNotBlank()) spokenText else null,
-                                auditoryCue = if (auditoryCueText.isNotBlank()) AuditoryCue.TextToSpeechCue(auditoryCueText) else null,
-                                isActive = isActive,
-                                playActionAsAuditoryCue = playActionAsAuditoryCue,
-                                buttonAction = action
-                            )
-
-                            if (action is WeatherButtonAction) {
-                                val hasFine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-                                val hasCoarse = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
-                                if (!hasFine && !hasCoarse) {
-                                    permissionLauncher.launch(
-                                        arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
-                                    )
-                                }
-                            }
-
-                            onSave(config)
-                        }
-                    ) {
-                        Text(stringResource(CoreR.string.action_save))
                     }
 
                     // Overflow Menu

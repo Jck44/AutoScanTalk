@@ -67,7 +67,6 @@ fun EditorDialogs(
             onDismiss = onDismissButtonDialog,
             onSave = { newConfig ->
                 actions.updateButtonConfig(item.id, selectedButtonIndex, newConfig)
-                onDismissButtonDialog()
             },
             onTest = { config ->
                 actions.executeButtonAction(config)

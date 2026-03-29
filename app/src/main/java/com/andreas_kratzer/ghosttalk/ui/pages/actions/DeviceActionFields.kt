@@ -27,6 +27,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
@@ -37,7 +38,7 @@ import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ControlDeviceActionFields(
+fun DeviceActionFields(
     selectedType: DeviceActionType,
     onTypeSelected: (DeviceActionType) -> Unit,
     volumeValue: String? = null,
@@ -53,7 +54,8 @@ fun ControlDeviceActionFields(
     suffixText: String = "",
     onSuffixTextChange: (String) -> Unit = {},
     offsetValue: String = "0",
-    onOffsetValueChange: (String) -> Unit = {}
+    onOffsetValueChange: (String) -> Unit = {},
+    onAutoSave: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val dimensions = LocalDimensions.current
@@ -109,6 +111,7 @@ fun ControlDeviceActionFields(
                         onClick = {
                             onTypeSelected(type)
                             expandedType = false
+                            onAutoSave()
                             
                             // Permission check for Silent mode
                             if (type == DeviceActionType.STATUS_SILENT) {
@@ -144,7 +147,9 @@ fun ControlDeviceActionFields(
                 singleLine = true,
                 shape = MaterialTheme.shapes.large,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().onFocusChanged { 
+                    if (!it.isFocused) onAutoSave()
+                }
             )
         }
 
@@ -154,7 +159,8 @@ fun ControlDeviceActionFields(
                 contactName = contactName ?: stringResource(R.string.contact_picker_title),
                 onContactSelected = onContactSelected,
                 messageText = messageText ?: "",
-                onMessageTextChange = onMessageTextChange
+                onMessageTextChange = onMessageTextChange,
+                onAutoSave = onAutoSave
             )
         }
 
@@ -165,7 +171,9 @@ fun ControlDeviceActionFields(
                 onValueChange = onPrefixTextChange,
                 label = { Text(stringResource(R.string.button_device_control_prefix_label)) },
                 shape = MaterialTheme.shapes.large,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().onFocusChanged { 
+                    if (!it.isFocused) onAutoSave()
+                }
             )
 
             OutlinedTextField(
@@ -173,14 +181,17 @@ fun ControlDeviceActionFields(
                 onValueChange = onSuffixTextChange,
                 label = { Text(stringResource(R.string.button_device_control_suffix_label)) },
                 shape = MaterialTheme.shapes.large,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().onFocusChanged { 
+                    if (!it.isFocused) onAutoSave()
+                }
             )
 
             if (selectedType == DeviceActionType.READ_DATE) {
                 com.andreas_kratzer.ghosttalk.core.ui.components.SettingsToggleItem(
                     label = stringResource(R.string.button_device_control_weekday_label),
                     checked = includeWeekday,
-                    onCheckedChange = onIncludeWeekdayChange
+                    onCheckedChange = onIncludeWeekdayChange,
+                    onValueChangeFinished = onAutoSave
                 )
                 
                 OutlinedTextField(
@@ -189,7 +200,9 @@ fun ControlDeviceActionFields(
                     label = { Text(stringResource(R.string.button_device_control_offset_days_label)) },
                     shape = MaterialTheme.shapes.large,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth().onFocusChanged { 
+                        if (!it.isFocused) onAutoSave()
+                    }
                 )
             } else {
                 OutlinedTextField(
@@ -198,7 +211,9 @@ fun ControlDeviceActionFields(
                     label = { Text(stringResource(R.string.button_device_control_offset_minutes_label)) },
                     shape = MaterialTheme.shapes.large,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth().onFocusChanged { 
+                        if (!it.isFocused) onAutoSave()
+                    }
                 )
             }
         }
@@ -210,7 +225,8 @@ fun MessagingFields(
     contactName: String,
     onContactSelected: (String, String) -> Unit,
     messageText: String,
-    onMessageTextChange: (String) -> Unit
+    onMessageTextChange: (String) -> Unit,
+    onAutoSave: () -> Unit = {}
 ) {
     val dimensions = LocalDimensions.current
     val context = LocalContext.current
@@ -273,6 +289,7 @@ fun MessagingFields(
             modifier = Modifier.fillMaxWidth(),
             shape = MaterialTheme.shapes.medium
         ) {
+            onAutoSave()
             Text(contactName)
         }
 
@@ -288,7 +305,9 @@ fun MessagingFields(
             },
             label = { Text(stringResource(R.string.message_emojis_not_supported)) },
             shape = MaterialTheme.shapes.large,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().onFocusChanged {
+                if (!it.isFocused) onAutoSave()
+            },
             supportingText = {
                 Text(stringResource(R.string.message_emojis_hint))
             }

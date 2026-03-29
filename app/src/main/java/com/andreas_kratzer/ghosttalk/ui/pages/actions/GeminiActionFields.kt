@@ -16,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -27,7 +28,8 @@ import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 fun GeminiActionFields(
     prompt: String,
     onPromptChanged: (String) -> Unit,
-    availableTools: List<com.andreas_kratzer.ghosttalk.core.ai.domain.AiTool> = emptyList()
+    availableTools: List<com.andreas_kratzer.ghosttalk.core.ai.domain.AiTool> = emptyList(),
+    onAutoSave: () -> Unit = {}
 ) {
     val dimensions = LocalDimensions.current
     Column(verticalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)) {
@@ -37,7 +39,9 @@ fun GeminiActionFields(
             label = { Text(stringResource(R.string.button_gemini_prompt_field)) },
             placeholder = { Text(stringResource(R.string.button_gemini_prompt_hint)) },
             shape = MaterialTheme.shapes.large,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth().onFocusChanged { 
+                if (!it.isFocused) onAutoSave()
+            }
         )
 
         if (availableTools.isNotEmpty()) {
@@ -112,7 +116,8 @@ fun GeminiVisionActionFields(
     playShutterSound: Boolean = true,
     onPromptChanged: (String) -> Unit,
     onUseCloudChanged: (Boolean) -> Unit,
-    onPlayShutterSoundChanged: (Boolean) -> Unit
+    onPlayShutterSoundChanged: (Boolean) -> Unit,
+    onAutoSave: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -137,20 +142,24 @@ fun GeminiVisionActionFields(
             label = { Text(stringResource(R.string.button_gemini_vision_prompt_label)) },
             placeholder = { Text(stringResource(R.string.button_gemini_vision_prompt_hint)) },
             shape = MaterialTheme.shapes.large,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth().onFocusChanged { 
+                if (!it.isFocused) onAutoSave()
+            }
         )
 
         com.andreas_kratzer.ghosttalk.core.ui.components.SettingsToggleItem(
             label = stringResource(R.string.button_gemini_vision_use_cloud_label),
             checked = useCloud,
             enabled = isCloudEnabled,
-            onCheckedChange = onUseCloudChanged
+            onCheckedChange = onUseCloudChanged,
+            onValueChangeFinished = onAutoSave
         )
         
         com.andreas_kratzer.ghosttalk.core.ui.components.SettingsToggleItem(
             label = stringResource(R.string.button_gemini_vision_shutter_sound_label),
             checked = playShutterSound,
-            onCheckedChange = onPlayShutterSoundChanged
+            onCheckedChange = onPlayShutterSoundChanged,
+            onValueChangeFinished = onAutoSave
         )
     }
 }

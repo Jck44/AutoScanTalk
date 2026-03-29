@@ -36,7 +36,8 @@ fun NavigationActionFields(
     onNavigateToPage: ((String) -> Unit)?,
     onCreatePage: ((String, Int, Int, String?, (String) -> Unit) -> Unit)?,
     onBeforeCreatePage: (() -> Boolean)? = null,
-    onDismissDialog: () -> Unit
+    onDismissDialog: () -> Unit,
+    onAutoSave: () -> Unit = {}
 ) {
     var expandedPageSelect by remember { mutableStateOf(false) }
     var pageSearchQuery by remember { mutableStateOf("") }
@@ -85,6 +86,7 @@ fun NavigationActionFields(
                             focusManager.clearFocus()
                             expandedPageSelect = false
                             pageSearchQuery = ""
+                            onAutoSave()
                         }
                     )
                 }
@@ -134,6 +136,7 @@ fun NavigationActionFields(
                 onCreatePage?.invoke(name, rows, cols, templateId) { newId ->
                     onPageSelected(newId)
                     showAddPageDialogState.value = false
+                    onAutoSave()
                 }
             }
         )

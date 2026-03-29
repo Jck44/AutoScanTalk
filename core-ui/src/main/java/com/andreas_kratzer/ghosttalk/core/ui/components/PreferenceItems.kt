@@ -62,13 +62,17 @@ fun SettingsToggleItem(
     label: String,
     checked: Boolean,
     enabled: Boolean = true,
+    onValueChangeFinished: (() -> Unit)? = null,
     onCheckedChange: (Boolean) -> Unit
 ) {
     val dimensions = LocalDimensions.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(enabled = enabled) { onCheckedChange(!checked) }
+            .clickable(enabled = enabled) { 
+                onCheckedChange(!checked)
+                onValueChangeFinished?.invoke()
+            }
             .padding(vertical = dimensions.paddingSmall),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -78,7 +82,14 @@ fun SettingsToggleItem(
             style = MaterialTheme.typography.bodyLarge,
             color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
         )
-        Switch(checked = checked, onCheckedChange = onCheckedChange, enabled = enabled)
+        Switch(
+            checked = checked, 
+            onCheckedChange = { 
+                onCheckedChange(it)
+                onValueChangeFinished?.invoke()
+            }, 
+            enabled = enabled
+        )
     }
 }
 
@@ -110,7 +121,8 @@ fun SettingsEditTextItem(
     onValueChange: (String) -> Unit,
     keyboardOptions: KeyboardOptions? = null,
     forceKeyboard: Boolean = false,
-    numericOnly: Boolean = false
+    numericOnly: Boolean = false,
+    onFocusLost: (() -> Unit)? = null
 ) {
     val dimensions = LocalDimensions.current
     var localValue by remember(value) { mutableStateOf(value) }
@@ -133,6 +145,8 @@ fun SettingsEditTextItem(
         }
     }
 
+    var hadFocus by remember { mutableStateOf(false) }
+
     OutlinedTextField(
         value = localValue,
         onValueChange = { newValue -> 
@@ -151,8 +165,11 @@ fun SettingsEditTextItem(
             .fillMaxWidth()
             .padding(vertical = dimensions.paddingSmall)
             .onFocusChanged { 
-                if (it.isFocused && forceKeyboard) {
-                    keyboardController?.show()
+                if (it.isFocused) {
+                    hadFocus = true
+                    if (forceKeyboard) keyboardController?.show()
+                } else if (hadFocus) {
+                    onFocusLost?.invoke()
                 }
             },
         keyboardOptions = keyboardOptions ?: defaultKeyboardOptions,
@@ -166,7 +183,8 @@ fun SettingsDropdownItem(
     label: String,
     selectedOption: String,
     options: List<Pair<String, () -> Unit>>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onValueChangeFinished: (() -> Unit)? = null
 ) {
     val dimensions = LocalDimensions.current
     var expanded by remember { mutableStateOf(false) }
@@ -211,6 +229,7 @@ fun SettingsDropdownItem(
                             onClick()
                             focusManager.clearFocus()
                             expanded = false
+                            onValueChangeFinished?.invoke()
                         }
                     )
                 }

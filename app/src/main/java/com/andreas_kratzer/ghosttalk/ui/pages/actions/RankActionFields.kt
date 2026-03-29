@@ -7,6 +7,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import com.andreas_kratzer.ghosttalk.R
@@ -15,7 +16,8 @@ import com.andreas_kratzer.ghosttalk.R
 fun RankActionFields(
     rank: String,
     onRankChanged: (String) -> Unit,
-    labelOverride: String? = null
+    labelOverride: String? = null,
+    onAutoSave: () -> Unit = {}
 ) {
     OutlinedTextField(
         value = rank,
@@ -28,6 +30,8 @@ fun RankActionFields(
         singleLine = true,
         shape = MaterialTheme.shapes.large,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth().onFocusChanged { 
+            if (!it.isFocused) onAutoSave()
+        }
     )
 }

@@ -11,7 +11,7 @@ import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.core.model.SmartHomeProvider
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
-import com.andreas_kratzer.ghosttalk.ui.pages.actions.ControlDeviceActionFields
+import com.andreas_kratzer.ghosttalk.ui.pages.actions.DeviceActionFields
 import com.andreas_kratzer.ghosttalk.ui.pages.actions.GeminiActionFields
 import com.andreas_kratzer.ghosttalk.ui.pages.actions.GeminiNanoActionFields
 import com.andreas_kratzer.ghosttalk.ui.pages.actions.GeminiVisionActionFields
@@ -74,7 +74,8 @@ fun ActionConfigFields(
     isCloudEnabled: Boolean = true,
     playShutterSound: Boolean = true,
     onUseCloudChange: (Boolean) -> Unit = {},
-    onPlayShutterSoundChange: (Boolean) -> Unit = {}
+    onPlayShutterSoundChange: (Boolean) -> Unit = {},
+    onAutoSave: () -> Unit = {}
 ) {
     val actionTypeNavigate = stringResource(R.string.button_action_navigate_page)
     val actionTypeGemini = stringResource(R.string.button_action_gemini)
@@ -100,14 +101,16 @@ fun ActionConfigFields(
                     templates = templates,
                     onNavigateToPage = onNavigateToPage,
                     onCreatePage = onCreatePage,
-                    onDismissDialog = onDismissDialog
+                    onDismissDialog = onDismissDialog,
+                    onAutoSave = onAutoSave
                 )
             }
             actionTypeGemini, actionTypeGeminiSearch -> {
                 GeminiActionFields(
                     prompt = geminiPrompt,
                     onPromptChanged = onGeminiPromptChange,
-                    availableTools = availableGeminiTools
+                    availableTools = availableGeminiTools,
+                    onAutoSave = onAutoSave
                 )
             }
             actionTypeGeminiNano -> {
@@ -120,25 +123,34 @@ fun ActionConfigFields(
                     isCloudEnabled = isCloudEnabled,
                     playShutterSound = playShutterSound,
                     onPromptChanged = onGeminiPromptChange,
-                    onUseCloudChanged = onUseCloudChange,
-                    onPlayShutterSoundChanged = onPlayShutterSoundChange
+                    onUseCloudChanged = { 
+                        onUseCloudChange(it)
+                        onAutoSave()
+                    },
+                    onPlayShutterSoundChanged = { 
+                        onPlayShutterSoundChange(it)
+                        onAutoSave()
+                    },
+                    onAutoSave = onAutoSave
                 )
             }
             actionTypeFrequent, actionTypeSmart -> {
                 RankActionFields(
                     rank = rank.toString(),
-                    onRankChanged = { onRankChange(it.toIntOrNull() ?: 1) }
+                    onRankChanged = { onRankChange(it.toIntOrNull() ?: 1) },
+                    onAutoSave = onAutoSave
                 )
             }
             actionTypePrevious -> {
                 RankActionFields(
                     rank = rank.toString(),
                     onRankChanged = { onRankChange(it.toIntOrNull() ?: 1) },
-                    labelOverride = stringResource(R.string.action_previous_action_rank)
+                    labelOverride = stringResource(R.string.action_previous_action_rank),
+                    onAutoSave = onAutoSave
                 )
             }
             actionTypeDevice -> {
-                ControlDeviceActionFields(
+                DeviceActionFields(
                     selectedType = deviceActionType,
                     onTypeSelected = onDeviceActionTypeChange,
                     volumeValue = volumeValue,
@@ -157,7 +169,8 @@ fun ActionConfigFields(
                     suffixText = suffixText,
                     onSuffixTextChange = onSuffixTextChange,
                     offsetValue = offsetValue,
-                    onOffsetValueChange = onOffsetValueChange
+                    onOffsetValueChange = onOffsetValueChange,
+                    onAutoSave = onAutoSave
                 )
             }
             actionTypeSmartHome -> {
@@ -176,7 +189,8 @@ fun ActionConfigFields(
                     onValueChange = onSmartHomeValueChange,
                     devices = availableHomeDevices,
                     isFetching = isFetchingDevices,
-                    onRefresh = onFetchDevices
+                    onRefresh = onFetchDevices,
+                    onAutoSave = onAutoSave
                 )
             }
             actionTypeWeather -> {
