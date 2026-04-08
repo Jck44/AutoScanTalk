@@ -32,6 +32,7 @@ class ScanCoordinator @Inject constructor(
     private var resolvedPage: StateFlow<Page?>? = null
     private var isSmartPredictionLoading: StateFlow<Boolean>? = null
     private var smartPredictions: StateFlow<List<String>?>? = null
+    private var observeJob: kotlinx.coroutines.Job? = null
 
     private data class Data(
         val isExecuting: Boolean,
@@ -90,7 +91,8 @@ class ScanCoordinator @Inject constructor(
         this.isSmartPredictionLoading = isSmartPredictionLoading
         this.smartPredictions = smartPredictions
 
-        scope.launch {
+        observeJob?.cancel()
+        observeJob = scope.launch {
             combine(
                 isUserModeActive,
                 actionProvider.isExecuting,
@@ -239,6 +241,7 @@ class ScanCoordinator @Inject constructor(
     }
 
     fun clear() {
+        observeJob?.cancel()
         scannerEngine.clear()
         _currentCycleCount.value = 0
         _isStoppedDueToLimit.value = false

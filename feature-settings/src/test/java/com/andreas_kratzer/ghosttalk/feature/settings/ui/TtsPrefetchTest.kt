@@ -93,7 +93,7 @@ class TtsPrefetchTest {
             securityManager, getPagesUseCase, ttsDelegate, scanningDelegate, 
             cloudSyncDelegate, genAiDelegate, experimentalDelegate, 
             updateActiveBookNameUseCase, deleteBookUseCase, updateActionLogLimitUseCase, 
-            importExportManager, hueManager, ttsHelper, audioCacheRepository
+            importExportManager, hueManager, ttsHelper, audioCacheRepository, mockk(relaxed = true)
         )
     }
 

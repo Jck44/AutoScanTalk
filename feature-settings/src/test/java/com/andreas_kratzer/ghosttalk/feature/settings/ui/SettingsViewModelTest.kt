@@ -114,7 +114,8 @@ class SettingsViewModelTest {
             importExportManager = importExportManager,
             hueManager = hueManager,
             ttsHelper = ttsHelper,
-            audioCacheRepository = audioCacheRepository
+            audioCacheRepository = audioCacheRepository,
+            pageRepository = mockk(relaxed = true)
         )
     }
 

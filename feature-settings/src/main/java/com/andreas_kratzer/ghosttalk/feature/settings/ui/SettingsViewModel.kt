@@ -280,8 +280,14 @@ class SettingsViewModel @Inject constructor(
     fun syncNow() {
         _isBackupRestoreRunning.value = true
         _backupRestoreProgress.value = 0f
+        val modeStr = settingsRepository.syncMode
+        val mode = try {
+            com.andreas_kratzer.ghosttalk.core.cloud.domain.SyncMode.valueOf(modeStr)
+        } catch (_: Exception) {
+            com.andreas_kratzer.ghosttalk.core.cloud.domain.SyncMode.TWO_WAY
+        }
         cloudSyncDelegate.performManualSync(
-            mode = com.andreas_kratzer.ghosttalk.core.cloud.domain.SyncMode.TWO_WAY,
+            mode = mode,
             scope = viewModelScope,
             onProgress = { p, s -> handleCloudProgress(p, s) },
             onComplete = { finishBackupRestoreProgress() }

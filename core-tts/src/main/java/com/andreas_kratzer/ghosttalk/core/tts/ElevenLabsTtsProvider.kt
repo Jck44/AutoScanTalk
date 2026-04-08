@@ -40,6 +40,8 @@ open class ElevenLabsTtsProvider @Inject constructor(
     private val handler = Handler(Looper.getMainLooper())
     private val playRequests = ConcurrentHashMap<String, File>()
     
+    private var lastDeviceAddress: String? = "uninitialized"
+    
     // Default voice ID if none is selected
     private var currentVoiceId: String = DEFAULT_VOICE_ID // Adam
 
@@ -68,94 +70,137 @@ open class ElevenLabsTtsProvider @Inject constructor(
             return
         }
 
+        val isRoutingSwitched = lastDeviceAddress != "uninitialized" && lastDeviceAddress != deviceAddress
+        lastDeviceAddress = deviceAddress
+
         if (queueMode == TextToSpeech.QUEUE_FLUSH) {
             stopAll()
         }
 
-        val elevenLabsModel = cloudSettings.elevenLabsModel
-        val languageCode = getIsoLanguageCode(cloudSettings.elevenLabsTtsLanguage)
-        val cachedFile = getCacheFile(text, currentVoiceId, elevenLabsModel, languageCode)
+        val delayedStart = isRoutingSwitched && queueMode == TextToSpeech.QUEUE_FLUSH
 
-        if (cachedFile.exists() && cachedFile.length() > 0) {
-            Log.d("ElevenLabsTtsProvider", "Playing cached audio for ${cachedFile.name}")
-            handler.post {
-                routedAudioPlayer.playAudioFile(cachedFile, deviceAddress) {
-                    onDone?.invoke()
-                }
-            }
-            return
-        }
-        val requestBody = JSONObject().apply {
-            put("text", text)
-            put("model_id", elevenLabsModel)
-            put("voice_settings", JSONObject().apply {
-                put("stability", cloudSettings.elevenLabsStability)
-                put("similarity_boost", cloudSettings.elevenLabsSimilarityBoost)
-            })
-            languageCode?.let { put("language_code", it) }
-        }.toString().toRequestBody("application/json".toMediaType())
+        fun startAudio() {
+            val elevenLabsModel = cloudSettings.elevenLabsModel
+            val languageCode = getIsoLanguageCode(cloudSettings.elevenLabsTtsLanguage)
+            val cachedFile = getCacheFile(text, currentVoiceId, elevenLabsModel, languageCode)
 
-
-        val request = Request.Builder()
-            .url("https://api.elevenlabs.io/v1/text-to-speech/$currentVoiceId")
-            .addHeader("xi-api-key", apiKey)
-            .post(requestBody)
-            .tag(SPEECH_TAG)
-            .build()
-
-        httpClient.newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: java.io.IOException) {
-                if (e.message?.contains("Canceled") == true || e.message?.contains("Socket closed") == true) {
-                    Log.d("ElevenLabsTtsProvider", "Speech call canceled")
-                } else {
-                    Log.e("ElevenLabsTtsProvider", "API call failed: ${e.message}")
-                    handler.post { 
-                        onError?.invoke(e.message ?: "Network error")
-                        onDone?.invoke() 
+            if (cachedFile.exists() && cachedFile.length() > 0) {
+                Log.d("ElevenLabsTtsProvider", "Playing cached audio for ${cachedFile.name}")
+                handler.post {
+                    routedAudioPlayer.playAudioFile(cachedFile, deviceAddress) {
+                        onDone?.invoke()
                     }
                 }
+                return
             }
+            
+            val requestBody = JSONObject().apply {
+                put("text", text)
+                put("model_id", elevenLabsModel)
+                put("voice_settings", JSONObject().apply {
+                    put("stability", cloudSettings.elevenLabsStability)
+                    put("similarity_boost", cloudSettings.elevenLabsSimilarityBoost)
+                })
+                languageCode?.let { put("language_code", it) }
+            }.toString().toRequestBody("application/json".toMediaType())
 
-            override fun onResponse(call: Call, response: Response) {
-                response.use { resp ->
-                    if (!resp.isSuccessful) {
-                        val errorMsg = "API error: ${resp.code} ${resp.message}"
-                        Log.e("ElevenLabsTtsProvider", errorMsg)
+
+            val request = Request.Builder()
+                .url("https://api.elevenlabs.io/v1/text-to-speech/$currentVoiceId")
+                .addHeader("xi-api-key", apiKey)
+                .post(requestBody)
+                .tag(SPEECH_TAG)
+                .build()
+
+            httpClient.newCall(request).enqueue(object : Callback {
+                override fun onFailure(call: Call, e: java.io.IOException) {
+                    if (e.message?.contains("Canceled") == true || e.message?.contains("Socket closed") == true) {
+                        Log.d("ElevenLabsTtsProvider", "Speech call canceled")
+                    } else {
+                        Log.e("ElevenLabsTtsProvider", "API call failed: ${e.message}")
                         handler.post { 
-                            onError?.invoke(errorMsg)
+                            onError?.invoke(e.message ?: "Network error")
                             onDone?.invoke() 
                         }
-                        return
                     }
+                }
 
-                    val body = resp.body
-                    if (body == null) {
-                        handler.post { onDone?.invoke() }
-                        return
-                    }
-
-                    try {
-                        java.io.FileOutputStream(cachedFile).use { output ->
-                            body.byteStream().copyTo(output)
+                override fun onResponse(call: Call, response: Response) {
+                    response.use { resp ->
+                        if (!resp.isSuccessful) {
+                            val errorMsg = "API error: ${resp.code} ${resp.message}"
+                            Log.e("ElevenLabsTtsProvider", errorMsg)
+                            handler.post { 
+                                onError?.invoke(errorMsg)
+                                onDone?.invoke() 
+                            }
+                            return
                         }
-                        Log.i("ElevenLabsTtsProvider", "Saved audio file size: ${cachedFile.length()} bytes")
 
-                        handler.post {
-                            routedAudioPlayer.playAudioFile(cachedFile, deviceAddress) {
-                                // Keep the file in cacheDir
-                                onDone?.invoke()
+                        val body = resp.body
+                        if (body == null) {
+                            handler.post { onDone?.invoke() }
+                            return
+                        }
+
+                        try {
+                            java.io.FileOutputStream(cachedFile).use { output ->
+                                body.byteStream().copyTo(output)
+                            }
+                            Log.i("ElevenLabsTtsProvider", "Saved audio file size: ${cachedFile.length()} bytes")
+
+                            handler.post {
+                                routedAudioPlayer.playAudioFile(cachedFile, deviceAddress) {
+                                    // Keep the file in cacheDir
+                                    onDone?.invoke()
+                                }
+                            }
+                        } catch (e: Exception) {
+                            Log.e("ElevenLabsTtsProvider", "Error saving/playing audio: ${e.message}")
+                            handler.post { 
+                                onError?.invoke(e.message ?: "Playback error")
+                                onDone?.invoke() 
                             }
                         }
-                    } catch (e: Exception) {
-                        Log.e("ElevenLabsTtsProvider", "Error saving/playing audio: ${e.message}")
-                        handler.post { 
-                            onError?.invoke(e.message ?: "Playback error")
-                            onDone?.invoke() 
+                    }
+                }
+            })
+        }
+        
+        if (delayedStart) {
+            Log.d("ElevenLabsTtsProvider", "Routing switched, waiting for communication device to clear...")
+            val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as android.media.AudioManager
+            
+            if (audioManager.communicationDevice == null) {
+                // Already clear, adding minimal hardware settle time
+                handler.postDelayed({ startAudio() }, 100)
+            } else {
+                var isReadyFired = false
+                val listener = object : android.media.AudioManager.OnCommunicationDeviceChangedListener {
+                    override fun onCommunicationDeviceChanged(device: android.media.AudioDeviceInfo?) {
+                        if (device == null && !isReadyFired) {
+                            isReadyFired = true
+                            audioManager.removeOnCommunicationDeviceChangedListener(this)
+                            Log.d("ElevenLabsTtsProvider", "Communication device cleared by OS, adding 50ms hardware settle time")
+                            handler.postDelayed({ startAudio() }, 50)
                         }
                     }
                 }
+                audioManager.addOnCommunicationDeviceChangedListener(context.mainExecutor, listener)
+                
+                // Fallback timeout in case OS does not fire the event
+                handler.postDelayed({
+                    if (!isReadyFired) {
+                        isReadyFired = true
+                        audioManager.removeOnCommunicationDeviceChangedListener(listener)
+                        Log.w("ElevenLabsTtsProvider", "Timeout waiting for communication device to clear, proceeding")
+                        startAudio()
+                    }
+                }, 400)
             }
-        })
+        } else {
+            startAudio()
+        }
     }
 
     override suspend fun prefetch(text: String) {
@@ -235,9 +280,10 @@ open class ElevenLabsTtsProvider @Inject constructor(
 
     private fun getIsoLanguageCode(languageTag: String?): String? {
         if (languageTag.isNullOrEmpty() || languageTag == "default" || languageTag == "Basis (System)") return null
-        // Extract first 2 letters (e.g., "de" from "de-DE")
-        val code = languageTag.split("-").firstOrNull()?.lowercase()
-        return if (code?.length == 2) code else null
+        // Normalize underscores to hyphens for Locale parser, then extract native base language
+        val normalizedTag = languageTag.replace("_", "-")
+        val code = Locale.forLanguageTag(normalizedTag).language
+        return code.takeIf { it.length == 2 }
     }
 
     init {

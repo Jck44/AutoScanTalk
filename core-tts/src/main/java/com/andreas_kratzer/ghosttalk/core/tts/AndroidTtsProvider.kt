@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import java.io.File
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
+import android.media.AudioManager
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -34,6 +35,7 @@ open class AndroidTtsProvider @Inject constructor(
     private val handler = Handler(Looper.getMainLooper())
     private var pendingLanguageTag: String? = null
     private var pendingVoiceName: String? = null
+    private var lastDeviceAddress: String? = "uninitialized"
 
     var fallbackListener: TextToSpeechHelper.OnVoiceFallbackListener? = null
 
@@ -139,31 +141,76 @@ open class AndroidTtsProvider @Inject constructor(
             return
         }
 
+        val isRoutingSwitched = lastDeviceAddress != "uninitialized" && lastDeviceAddress != deviceAddress
+        lastDeviceAddress = deviceAddress
+
         if (queueMode == TextToSpeech.QUEUE_FLUSH) {
             routedAudioPlayer.stopAll()
             playRequests.values.forEach { it.onDoneCallback?.let { cb -> handler.post { cb() } } }
             directCallbacks.values.forEach { handler.post { it() } }
             playRequests.clear()
             directCallbacks.clear()
+            // Flush the native TTS as well
+            tts?.speak("", TextToSpeech.QUEUE_FLUSH, null, "flush_${System.currentTimeMillis()}")
         }
         
-        if (deviceAddress == null) {
-            val utteranceId = "direct_${System.currentTimeMillis()}_${text.hashCode()}"
-            if (onDone != null) {
-                directCallbacks[utteranceId] = onDone
+        val delayedStart = isRoutingSwitched && queueMode == TextToSpeech.QUEUE_FLUSH
+
+        val startAudio = {
+            val actualQueueMode = if (delayedStart) TextToSpeech.QUEUE_ADD else queueMode
+            
+            if (deviceAddress == null) {
+                val utteranceId = "direct_${System.currentTimeMillis()}_${text.hashCode()}"
+                if (onDone != null) {
+                    directCallbacks[utteranceId] = onDone
+                }
+                tts?.speak(text, actualQueueMode, null, utteranceId)
+            } else {
+                val utteranceId = "routed_${System.currentTimeMillis()}_${text.hashCode()}"
+                val cacheFile = File(context.cacheDir, "$utteranceId.wav")
+                playRequests[utteranceId] = PlaybackRequest(cacheFile, deviceAddress, onDone)
+
+                val params = android.os.Bundle().apply {
+                    putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, utteranceId)
+                }
+                tts?.synthesizeToFile(text, params, cacheFile, utteranceId)
             }
-            tts?.speak(text, queueMode, null, utteranceId)
-            return
         }
 
-        val utteranceId = "routed_${System.currentTimeMillis()}_${text.hashCode()}"
-        val cacheFile = File(context.cacheDir, "$utteranceId.wav")
-        playRequests[utteranceId] = PlaybackRequest(cacheFile, deviceAddress, onDone)
-
-        val params = android.os.Bundle().apply {
-            putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, utteranceId)
+        if (delayedStart) {
+            Log.d("AndroidTtsProvider", "Routing switched, waiting for communication device to clear...")
+            val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+            
+            if (audioManager.communicationDevice == null) {
+                // Already clear, adding minimal hardware settle time Let the HAL process route drop
+                handler.postDelayed({ startAudio() }, 100)
+            } else {
+                var isReadyFired = false
+                val listener = object : AudioManager.OnCommunicationDeviceChangedListener {
+                    override fun onCommunicationDeviceChanged(device: android.media.AudioDeviceInfo?) {
+                        if (device == null && !isReadyFired) {
+                            isReadyFired = true
+                            audioManager.removeOnCommunicationDeviceChangedListener(this)
+                            Log.d("AndroidTtsProvider", "Communication device cleared by OS, adding 50ms hardware settle time")
+                            handler.postDelayed({ startAudio() }, 50)
+                        }
+                    }
+                }
+                audioManager.addOnCommunicationDeviceChangedListener(context.mainExecutor, listener)
+                
+                // Fallback timeout in case OS does not fire the event
+                handler.postDelayed({
+                    if (!isReadyFired) {
+                        isReadyFired = true
+                        audioManager.removeOnCommunicationDeviceChangedListener(listener)
+                        Log.w("AndroidTtsProvider", "Timeout waiting for communication device to clear, proceeding")
+                        startAudio()
+                    }
+                }, 400)
+            }
+        } else {
+            startAudio()
         }
-        tts?.synthesizeToFile(text, params, cacheFile, utteranceId)
     }
 
     override fun setLanguageAndVoice(languageTag: String?, voiceName: String?) {
