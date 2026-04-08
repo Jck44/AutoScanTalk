@@ -280,25 +280,34 @@ class SettingsViewModel @Inject constructor(
     fun syncNow() {
         _isBackupRestoreRunning.value = true
         _backupRestoreProgress.value = 0f
-        cloudSyncDelegate.performManualSync(com.andreas_kratzer.ghosttalk.core.cloud.domain.SyncMode.TWO_WAY, viewModelScope) { p, s -> 
-            handleCloudProgress(p, s)
-        }
+        cloudSyncDelegate.performManualSync(
+            mode = com.andreas_kratzer.ghosttalk.core.cloud.domain.SyncMode.TWO_WAY,
+            scope = viewModelScope,
+            onProgress = { p, s -> handleCloudProgress(p, s) },
+            onComplete = { finishBackupRestoreProgress() }
+        )
     }
     
     fun backupNow() {
         _isBackupRestoreRunning.value = true
         _backupRestoreProgress.value = 0f
-        cloudSyncDelegate.performManualSync(com.andreas_kratzer.ghosttalk.core.cloud.domain.SyncMode.BACKUP_ONLY, viewModelScope) { p, s -> 
-            handleCloudProgress(p, s)
-        }
+        cloudSyncDelegate.performManualSync(
+            mode = com.andreas_kratzer.ghosttalk.core.cloud.domain.SyncMode.BACKUP_ONLY,
+            scope = viewModelScope,
+            onProgress = { p, s -> handleCloudProgress(p, s) },
+            onComplete = { finishBackupRestoreProgress() }
+        )
     }
     
     fun restoreNow() {
         _isBackupRestoreRunning.value = true
         _backupRestoreProgress.value = 0f
-        cloudSyncDelegate.performManualSync(com.andreas_kratzer.ghosttalk.core.cloud.domain.SyncMode.RESTORE_ONLY, viewModelScope) { p, s -> 
-            handleCloudProgress(p, s)
-        }
+        cloudSyncDelegate.performManualSync(
+            mode = com.andreas_kratzer.ghosttalk.core.cloud.domain.SyncMode.RESTORE_ONLY,
+            scope = viewModelScope,
+            onProgress = { p, s -> handleCloudProgress(p, s) },
+            onComplete = { finishBackupRestoreProgress() }
+        )
     }
     
     fun fetchAvailableBackupsForImport() = cloudSyncDelegate.fetchAvailableBackupsForImport(viewModelScope)
@@ -681,6 +690,37 @@ class SettingsViewModel @Inject constructor(
             .onFailure { e -> onError("Fehler beim globalen Import: ${e.message}") }
     }
 
+    suspend fun importGlobalManualBackupZip(
+        inputStream: java.io.InputStream,
+        onSuccess: (String) -> Unit,
+        onError: (String) -> Unit
+    ) {
+        _isBackupRestoreRunning.value = true
+        _backupRestoreProgress.value = 0f
+        _backupRestoreStatus.value = application.getString(R.string.restore_progress_importing)
+
+        try {
+            val result = importExportManager.importCloudBackupFromZip(
+                inputStream = inputStream,
+                cloudFileId = null
+            ) { progress, status ->
+                _backupRestoreProgress.value = progress
+                _backupRestoreStatus.value = when {
+                    status == "Importing data..." || status == "Importing book..." -> application.getString(R.string.restore_progress_importing)
+                    status.startsWith("Extracting:") -> application.getString(R.string.restore_progress_extracting, status.substringAfter(": "))
+                    status == "Import complete." -> application.getString(R.string.restore_progress_complete)
+                    else -> status
+                }
+            }
+            result.onSuccess { bookId -> onSuccess(bookId) }
+                .onFailure { e -> onError("Fehler beim globalen ZIP-Import: ${e.message}") }
+        } finally {
+            delay(1000)
+            _isBackupRestoreRunning.value = false
+            _backupRestoreStatus.value = null
+        }
+    }
+
     fun onEditButtonFromHistory(pageId: String, buttonId: String) {
         viewModelScope.launch {
             _showActionHistoryDialog.value = false
@@ -885,14 +925,13 @@ class SettingsViewModel @Inject constructor(
             status == "Backup complete." -> application.getString(R.string.backup_progress_complete)
             else -> status
         }
-        
-        // Hide dialog when complete
-        if (progress >= 1.0f) {
-            viewModelScope.launch {
-                delay(1000)
-                _isBackupRestoreRunning.value = false
-                _backupRestoreStatus.value = null
-            }
+    }
+
+    private fun finishBackupRestoreProgress() {
+        viewModelScope.launch {
+            delay(1000)
+            _isBackupRestoreRunning.value = false
+            _backupRestoreStatus.value = null
         }
     }
 

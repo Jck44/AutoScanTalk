@@ -364,15 +364,27 @@ private fun handleLocalImport(
 
             if (isZip) {
                 context.contentResolver.openInputStream(uri)?.use { inputStream ->
-                    viewModel.importLocalBackupZip(
-                        inputStream = inputStream,
-                        onSuccess = {
-                            Toast.makeText(context, context.getString(CoreR.string.page_import_success), Toast.LENGTH_SHORT).show()
-                        },
-                        onError = { error ->
-                            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
-                        }
-                    )
+                    if (isGlobal) {
+                        viewModel.importGlobalManualBackupZip(
+                            inputStream = inputStream,
+                            onSuccess = { _ ->
+                                Toast.makeText(context, "Buch erfolgreich importiert.", Toast.LENGTH_SHORT).show()
+                            },
+                            onError = { error ->
+                                Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+                            }
+                        )
+                    } else {
+                        viewModel.importLocalBackupZip(
+                            inputStream = inputStream,
+                            onSuccess = {
+                                Toast.makeText(context, context.getString(CoreR.string.page_import_success), Toast.LENGTH_SHORT).show()
+                            },
+                            onError = { error ->
+                                Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+                            }
+                        )
+                    }
                 }
             } else {
                 // Legacy JSON import

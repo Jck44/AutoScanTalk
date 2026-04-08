@@ -101,29 +101,34 @@ class CloudSyncSettingsDelegate @Inject constructor(
     fun performManualSync(
         mode: SyncMode,
         scope: CoroutineScope,
-        onProgress: (Float, String) -> Unit = { _, _ -> }
+        onProgress: (Float, String) -> Unit = { _, _ -> },
+        onComplete: () -> Unit = {}
     ) {
         scope.launch {
             _isSyncing.value = true
             
-            when (val result = performManualSyncUseCase.execute(mode, onProgress)) {
-                is PerformManualSyncUseCase.Result.Success -> {
-                    val messageRes = when (mode) {
-                        SyncMode.BACKUP_ONLY -> R.string.settings_cloud_backup_success
-                        SyncMode.RESTORE_ONLY -> R.string.settings_cloud_restore_success
-                        SyncMode.TWO_WAY -> R.string.settings_cloud_sync_success
+            try {
+                when (val result = performManualSyncUseCase.execute(mode, onProgress)) {
+                    is PerformManualSyncUseCase.Result.Success -> {
+                        val messageRes = when (mode) {
+                            SyncMode.BACKUP_ONLY -> R.string.settings_cloud_backup_success
+                            SyncMode.RESTORE_ONLY -> R.string.settings_cloud_restore_success
+                            SyncMode.TWO_WAY -> R.string.settings_cloud_sync_success
+                        }
+                        Toast.makeText(application, messageRes, Toast.LENGTH_LONG).show()
                     }
-                    Toast.makeText(application, messageRes, Toast.LENGTH_LONG).show()
+                    is PerformManualSyncUseCase.Result.RecoverableAuth -> {
+                        _authIntentFlow.emit(result.intent)
+                    }
+                    is PerformManualSyncUseCase.Result.Error -> {
+                        val errorMsg = application.getString(R.string.settings_cloud_sync_error, result.message)
+                        Toast.makeText(application, errorMsg, Toast.LENGTH_LONG).show()
+                    }
                 }
-                is PerformManualSyncUseCase.Result.RecoverableAuth -> {
-                    _authIntentFlow.emit(result.intent)
-                }
-                is PerformManualSyncUseCase.Result.Error -> {
-                    val errorMsg = application.getString(R.string.settings_cloud_sync_error, result.message)
-                    Toast.makeText(application, errorMsg, Toast.LENGTH_LONG).show()
-                }
+            } finally {
+                _isSyncing.value = false
+                onComplete()
             }
-            _isSyncing.value = false
         }
     }
 

@@ -55,8 +55,10 @@ class SettingsRoundTripTest {
             "autoStartScanning", "scanDelayMillis", "resumeScanningFromStart",
             "switchActivationKey", "volumeKeysActivate", "defaultScanPattern",
             "isSmartPredictionEnabled", "geminiRedoPrediction", "geminiTimeout",
-            "isGeminiEnabled", "useLocalGenerativeAi", "isCloudSyncEnabled",
-            "syncIntervalMinutes", "syncMode", "ttsLanguage", "ttsVoiceName",
+            "isGeminiEnabled", "useLocalGenerativeAi",
+            // Note: isCloudSyncEnabled, syncIntervalMinutes, syncMode are intentionally
+            // excluded from import (device-specific cloud sync settings)
+            "ttsLanguage", "ttsVoiceName",
             "smartPredictionDelay", "keepScreenOnUserMode", "userModeScreenBehavior",
             "themeMode", "securityPinTimeoutMinutes", "isPinRequiredForDeletion",
             "isBiometricEnabled", "isSecurityRequiredForEdit", "isSecurityRequiredForSettings",

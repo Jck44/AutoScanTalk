@@ -116,9 +116,11 @@ class SettingsMapper @Inject constructor(
         data.geminiTimeout?.let { settingsRepository.geminiTimeout = it }
         data.isGeminiEnabled?.let { settingsRepository.isGeminiEnabled = it }
         data.useLocalGenerativeAi?.let { settingsRepository.useLocalGenerativeAi = it }
-        data.isCloudSyncEnabled?.let { settingsRepository.isCloudSyncEnabled = it }
-        data.syncIntervalMinutes?.let { settingsRepository.syncIntervalMinutes = it }
-        data.syncMode?.let { settingsRepository.syncMode = it }
+        // Cloud sync settings are device-specific and should never be overwritten by an import.
+        // They are still exported for diagnostic/backup visibility but intentionally skipped here.
+        // data.isCloudSyncEnabled?.let { settingsRepository.isCloudSyncEnabled = it }
+        // data.syncIntervalMinutes?.let { settingsRepository.syncIntervalMinutes = it }
+        // data.syncMode?.let { settingsRepository.syncMode = it }
         data.ttsLanguage?.let { settingsRepository.ttsLanguage = it }
         data.ttsVoiceName?.let { settingsRepository.ttsVoiceName = it }
         data.smartPredictionDelay?.let { settingsRepository.smartPredictionDelay = it }
