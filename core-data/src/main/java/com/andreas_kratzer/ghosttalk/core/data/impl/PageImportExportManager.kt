@@ -238,12 +238,18 @@ class PageImportExportManager @Inject constructor(
                         buttonAction = finalAction
                     )
                     
-                    // Spatial logic: map index from source columns to 7 columns
-                    val sourceCols = importPage.columns.coerceAtLeast(1)
-                    val row = (importButton.index / sourceCols).toInt()
-                    val col = (importButton.index % sourceCols).toInt()
+                    // Spatial logic: if it's a GhostTalk backup, the index is already a 7x7 grid index.
+                    // If it's from GoTalk Now or others, map index from source columns to 7 columns.
+                    val isGhostTalk = importData.appName == "GhostTalk" || importData.ghosttalk_import_version != null
+                    val globalIndex = if (isGhostTalk) {
+                        importButton.index.toInt()
+                    } else {
+                        val sourceCols = importPage.columns.coerceAtLeast(1)
+                        val row = (importButton.index / sourceCols).toInt()
+                        val col = (importButton.index % sourceCols).toInt()
+                        row * 7 + col
+                    }
                     
-                    val globalIndex = row * 7 + col
                     if (globalIndex < buttons.size) {
                         buttons[globalIndex] = config
                     }

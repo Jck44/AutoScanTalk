@@ -45,7 +45,11 @@ class ActionMapper @Inject constructor() {
                 volumeValue = action.volumeValue,
                 contactName = action.contactName,
                 contactPhone = action.contactPhone,
-                messageText = action.messageText
+                messageText = action.messageText,
+                includeWeekday = action.includeWeekday,
+                prefixText = action.prefixText,
+                suffixText = action.suffixText,
+                offsetValue = action.offsetValue
             )
             is WeatherButtonAction -> ImportAction(type = "WEATHER")
             is SmartHomeButtonAction -> ImportAction(
@@ -85,7 +89,11 @@ class ActionMapper @Inject constructor() {
                     volumeValue = importAction.volumeValue,
                     contactName = importAction.contactName,
                     contactPhone = importAction.contactPhone,
-                    messageText = importAction.messageText
+                    messageText = importAction.messageText,
+                    includeWeekday = importAction.includeWeekday ?: false,
+                    prefixText = importAction.prefixText,
+                    suffixText = importAction.suffixText,
+                    offsetValue = importAction.offsetValue ?: 0
                 )
             }
             "WEATHER" -> WeatherButtonAction()

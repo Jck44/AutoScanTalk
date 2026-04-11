@@ -220,4 +220,7 @@
     <string name="action_previous_action">Vorherige Aktion</string>
     <string name="action_previous_action_rank">Aktions-Nummer (1=letzte, 2=vorletzte...)</string>
     <string name="action_previous_action_empty">Keine vorherige Aktion gefunden</string>
+    <string name="dialog_discard_changes_title">Änderungen verwerfen?</string>
+    <string name="dialog_discard_changes_message">Es gibt ungespeicherte Änderungen. Möchtest du diese wirklich verwerfen?</string>
+    <string name="action_discard">Verwerfen</string>
 </resources>

@@ -198,4 +198,7 @@
     <string name="action_previous_action">Previous Action</string>
     <string name="action_previous_action_rank">Action Rank (1=last, 2=second to last...)</string>
     <string name="action_previous_action_empty">No previous action found</string>
+    <string name="dialog_discard_changes_title">Discard changes?</string>
+    <string name="dialog_discard_changes_message">You have unsaved changes. Do you really want to discard them?</string>
+    <string name="action_discard">Discard</string>
 </resources>

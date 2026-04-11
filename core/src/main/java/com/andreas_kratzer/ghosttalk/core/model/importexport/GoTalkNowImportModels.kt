@@ -127,6 +127,10 @@ data class ImportAction(
     val contactName: String? = null,
     val contactPhone: String? = null,
     val messageText: String? = null,
+    val includeWeekday: Boolean? = null,
+    val prefixText: String? = null,
+    val suffixText: String? = null,
+    val offsetValue: Int? = null,
     
     // Unified Smart Home
     val smartHomeProvider: String? = null,
