@@ -26,6 +26,8 @@
     <string name="action_cancel">Cancel</string>
     <string name="action_delete">Delete</string>
     <string name="action_search">Search…</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_refresh">Refresh</string>
 
     <string name="error_book_name_required">Please enter a name for the book.</string>
     <string name="error_page_name_required">Please enter a name for the page.</string>
@@ -110,6 +112,22 @@
     <string name="button_smart_prediction_rank_label">Prediction Rank (1 = Most Likely)</string>
     <string name="button_gemini_prompt_field">Gemini Prompt (Command)</string>
     <string name="button_gemini_prompt_hint">What should Gemini do?</string>
+
+    <!-- Navigation & Smart Home Extra Strings -->
+    <string name="button_navigation_search_label">Search Page</string>
+    <string name="button_navigation_select_page">Select Page</string>
+    <string name="page_create_new">Create New Page</string>
+    <string name="button_google_home_provider_label">Provider</string>
+    <string name="button_google_home_intent_onoff">On / Off</string>
+    <string name="button_google_home_intent_brightness">Brightness</string>
+    <string name="button_google_home_intent_color">Color</string>
+    <string name="button_google_home_intent_thermostat">Thermostat</string>
+    <string name="button_google_home_intent_label">Command</string>
+    <string name="button_google_home_intent_select">Select Command</string>
+    <string name="button_google_home_value_onoff_label">Status (0 = Off, 1 = On)</string>
+    <string name="button_google_home_value_onoff_hint">0 or 1</string>
+    <string name="button_google_home_value_number_label">Value</string>
+    <string name="button_google_home_value_number_hint">e.g. 50</string>
 
     <string name="button_play_as_cue">Play as Auditory cue</string>
     <string name="button_google_home_device_label">Device</string>
@@ -196,7 +214,7 @@
     <string name="sort_active_first">Active first</string>
     <string name="sort_inactive_first">Inactive first</string>
     <string name="action_previous_action">Previous Action</string>
-    <string name="action_previous_action_rank">Action Rank (1=last, 2=second to last...)</string>
+    <string name="action_previous_action_rank">Action Rank (1=last, 2=second to last…)</string>
     <string name="action_previous_action_empty">No previous action found</string>
     <string name="dialog_discard_changes_title">Discard changes?</string>
     <string name="dialog_discard_changes_message">You have unsaved changes. Do you really want to discard them?</string>
