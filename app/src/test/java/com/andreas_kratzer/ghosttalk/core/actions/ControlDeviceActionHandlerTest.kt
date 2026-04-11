@@ -262,4 +262,57 @@ class ControlDeviceActionHandlerTest {
         assert(!ssml.contains("Zeit:  "))
         assert(!ssml.contains("  jetzt"))
     }
+
+    @Test
+    fun `handle READ_CALENDAR_ENTRIES reads next events and speaks them`() {
+        val action = ControlDeviceButtonAction(
+            actionType = DeviceActionType.READ_CALENDAR_ENTRIES,
+            offsetValue = 2
+        )
+        val config = ButtonConfig(id = "b1", label = "Calendar", buttonAction = action, auditoryCue = null)
+        
+        val contentResolver = mockk<android.content.ContentResolver>(relaxed = true)
+        every { context.contentResolver } returns contentResolver
+        
+        val cursor = mockk<android.database.Cursor>(relaxed = true)
+        every { contentResolver.query(any(), any(), any(), any(), any()) } returns cursor
+        
+        // Mock 2 events
+        every { cursor.moveToNext() } returnsMany listOf(true, true, false)
+        
+        // Mock column indices
+        every { cursor.getColumnIndex(android.provider.CalendarContract.Events.TITLE) } returns 0
+        every { cursor.getColumnIndex(android.provider.CalendarContract.Events.DTSTART) } returns 1
+        every { cursor.getColumnIndex(android.provider.CalendarContract.Events.DTEND) } returns 2
+        every { cursor.getColumnIndex(android.provider.CalendarContract.Events.ALL_DAY) } returns 3
+        
+        // Use a list to return different values for different calls if needed, 
+        // but here we just need to return title and times correctly for each row.
+        // Mocking getString(0) to return different values on subsequent calls
+        var callCount = 0
+        every { cursor.getString(0) } answers { 
+            if (callCount == 0) "Meeting 1" else "Meeting 2" 
+        }
+        every { cursor.getLong(1) } answers { 
+            if (callCount == 0) 1712836800000L else 1712844000000L 
+        }
+        every { cursor.getLong(2) } answers { 
+            if (callCount == 0) 1712840400000L else 1712847600000L 
+        }
+        every { cursor.getInt(3) } answers { 
+            val res = 0
+            callCount++
+            res
+        }
+
+        every { ttsProxy.isReady } returns true
+        val ssmlSlot = slot<String>()
+        every { ttsProxy.speakRouted(capture(ssmlSlot), any(), any()) } just Runs
+        
+        handler.handle(config, action, 1) {}
+        
+        val ssml = ssmlSlot.captured
+        assert(ssml.contains("Meeting 1"))
+        assert(ssml.contains("Meeting 2"))
+    }
 }

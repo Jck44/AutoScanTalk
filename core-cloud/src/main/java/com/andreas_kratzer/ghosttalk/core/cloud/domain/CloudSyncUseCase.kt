@@ -158,7 +158,11 @@ class CloudSyncUseCase @Inject constructor(
 
             when (syncMode) {
                 SyncMode.BACKUP_ONLY -> {
-                    logger.d(TAG, "BACKUP_ONLY mode. Overwriting/Migrating to remote ZIP...")
+                    if (remoteZipFile != null) {
+                        syncLogProvider.addLogEntry("BACKUP_ONLY: Cloud-Sicherung aktualisiert", bookId, book.name)
+                    } else {
+                        syncLogProvider.addLogEntry("BACKUP_ONLY: Cloud-Sicherung neu erstellt", bookId, book.name)
+                    }
                     success = if (remoteZipFile != null) {
                         helper.updateFile(remoteZipFile.id, tempFile, "application/zip", book.name) { p ->
                             onProgress(0.3f + p * 0.7f, "Uploading to Drive...")
@@ -169,10 +173,16 @@ class CloudSyncUseCase @Inject constructor(
                         } != null
                     }
                     logger.d(TAG, "Update/Migration result: $success")
+                    if (!success) {
+                        syncLogProvider.addLogEntry("BACKUP_ONLY: Sicherung fehlgeschlagen", bookId, book.name, isError = true)
+                    }
                 }
                 SyncMode.RESTORE_ONLY -> {
                     logger.d(TAG, "RESTORE_ONLY mode. Downloading and importing...")
                     success = downloadAndImport(helper, remoteFile.id, remoteFile.name, book, remoteLastModified, onProgress)
+                    if (!success) {
+                        syncLogProvider.addLogEntry("RESTORE_ONLY: Wiederherstellung fehlgeschlagen", bookId, book.name, isError = true)
+                    }
                 }
                 SyncMode.TWO_WAY -> {
                     if (localLastModified > remoteLastModified + 2000) { // 2s Grace period
@@ -215,135 +225,144 @@ class CloudSyncUseCase @Inject constructor(
         success
     }
 
-    suspend fun getAvailableBackups(drive: Drive): List<RemoteBackupInfo> = withContext(Dispatchers.IO) {
-        logger.d(TAG, "Fetching available backups...")
-        val helper = DriveServiceHelper(drive)
-        val folderId = helper.findFolder(FOLDER_NAME) ?: return@withContext emptyList()
-        
-        val files = helper.listFiles(folderId)
-        logger.d(TAG, "Found ${files.size} total files in sync folder.")
-        
-        files.mapNotNull { file ->
-            try {
-                val bookName = file.description ?: if (file.name.endsWith(".json")) {
-                    logger.d(TAG, "Processing metadata for legacy JSON file: ${file.name}")
-                    val downloadFile = File(context.cacheDir, "metadata_${file.name}")
-                    if (helper.downloadFile(file.id, downloadFile)) {
-                        val json = downloadFile.readText()
-                        val name = importExportManager.extractBookNameFromJson(json) ?: "Unbenanntes Buch"
-                        downloadFile.delete()
-                        name
-                    } else null
-                } else {
-                    file.name // Fallback to filename for ZIPs without description
-                }
-                
-                if (bookName != null) {
-                    RemoteBackupInfo(
-                        fileId = file.id,
-                        fileName = file.name,
-                        bookName = bookName,
-                        lastModified = file.modifiedTime?.value ?: 0L
-                    )
-                } else null
-            } catch (e: Exception) {
-                logger.e(TAG, "Error processing backup info for file ${file.id}", e)
-                null
-            }
-        }.sortedByDescending { it.lastModified }
-    }
+suspend fun getAvailableBackups(drive: Drive): List<RemoteBackupInfo> = withContext(Dispatchers.IO) {
+logger.d(TAG, "Fetching available backups...")
+val helper = DriveServiceHelper(drive)
+val folderId = helper.findFolder(FOLDER_NAME) ?: return@withContext emptyList()
 
-    private suspend fun downloadAndImport(
-        helper: DriveServiceHelper,
-        remoteFileId: String,
-        fileName: String,
-        book: com.andreas_kratzer.ghosttalk.core.model.Book,
-        remoteLastModified: Long,
-        onProgress: (Float, String) -> Unit
-    ): Boolean {
-        logger.d(TAG, "downloadAndImport: Starting for $remoteFileId ($fileName)")
-        val downloadFile = File(context.cacheDir, "download_$fileName")
-        return if (helper.downloadFile(remoteFileId, downloadFile) { p -> 
-            onProgress(p * 0.7f, "Downloading from Drive...") // Download is 0-70%
-        }) {
-            logger.d(TAG, "Download successful. File size: ${downloadFile.length()}.")
-            
-            val result = if (fileName.endsWith(".zip")) {
-                downloadFile.inputStream().use { inputStream ->
-                    importExportManager.importFromZip(
-                        inputStream = inputStream,
-                        bookId = book.id,
-                        regenerateIds = false,
-                        restoreSyncSettings = false
-                    ) { p, s -> 
-                        onProgress(0.7f + p * 0.3f, s) // ZIP import is 70-100%
-                    }
-                }
-            } else {
-                val remoteJson = try {
-                    downloadFile.readText()
-                } catch (e: Exception) {
-                    logger.e(TAG, "Failed to read downloaded JSON file", e)
-                    return false
-                }
-                importExportManager.importFromJson(remoteJson, book.id, restoreSyncSettings = false)
-            }
-            
-            downloadFile.delete()
+val files = helper.listFiles(folderId)
+logger.d(TAG, "Found ${files.size} total files in sync folder.")
 
-            if (result.isSuccess) {
-                logger.d(TAG, "Import successful. Updating local timestamp to $remoteLastModified")
-                syncLogProvider.addLogEntry("Cloud-Version war neuer -> Lokal aktualisiert (${if (fileName.endsWith(".zip")) "ZIP" else "JSON"})", book.id, book.name)
-                bookRepository.updateLastModified(book.id, remoteLastModified)
-                true
-            } else {
-                logger.e(TAG, "Import failed: ${result.exceptionOrNull()?.message}")
-                syncLogProvider.addLogEntry("Import der Cloud-Datei fehlgeschlagen: ${result.exceptionOrNull()?.message}", book.id, book.name, isError = true)
-                false
-            }
+files.mapNotNull { file ->
+    try {
+        val bookName = file.description ?: if (file.name.endsWith(".json")) {
+            logger.d(TAG, "Processing metadata for legacy JSON file: ${file.name}")
+            val downloadFile = File(context.cacheDir, "metadata_${file.name}")
+            if (helper.downloadFile(file.id, downloadFile)) {
+                val json = downloadFile.readText()
+                val name = importExportManager.extractBookNameFromJson(json) ?: "Unbenanntes Buch"
+                downloadFile.delete()
+                name
+            } else null
         } else {
-            logger.e(TAG, "Failed to download remote file.")
-            false
+            file.name // Fallback to filename for ZIPs without description
         }
+        
+        if (bookName != null) {
+            RemoteBackupInfo(
+                fileId = file.id,
+                fileName = file.name,
+                bookName = bookName,
+                lastModified = file.modifiedTime?.value ?: 0L
+            )
+        } else null
+    } catch (e: Exception) {
+        logger.e(TAG, "Error processing backup info for file ${file.id}", e)
+        null
+    }
+}.sortedByDescending { it.lastModified }
+}
+
+private suspend fun downloadAndImport(
+helper: DriveServiceHelper,
+remoteFileId: String,
+fileName: String,
+book: com.andreas_kratzer.ghosttalk.core.model.Book,
+remoteLastModified: Long,
+onProgress: (Float, String) -> Unit
+): Boolean {
+logger.d(TAG, "downloadAndImport: Starting for $remoteFileId ($fileName)")
+val downloadFile = File(context.cacheDir, "download_$fileName")
+return if (helper.downloadFile(remoteFileId, downloadFile) { p -> 
+    onProgress(p * 0.7f, "Downloading from Drive...") // Download is 0-70%
+}) {
+    logger.d(TAG, "Download successful. File size: ${downloadFile.length()}.")
+    
+    val result = if (fileName.endsWith(".zip")) {
+        downloadFile.inputStream().use { inputStream ->
+            importExportManager.importFromZip(
+                inputStream = inputStream,
+                bookId = book.id,
+                regenerateIds = false,
+                restoreSyncSettings = false
+            ) { p, s -> 
+                onProgress(0.7f + p * 0.3f, s) // ZIP import is 70-100%
+            }
+        }
+    } else {
+        val remoteJson = try {
+            downloadFile.readText()
+        } catch (e: Exception) {
+            logger.e(TAG, "Failed to read downloaded JSON file", e)
+            return false
+        }
+        importExportManager.importFromJson(remoteJson, book.id, restoreSyncSettings = false)
     }
     
-    suspend fun importCloudBackup(
-        drive: Drive, 
-        fileId: String, 
-        fileName: String,
-        onProgress: (Float, String) -> Unit = { _, _ -> }
-    ): Result<String> = withContext(Dispatchers.IO) {
-        logger.d(TAG, "importCloudBackup: Starting for $fileName (ID: $fileId)")
-        val helper = DriveServiceHelper(drive)
-        val tempFile = File(context.cacheDir, "import_cloud_$fileId${if (fileName.endsWith(".zip")) ".zip" else ".json"}")
-        
-        try {
-            if (helper.downloadFile(fileId, tempFile) { p -> 
-                onProgress(p * 0.7f, "Downloading from Drive...")
-            }) {
-                val result: Result<String> = if (fileName.endsWith(".zip")) {
-                    tempFile.inputStream().use { inputStream ->
-                        importExportManager.importCloudBackupFromZip(
-                            inputStream = inputStream,
-                            cloudFileId = fileId
-                        ) { p, s -> 
-                            onProgress(0.7f + p * 0.3f, s)
-                        }
-                    }
-                } else {
-                    val json = tempFile.readText()
-                    importExportManager.importCloudBackup(json, fileId)
-                }
-                tempFile.delete()
-                result
-            } else {
-                logger.e(TAG, "Failed to download remote file $fileId")
-                Result.failure<String>(Exception("Download der Cloud-Datei fehlgeschlagen."))
-            }
-        } catch (e: Exception) {
-            logger.e(TAG, "Error in importCloudBackup", e)
-            tempFile.delete()
-            Result.failure<String>(e)
-        }
+    downloadFile.delete()
+
+    if (result.isSuccess) {
+        logger.d(TAG, "Import successful. Updating local timestamp to $remoteLastModified")
+        syncLogProvider.addLogEntry("Cloud-Version war neuer -> Lokal aktualisiert (${if (fileName.endsWith(".zip")) "ZIP" else "JSON"})", book.id, book.name)
+        bookRepository.updateLastModified(book.id, remoteLastModified)
+        true
+    } else {
+        logger.e(TAG, "Import failed: ${result.exceptionOrNull()?.message}")
+        syncLogProvider.addLogEntry("Import der Cloud-Datei fehlgeschlagen: ${result.exceptionOrNull()?.message}", book.id, book.name, isError = true)
+        false
     }
+} else {
+    logger.e(TAG, "Failed to download remote file.")
+    false
+}
+}
+
+suspend fun importCloudBackup(
+drive: Drive, 
+fileId: String, 
+fileName: String,
+onProgress: (Float, String) -> Unit = { _, _ -> }
+): Result<String> = withContext(Dispatchers.IO) {
+logger.d(TAG, "importCloudBackup: Starting for $fileName (ID: $fileId)")
+val helper = DriveServiceHelper(drive)
+val tempFile = File(context.cacheDir, "import_cloud_$fileId${if (fileName.endsWith(".zip")) ".zip" else ".json"}")
+
+try {
+    if (helper.downloadFile(fileId, tempFile) { p -> 
+        onProgress(p * 0.7f, "Downloading from Drive...")
+    }) {
+        val result: Result<String> = if (fileName.endsWith(".zip")) {
+            tempFile.inputStream().use { inputStream ->
+                importExportManager.importCloudBackupFromZip(
+                    inputStream = inputStream,
+                    cloudFileId = fileId
+                ) { p, s -> 
+                    onProgress(0.7f + p * 0.3f, s)
+                }
+            }
+        } else {
+            val json = tempFile.readText()
+            importExportManager.importCloudBackup(json, fileId)
+        }
+        tempFile.delete()
+        
+        if (result.isSuccess) {
+            syncLogProvider.addLogEntry("Cloud-Import erfolgreich: $fileName", null, null)
+        } else {
+            syncLogProvider.addLogEntry("Cloud-Import fehlgeschlagen: ${result.exceptionOrNull()?.message}", null, null, isError = true)
+        }
+        
+        result
+    } else {
+        logger.e(TAG, "Failed to download remote file $fileId")
+        syncLogProvider.addLogEntry("Download für Cloud-Import fehlgeschlagen", null, null, isError = true)
+        Result.failure<String>(Exception("Download der Cloud-Datei fehlgeschlagen."))
+    }
+} catch (e: Exception) {
+    logger.e(TAG, "Error in importCloudBackup", e)
+    syncLogProvider.addLogEntry("Fehler beim Cloud-Import: ${e.message}", null, null, isError = true)
+    tempFile.delete()
+    Result.failure<String>(e)
+}
+}
 }

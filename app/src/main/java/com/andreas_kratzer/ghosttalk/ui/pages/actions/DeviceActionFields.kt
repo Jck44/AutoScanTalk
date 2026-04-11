@@ -81,6 +81,7 @@ fun DeviceActionFields(
         DeviceActionType.READ_BATTERY to stringResource(R.string.button_device_control_battery),
         DeviceActionType.READ_DATE to stringResource(R.string.button_device_control_date),
         DeviceActionType.READ_TIME to stringResource(R.string.button_device_control_time),
+        DeviceActionType.READ_CALENDAR_ENTRIES to stringResource(R.string.button_device_control_calendar),
         DeviceActionType.TOGGLE_SCANNING to stringResource(R.string.button_device_control_toggle_scanning)
     )
 
@@ -128,6 +129,13 @@ fun DeviceActionFields(
                                     arrayOf(Manifest.permission.SEND_SMS, Manifest.permission.READ_CONTACTS)
                                 )
                             }
+
+                            // Permission check for Calendar
+                            if (type == DeviceActionType.READ_CALENDAR_ENTRIES) {
+                                permissionLauncher.launch(
+                                    arrayOf(Manifest.permission.READ_CALENDAR)
+                                )
+                            }
                         }
                     )
                 }
@@ -165,7 +173,7 @@ fun DeviceActionFields(
         }
 
         // Date & Time parameters
-        if (selectedType == DeviceActionType.READ_DATE || selectedType == DeviceActionType.READ_TIME) {
+        if (selectedType == DeviceActionType.READ_DATE || selectedType == DeviceActionType.READ_TIME || selectedType == DeviceActionType.READ_CALENDAR_ENTRIES) {
             OutlinedTextField(
                 value = prefixText,
                 onValueChange = onPrefixTextChange,
@@ -204,11 +212,24 @@ fun DeviceActionFields(
                         if (!it.isFocused) onAutoSave()
                     }
                 )
-            } else {
+            } else if (selectedType == DeviceActionType.READ_TIME) {
                 OutlinedTextField(
                     value = offsetValue,
                     onValueChange = { if (it.isEmpty() || it == "-" || it.all { c -> c.isDigit() || c == '-' }) onOffsetValueChange(it) },
                     label = { Text(stringResource(R.string.button_device_control_offset_minutes_label)) },
+                    shape = MaterialTheme.shapes.large,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth().onFocusChanged { 
+                        if (!it.isFocused) onAutoSave()
+                    }
+                )
+            } else {
+                // Calendar Entries Count
+                OutlinedTextField(
+                    value = offsetValue,
+                    onValueChange = { if (it.isEmpty() || it.all { c -> c.isDigit() }) onOffsetValueChange(it) },
+                    label = { Text(stringResource(R.string.button_device_control_calendar_count_label)) },
+                    placeholder = { Text("1") },
                     shape = MaterialTheme.shapes.large,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth().onFocusChanged { 

@@ -74,6 +74,7 @@ class ControlDeviceActionHandler @Inject constructor(
             DeviceActionType.READ_BATTERY -> handleReadBattery(buttonConfig, deviceAction, executionId, onFinish)
             DeviceActionType.READ_TIME -> handleReadTime(buttonConfig, deviceAction, executionId, onFinish)
             DeviceActionType.READ_DATE -> handleReadDate(buttonConfig, deviceAction, executionId, onFinish)
+            DeviceActionType.READ_CALENDAR_ENTRIES -> handleReadCalendarEntries(buttonConfig, deviceAction, executionId, onFinish)
 
             DeviceActionType.TOGGLE_SCANNING -> {
                 handleToggleScanning(action, buttonConfig.label, executionId, onFinish)
@@ -402,5 +403,68 @@ class ControlDeviceActionHandler @Inject constructor(
         actionLogger.log(msg, action, label)
         
         onFinish(executionId)
+    }
+
+    private fun handleReadCalendarEntries(config: ButtonConfig, action: ControlDeviceButtonAction, executionId: Int, onFinish: (Int) -> Unit) {
+        val count = action.offsetValue.coerceAtLeast(1)
+        val resolver = context.contentResolver
+        val uri = android.provider.CalendarContract.Events.CONTENT_URI
+        val now = System.currentTimeMillis()
+        
+        val projection = arrayOf(
+            android.provider.CalendarContract.Events.TITLE,
+            android.provider.CalendarContract.Events.DTSTART,
+            android.provider.CalendarContract.Events.DTEND,
+            android.provider.CalendarContract.Events.ALL_DAY
+        )
+        
+        val selection = "${android.provider.CalendarContract.Events.DTSTART} >= ?"
+        val selectionArgs = arrayOf(now.toString())
+        val sortOrder = "${android.provider.CalendarContract.Events.DTSTART} ASC"
+        
+        val messages = mutableListOf<String>()
+        
+        try {
+            resolver.query(uri, projection, selection, selectionArgs, sortOrder)?.use { cursor ->
+                var found = 0
+                while (cursor.moveToNext() && found < count) {
+                    val titleIdx = cursor.getColumnIndex(android.provider.CalendarContract.Events.TITLE)
+                    val startIdx = cursor.getColumnIndex(android.provider.CalendarContract.Events.DTSTART)
+                    val endIdx = cursor.getColumnIndex(android.provider.CalendarContract.Events.DTEND)
+                    val allDayIdx = cursor.getColumnIndex(android.provider.CalendarContract.Events.ALL_DAY)
+                    
+                    val title = if (titleIdx >= 0) cursor.getString(titleIdx) else "Unbekannt"
+                    val start = if (startIdx >= 0) cursor.getLong(startIdx) else 0L
+                    val end = if (endIdx >= 0) cursor.getLong(endIdx) else 0L
+                    val allDay = if (allDayIdx >= 0) cursor.getInt(allDayIdx) == 1 else false
+                    
+                    val dateStr = java.text.SimpleDateFormat("dd. MMMM", java.util.Locale.getDefault()).format(java.util.Date(start))
+                    val timeStr = if (allDay) {
+                         "ganztägig"
+                    } else {
+                        val stTime = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date(start))
+                        val enTime = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date(end))
+                        "von $stTime bis $enTime Uhr"
+                    }
+                    
+                    messages.add("Am $dateStr, $timeStr: $title")
+                    found++
+                }
+            }
+        } catch (e: Exception) {
+            actionLogger.log("Fehler beim Kalenderzugriff: ${e.message}", action, config.label)
+        }
+
+        if (messages.isEmpty()) {
+            val msg = "Keine anstehenden Kalendereinträge gefunden."
+            speakRoutedWithLogging("<speak>$msg</speak>", msg, config, action, executionId, onFinish)
+        } else {
+            val prefix = action.prefixText?.takeIf { it.isNotBlank() }?.let { if (it.endsWith(" ")) it else "$it " } ?: ""
+            val suffix = action.suffixText?.takeIf { it.isNotBlank() }?.let { if (it.startsWith(" ")) it else " $it" } ?: ""
+            
+            val plain = prefix + messages.joinToString(". ") + suffix
+            val ssml = "<speak>$plain</speak>"
+            speakRoutedWithLogging(ssml, plain, config, action, executionId, onFinish)
+        }
     }
 }

@@ -13,6 +13,7 @@ import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.core.data.GetPagesUseCase
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.data.export.PageImportExportProvider
+import com.andreas_kratzer.ghosttalk.core.data.SyncLogProvider
 import com.andreas_kratzer.ghosttalk.core.model.Book
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.tts.AudioCacheRepository
@@ -64,7 +65,8 @@ class SettingsViewModel @Inject constructor(
     private val hueManager: PhilipsHueManager,
     private val ttsHelper: TextToSpeechHelper,
     private val audioCacheRepository: AudioCacheRepository,
-    private val pageRepository: PageRepository
+    private val pageRepository: PageRepository,
+    private val syncLogProvider: SyncLogProvider
 ) : AndroidViewModel(application) {
 
     private val _activeBookId = settingsRepository.activeBookIdFlow
@@ -632,6 +634,10 @@ class SettingsViewModel @Inject constructor(
                     else -> status
                 }
             }
+            syncLogProvider.addLogEntry("Lokale Sicherung erstellt", activeBookId, activeBook.value?.name)
+        } catch (e: Exception) {
+            syncLogProvider.addLogEntry("Lokale Sicherung fehlgeschlagen: ${e.message}", activeBookId, activeBook.value?.name, isError = true)
+            throw e
         } finally {
             delay(1000) // Show complete message briefly
             _isBackupRestoreRunning.value = false
@@ -663,8 +669,17 @@ class SettingsViewModel @Inject constructor(
                     else -> status
                 }
             }
-            result.onSuccess { onSuccess() }
-                .onFailure { e -> onError("Fehler beim ZIP-Import: ${e.message}") }
+            result.onSuccess { 
+                syncLogProvider.addLogEntry("Lokale Wiederherstellung (ZIP) erfolgreich", activeBookId, activeBook.value?.name)
+                onSuccess() 
+            }
+                .onFailure { e -> 
+                    syncLogProvider.addLogEntry("Lokale Wiederherstellung (ZIP) fehlgeschlagen: ${e.message}", activeBookId, activeBook.value?.name, isError = true)
+                    onError("Fehler beim ZIP-Import: ${e.message}") 
+                }
+        } catch (e: Exception) {
+            syncLogProvider.addLogEntry("Fehler bei lokaler Wiederherstellung (ZIP): ${e.message}", activeBookId, activeBook.value?.name, isError = true)
+            throw e
         } finally {
             delay(1000)
             _isBackupRestoreRunning.value = false
@@ -686,14 +701,26 @@ class SettingsViewModel @Inject constructor(
             regenerateIds = false, // Preserve IDs for matching book
             restoreSyncSettings = false
         )
-        result.onSuccess { onSuccess() }
-            .onFailure { e -> onError("Fehler beim Import: ${e.message}") }
+        result.onSuccess { 
+            syncLogProvider.addLogEntry("Lokale Wiederherstellung (JSON) erfolgreich", activeBookId, activeBook.value?.name)
+            onSuccess() 
+        }
+            .onFailure { e -> 
+                syncLogProvider.addLogEntry("Lokale Wiederherstellung (JSON) fehlgeschlagen: ${e.message}", activeBookId, activeBook.value?.name, isError = true)
+                onError("Fehler beim Import: ${e.message}") 
+            }
     }
 
     suspend fun importGlobalManualBackup(json: String, onSuccess: (String) -> Unit, onError: (String) -> Unit) {
         val result = importExportManager.importCloudBackup(json, null)
-        result.onSuccess { bookId -> onSuccess(bookId) }
-            .onFailure { e -> onError("Fehler beim globalen Import: ${e.message}") }
+        result.onSuccess { bookId -> 
+            syncLogProvider.addLogEntry("Globaler Import (JSON) erfolgreich", bookId, null)
+            onSuccess(bookId) 
+        }
+            .onFailure { e -> 
+                syncLogProvider.addLogEntry("Globaler Import (JSON) fehlgeschlagen: ${e.message}", null, null, isError = true)
+                onError("Fehler beim globalen Import: ${e.message}") 
+            }
     }
 
     suspend fun importGlobalManualBackupZip(
@@ -718,8 +745,17 @@ class SettingsViewModel @Inject constructor(
                     else -> status
                 }
             }
-            result.onSuccess { bookId -> onSuccess(bookId) }
-                .onFailure { e -> onError("Fehler beim globalen ZIP-Import: ${e.message}") }
+            result.onSuccess { bookId -> 
+                syncLogProvider.addLogEntry("Globaler Import (ZIP) erfolgreich", bookId, null)
+                onSuccess(bookId) 
+            }
+                .onFailure { e -> 
+                    syncLogProvider.addLogEntry("Globaler Import (ZIP) fehlgeschlagen: ${e.message}", null, null, isError = true)
+                    onError("Fehler beim globalen ZIP-Import: ${e.message}") 
+                }
+        } catch (e: Exception) {
+            syncLogProvider.addLogEntry("Fehler beim globalen ZIP-Import: ${e.message}", null, null, isError = true)
+            throw e
         } finally {
             delay(1000)
             _isBackupRestoreRunning.value = false

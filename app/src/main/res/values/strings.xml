@@ -101,12 +101,14 @@
 
     <string name="button_device_control_date">Datum vorlesen</string>
     <string name="button_device_control_time">Uhrzeit vorlesen</string>
+    <string name="button_device_control_calendar">Kalendereinträge vorlesen</string>
     <string name="button_device_control_toggle_scanning">Scannen starten / pausieren</string>
     <string name="button_device_control_prefix_label">Vorgeschalteter Text</string>
     <string name="button_device_control_suffix_label">Nachfolgender Text</string>
     <string name="button_device_control_weekday_label">Wochentag einschließen</string>
     <string name="button_device_control_offset_days_label">Tages-Offset (±)</string>
     <string name="button_device_control_offset_minutes_label">Minuten-Offset (±)</string>
+    <string name="button_device_control_calendar_count_label">Anzahl vorzulesender Einträge</string>
     <string name="button_no_page_selected">Keine Seite ausgewählt</string>
     <string name="button_target_page_label">Ziel-Seite</string>
     <string name="button_smart_prediction_rank_label">Vorhersage-Rang (1 = Wahrscheinlichste)</string>
@@ -214,6 +216,7 @@
     <string name="feature_disabled_warning">Das Feature \"%s\" ist deaktiviert und muss in den Einstellungen aktiviert werden.</string>
     <string name="permission_camera_denied">Kameraberechtigung ist erforderlich für die KI-Bilderkennung.</string>
     <string name="error_camera_permission_missing">Kamera-Berechtigung fehlt.</string>
+    <string name="error_calendar_permission_missing">Kalender-Berechtigung fehlt.</string>
     <string name="button_gemini_vision_shutter_sound_label">Kamerasound beim Auslösen abspielen</string>
     <string name="sort_active_first">Aktive zuerst</string>
     <string name="sort_inactive_first">Inaktive zuerst</string>

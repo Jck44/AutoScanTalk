@@ -142,6 +142,8 @@
     <string name="settings_permission_camera_desc">Required for photos to describe the environment via Gemini.</string>
     <string name="settings_permission_location">Location</string>
     <string name="settings_permission_location_desc">Required for features such as retrieving weather information.</string>
+    <string name="settings_permission_calendar">Calendar</string>
+    <string name="settings_permission_calendar_desc">Required to read calendar entries.</string>
     <string name="settings_permission_active">Granted</string>
     <string name="settings_permission_inactive">Not granted</string>
     <string name="settings_permission_request">Request</string>

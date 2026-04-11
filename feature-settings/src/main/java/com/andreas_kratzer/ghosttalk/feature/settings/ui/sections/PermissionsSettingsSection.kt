@@ -62,6 +62,9 @@ fun PermissionsSettingsSection(viewModel: SettingsViewModel) {
     var notificationListenerGranted by remember {
         mutableStateOf(NotificationManagerCompat.getEnabledListenerPackages(context).contains(packageName))
     }
+    var calendarGranted by remember {
+        mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CALENDAR) == PackageManager.PERMISSION_GRANTED)
+    }
 
     // Refresh states when returning to screen (approximation)
     LaunchedEffect(Unit) {
@@ -69,6 +72,7 @@ fun PermissionsSettingsSection(viewModel: SettingsViewModel) {
         locationGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
                           ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
         notificationListenerGranted = NotificationManagerCompat.getEnabledListenerPackages(context).contains(packageName)
+        calendarGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CALENDAR) == PackageManager.PERMISSION_GRANTED
     }
 
     val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -76,6 +80,9 @@ fun PermissionsSettingsSection(viewModel: SettingsViewModel) {
     }
     val locationLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
         locationGranted = permissions.values.any { it }
+    }
+    val calendarLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        calendarGranted = granted
     }
 
     FlowRow(
@@ -151,6 +158,16 @@ fun PermissionsSettingsSection(viewModel: SettingsViewModel) {
                         Manifest.permission.ACCESS_COARSE_LOCATION
                     ))
                 }
+            )
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = dimensions.paddingMedium))
+
+            // 4. Calendar Permission
+            PermissionRow(
+                title = stringResource(R.string.settings_permission_calendar),
+                description = stringResource(R.string.settings_permission_calendar_desc),
+                isGranted = calendarGranted,
+                onRequest = { calendarLauncher.launch(Manifest.permission.READ_CALENDAR) }
             )
         }
     }

@@ -101,12 +101,14 @@
 
     <string name="button_device_control_date">Read Date</string>
     <string name="button_device_control_time">Read Time</string>
+    <string name="button_device_control_calendar">Read Calendar Entries</string>
     <string name="button_device_control_toggle_scanning">Start / Pause Scanning</string>
     <string name="button_device_control_prefix_label">Prefix Text</string>
     <string name="button_device_control_suffix_label">Suffix Text</string>
     <string name="button_device_control_weekday_label">Include Weekday</string>
     <string name="button_device_control_offset_days_label">Day Offset (±)</string>
     <string name="button_device_control_offset_minutes_label">Minute Offset (±)</string>
+    <string name="button_device_control_calendar_count_label">Number of entries to read</string>
     <string name="button_no_page_selected">No page selected</string>
     <string name="button_target_page_label">Target Page</string>
     <string name="button_smart_prediction_rank_label">Prediction Rank (1 = Most Likely)</string>
@@ -210,6 +212,7 @@
     <string name="feature_disabled_warning">Feature \"%s\" is disabled and must be enabled in settings.</string>
     <string name="permission_camera_denied">Camera permission is required for AI image recognition.</string>
     <string name="error_camera_permission_missing">Camera permission missing.</string>
+    <string name="error_calendar_permission_missing">Calendar permission missing.</string>
     <string name="button_gemini_vision_shutter_sound_label">Play shutter sound when triggered</string>
     <string name="sort_active_first">Active first</string>
     <string name="sort_inactive_first">Inactive first</string>
