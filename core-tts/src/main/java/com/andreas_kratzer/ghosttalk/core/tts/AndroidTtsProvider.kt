@@ -17,6 +17,7 @@ import java.util.concurrent.ConcurrentHashMap
 import android.media.AudioManager
 import javax.inject.Inject
 import javax.inject.Singleton
+import com.andreas_kratzer.ghosttalk.core.util.NetworkUtils
 
 @Singleton
 open class AndroidTtsProvider @Inject constructor(
@@ -244,7 +245,7 @@ open class AndroidTtsProvider @Inject constructor(
         if (!pendingVoiceName.isNullOrEmpty()) {
             val targetVoice = voiceManager.findVoice(tts, pendingVoiceName)
             if (targetVoice != null) {
-                if (targetVoice.isNetworkConnectionRequired && !isNetworkAvailable()) {
+                if (targetVoice.isNetworkConnectionRequired && !NetworkUtils.isNetworkAvailable(context)) {
                     Log.w("AndroidTtsProvider", "Voice $pendingVoiceName requires network but system is offline. Finding local fallback...")
                     
                     val allVoices = tts?.voices ?: emptySet()
@@ -271,12 +272,6 @@ open class AndroidTtsProvider @Inject constructor(
         }
     }
 
-    private fun isNetworkAvailable(): Boolean {
-        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? android.net.ConnectivityManager
-        val activeNetwork = cm?.activeNetwork ?: return false
-        val capabilities = cm.getNetworkCapabilities(activeNetwork) ?: return false
-        return capabilities.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET)
-    }
 
     override fun getAvailableLanguages(): List<Locale> {
         return voiceManager.getAvailableLanguages(tts)

@@ -27,6 +27,7 @@ import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
+import com.andreas_kratzer.ghosttalk.core.util.NetworkUtils
 
 @Singleton
 open class ElevenLabsTtsProvider @Inject constructor(
@@ -94,6 +95,16 @@ open class ElevenLabsTtsProvider @Inject constructor(
                 return
             }
             
+            // If offline and not in cache, fail fast to trigger fallback
+            if (!NetworkUtils.isNetworkAvailable(context)) {
+                Log.w("ElevenLabsTtsProvider", "Offline and no cache found for: ${text.take(20)}... - Triggering fallback")
+                handler.post {
+                    onError?.invoke("Offline and not in cache")
+                    onDone?.invoke()
+                }
+                return
+            }
+            
             val requestBody = JSONObject().apply {
                 put("text", text)
                 put("model_id", elevenLabsModel)
@@ -114,14 +125,18 @@ open class ElevenLabsTtsProvider @Inject constructor(
 
             httpClient.newCall(request).enqueue(object : Callback {
                 override fun onFailure(call: Call, e: java.io.IOException) {
-                    if (e.message?.contains("Canceled") == true || e.message?.contains("Socket closed") == true) {
+                    val isCanceled = e.message?.contains("Canceled") == true || e.message?.contains("Socket closed") == true
+                    if (isCanceled) {
                         Log.d("ElevenLabsTtsProvider", "Speech call canceled")
                     } else {
                         Log.e("ElevenLabsTtsProvider", "API call failed: ${e.message}")
-                        handler.post { 
+                    }
+                    
+                    handler.post { 
+                        if (!isCanceled) {
                             onError?.invoke(e.message ?: "Network error")
-                            onDone?.invoke() 
                         }
+                        onDone?.invoke() 
                     }
                 }
 
@@ -206,6 +221,11 @@ open class ElevenLabsTtsProvider @Inject constructor(
     override suspend fun prefetch(text: String) {
         val apiKey = cloudSettings.elevenLabsApiKey
         if (apiKey.isNullOrEmpty()) return
+        
+        if (!NetworkUtils.isNetworkAvailable(context)) {
+            Log.d("ElevenLabsTtsProvider", "Offline - skipping prefetch for: ${text.take(20)}...")
+            return
+        }
 
         val elevenLabsModel = cloudSettings.elevenLabsModel
         val languageCode = getIsoLanguageCode(cloudSettings.elevenLabsTtsLanguage)
@@ -275,11 +295,13 @@ open class ElevenLabsTtsProvider @Inject constructor(
         val safeLang = languageCode?.replace(Regex("[^a-z]"), "") ?: "auto"
         
         val fileName = "tts_eleven#${base64Text}#${safeVoiceId}#${safeModelId}#${safeLang}.mp3"
-        return java.io.File(tgtDir, fileName)
+        val file = java.io.File(tgtDir, fileName)
+        Log.v("ElevenLabsTtsProvider", "Cache path for '${text.take(15)}...': ${file.absolutePath}")
+        return file
     }
 
     private fun getIsoLanguageCode(languageTag: String?): String? {
-        if (languageTag.isNullOrEmpty() || languageTag == "default" || languageTag == "Basis (System)") return null
+        if (languageTag.isNullOrEmpty() || languageTag.equals("default", ignoreCase = true) || languageTag == "Basis (System)") return null
         // Normalize underscores to hyphens for Locale parser, then extract native base language
         val normalizedTag = languageTag.replace("_", "-")
         val code = Locale.forLanguageTag(normalizedTag).language
