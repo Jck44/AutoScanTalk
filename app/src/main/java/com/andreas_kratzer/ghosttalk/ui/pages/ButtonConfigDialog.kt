@@ -237,97 +237,54 @@ fun ButtonConfigDialog(
     var availableHomeDevices by remember { mutableStateOf<List<HomeDevice>>(emptyList()) }
     var isFetchingDevices by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
-    
-    var showDiscardDialog by remember { mutableStateOf(false) }
-
-    val getCurrentConfig = {
-        val action = when (selectedActionType) {
-            actionTypeNavigate -> NavigateToPageButtonAction(targetPageId)
-            actionTypeGemini -> GeminiButtonAction(geminiPrompt)
-            actionTypeGeminiSearch -> GeminiSearchButtonAction(geminiPrompt)
-            actionTypeGeminiNano -> GeminiNanoButtonAction(geminiPrompt)
-            actionTypeGeminiVision -> com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction(geminiPrompt, geminiVisionUseCloud, geminiVisionPlayShutterSound)
-            actionTypeFrequent -> FrequentActionButtonAction(rank)
-            actionTypePrevious -> PreviousActionButtonAction(rank)
-            actionTypeSmart -> SmartPredictionButtonAction(rank)
-            actionTypeWeather -> WeatherButtonAction()
-            actionTypeDevice -> ControlDeviceButtonAction(
-                actionType = deviceActionType,
-                volumeValue = volumeValue,
-                contactName = contactName,
-                contactPhone = contactPhone,
-                messageText = messageText,
-                includeWeekday = includeWeekday,
-                prefixText = prefixText.takeIf { it.isNotBlank() },
-                suffixText = suffixText.takeIf { it.isNotBlank() },
-                offsetValue = offsetValue.toIntOrNull() ?: 0
-            )
-            actionTypeSmartHome -> SmartHomeButtonAction(
-                provider = smartHomeProvider,
-                deviceId = smartHomeDeviceId,
-                deviceName = smartHomeDeviceName,
-                intent = smartHomeIntent,
-                value = if (smartHomeValue.isNotBlank()) smartHomeValue else null
-            )
-            else -> SpeakTextButtonAction()
-        }
-
-        buttonConfig.copy(
-            label = label,
-            spokenText = if (spokenText.isNotBlank()) spokenText else null,
-            auditoryCue = if (auditoryCueText.isNotBlank()) AuditoryCue.TextToSpeechCue(auditoryCueText) else null,
-            isActive = isActive,
-            playActionAsAuditoryCue = playActionAsAuditoryCue,
-            buttonAction = action
-        )
-    }
 
     val handleAutoSave = {
         if (label.isNotBlank()) {
-            val config = getCurrentConfig()
+            val action = when (selectedActionType) {
+                actionTypeNavigate -> NavigateToPageButtonAction(targetPageId)
+                actionTypeGemini -> GeminiButtonAction(geminiPrompt)
+                actionTypeGeminiSearch -> GeminiSearchButtonAction(geminiPrompt)
+                actionTypeGeminiNano -> GeminiNanoButtonAction(geminiPrompt)
+                actionTypeGeminiVision -> com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction(geminiPrompt, geminiVisionUseCloud, geminiVisionPlayShutterSound)
+                actionTypeFrequent -> FrequentActionButtonAction(rank)
+                actionTypePrevious -> PreviousActionButtonAction(rank)
+                actionTypeSmart -> SmartPredictionButtonAction(rank)
+                actionTypeWeather -> WeatherButtonAction()
+                actionTypeDevice -> ControlDeviceButtonAction(
+                    actionType = deviceActionType,
+                    volumeValue = volumeValue,
+                    contactName = contactName,
+                    contactPhone = contactPhone,
+                    messageText = messageText,
+                    includeWeekday = includeWeekday,
+                    prefixText = prefixText.takeIf { it.isNotBlank() },
+                    suffixText = suffixText.takeIf { it.isNotBlank() },
+                    offsetValue = offsetValue.toIntOrNull() ?: 0
+                )
+                actionTypeSmartHome -> SmartHomeButtonAction(
+                    provider = smartHomeProvider,
+                    deviceId = smartHomeDeviceId,
+                    deviceName = smartHomeDeviceName,
+                    intent = smartHomeIntent,
+                    value = if (smartHomeValue.isNotBlank()) smartHomeValue else null
+                )
+                else -> SpeakTextButtonAction()
+            }
+
+            val config = buttonConfig.copy(
+                label = label,
+                spokenText = if (spokenText.isNotBlank()) spokenText else null,
+                auditoryCue = if (auditoryCueText.isNotBlank()) AuditoryCue.TextToSpeechCue(auditoryCueText) else null,
+                isActive = isActive,
+                playActionAsAuditoryCue = playActionAsAuditoryCue,
+                buttonAction = action
+            )
             onSave(config)
         }
     }
 
-    val handleDismiss = {
-        val currentConfig = getCurrentConfig()
-        if (currentConfig != buttonConfig) {
-            showDiscardDialog = true
-        } else {
-            onDismiss()
-        }
-    }
-
-    if (showDiscardDialog) {
-        AlertDialog(
-            onDismissRequest = { showDiscardDialog = false },
-            title = { Text(stringResource(R.string.dialog_discard_changes_title)) },
-            text = { Text(stringResource(R.string.dialog_discard_changes_message)) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showDiscardDialog = false
-                        onDismiss()
-                    }
-                ) {
-                    Text(
-                        stringResource(R.string.action_discard),
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { showDiscardDialog = false }
-                ) {
-                    Text(stringResource(R.string.action_cancel))
-                }
-            }
-        )
-    }
-
     AlertDialog(
-        onDismissRequest = handleDismiss,
+        onDismissRequest = onDismiss,
         modifier = Modifier
             .widthIn(max = 800.dp)
             .fillMaxWidth(0.9f),
@@ -498,7 +455,7 @@ fun ButtonConfigDialog(
                     },
                     onNavigateToPage = onNavigateToPage,
                     onCreatePage = onCreatePage,
-                    onDismissDialog = handleDismiss,
+                    onDismissDialog = onDismiss,
                     useCloud = geminiVisionUseCloud,
                     onUseCloudChange = { 
                         geminiVisionUseCloud = it
@@ -532,7 +489,7 @@ fun ButtonConfigDialog(
                 ) {
                     // Always show Close
                     OutlinedButton(
-                        onClick = handleDismiss,
+                        onClick = onDismiss,
                         modifier = Modifier.widthIn(min = 96.dp)
                     ) {
                         Text(stringResource(CoreR.string.dialog_close))
