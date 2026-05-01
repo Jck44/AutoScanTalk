@@ -103,7 +103,7 @@ class MainActivity : AppCompatActivity() {
         
         com.andreas_kratzer.ghosttalk.core.tts.VoiceDebugger(applicationContext).start()
         
-        updateManager = UpdateManager(this)
+        updateManager = UpdateManager(applicationContext)
         updateManager.checkForUpdates(updateLauncher)
 
         // Android 14+ requires export flags for receivers
@@ -141,6 +141,24 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             pageViewModel.authRecoverIntent.collect { intent ->
                 authLauncher.launch(intent)
+            }
+        }
+
+        // Observe Manual Update Check
+        lifecycleScope.launch {
+            settingsViewModel.manualUpdateCheckTrigger.collect {
+                updateManager.checkManualUpdate(
+                    updateLauncher = updateLauncher,
+                    onUpdateFound = {
+                        settingsViewModel.setUpdateCheckStatus(null) // Reset on success/found
+                    },
+                    onUpToDate = {
+                        settingsViewModel.setUpdateCheckStatus(SettingsViewModel.UpdateCheckStatus.UpToDate)
+                    },
+                    onError = { error ->
+                        settingsViewModel.setUpdateCheckStatus(SettingsViewModel.UpdateCheckStatus.Error(error))
+                    }
+                )
             }
         }
 
@@ -236,7 +254,7 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         if (::updateManager.isInitialized) {
-            updateManager.resumeUpdateIfInProgress()
+            updateManager.resumeUpdateIfInProgress(this)
         }
     }
 

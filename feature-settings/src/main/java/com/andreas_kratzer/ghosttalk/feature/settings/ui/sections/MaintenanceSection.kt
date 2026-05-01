@@ -23,6 +23,14 @@ import com.andreas_kratzer.ghosttalk.core.ui.components.PreferenceCategory
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.feature.settings.R
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.dp
 
 @Composable
 fun MaintenanceSection(
@@ -33,6 +41,22 @@ fun MaintenanceSection(
 ) {
     val context = LocalContext.current
     var showDeleteEmptyButtonsConfirmation by remember { mutableStateOf(false) }
+    val updateStatus by viewModel.updateCheckStatus.collectAsState()
+
+    LaunchedEffect(updateStatus) {
+        when (val status = updateStatus) {
+            is SettingsViewModel.UpdateCheckStatus.UpToDate -> {
+                Toast.makeText(context, R.string.settings_maintenance_check_update_none, Toast.LENGTH_SHORT).show()
+                viewModel.setUpdateCheckStatus(null)
+            }
+            is SettingsViewModel.UpdateCheckStatus.Error -> {
+                val message = context.getString(R.string.settings_maintenance_check_update_error, status.message)
+                Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                viewModel.setUpdateCheckStatus(null)
+            }
+            else -> {}
+        }
+    }
 
     Column {
 
@@ -81,6 +105,34 @@ fun MaintenanceSection(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(stringResource(R.string.settings_maintenance_delete_empty_buttons_title))
+                }
+
+                Spacer(modifier = Modifier.height(LocalDimensions.current.paddingLarge))
+
+                Text(
+                    text = stringResource(R.string.settings_maintenance_check_update_desc),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(LocalDimensions.current.paddingSmall))
+                Button(
+                    onClick = { viewModel.checkManualUpdate() },
+                    shape = MaterialTheme.shapes.medium,
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = updateStatus !is SettingsViewModel.UpdateCheckStatus.Checking
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (updateStatus is SettingsViewModel.UpdateCheckStatus.Checking) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp).padding(end = 8.dp),
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                strokeWidth = 2.dp
+                            )
+                            Text(stringResource(R.string.settings_maintenance_check_update_started))
+                        } else {
+                            Text(stringResource(R.string.settings_maintenance_check_update_title))
+                        }
+                    }
                 }
             }
         }

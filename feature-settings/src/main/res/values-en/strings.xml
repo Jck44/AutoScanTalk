@@ -269,5 +269,11 @@
     <string name="settings_maintenance_delete_empty_buttons_confirm_title">Delete buttons?</string>
     <string name="settings_maintenance_delete_empty_buttons_confirm_text">Are you sure you want to delete all buttons without a label? This cannot be undone.</string>
     <string name="settings_maintenance_delete_empty_buttons_success">%d buttons were deleted.</string>
+    
+    <string name="settings_maintenance_check_update_title">Check for Update</string>
+    <string name="settings_maintenance_check_update_desc">Manually checks if a newer version of the app is available in the Google Play Store.</string>
+    <string name="settings_maintenance_check_update_started">Checking for updates…</string>
+    <string name="settings_maintenance_check_update_none">The app is up to date.</string>
+    <string name="settings_maintenance_check_update_error">Error checking for updates: %s</string>
 
 </resources>

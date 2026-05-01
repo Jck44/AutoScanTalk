@@ -203,6 +203,12 @@ class SettingsViewModel @Inject constructor(
 
     private val _backupRestoreStatus = MutableStateFlow<String?>(null)
     val backupRestoreStatus = _backupRestoreStatus.asStateFlow()
+
+    private val _manualUpdateCheckTrigger = kotlinx.coroutines.flow.MutableSharedFlow<Unit>()
+    val manualUpdateCheckTrigger = _manualUpdateCheckTrigger.asSharedFlow()
+
+    private val _updateCheckStatus = MutableStateFlow<UpdateCheckStatus?>(null)
+    val updateCheckStatus = _updateCheckStatus.asStateFlow()
     
     private var prefetchJob: kotlinx.coroutines.Job? = null
 
@@ -230,6 +236,12 @@ class SettingsViewModel @Inject constructor(
     sealed class SettingsNavigationEvent {
         data class EditButton(val pageId: String, val buttonId: String) : SettingsNavigationEvent()
         data class JumpToPage(val pageId: String) : SettingsNavigationEvent()
+    }
+
+    sealed class UpdateCheckStatus {
+        object Checking : UpdateCheckStatus()
+        object UpToDate : UpdateCheckStatus()
+        data class Error(val message: String) : UpdateCheckStatus()
     }
     
     val isBiometricSupported: Boolean = securityManager.isBiometricSupported(application)
@@ -547,6 +559,17 @@ class SettingsViewModel @Inject constructor(
             val stats = buttonUsageRepository.getGroupedUsageStats(activeBookId)
             _topButtonUsage.value = stats.take(50) // Show top 50 groups
         }
+    }
+
+    fun checkManualUpdate() {
+        viewModelScope.launch {
+            _updateCheckStatus.value = UpdateCheckStatus.Checking
+            _manualUpdateCheckTrigger.emit(Unit)
+        }
+    }
+
+    fun setUpdateCheckStatus(status: UpdateCheckStatus?) {
+        _updateCheckStatus.value = status
     }
 
     fun setKeepScreenOnUserMode(e: Boolean) { settingsRepository.keepScreenOnUserMode = e }

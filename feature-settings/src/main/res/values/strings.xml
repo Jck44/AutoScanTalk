@@ -271,4 +271,10 @@
     <string name="settings_maintenance_delete_empty_buttons_confirm_text">Sind Sie sicher, dass Sie alle Buttons ohne Beschriftung löschen wollen? Dies kann nicht rückgängig gemacht werden.</string>
     <string name="settings_maintenance_delete_empty_buttons_success">%d Buttons wurden gelöscht.</string>
 
+    <string name="settings_maintenance_check_update_title">Auf Update prüfen</string>
+    <string name="settings_maintenance_check_update_desc">Prüft manuell, ob eine neuere Version der App im Google Play Store verfügbar ist.</string>
+    <string name="settings_maintenance_check_update_started">Suche nach Updates…</string>
+    <string name="settings_maintenance_check_update_none">Die App ist auf dem neuesten Stand.</string>
+    <string name="settings_maintenance_check_update_error">Fehler bei der Update-Prüfung: %s</string>
+
 </resources>
