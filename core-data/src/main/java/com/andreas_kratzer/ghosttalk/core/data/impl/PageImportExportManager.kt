@@ -52,6 +52,8 @@ class PageImportExportManager @Inject constructor(
 
     suspend fun exportPageListToJson(pages: List<Page>): String = withContext(Dispatchers.IO) {
         val exportData = ImportExportData(
+            ghosttalk_import_version = "1.1",
+            appName = "GhostTalk",
             bookId = pages.firstOrNull()?.bookId ?: "unknown",
             bookName = "Exportierte Seiten",
             holdingTimeSeconds = settingsRepository.holdingTimeMillis / 1000f,
@@ -89,6 +91,8 @@ class PageImportExportManager @Inject constructor(
         val pages = pageRepository.getPagesForBook(bookId)
         
         val baseExportData = ImportExportData(
+            ghosttalk_import_version = "1.1",
+            appName = "GhostTalk",
             bookId = book.id,
             bookName = book.name,
             bookCreatedAt = book.createdAt,
@@ -416,11 +420,17 @@ class PageImportExportManager @Inject constructor(
                     val fileName = entry.name.substringAfter("tts_cache/")
                     if (fileName.isNotEmpty()) {
                         val targetFile = File(ttsCacheDir, fileName)
-                        val out = FileOutputStream(targetFile)
-                        try {
-                            zipIn.copyTo(out)
-                        } finally {
-                            out.close()
+                        val shouldExtract = !targetFile.exists() || (entry.time > targetFile.lastModified())
+                        if (shouldExtract) {
+                            val out = FileOutputStream(targetFile)
+                            try {
+                                zipIn.copyTo(out)
+                            } finally {
+                                out.close()
+                            }
+                            if (entry.time != -1L) {
+                                targetFile.setLastModified(entry.time)
+                            }
                         }
                     }
                 }
@@ -463,8 +473,14 @@ class PageImportExportManager @Inject constructor(
                     val fileName = entry.name.substringAfter("tts_cache/")
                     if (fileName.isNotEmpty()) {
                         val targetFile = File(ttsCacheDir, fileName)
-                        FileOutputStream(targetFile).use { out ->
-                            zipIn.copyTo(out)
+                        val shouldExtract = !targetFile.exists() || (entry.time > targetFile.lastModified())
+                        if (shouldExtract) {
+                            FileOutputStream(targetFile).use { out ->
+                                zipIn.copyTo(out)
+                            }
+                            if (entry.time != -1L) {
+                                targetFile.setLastModified(entry.time)
+                            }
                         }
                     }
                 }

@@ -94,6 +94,8 @@ fun EditorDialogs(
                 }
             },
             currentPageId = item.id,
+            isTextCached = { actions.isTextCached(it) },
+            onPrefetchText = { text, onComplete -> actions.prefetchText(text, onComplete) },
             googleHomeManager = googleHomeManager,
             googleHomeProjectId = googleHomeProjectId,
             featureGuard = featureGuard

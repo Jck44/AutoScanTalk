@@ -59,9 +59,9 @@ fun GridEditorControls(
                 delay(50)
                 actions.updateGridSettings(
                     itemId = item.id,
-                    newName = item.name,
+                    newName = null,
                     newScanPattern = item.scanPattern,
-                    newRowNames = item.rowNames,
+                    newRowNames = null,
                     newRows = localRows,
                     newColumns = localCols
                 )
@@ -138,9 +138,9 @@ fun GridEditorControls(
                         onClick = {
                             actions.updateGridSettings(
                                 itemId = item.id,
-                                newName = item.name,
+                                newName = null,
                                 newScanPattern = pattern,
-                                newRowNames = item.rowNames
+                                newRowNames = null
                             )
                             focusManager.clearFocus()
                             expandedPattern = false

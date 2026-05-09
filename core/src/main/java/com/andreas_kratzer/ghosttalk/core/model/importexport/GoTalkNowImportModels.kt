@@ -4,8 +4,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class ImportExportData(
-    val ghosttalk_import_version: String? = "1.1",
-    val appName: String? = "GhostTalk",
+    val ghosttalk_import_version: String? = null,
+    val appName: String? = null,
     val holdingTimeSeconds: Float? = null,
     val autoStartScanning: Boolean? = null,
     val scanDelayMillis: Long? = null,

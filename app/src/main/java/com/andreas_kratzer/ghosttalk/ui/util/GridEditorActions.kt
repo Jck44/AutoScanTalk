@@ -6,9 +6,9 @@ import kotlinx.coroutines.flow.StateFlow
 interface GridEditorActions {
     fun updateGridSettings(
         itemId: String,
-        newName: String,
-        newScanPattern: String?,
-        newRowNames: List<String>,
+        newName: String? = null,
+        newScanPattern: String? = null,
+        newRowNames: List<String>? = null,
         newRows: Int? = null,
         newColumns: Int? = null
     )
@@ -36,4 +36,7 @@ interface GridEditorActions {
         onResult: (com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult) -> Unit
     )
     val availableGeminiTools: List<com.andreas_kratzer.ghosttalk.core.ai.domain.AiTool>
+    
+    fun isTextCached(text: String): Boolean = false
+    fun prefetchText(text: String, onComplete: () -> Unit = {}) {}
 }

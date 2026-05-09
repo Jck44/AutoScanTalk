@@ -85,9 +85,9 @@ class TemplateViewModel @Inject constructor(
 
     override fun updateGridSettings(
         itemId: String,
-        newName: String,
+        newName: String?,
         newScanPattern: String?,
-        newRowNames: List<String>,
+        newRowNames: List<String>?,
         newRows: Int?,
         newColumns: Int?
     ) {

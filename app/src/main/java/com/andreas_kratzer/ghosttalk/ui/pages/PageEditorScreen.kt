@@ -26,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -68,15 +69,11 @@ fun PageEditorScreen(
                     var localName by remember(page.name) { mutableStateOf(page.name) }
                     
                     LaunchedEffect(localName) {
-                        if (localName != page.name) {
+                        if (localName != page.name && localName.isNotBlank()) {
                             delay(500)
                             pageViewModel.updatePageSettings(
                                 pageId = page.id,
-                                newName = localName,
-                                newScanPattern = page.scanPattern,
-                                newRowNames = page.rowNames,
-                                newRows = page.rows,
-                                newColumns = page.columns
+                                newName = localName
                             )
                         }
                     }
@@ -86,12 +83,28 @@ fun PageEditorScreen(
                         onValueChange = { localName = it },
                         placeholder = { Text(stringResource(R.string.page_name_label)) },
                         singleLine = true,
+                        isError = localName.isBlank(),
+                        supportingText = if (localName.isBlank()) {
+                            { Text(stringResource(R.string.error_page_name_required)) }
+                        } else null,
                         shape = MaterialTheme.shapes.large,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(end = dimensions.paddingLarge)
                             .padding(vertical = 4.dp) // Reduce vertical impact
                             .testTag("page_editor_name_field")
+                            .onFocusChanged { focusState ->
+                                if (!focusState.isFocused) {
+                                    if (localName.isNotBlank() && localName != page.name) {
+                                        pageViewModel.updatePageSettings(
+                                            pageId = page.id,
+                                            newName = localName
+                                        )
+                                    } else if (localName.isBlank()) {
+                                        localName = page.name // Revert to saved name if left blank
+                                    }
+                                }
+                            }
                     )
                 },
                 navigationIcon = {

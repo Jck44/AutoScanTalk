@@ -148,9 +148,9 @@ class PageManagementDelegate @Inject constructor(
 
     fun updatePageSettings(
         pageId: String, 
-        newName: String, 
-        newScanPattern: String?, 
-        newRowNames: List<String>,
+        newName: String? = null, 
+        newScanPattern: String? = null, 
+        newRowNames: List<String>? = null,
         newRows: Int? = null,
         newColumns: Int? = null
     ) {

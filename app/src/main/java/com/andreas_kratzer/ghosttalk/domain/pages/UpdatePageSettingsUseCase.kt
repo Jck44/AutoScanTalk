@@ -11,23 +11,25 @@ class UpdatePageSettingsUseCase @Inject constructor(
 ) {
     suspend fun execute(
         pageId: String, 
-        newName: String, 
-        newScanPattern: String?, 
-        newRowNames: List<String>,
+        newName: String? = null, 
+        newScanPattern: String? = null, 
+        newRowNames: List<String>? = null,
         newRows: Int? = null,
         newColumns: Int? = null
     ): Page? {
         val page = pageRepository.getPageById(pageId)
         if (page != null) {
+            val targetName = newName ?: page.name
+            val targetRowNames = newRowNames ?: page.rowNames
             val oldRows = page.rows
             val oldCols = page.columns
             val targetRows = newRows ?: oldRows
             val targetCols = newColumns ?: oldCols
 
             val updatedPage = page.copy(
-                name = newName,
+                name = targetName,
                 scanPattern = newScanPattern,
-                rowNames = newRowNames,
+                rowNames = targetRowNames,
                 rows = targetRows,
                 columns = targetCols
             )

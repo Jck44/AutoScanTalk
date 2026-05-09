@@ -37,7 +37,11 @@ open class ElevenLabsTtsProvider @Inject constructor(
     @param:ApplicationScope private val scope: CoroutineScope
 ) : TtsProvider {
 
-    private val httpClient = OkHttpClient()
+    private val httpClient = OkHttpClient.Builder()
+        .readTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+        .writeTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+        .connectTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
+        .build()
     private val handler = Handler(Looper.getMainLooper())
     private val playRequests = ConcurrentHashMap<String, File>()
     
@@ -49,7 +53,8 @@ open class ElevenLabsTtsProvider @Inject constructor(
     private val SPEECH_TAG = "elevenlabs_speech"
     private val VOICES_TAG = "elevenlabs_voices"
 
-    override val isReady: Boolean get() = true // API-based, always "ready" if network is up
+    private var isInitialized = false
+    override val isReady: Boolean get() = isInitialized
 
     override fun speak(text: String, queueMode: Int, onDone: (() -> Unit)?, onError: ((String) -> Unit)?) {
         speakRouted(text, null, queueMode, false, onDone, onError)
@@ -63,6 +68,7 @@ open class ElevenLabsTtsProvider @Inject constructor(
         onDone: (() -> Unit)?,
         onError: ((String) -> Unit)?
     ) {
+        Log.i("ElevenLabsTtsProvider", "speakRouted entered for: ${text.take(20)}... (isReady=$isReady, voice=$currentVoiceId)")
         val apiKey = cloudSettings.elevenLabsApiKey
         if (apiKey.isNullOrEmpty()) {
             Log.e("ElevenLabsTtsProvider", "API Key missing")
@@ -86,7 +92,7 @@ open class ElevenLabsTtsProvider @Inject constructor(
             val cachedFile = getCacheFile(text, currentVoiceId, elevenLabsModel, languageCode)
 
             if (cachedFile.exists() && cachedFile.length() > 0) {
-                Log.d("ElevenLabsTtsProvider", "Playing cached audio for ${cachedFile.name}")
+                Log.i("ElevenLabsTtsProvider", "Playing cached audio for ${cachedFile.name}")
                 handler.post {
                     routedAudioPlayer.playAudioFile(cachedFile, deviceAddress) {
                         onDone?.invoke()
@@ -159,9 +165,11 @@ open class ElevenLabsTtsProvider @Inject constructor(
                         }
 
                         try {
-                            java.io.FileOutputStream(cachedFile).use { output ->
+                            val tempFile = java.io.File(cachedFile.absolutePath + ".tmp")
+                            java.io.FileOutputStream(tempFile).use { output ->
                                 body.byteStream().copyTo(output)
                             }
+                            tempFile.renameTo(cachedFile)
                             Log.i("ElevenLabsTtsProvider", "Saved audio file size: ${cachedFile.length()} bytes")
 
                             handler.post {
@@ -260,9 +268,11 @@ open class ElevenLabsTtsProvider @Inject constructor(
                         return@withContext
                     }
                     val body = resp.body ?: return@withContext
-                    java.io.FileOutputStream(cachedFile).use { output ->
+                    val tempFile = java.io.File(cachedFile.absolutePath + ".tmp")
+                    java.io.FileOutputStream(tempFile).use { output ->
                         body.byteStream().copyTo(output)
                     }
+                    tempFile.renameTo(cachedFile)
                     Log.i("ElevenLabsTtsProvider", "Prefetched audio: ${cachedFile.name}")
                 }
             } catch (e: Exception) {
@@ -282,11 +292,13 @@ open class ElevenLabsTtsProvider @Inject constructor(
         val tgtDir = java.io.File(context.filesDir, "elevenlabs")
         if (!tgtDir.exists()) tgtDir.mkdirs()
         
-        var base64Text = android.util.Base64.encodeToString(text.toByteArray(Charsets.UTF_8), android.util.Base64.URL_SAFE or android.util.Base64.NO_WRAP or android.util.Base64.NO_PADDING)
+        val trimmedText = text.trim()
+        val textBytes = trimmedText.toByteArray(Charsets.UTF_8)
+        var base64Text = android.util.Base64.encodeToString(textBytes, android.util.Base64.URL_SAFE or android.util.Base64.NO_WRAP or android.util.Base64.NO_PADDING)
         
         if (base64Text.length > 100) {
             val digest = java.security.MessageDigest.getInstance("MD5")
-            val hash = digest.digest(text.toByteArray()).joinToString("") { "%02x".format(it) }.take(8)
+            val hash = digest.digest(textBytes).joinToString("") { "%02x".format(it) }.take(8)
             base64Text = "${base64Text.take(100)}-$hash"
         }
         
@@ -296,7 +308,56 @@ open class ElevenLabsTtsProvider @Inject constructor(
         
         val fileName = "tts_eleven#${base64Text}#${safeVoiceId}#${safeModelId}#${safeLang}.mp3"
         val file = java.io.File(tgtDir, fileName)
-        Log.v("ElevenLabsTtsProvider", "Cache path for '${text.take(15)}...': ${file.absolutePath}")
+        
+        if (file.exists() && file.length() > 0) {
+            Log.i("ElevenLabsTtsProvider", "Cache hit: ${file.name}")
+            return file
+        }
+
+        // --- Robustness Fallbacks ---
+        
+        // 1. Try legacy model ID (e.g. "v3" instead of "eleven_v3")
+        if (safeModelId.startsWith("eleven_")) {
+            val legacyModelId = safeModelId.removePrefix("eleven_")
+            val legacyFile = java.io.File(tgtDir, "tts_eleven#${base64Text}#${safeVoiceId}#${legacyModelId}#${safeLang}.mp3")
+            if (legacyFile.exists() && legacyFile.length() > 0) {
+                Log.i("ElevenLabsTtsProvider", "Cache hit (legacy model ID): ${legacyFile.name}")
+                return legacyFile
+            }
+            
+            // 2. Try legacy model ID + "auto" language fallback
+            if (safeLang != "auto") {
+                val legacyAutoFile = java.io.File(tgtDir, "tts_eleven#${base64Text}#${safeVoiceId}#${legacyModelId}#auto.mp3")
+                if (legacyAutoFile.exists() && legacyAutoFile.length() > 0) {
+                    Log.i("ElevenLabsTtsProvider", "Cache hit (legacy model + auto lang): ${legacyAutoFile.name}")
+                    return legacyAutoFile
+                }
+            }
+        }
+
+        // 3. Try current model ID + "auto" language fallback
+        if (safeLang != "auto") {
+            val autoFile = java.io.File(tgtDir, "tts_eleven#${base64Text}#${safeVoiceId}#${safeModelId}#auto.mp3")
+            if (autoFile.exists() && autoFile.length() > 0) {
+                Log.i("ElevenLabsTtsProvider", "Cache hit (auto lang fallback): ${autoFile.name}")
+                return autoFile
+            }
+        }
+
+        // 4. DEEP SCAN: Look for ANY file with matching text hash and voice ID
+        try {
+            val prefix = "tts_eleven#${base64Text}#${safeVoiceId}#"
+            val files = tgtDir.listFiles()
+            val deepMatch = files?.find { it.name.startsWith(prefix) && it.length() > 0 }
+            if (deepMatch != null) {
+                Log.i("ElevenLabsTtsProvider", "Cache hit (DEEP SCAN match): ${deepMatch.name}")
+                return deepMatch
+            }
+        } catch (e: Exception) {
+            Log.e("ElevenLabsTtsProvider", "Deep scan failed: ${e.message}")
+        }
+
+        Log.i("ElevenLabsTtsProvider", "Cache miss: ${file.name} (even after deep scan)")
         return file
     }
 
@@ -482,6 +543,8 @@ open class ElevenLabsTtsProvider @Inject constructor(
             } else {
                 currentVoiceId = DEFAULT_VOICE_ID
             }
+            isInitialized = true
+            Log.i("ElevenLabsTtsProvider", "Voice set to: $currentVoiceId (Initialized: $isInitialized)")
         }
     }
 

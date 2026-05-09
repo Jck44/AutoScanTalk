@@ -50,7 +50,7 @@ class PageViewModel @Inject constructor(
     val settingsRepository: SettingsRepository,
     private val bookRepository: com.andreas_kratzer.ghosttalk.core.data.BookRepository,
     internal val importExportManager: PageImportExportManager,
-    ttsHelper: TextToSpeechHelper,
+    private val ttsHelper: TextToSpeechHelper,
     private val logger: Logger,
     private val weatherExecutor: com.andreas_kratzer.ghosttalk.domain.executors.WeatherExecutor,
     val featureGuard: FeatureGuard,
@@ -259,9 +259,9 @@ class PageViewModel @Inject constructor(
 
     override fun updateGridSettings(
         itemId: String,
-        newName: String,
+        newName: String?,
         newScanPattern: String?,
-        newRowNames: List<String>,
+        newRowNames: List<String>?,
         newRows: Int?,
         newColumns: Int?
     ) {
@@ -272,6 +272,17 @@ class PageViewModel @Inject constructor(
 
     override fun executeButtonAction(config: ButtonConfig) {
         actionExecutor.executeButtonAction(config)
+    }
+
+    override fun isTextCached(text: String): Boolean {
+        return ttsHelper.isCached(text)
+    }
+
+    override fun prefetchText(text: String, onComplete: () -> Unit) {
+        viewModelScope.launch {
+            ttsHelper.prefetch(text)
+            onComplete()
+        }
     }
 
     override fun createNewPage(
@@ -287,9 +298,9 @@ class PageViewModel @Inject constructor(
 
     fun updatePageSettings(
         pageId: String, 
-        newName: String, 
-        newScanPattern: String?, 
-        newRowNames: List<String>,
+        newName: String? = null, 
+        newScanPattern: String? = null, 
+        newRowNames: List<String>? = null,
         newRows: Int? = null,
         newColumns: Int? = null
     ) = pageManagementDelegate.updatePageSettings(pageId, newName, newScanPattern, newRowNames, newRows, newColumns)

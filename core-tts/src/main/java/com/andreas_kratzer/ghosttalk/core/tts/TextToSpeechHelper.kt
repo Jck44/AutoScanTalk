@@ -52,17 +52,27 @@ open class TextToSpeechHelper @Inject constructor(
             }
         }
 
-        // Observe language/voice changes
+        // Observe Google TTS language/voice changes for Android Provider
         scope.launch {
             combine(
-                settingsRepository.ttsLanguageFlow,
-                settingsRepository.ttsVoiceNameFlow
+                settingsRepository.googleTtsLanguageFlow,
+                settingsRepository.googleTtsVoiceNameFlow
             ) { lang, voice -> lang to voice }
-                .collect { (newLanguage, newVoice) ->
-                    Log.d("TextToSpeechHelper", "Settings updated: lang=$newLanguage, voice=$newVoice")
-                    // Keep both providers in sync so fallback works with correct language
-                    androidTtsProvider.get().setLanguageAndVoice(newLanguage, newVoice)
-                    elevenLabsTtsProvider.get().setLanguageAndVoice(newLanguage, newVoice)
+                .collect { (lang, voice) ->
+                    Log.d("TextToSpeechHelper", "Google TTS Settings updated: lang=$lang, voice=$voice")
+                    androidTtsProvider.get().setLanguageAndVoice(lang, voice)
+                }
+        }
+
+        // Observe ElevenLabs TTS language/voice changes for ElevenLabs Provider
+        scope.launch {
+            combine(
+                settingsRepository.elevenLabsTtsLanguageFlow,
+                settingsRepository.elevenLabsTtsVoiceNameFlow
+            ) { lang, voice -> lang to voice }
+                .collect { (lang, voice) ->
+                    Log.d("TextToSpeechHelper", "ElevenLabs TTS Settings updated: lang=$lang, voice=$voice")
+                    elevenLabsTtsProvider.get().setLanguageAndVoice(lang, voice)
                 }
         }
     }
@@ -76,11 +86,7 @@ open class TextToSpeechHelper @Inject constructor(
         if (nextProvider != currentProvider) {
             currentProvider.stopAll()
             currentProvider = nextProvider
-            // Ensure both are synced on switch
-            val lang = settingsRepository.ttsLanguage
-            val voice = settingsRepository.ttsVoiceName
-            androidTtsProvider.get().setLanguageAndVoice(lang, voice)
-            elevenLabsTtsProvider.get().setLanguageAndVoice(lang, voice)
+            // Providers maintain their own settings via independent flows, no need to force sync here
         }
     }
 
@@ -114,6 +120,9 @@ open class TextToSpeechHelper @Inject constructor(
         onError: ((String) -> Unit)? = null
     ) {
         val provider = currentProvider
+        val engineType = if (provider is ElevenLabsTtsProvider) "elevenlabs" else "android"
+        Log.i("TextToSpeechHelper", "speakRouted: engine=$engineType, text='${text.take(20)}...', isReady=${provider.isReady}")
+        
         if (provider is ElevenLabsTtsProvider) {
             var fallbackTriggered = false
             provider.speakRouted(

@@ -22,6 +22,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -91,6 +93,8 @@ fun ButtonConfigDialog(
     onNavigateToPage: ((String) -> Unit)? = null,
     onCreatePage: ((String, Int, Int, String?, (String) -> Unit) -> Unit)? = null,
     currentPageId: String? = null,
+    isTextCached: ((String) -> Boolean)? = null,
+    onPrefetchText: ((String, () -> Unit) -> Unit)? = null,
     // AI Tools
     availableGeminiTools: List<com.andreas_kratzer.ghosttalk.core.ai.domain.AiTool> = emptyList(),
     // Google Home Support
@@ -316,11 +320,26 @@ fun ButtonConfigDialog(
                     onFocusLost = handleAutoSave
                 )
 
+                if (selectedActionType == actionTypeSpeak) {
+                    val currentTextToSpeak = spokenText.takeIf { it.isNotBlank() } ?: label
+                    CacheStatusRow(
+                        textToCache = currentTextToSpeak,
+                        isTextCached = isTextCached,
+                        onPrefetchText = onPrefetchText
+                    )
+                }
+
                 SettingsEditTextItem(
                     label = stringResource(R.string.button_auditory_cue_field),
                     value = auditoryCueText,
                     onValueChange = { auditoryCueText = it },
                     onFocusLost = handleAutoSave
+                )
+
+                CacheStatusRow(
+                    textToCache = auditoryCueText,
+                    isTextCached = isTextCached,
+                    onPrefetchText = onPrefetchText
                 )
 
                 SettingsToggleItem(
@@ -689,4 +708,56 @@ fun ButtonConfigDialog(
     confirmButton = { },
     dismissButton = { }
 )
+}
+
+@Composable
+private fun CacheStatusRow(
+    textToCache: String,
+    isTextCached: ((String) -> Boolean)?,
+    onPrefetchText: ((String, () -> Unit) -> Unit)?
+) {
+    if (textToCache.isBlank()) return
+
+    var isCached by remember(textToCache, isTextCached) { 
+        mutableStateOf(isTextCached?.invoke(textToCache) ?: false) 
+    }
+    var isPrefetching by remember(textToCache) { mutableStateOf(false) }
+
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = if (isCached) Icons.Default.Check else Icons.Default.Info,
+                contentDescription = null,
+                tint = if (isCached) androidx.compose.material3.MaterialTheme.colorScheme.primary else androidx.compose.material3.MaterialTheme.colorScheme.error,
+                modifier = Modifier.size(16.dp).padding(end = 4.dp)
+            )
+            Text(
+                text = if (isCached) "Im Cache (Offline verfügbar)" else "Nicht im Cache (Benötigt Internet)",
+                style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+                color = if (isCached) androidx.compose.material3.MaterialTheme.colorScheme.primary else androidx.compose.material3.MaterialTheme.colorScheme.error
+            )
+        }
+        
+        if (!isCached && onPrefetchText != null) {
+            if (isPrefetching) {
+                androidx.compose.material3.CircularProgressIndicator(modifier = Modifier.size(24.dp))
+            } else {
+                androidx.compose.material3.TextButton(
+                    onClick = {
+                        isPrefetching = true
+                        onPrefetchText(textToCache) {
+                            isPrefetching = false
+                            isCached = isTextCached?.invoke(textToCache) ?: false
+                        }
+                    }
+                ) {
+                    Text("Jetzt cachen")
+                }
+            }
+        }
+    }
 }

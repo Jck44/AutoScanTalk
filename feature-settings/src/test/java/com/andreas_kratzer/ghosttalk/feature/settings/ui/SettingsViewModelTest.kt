@@ -115,7 +115,8 @@ class SettingsViewModelTest {
             hueManager = hueManager,
             ttsHelper = ttsHelper,
             audioCacheRepository = audioCacheRepository,
-            pageRepository = mockk(relaxed = true)
+            pageRepository = mockk(relaxed = true),
+            syncLogProvider = mockk(relaxed = true)
         )
     }
 
