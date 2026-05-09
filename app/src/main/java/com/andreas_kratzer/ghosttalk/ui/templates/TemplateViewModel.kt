@@ -93,9 +93,9 @@ class TemplateViewModel @Inject constructor(
     ) {
         val current = templates.value.find { it.id == itemId } ?: return
         updateTemplate(current.copy(
-            name = newName,
+            name = newName ?: current.name,
             scanPattern = newScanPattern,
-            rowNames = newRowNames,
+            rowNames = newRowNames ?: current.rowNames,
             rows = newRows ?: current.rows,
             columns = newColumns ?: current.columns
         ))

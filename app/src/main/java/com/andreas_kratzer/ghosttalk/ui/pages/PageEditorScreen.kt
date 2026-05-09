@@ -12,11 +12,10 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import com.andreas_kratzer.ghosttalk.ui.components.ValidatedTextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -26,7 +25,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -57,8 +55,16 @@ fun PageEditorScreen(
         return
     }
 
+    var localName by remember(page.name) { mutableStateOf(page.name) }
+
+    val handleNavigateBack = {
+        if (localName.isNotBlank()) {
+            onNavigateBack()
+        }
+    }
+
     BackHandler {
-        onNavigateBack()
+        handleNavigateBack()
     }
 
     Scaffold(
@@ -66,8 +72,6 @@ fun PageEditorScreen(
             TopAppBar(
                 windowInsets = WindowInsets.statusBars,
                 title = { 
-                    var localName by remember(page.name) { mutableStateOf(page.name) }
-                    
                     LaunchedEffect(localName) {
                         if (localName != page.name && localName.isNotBlank()) {
                             delay(500)
@@ -78,37 +82,29 @@ fun PageEditorScreen(
                         }
                     }
 
-                    OutlinedTextField(
+                    ValidatedTextField(
                         value = localName,
                         onValueChange = { localName = it },
+                        isRequired = true,
+                        errorMessage = stringResource(R.string.error_page_name_required),
+                        onFocusLost = {
+                            if (it.isNotBlank() && it != page.name) {
+                                pageViewModel.updatePageSettings(
+                                    pageId = page.id,
+                                    newName = it
+                                )
+                            }
+                        },
                         placeholder = { Text(stringResource(R.string.page_name_label)) },
-                        singleLine = true,
-                        isError = localName.isBlank(),
-                        supportingText = if (localName.isBlank()) {
-                            { Text(stringResource(R.string.error_page_name_required)) }
-                        } else null,
-                        shape = MaterialTheme.shapes.large,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(end = dimensions.paddingLarge)
                             .padding(vertical = 4.dp) // Reduce vertical impact
                             .testTag("page_editor_name_field")
-                            .onFocusChanged { focusState ->
-                                if (!focusState.isFocused) {
-                                    if (localName.isNotBlank() && localName != page.name) {
-                                        pageViewModel.updatePageSettings(
-                                            pageId = page.id,
-                                            newName = localName
-                                        )
-                                    } else if (localName.isBlank()) {
-                                        localName = page.name // Revert to saved name if left blank
-                                    }
-                                }
-                            }
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(onClick = handleNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(CoreR.string.back_button_content_description))
                     }
                 }
