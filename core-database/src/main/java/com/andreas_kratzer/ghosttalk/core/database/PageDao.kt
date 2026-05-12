@@ -57,4 +57,16 @@ interface PageDao {
 
     @Query("DELETE FROM pages WHERE bookId = :bookId")
     suspend fun deletePagesForBook(bookId: String)
+
+    @Query("UPDATE pages SET name = :name WHERE id = :pageId")
+    suspend fun updatePageName(pageId: String, name: String)
+
+    @Query("UPDATE pages SET scanPattern = :scanPattern WHERE id = :pageId")
+    suspend fun updatePageScanPattern(pageId: String, scanPattern: String?)
+
+    @Query("UPDATE pages SET rowNames = :rowNames WHERE id = :pageId")
+    suspend fun updatePageRowNames(pageId: String, rowNames: List<String>)
+
+    @Query("UPDATE pages SET rows = :rows, columns = :columns WHERE id = :pageId")
+    suspend fun updatePageGridSize(pageId: String, rows: Int, columns: Int)
 }

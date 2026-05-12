@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.data.TemplateRepository
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.GridSettingsUpdate
 import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.core.model.SortOrder
 import com.andreas_kratzer.ghosttalk.domain.templates.CreateTemplateUseCase
@@ -85,19 +86,15 @@ class TemplateViewModel @Inject constructor(
 
     override fun updateGridSettings(
         itemId: String,
-        newName: String?,
-        newScanPattern: String?,
-        newRowNames: List<String>?,
-        newRows: Int?,
-        newColumns: Int?
+        update: GridSettingsUpdate
     ) {
         val current = templates.value.find { it.id == itemId } ?: return
         updateTemplate(current.copy(
-            name = newName ?: current.name,
-            scanPattern = newScanPattern,
-            rowNames = newRowNames ?: current.rowNames,
-            rows = newRows ?: current.rows,
-            columns = newColumns ?: current.columns
+            name = update.name ?: current.name,
+            scanPattern = update.scanPattern?.value ?: current.scanPattern,
+            rowNames = update.rowNames ?: current.rowNames,
+            rows = update.rows ?: current.rows,
+            columns = update.columns ?: current.columns
         ))
     }
 

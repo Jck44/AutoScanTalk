@@ -3,14 +3,12 @@ package com.andreas_kratzer.ghosttalk.ui.util
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import kotlinx.coroutines.flow.StateFlow
 
+import com.andreas_kratzer.ghosttalk.core.model.GridSettingsUpdate
+
 interface GridEditorActions {
     fun updateGridSettings(
         itemId: String,
-        newName: String? = null,
-        newScanPattern: String? = null,
-        newRowNames: List<String>? = null,
-        newRows: Int? = null,
-        newColumns: Int? = null
+        update: GridSettingsUpdate
     )
     fun updateButtonConfig(itemId: String, index: Int, newConfig: ButtonConfig?)
     fun updateRowName(itemId: String, rowIndex: Int, newName: String)

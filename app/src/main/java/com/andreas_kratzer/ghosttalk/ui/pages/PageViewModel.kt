@@ -15,6 +15,7 @@ import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.data.impl.PageImportExportManager
 import com.andreas_kratzer.ghosttalk.core.model.Book
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.GridSettingsUpdate
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.scanning.ScanCoordinator
 import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
@@ -259,13 +260,9 @@ class PageViewModel @Inject constructor(
 
     override fun updateGridSettings(
         itemId: String,
-        newName: String?,
-        newScanPattern: String?,
-        newRowNames: List<String>?,
-        newRows: Int?,
-        newColumns: Int?
+        update: GridSettingsUpdate
     ) {
-        updatePageSettings(itemId, newName, newScanPattern, newRowNames, newRows, newColumns)
+        updatePageSettings(itemId, update)
     }
 
     override val isExecuting: StateFlow<Boolean> = actionExecutor.isExecuting
@@ -298,12 +295,8 @@ class PageViewModel @Inject constructor(
 
     fun updatePageSettings(
         pageId: String, 
-        newName: String? = null, 
-        newScanPattern: String? = null, 
-        newRowNames: List<String>? = null,
-        newRows: Int? = null,
-        newColumns: Int? = null
-    ) = pageManagementDelegate.updatePageSettings(pageId, newName, newScanPattern, newRowNames, newRows, newColumns)
+        update: GridSettingsUpdate
+    ) = pageManagementDelegate.updatePageSettings(pageId, update)
 
     override fun updateRowName(itemId: String, rowIndex: Int, newName: String) {
         pageManagementDelegate.updateRowName(itemId, rowIndex, newName)

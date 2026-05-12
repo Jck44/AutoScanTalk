@@ -18,4 +18,8 @@ interface PageRepository {
     suspend fun duplicatePage(pageId: String, duplicateSuffix: String): String?
     fun getUsedTemplateIdsFlow(): Flow<Set<String>>
     suspend fun deleteEmptyButtons(): Int
+    suspend fun updatePageName(pageId: String, name: String)
+    suspend fun updatePageScanPattern(pageId: String, scanPattern: String?)
+    suspend fun updatePageRowNames(pageId: String, rowNames: List<String>)
+    suspend fun updatePageGridSize(pageId: String, rows: Int, columns: Int)
 }

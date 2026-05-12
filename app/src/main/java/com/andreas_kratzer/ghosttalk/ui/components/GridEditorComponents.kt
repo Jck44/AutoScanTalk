@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.model.GridItem
+import com.andreas_kratzer.ghosttalk.core.model.GridSettingsUpdate
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions
 import kotlinx.coroutines.delay
@@ -59,11 +60,11 @@ fun GridEditorControls(
                 delay(50)
                 actions.updateGridSettings(
                     itemId = item.id,
-                    newName = null,
-                    newScanPattern = item.scanPattern,
-                    newRowNames = null,
-                    newRows = localRows,
-                    newColumns = localCols
+                    update = GridSettingsUpdate(
+                        scanPattern = com.andreas_kratzer.ghosttalk.core.model.OptionalProperty(item.scanPattern),
+                        rows = localRows,
+                        columns = localCols
+                    )
                 )
             }
         }
@@ -138,9 +139,9 @@ fun GridEditorControls(
                         onClick = {
                             actions.updateGridSettings(
                                 itemId = item.id,
-                                newName = null,
-                                newScanPattern = pattern,
-                                newRowNames = null
+                                update = GridSettingsUpdate(
+                                    scanPattern = com.andreas_kratzer.ghosttalk.core.model.OptionalProperty(pattern)
+                                )
                             )
                             focusManager.clearFocus()
                             expandedPattern = false

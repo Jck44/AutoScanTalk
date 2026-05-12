@@ -9,6 +9,7 @@ import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import com.andreas_kratzer.ghosttalk.core.model.OptionalProperty
 import org.junit.Before
 import org.junit.Test
 
@@ -41,19 +42,16 @@ class UpdatePageSettingsUseCaseTest {
         coEvery { pageRepository.getPageById("p1") } returns page
 
         val newRowNames = listOf("NewR1", "NewR2")
-        val result = useCase.execute("p1", "New Name", "row_by_row", newRowNames)
+        val result = useCase.execute("p1", "New Name", OptionalProperty("row_by_row"), newRowNames)
 
         assertEquals("New Name", result?.name)
         assertEquals("row_by_row", result?.scanPattern)
         assertEquals(newRowNames, result?.rowNames)
         
         coVerify {
-            pageRepository.updatePageSettingsOnly(match { 
-                it.id == "p1" && 
-                it.name == "New Name" && 
-                it.scanPattern == "row_by_row" && 
-                it.rowNames == newRowNames 
-            })
+            pageRepository.updatePageName("p1", "New Name")
+            pageRepository.updatePageScanPattern("p1", "row_by_row")
+            pageRepository.updatePageRowNames("p1", newRowNames)
             bookRepository.updateLastModified("book1", any())
         }
     }
@@ -66,7 +64,7 @@ class UpdatePageSettingsUseCaseTest {
 
         assertNull(result)
         coVerify(exactly = 0) {
-            pageRepository.updatePageSettingsOnly(any())
+            pageRepository.updatePageName(any(), any())
         }
     }
 }

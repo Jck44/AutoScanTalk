@@ -6,6 +6,7 @@ import com.andreas_kratzer.ghosttalk.core.data.GetPagesUseCase
 import com.andreas_kratzer.ghosttalk.core.data.PageRepository
 import com.andreas_kratzer.ghosttalk.core.data.TemplateRepository
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.GridSettingsUpdate
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.domain.pages.CreatePageUseCase
@@ -148,14 +149,17 @@ class PageManagementDelegate @Inject constructor(
 
     fun updatePageSettings(
         pageId: String, 
-        newName: String? = null, 
-        newScanPattern: String? = null, 
-        newRowNames: List<String>? = null,
-        newRows: Int? = null,
-        newColumns: Int? = null
+        update: GridSettingsUpdate
     ) {
         scope.launch {
-            val updatedPage = updatePageSettingsUseCase.execute(pageId, newName, newScanPattern, newRowNames, newRows, newColumns)
+            val updatedPage = updatePageSettingsUseCase.execute(
+                pageId, 
+                update.name, 
+                update.scanPattern, 
+                update.rowNames, 
+                update.rows, 
+                update.columns
+            )
             if (updatedPage != null && _currentPage.value?.id == pageId) {
                 setCurrentPage(updatedPage)
             }

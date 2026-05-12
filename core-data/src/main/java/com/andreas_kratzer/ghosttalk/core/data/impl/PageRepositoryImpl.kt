@@ -97,4 +97,20 @@ class PageRepositoryImpl(
     override suspend fun deleteEmptyButtons(): Int {
         return buttonDao.deleteEmptyButtons()
     }
+
+    override suspend fun updatePageName(pageId: String, name: String) {
+        pageDao.updatePageName(pageId, name)
+    }
+
+    override suspend fun updatePageScanPattern(pageId: String, scanPattern: String?) {
+        pageDao.updatePageScanPattern(pageId, scanPattern)
+    }
+
+    override suspend fun updatePageRowNames(pageId: String, rowNames: List<String>) {
+        pageDao.updatePageRowNames(pageId, rowNames)
+    }
+
+    override suspend fun updatePageGridSize(pageId: String, rows: Int, columns: Int) {
+        pageDao.updatePageGridSize(pageId, rows, columns)
+    }
 }

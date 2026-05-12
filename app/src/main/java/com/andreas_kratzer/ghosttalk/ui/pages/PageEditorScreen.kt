@@ -15,6 +15,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import com.andreas_kratzer.ghosttalk.core.model.GridSettingsUpdate
 import com.andreas_kratzer.ghosttalk.ui.components.ValidatedTextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -77,7 +78,7 @@ fun PageEditorScreen(
                             delay(500)
                             pageViewModel.updatePageSettings(
                                 pageId = page.id,
-                                newName = localName
+                                update = GridSettingsUpdate(name = localName)
                             )
                         }
                     }
@@ -91,7 +92,7 @@ fun PageEditorScreen(
                             if (it.isNotBlank() && it != page.name) {
                                 pageViewModel.updatePageSettings(
                                     pageId = page.id,
-                                    newName = it
+                                    update = GridSettingsUpdate(name = it)
                                 )
                             }
                         },
