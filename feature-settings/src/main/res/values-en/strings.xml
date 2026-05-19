@@ -8,7 +8,7 @@
     <string name="settings_category_cloud">Accounts &amp; Import</string>
     <string name="settings_category_smart_home">Smart Home (Experimental)</string>
     <string name="settings_category_gemini">Gemini AI Assistant</string>
-    <string name="settings_category_elevenlabs">Eleven Labs</string>
+    <string name="settings_category_elevenlabs">ElevenLabs</string>
     <string name="settings_category_notifications">Permissions</string>
     <string name="settings_category_cloud_book">Backup</string>
     <string name="settings_category_cloud_sync">Synchronization</string>
@@ -51,8 +51,8 @@
     <string name="settings_voice_default">Default</string>
     <string name="settings_voice_local_hint"> (Local)</string>
     <string name="settings_audio_tts">Output: Speak Out Loud</string>
-    <string name="settings_audio_cues">Output: Auditory cue</string>
-    <string name="settings_audio_default">System-Default (Automatic)</string>
+    <string name="settings_audio_cues">Output: Auditory Cue</string>
+    <string name="settings_audio_default">System Default (Automatic)</string>
     <string name="settings_category_audio_hardware">Audio Hardware</string>
     
     <!-- Scanning Settings -->

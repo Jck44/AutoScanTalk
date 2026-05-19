@@ -6,7 +6,7 @@
     
     <!-- Settings Screen Labels -->
 
-    <string name="start_user_mode">Nutzer Modus</string>
+    <string name="start_user_mode">Nutzermodus</string>
     <string name="start_back_to_books">Zurück zu den Büchern</string>
 
     <!-- Book List Screen -->
@@ -28,8 +28,8 @@
     <string name="action_edit">Bearbeiten</string>
     <string name="action_refresh">Aktualisieren</string>
 
-    <string name="error_book_name_required">Bitte geben Sie einen Namen für das Buch ein.</string>
-    <string name="error_page_name_required">Bitte geben Sie einen Namen für die Seite ein.</string>
+    <string name="error_book_name_required">Bitte gib einen Namen für das Buch ein.</string>
+    <string name="error_page_name_required">Bitte gib einen Namen für die Seite ein.</string>
 
 
     <!-- Page List Screen -->
@@ -207,7 +207,7 @@
     <string name="template_built_in_label">Standard</string>
     <string name="template_custom_label">Benutzerdefiniert</string>
     <string name="template_delete_title">Vorlage löschen</string>
-    <string name="template_delete_confirm">Möchten Sie die Vorlage \"%s\" wirklich löschen?</string>
+    <string name="template_delete_confirm">Möchtest du die Vorlage \"%s\" wirklich löschen?</string>
     <string name="template_create_new">Neue Vorlage erstellen</string>
     <string name="template_loading">Vorlage wird geladen…</string>
     <string name="permission_location_denied_weather">Standortberechtigung erforderlich für Wetterdaten.</string>

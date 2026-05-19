@@ -71,7 +71,7 @@
     <string name="button_dialog_edit_title">Edit Button</string>
     <string name="button_label_field">Label</string>
     <string name="button_spoken_text_field">Spoken Text (Optional)</string>
-    <string name="button_auditory_cue_field">Auditory cue (Optional)</string>
+    <string name="button_auditory_cue_field">Auditory Cue (Optional)</string>
     <string name="button_is_active_label">Is Active</string>
     <string name="button_action_label">Action</string>
     <string name="button_action_speak_text">Speak Text</string>
@@ -81,7 +81,7 @@
     <string name="button_action_gemini_nano">Use Gemini Nano (Offline)</string>
     <string name="button_action_frequent_action">Most Frequent Action</string>
     <string name="button_action_smart_prediction">Gemini Prediction</string>
-    <string name="button_action_notification">Notification (Auditory cue)</string>
+    <string name="button_action_notification">Notification (Auditory Cue)</string>
 
     <string name="button_action_control_device">Device Functions</string>
     <string name="button_action_weather">Read Weather</string>
@@ -131,7 +131,7 @@
     <string name="button_google_home_value_number_label">Value</string>
     <string name="button_google_home_value_number_hint">e.g. 50</string>
 
-    <string name="button_play_as_cue">Play as Auditory cue</string>
+    <string name="button_play_as_cue">Play as Auditory Cue</string>
     <string name="button_google_home_device_label">Device</string>
     <string name="button_google_home_command_label">Command</string>
     <string name="button_google_home_value_label">Value</string>
