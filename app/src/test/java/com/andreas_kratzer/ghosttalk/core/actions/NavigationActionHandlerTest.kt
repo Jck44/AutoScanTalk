@@ -3,7 +3,6 @@ package com.andreas_kratzer.ghosttalk.core.actions
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
-import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
@@ -19,7 +18,7 @@ import org.junit.Test
 class NavigationActionHandlerTest {
 
     private lateinit var settingsRepository: SettingsRepository
-    private lateinit var ttsHelper: TextToSpeechHelper
+    private lateinit var ttsProxy: ActionTtsProxy
     private lateinit var actionLogger: ActionLogger
     private lateinit var actionEventEmitter: ActionEventEmitter
     private lateinit var handler: NavigationActionHandler
@@ -27,7 +26,7 @@ class NavigationActionHandlerTest {
     @Before
     fun setup() {
         settingsRepository = mockk(relaxed = true)
-        ttsHelper = mockk(relaxed = true)
+        ttsProxy = mockk(relaxed = true)
         actionLogger = mockk(relaxed = true)
         actionEventEmitter = mockk(relaxed = true)
     }
@@ -37,8 +36,8 @@ class NavigationActionHandlerTest {
         handler = NavigationActionHandler(
             scope = this,
             settingsRepository = settingsRepository,
-            ttsHelperLazy = object : dagger.Lazy<TextToSpeechHelper> {
-                override fun get() = ttsHelper
+            ttsProxyLazy = object : dagger.Lazy<ActionTtsProxy> {
+                override fun get() = ttsProxy
             },
             actionLogger = actionLogger,
             actionEventEmitter = actionEventEmitter
@@ -51,8 +50,8 @@ class NavigationActionHandlerTest {
         handler = NavigationActionHandler(
             scope = this,
             settingsRepository = settingsRepository,
-            ttsHelperLazy = object : dagger.Lazy<TextToSpeechHelper> {
-                override fun get() = ttsHelper
+            ttsProxyLazy = object : dagger.Lazy<ActionTtsProxy> {
+                override fun get() = ttsProxy
             },
             actionLogger = actionLogger,
             actionEventEmitter = actionEventEmitter
@@ -73,8 +72,8 @@ class NavigationActionHandlerTest {
         handler = NavigationActionHandler(
             scope = this,
             settingsRepository = settingsRepository,
-            ttsHelperLazy = object : dagger.Lazy<TextToSpeechHelper> {
-                override fun get() = ttsHelper
+            ttsProxyLazy = object : dagger.Lazy<ActionTtsProxy> {
+                override fun get() = ttsProxy
             },
             actionLogger = actionLogger,
             actionEventEmitter = actionEventEmitter
@@ -95,8 +94,8 @@ class NavigationActionHandlerTest {
         handler = NavigationActionHandler(
             scope = this,
             settingsRepository = settingsRepository,
-            ttsHelperLazy = object : dagger.Lazy<TextToSpeechHelper> {
-                override fun get() = ttsHelper
+            ttsProxyLazy = object : dagger.Lazy<ActionTtsProxy> {
+                override fun get() = ttsProxy
             },
             actionLogger = actionLogger,
             actionEventEmitter = actionEventEmitter
@@ -105,9 +104,9 @@ class NavigationActionHandlerTest {
         val config = ButtonConfig(id = "b1", label = "Go", spokenText = "Navigating", buttonAction = action, auditoryCue = null)
         val onFinish = mockk<(Int) -> Unit>(relaxed = true)
 
-        every { ttsHelper.isReady } returns true
+        every { ttsProxy.isReady } returns true
         val onCompleteSlot = slot<() -> Unit>()
-        every { ttsHelper.speakRouted(any(), any(), any(), any(), capture(onCompleteSlot)) } returns Unit
+        every { ttsProxy.speakRouted(any(), any(), any(), any(), capture(onCompleteSlot)) } returns Unit
 
         handler.handle(config, action, 1, onFinish)
         runCurrent()
@@ -129,8 +128,8 @@ class NavigationActionHandlerTest {
         handler = NavigationActionHandler(
             scope = this,
             settingsRepository = settingsRepository,
-            ttsHelperLazy = object : dagger.Lazy<TextToSpeechHelper> {
-                override fun get() = ttsHelper
+            ttsProxyLazy = object : dagger.Lazy<ActionTtsProxy> {
+                override fun get() = ttsProxy
             },
             actionLogger = actionLogger,
             actionEventEmitter = actionEventEmitter
@@ -139,7 +138,7 @@ class NavigationActionHandlerTest {
         val config = ButtonConfig(id = "b1", label = "Go", spokenText = "Navigating", buttonAction = action, auditoryCue = null)
         val onFinish = mockk<(Int) -> Unit>(relaxed = true)
 
-        every { ttsHelper.isReady } returns false
+        every { ttsProxy.isReady } returns false
 
         handler.handle(config, action, 1, onFinish)
         runCurrent()

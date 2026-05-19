@@ -27,33 +27,13 @@ class SmartHomeSettingsRepository(
     override val hueClientIdFlow = _hueClientId.flow
     override val hueClientSecretFlow = _hueClientSecret.flow
 
-    override var googleHomeProjectId: String
-        get() = _googleHomeProjectId.value
-        set(value) { _googleHomeProjectId.value = value }
-
-    override var hueBridgeIp: String
-        get() = _hueBridgeIp.value
-        set(value) { _hueBridgeIp.value = value }
-
-    override var hueUsername: String
-        get() = _hueUsername.value
-        set(value) { _hueUsername.value = value }
-
-    override var hueAccessToken: String
-        get() = _hueAccessToken.value
-        set(value) { _hueAccessToken.value = value }
-
-    override var hueRefreshToken: String
-        get() = _hueRefreshToken.value
-        set(value) { _hueRefreshToken.value = value }
-
-    override var hueClientId: String
-        get() = _hueClientId.value
-        set(value) { _hueClientId.value = value }
-
-    override var hueClientSecret: String
-        get() = _hueClientSecret.value
-        set(value) { _hueClientSecret.value = value }
+    override var googleHomeProjectId: String by _googleHomeProjectId
+    override var hueBridgeIp: String by _hueBridgeIp
+    override var hueUsername: String by _hueUsername
+    override var hueAccessToken: String by _hueAccessToken
+    override var hueRefreshToken: String by _hueRefreshToken
+    override var hueClientId: String by _hueClientId
+    override var hueClientSecret: String by _hueClientSecret
 
 
 

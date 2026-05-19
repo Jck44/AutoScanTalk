@@ -10,6 +10,7 @@ import kotlinx.coroutines.launch
 
 class RowByRowScanStrategy : ScanStrategy {
     override suspend fun executeScan(
+        scope: CoroutineScope,
         buttonConfigs: List<ButtonConfig?>,
         rows: Int,
         columns: Int,
@@ -72,7 +73,7 @@ class RowByRowScanStrategy : ScanStrategy {
                     
                     if (foundNext) {
                         val nextRowName = rowNames.getOrNull(nextValidRow) ?: "Zeile ${nextValidRow + 1}"
-                        CoroutineScope(Dispatchers.IO).launch {
+                        scope.launch(Dispatchers.IO) {
                             onPrefetchCue(nextRowName)
                         }
                     }
@@ -87,6 +88,7 @@ class RowByRowScanStrategy : ScanStrategy {
     }
 
     suspend fun executeButtonScanInRow(
+        scope: CoroutineScope,
         buttonConfigs: List<ButtonConfig?>,
         rows: Int,
         columns: Int,
@@ -123,7 +125,7 @@ class RowByRowScanStrategy : ScanStrategy {
                 val nextCue = nextConfig.auditoryCue
                 val nextCueText = (nextCue as? AuditoryCue.TextToSpeechCue)?.text?.takeIf { it.isNotBlank() } ?: nextConfig.label
                 
-                CoroutineScope(Dispatchers.IO).launch {
+                scope.launch(Dispatchers.IO) {
                     onPrefetchCue(nextCueText)
                 }
                 

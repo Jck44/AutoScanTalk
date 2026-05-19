@@ -40,45 +40,17 @@ class AdvancedSettingsRepository(
     override val logIgnoredActionsFlow = _logIgnoredActions.flow
     override val logStopActionsFlow = _logStopActions.flow
 
-    override var persistActionLogs: Boolean
-        get() = _persistActionLogs.value
-        set(value) { _persistActionLogs.value = value }
+    override var persistActionLogs: Boolean by _persistActionLogs
+    override var actionLogsStorage: String? by _actionLogsStorage
+    override var showTestButtons: Boolean by _showTestButtons
+    override var showPageIdInLog: Boolean by _showPageIdInLog
+    override var smartPredictionDelay: Long by _smartPredictionDelay
+    override var isSmartPredictionEnabled: Boolean by _isSmartPredictionEnabled
+    override var weatherCacheTimeout: Long by _weatherCacheTimeout
+    override var actionLogLimit: Int by _actionLogLimit
+    override var logIgnoredActions: Boolean by _logIgnoredActions
+    override var logStopActions: Boolean by _logStopActions
 
-    override var actionLogsStorage: String?
-        get() = _actionLogsStorage.value
-        set(value) { _actionLogsStorage.value = value }
-
-    override var showTestButtons: Boolean
-        get() = _showTestButtons.value
-        set(value) { _showTestButtons.value = value }
-
-    override var showPageIdInLog: Boolean
-        get() = _showPageIdInLog.value
-        set(value) { _showPageIdInLog.value = value }
-
-    override var smartPredictionDelay: Long
-        get() = _smartPredictionDelay.value
-        set(value) { _smartPredictionDelay.value = value }
-
-    override var isSmartPredictionEnabled: Boolean
-        get() = _isSmartPredictionEnabled.value
-        set(value) { _isSmartPredictionEnabled.value = value }
-
-    override var weatherCacheTimeout: Long
-        get() = _weatherCacheTimeout.value
-        set(value) { _weatherCacheTimeout.value = value }
-
-    override var actionLogLimit: Int
-        get() = _actionLogLimit.value
-        set(value) { _actionLogLimit.value = value }
-
-    override var logIgnoredActions: Boolean
-        get() = _logIgnoredActions.value
-        set(value) { _logIgnoredActions.value = value }
-
-    override var logStopActions: Boolean
-        get() = _logStopActions.value
-        set(value) { _logStopActions.value = value }
 
     override fun refresh() {
         _persistActionLogs.refresh()

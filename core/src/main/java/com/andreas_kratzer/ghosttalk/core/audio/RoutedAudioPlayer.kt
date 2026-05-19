@@ -7,6 +7,7 @@ import android.media.AudioManager
 import android.media.AudioTrack
 import android.media.MediaPlayer
 import android.util.Log
+import com.andreas_kratzer.ghosttalk.core.di.ApplicationScope
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -21,7 +22,8 @@ import javax.inject.Singleton
 open class RoutedAudioPlayer @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val audioDeviceManager: AudioDeviceManager,
-    private val audioSettings: AudioSettings
+    private val audioSettings: AudioSettings,
+    @ApplicationScope private val scope: CoroutineScope
 ) {
     private val activePlayers = ConcurrentHashMap<MediaPlayer, Boolean>()
     private val playbackJobs = ConcurrentHashMap<MediaPlayer, Job>()
@@ -43,7 +45,7 @@ open class RoutedAudioPlayer @Inject constructor(
             return
         }
 
-        CoroutineScope(Dispatchers.Main).launch {
+        scope.launch(Dispatchers.Main) {
             var focusRequest: android.media.AudioFocusRequest? = null
             val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
             var communicationDeviceSet = false
@@ -191,7 +193,7 @@ open class RoutedAudioPlayer @Inject constructor(
             audioTrack.write(silenceData, 0, silenceData.size)
             
             // Release after a short while
-            CoroutineScope(Dispatchers.IO).launch {
+            scope.launch(Dispatchers.IO) {
                 kotlinx.coroutines.delay(1000)
                 try {
                     audioTrack.stop()

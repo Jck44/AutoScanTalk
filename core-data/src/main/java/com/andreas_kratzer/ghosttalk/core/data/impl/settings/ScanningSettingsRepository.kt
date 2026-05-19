@@ -38,45 +38,17 @@ class ScanningSettingsRepository(
     val limitScanCyclesFlow = _limitScanCycles.flow
     val scanCycleLimitFlow = _scanCycleLimit.flow
 
-    var autoStartScanning: Boolean
-        get() = _autoStartScanning.value
-        set(value) { _autoStartScanning.value = value }
+    var autoStartScanning: Boolean by _autoStartScanning
+    var scanDelayMillis: Long by _scanDelay
+    var resumeScanningFromStart: Boolean by _resumeScanningFromStart
+    var holdingTimeMillis: Long by _holdingTimeMillis
+    var switchActivationKey: String by _switchActivationKey
+    var volumeKeysActivate: Boolean by _volumeKeysActivate
+    var defaultScanPattern: String by _defaultScanPattern
+    var bluetoothDelay: Long by _bluetoothDelay
+    var limitScanCycles: Boolean by _limitScanCycles
+    var scanCycleLimit: Int by _scanCycleLimit
 
-    var scanDelayMillis: Long
-        get() = _scanDelay.value
-        set(value) { _scanDelay.value = value }
-
-    var resumeScanningFromStart: Boolean
-        get() = _resumeScanningFromStart.value
-        set(value) { _resumeScanningFromStart.value = value }
-
-    var holdingTimeMillis: Long
-        get() = _holdingTimeMillis.value
-        set(value) { _holdingTimeMillis.value = value }
-
-    var switchActivationKey: String
-        get() = _switchActivationKey.value
-        set(value) { _switchActivationKey.value = value }
-
-    var volumeKeysActivate: Boolean
-        get() = _volumeKeysActivate.value
-        set(value) { _volumeKeysActivate.value = value }
-
-    var defaultScanPattern: String
-        get() = _defaultScanPattern.value
-        set(value) { _defaultScanPattern.value = value }
-
-    var bluetoothDelay: Long
-        get() = _bluetoothDelay.value
-        set(value) { _bluetoothDelay.value = value }
-
-    var limitScanCycles: Boolean
-        get() = _limitScanCycles.value
-        set(value) { _limitScanCycles.value = value }
-
-    var scanCycleLimit: Int
-        get() = _scanCycleLimit.value
-        set(value) { _scanCycleLimit.value = value }
 
     override fun refresh() {
         _autoStartScanning.refresh()

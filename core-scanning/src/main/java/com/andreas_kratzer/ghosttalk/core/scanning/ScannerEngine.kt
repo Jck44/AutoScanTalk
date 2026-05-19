@@ -83,6 +83,7 @@ class ScannerEngine @Inject constructor(
             try {
                 if (pattern == "row_by_row") {
                     rowByRowStrategy.executeScan(
+                        scope = this,
                         buttonConfigs = buttonConfigs,
                         rows = rows,
                         columns = columns,
@@ -98,6 +99,7 @@ class ScannerEngine @Inject constructor(
                     )
                 } else if (pattern == "linear") {
                     linearStrategy.executeScan(
+                        scope = this,
                         buttonConfigs = buttonConfigs,
                         rows = rows,
                         columns = columns,
@@ -138,6 +140,7 @@ class ScannerEngine @Inject constructor(
         val job = scope.launch {
             try {
                 rowByRowStrategy.executeButtonScanInRow(
+                    scope = this,
                     buttonConfigs = currentButtonConfigs,
                     rows = currentRows,
                     columns = currentColumns,

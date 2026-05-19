@@ -5,7 +5,6 @@ import com.andreas_kratzer.ghosttalk.core.di.ApplicationScope
 import com.andreas_kratzer.ghosttalk.core.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
-import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -13,7 +12,7 @@ import javax.inject.Inject
 class NavigationActionHandler @Inject constructor(
     @param:ApplicationScope private val scope: CoroutineScope,
     private val settingsRepository: SettingsRepository,
-    private val ttsHelperLazy: dagger.Lazy<TextToSpeechHelper>,
+    private val ttsProxyLazy: dagger.Lazy<ActionTtsProxy>,
     private val actionEventEmitter: ActionEventEmitter,
     private val actionLogger: ActionLogger
 ) : ActionHandler {
@@ -39,7 +38,7 @@ class NavigationActionHandler @Inject constructor(
         }
 
         if (feedback != null) {
-            val ttsHelper = ttsHelperLazy.get()
+            val ttsHelper = ttsProxyLazy.get()
             if (ttsHelper.isReady) {
                 ttsHelper.speakRouted(
                     text = feedback,

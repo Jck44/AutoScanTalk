@@ -34,6 +34,7 @@ class LinearScanStrategyTest {
     @Test
     fun `executeScan with empty configs sets focus to null`() = runTest {
         strategy.executeScan(
+            scope = this,
             buttonConfigs = emptyList(),
             rows = 4,
             columns = 4,
@@ -66,6 +67,7 @@ class LinearScanStrategyTest {
         // Use a background scope for the infinite scan loop
         val job = launch {
             strategy.executeScan(
+                scope = this,
                 buttonConfigs = configs,
                 rows = 1,
                 columns = 4,
@@ -109,6 +111,7 @@ class LinearScanStrategyTest {
         val cues = mutableListOf<String>()
         val job = launch {
             strategy.executeScan(
+                scope = this,
                 buttonConfigs = listOf(config),
                 rows = 1,
                 columns = 4,
@@ -139,6 +142,7 @@ class LinearScanStrategyTest {
 
         val job = launch {
             strategy.executeScan(
+                scope = this,
                 buttonConfigs = configs,
                 rows = 1,
                 columns = 4,
@@ -174,6 +178,7 @@ class LinearScanStrategyTest {
         var cycleCount = 0
         val job = launch {
             strategy.executeScan(
+                scope = this,
                 buttonConfigs = listOf(config),
                 rows = 1,
                 columns = 1,

@@ -57,6 +57,7 @@ class RowByRowScanStrategyTest {
         val cues = mutableListOf<String>()
         val job = launch {
             strategy.executeScan(
+                scope = this,
                 buttonConfigs = modifiedConfigs,
                 rows = 7,
                 columns = 2,
@@ -88,6 +89,7 @@ class RowByRowScanStrategyTest {
         val cues = mutableListOf<String>()
         val job = launch {
             strategy.executeScan(
+                scope = this,
                 buttonConfigs = configs,
                 rows = 7,
                 columns = 1,
@@ -118,6 +120,7 @@ class RowByRowScanStrategyTest {
         val cues = mutableListOf<String>()
         val job = launch {
             strategy.executeButtonScanInRow(
+                scope = this,
                 buttonConfigs = configs,
                 rows = 7,
                 columns = 2,
@@ -152,6 +155,7 @@ class RowByRowScanStrategyTest {
         }
         
         strategy.executeButtonScanInRow(
+            scope = this,
             buttonConfigs = configs,
             rows = 7,
             columns = 1,
@@ -180,6 +184,7 @@ class RowByRowScanStrategyTest {
         // Use backgroundScope from runTest to ensure cleanup
         backgroundScope.launch {
             strategy.executeScan(
+                scope = this,
                 buttonConfigs = buttonConfigs,
                 rows = 1,
                 columns = 1,

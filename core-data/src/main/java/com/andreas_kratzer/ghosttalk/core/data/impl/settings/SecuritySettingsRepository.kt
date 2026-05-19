@@ -34,37 +34,15 @@ class SecuritySettingsRepository(
     val isSecurityRequiredForEditFlow = _isSecurityRequiredForEdit.flow
     val isSecurityRequiredForSettingsFlow = _isSecurityRequiredForSettings.flow
 
-    var securityPinHash: String?
-        get() = _securityPinHash.value
-        set(value) { _securityPinHash.value = value }
+    var securityPinHash: String? by _securityPinHash
+    var securityPinSalt: String? by _securityPinSalt
+    var securityPin: String? by _securityPin
+    var securityPinTimeoutMinutes: Long by _securityPinTimeoutMinutes
+    var isPinRequiredForDeletion: Boolean by _isPinRequiredForDeletion
+    var isBiometricEnabled: Boolean by _isBiometricEnabled
+    var isSecurityRequiredForEdit: Boolean by _isSecurityRequiredForEdit
+    var isSecurityRequiredForSettings: Boolean by _isSecurityRequiredForSettings
 
-    var securityPinSalt: String?
-        get() = _securityPinSalt.value
-        set(value) { _securityPinSalt.value = value }
-
-    var securityPin: String?
-        get() = _securityPin.value
-        set(value) { _securityPin.value = value }
-
-    var securityPinTimeoutMinutes: Long
-        get() = _securityPinTimeoutMinutes.value
-        set(value) { _securityPinTimeoutMinutes.value = value }
-
-    var isPinRequiredForDeletion: Boolean
-        get() = _isPinRequiredForDeletion.value
-        set(value) { _isPinRequiredForDeletion.value = value }
-
-    var isBiometricEnabled: Boolean
-        get() = _isBiometricEnabled.value
-        set(value) { _isBiometricEnabled.value = value }
-
-    var isSecurityRequiredForEdit: Boolean
-        get() = _isSecurityRequiredForEdit.value
-        set(value) { _isSecurityRequiredForEdit.value = value }
-
-    var isSecurityRequiredForSettings: Boolean
-        get() = _isSecurityRequiredForSettings.value
-        set(value) { _isSecurityRequiredForSettings.value = value }
 
     override fun refresh() {
         _securityPinHash.refresh()

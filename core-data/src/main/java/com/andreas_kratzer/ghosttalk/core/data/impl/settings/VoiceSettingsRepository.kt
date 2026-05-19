@@ -32,41 +32,16 @@ class VoiceSettingsRepository(
     val elevenLabsTtsLanguageFlow = _elevenLabsTtsLanguage.flow
     val elevenLabsTtsVoiceNameFlow = _elevenLabsTtsVoiceName.flow
 
-    var ttsLanguage: String?
-        get() = _ttsLanguage.value
-        set(value) { _ttsLanguage.value = value }
+    var ttsLanguage: String? by _ttsLanguage
+    var ttsVoiceName: String? by _ttsVoiceName
+    var ttsAudioDeviceAddress: String? by _ttsAudioDeviceAddress
+    var cuesAudioDeviceAddress: String? by _cuesAudioDeviceAddress
+    var ttsEngine: String? by _ttsEngine
+    var googleTtsLanguage: String? by _googleTtsLanguage
+    var googleTtsVoiceName: String? by _googleTtsVoiceName
+    var elevenLabsTtsLanguage: String? by _elevenLabsTtsLanguage
+    var elevenLabsTtsVoiceName: String? by _elevenLabsTtsVoiceName
 
-    var ttsVoiceName: String?
-        get() = _ttsVoiceName.value
-        set(value) { _ttsVoiceName.value = value }
-
-    var ttsAudioDeviceAddress: String?
-        get() = _ttsAudioDeviceAddress.value
-        set(value) { _ttsAudioDeviceAddress.value = value }
-
-    var cuesAudioDeviceAddress: String?
-        get() = _cuesAudioDeviceAddress.value
-        set(value) { _cuesAudioDeviceAddress.value = value }
-
-    var ttsEngine: String?
-        get() = _ttsEngine.value
-        set(value) { _ttsEngine.value = value }
-
-    var googleTtsLanguage: String?
-        get() = _googleTtsLanguage.value
-        set(value) { _googleTtsLanguage.value = value }
-
-    var googleTtsVoiceName: String?
-        get() = _googleTtsVoiceName.value
-        set(value) { _googleTtsVoiceName.value = value }
-
-    var elevenLabsTtsLanguage: String?
-        get() = _elevenLabsTtsLanguage.value
-        set(value) { _elevenLabsTtsLanguage.value = value }
-
-    var elevenLabsTtsVoiceName: String?
-        get() = _elevenLabsTtsVoiceName.value
-        set(value) { _elevenLabsTtsVoiceName.value = value }
 
     override fun refresh() {
         _ttsLanguage.refresh()

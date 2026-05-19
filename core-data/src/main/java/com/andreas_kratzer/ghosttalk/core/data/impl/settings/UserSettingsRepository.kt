@@ -16,13 +16,9 @@ class UserSettingsRepository(
     val keepScreenOnUserModeFlow = _keepScreenOnUserMode.flow
     val userModeScreenBehaviorFlow = _userModeScreenBehavior.flow
 
-    var keepScreenOnUserMode: Boolean
-        get() = _keepScreenOnUserMode.value
-        set(value) { _keepScreenOnUserMode.value = value }
+    var keepScreenOnUserMode: Boolean by _keepScreenOnUserMode
+    var userModeScreenBehavior: String by _userModeScreenBehavior
 
-    var userModeScreenBehavior: String
-        get() = _userModeScreenBehavior.value
-        set(value) { _userModeScreenBehavior.value = value }
 
     override fun refresh() {
         _keepScreenOnUserMode.refresh()

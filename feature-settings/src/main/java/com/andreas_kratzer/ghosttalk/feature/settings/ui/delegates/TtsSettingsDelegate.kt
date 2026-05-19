@@ -60,7 +60,8 @@ class TtsSettingsDelegate @Inject constructor(
     }
 
     private fun viewModelScopeLaunch(block: suspend CoroutineScope.() -> Unit) {
-        (scope ?: CoroutineScope(Dispatchers.Main)).launch {
+        val activeScope = checkNotNull(scope) { "TtsSettingsDelegate scope has not been initialized. Call initialize(scope) first." }
+        activeScope.launch {
             block()
         }
     }

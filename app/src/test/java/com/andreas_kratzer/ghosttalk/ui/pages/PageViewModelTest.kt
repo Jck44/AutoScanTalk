@@ -5,6 +5,7 @@ import androidx.lifecycle.SavedStateHandle
 import com.andreas_kratzer.ghosttalk.core.actions.ActionCoordinator
 import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
 import com.andreas_kratzer.ghosttalk.core.actions.NavigationActionHandler
+import com.andreas_kratzer.ghosttalk.core.actions.ActionTtsProxy
 import com.andreas_kratzer.ghosttalk.core.ai.LocalIntentRouter
 import com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase
 import com.andreas_kratzer.ghosttalk.core.ai.domain.PredictNextActionUseCase
@@ -233,8 +234,8 @@ class PageViewModelTest {
         val navHandler = NavigationActionHandler(
             scope = kotlinx.coroutines.CoroutineScope(testDispatcher),
             settingsRepository = settingsRepository,
-            ttsHelperLazy = object : dagger.Lazy<TextToSpeechHelper> {
-                override fun get() = ttsHelper
+            ttsProxyLazy = object : dagger.Lazy<ActionTtsProxy> {
+                override fun get(): ActionTtsProxy = mockk(relaxed = true)
             },
             actionEventEmitter = actionCoordinator,
             actionLogger = actionCoordinator

@@ -38,42 +38,16 @@ class CloudSettingsRepository(
     override val elevenLabsSimilarityBoostFlow = _elevenLabsSimilarityBoost.flow
     override val elevenLabsTtsLanguageFlow = _elevenLabsTtsLanguage.flow
 
-    override var isCloudSyncEnabled: Boolean
-        get() = _isCloudSyncEnabled.value
-        set(value) { _isCloudSyncEnabled.value = value }
+    override var isCloudSyncEnabled: Boolean by _isCloudSyncEnabled
+    override var syncIntervalMinutes: Long by _syncIntervalMinutes
+    override var syncMode: String by _syncMode
+    override var lastSuccessfulSyncTime: Long by _lastSuccessfulSyncTime
+    override var elevenLabsApiKey: String? by _elevenLabsApiKey
+    override var elevenLabsModel: String by _elevenLabsModel
+    override var elevenLabsStability: Float by _elevenLabsStability
+    override var elevenLabsSimilarityBoost: Float by _elevenLabsSimilarityBoost
+    override var elevenLabsTtsLanguage: String? by _elevenLabsTtsLanguage
 
-    override var syncIntervalMinutes: Long
-        get() = _syncIntervalMinutes.value
-        set(value) { _syncIntervalMinutes.value = value }
-
-    override var syncMode: String
-        get() = _syncMode.value
-        set(value) { _syncMode.value = value }
-
-    override var lastSuccessfulSyncTime: Long
-        get() = _lastSuccessfulSyncTime.value
-        set(value) { _lastSuccessfulSyncTime.value = value }
-
-    override var elevenLabsApiKey: String?
-        get() = _elevenLabsApiKey.value
-        set(value) { _elevenLabsApiKey.value = value }
-        
-    override var elevenLabsModel: String
-        get() = _elevenLabsModel.value
-        set(value) { _elevenLabsModel.value = value }
-
-    override var elevenLabsStability: Float
-        get() = _elevenLabsStability.value
-        set(value) { _elevenLabsStability.value = value }
-
-    override var elevenLabsSimilarityBoost: Float
-        get() = _elevenLabsSimilarityBoost.value
-        set(value) { _elevenLabsSimilarityBoost.value = value }
-
-    override var elevenLabsTtsLanguage: String?
-        get() = _elevenLabsTtsLanguage.value
-        set(value) { _elevenLabsTtsLanguage.value = value }
-        
 
     override fun refresh() {
         _isCloudSyncEnabled.refresh()

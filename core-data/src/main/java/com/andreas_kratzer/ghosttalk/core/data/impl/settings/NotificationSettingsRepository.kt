@@ -16,13 +16,9 @@ class NotificationSettingsRepository(
     val isNotificationReadingEnabledFlow = _isNotificationReadingEnabled.flow
     val monitoredNotificationAppsFlow = _monitoredNotificationApps.flow
 
-    var isNotificationReadingEnabled: Boolean
-        get() = _isNotificationReadingEnabled.value
-        set(value) { _isNotificationReadingEnabled.value = value }
+    var isNotificationReadingEnabled: Boolean by _isNotificationReadingEnabled
+    var monitoredNotificationApps: Set<String> by _monitoredNotificationApps
 
-    var monitoredNotificationApps: Set<String>
-        get() = _monitoredNotificationApps.value
-        set(value) { _monitoredNotificationApps.value = value }
 
     override fun refresh() {
         _isNotificationReadingEnabled.refresh()

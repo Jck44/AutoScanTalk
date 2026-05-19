@@ -22,21 +22,11 @@ class GenAiSettingsRepository(
     val geminiRedoPredictionFlow = _geminiRedoPrediction.flow
     val geminiTimeoutFlow = _geminiTimeout.flow
 
-    var isGeminiEnabled: Boolean
-        get() = _isGeminiEnabled.value
-        set(value) { _isGeminiEnabled.value = value }
+    var isGeminiEnabled: Boolean by _isGeminiEnabled
+    var useLocalGenerativeAi: Boolean by _useLocalGenerativeAi
+    var geminiRedoPrediction: Boolean by _geminiRedoPrediction
+    var geminiTimeout: Long by _geminiTimeout
 
-    var useLocalGenerativeAi: Boolean
-        get() = _useLocalGenerativeAi.value
-        set(value) { _useLocalGenerativeAi.value = value }
-
-    var geminiRedoPrediction: Boolean
-        get() = _geminiRedoPrediction.value
-        set(value) { _geminiRedoPrediction.value = value }
-
-    var geminiTimeout: Long
-        get() = _geminiTimeout.value
-        set(value) { _geminiTimeout.value = value }
 
     override fun refresh() {
         _isGeminiEnabled.refresh()

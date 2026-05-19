@@ -136,6 +136,9 @@ abstract class BaseSettingsRepository(
             }
 
         fun refresh() { if (isScoped) _flow.value = value }
+
+        operator fun getValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>): String? = value
+        operator fun setValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>, v: String?) { value = v }
     }
 
     protected inner class NonNullStringSetting(
@@ -154,6 +157,9 @@ abstract class BaseSettingsRepository(
             }
 
         fun refresh() { if (isScoped) _flow.value = value }
+
+        operator fun getValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>): String = value
+        operator fun setValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>, v: String) { value = v }
     }
 
     protected inner class BooleanSetting(
@@ -172,6 +178,9 @@ abstract class BaseSettingsRepository(
             }
 
         fun refresh() { if (isScoped) _flow.value = value }
+
+        operator fun getValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>): Boolean = value
+        operator fun setValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>, v: Boolean) { value = v }
     }
 
     protected inner class IntSetting(
@@ -190,6 +199,9 @@ abstract class BaseSettingsRepository(
             }
 
         fun refresh() { if (isScoped) _flow.value = value }
+
+        operator fun getValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>): Int = value
+        operator fun setValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>, v: Int) { value = v }
     }
 
     protected inner class LongSetting(
@@ -208,6 +220,9 @@ abstract class BaseSettingsRepository(
             }
 
         fun refresh() { if (isScoped) _flow.value = value }
+
+        operator fun getValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>): Long = value
+        operator fun setValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>, v: Long) { value = v }
     }
 
     protected inner class FloatSetting(
@@ -233,6 +248,9 @@ abstract class BaseSettingsRepository(
             }
 
         fun refresh() { if (isScoped) _flow.value = value }
+
+        operator fun getValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>): Float = value
+        operator fun setValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>, v: Float) { value = v }
     }
 
     protected inner class StringSetSetting(
@@ -251,6 +269,9 @@ abstract class BaseSettingsRepository(
             }
 
         fun refresh() { if (isScoped) _flow.value = value }
+
+        operator fun getValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>): Set<String> = value
+        operator fun setValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>, v: Set<String>) { value = v }
     }
 
     abstract fun refresh()

@@ -11,6 +11,7 @@ import kotlinx.coroutines.launch
 
 class LinearScanStrategy : ScanStrategy {
     override suspend fun executeScan(
+        scope: CoroutineScope,
         buttonConfigs: List<ButtonConfig?>,
         rows: Int,
         columns: Int,
@@ -63,7 +64,7 @@ class LinearScanStrategy : ScanStrategy {
                 val nextCue = nextButtonConfig.auditoryCue
                 val nextCueText = (nextCue as? AuditoryCue.TextToSpeechCue)?.text?.takeIf { it.isNotBlank() } ?: nextButtonConfig.label
                 
-                CoroutineScope(Dispatchers.IO).launch {
+                scope.launch(Dispatchers.IO) {
                     onPrefetchCue(nextCueText)
                 }
 

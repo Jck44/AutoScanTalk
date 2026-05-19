@@ -37,41 +37,16 @@ class GeneralSettingsRepository(
     val startupBehaviorFlow = _startupBehavior.flow
     val forceSoftKeyboardFlow = _forceSoftKeyboard.flow
 
-    var themeMode: String
-        get() = _themeMode.value
-        set(value) { _themeMode.value = value }
+    var themeMode: String by _themeMode
+    var pageSortOrder: String by _pageSortOrder
+    var templateSortOrder: String by _templateSortOrder
+    var appLanguage: String? by _appLanguage
+    var defaultStartPageId: String? by _defaultStartPageId
+    var favoriteBookId: String? by _favoriteBookId
+    var startupBehavior: String by _startupBehavior
+    var forceSoftKeyboard: Boolean by _forceSoftKeyboard
+    var syncLogsStorage: String? by _syncLogsStorage
 
-    var pageSortOrder: String
-        get() = _pageSortOrder.value
-        set(value) { _pageSortOrder.value = value }
-
-    var templateSortOrder: String
-        get() = _templateSortOrder.value
-        set(value) { _templateSortOrder.value = value }
-
-    var appLanguage: String?
-        get() = _appLanguage.value
-        set(value) { _appLanguage.value = value }
-
-    var defaultStartPageId: String?
-        get() = _defaultStartPageId.value
-        set(value) { _defaultStartPageId.value = value }
-
-    var favoriteBookId: String?
-        get() = _favoriteBookId.value
-        set(value) { _favoriteBookId.value = value }
-
-    var startupBehavior: String
-        get() = _startupBehavior.value
-        set(value) { _startupBehavior.value = value }
-
-    var forceSoftKeyboard: Boolean
-        get() = _forceSoftKeyboard.value
-        set(value) { _forceSoftKeyboard.value = value }
-
-    var syncLogsStorage: String?
-        get() = _syncLogsStorage.value
-        set(value) { _syncLogsStorage.value = value }
 
     override fun refresh() {
         _themeMode.refresh()
