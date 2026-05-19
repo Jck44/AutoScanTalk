@@ -6,18 +6,25 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayArrow
+import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -30,6 +37,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import kotlinx.coroutines.delay
 
@@ -122,7 +130,11 @@ fun SettingsEditTextItem(
     keyboardOptions: KeyboardOptions? = null,
     forceKeyboard: Boolean = false,
     numericOnly: Boolean = false,
-    onFocusLost: (() -> Unit)? = null
+    onFocusLost: (() -> Unit)? = null,
+    isPlaying: Boolean = false,
+    onPlayPauseClick: (() -> Unit)? = null,
+    isLoading: Boolean = false,
+    playPauseIconTint: androidx.compose.ui.graphics.Color? = null
 ) {
     val dimensions = LocalDimensions.current
     var localValue by remember(value) { mutableStateOf(value) }
@@ -173,7 +185,25 @@ fun SettingsEditTextItem(
                 }
             },
         keyboardOptions = keyboardOptions ?: defaultKeyboardOptions,
-        singleLine = true
+        singleLine = true,
+        trailingIcon = if (onPlayPauseClick != null && localValue.isNotBlank()) {
+            {
+                if (isLoading) {
+                    androidx.compose.material3.CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    IconButton(onClick = onPlayPauseClick) {
+                        Icon(
+                            imageVector = if (isPlaying) GhostTalkIcons.Stop else Icons.Default.PlayArrow,
+                            contentDescription = if (isPlaying) "Stop" else "Play",
+                            tint = playPauseIconTint ?: androidx.compose.material3.LocalContentColor.current
+                        )
+                    }
+                }
+            }
+        } else null
     )
 }
 
@@ -282,3 +312,83 @@ fun SettingsSliderItem(
         }
     }
 }
+
+data class DropdownGroup(
+    val name: String,
+    val items: List<Pair<String, () -> Unit>>
+)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SettingsGroupedDropdownItem(
+    label: String,
+    selectedOption: String,
+    groups: List<DropdownGroup>,
+    modifier: Modifier = Modifier,
+    onValueChangeFinished: (() -> Unit)? = null
+) {
+    val dimensions = LocalDimensions.current
+    var expanded by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = dimensions.paddingSmall)
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(bottom = dimensions.paddingSmall)
+        )
+
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = { expanded = !expanded }
+        ) {
+            OutlinedTextField(
+                value = selectedOption,
+                onValueChange = {},
+                readOnly = true,
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                shape = MaterialTheme.shapes.large,
+                modifier = Modifier
+                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                    .fillMaxWidth()
+            )
+
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                groups.forEachIndexed { index, group ->
+                    if (group.name.isNotBlank()) {
+                        Text(
+                            text = group.name,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                        )
+                    }
+                    group.items.forEach { (optionLabel, onClick) ->
+                        DropdownMenuItem(
+                            text = { Text(optionLabel, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(start = if (group.name.isNotBlank()) 12.dp else 0.dp)) },
+                            onClick = {
+                                onClick()
+                                focusManager.clearFocus()
+                                expanded = false
+                                onValueChangeFinished?.invoke()
+                            }
+                        )
+                    }
+                    if (index < groups.size - 1) {
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                    }
+                }
+            }
+        }
+    }
+}
+

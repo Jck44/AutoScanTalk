@@ -8,14 +8,25 @@ import android.provider.ContactsContract
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.SuggestionChip
+import androidx.compose.material3.Surface
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -26,6 +37,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
@@ -174,44 +186,148 @@ fun DeviceActionFields(
 
         // Date & Time parameters
         if (selectedType == DeviceActionType.READ_DATE || selectedType == DeviceActionType.READ_TIME || selectedType == DeviceActionType.READ_CALENDAR_ENTRIES) {
-            OutlinedTextField(
-                value = prefixText,
-                onValueChange = onPrefixTextChange,
-                label = { Text(stringResource(R.string.button_device_control_prefix_label)) },
-                shape = MaterialTheme.shapes.large,
-                modifier = Modifier.fillMaxWidth().onFocusChanged { 
-                    if (!it.isFocused) onAutoSave()
+            
+            // Preset Suggestion Chips
+            val scrollState = rememberScrollState()
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(scrollState),
+                horizontalArrangement = Arrangement.spacedBy(dimensions.paddingSmall),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (selectedType == DeviceActionType.READ_TIME) {
+                    SuggestionChip(
+                        onClick = {
+                            onPrefixTextChange("Es ist")
+                            onSuffixTextChange("Uhr")
+                            onOffsetValueChange("0")
+                            onAutoSave()
+                        },
+                        label = { Text("Standard (\"Es ist ... Uhr\")") }
+                    )
+                    SuggestionChip(
+                        onClick = {
+                            onPrefixTextChange("")
+                            onSuffixTextChange("")
+                            onOffsetValueChange("0")
+                            onAutoSave()
+                        },
+                        label = { Text("Kurz (\"14:30\")") }
+                    )
+                    SuggestionChip(
+                        onClick = {
+                            onPrefixTextChange("In fünf Minuten ist es")
+                            onSuffixTextChange("Uhr")
+                            onOffsetValueChange("5")
+                            onAutoSave()
+                        },
+                        label = { Text("+5 Min.") }
+                    )
+                    SuggestionChip(
+                        onClick = {
+                            onPrefixTextChange("Vor fünf Minuten war es")
+                            onSuffixTextChange("Uhr")
+                            onOffsetValueChange("-5")
+                            onAutoSave()
+                        },
+                        label = { Text("-5 Min.") }
+                    )
+                } else if (selectedType == DeviceActionType.READ_DATE) {
+                    SuggestionChip(
+                        onClick = {
+                            onPrefixTextChange("Heute ist")
+                            onSuffixTextChange("")
+                            onIncludeWeekdayChange(true)
+                            onOffsetValueChange("0")
+                            onAutoSave()
+                        },
+                        label = { Text("Wochentag & Datum") }
+                    )
+                    SuggestionChip(
+                        onClick = {
+                            onPrefixTextChange("Heute ist der")
+                            onSuffixTextChange("")
+                            onIncludeWeekdayChange(false)
+                            onOffsetValueChange("0")
+                            onAutoSave()
+                        },
+                        label = { Text("Nur Datum") }
+                    )
+                    SuggestionChip(
+                        onClick = {
+                            onPrefixTextChange("Morgen ist")
+                            onSuffixTextChange("")
+                            onIncludeWeekdayChange(true)
+                            onOffsetValueChange("1")
+                            onAutoSave()
+                        },
+                        label = { Text("Morgen") }
+                    )
+                    SuggestionChip(
+                        onClick = {
+                            onPrefixTextChange("Gestern war")
+                            onSuffixTextChange("")
+                            onIncludeWeekdayChange(true)
+                            onOffsetValueChange("-1")
+                            onAutoSave()
+                        },
+                        label = { Text("Gestern") }
+                    )
                 }
-            )
+            }
 
-            OutlinedTextField(
-                value = suffixText,
-                onValueChange = onSuffixTextChange,
-                label = { Text(stringResource(R.string.button_device_control_suffix_label)) },
-                shape = MaterialTheme.shapes.large,
-                modifier = Modifier.fillMaxWidth().onFocusChanged { 
-                    if (!it.isFocused) onAutoSave()
-                }
-            )
-
-            if (selectedType == DeviceActionType.READ_DATE) {
-                com.andreas_kratzer.ghosttalk.core.ui.components.SettingsToggleItem(
-                    label = stringResource(R.string.button_device_control_weekday_label),
-                    checked = includeWeekday,
-                    onCheckedChange = onIncludeWeekdayChange,
-                    onValueChangeFinished = onAutoSave
-                )
-                
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)
+            ) {
                 OutlinedTextField(
-                    value = offsetValue,
-                    onValueChange = { if (it.isEmpty() || it == "-" || it.all { c -> c.isDigit() || c == '-' }) onOffsetValueChange(it) },
-                    label = { Text(stringResource(R.string.button_device_control_offset_days_label)) },
+                    value = prefixText,
+                    onValueChange = onPrefixTextChange,
+                    label = { Text(stringResource(R.string.button_device_control_prefix_label)) },
                     shape = MaterialTheme.shapes.large,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth().onFocusChanged { 
+                    modifier = Modifier.weight(1f).onFocusChanged { 
                         if (!it.isFocused) onAutoSave()
                     }
                 )
+
+                OutlinedTextField(
+                    value = suffixText,
+                    onValueChange = onSuffixTextChange,
+                    label = { Text(stringResource(R.string.button_device_control_suffix_label)) },
+                    shape = MaterialTheme.shapes.large,
+                    modifier = Modifier.weight(1f).onFocusChanged { 
+                        if (!it.isFocused) onAutoSave()
+                    }
+                )
+            }
+
+            if (selectedType == DeviceActionType.READ_DATE) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)
+                ) {
+                    Box(modifier = Modifier.weight(1.2f)) {
+                        com.andreas_kratzer.ghosttalk.core.ui.components.SettingsToggleItem(
+                            label = stringResource(R.string.button_device_control_weekday_label),
+                            checked = includeWeekday,
+                            onCheckedChange = onIncludeWeekdayChange,
+                            onValueChangeFinished = onAutoSave
+                        )
+                    }
+                    
+                    OutlinedTextField(
+                        value = offsetValue,
+                        onValueChange = { if (it.isEmpty() || it == "-" || it.all { c -> c.isDigit() || c == '-' }) onOffsetValueChange(it) },
+                        label = { Text(stringResource(R.string.button_device_control_offset_days_label)) },
+                        shape = MaterialTheme.shapes.large,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(0.8f).onFocusChanged { 
+                            if (!it.isFocused) onAutoSave()
+                        }
+                    )
+                }
             } else if (selectedType == DeviceActionType.READ_TIME) {
                 OutlinedTextField(
                     value = offsetValue,
@@ -236,6 +352,68 @@ fun DeviceActionFields(
                         if (!it.isFocused) onAutoSave()
                     }
                 )
+            }
+
+            // Spoken text preview
+            val previewText = remember(selectedType, prefixText, suffixText, includeWeekday, offsetValue) {
+                try {
+                    val calendar = java.util.Calendar.getInstance()
+                    val offsetInt = offsetValue.toIntOrNull() ?: 0
+                    if (selectedType == DeviceActionType.READ_TIME) {
+                        if (offsetInt != 0) {
+                            calendar.add(java.util.Calendar.MINUTE, offsetInt)
+                        }
+                        val sdf = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
+                        val timeString = sdf.format(calendar.time)
+                        val prefix = prefixText.takeIf { it.isNotBlank() }?.let { if (it.endsWith(" ")) it else "$it " } ?: ""
+                        val suffix = suffixText.takeIf { it.isNotBlank() }?.let { if (it.startsWith(" ")) it else " $it" } ?: ""
+                        "$prefix$timeString$suffix"
+                    } else if (selectedType == DeviceActionType.READ_DATE) {
+                        if (offsetInt != 0) {
+                            calendar.add(java.util.Calendar.DAY_OF_YEAR, offsetInt)
+                        }
+                        val pattern = if (includeWeekday) "EEEE, dd. MMMM yyyy" else "dd. MMMM yyyy"
+                        val sdf = java.text.SimpleDateFormat(pattern, java.util.Locale.getDefault())
+                        val dateString = sdf.format(calendar.time)
+                        val prefix = prefixText.takeIf { it.isNotBlank() }?.let { if (it.endsWith(" ")) it else "$it " } ?: ""
+                        val suffix = suffixText.takeIf { it.isNotBlank() }?.let { if (it.startsWith(" ")) it else " $it" } ?: ""
+                        "$prefix$dateString$suffix"
+                    } else if (selectedType == DeviceActionType.READ_CALENDAR_ENTRIES) {
+                        val count = offsetInt.coerceAtLeast(1)
+                        val prefix = prefixText.takeIf { it.isNotBlank() }?.let { if (it.endsWith(" ")) it else "$it " } ?: ""
+                        val suffix = suffixText.takeIf { it.isNotBlank() }?.let { if (it.startsWith(" ")) it else " $it" } ?: ""
+                        "$prefix[Termine]$suffix (Liest $count Kalendereinträge vor)"
+                    } else {
+                        ""
+                    }
+                } catch (e: Exception) {
+                    ""
+                }
+            }
+
+            if (previewText.isNotEmpty()) {
+                Surface(
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    shape = MaterialTheme.shapes.medium,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(dimensions.paddingMedium)) {
+                        Text(
+                            text = "Gesprochener Text (Vorschau):",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.height(dimensions.paddingSmall))
+                        Text(
+                            text = "\"$previewText\"",
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                                fontWeight = androidx.compose.ui.text.font.FontWeight.Medium
+                            )
+                        )
+                    }
+                }
             }
         }
     }
@@ -302,17 +480,27 @@ fun MessagingFields(
 
     Column(verticalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)) {
         // Contact Selection
-        OutlinedButton(
-            onClick = { 
-                checkSmsPermission()
-                contactLauncher.launch(null)
-            },
+        OutlinedTextField(
+            value = contactName,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(stringResource(R.string.contact_picker_title)) },
+            shape = MaterialTheme.shapes.large,
             modifier = Modifier.fillMaxWidth(),
-            shape = MaterialTheme.shapes.medium
-        ) {
-            onAutoSave()
-            Text(contactName)
-        }
+            trailingIcon = {
+                IconButton(
+                    onClick = { 
+                        checkSmsPermission()
+                        contactLauncher.launch(null)
+                    }
+                ) {
+                    Icon(
+                        imageVector = com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.Edit,
+                        contentDescription = stringResource(R.string.contact_picker_title)
+                    )
+                }
+            }
+        )
 
         // Message Text (Filtering Emojis)
         OutlinedTextField(

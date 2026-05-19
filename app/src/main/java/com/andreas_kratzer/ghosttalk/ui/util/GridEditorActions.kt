@@ -37,4 +37,7 @@ interface GridEditorActions {
     
     fun isTextCached(text: String): Boolean = false
     fun prefetchText(text: String, onComplete: () -> Unit = {}) {}
+    fun speakTtsPreview(text: String, onDone: () -> Unit = {}) {}
+    fun stopTtsPreview() {}
+    fun isTtsElevenLabs(): Boolean = false
 }

@@ -282,6 +282,10 @@ class PageViewModel @Inject constructor(
         }
     }
 
+    override fun isTtsElevenLabs(): Boolean {
+        return settingsRepository.ttsEngine == "elevenlabs"
+    }
+
     override fun createNewPage(
         name: String,
         rows: Int,
@@ -346,6 +350,14 @@ class PageViewModel @Inject constructor(
     }
 
     suspend fun exportToJson(): String = pageManagementDelegate.exportToJson()
+
+    override fun speakTtsPreview(text: String, onDone: () -> Unit) {
+        ttsHelper.speak(text, queueMode = 0, onDone = onDone, onError = { onDone() })
+    }
+
+    override fun stopTtsPreview() {
+        ttsHelper.stopAll()
+    }
 
     override fun onCleared() {
         super.onCleared()

@@ -12,6 +12,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -22,7 +23,20 @@ import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.SmartHomeButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.GeminiButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.GeminiSearchButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.GeminiNanoButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.ControlDeviceButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.WeatherButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.FrequentActionButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.PreviousActionButtonAction
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalIsUserModeActive
 
@@ -70,34 +84,64 @@ fun GridButton(
             )
         ) {
             Box(
-                contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(dimensions.paddingMedium)
             ) {
-            if (buttonConfig != null) {
-                Text(
-                    text = overrideLabel ?: buttonConfig.label,
-                    color = if (isEditorMode) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = dimensions.buttonFontSize,
-                    textAlign = TextAlign.Center,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    style = MaterialTheme.typography.titleLarge.copy(
+                if (buttonConfig != null) {
+                    if (isEditorMode) {
+                        // 1. Text Badge at top-left
+                        val actionBadgeText = when (buttonConfig.buttonAction) {
+                            is SpeakTextButtonAction -> "Sprechen"
+                            is NavigateToPageButtonAction -> "Nav"
+                            is SmartHomeButtonAction -> "Home"
+                            is GeminiButtonAction, is GeminiSearchButtonAction, is GeminiNanoButtonAction, is GeminiVisionButtonAction -> "KI"
+                            is ControlDeviceButtonAction -> "Gerät"
+                            is WeatherButtonAction -> "Wetter"
+                            is FrequentActionButtonAction, is SmartPredictionButtonAction, is PreviousActionButtonAction -> "Verlauf"
+                        }
+                        
+                        if (actionBadgeText.isNotEmpty()) {
+                            Surface(
+                                color = MaterialTheme.colorScheme.inverseSurface.copy(alpha = 0.75f),
+                                contentColor = MaterialTheme.colorScheme.inverseOnSurface,
+                                shape = MaterialTheme.shapes.extraSmall,
+                                modifier = Modifier.align(Alignment.TopStart)
+                            ) {
+                                Text(
+                                    text = actionBadgeText,
+                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+
+                    }
+
+                    // 3. Label Text centered
+                    Text(
+                        text = overrideLabel ?: buttonConfig.label,
+                        color = if (isEditorMode) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = dimensions.buttonFontSize,
-                        lineHeight = dimensions.buttonFontSize * 1.1f,
-                        platformStyle = PlatformTextStyle(includeFontPadding = false)
+                        textAlign = TextAlign.Center,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.align(Alignment.Center),
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontSize = dimensions.buttonFontSize,
+                            lineHeight = dimensions.buttonFontSize * 1.1f,
+                            platformStyle = PlatformTextStyle(includeFontPadding = false)
+                        )
                     )
-                )
-            } else if (isEditorMode) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = null,
-                    modifier = Modifier.size(dimensions.iconSizeLarge),
-                    tint = MaterialTheme.colorScheme.outline
-                )
+                } else if (isEditorMode) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = null,
+                        modifier = Modifier.size(dimensions.iconSizeLarge).align(Alignment.Center),
+                        tint = MaterialTheme.colorScheme.outline
+                    )
+                }
             }
         }
     }
-}
 }

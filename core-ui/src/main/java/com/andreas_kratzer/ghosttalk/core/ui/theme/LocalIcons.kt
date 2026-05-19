@@ -717,4 +717,15 @@ object GhostTalkIcons {
                 close()
             }
         }
+
+    val Stop: ImageVector
+        get() = materialIcon(name = "Filled.Stop") {
+            materialPath {
+                moveTo(6.0f, 6.0f)
+                horizontalLineToRelative(12.0f)
+                verticalLineToRelative(12.0f)
+                horizontalLineTo(6.0f)
+                close()
+            }
+        }
 }

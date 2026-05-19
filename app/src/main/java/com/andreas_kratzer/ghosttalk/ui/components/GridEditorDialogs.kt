@@ -98,7 +98,10 @@ fun EditorDialogs(
             onPrefetchText = { text, onComplete -> actions.prefetchText(text, onComplete) },
             googleHomeManager = googleHomeManager,
             googleHomeProjectId = googleHomeProjectId,
-            featureGuard = featureGuard
+            featureGuard = featureGuard,
+            onPlayTts = { text, onDone -> actions.speakTtsPreview(text, onDone) },
+            onStopTts = { actions.stopTtsPreview() },
+            isTtsElevenLabs = { actions.isTtsElevenLabs() }
         )
     }
 
