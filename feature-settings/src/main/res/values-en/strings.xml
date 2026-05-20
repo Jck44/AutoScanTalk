@@ -101,6 +101,8 @@
     <string name="settings_elevenlabs_test_success">Connection successful! A test announcement has been sent.</string>
     <string name="settings_elevenlabs_test_failure">Connection failed: %s</string>
     <string name="settings_elevenlabs_test_sample_text">This is a test announcement from ElevenLabs.</string>
+    <string name="settings_voice_preview_button">Play voice preview</string>
+    <string name="settings_voice_preview_sample_text">This is a voice preview for the selected voice in Ghost Talk.</string>
     <string name="settings_elevenlabs_model">Model</string>
     <string name="settings_elevenlabs_model_multilingual">Multilingual v2 (Best quality)</string>
     <string name="settings_elevenlabs_model_turbo">Turbo v2.5 (Fast, ~200ms)</string>

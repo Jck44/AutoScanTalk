@@ -7,6 +7,7 @@ import com.andreas_kratzer.ghosttalk.core.data.PageRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.data.TemplateRepository
 import com.andreas_kratzer.ghosttalk.core.model.Page
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.SortOrder
 import com.andreas_kratzer.ghosttalk.domain.pages.CreatePageUseCase
 import com.andreas_kratzer.ghosttalk.domain.pages.DeletePageUseCase
@@ -221,5 +222,77 @@ class PageManagementDelegateTest {
         
         coVerify { duplicateButtonToPageUseCase.execute("p1", 0, "p2", false) }
         assertEquals(result, receivedResult)
+    }
+
+    @Test
+    fun `moveButtonWithInsert moves button and shifts elements`() = runTest(testDispatcher) {
+        val originalConfigs = MutableList<ButtonConfig?>(49) { null }
+        val b1 = ButtonConfig(id = "b1", label = "L1")
+        val b2 = ButtonConfig(id = "b2", label = "L2")
+        val b3 = ButtonConfig(id = "b3", label = "L3")
+        originalConfigs[0] = b1
+        originalConfigs[1] = b2
+        originalConfigs[2] = b3
+        
+        val page = Page(id = "page1", bookId = "book1", name = "Page 1", rows = 2, columns = 3, buttonConfigs = originalConfigs)
+        coEvery { pageRepository.getPageById("page1") } returns page
+        
+        val updatedPageSlot = io.mockk.slot<Page>()
+        coEvery { pageRepository.updatePage(capture(updatedPageSlot)) } returns Unit
+        
+        delegate.init(backgroundScope)
+        
+        // Move b1 (0) to index 2 (between 1 and 2, target drop pos 2).
+        // Since fromIndex < toIndex, we expect:
+        // b2 shifts from 1 to 0.
+        // b1 is placed at toIndex - 1 (1).
+        // b3 remains at 2.
+        delegate.moveButtonWithInsert("page1", 0, 2)
+        
+        // Wait for coroutine to complete
+        testScheduler.advanceUntilIdle()
+        
+        val updated = updatedPageSlot.captured
+        assertEquals(b2, updated.buttonConfigs[0])
+        assertEquals(b1, updated.buttonConfigs[1])
+        assertEquals(b3, updated.buttonConfigs[2])
+    }
+
+    @Test
+    fun `undo restores previous page state`() = runTest(testDispatcher) {
+        val originalConfigs = MutableList<ButtonConfig?>(49) { null }
+        val b1 = ButtonConfig(id = "b1", label = "L1")
+        originalConfigs[0] = b1
+        
+        val page = Page(id = "page1", bookId = "book1", name = "Page 1", rows = 2, columns = 3, buttonConfigs = originalConfigs)
+        coEvery { pageRepository.getPageById("page1") } returns page
+        
+        val updatedPageSlot = io.mockk.slot<Page>()
+        coEvery { pageRepository.updatePage(capture(updatedPageSlot)) } returns Unit
+        
+        delegate.init(backgroundScope)
+        
+        // Change button configuration at index 0 (which triggers saveUndoStateForPage)
+        val newConfig = ButtonConfig(id = "b1_new", label = "L1_new")
+        delegate.insertButtonConfig("page1", 0, newConfig, forceShift = false) { }
+        
+        testScheduler.advanceUntilIdle()
+        
+        // Verify it was updated
+        assertEquals(newConfig, updatedPageSlot.captured.buttonConfigs[0])
+        
+        // Verify we can undo
+        assertEquals(true, delegate.canUndo.value)
+        
+        // Trigger undo
+        var undoMsg: String? = null
+        delegate.undo { undoMsg = it }
+        
+        testScheduler.advanceUntilIdle()
+        
+        // After undo, the repository should have been updated back to the original page state
+        assertEquals("Aktion rückgängig gemacht", undoMsg)
+        assertEquals(b1, updatedPageSlot.captured.buttonConfigs[0])
+        assertEquals(false, delegate.canUndo.value)
     }
 }

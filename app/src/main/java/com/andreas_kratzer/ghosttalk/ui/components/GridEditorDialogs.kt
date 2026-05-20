@@ -102,6 +102,21 @@ fun EditorDialogs(
             onDelete = {
                 actions.updateButtonConfig(item.id, selectedButtonIndex, null)
                 onDismissButtonDialog()
+                scope.launch {
+                    snackbarHostState.currentSnackbarData?.dismiss()
+                    val result = snackbarHostState.showSnackbar(
+                        message = "Button gelöscht",
+                        actionLabel = "Rückgängig",
+                        duration = androidx.compose.material3.SnackbarDuration.Long
+                    )
+                    if (result == androidx.compose.material3.SnackbarResult.ActionPerformed) {
+                        actions.undo { undoMsg ->
+                            scope.launch {
+                                snackbarHostState.showSnackbar(undoMsg)
+                            }
+                        }
+                    }
+                }
             },
             onNavigateToPage = onEditPage,
             availableGeminiTools = actions.availableGeminiTools,
@@ -139,7 +154,21 @@ fun EditorDialogs(
                     when (result) {
                         is com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.Success -> {
                             onDismissButtonDialog()
-                            android.widget.Toast.makeText(context, R.string.button_move_success, android.widget.Toast.LENGTH_SHORT).show()
+                            scope.launch {
+                                snackbarHostState.currentSnackbarData?.dismiss()
+                                val result = snackbarHostState.showSnackbar(
+                                    message = moveSuccessText,
+                                    actionLabel = "Rückgängig",
+                                    duration = androidx.compose.material3.SnackbarDuration.Long
+                                )
+                                if (result == androidx.compose.material3.SnackbarResult.ActionPerformed) {
+                                    actions.undo { undoMsg ->
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar(undoMsg)
+                                        }
+                                    }
+                                }
+                            }
                         }
                         is com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.NeedsConfirmation -> {
                             onShowHiddenPrompt(result)
@@ -177,7 +206,21 @@ fun EditorDialogs(
                     when (result) {
                         is com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.Success -> {
                             onDismissButtonDialog()
-                            android.widget.Toast.makeText(context, R.string.button_duplicate_success, android.widget.Toast.LENGTH_SHORT).show()
+                            scope.launch {
+                                snackbarHostState.currentSnackbarData?.dismiss()
+                                val result = snackbarHostState.showSnackbar(
+                                    message = duplicateSuccessText,
+                                    actionLabel = "Rückgängig",
+                                    duration = androidx.compose.material3.SnackbarDuration.Long
+                                )
+                                if (result == androidx.compose.material3.SnackbarResult.ActionPerformed) {
+                                    actions.undo { undoMsg ->
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar(undoMsg)
+                                        }
+                                    }
+                                }
+                            }
                         }
                         is com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.NeedsConfirmation -> {
                             onShowHiddenPrompt(result)

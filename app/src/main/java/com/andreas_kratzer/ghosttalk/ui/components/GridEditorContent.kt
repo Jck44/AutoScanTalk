@@ -78,7 +78,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
 
+import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.animation.core.*
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarResult
+
 data class GridCellTarget(val index: Int)
+data class InsertTarget(val index: Int)
 object TemplatesPanelTarget
 data class DraggedGridCell(val index: Int, val config: ButtonConfig)
 
@@ -141,6 +149,24 @@ fun GridEditorContent(
         var newTemplateName by remember { mutableStateOf("") }
         var editingTemplate by remember { mutableStateOf<com.andreas_kratzer.ghosttalk.core.model.ButtonTemplate?>(null) }
 
+        fun showUndoSnackbar(message: String) {
+            scope.launch {
+                snackbarHostState.currentSnackbarData?.dismiss()
+                val result = snackbarHostState.showSnackbar(
+                    message = message,
+                    actionLabel = "Rückgängig",
+                    duration = SnackbarDuration.Long
+                )
+                if (result == SnackbarResult.ActionPerformed) {
+                    actions.undo { undoMsg ->
+                        scope.launch {
+                            snackbarHostState.showSnackbar(undoMsg)
+                        }
+                    }
+                }
+            }
+        }
+
         val onDrop: (Any, Any) -> Unit = { draggedItem, target ->
             when (draggedItem) {
                 is ButtonTemplate -> {
@@ -149,8 +175,24 @@ fun GridEditorContent(
                             val config = draggedItem.buttonConfig.copy(
                                 id = java.util.UUID.randomUUID().toString()
                             )
-                            actions.insertButtonConfig(item.id, target.index, config) { success ->
-                                if (!success) {
+                            actions.insertButtonConfig(item.id, target.index, config, false) { success ->
+                                if (success) {
+                                    showUndoSnackbar("Vorlage platziert")
+                                } else {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar("Zielseite ist voll")
+                                    }
+                                }
+                            }
+                        }
+                        is InsertTarget -> {
+                            val config = draggedItem.buttonConfig.copy(
+                                id = java.util.UUID.randomUUID().toString()
+                            )
+                            actions.insertButtonConfig(item.id, target.index, config, true) { success ->
+                                if (success) {
+                                    showUndoSnackbar("Vorlage eingefügt")
+                                } else {
                                     scope.launch {
                                         snackbarHostState.showSnackbar("Zielseite ist voll")
                                     }
@@ -240,7 +282,13 @@ fun GridEditorContent(
                 }
                 is DraggedGridCell -> {
                     if (target is GridCellTarget) {
-                        actions.moveButton(item.id, draggedItem.index, target.index)
+                        if (draggedItem.index != target.index) {
+                            actions.moveButton(item.id, draggedItem.index, target.index)
+                            showUndoSnackbar("Button verschoben")
+                        }
+                    } else if (target is InsertTarget) {
+                        actions.moveButtonWithInsert(item.id, draggedItem.index, target.index)
+                        showUndoSnackbar("Button verschoben")
                     } else if (target is TemplatesPanelTarget || target is TemplateDropTarget || target is CategoryHeaderDropTarget) {
                         showSaveTemplateDialogConfig = draggedItem.config
                         newTemplateName = draggedItem.config.label
@@ -259,7 +307,7 @@ fun GridEditorContent(
                 when (draggedItem) {
                     is ButtonTemplate -> {
                         Card(
-                            modifier = Modifier.size(width = 120.dp, height = 80.dp),
+                            modifier = Modifier.fillMaxSize(),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
                         ) {
                             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -276,7 +324,7 @@ fun GridEditorContent(
                     }
                     is DraggedGridCell -> {
                         Card(
-                            modifier = Modifier.size(width = 120.dp, height = 80.dp),
+                            modifier = Modifier.fillMaxSize(),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
                         ) {
                             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -533,15 +581,32 @@ private fun EditorButtonCell(
     isTarget: Boolean,
     width: Dp,
     height: Dp,
+    numCols: Int,
+    gridSpacing: Dp,
     onDragEnd: (Int) -> Unit,
     onClick: () -> Unit
 ) {
     val dragDropState = LocalDragDropState.current
+    val isDragging = dragDropState.isDragging
     val isDraggedHovered = dragDropState.currentHoveredTarget == GridCellTarget(globalIndex)
+    
+    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+    val pulseAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.4f,
+        targetValue = 1.0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(800, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulseAlpha"
+    )
+    
     val isHighlighted = isTarget || isDraggedHovered
 
     Box(
         modifier = Modifier
+            .width(width)
+            .height(height)
             .reorderableItemVisuals(reorderState, localIndex)
             .dragHandle(
                 state = reorderState,
@@ -558,23 +623,82 @@ private fun EditorButtonCell(
                     dragSource(item = DraggedGridCell(globalIndex, buttonConfig), longPress = true)
                 } else this
             }
-            .background(
-                if (isHighlighted) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                else Color.Transparent
-            )
-            .border(
-                width = if (isHighlighted) 2.dp else 0.dp,
-                color = if (isHighlighted) MaterialTheme.colorScheme.primary else Color.Transparent,
-                shape = MaterialTheme.shapes.medium
-            )
     ) {
         GridButton(
             buttonConfig = buttonConfig,
             isFocused = false,
-            // isEditorMode now defaults to !LocalIsUserModeActive.current
             onClick = onClick,
-            modifier = Modifier.width(width).height(height)
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    if (isHighlighted) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
+                    else Color.Transparent
+                )
+                .border(
+                    width = if (isDraggedHovered) 3.dp else if (isTarget) 2.dp else 0.dp,
+                    color = if (isDraggedHovered) MaterialTheme.colorScheme.primary.copy(alpha = pulseAlpha)
+                            else if (isTarget) MaterialTheme.colorScheme.primary
+                            else Color.Transparent,
+                    shape = MaterialTheme.shapes.medium
+                )
         )
+
+        if (isDragging) {
+            val leftTarget = InsertTarget(globalIndex)
+            val isLeftHovered = dragDropState.currentHoveredTarget == leftTarget
+            // Center the drop zone in the gap: shift left by half the zone width plus half the grid spacing
+            val halfGap = gridSpacing / 2
+            
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .offset(x = -(12.dp + halfGap))
+                    .width(24.dp)
+                    .fillMaxHeight()
+                    .dropTarget(key = leftTarget),
+                contentAlignment = Alignment.Center
+            ) {
+                if (isLeftHovered) {
+                    Box(
+                        modifier = Modifier
+                            .width(4.dp)
+                            .fillMaxHeight(0.85f)
+                            .background(
+                                color = MaterialTheme.colorScheme.primary,
+                                shape = RoundedCornerShape(2.dp)
+                            )
+                    )
+                }
+            }
+
+            val isLastCol = (globalIndex % numCols) == numCols - 1
+            if (isLastCol) {
+                val rightTarget = InsertTarget(globalIndex + 1)
+                val isRightHovered = dragDropState.currentHoveredTarget == rightTarget
+                
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .offset(x = 12.dp + halfGap)
+                        .width(24.dp)
+                        .fillMaxHeight()
+                        .dropTarget(key = rightTarget),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (isRightHovered) {
+                        Box(
+                            modifier = Modifier
+                                .width(4.dp)
+                                .fillMaxHeight(0.85f)
+                                .background(
+                                    color = MaterialTheme.colorScheme.primary,
+                                    shape = RoundedCornerShape(2.dp)
+                                )
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -663,6 +787,8 @@ private fun LazyGridScope.renderRowByRowGrid(
                             isTarget = buttonTargetIndex == globalIndex,
                             width = sizeInfo.optimalWidth,
                             height = sizeInfo.optimalHeight,
+                            numCols = item.columns,
+                            gridSpacing = dimensions.gridSpacing,
                             onDragEnd = { fromIdx ->
                                 val to = buttonReorderState.findTargetButtonIndex(
                                     gridState = gridState,
@@ -713,6 +839,8 @@ private fun LazyGridScope.renderLinearGrid(
             isTarget = buttonTargetIndex == globalIndex,
             width = sizeInfo.optimalWidth,
             height = sizeInfo.optimalHeight,
+            numCols = item.columns,
+            gridSpacing = dimensions.gridSpacing,
             onDragEnd = { fromLocalIdx ->
                 val toGlobal = buttonReorderState.findTargetButtonIndex(
                     gridState = gridState,

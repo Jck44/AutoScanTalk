@@ -39,7 +39,9 @@ class SettingsRoundTripTest {
 
         val settingsMapper = SettingsMapper(settingsRepository, authManager)
         val actionMapper = ActionMapper()
-        val manager = PageImportExportManager(context, pageRepository, bookRepository, settingsRepository, settingsMapper, actionMapper, logger)
+        val buttonTemplateRepository = mockk<com.andreas_kratzer.ghosttalk.core.data.ButtonTemplateRepository>(relaxed = true)
+        every { buttonTemplateRepository.getTemplates() } returns kotlinx.coroutines.flow.flowOf(emptyList())
+        val manager = PageImportExportManager(context, pageRepository, bookRepository, settingsRepository, settingsMapper, actionMapper, buttonTemplateRepository, logger)
 
         val bookId = "test-book"
         val originalBook = Book(id = bookId, name = "Test Book")

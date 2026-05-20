@@ -5,6 +5,7 @@ import androidx.core.content.edit
 import com.andreas_kratzer.ghosttalk.core.data.BookRepository
 import com.andreas_kratzer.ghosttalk.core.data.PageRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.data.ButtonTemplateRepository
 import com.andreas_kratzer.ghosttalk.core.data.export.PageImportExportProvider
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsMapper
@@ -12,12 +13,14 @@ import com.andreas_kratzer.ghosttalk.core.model.AuditoryCue
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportButton
 import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportExportData
+import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportButton
+import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportButtonTemplate
 import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportPage
 import com.andreas_kratzer.ghosttalk.core.util.Logger
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -41,6 +44,7 @@ class PageImportExportManager @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val settingsMapper: SettingsMapper,
     private val actionMapper: ActionMapper,
+    private val buttonTemplateRepository: ButtonTemplateRepository,
     private val logger: Logger
 ) : PageImportExportProvider {
     private val TAG = "PageImportExportManager"
@@ -90,6 +94,26 @@ class PageImportExportManager @Inject constructor(
         val book = bookRepository.getBookById(bookId) ?: throw Exception("Book not found")
         val pages = pageRepository.getPagesForBook(bookId)
         
+        val buttonTemplatesList = buttonTemplateRepository.getTemplates().first()
+        val mappedButtonTemplates = buttonTemplatesList.map { template ->
+            ImportButtonTemplate(
+                id = template.id,
+                name = template.name,
+                isBuiltIn = template.isBuiltIn,
+                orderIndex = template.orderIndex,
+                button = ImportButton(
+                    id = template.buttonConfig.id,
+                    index = 0,
+                    label = template.buttonConfig.label,
+                    spokenText = template.buttonConfig.spokenText,
+                    auditoryCueText = (template.buttonConfig.auditoryCue as? AuditoryCue.TextToSpeechCue)?.text,
+                    active = template.buttonConfig.isActive,
+                    playActionAsAuditoryCue = template.buttonConfig.playActionAsAuditoryCue,
+                    action = actionMapper.exportAction(template.buttonConfig.buttonAction)
+                )
+            )
+        }
+        
         val baseExportData = ImportExportData(
             ghosttalk_import_version = "1.1",
             appName = "GhostTalk",
@@ -97,6 +121,7 @@ class PageImportExportManager @Inject constructor(
             bookName = book.name,
             bookCreatedAt = book.createdAt,
             bookUpdatedAt = book.updatedAt,
+            buttonTemplates = mappedButtonTemplates,
             pages = pages.map { page ->
                 ImportPage(
                     importId = page.id,
@@ -283,6 +308,37 @@ class PageImportExportManager @Inject constructor(
                     createdAt = importPage.createdAt ?: System.currentTimeMillis()
                 )
                 pageRepository.insertPage(page)
+            }
+            
+            // 3. Import Button Templates (if syncing settings, since they are global)
+            val importButtonTemplates = importData.buttonTemplates
+            if (restoreSyncSettings && importButtonTemplates != null) {
+                logger.d(TAG, "Importing Button Templates...")
+                importButtonTemplates.forEach { importTemplate ->
+                    val button = importTemplate.button
+                    if (button != null) {
+                        val action = button.action?.let { actionMapper.importAction(it, idMap) } ?: SpeakTextButtonAction()
+                        
+                        val config = ButtonConfig(
+                            id = button.id ?: UUID.randomUUID().toString(),
+                            label = button.label,
+                            spokenText = button.spokenText ?: button.action?.textToSpeech,
+                            auditoryCue = button.auditoryCueText?.let { text -> AuditoryCue.TextToSpeechCue(text) },
+                            isActive = button.active ?: true,
+                            playActionAsAuditoryCue = button.playActionAsAuditoryCue ?: false,
+                            buttonAction = action
+                        )
+                        
+                        val template = com.andreas_kratzer.ghosttalk.core.model.ButtonTemplate(
+                            id = importTemplate.id.takeIf { it.isNotBlank() } ?: UUID.randomUUID().toString(),
+                            name = importTemplate.name,
+                            buttonConfig = config,
+                            isBuiltIn = importTemplate.isBuiltIn,
+                            orderIndex = importTemplate.orderIndex
+                        )
+                        buttonTemplateRepository.saveTemplate(template)
+                    }
+                }
             }
             
             // 4. Force refresh of settings flows to ensure UI is updated

@@ -37,6 +37,30 @@ class TemplateViewModel @Inject constructor(
 
     override val availableGeminiTools = geminiUseCase.getAvailableTools()
 
+    private val undoStack = mutableListOf<PageTemplate>()
+    private val _canUndo = MutableStateFlow(false)
+    override val canUndo: StateFlow<Boolean> = _canUndo.asStateFlow()
+
+    private fun saveUndoState(templateId: String) {
+        templates.value.find { it.id == templateId }?.let { current ->
+            if (undoStack.size >= 10) {
+                undoStack.removeAt(0)
+            }
+            undoStack.add(current.copy(buttonConfigs = current.buttonConfigs.toList()))
+            _canUndo.value = true
+        }
+    }
+
+    override fun undo(onSuccess: (String) -> Unit) {
+        if (undoStack.isNotEmpty()) {
+            val previousState = undoStack.removeLast()
+            if (undoStack.isEmpty()) {
+                _canUndo.value = false
+            }
+            updateTemplate(previousState)
+            onSuccess("Aktion rückgängig gemacht")
+        }
+    }
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
@@ -89,6 +113,7 @@ class TemplateViewModel @Inject constructor(
         update: GridSettingsUpdate
     ) {
         val current = templates.value.find { it.id == itemId } ?: return
+        saveUndoState(itemId)
         updateTemplate(current.copy(
             name = update.name ?: current.name,
             scanPattern = update.scanPattern?.value ?: current.scanPattern,
@@ -100,10 +125,11 @@ class TemplateViewModel @Inject constructor(
 
     override fun updateButtonConfig(itemId: String, index: Int, newConfig: ButtonConfig?) {
         val current = templates.value.find { it.id == itemId } ?: return
+        saveUndoState(itemId)
         updateButtonConfig(current, index, newConfig)
     }
 
-    override fun insertButtonConfig(itemId: String, index: Int, newConfig: ButtonConfig, onResult: (Boolean) -> Unit) {
+    override fun insertButtonConfig(itemId: String, index: Int, newConfig: ButtonConfig, forceShift: Boolean, onResult: (Boolean) -> Unit) {
         val current = templates.value.find { it.id == itemId } ?: return
         val newButtonConfigs = current.buttonConfigs.toMutableList()
         
@@ -114,16 +140,17 @@ class TemplateViewModel @Inject constructor(
         
         if (index in newButtonConfigs.indices) {
             // Check if the entire 49 slots are completely full
-            if (newButtonConfigs[index] != null && newButtonConfigs.none { it == null }) {
+            if ((newButtonConfigs[index] != null || forceShift) && newButtonConfigs.none { it == null }) {
                 onResult(false)
                 return
             }
             
-            if (newButtonConfigs[index] == null) {
+            saveUndoState(itemId)
+            if (newButtonConfigs[index] == null && !forceShift) {
                 // Target is empty, just replace
                 newButtonConfigs[index] = newConfig
             } else {
-                // Target is not empty, shift items down following the visible layout flow
+                // Target is not empty or we force shift, shift items down following the visible layout flow
                 val visibleIndices = mutableListOf<Int>()
                 for (r in 0 until current.rows) {
                     for (c in 0 until current.columns) {
@@ -165,6 +192,7 @@ class TemplateViewModel @Inject constructor(
 
     override fun updateRowName(itemId: String, rowIndex: Int, newName: String) {
         val current = templates.value.find { it.id == itemId } ?: return
+        saveUndoState(itemId)
         val updatedNames = current.rowNames.toMutableList()
         while (updatedNames.size <= rowIndex) updatedNames.add("Row ${updatedNames.size + 1}")
         updatedNames[rowIndex] = newName
@@ -175,6 +203,7 @@ class TemplateViewModel @Inject constructor(
         val current = templates.value.find { it.id == itemId } ?: return
         if (fromRow == toRow) return
         
+        saveUndoState(itemId)
         val maxCols = com.andreas_kratzer.ghosttalk.ui.util.GridUtils.MAX_GRID_SIZE
         val newButtonConfigs = current.buttonConfigs.toMutableList()
         
@@ -203,6 +232,7 @@ class TemplateViewModel @Inject constructor(
         val current = templates.value.find { it.id == itemId } ?: return
         if (fromIndex == toIndex) return
         
+        saveUndoState(itemId)
         val newButtonConfigs = current.buttonConfigs.toMutableList()
         // Ensure 49 slots
         while (newButtonConfigs.size < com.andreas_kratzer.ghosttalk.ui.util.GridUtils.TOTAL_SLOTS) {
@@ -218,6 +248,51 @@ class TemplateViewModel @Inject constructor(
         newButtonConfigs[fromIndex] = toConfig
         
         updateTemplate(current.copy(buttonConfigs = newButtonConfigs))
+    }
+
+    override fun moveButtonWithInsert(itemId: String, fromIndex: Int, toIndex: Int) {
+        if (fromIndex == toIndex || fromIndex == toIndex - 1) return
+        val current = templates.value.find { it.id == itemId } ?: return
+        val newButtonConfigs = current.buttonConfigs.toMutableList()
+        
+        while (newButtonConfigs.size < com.andreas_kratzer.ghosttalk.ui.util.GridUtils.TOTAL_SLOTS) {
+            newButtonConfigs.add(null)
+        }
+        
+        val visibleIndices = mutableListOf<Int>()
+        for (r in 0 until current.rows) {
+            for (c in 0 until current.columns) {
+                visibleIndices.add(r * com.andreas_kratzer.ghosttalk.ui.util.GridUtils.MAX_GRID_SIZE + c)
+            }
+        }
+        
+        if (fromIndex in visibleIndices && toIndex <= visibleIndices.size) {
+            val movedItem = newButtonConfigs[fromIndex] ?: return
+            saveUndoState(itemId)
+            newButtonConfigs[fromIndex] = null
+            
+            if (fromIndex < toIndex) {
+                for (i in fromIndex until toIndex - 1) {
+                    if (i < visibleIndices.size - 1) {
+                        val currentGlobal = visibleIndices[i]
+                        val nextGlobal = visibleIndices[i + 1]
+                        newButtonConfigs[currentGlobal] = newButtonConfigs[nextGlobal]
+                    }
+                }
+                val targetGlobal = visibleIndices[toIndex - 1]
+                newButtonConfigs[targetGlobal] = movedItem
+            } else if (fromIndex > toIndex) {
+                for (i in fromIndex downTo toIndex + 1) {
+                    val currentGlobal = visibleIndices[i]
+                    val prevGlobal = visibleIndices[i - 1]
+                    newButtonConfigs[currentGlobal] = newButtonConfigs[prevGlobal]
+                }
+                val targetGlobal = visibleIndices[toIndex]
+                newButtonConfigs[targetGlobal] = movedItem
+            }
+            
+            updateTemplate(current.copy(buttonConfigs = newButtonConfigs))
+        }
     }
 
     override fun moveButtonToPage(

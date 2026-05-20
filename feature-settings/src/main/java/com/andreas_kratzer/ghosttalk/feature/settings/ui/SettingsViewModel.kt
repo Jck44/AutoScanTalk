@@ -450,6 +450,13 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    fun playVoicePreview() {
+        viewModelScope.launch {
+            val sampleText = application.getString(R.string.settings_voice_preview_sample_text)
+            ttsHelper.speak(sampleText)
+        }
+    }
+
 
     fun discoverHueBridges() {
         viewModelScope.launch {

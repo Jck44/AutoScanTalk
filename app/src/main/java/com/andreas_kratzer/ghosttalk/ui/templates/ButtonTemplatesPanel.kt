@@ -268,21 +268,18 @@ fun TemplateItemCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Visual Mini Button representation
+            val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+            val (badgeBgColor, badgeTxtColor) = remember(template.buttonConfig.buttonAction, isDark) {
+                com.andreas_kratzer.ghosttalk.ui.pages.GridButtonColors.getBadgeColors(template.buttonConfig.buttonAction, isDark)
+            }
             Box(
                 modifier = Modifier
                     .size(width = 56.dp, height = 36.dp)
                     .clip(RoundedCornerShape(6.dp))
-                    .background(
-                        Brush.linearGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.primaryContainer,
-                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f)
-                            )
-                        )
-                    )
+                    .background(badgeBgColor)
                     .border(
                         width = 1.dp,
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                        color = badgeTxtColor.copy(alpha = 0.5f),
                         shape = RoundedCornerShape(6.dp)
                     ),
                 contentAlignment = Alignment.Center
@@ -291,7 +288,7 @@ fun TemplateItemCard(
                     text = template.buttonConfig.label.take(8),
                     fontSize = 9.sp,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    color = badgeTxtColor,
                     maxLines = 1
                 )
             }

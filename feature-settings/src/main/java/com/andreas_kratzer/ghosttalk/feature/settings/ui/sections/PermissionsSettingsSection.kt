@@ -8,6 +8,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -17,7 +18,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -28,6 +31,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -178,9 +182,34 @@ private fun PermissionRow(
     onRequest: () -> Unit
 ) {
     val dimensions = LocalDimensions.current
+    val isDark = isSystemInDarkTheme()
+    
+    // Status-colors matching design guidelines
+    val (chipBg, chipContentColor) = if (isGranted) {
+        if (isDark) androidx.compose.ui.graphics.Color(0xFF1B5E20) to androidx.compose.ui.graphics.Color(0xFFC8E6C9)
+        else androidx.compose.ui.graphics.Color(0xFFE8F5E9) to androidx.compose.ui.graphics.Color(0xFF2E7D32)
+    } else {
+        if (isDark) androidx.compose.ui.graphics.Color(0xFFC62828).copy(alpha = 0.2f) to androidx.compose.ui.graphics.Color(0xFFFFCDD2)
+        else androidx.compose.ui.graphics.Color(0xFFFFEBEE) to androidx.compose.ui.graphics.Color(0xFFC62828)
+    }
+    
+    val chipIcon = if (isGranted) Icons.Default.Check else Icons.Default.Warning
+    val chipText = if (isGranted) {
+        stringResource(R.string.settings_permission_active)
+    } else {
+        stringResource(R.string.settings_permission_inactive)
+    }
+
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth().padding(vertical = dimensions.paddingSmall)
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = dimensions.paddingSmall)
+            .run {
+                if (!isGranted) {
+                    clickable(onClick = onRequest)
+                } else this
+            }
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
@@ -192,18 +221,41 @@ private fun PermissionRow(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Text(
-                text = if (isGranted) stringResource(R.string.settings_permission_active) else stringResource(R.string.settings_permission_inactive),
-                style = MaterialTheme.typography.labelSmall,
-                color = if (isGranted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
-            )
         }
-        if (!isGranted) {
-            TextButton(
-                onClick = onRequest,
-                shape = MaterialTheme.shapes.medium
+        
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)
+        ) {
+            Surface(
+                color = chipBg,
+                contentColor = chipContentColor,
+                shape = MaterialTheme.shapes.large,
             ) {
-                Text(stringResource(R.string.settings_permission_request))
+                Row(
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Icon(
+                        imageVector = chipIcon,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Text(
+                        text = chipText,
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                }
+            }
+            
+            if (!isGranted) {
+                TextButton(
+                    onClick = onRequest,
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Text(stringResource(R.string.settings_permission_request))
+                }
             }
         }
     }

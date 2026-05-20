@@ -298,9 +298,19 @@ class PageViewModel @Inject constructor(
         pageManagementDelegate.updateButtonConfig(itemId, index, newConfig)
     }
 
-    override fun insertButtonConfig(itemId: String, index: Int, newConfig: ButtonConfig, onResult: (Boolean) -> Unit) {
-        pageManagementDelegate.insertButtonConfig(itemId, index, newConfig, onResult)
+    override fun insertButtonConfig(itemId: String, index: Int, newConfig: ButtonConfig, forceShift: Boolean, onResult: (Boolean) -> Unit) {
+        pageManagementDelegate.insertButtonConfig(itemId, index, newConfig, forceShift, onResult)
     }
+
+    override fun moveButtonWithInsert(itemId: String, fromIndex: Int, toIndex: Int) {
+        pageManagementDelegate.moveButtonWithInsert(itemId, fromIndex, toIndex)
+    }
+
+    override fun undo(onSuccess: (String) -> Unit) {
+        pageManagementDelegate.undo(onSuccess)
+    }
+
+    override val canUndo: StateFlow<Boolean> = pageManagementDelegate.canUndo
 
     override fun updateGridSettings(
         itemId: String,

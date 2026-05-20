@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
+import androidx.compose.ui.platform.LocalView
+import android.view.HapticFeedbackConstants
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.graphicsLayer
@@ -15,6 +17,9 @@ import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.size
 import androidx.compose.ui.zIndex
 
 val LocalDragDropState = staticCompositionLocalOf<DragDropState> {
@@ -106,6 +111,14 @@ fun DragDropContainer(
 ) {
     state.onDropCallback = onDrop
     var containerPositionInWindow by remember { mutableStateOf(Offset.Zero) }
+    val view = LocalView.current
+    val density = LocalDensity.current
+
+    LaunchedEffect(state.currentHoveredTarget) {
+        if (state.isDragging && state.currentHoveredTarget != null) {
+            view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+        }
+    }
 
     CompositionLocalProvider(LocalDragDropState provides state) {
         Box(
@@ -118,15 +131,18 @@ fun DragDropContainer(
             content()
             
             if (state.isDragging && state.dragItem != null && floatingPreview != null) {
+                val previewWidthDp = with(density) { state.draggedSize.width.toDp() }
+                val previewHeightDp = with(density) { state.draggedSize.height.toDp() }
                 Box(
                     modifier = Modifier
+                        .size(width = previewWidthDp, height = previewHeightDp)
                         .graphicsLayer {
                             val currentPos = state.dragPosition + state.dragOffset
-                            // Subtract container's window offset so translation aligns exactly with container coordinates
+                            // Subtract container's window offset and touchOffset so preview sits exactly under the finger
                             translationX = currentPos.x - containerPositionInWindow.x
                             translationY = currentPos.y - containerPositionInWindow.y
-                            scaleX = 1.08f
-                            scaleY = 1.08f
+                            scaleX = 1.05f
+                            scaleY = 1.05f
                             alpha = 0.85f
                         }
                         .zIndex(9999f)
@@ -147,6 +163,7 @@ fun Modifier.dragSource(
     val state = LocalDragDropState.current
     var itemPosition by remember { mutableStateOf(Offset.Zero) }
     var itemSize by remember { mutableStateOf(IntSize.Zero) }
+    val view = LocalView.current
 
     this
         .onGloballyPositioned { layoutCoordinates ->
@@ -157,6 +174,7 @@ fun Modifier.dragSource(
             if (longPress) {
                 detectDragGesturesAfterLongPress(
                     onDragStart = { offset ->
+                        view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
                         // Pass itemPosition as the base top-left and offset as touchOffset relative to base
                         state.onDragStart(item, itemPosition, itemSize, offset)
                         onDragStart()

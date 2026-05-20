@@ -1,9 +1,17 @@
 package com.andreas_kratzer.ghosttalk.ui.pages
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -15,15 +23,20 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.andreas_kratzer.ghosttalk.core.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
@@ -40,6 +53,45 @@ import com.andreas_kratzer.ghosttalk.core.model.PreviousActionButtonAction
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalIsUserModeActive
 
+object GridButtonColors {
+    fun getBadgeColors(action: ButtonAction, isDark: Boolean): Pair<Color, Color> {
+        return when (action) {
+            is SpeakTextButtonAction -> {
+                if (isDark) Color(0xFF1B5E20) to Color(0xFFC8E6C9)
+                else Color(0xFFE8F5E9) to Color(0xFF2E7D32)
+            }
+            is NavigateToPageButtonAction -> {
+                if (isDark) Color(0xFF0D47A1) to Color(0xFFBBDEFB)
+                else Color(0xFFE3F2FD) to Color(0xFF1565C0)
+            }
+            is SmartHomeButtonAction -> {
+                if (isDark) Color(0xFF4A148C) to Color(0xFFE1BEE7)
+                else Color(0xFFF3E5F5) to Color(0xFF6A1B9A)
+            }
+            is GeminiButtonAction, is GeminiSearchButtonAction, is GeminiNanoButtonAction, is GeminiVisionButtonAction -> {
+                if (isDark) Color(0xFF1A237E) to Color(0xFFC5CAE9)
+                else Color(0xFFE8EAF6) to Color(0xFF283593)
+            }
+            is ControlDeviceButtonAction -> {
+                if (isDark) Color(0xFF004D40) to Color(0xFFB2DFDB)
+                else Color(0xFFE0F2F1) to Color(0xFF00695C)
+            }
+            is WeatherButtonAction -> {
+                if (isDark) Color(0xFF5D4037) to Color(0xFFFFE0B2) // Amber/Orange-ish brown
+                else Color(0xFFFFF3E0) to Color(0xFFE65100)
+            }
+            is FrequentActionButtonAction, is SmartPredictionButtonAction, is PreviousActionButtonAction -> {
+                if (isDark) Color(0xFF263238) to Color(0xFFCFD8DC)
+                else Color(0xFFECEFF1) to Color(0xFF37474F)
+            }
+            else -> {
+                if (isDark) Color(0xFF333333) to Color(0xFFCCCCCC)
+                else Color(0xFFEEEEEE) to Color(0xFF333333)
+            }
+        }
+    }
+}
+
 @Composable
 fun GridButton(
     buttonConfig: ButtonConfig?,
@@ -54,17 +106,30 @@ fun GridButton(
     val isActive = buttonConfig?.isActive ?: true
     val stateTag = if (isFocused) "button_focused" else if (isRowFocused) "row_focused" else "button_idle"
     
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.94f else 1.0f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "button_scale"
+    )
+    
     Box(
         modifier = modifier
             .testTag(buttonConfig?.id ?: "")
-            .clickable(onClick = onClick)
     ) {
         Card(
+            onClick = onClick,
+            interactionSource = interactionSource,
             modifier = Modifier
                 .fillMaxSize()
+                .scale(scale)
                 .alpha(if (isEditorMode && !isActive) 0.5f else 1f)
-                .testTag(stateTag)
-                .clickable(onClick = onClick),
+                .testTag(stateTag),
             shape = MaterialTheme.shapes.medium,
             elevation = CardDefaults.cardElevation(
                 defaultElevation = if (buttonConfig != null) dimensions.cardElevation else 0.dp
@@ -83,14 +148,16 @@ fun GridButton(
                 }
             )
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(dimensions.paddingMedium)
-            ) {
-                if (buttonConfig != null) {
-                    if (isEditorMode) {
-                        // 1. Text Badge at top-left
+            if (buttonConfig != null) {
+                if (isEditorMode) {
+                    // Editor mode: Column layout with badge on top, label centered below
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(2.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        // Action badge at top
                         val actionBadgeText = when (buttonConfig.buttonAction) {
                             is SpeakTextButtonAction -> "Sprechen"
                             is NavigateToPageButtonAction -> "Nav"
@@ -101,43 +168,78 @@ fun GridButton(
                             is FrequentActionButtonAction, is SmartPredictionButtonAction, is PreviousActionButtonAction -> "Verlauf"
                         }
                         
-                        if (actionBadgeText.isNotEmpty()) {
-                            Surface(
-                                color = MaterialTheme.colorScheme.inverseSurface.copy(alpha = 0.75f),
-                                contentColor = MaterialTheme.colorScheme.inverseOnSurface,
-                                shape = MaterialTheme.shapes.extraSmall,
-                                modifier = Modifier.align(Alignment.TopStart)
-                            ) {
-                                Text(
-                                    text = actionBadgeText,
-                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
-                                )
-                            }
+                        val isDark = isSystemInDarkTheme()
+                        val (badgeBgColor, badgeTxtColor) = GridButtonColors.getBadgeColors(buttonConfig.buttonAction, isDark)
+                        
+                        Surface(
+                            color = badgeBgColor,
+                            contentColor = badgeTxtColor,
+                            shape = MaterialTheme.shapes.extraSmall,
+                            modifier = Modifier.align(Alignment.Start)
+                        ) {
+                            Text(
+                                text = actionBadgeText,
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
+                                modifier = Modifier.padding(horizontal = 3.dp, vertical = 1.dp)
+                            )
                         }
-
+                        
+                        // Label centered in remaining space
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = overrideLabel ?: buttonConfig.label,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                fontSize = dimensions.buttonFontSize,
+                                textAlign = TextAlign.Center,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                                style = MaterialTheme.typography.titleLarge.copy(
+                                    fontSize = dimensions.buttonFontSize,
+                                    lineHeight = dimensions.buttonFontSize * 1.1f,
+                                    platformStyle = PlatformTextStyle(includeFontPadding = false)
+                                )
+                            )
+                        }
                     }
-
-                    // 3. Label Text centered
-                    Text(
-                        text = overrideLabel ?: buttonConfig.label,
-                        color = if (isEditorMode) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = dimensions.buttonFontSize,
-                        textAlign = TextAlign.Center,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.align(Alignment.Center),
-                        style = MaterialTheme.typography.titleLarge.copy(
+                } else {
+                    // User mode: just centered label, no badge
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(dimensions.paddingMedium),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = overrideLabel ?: buttonConfig.label,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = dimensions.buttonFontSize,
-                            lineHeight = dimensions.buttonFontSize * 1.1f,
-                            platformStyle = PlatformTextStyle(includeFontPadding = false)
+                            textAlign = TextAlign.Center,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            style = MaterialTheme.typography.titleLarge.copy(
+                                fontSize = dimensions.buttonFontSize,
+                                lineHeight = dimensions.buttonFontSize * 1.1f,
+                                platformStyle = PlatformTextStyle(includeFontPadding = false)
+                            )
                         )
-                    )
-                } else if (isEditorMode) {
+                    }
+                }
+            } else if (isEditorMode) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(dimensions.paddingMedium),
+                    contentAlignment = Alignment.Center
+                ) {
                     Icon(
                         imageVector = Icons.Default.Add,
                         contentDescription = null,
-                        modifier = Modifier.size(dimensions.iconSizeLarge).align(Alignment.Center),
+                        modifier = Modifier.size(dimensions.iconSizeLarge),
                         tint = MaterialTheme.colorScheme.outline
                     )
                 }

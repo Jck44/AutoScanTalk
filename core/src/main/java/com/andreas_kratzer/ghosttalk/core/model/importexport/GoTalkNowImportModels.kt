@@ -66,6 +66,7 @@ data class ImportExportData(
     val elevenLabsStability: Float? = null,
     val elevenLabsSimilarityBoost: Float? = null,
     val templates: List<ImportTemplate>? = null,
+    val buttonTemplates: List<ImportButtonTemplate>? = null,
     val pages: List<ImportPage> = emptyList()
 )
 
@@ -107,6 +108,15 @@ data class ImportButton(
     val active: Boolean? = true,
     val playActionAsAuditoryCue: Boolean? = false,
     val action: ImportAction? = null
+)
+
+@Serializable
+data class ImportButtonTemplate(
+    val id: String = "",
+    val name: String = "",
+    val isBuiltIn: Boolean = false,
+    val orderIndex: Int = 0,
+    val button: ImportButton? = null
 )
 
 @Serializable

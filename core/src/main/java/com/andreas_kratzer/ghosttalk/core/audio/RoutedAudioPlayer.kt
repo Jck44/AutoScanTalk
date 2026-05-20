@@ -23,7 +23,7 @@ open class RoutedAudioPlayer @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val audioDeviceManager: AudioDeviceManager,
     private val audioSettings: AudioSettings,
-    @ApplicationScope private val scope: CoroutineScope
+    @param:ApplicationScope private val scope: CoroutineScope
 ) {
     private val activePlayers = ConcurrentHashMap<MediaPlayer, Boolean>()
     private val playbackJobs = ConcurrentHashMap<MediaPlayer, Job>()
