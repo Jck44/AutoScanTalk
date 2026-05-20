@@ -124,7 +124,7 @@ fun PageScreen(
                     .fillMaxSize(),
                 horizontalArrangement = Arrangement.spacedBy(dimensions.paddingLarge)
             ) {
-                Box(modifier = Modifier.weight(0.7f)) {
+                Box(modifier = Modifier.weight(0.65f)) {
                     ButtonGrid(
                         page = page,
                         focusedButtonIndex = focusedButtonIndex,
@@ -136,10 +136,9 @@ fun PageScreen(
 
                 Column(
                     modifier = Modifier
-                        .weight(0.3f)
-                        .fillMaxHeight()
-                        .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.Bottom
+                        .weight(0.35f)
+                        .fillMaxHeight(),
+                    verticalArrangement = Arrangement.spacedBy(dimensions.paddingMedium)
                 ) {
                     if (showTestButtons) {
                         ControlButtons(
@@ -148,12 +147,12 @@ fun PageScreen(
                             onStopScanning = { pageViewModel.stopScanning() },
                             isFocused = focusedButtonIndex != null || focusedRowIndex != null
                         )
-                        Spacer(modifier = Modifier.height(dimensions.paddingLarge))
                     }
                     ActionLogCard(
                         lastActions = lastActions,
                         onClearLogs = { pageViewModel.clearActionLogs() },
-                        actionLogUseCase = pageViewModel.interactionDelegate.actionLogUseCase
+                        actionLogUseCase = pageViewModel.interactionDelegate.actionLogUseCase,
+                        modifier = Modifier.weight(1f)
                     )
                 }
             }

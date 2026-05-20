@@ -44,11 +44,19 @@ fun ActionLogCard(
 ) {
     val dimensions = LocalDimensions.current
     var showDetailDialog by remember { mutableStateOf(false) }
+    val isLandscape = androidx.compose.ui.platform.LocalConfiguration.current.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
 
-    Card(
-        modifier = modifier
+    val cardModifier = if (isLandscape) {
+        modifier
+            .fillMaxWidth()
+    } else {
+        modifier
             .fillMaxWidth()
             .heightIn(min = 80.dp, max = 180.dp)
+    }
+
+    Card(
+        modifier = cardModifier
             .clickable { showDetailDialog = true },
         shape = MaterialTheme.shapes.large,
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
@@ -105,7 +113,8 @@ fun ActionLogCard(
                     contentPadding = PaddingValues(bottom = 4.dp),
                     userScrollEnabled = false // Prevent scroll conflict with card click
                 ) {
-                    items(lastActions.take(5)) { entry ->
+                    val maxItems = if (isLandscape) 10 else 5
+                    items(lastActions.take(maxItems)) { entry ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
