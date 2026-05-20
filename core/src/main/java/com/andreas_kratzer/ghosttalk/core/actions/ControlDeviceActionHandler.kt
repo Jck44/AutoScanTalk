@@ -81,8 +81,7 @@ class ControlDeviceActionHandler @Inject constructor(
             }
 
             DeviceActionType.CLEAR_NOTIFICATIONS -> {
-                actionLogger.log("Benachrichtigungen löschen noch nicht unterstützt.", action, buttonConfig.label)
-                onFinish(executionId)
+                handleClearNotifications(deviceAction, buttonConfig.label, executionId, onFinish)
             }
         }
     }
@@ -232,8 +231,8 @@ class ControlDeviceActionHandler @Inject constructor(
         }
 
         val tts = ttsProxyLazy.get()
-        if (service == null || !settings.isNotificationReadingEnabled) {
-            val msg = "Vorlesen von Benachrichtigungen nicht aktiv oder Berechtigung fehlt."
+        if (service == null) {
+            val msg = "Berechtigung für Benachrichtigungs-Zugriff fehlt."
             actionLogger.log(msg, action, buttonConfig.label)
             if (tts.isReady) {
                 tts.speakRouted(msg, targetDeviceAddress) {
@@ -472,5 +471,46 @@ class ControlDeviceActionHandler @Inject constructor(
             val ssml = "<speak>$plain</speak>"
             speakRoutedWithLogging(ssml, plain, config, action, executionId, onFinish)
         }
+    }
+
+    private fun handleClearNotifications(action: ControlDeviceButtonAction, label: String?, executionId: Int, onFinish: (Int) -> Unit) {
+        val service = NotificationReaderService.instance
+        if (service == null) {
+            actionLogger.log("Benachrichtigungsservice nicht verbunden.", action, label)
+            onFinish(executionId)
+            return
+        }
+
+        val contactPhone = action.contactPhone
+        val targetPackages = if (!contactPhone.isNullOrBlank()) {
+            contactPhone.split(",").map { it.trim() }.filter { it.isNotEmpty() }.toSet()
+        } else {
+            settings.monitoredNotificationApps
+        }
+
+        try {
+            val activeNotifications = service.activeNotifications
+            if (activeNotifications != null) {
+                var clearedCount = 0
+                for (sbn in activeNotifications) {
+                    val pkg = sbn.packageName
+                    if (targetPackages.isEmpty() || targetPackages.contains(pkg)) {
+                        service.cancelNotification(sbn.key)
+                        clearedCount++
+                    }
+                }
+                if (clearedCount > 0) {
+                    actionLogger.log("$clearedCount Benachrichtigungen als gelesen markiert.", action, label)
+                } else {
+                    actionLogger.log("Keine passenden Benachrichtigungen zum Löschen gefunden.", action, label)
+                }
+            } else {
+                actionLogger.log("Keine aktiven Benachrichtigungen gefunden.", action, label)
+            }
+        } catch (e: Exception) {
+            actionLogger.log("Fehler beim Löschen der Benachrichtigungen: ${e.message}", action, label)
+        }
+
+        onFinish(executionId)
     }
 }

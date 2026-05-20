@@ -138,10 +138,8 @@
     <string name="settings_notifications_enable">Allow System Access</string>
     <string name="settings_notifications_enable_desc">Required for the app to read and process incoming notifications.</string>
     <string name="settings_notifications_permission_button">Grant Permission</string>
-    <string name="settings_notifications_feature_enable">Enable Reading</string>
-    <string name="settings_notifications_feature_enable_desc">Read incoming notifications from selected apps out loud or as an auditory cue.</string>
-    <string name="settings_notifications_apps_header">Select Apps</string>
-    <string name="settings_notifications_apps_reset">Reset app selection to messengers</string>
+    <string name="settings_notifications_apps_header">Preferred Apps</string>
+    <string name="settings_notifications_apps_reset">Reset preferred apps to messengers</string>
     <string name="settings_permission_camera">Camera</string>
     <string name="settings_permission_camera_desc">Required for photos to describe the environment via Gemini.</string>
     <string name="settings_permission_location">Location</string>

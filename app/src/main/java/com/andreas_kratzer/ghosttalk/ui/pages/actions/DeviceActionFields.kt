@@ -241,12 +241,13 @@ fun DeviceActionFields(
         }
 
         // Notification parameters (Target App Selection)
-        if (selectedType == DeviceActionType.READ_NOTIFICATIONS) {
+        if (selectedType == DeviceActionType.READ_NOTIFICATIONS || selectedType == DeviceActionType.CLEAR_NOTIFICATIONS) {
             NotificationAppPicker(
                 selectedPackage = contactPhone,
                 selectedLabel = contactName,
                 onAppSelected = { label, pkg ->
                     onContactSelected(label, pkg)
+                    onAutoSave()
                 }
             )
         }

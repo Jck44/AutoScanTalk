@@ -159,10 +159,8 @@
     <string name="settings_notifications_enable">System-Zugriff erlauben</string>
     <string name="settings_notifications_enable_desc">Erforderlich, damit die App eingehende Benachrichtigungen lesen und verarbeiten kann.</string>
     <string name="settings_notifications_permission_button">Berechtigung</string>
-    <string name="settings_notifications_feature_enable">Vorlesen aktivieren</string>
-    <string name="settings_notifications_feature_enable_desc">Eingehende Benachrichtigungen der ausgewählten Apps laut oder als Audio-Hinweis ausgeben.</string>
-    <string name="settings_notifications_apps_header">Apps auswählen</string>
-    <string name="settings_notifications_apps_reset">App-Auswahl auf Messenger zurücksetzen</string>
+    <string name="settings_notifications_apps_header">Bevorzugte Apps</string>
+    <string name="settings_notifications_apps_reset">Bevorzugte Apps auf Messenger zurücksetzen</string>
     <string name="settings_permission_camera">Kamera</string>
     <string name="settings_permission_camera_desc">Wird für Fotos zur Beschreibung der Umgebung über Gemini benötigt.</string>
     <string name="settings_permission_location">Standort</string>

@@ -100,7 +100,6 @@ class ControlDeviceActionHandlerTest {
         
         val service = mockk<NotificationReaderService>(relaxed = true)
         every { NotificationReaderService.instance } returns service
-        every { settings.isNotificationReadingEnabled } returns true
         every { ttsProxy.isReady } returns true
         
         val sbn = mockk<android.service.notification.StatusBarNotification>(relaxed = true)

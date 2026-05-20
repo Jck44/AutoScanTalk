@@ -72,14 +72,9 @@ class FeatureGuardTest {
     }
 
     @Test
-    fun `isActionEnabled respects notification reading setting for ControlDeviceButtonAction`() {
+    fun `isActionEnabled returns true for notification reading ControlDeviceButtonAction`() {
         val action = ControlDeviceButtonAction(DeviceActionType.READ_NOTIFICATIONS)
-
-        every { settingsRepository.isNotificationReadingEnabled } returns true
         assertTrue(featureGuard.isActionEnabled(action))
-
-        every { settingsRepository.isNotificationReadingEnabled } returns false
-        assertFalse(featureGuard.isActionEnabled(action))
     }
 
     @Test

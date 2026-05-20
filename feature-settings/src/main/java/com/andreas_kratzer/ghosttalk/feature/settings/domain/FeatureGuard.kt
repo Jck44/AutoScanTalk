@@ -40,13 +40,7 @@ class FeatureGuard @Inject constructor(
                     SmartHomeProvider.PHILIPS_HUE -> settingsRepository.hueAccessToken.isNotBlank()
                 }
             }
-            is ControlDeviceButtonAction -> {
-                if (action.actionType == DeviceActionType.READ_NOTIFICATIONS) {
-                    settingsRepository.isNotificationReadingEnabled
-                } else {
-                    true
-                }
-            }
+            is ControlDeviceButtonAction -> true
             else -> true
         }
     }

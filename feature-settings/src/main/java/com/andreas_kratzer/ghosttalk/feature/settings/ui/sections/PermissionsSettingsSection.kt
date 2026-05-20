@@ -60,8 +60,6 @@ fun PermissionsSettingsSection(viewModel: SettingsViewModel) {
     val dimensions = LocalDimensions.current
     val packageName = context.packageName
 
-    // Notification Reader State
-    val isNotificationReadingEnabled by viewModel.isNotificationReadingEnabled.collectAsState(false)
     val monitoredApps by viewModel.monitoredNotificationApps.collectAsState(emptySet())
     
     // Permission States
@@ -117,30 +115,20 @@ fun PermissionsSettingsSection(viewModel: SettingsViewModel) {
             )
 
             if (notificationListenerGranted) {
-                SettingsToggleItem(
-                    label = stringResource(R.string.settings_notifications_feature_enable),
-                    checked = isNotificationReadingEnabled,
-                    description = stringResource(R.string.settings_notifications_feature_enable_desc),
-                    onCheckedChange = { viewModel.setNotificationReadingEnabled(it) }
-                )
-
-                if (isNotificationReadingEnabled) {
-                    HorizontalDivider(modifier = Modifier.padding(vertical = dimensions.paddingMedium))
-                    PreferredAppsPicker(
-                        monitoredApps = monitoredApps,
-                        onToggleApp = { pkg, checked ->
-                            viewModel.toggleMonitoredNotificationApp(pkg, checked)
-                        },
-                        onToggleAll = { apps ->
-                            viewModel.setMonitoredNotificationApps(apps)
-                        }
-                    )
-                    TextButton(
-                        onClick = { viewModel.resetMonitoredNotificationAppsToMessagingDefaults() },
-                        modifier = Modifier.padding(top = dimensions.paddingSmall)
-                    ) {
-                        Text(stringResource(R.string.settings_notifications_apps_reset))
+                PreferredAppsPicker(
+                    monitoredApps = monitoredApps,
+                    onToggleApp = { pkg, checked ->
+                        viewModel.toggleMonitoredNotificationApp(pkg, checked)
+                    },
+                    onToggleAll = { apps ->
+                        viewModel.setMonitoredNotificationApps(apps)
                     }
+                )
+                TextButton(
+                    onClick = { viewModel.resetMonitoredNotificationAppsToMessagingDefaults() },
+                    modifier = Modifier.padding(top = dimensions.paddingSmall)
+                ) {
+                    Text(stringResource(R.string.settings_notifications_apps_reset))
                 }
             }
 
