@@ -274,7 +274,8 @@ class PageViewModelTest {
             actionExecutor = actionExecutor,
             scanCoordinator = scanCoordinator,
             geminiUseCase = geminiUseCase,
-            googleHomeManager = googleHomeManager
+            googleHomeManager = googleHomeManager,
+            buttonTemplateRepository = mockk(relaxed = true)
         )
     }
 

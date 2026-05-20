@@ -46,6 +46,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.cloud.GoogleHomeManager
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
@@ -56,9 +57,30 @@ import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalCurrentPageId
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalIsUserModeActive
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.ui.platform.LocalContext
 import com.andreas_kratzer.ghosttalk.ui.pages.GridButton
 import com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions
 import com.andreas_kratzer.ghosttalk.ui.util.GridUtils
+import com.andreas_kratzer.ghosttalk.core.model.ButtonTemplate
+import com.andreas_kratzer.ghosttalk.core.model.ActionCategoryRegistry
+import com.andreas_kratzer.ghosttalk.ui.components.TemplateDropTarget
+import com.andreas_kratzer.ghosttalk.ui.components.CategoryHeaderDropTarget
+import com.andreas_kratzer.ghosttalk.ui.templates.ButtonTemplatesPanel
+import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.sp
+
+data class GridCellTarget(val index: Int)
+object TemplatesPanelTarget
+data class DraggedGridCell(val index: Int, val config: ButtonConfig)
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -73,7 +95,8 @@ fun GridEditorContent(
     onEditPage: ((String) -> Unit)? = null,
     googleHomeManager: GoogleHomeManager? = null,
     googleHomeProjectId: String = "",
-    initialButtonId: String? = null
+    initialButtonId: String? = null,
+    pageViewModel: PageViewModel? = null
 ) {
     CompositionLocalProvider(
         LocalCurrentPageId provides item.id,
@@ -83,6 +106,7 @@ fun GridEditorContent(
         val configuration = LocalConfiguration.current
         val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
         val density = LocalDensity.current.density
+        val context = LocalContext.current
 
         var selectedButtonIndex by remember { mutableStateOf<Int?>(null) }
         var showDialog by remember { mutableStateOf(false) }
@@ -112,141 +136,398 @@ fun GridEditorContent(
         val rowReorderState = rememberReorderableState()
         val buttonReorderState = rememberReorderableState()
 
-        Box(
+        val dragDropState = rememberDragDropState()
+        var showSaveTemplateDialogConfig by remember { mutableStateOf<ButtonConfig?>(null) }
+        var newTemplateName by remember { mutableStateOf("") }
+        var editingTemplate by remember { mutableStateOf<com.andreas_kratzer.ghosttalk.core.model.ButtonTemplate?>(null) }
+
+        val onDrop: (Any, Any) -> Unit = { draggedItem, target ->
+            when (draggedItem) {
+                is ButtonTemplate -> {
+                    when (target) {
+                        is GridCellTarget -> {
+                            val config = draggedItem.buttonConfig.copy(
+                                id = java.util.UUID.randomUUID().toString()
+                            )
+                            actions.insertButtonConfig(item.id, target.index, config) { success ->
+                                if (!success) {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar("Zielseite ist voll")
+                                    }
+                                }
+                            }
+                        }
+                        is TemplateDropTarget -> {
+                            if (pageViewModel != null) {
+                                val allTemplates = pageViewModel.buttonTemplates.value
+                                val fromItem = draggedItem
+                                val toItem = target.template
+                                if (fromItem.id != toItem.id) {
+                                    val fromCategory = ActionCategoryRegistry.getGroupForAction(fromItem.buttonConfig.buttonAction)
+                                    val toCategory = ActionCategoryRegistry.getGroupForAction(toItem.buttonConfig.buttonAction)
+                                    
+                                    if (fromCategory == toCategory) {
+                                        val categoryTemplates = allTemplates
+                                            .filter { ActionCategoryRegistry.getGroupForAction(it.buttonConfig.buttonAction) == fromCategory }
+                                            .sortedBy { it.orderIndex }
+                                            .toMutableList()
+                                            
+                                        val fromIdxInCat = categoryTemplates.indexOfFirst { it.id == fromItem.id }
+                                        val toIdxInCat = categoryTemplates.indexOfFirst { it.id == toItem.id }
+                                        
+                                        if (fromIdxInCat != -1 && toIdxInCat != -1) {
+                                            categoryTemplates.removeAt(fromIdxInCat)
+                                            categoryTemplates.add(toIdxInCat, fromItem)
+                                            
+                                            val grouped = allTemplates.groupBy {
+                                                ActionCategoryRegistry.getGroupForAction(it.buttonConfig.buttonAction)
+                                            }
+                                            
+                                            val newGlobalList = mutableListOf<ButtonTemplate>()
+                                            ActionCategoryRegistry.ALL_GROUPS.forEach { cat ->
+                                                val itemsInCat = if (cat == fromCategory) {
+                                                    categoryTemplates
+                                                } else {
+                                                    grouped[cat]?.sortedBy { it.orderIndex } ?: emptyList()
+                                                }
+                                                newGlobalList.addAll(itemsInCat)
+                                            }
+                                            
+                                            pageViewModel.updateButtonTemplatesOrder(newGlobalList)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        is CategoryHeaderDropTarget -> {
+                            if (pageViewModel != null) {
+                                val allTemplates = pageViewModel.buttonTemplates.value
+                                val fromItem = draggedItem
+                                val fromCategory = ActionCategoryRegistry.getGroupForAction(fromItem.buttonConfig.buttonAction)
+                                val toCategory = target.groupName
+                                
+                                if (fromCategory == toCategory) {
+                                    val categoryTemplates = allTemplates
+                                        .filter { ActionCategoryRegistry.getGroupForAction(it.buttonConfig.buttonAction) == fromCategory }
+                                        .sortedBy { it.orderIndex }
+                                        .toMutableList()
+                                        
+                                    val fromIdxInCat = categoryTemplates.indexOfFirst { it.id == fromItem.id }
+                                    if (fromIdxInCat != -1) {
+                                        categoryTemplates.removeAt(fromIdxInCat)
+                                        categoryTemplates.add(0, fromItem)
+                                        
+                                        val grouped = allTemplates.groupBy {
+                                            ActionCategoryRegistry.getGroupForAction(it.buttonConfig.buttonAction)
+                                        }
+                                        
+                                        val newGlobalList = mutableListOf<ButtonTemplate>()
+                                        ActionCategoryRegistry.ALL_GROUPS.forEach { cat ->
+                                            val itemsInCat = if (cat == fromCategory) {
+                                                categoryTemplates
+                                            } else {
+                                                grouped[cat]?.sortedBy { it.orderIndex } ?: emptyList()
+                                            }
+                                            newGlobalList.addAll(itemsInCat)
+                                        }
+                                        
+                                        pageViewModel.updateButtonTemplatesOrder(newGlobalList)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                is DraggedGridCell -> {
+                    if (target is GridCellTarget) {
+                        actions.moveButton(item.id, draggedItem.index, target.index)
+                    } else if (target is TemplatesPanelTarget || target is TemplateDropTarget || target is CategoryHeaderDropTarget) {
+                        showSaveTemplateDialogConfig = draggedItem.config
+                        newTemplateName = draggedItem.config.label
+                    }
+                }
+            }
+        }
+
+        DragDropContainer(
+            state = dragDropState,
+            onDrop = onDrop,
             modifier = Modifier
                 .padding(paddingValues)
-                .fillMaxSize()
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = horizontalPadding)
-                    .padding(bottom = if (isLandscape) dimensions.paddingMedium else dimensions.paddingLarge),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                GridEditorControls(item = item, actions = actions)
-
-                val effectiveScanPattern = item.scanPattern ?: bookDefaultScanPattern
-                val isRowByRow = effectiveScanPattern == "row_by_row" || effectiveScanPattern == "row_column"
-                
-                BoxWithConstraints(
-                    modifier = Modifier.weight(1f).fillMaxWidth(),
-                    contentAlignment = Alignment.TopCenter
-                ) {
-                    val sizeInfo = calculateGridSize(
-                        maxWidth = maxWidth,
-                        maxHeight = maxHeight,
-                        rows = item.rows,
-                        cols = item.columns,
-                        isRowByRow = isRowByRow,
-                        horizontalPadding = horizontalPadding,
-                        isTablet = dimensions.isTablet,
-                        dimensions = dimensions
-                    )
-
-                    val gridSpacingPx = with(LocalDensity.current) { dimensions.gridSpacing.toPx() }
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(item.columns),
-                        state = gridState,
-                        modifier = Modifier
-                            .width(sizeInfo.totalWidth)
-                            .height(sizeInfo.totalHeight.coerceAtMost(maxHeight)),
-                        contentPadding = PaddingValues(horizontalPadding),
-                        verticalArrangement = Arrangement.spacedBy(dimensions.gridSpacing),
-                        horizontalArrangement = Arrangement.spacedBy(dimensions.gridSpacing)
-                    ) {
-                        if (isRowByRow) {
-                            renderRowByRowGrid(
-                                item = item,
-                                actions = actions,
-                                gridState = gridState,
-                                rowReorderState = rowReorderState,
-                                buttonReorderState = buttonReorderState,
-                                sizeInfo = sizeInfo,
-                                dimensions = dimensions,
-                                density = density,
-                                gridSpacingPx = gridSpacingPx,
-                                onEditRow = { r: Int ->
-                                    editingRowIndex = r
-                                    showRowEditDialog = true
-                                },
-                                onEditButton = { idx: Int ->
-                                    selectedButtonIndex = idx
-                                    showDialog = true
-                                }
-                            )
-                        } else {
-                            renderLinearGrid(
-                                item = item,
-                                actions = actions,
-                                gridState = gridState,
-                                buttonReorderState = buttonReorderState,
-                                sizeInfo = sizeInfo,
-                                dimensions = dimensions,
-                                density = density,
-                                gridSpacingPx = gridSpacingPx,
-                                onEditButton = { idx: Int ->
-                                    selectedButtonIndex = idx
-                                    showDialog = true
-                                }
-                            )
+                .fillMaxSize(),
+            floatingPreview = { draggedItem ->
+                when (draggedItem) {
+                    is ButtonTemplate -> {
+                        Card(
+                            modifier = Modifier.size(width = 120.dp, height = 80.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                        ) {
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Text(
+                                    text = draggedItem.buttonConfig.label,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    textAlign = TextAlign.Center,
+                                    fontSize = 12.sp,
+                                    maxLines = 2
+                                )
+                            }
+                        }
+                    }
+                    is DraggedGridCell -> {
+                        Card(
+                            modifier = Modifier.size(width = 120.dp, height = 80.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+                        ) {
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Text(
+                                    text = draggedItem.config.label,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    textAlign = TextAlign.Center,
+                                    fontSize = 12.sp,
+                                    maxLines = 2
+                                )
+                            }
                         }
                     }
                 }
             }
-            
-            SnackbarHost(
-                hostState = snackbarHostState,
-                modifier = Modifier.align(Alignment.BottomCenter)
-            )
-        }
+        ) {
+            Row(modifier = Modifier.fillMaxSize()) {
+                // Left Column: Grid controls and layout
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .padding(horizontal = horizontalPadding)
+                        .padding(bottom = if (isLandscape) dimensions.paddingMedium else dimensions.paddingLarge),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    GridEditorControls(item = item, actions = actions)
 
-        EditorDialogs(
-            item = item,
-            actions = actions,
-            availablePages = availablePages,
-            templates = templates,
-            featureGuard = featureGuard,
-            editingRowIndex = editingRowIndex,
-            showRowEditDialog = showRowEditDialog,
-            selectedButtonIndex = selectedButtonIndex,
-            showDialog = showDialog,
-            showMoveDialog = showMoveDialog,
-            showDuplicateDialog = showDuplicateDialog,
-            isDuplicating = isDuplicating,
-            showHiddenPrompt = showHiddenPrompt,
-            snackbarHostState = snackbarHostState,
-            scope = scope,
-            onShowMoveDialog = { value: Boolean -> 
-                showMoveDialog = value 
-                if (value) isDuplicating = false
-            },
-            onShowDuplicateDialog = { value: Boolean -> 
-                showDuplicateDialog = value
-                if (value) isDuplicating = true
-            },
-            onShowHiddenPrompt = { value -> showHiddenPrompt = value },
-            onDismissRowDialog = {
-                showRowEditDialog = false
-                editingRowIndex = null
-            },
-            onDismissButtonDialog = {
-                showDialog = false
-                // Note: We don't clear selectedButtonIndex here if showMoveDialog or showDuplicateDialog is about to be true
-                if (!showMoveDialog && !showDuplicateDialog && showHiddenPrompt == null) {
-                    selectedButtonIndex = null
+                    val effectiveScanPattern = item.scanPattern ?: bookDefaultScanPattern
+                    val isRowByRow = effectiveScanPattern == "row_by_row" || effectiveScanPattern == "row_column"
+
+                    BoxWithConstraints(
+                        modifier = Modifier.weight(1f).fillMaxWidth(),
+                        contentAlignment = Alignment.TopCenter
+                    ) {
+                        val sizeInfo = calculateGridSize(
+                            maxWidth = maxWidth,
+                            maxHeight = maxHeight,
+                            rows = item.rows,
+                            cols = item.columns,
+                            isRowByRow = isRowByRow,
+                            horizontalPadding = horizontalPadding,
+                            isTablet = dimensions.isTablet,
+                            dimensions = dimensions
+                        )
+
+                        val gridSpacingPx = with(LocalDensity.current) { dimensions.gridSpacing.toPx() }
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(item.columns),
+                            state = gridState,
+                            modifier = Modifier
+                                .width(sizeInfo.totalWidth)
+                                .height(sizeInfo.totalHeight.coerceAtMost(maxHeight)),
+                            contentPadding = PaddingValues(horizontalPadding),
+                            verticalArrangement = Arrangement.spacedBy(dimensions.gridSpacing),
+                            horizontalArrangement = Arrangement.spacedBy(dimensions.gridSpacing)
+                        ) {
+                            if (isRowByRow) {
+                                renderRowByRowGrid(
+                                    item = item,
+                                    actions = actions,
+                                    gridState = gridState,
+                                    rowReorderState = rowReorderState,
+                                    buttonReorderState = buttonReorderState,
+                                    sizeInfo = sizeInfo,
+                                    dimensions = dimensions,
+                                    density = density,
+                                    gridSpacingPx = gridSpacingPx,
+                                    onEditRow = { editingRowIndex = it; showRowEditDialog = true },
+                                    onEditButton = { index ->
+                                        selectedButtonIndex = index
+                                        showDialog = true
+                                    }
+                                )
+                            } else {
+                                renderLinearGrid(
+                                    item = item,
+                                    actions = actions,
+                                    gridState = gridState,
+                                    buttonReorderState = buttonReorderState,
+                                    sizeInfo = sizeInfo,
+                                    dimensions = dimensions,
+                                    density = density,
+                                    gridSpacingPx = gridSpacingPx,
+                                    onEditButton = { index ->
+                                        selectedButtonIndex = index
+                                        showDialog = true
+                                    }
+                                )
+                            }
+                        }
+                    }
                 }
-            },
-            onEditPage = onEditPage,
-            googleHomeManager = googleHomeManager,
-            googleHomeProjectId = googleHomeProjectId
-        )
+
+                // Right Panel: Button Templates Panel (only visible in Landscape mode and if pageViewModel is provided)
+                if (isLandscape && pageViewModel != null) {
+                    ButtonTemplatesPanel(
+                        viewModel = pageViewModel,
+                        onEditTemplate = { template -> editingTemplate = template },
+                        modifier = Modifier
+                            .width(320.dp)
+                            .fillMaxHeight()
+                            .dropTarget(key = TemplatesPanelTarget)
+                    )
+                }
+            }
+
+            // Snackbar Host & Dialogs
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                SnackbarHost(hostState = snackbarHostState)
+            }
+
+            EditorDialogs(
+                item = item,
+                actions = actions,
+                availablePages = availablePages,
+                templates = templates,
+                featureGuard = featureGuard,
+                editingRowIndex = editingRowIndex,
+                showRowEditDialog = showRowEditDialog,
+                selectedButtonIndex = selectedButtonIndex,
+                showDialog = showDialog,
+                showMoveDialog = showMoveDialog,
+                showDuplicateDialog = showDuplicateDialog,
+                isDuplicating = isDuplicating,
+                showHiddenPrompt = showHiddenPrompt,
+                snackbarHostState = snackbarHostState,
+                scope = scope,
+                onShowMoveDialog = { value: Boolean -> 
+                    showMoveDialog = value 
+                    if (value) isDuplicating = false
+                },
+                onShowDuplicateDialog = { value: Boolean -> 
+                    showDuplicateDialog = value
+                    if (value) isDuplicating = true
+                },
+                onShowHiddenPrompt = { value -> showHiddenPrompt = value },
+                onDismissRowDialog = {
+                    showRowEditDialog = false
+                    editingRowIndex = null
+                },
+                onDismissButtonDialog = {
+                    showDialog = false
+                    if (!showMoveDialog && !showDuplicateDialog && showHiddenPrompt == null) {
+                        selectedButtonIndex = null
+                    }
+                },
+                onEditPage = onEditPage,
+                googleHomeManager = googleHomeManager,
+                googleHomeProjectId = googleHomeProjectId
+            )
+
+            if (editingTemplate != null) {
+                val template = editingTemplate!!
+                com.andreas_kratzer.ghosttalk.ui.pages.ButtonConfigDialog(
+                    buttonConfig = template.buttonConfig,
+                    pages = availablePages,
+                    templates = templates,
+                    onDismiss = { editingTemplate = null },
+                    onSave = { newConfig ->
+                        pageViewModel?.updateButtonTemplate(template.copy(name = newConfig.label, buttonConfig = newConfig))
+                        editingTemplate = null
+                    },
+                    onTest = { config ->
+                        actions.executeButtonAction(config)
+                    },
+                    onMove = {
+                        android.widget.Toast.makeText(context, "Verschieben für Vorlagen nicht unterstützt", android.widget.Toast.LENGTH_SHORT).show()
+                    },
+                    onDuplicate = {
+                        android.widget.Toast.makeText(context, "Duplizieren für Vorlagen nicht unterstützt", android.widget.Toast.LENGTH_SHORT).show()
+                    },
+                    onDelete = {
+                        pageViewModel?.deleteButtonTemplate(template)
+                        editingTemplate = null
+                    },
+                    onNavigateToPage = onEditPage,
+                    availableGeminiTools = actions.availableGeminiTools,
+                    onCreatePage = { name, r, c, t, callback ->
+                        val bookId = (item as? Page)?.bookId
+                        if (bookId != null) {
+                            actions.createNewPage(name, r, c, bookId, t, callback)
+                        }
+                    },
+                    isTextCached = { actions.isTextCached(it) },
+                    onPrefetchText = { text, onComplete -> actions.prefetchText(text, onComplete) },
+                    googleHomeManager = googleHomeManager,
+                    googleHomeProjectId = googleHomeProjectId,
+                    featureGuard = featureGuard,
+                    onPlayTts = { text, onDone -> actions.speakTtsPreview(text, onDone) },
+                    onStopTts = { actions.stopTtsPreview() },
+                    isTtsElevenLabs = { actions.isTtsElevenLabs() },
+                    onSaveAsTemplate = {
+                        // Already a template
+                    }
+                )
+            }
+
+            // Save Template Dialog from Drag & Drop
+            if (showSaveTemplateDialogConfig != null) {
+                AlertDialog(
+                    onDismissRequest = { showSaveTemplateDialogConfig = null },
+                    title = { Text("Als Vorlage speichern") },
+                    text = {
+                        Column {
+                            Text("Geben Sie einen Namen für die Button-Vorlage ein:")
+                            Spacer(modifier = Modifier.height(8.dp))
+                            OutlinedTextField(
+                                value = newTemplateName,
+                                onValueChange = { newTemplateName = it },
+                                label = { Text("Name der Vorlage") },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                val config = showSaveTemplateDialogConfig
+                                if (config != null && newTemplateName.isNotBlank() && pageViewModel != null) {
+                                    pageViewModel.saveButtonAsTemplate(newTemplateName, config)
+                                    android.widget.Toast.makeText(context, "Vorlage gespeichert", android.widget.Toast.LENGTH_SHORT).show()
+                                }
+                                showSaveTemplateDialogConfig = null
+                            }
+                        ) {
+                            Text("Speichern")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showSaveTemplateDialogConfig = null }) {
+                            Text("Abbrechen")
+                        }
+                    }
+                )
+            }
+        }
     }
 }
 
 @Composable
 private fun EditorButtonCell(
-    index: Int,
+    localIndex: Int,
+    globalIndex: Int,
     buttonConfig: ButtonConfig?,
     reorderState: ReorderableState,
     isTarget: Boolean,
@@ -255,25 +536,35 @@ private fun EditorButtonCell(
     onDragEnd: (Int) -> Unit,
     onClick: () -> Unit
 ) {
+    val dragDropState = LocalDragDropState.current
+    val isDraggedHovered = dragDropState.currentHoveredTarget == GridCellTarget(globalIndex)
+    val isHighlighted = isTarget || isDraggedHovered
+
     Box(
         modifier = Modifier
-            .reorderableItemVisuals(reorderState, index)
+            .reorderableItemVisuals(reorderState, localIndex)
             .dragHandle(
                 state = reorderState,
-                index = index,
+                index = localIndex,
                 onDragEnd = { fromIdx ->
                     if (fromIdx != null) {
                         onDragEnd(fromIdx)
                     }
                 }
             )
+            .dropTarget(key = GridCellTarget(globalIndex))
+            .run {
+                if (buttonConfig != null) {
+                    dragSource(item = DraggedGridCell(globalIndex, buttonConfig), longPress = true)
+                } else this
+            }
             .background(
-                if (isTarget) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                if (isHighlighted) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
                 else Color.Transparent
             )
             .border(
-                width = if (isTarget) 2.dp else 0.dp,
-                color = if (isTarget) MaterialTheme.colorScheme.primary else Color.Transparent,
+                width = if (isHighlighted) 2.dp else 0.dp,
+                color = if (isHighlighted) MaterialTheme.colorScheme.primary else Color.Transparent,
                 shape = MaterialTheme.shapes.medium
             )
     ) {
@@ -365,7 +656,8 @@ private fun LazyGridScope.renderRowByRowGrid(
                     for (c in 0 until item.columns) {
                         val globalIndex = GridUtils.getGlobalIndex(r, c)
                         EditorButtonCell(
-                            index = globalIndex, // In RowByRow, buttons are NOT grid items, so we use globalIndex
+                            localIndex = globalIndex, // In RowByRow, buttons are NOT grid items, so we use globalIndex for visual reorder
+                            globalIndex = globalIndex,
                             buttonConfig = item.buttonConfigs.getOrNull(globalIndex),
                             reorderState = buttonReorderState,
                             isTarget = buttonTargetIndex == globalIndex,
@@ -414,7 +706,8 @@ private fun LazyGridScope.renderLinearGrid(
     items(item.rows * item.columns) { localIndex ->
         val globalIndex = GridUtils.localToGlobalIndex(localIndex, item.columns)
         EditorButtonCell(
-            index = localIndex, // In Linear Grid, buttons ARE grid items, so we use localIndex to match LazyGridState
+                            localIndex = localIndex, // In Linear Grid, buttons ARE grid items, so we use localIndex to match LazyGridState
+                            globalIndex = globalIndex,
             buttonConfig = item.buttonConfigs.getOrNull(globalIndex),
             reorderState = buttonReorderState,
             isTarget = buttonTargetIndex == globalIndex,

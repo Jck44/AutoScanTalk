@@ -126,7 +126,8 @@ fun PageEditorScreen(
             onEditPage = onEditPage,
             googleHomeManager = pageViewModel.googleHomeManager,
             googleHomeProjectId = googleHomeProjectId,
-            initialButtonId = initialButtonId
+            initialButtonId = initialButtonId,
+            pageViewModel = pageViewModel
         )
     }
 }

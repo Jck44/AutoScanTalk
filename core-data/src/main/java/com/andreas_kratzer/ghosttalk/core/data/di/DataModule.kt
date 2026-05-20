@@ -14,10 +14,12 @@ import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.core.data.PageRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.data.TemplateRepository
+import com.andreas_kratzer.ghosttalk.core.data.ButtonTemplateRepository
 import com.andreas_kratzer.ghosttalk.core.data.WeatherRepository
 import com.andreas_kratzer.ghosttalk.core.data.export.PageImportExportProvider
 import com.andreas_kratzer.ghosttalk.core.data.impl.AppStateRepositoryImpl
 import com.andreas_kratzer.ghosttalk.core.data.impl.BookRepositoryImpl
+import com.andreas_kratzer.ghosttalk.core.data.impl.ButtonTemplateRepositoryImpl
 import com.andreas_kratzer.ghosttalk.core.data.impl.ButtonUsageRepositoryImpl
 import com.andreas_kratzer.ghosttalk.core.data.impl.PageImportExportManager
 import com.andreas_kratzer.ghosttalk.core.data.impl.PageRepositoryImpl
@@ -31,6 +33,7 @@ import com.andreas_kratzer.ghosttalk.core.database.ButtonDao
 import com.andreas_kratzer.ghosttalk.core.database.ButtonUsageDao
 import com.andreas_kratzer.ghosttalk.core.database.PageDao
 import com.andreas_kratzer.ghosttalk.core.database.TemplateDao
+import com.andreas_kratzer.ghosttalk.core.database.ButtonTemplateDao
 import com.andreas_kratzer.ghosttalk.core.di.ApplicationScope
 import com.andreas_kratzer.ghosttalk.core.settings.CloudSettings
 import com.andreas_kratzer.ghosttalk.core.settings.DatabaseSettings
@@ -63,6 +66,10 @@ abstract class DataModule {
     @Binds
     @Singleton
     abstract fun bindTemplateRepository(impl: TemplateRepositoryImpl): TemplateRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindButtonTemplateRepository(impl: ButtonTemplateRepositoryImpl): ButtonTemplateRepository
 
     @Binds
     @Singleton
@@ -108,6 +115,15 @@ abstract class DataModule {
             settings: DatabaseSettings
         ): TemplateRepositoryImpl {
             return TemplateRepositoryImpl(templateDao, settings)
+        }
+
+        @Provides
+        @Singleton
+        fun provideButtonTemplateRepositoryImpl(
+            buttonTemplateDao: ButtonTemplateDao,
+            settings: DatabaseSettings
+        ): ButtonTemplateRepositoryImpl {
+            return ButtonTemplateRepositoryImpl(buttonTemplateDao, settings)
         }
 
         @Provides

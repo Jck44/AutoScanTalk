@@ -11,6 +11,7 @@ interface GridEditorActions {
         update: GridSettingsUpdate
     )
     fun updateButtonConfig(itemId: String, index: Int, newConfig: ButtonConfig?)
+    fun insertButtonConfig(itemId: String, index: Int, newConfig: ButtonConfig, onResult: (Boolean) -> Unit = {})
     fun updateRowName(itemId: String, rowIndex: Int, newName: String)
     fun moveRow(itemId: String, fromRow: Int, toRow: Int)
     fun moveButton(itemId: String, fromIndex: Int, toIndex: Int)

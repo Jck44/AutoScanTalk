@@ -1,5 +1,6 @@
 package com.andreas_kratzer.ghosttalk.ui.components
 
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.LazyGridState
@@ -178,27 +179,50 @@ fun Modifier.dragHandle(
     index: Int,
     onDragStart: () -> Unit = {},
     onDragEnd: (Int?) -> Unit = {},
-    onDrag: () -> Unit = {}
+    onDrag: () -> Unit = {},
+    longPress: Boolean = true
 ): Modifier = this.pointerInput(index) {
-    detectDragGesturesAfterLongPress(
-        onDragStart = {
-            state.onDragStart(index)
-            onDragStart()
-        },
-        onDragEnd = {
-            onDragEnd(state.draggedIndex)
-            state.onDragEnd()
-        },
-        onDragCancel = {
-            state.onDragEnd()
-            onDragEnd(null)
-        },
-        onDrag = { change, dragAmount ->
-            change.consume()
-            state.onDrag(dragAmount)
-            onDrag()
-        }
-    )
+    if (longPress) {
+        detectDragGesturesAfterLongPress(
+            onDragStart = {
+                state.onDragStart(index)
+                onDragStart()
+            },
+            onDragEnd = {
+                onDragEnd(state.draggedIndex)
+                state.onDragEnd()
+            },
+            onDragCancel = {
+                state.onDragEnd()
+                onDragEnd(null)
+            },
+            onDrag = { change, dragAmount ->
+                change.consume()
+                state.onDrag(dragAmount)
+                onDrag()
+            }
+        )
+    } else {
+        detectDragGestures(
+            onDragStart = {
+                state.onDragStart(index)
+                onDragStart()
+            },
+            onDragEnd = {
+                onDragEnd(state.draggedIndex)
+                state.onDragEnd()
+            },
+            onDragCancel = {
+                state.onDragEnd()
+                onDragEnd(null)
+            },
+            onDrag = { change, dragAmount ->
+                change.consume()
+                state.onDrag(dragAmount)
+                onDrag()
+            }
+        )
+    }
 }
 
 /**

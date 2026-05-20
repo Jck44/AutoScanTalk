@@ -106,7 +106,8 @@ fun TemplateEditorScreen(
                         pageViewModel.loadPage(target)
                     }
                 }
-            }
+            },
+            pageViewModel = pageViewModel
         )
     }
 }

@@ -13,6 +13,18 @@ class Converters {
     }
 
     @TypeConverter
+    fun fromButtonConfig(config: ButtonConfig?): String? {
+        if (config == null) return null
+        return json.encodeToString(config)
+    }
+
+    @TypeConverter
+    fun toButtonConfig(configString: String?): ButtonConfig? {
+        if (configString == null) return null
+        return json.decodeFromString<ButtonConfig>(configString)
+    }
+
+    @TypeConverter
     fun fromButtonAction(action: ButtonAction?): String? {
         if (action == null) return null
         return json.encodeToString(action)

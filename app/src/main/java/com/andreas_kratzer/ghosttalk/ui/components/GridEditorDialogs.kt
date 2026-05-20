@@ -1,9 +1,23 @@
 package com.andreas_kratzer.ghosttalk.ui.components
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.cloud.GoogleHomeManager
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
@@ -14,6 +28,7 @@ import com.andreas_kratzer.ghosttalk.ui.pages.ButtonConfigDialog
 import com.andreas_kratzer.ghosttalk.ui.pages.MoveHiddenPromptDialog
 import com.andreas_kratzer.ghosttalk.ui.pages.TargetPageSelectionDialog
 import com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions
+import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -46,6 +61,9 @@ fun EditorDialogs(
     val context = LocalContext.current
     val moveSuccessText = stringResource(R.string.button_move_success)
     val duplicateSuccessText = stringResource(R.string.button_duplicate_success)
+
+    var showSaveTemplateDialogConfig by remember { mutableStateOf<ButtonConfig?>(null) }
+    var newTemplateName by remember { mutableStateOf("") }
     
     if (showRowEditDialog && editingRowIndex != null) {
         RowEditDialog(
@@ -101,7 +119,12 @@ fun EditorDialogs(
             featureGuard = featureGuard,
             onPlayTts = { text, onDone -> actions.speakTtsPreview(text, onDone) },
             onStopTts = { actions.stopTtsPreview() },
-            isTtsElevenLabs = { actions.isTtsElevenLabs() }
+            isTtsElevenLabs = { actions.isTtsElevenLabs() },
+            onSaveAsTemplate = { config ->
+                showSaveTemplateDialogConfig = config
+                newTemplateName = config.label
+                onDismissButtonDialog()
+            }
         )
     }
 
@@ -209,6 +232,45 @@ fun EditorDialogs(
             onDismiss = { 
                 onShowHiddenPrompt(null)
                 onDismissButtonDialog()
+            }
+        )
+    }
+
+    if (showSaveTemplateDialogConfig != null) {
+        AlertDialog(
+            onDismissRequest = { showSaveTemplateDialogConfig = null },
+            title = { Text("Als Vorlage speichern") },
+            text = {
+                Column {
+                    Text("Geben Sie einen Namen für die Button-Vorlage ein:")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = newTemplateName,
+                        onValueChange = { newTemplateName = it },
+                        label = { Text("Name der Vorlage") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val config = showSaveTemplateDialogConfig
+                        if (config != null && newTemplateName.isNotBlank()) {
+                            (actions as? PageViewModel)?.saveButtonAsTemplate(newTemplateName, config)
+                            android.widget.Toast.makeText(context, "Vorlage gespeichert", android.widget.Toast.LENGTH_SHORT).show()
+                        }
+                        showSaveTemplateDialogConfig = null
+                    }
+                ) {
+                    Text("Speichern")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showSaveTemplateDialogConfig = null }) {
+                    Text("Abbrechen")
+                }
             }
         )
     }

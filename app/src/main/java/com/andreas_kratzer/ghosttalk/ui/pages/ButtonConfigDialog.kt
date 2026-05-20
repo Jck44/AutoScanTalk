@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -117,7 +118,8 @@ fun ButtonConfigDialog(
     featureGuard: FeatureGuard? = null,
     onPlayTts: ((String, () -> Unit) -> Unit)? = null,
     onStopTts: (() -> Unit)? = null,
-    isTtsElevenLabs: () -> Boolean = { false }
+    isTtsElevenLabs: () -> Boolean = { false },
+    onSaveAsTemplate: ((ButtonConfig) -> Unit)? = null
 ) {
     val context = LocalContext.current
     var label by remember { mutableStateOf(buttonConfig.label) }
@@ -609,22 +611,22 @@ fun ButtonConfigDialog(
                             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
                             val rawGroups = listOf(
-                                "Basis" to listOf(
+                                com.andreas_kratzer.ghosttalk.core.model.ActionCategoryRegistry.GROUP_BASIS to listOf(
                                     actionTypeSpeak to SpeakTextButtonAction(),
                                     actionTypeNavigate to NavigateToPageButtonAction()
                                 ),
-                                "KI & Assistenz" to listOf(
+                                com.andreas_kratzer.ghosttalk.core.model.ActionCategoryRegistry.GROUP_KI_ASSISTENZ to listOf(
                                     actionTypeGemini to GeminiButtonAction(),
                                     actionTypeGeminiSearch to GeminiSearchButtonAction(),
                                     actionTypeGeminiNano to GeminiNanoButtonAction(),
                                     actionTypeGeminiVision to com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction()
                                 ),
-                                "Geräte & Smart Home" to listOf(
+                                com.andreas_kratzer.ghosttalk.core.model.ActionCategoryRegistry.GROUP_GERAETE_SMART_HOME to listOf(
                                     actionTypeWeather to WeatherButtonAction(),
                                     actionTypeSmartHome to SmartHomeButtonAction(),
                                     actionTypeDevice to ControlDeviceButtonAction()
                                 ),
-                                "Dynamische Aktionen" to listOf(
+                                com.andreas_kratzer.ghosttalk.core.model.ActionCategoryRegistry.GROUP_DYNAMISCHE_AKTIONEN to listOf(
                                     actionTypeFrequent to FrequentActionButtonAction(),
                                     actionTypePrevious to PreviousActionButtonAction(),
                                     actionTypeSmart to SmartPredictionButtonAction()
@@ -775,7 +777,8 @@ fun ButtonConfigDialog(
                 onTest = onTest,
                 onMove = onMove,
                 onDuplicate = onDuplicate,
-                onDelete = onDelete
+                onDelete = onDelete,
+                onSaveAsTemplate = onSaveAsTemplate
             )
         }
     },
@@ -1036,6 +1039,7 @@ private fun DialogActionBar(
     onMove: () -> Unit,
     onDuplicate: () -> Unit,
     onDelete: () -> Unit,
+    onSaveAsTemplate: ((ButtonConfig) -> Unit)? = null,
     context: Context = androidx.compose.ui.platform.LocalContext.current
 ) {
     var showMenu by remember { mutableStateOf(false) }
@@ -1132,6 +1136,21 @@ private fun DialogActionBar(
                         expanded = showMenu,
                         onDismissRequest = { showMenu = false }
                     ) {
+                        if (onSaveAsTemplate != null) {
+                            DropdownMenuItem(
+                                text = { Text("Als Vorlage speichern") },
+                                leadingIcon = { Icon(Icons.Default.Star, contentDescription = null) },
+                                onClick = {
+                                    showMenu = false
+                                    val currentAction = buildCurrentAction()
+                                    onSaveAsTemplate(buttonConfig.copy(
+                                        label = label,
+                                        spokenText = if (spokenText.isNotBlank()) spokenText else null,
+                                        buttonAction = currentAction
+                                    ))
+                                }
+                            )
+                        }
                         if (!showTest) {
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.button_action_test)) },

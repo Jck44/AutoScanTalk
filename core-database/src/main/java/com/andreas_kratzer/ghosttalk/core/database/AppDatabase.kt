@@ -28,7 +28,7 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonPrimitive
 import java.util.UUID
 
-@Database(entities = [Page::class, Book::class, ButtonUsageStat::class, PageTemplate::class, ButtonEntity::class, ButtonUsageHistoryEntity::class], version = 16, exportSchema = false)
+@Database(entities = [Page::class, Book::class, ButtonUsageStat::class, PageTemplate::class, ButtonEntity::class, ButtonUsageHistoryEntity::class, ButtonTemplateEntity::class], version = 17, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
 
@@ -37,11 +37,27 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun buttonUsageDao(): ButtonUsageDao
     abstract fun templateDao(): TemplateDao
     abstract fun buttonDao(): ButtonDao
+    abstract fun buttonTemplateDao(): ButtonTemplateDao
 
     companion object {
         @Volatile
         private var INSTANCE: AppDatabase? = null
         
+        val MIGRATION_16_17: Migration = object : Migration(16, 17) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `button_templates` (
+                        `id` TEXT NOT NULL, 
+                        `name` TEXT NOT NULL, 
+                        `isBuiltIn` INTEGER NOT NULL, 
+                        `buttonConfig` TEXT NOT NULL, 
+                        `orderIndex` INTEGER NOT NULL, 
+                        PRIMARY KEY(`id`)
+                    )
+                """)
+            }
+        }
+
         val MIGRATION_1_2: Migration = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL(
@@ -387,7 +403,8 @@ abstract class AppDatabase : RoomDatabase() {
                     MIGRATION_12_13,
                     MIGRATION_13_14,
                     MIGRATION_14_15,
-                    MIGRATION_15_16
+                    MIGRATION_15_16,
+                    MIGRATION_16_17
                 )
                 .build()
                 INSTANCE = instance

@@ -91,7 +91,8 @@ class PageViewModelStateTest {
             actionExecutor = actionExecutor,
             scanCoordinator = scanCoordinator,
             geminiUseCase = mockk(relaxed = true),
-            googleHomeManager = mockk(relaxed = true)
+            googleHomeManager = mockk(relaxed = true),
+            buttonTemplateRepository = mockk(relaxed = true)
         )
         
         // Advance to allow launch in init to execute

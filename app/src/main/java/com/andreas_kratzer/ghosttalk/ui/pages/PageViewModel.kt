@@ -17,6 +17,8 @@ import com.andreas_kratzer.ghosttalk.core.model.Book
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.GridSettingsUpdate
 import com.andreas_kratzer.ghosttalk.core.model.Page
+import com.andreas_kratzer.ghosttalk.core.model.ButtonTemplate
+import com.andreas_kratzer.ghosttalk.core.data.ButtonTemplateRepository
 import com.andreas_kratzer.ghosttalk.core.scanning.ScanCoordinator
 import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
 import com.andreas_kratzer.ghosttalk.core.util.Logger
@@ -64,8 +66,43 @@ class PageViewModel @Inject constructor(
     val actionExecutor: ActionExecutor,
     private val scanCoordinator: ScanCoordinator,
     geminiUseCase: GeminiUseCase,
-    val googleHomeManager: GoogleHomeManager
+    val googleHomeManager: GoogleHomeManager,
+    private val buttonTemplateRepository: ButtonTemplateRepository
 ) : AndroidViewModel(application), com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions {
+
+    val buttonTemplates: StateFlow<List<ButtonTemplate>> = buttonTemplateRepository.getTemplates()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun saveButtonAsTemplate(name: String, config: ButtonConfig) {
+        viewModelScope.launch {
+            buttonTemplateRepository.saveTemplate(
+                ButtonTemplate(
+                    id = java.util.UUID.randomUUID().toString(),
+                    name = name,
+                    buttonConfig = config.copy(id = java.util.UUID.randomUUID().toString()),
+                    isBuiltIn = false
+                )
+            )
+        }
+    }
+
+    fun deleteButtonTemplate(template: ButtonTemplate) {
+        viewModelScope.launch {
+            buttonTemplateRepository.deleteTemplate(template)
+        }
+    }
+
+    fun updateButtonTemplate(template: ButtonTemplate) {
+        viewModelScope.launch {
+            buttonTemplateRepository.saveTemplate(template)
+        }
+    }
+
+    fun updateButtonTemplatesOrder(templates: List<ButtonTemplate>) {
+        viewModelScope.launch {
+            buttonTemplateRepository.updateTemplateOrder(templates)
+        }
+    }
 
     val activeBookId = pageManagementDelegate.activeBookId
     val currentPageId = pageManagementDelegate.currentPageId
@@ -117,6 +154,9 @@ class PageViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     init {
+        viewModelScope.launch {
+            buttonTemplateRepository.ensureBuiltInTemplates()
+        }
         pageManagementDelegate.init(viewModelScope)
         interactionDelegate.init(viewModelScope, actionExecutor, ::loadPage, _smartPredictions, activeBookId)
         interactionDelegate.scanCoordinator = scanCoordinator
@@ -256,6 +296,10 @@ class PageViewModel @Inject constructor(
 
     override fun updateButtonConfig(itemId: String, index: Int, newConfig: ButtonConfig?) {
         pageManagementDelegate.updateButtonConfig(itemId, index, newConfig)
+    }
+
+    override fun insertButtonConfig(itemId: String, index: Int, newConfig: ButtonConfig, onResult: (Boolean) -> Unit) {
+        pageManagementDelegate.insertButtonConfig(itemId, index, newConfig, onResult)
     }
 
     override fun updateGridSettings(

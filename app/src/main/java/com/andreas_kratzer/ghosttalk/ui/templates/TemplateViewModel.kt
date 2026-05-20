@@ -103,6 +103,66 @@ class TemplateViewModel @Inject constructor(
         updateButtonConfig(current, index, newConfig)
     }
 
+    override fun insertButtonConfig(itemId: String, index: Int, newConfig: ButtonConfig, onResult: (Boolean) -> Unit) {
+        val current = templates.value.find { it.id == itemId } ?: return
+        val newButtonConfigs = current.buttonConfigs.toMutableList()
+        
+        // Ensure 49 slots
+        while (newButtonConfigs.size < com.andreas_kratzer.ghosttalk.core.util.GridUtils.TOTAL_SLOTS) {
+            newButtonConfigs.add(null)
+        }
+        
+        if (index in newButtonConfigs.indices) {
+            // Check if the entire 49 slots are completely full
+            if (newButtonConfigs[index] != null && newButtonConfigs.none { it == null }) {
+                onResult(false)
+                return
+            }
+            
+            if (newButtonConfigs[index] == null) {
+                // Target is empty, just replace
+                newButtonConfigs[index] = newConfig
+            } else {
+                // Target is not empty, shift items down following the visible layout flow
+                val visibleIndices = mutableListOf<Int>()
+                for (r in 0 until current.rows) {
+                    for (c in 0 until current.columns) {
+                        visibleIndices.add(r * com.andreas_kratzer.ghosttalk.core.util.GridUtils.MAX_GRID_SIZE + c)
+                    }
+                }
+                
+                val dropVisiblePos = visibleIndices.indexOf(index)
+                if (dropVisiblePos != -1) {
+                    val lastVisibleGlobal = visibleIndices.last()
+                    val lastItem = newButtonConfigs[lastVisibleGlobal]
+                    
+                    // Shift visible items down by 1
+                    for (i in visibleIndices.size - 1 downTo dropVisiblePos + 1) {
+                        val currentGlobal = visibleIndices[i]
+                        val prevGlobal = visibleIndices[i - 1]
+                        newButtonConfigs[currentGlobal] = newButtonConfigs[prevGlobal]
+                    }
+                    
+                    // Rescue the last item by placing it in the first available invisible slot
+                    if (lastItem != null) {
+                        for (i in 0 until com.andreas_kratzer.ghosttalk.core.util.GridUtils.TOTAL_SLOTS) {
+                            if (i !in visibleIndices && newButtonConfigs[i] == null) {
+                                newButtonConfigs[i] = lastItem
+                                break
+                            }
+                        }
+                    }
+                }
+                
+                // Insert new config
+                newButtonConfigs[index] = newConfig
+            }
+            
+            updateTemplate(current.copy(buttonConfigs = newButtonConfigs))
+            onResult(true)
+        }
+    }
+
     override fun updateRowName(itemId: String, rowIndex: Int, newName: String) {
         val current = templates.value.find { it.id == itemId } ?: return
         val updatedNames = current.rowNames.toMutableList()
