@@ -68,6 +68,14 @@ class TextToSpeechHelperTest {
     }
 
     @Test
+    fun `isReady returns true if current provider is false but fallback is true`() {
+        ttsEngineFlow.value = "elevenlabs"
+        every { mockElevenLabsProvider.isReady } returns false
+        every { mockAndroidProvider.isReady } returns true
+        assertTrue(helper.isReady)
+    }
+
+    @Test
     fun `speak delegates to current provider`() {
         helper.speak("Hello")
         verify { mockAndroidProvider.speak("Hello", any(), any(), any()) }

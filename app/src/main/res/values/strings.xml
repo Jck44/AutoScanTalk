@@ -81,7 +81,12 @@
     <string name="button_action_gemini_nano">Gemini Nano (Offline) nutzen</string>
     <string name="button_action_frequent_action">Häufigste Aktion</string>
     <string name="button_action_smart_prediction">Gemini Vorhersage</string>
-    <string name="button_action_notification">Benachrichtigung (Audio-Hinweis)</string>
+    <string name="button_action_notification">Benachrichtigungen vorlesen</string>
+    <string name="button_action_clear_notifications">Benachrichtigungen löschen</string>
+    <string name="notification_permission_dialog_title">Benachrichtigungszugriff erforderlich</string>
+    <string name="notification_permission_dialog_message">Um Benachrichtigungen vorlesen oder löschen zu können, muss die App Zugriff auf deine Benachrichtigungen haben.\n\nBitte aktiviere in den folgenden Einstellungen den Schalter für \"GoSTalk\".</string>
+    <string name="notification_permission_dialog_confirm">Zu den Einstellungen</string>
+    <string name="notification_permission_dialog_dismiss">Abbrechen</string>
 
     <string name="button_action_control_device">Gerätefunktionen</string>
     <string name="button_action_weather">Wetter vorlesen</string>
@@ -132,6 +137,7 @@
     <string name="button_google_home_value_number_hint">z.B. 50</string>
 
     <string name="button_play_as_cue">Als Audio-Hinweis abspielen</string>
+    <string name="button_play_as_cue_short">Als Audio-Hinweis</string>
     <string name="button_google_home_device_label">Gerät</string>
     <string name="button_google_home_command_label">Befehl</string>
     <string name="button_google_home_value_label">Wert</string>

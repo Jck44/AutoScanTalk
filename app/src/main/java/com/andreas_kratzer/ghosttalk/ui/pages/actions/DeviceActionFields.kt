@@ -31,6 +31,18 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.drawable.Drawable
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.asImageBitmap
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -47,6 +59,39 @@ import androidx.core.content.ContextCompat
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.model.DeviceActionType
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.ui.graphics.vector.ImageVector
+import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
+
+private fun getDeviceActionIcon(type: DeviceActionType): ImageVector {
+    return when (type) {
+        DeviceActionType.READ_NOTIFICATIONS -> GhostTalkIcons.Notifications
+        DeviceActionType.CLEAR_NOTIFICATIONS -> Icons.Default.Delete
+        DeviceActionType.MEDIA_PLAY_PAUSE -> Icons.Default.PlayArrow
+        DeviceActionType.MEDIA_NEXT -> Icons.AutoMirrored.Filled.ArrowForward
+        DeviceActionType.MEDIA_PREVIOUS -> Icons.AutoMirrored.Filled.ArrowBack
+        DeviceActionType.VOLUME_MEDIA -> GhostTalkIcons.VolumeUp
+        DeviceActionType.VOLUME_NOTIFICATION -> GhostTalkIcons.VolumeDown
+        DeviceActionType.VOLUME_ALARM -> GhostTalkIcons.VolumeUp
+        DeviceActionType.VOLUME_CALL -> Icons.Default.Phone
+        DeviceActionType.STATUS_SILENT -> GhostTalkIcons.VolumeOff
+        DeviceActionType.STATUS_VIBRATE -> GhostTalkIcons.Vibration
+        DeviceActionType.STATUS_LOUD -> GhostTalkIcons.VolumeUp
+        DeviceActionType.SEND_MESSAGE -> Icons.AutoMirrored.Filled.Send
+        DeviceActionType.READ_BATTERY -> GhostTalkIcons.BatteryFull
+        DeviceActionType.READ_DATE -> GhostTalkIcons.DateRange
+        DeviceActionType.READ_TIME -> GhostTalkIcons.AccessTime
+        DeviceActionType.READ_CALENDAR_ENTRIES -> GhostTalkIcons.DateRange
+        DeviceActionType.TOGGLE_SCANNING -> Icons.Default.Refresh
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,6 +101,7 @@ fun DeviceActionFields(
     volumeValue: String? = null,
     onVolumeValueChange: (String) -> Unit = {},
     contactName: String? = null,
+    contactPhone: String? = null,
     onContactSelected: (name: String, phone: String) -> Unit = { _, _ -> },
     messageText: String? = null,
     onMessageTextChange: (String) -> Unit = {},
@@ -72,6 +118,7 @@ fun DeviceActionFields(
     val context = LocalContext.current
     val dimensions = LocalDimensions.current
     var expandedType by remember { mutableStateOf(false) }
+    var showNotificationPermissionDialog by remember { mutableStateOf(false) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -79,6 +126,7 @@ fun DeviceActionFields(
 
     val types = listOf(
         DeviceActionType.READ_NOTIFICATIONS to stringResource(R.string.button_action_notification),
+        DeviceActionType.CLEAR_NOTIFICATIONS to stringResource(R.string.button_action_clear_notifications),
         DeviceActionType.MEDIA_PLAY_PAUSE to stringResource(R.string.button_device_control_media_play_pause),
         DeviceActionType.MEDIA_NEXT to stringResource(R.string.button_device_control_media_next),
         DeviceActionType.MEDIA_PREVIOUS to stringResource(R.string.button_device_control_media_previous),
@@ -110,6 +158,12 @@ fun DeviceActionFields(
                 readOnly = true,
                 value = currentLabel,
                 onValueChange = { },
+                leadingIcon = {
+                    Icon(
+                        imageVector = getDeviceActionIcon(selectedType),
+                        contentDescription = null
+                    )
+                },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedType) },
                 shape = MaterialTheme.shapes.large,
                 modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
@@ -121,11 +175,24 @@ fun DeviceActionFields(
                 types.forEach { (type, label) ->
                     DropdownMenuItem(
                         text = { Text(label) },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = getDeviceActionIcon(type),
+                                contentDescription = null
+                            )
+                        },
                         onClick = {
                             onTypeSelected(type)
                             expandedType = false
                             onAutoSave()
                             
+                            // Permission check for Notification Access
+                            if (type == DeviceActionType.READ_NOTIFICATIONS || type == DeviceActionType.CLEAR_NOTIFICATIONS) {
+                                if (!androidx.core.app.NotificationManagerCompat.getEnabledListenerPackages(context).contains(context.packageName)) {
+                                    showNotificationPermissionDialog = true
+                                }
+                            }
+
                             // Permission check for Silent mode
                             if (type == DeviceActionType.STATUS_SILENT) {
                                 val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -169,6 +236,17 @@ fun DeviceActionFields(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth().onFocusChanged { 
                     if (!it.isFocused) onAutoSave()
+                }
+            )
+        }
+
+        // Notification parameters (Target App Selection)
+        if (selectedType == DeviceActionType.READ_NOTIFICATIONS) {
+            NotificationAppPicker(
+                selectedPackage = contactPhone,
+                selectedLabel = contactName,
+                onAppSelected = { label, pkg ->
+                    onContactSelected(label, pkg)
                 }
             )
         }
@@ -416,6 +494,42 @@ fun DeviceActionFields(
                 }
             }
         }
+
+        if (showNotificationPermissionDialog) {
+            AlertDialog(
+                onDismissRequest = { showNotificationPermissionDialog = false },
+                title = {
+                    Text(
+                        text = stringResource(R.string.notification_permission_dialog_title),
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                },
+                text = {
+                    Text(
+                        text = stringResource(R.string.notification_permission_dialog_message),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showNotificationPermissionDialog = false
+                            val intent = android.content.Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+                            context.startActivity(intent)
+                        }
+                    ) {
+                        Text(stringResource(R.string.notification_permission_dialog_confirm))
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = { showNotificationPermissionDialog = false }
+                    ) {
+                        Text(stringResource(R.string.notification_permission_dialog_dismiss))
+                    }
+                }
+            )
+        }
     }
 }
 
@@ -521,5 +635,245 @@ fun MessagingFields(
                 Text(stringResource(R.string.message_emojis_hint))
             }
         )
+    }
+}
+
+private data class InstalledAppInfo(
+    val packageName: String,
+    val label: String,
+    val icon: android.graphics.Bitmap?
+)
+
+private fun android.graphics.drawable.Drawable.toBitmapOrNull(): android.graphics.Bitmap? {
+    try {
+        val bitmap = android.graphics.Bitmap.createBitmap(
+            intrinsicWidth.coerceAtLeast(1),
+            intrinsicHeight.coerceAtLeast(1),
+            android.graphics.Bitmap.Config.ARGB_8888
+        )
+        val canvas = android.graphics.Canvas(bitmap)
+        setBounds(0, 0, canvas.width, canvas.height)
+        draw(canvas)
+        return bitmap
+    } catch (e: Exception) {
+        return null
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun NotificationAppPicker(
+    selectedPackage: String?,
+    selectedLabel: String?,
+    onAppSelected: (String, String) -> Unit
+) {
+    val context = LocalContext.current
+    val dimensions = LocalDimensions.current
+    var expanded by remember { mutableStateOf(false) }
+    var installedApps by remember { mutableStateOf<List<InstalledAppInfo>>(emptyList()) }
+
+    LaunchedEffect(Unit) {
+        withContext(Dispatchers.IO) {
+            val pm = context.packageManager
+            val mainIntent = Intent(Intent.ACTION_MAIN, null).apply {
+                addCategory(Intent.CATEGORY_LAUNCHER)
+            }
+            val resolveInfos = pm.queryIntentActivities(mainIntent, 0)
+            val appsList = resolveInfos.mapNotNull { resolveInfo ->
+                val packageName = resolveInfo.activityInfo.packageName
+                val label = resolveInfo.loadLabel(pm).toString()
+                val icon = try {
+                    resolveInfo.loadIcon(pm)?.toBitmapOrNull()
+                } catch (e: Exception) {
+                    null
+                }
+                if (packageName.isNotEmpty()) InstalledAppInfo(packageName, label, icon) else null
+            }
+            val sortedApps = appsList.distinctBy { it.packageName }.sortedBy { it.label.lowercase() }
+            withContext(Dispatchers.Main) {
+                installedApps = sortedApps
+            }
+        }
+    }
+
+    val selectedPackages = remember(selectedPackage) {
+        selectedPackage?.split(",")?.filter { it.isNotBlank() }?.toSet() ?: emptySet()
+    }
+
+    val currentLabel = remember(selectedPackages, installedApps, selectedLabel) {
+        if (selectedPackages.isEmpty()) {
+            "Bevorzugte Apps (Einstellungen)"
+        } else if (installedApps.isEmpty()) {
+            if (selectedPackages.size == 1) "1 App ausgewählt" else "${selectedPackages.size} Apps ausgewählt"
+        } else {
+            val selectedLabels = selectedPackages.mapNotNull { pkg ->
+                installedApps.find { it.packageName == pkg }?.label
+            }.filter { it.isNotEmpty() && !it.contains(".") }
+            
+            val displayLabels = if (selectedLabels.size == selectedPackages.size) {
+                selectedLabels
+            } else {
+                val splitLabels = selectedLabel?.split(",")?.map { it.trim() }?.filter { it.isNotBlank() && !it.contains(".") } ?: emptyList()
+                if (splitLabels.size == selectedPackages.size) {
+                    splitLabels
+                } else {
+                    selectedPackages.map { pkg ->
+                        installedApps.find { it.packageName == pkg }?.label ?: pkg
+                    }
+                }
+            }
+
+            if (displayLabels.size <= 3) {
+                displayLabels.joinToString(", ")
+            } else {
+                val firstThree = displayLabels.take(3).joinToString(", ")
+                val remaining = displayLabels.size - 3
+                "$firstThree und $remaining weitere"
+            }
+        }
+    }
+
+    val singleSelectedApp = remember(selectedPackages, installedApps) {
+        if (selectedPackages.size == 1) {
+            installedApps.find { it.packageName == selectedPackages.first() }
+        } else null
+    }
+
+    val onToggleApp: (String, String) -> Unit = { pkg, label ->
+        val updated = selectedPackages.toMutableSet()
+        if (updated.contains(pkg)) {
+            updated.remove(pkg)
+        } else {
+            updated.add(pkg)
+        }
+        if (updated.isEmpty()) {
+            onAppSelected("", "")
+        } else {
+            val newPhone = updated.joinToString(",")
+            val newName = updated.map { p ->
+                installedApps.find { it.packageName == p }?.label ?: p
+            }.joinToString(", ")
+            onAppSelected(newName, newPhone)
+        }
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)) {
+        Text("Vorlesen von App:", style = MaterialTheme.typography.labelMedium)
+        
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = { expanded = !expanded }
+        ) {
+            OutlinedTextField(
+                readOnly = true,
+                value = currentLabel,
+                onValueChange = { },
+                leadingIcon = {
+                    if (singleSelectedApp?.icon != null) {
+                        Image(
+                            bitmap = singleSelectedApp.icon.asImageBitmap(),
+                            contentDescription = null,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    } else {
+                        Icon(
+                            imageVector = getDeviceActionIcon(DeviceActionType.READ_NOTIFICATIONS),
+                            contentDescription = null
+                        )
+                    }
+                },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                shape = MaterialTheme.shapes.large,
+                modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
+            )
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                // Option for "Bevorzugte Apps (Einstellungen)"
+                DropdownMenuItem(
+                    text = { Text("Bevorzugte Apps (Einstellungen)") },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = getDeviceActionIcon(DeviceActionType.READ_NOTIFICATIONS),
+                            contentDescription = null
+                        )
+                    },
+                    trailingIcon = {
+                        androidx.compose.material3.Checkbox(
+                            checked = selectedPackages.isEmpty(),
+                            onCheckedChange = {
+                                if (selectedPackages.isNotEmpty()) {
+                                    onAppSelected("", "")
+                                }
+                            }
+                        )
+                    },
+                    onClick = {
+                        onAppSelected("", "")
+                    }
+                )
+                
+                if (installedApps.isNotEmpty()) {
+                    androidx.compose.material3.HorizontalDivider()
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = dimensions.paddingMedium, vertical = dimensions.paddingSmall),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        TextButton(
+                            onClick = {
+                                val allPkgs = installedApps.map { it.packageName }.toSet()
+                                val newPhone = allPkgs.joinToString(",")
+                                val newName = allPkgs.map { p ->
+                                    installedApps.find { it.packageName == p }?.label ?: p
+                                }.joinToString(", ")
+                                onAppSelected(newName, newPhone)
+                            }
+                        ) {
+                            Text("Alle auswählen")
+                        }
+                        TextButton(
+                            onClick = {
+                                onAppSelected("", "")
+                            }
+                        ) {
+                            Text("Alle abwählen")
+                        }
+                    }
+                    androidx.compose.material3.HorizontalDivider(modifier = Modifier.padding(bottom = dimensions.paddingSmall))
+                }
+                
+                installedApps.forEach { app ->
+                    DropdownMenuItem(
+                        text = { Text(app.label) },
+                        leadingIcon = {
+                            if (app.icon != null) {
+                                Image(
+                                    bitmap = app.icon.asImageBitmap(),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = getDeviceActionIcon(DeviceActionType.READ_NOTIFICATIONS),
+                                    contentDescription = null
+                                )
+                            }
+                        },
+                        trailingIcon = {
+                            androidx.compose.material3.Checkbox(
+                                checked = selectedPackages.contains(app.packageName),
+                                onCheckedChange = { onToggleApp(app.packageName, app.label) }
+                            )
+                        },
+                        onClick = {
+                            onToggleApp(app.packageName, app.label)
+                        }
+                    )
+                }
+            }
+        }
     }
 }

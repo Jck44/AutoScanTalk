@@ -124,6 +124,7 @@ fun ButtonGrid(
                                 buttonConfig = buttonConfig,
                                 isFocused = isFocused,
                                 isRowFocused = isRowFocused,
+                                isEditorMode = false,
                                 onClick = { pageViewModel.activateButtonAtIndex(globalIndex) },
                                 modifier = Modifier.weight(1f).fillMaxHeight()
                             )

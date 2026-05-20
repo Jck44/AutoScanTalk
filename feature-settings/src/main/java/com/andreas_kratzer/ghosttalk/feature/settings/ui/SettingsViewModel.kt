@@ -2,6 +2,8 @@ package com.andreas_kratzer.ghosttalk.feature.settings.ui
 
 import android.app.Application
 import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -225,6 +227,7 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             genAiDelegate.performGeminiNanoIntegrityCheck()
         }
+        initializeDefaultMessagingAppsIfNeeded()
     }
     
     private val _navigationEvent = kotlinx.coroutines.flow.MutableSharedFlow<SettingsNavigationEvent>()
@@ -530,6 +533,9 @@ class SettingsViewModel @Inject constructor(
         val current = settingsRepository.monitoredNotificationApps.toMutableSet()
         if (e) current.add(pkg) else current.remove(pkg)
         settingsRepository.monitoredNotificationApps = current
+    }
+    fun setMonitoredNotificationApps(apps: Set<String>) {
+        settingsRepository.monitoredNotificationApps = apps
     }
 
     fun clearButtonUsageStats(bookId: String) {
@@ -1010,4 +1016,140 @@ class SettingsViewModel @Inject constructor(
             }
         }
     }
+
+    private fun initializeDefaultMessagingAppsIfNeeded() {
+        try {
+            val sharedPrefs = application.getSharedPreferences("ghosttalk_app_meta", android.content.Context.MODE_PRIVATE) ?: return
+            val hasInitialized = sharedPrefs.getBoolean("has_initialized_monitored_apps", false)
+            if (!hasInitialized) {
+                viewModelScope.launch(Dispatchers.IO) {
+                    try {
+                        val pm = application.packageManager ?: return@launch
+                        val mainIntent = Intent(Intent.ACTION_MAIN, null).apply {
+                            addCategory(Intent.CATEGORY_LAUNCHER)
+                        }
+                        val resolveInfos = pm.queryIntentActivities(mainIntent, 0)
+                        val detectedApps = mutableSetOf<String>()
+                        
+                        for (resolveInfo in resolveInfos) {
+                            val packageName = resolveInfo.activityInfo?.packageName ?: continue
+                            if (packageName.isNotEmpty()) {
+                                try {
+                                    val appInfo = pm.getApplicationInfo(packageName, 0)
+                                    if (isMessagingOrSocialApp(pm, appInfo)) {
+                                        detectedApps.add(packageName)
+                                    }
+                                } catch (e: Exception) {
+                                    // ignore
+                                }
+                            }
+                        }
+                        
+                        withContext(Dispatchers.Main) {
+                            if (detectedApps.isNotEmpty()) {
+                                val current = settingsRepository.monitoredNotificationApps.toMutableSet()
+                                current.addAll(detectedApps)
+                                settingsRepository.monitoredNotificationApps = current
+                            }
+                            sharedPrefs.edit().putBoolean("has_initialized_monitored_apps", true).apply()
+                        }
+                    } catch (e: Exception) {
+                        // ignore background thread exceptions under test/mock environment
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            // ignore exceptions under test/mock environment
+        }
+    }
+
+    fun resetMonitoredNotificationAppsToMessagingDefaults() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val pm = application.packageManager ?: return@launch
+                val mainIntent = Intent(Intent.ACTION_MAIN, null).apply {
+                    addCategory(Intent.CATEGORY_LAUNCHER)
+                }
+                val resolveInfos = pm.queryIntentActivities(mainIntent, 0)
+                val detectedApps = mutableSetOf<String>()
+                
+                for (resolveInfo in resolveInfos) {
+                    val packageName = resolveInfo.activityInfo?.packageName ?: continue
+                    if (packageName.isNotEmpty()) {
+                        try {
+                            val appInfo = pm.getApplicationInfo(packageName, 0)
+                            if (isMessagingOrSocialApp(pm, appInfo)) {
+                                detectedApps.add(packageName)
+                            }
+                        } catch (e: Exception) {
+                            // ignore
+                        }
+                    }
+                }
+                
+                withContext(Dispatchers.Main) {
+                    settingsRepository.monitoredNotificationApps = detectedApps
+                }
+            } catch (e: Exception) {
+                // ignore
+            }
+        }
+    }
+
+    private fun isMessagingOrSocialApp(pm: PackageManager, appInfo: android.content.pm.ApplicationInfo): Boolean {
+        val pkg = appInfo.packageName.lowercase()
+        
+        // Exclude system, utility, mail, browser, contacts, dialer, accessibility, and companion apps that might match CATEGORY_SOCIAL
+        val excludeKeywords = listOf(
+            "browser", "watch", "wear", "companion", "launcher", "keyboard", 
+            "weather", "clock", "email", "mail", "gmail", "calendar", "chrome", 
+            "firefox", "opera", "edge", "safari", "system", "service", "provider",
+            "contacts", "dialer", "phone", "accessibility", "hearing", "speech", 
+            "transcribe", "translate"
+        )
+        if (excludeKeywords.any { pkg.contains(it) }) {
+            return false
+        }
+
+        // 1. Exact or prefix matches for well-known messaging app package names
+        val knownPackages = listOf(
+            "com.whatsapp", "com.whatsapp.w4b",
+            "org.telegram.messenger", "org.telegram.messenger.web", "org.telegram.plus",
+            "org.thoughtcrime.securesms", // Signal
+            "com.facebook.orca", "com.facebook.mlite", // Messenger
+            "com.discord",
+            "com.skype.raider", "com.skype.m2",
+            "com.viber.voip",
+            "ch.threema.app", "ch.threema.app.work",
+            "jp.naver.line.android",
+            "com.tencent.mm", // WeChat
+            "com.slack",
+            "com.microsoft.teams",
+            "com.google.android.apps.dynamite", // Google Chat
+            "com.google.android.apps.messaging", // Google Messages
+            "com.android.mms" // Default System SMS
+        )
+        if (knownPackages.any { pkg == it || pkg.startsWith("$it.") }) {
+            return true
+        }
+
+        // 2. Check if category is social (API 26+)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            if (appInfo.category == android.content.pm.ApplicationInfo.CATEGORY_SOCIAL) {
+                return true
+            }
+        }
+        
+        // 3. Fallback to general keywords (only if not excluded by excludeKeywords)
+        val knownKeywords = listOf(
+            "whatsapp", "telegram", "signal", "messenger", "discord", "skype", 
+            "viber", "threema", "wechat", "imessage", "sms"
+        )
+        if (knownKeywords.any { pkg.contains(it) }) {
+            return true
+        }
+        
+        return false
+    }
 }
+

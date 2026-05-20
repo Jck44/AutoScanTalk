@@ -38,7 +38,7 @@ open class TextToSpeechHelper @Inject constructor(
         .flatMapLatest { it.availableVoicesFlow }
         .stateIn(scope, SharingStarted.Eagerly, emptyList())
 
-    open val isReady: Boolean get() = currentProvider.isReady
+    open val isReady: Boolean get() = currentProvider.isReady || androidTtsProvider.get().isReady
 
     // Support for interrupting ONLY notifications
     var isReadingNotification: Boolean = false

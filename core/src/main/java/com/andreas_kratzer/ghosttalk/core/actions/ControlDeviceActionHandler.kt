@@ -262,9 +262,15 @@ class ControlDeviceActionHandler @Inject constructor(
         }
 
         val allowedApps = settings.monitoredNotificationApps
+        val targetAppPackage = action.contactPhone
         val filtered = activeNotifs.filter { sbn ->
             val pkg = sbn.packageName
-            allowedApps.contains(pkg)
+            if (!targetAppPackage.isNullOrBlank()) {
+                val targetApps = targetAppPackage.split(",").filter { it.isNotBlank() }
+                targetApps.contains(pkg)
+            } else {
+                allowedApps.contains(pkg)
+            }
         }
 
         if (filtered.isEmpty()) {

@@ -156,6 +156,7 @@ fun ActionConfigFields(
                     volumeValue = volumeValue,
                     onVolumeValueChange = onVolumeValueChange,
                     contactName = contactName,
+                    contactPhone = contactPhone,
                     onContactSelected = { name, phone ->
                         onContactNameChange(name)
                         onContactPhoneChange(phone)

@@ -9,7 +9,7 @@
     <string name="settings_category_smart_home">Smart Home (Experimentell)</string>
     <string name="settings_category_gemini">Gemini KI-Assistent</string>
     <string name="settings_category_elevenlabs">Eleven Labs</string>
-    <string name="settings_category_notifications">Berechtigungen</string>
+    <string name="settings_category_notifications">Benachrichtigungen &amp; Berechtigungen</string>
     <string name="settings_category_cloud_book">Sicherung</string>
     <string name="settings_category_cloud_sync">Synchronisierung</string>
     <string name="settings_category_advanced">Erweiterte Einstellungen</string>
@@ -156,9 +156,13 @@
     <string name="settings_gemini_tool_status_pending">Ausstehend…</string>
 
     <!-- Notification Settings -->
-    <string name="settings_notifications_enable">Benachrichtigungen vorlesen</string>
-    <string name="settings_notifications_enable_desc">Erlaubt den Zugriff auf Benachrichtigungen, um diese vorzulesen (Audio-Hinweis).</string>
+    <string name="settings_notifications_enable">System-Zugriff erlauben</string>
+    <string name="settings_notifications_enable_desc">Erforderlich, damit die App eingehende Benachrichtigungen lesen und verarbeiten kann.</string>
     <string name="settings_notifications_permission_button">Berechtigung</string>
+    <string name="settings_notifications_feature_enable">Vorlesen aktivieren</string>
+    <string name="settings_notifications_feature_enable_desc">Eingehende Benachrichtigungen der ausgewählten Apps laut oder als Audio-Hinweis ausgeben.</string>
+    <string name="settings_notifications_apps_header">Apps auswählen</string>
+    <string name="settings_notifications_apps_reset">App-Auswahl auf Messenger zurücksetzen</string>
     <string name="settings_permission_camera">Kamera</string>
     <string name="settings_permission_camera_desc">Wird für Fotos zur Beschreibung der Umgebung über Gemini benötigt.</string>
     <string name="settings_permission_location">Standort</string>

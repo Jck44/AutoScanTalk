@@ -418,6 +418,232 @@ object GhostTalkIcons {
             }
         }
 
+    val VolumeUp: ImageVector
+        get() = materialIcon(name = "Filled.VolumeUp") {
+            materialPath {
+                moveTo(3.0f, 9.0f)
+                verticalLineToRelative(6.0f)
+                horizontalLineToRelative(4.0f)
+                lineToRelative(5.0f, 5.0f)
+                verticalLineTo(4.0f)
+                lineTo(7.0f, 9.0f)
+                horizontalLineTo(3.0f)
+                close()
+                moveTo(16.5f, 12.0f)
+                curveToRelative(0.0f, -1.77f, -1.02f, -3.29f, -2.5f, -4.03f)
+                verticalLineToRelative(8.05f)
+                curveToRelative(1.48f, -0.73f, 2.5f, -2.25f, 2.5f, -4.02f)
+                close()
+                moveTo(14.0f, 3.23f)
+                verticalLineToRelative(2.06f)
+                curveToRelative(2.89f, 0.86f, 5.0f, 3.54f, 5.0f, 6.71f)
+                reflectiveCurveToRelative(-2.11f, 5.85f, -5.0f, 6.71f)
+                verticalLineToRelative(2.06f)
+                curveToRelative(4.01f, -0.91f, 7.0f, -4.49f, 7.0f, -8.77f)
+                reflectiveCurveToRelative(-2.99f, -7.86f, -7.0f, -8.77f)
+                close()
+            }
+        }
+
+    val VolumeDown: ImageVector
+        get() = materialIcon(name = "Filled.VolumeDown") {
+            materialPath {
+                moveTo(18.5f, 12.0f)
+                curveToRelative(0.0f, -1.77f, -1.02f, -3.29f, -2.5f, -4.03f)
+                verticalLineToRelative(8.05f)
+                curveToRelative(1.48f, -0.73f, 2.5f, -2.25f, 2.5f, -4.02f)
+                close()
+                moveTo(5.0f, 9.0f)
+                verticalLineToRelative(6.0f)
+                horizontalLineToRelative(4.0f)
+                lineToRelative(5.0f, 5.0f)
+                verticalLineTo(4.0f)
+                lineTo(9.0f, 9.0f)
+                horizontalLineTo(5.0f)
+                close()
+            }
+        }
+
+    val VolumeOff: ImageVector
+        get() = materialIcon(name = "Filled.VolumeOff") {
+            materialPath {
+                moveTo(16.5f, 12.0f)
+                curveToRelative(0.0f, -1.77f, -1.02f, -3.29f, -2.5f, -4.03f)
+                verticalLineToRelative(2.24f)
+                lineToRelative(2.48f, 2.48f)
+                curveToRelative(0.01f, -0.23f, 0.02f, -0.46f, 0.02f, -0.69f)
+                close()
+                moveTo(14.0f, 3.23f)
+                verticalLineToRelative(2.06f)
+                curveToRelative(2.89f, 0.86f, 5.0f, 3.54f, 5.0f, 6.71f)
+                curveToRelative(0.0f, 2.2f, -0.9f, 4.18f, -2.36f, 5.61f)
+                lineToRelative(1.44f, 1.44f)
+                curveTo(20.25f, 17.0f, 21.0f, 14.6f, 21.0f, 12.0f)
+                curveToRelative(0.0f, -4.28f, -2.99f, -7.86f, -7.0f, -8.77f)
+                close()
+                moveTo(12.0f, 4.0f)
+                lineTo(9.91f, 6.09f)
+                lineTo(12.0f, 8.18f)
+                verticalLineTo(4.0f)
+                close()
+                moveTo(4.27f, 3.0f)
+                lineTo(3.0f, 4.27f)
+                lineTo(7.73f, 9.0f)
+                horizontalLineTo(3.0f)
+                verticalLineToRelative(6.0f)
+                horizontalLineToRelative(4.0f)
+                lineToRelative(5.0f, 5.0f)
+                verticalLineToRelative(-6.73f)
+                lineToRelative(4.25f, 4.25f)
+                curveToRelative(-0.67f, 0.52f, -1.42f, 0.93f, -2.25f, 1.18f)
+                verticalLineToRelative(2.06f)
+                curveToRelative(1.38f, -0.31f, 2.63f, -0.95f, 3.69f, -1.81f)
+                lineTo(19.73f, 21.0f)
+                lineTo(21.0f, 19.73f)
+                lineTo(4.27f, 3.0f)
+                close()
+            }
+        }
+
+    val Vibration: ImageVector
+        get() = materialIcon(name = "Filled.Vibration") {
+            materialPath {
+                moveTo(0.0f, 15.0f)
+                horizontalLineToRelative(2.0f)
+                verticalLineTo(9.0f)
+                horizontalLineTo(0.0f)
+                verticalLineTo(15.0f)
+                close()
+                moveTo(3.0f, 17.0f)
+                horizontalLineToRelative(2.0f)
+                verticalLineTo(7.0f)
+                horizontalLineTo(3.0f)
+                verticalLineTo(17.0f)
+                close()
+                moveTo(22.0f, 9.0f)
+                verticalLineToRelative(6.0f)
+                horizontalLineToRelative(2.0f)
+                verticalLineTo(9.0f)
+                horizontalLineTo(22.0f)
+                close()
+                moveTo(19.0f, 7.0f)
+                verticalLineToRelative(10.0f)
+                horizontalLineToRelative(2.0f)
+                verticalLineTo(7.0f)
+                horizontalLineTo(19.0f)
+                close()
+                moveTo(16.5f, 3.0f)
+                horizontalLineToRelative(-9.0f)
+                curveTo(6.67f, 3.0f, 6.0f, 3.67f, 6.0f, 4.5f)
+                verticalLineToRelative(15.0f)
+                curveTo(6.0f, 20.33f, 6.67f, 21.0f, 7.5f, 21.0f)
+                horizontalLineToRelative(9.0f)
+                curveToRelative(0.83f, 0.0f, 1.5f, -0.67f, 1.5f, -1.5f)
+                verticalLineTo(4.5f)
+                curveTo(18.0f, 3.67f, 17.33f, 3.0f, 16.5f, 3.0f)
+                close()
+                moveTo(16.0f, 19.0f)
+                horizontalLineTo(8.0f)
+                verticalLineTo(5.0f)
+                horizontalLineToRelative(8.0f)
+                verticalLineTo(19.0f)
+                close()
+            }
+        }
+
+    val BatteryFull: ImageVector
+        get() = materialIcon(name = "Filled.BatteryFull") {
+            materialPath {
+                moveTo(17.0f, 5.0f)
+                horizontalLineToRelative(-3.0f)
+                verticalLineTo(3.0f)
+                horizontalLineToRelative(-4.0f)
+                verticalLineToRelative(2.0f)
+                horizontalLineTo(7.0f)
+                curveToRelative(-0.55f, 0.0f, -1.0f, 0.45f, -1.0f, 1.0f)
+                verticalLineToRelative(15.0f)
+                curveToRelative(0.0f, 0.55f, 0.45f, 1.0f, 1.0f, 1.0f)
+                horizontalLineToRelative(10.0f)
+                curveToRelative(0.55f, 0.0f, 1.0f, -0.45f, 1.0f, -1.0f)
+                verticalLineTo(6.0f)
+                curveToRelative(0.0f, -0.55f, -0.45f, -1.0f, -1.0f, -1.0f)
+                close()
+            }
+        }
+
+    val DateRange: ImageVector
+        get() = materialIcon(name = "Filled.DateRange") {
+            materialPath {
+                moveTo(9.0f, 11.0f)
+                horizontalLineTo(7.0f)
+                verticalLineToRelative(2.0f)
+                horizontalLineToRelative(2.0f)
+                verticalLineToRelative(-2.0f)
+                close()
+                moveTo(13.0f, 11.0f)
+                horizontalLineToRelative(-2.0f)
+                verticalLineToRelative(2.0f)
+                horizontalLineToRelative(2.0f)
+                verticalLineToRelative(-2.0f)
+                close()
+                moveTo(17.0f, 11.0f)
+                horizontalLineToRelative(-2.0f)
+                verticalLineToRelative(2.0f)
+                horizontalLineToRelative(2.0f)
+                verticalLineToRelative(-2.0f)
+                close()
+                moveTo(19.0f, 4.0f)
+                horizontalLineToRelative(-1.0f)
+                verticalLineTo(2.0f)
+                horizontalLineToRelative(-2.0f)
+                verticalLineToRelative(2.0f)
+                horizontalLineTo(8.0f)
+                verticalLineTo(2.0f)
+                horizontalLineTo(6.0f)
+                verticalLineToRelative(2.0f)
+                horizontalLineTo(5.0f)
+                curveToRelative(-1.11f, 0.0f, -1.99f, 0.9f, -1.99f, 2.0f)
+                lineTo(3.0f, 20.0f)
+                curveToRelative(0.0f, 1.1f, 0.89f, 2.0f, 2.0f, 2.0f)
+                horizontalLineToRelative(14.0f)
+                curveToRelative(1.1f, 0.0f, 2.0f, -0.9f, 2.0f, -2.0f)
+                verticalLineTo(6.0f)
+                curveToRelative(0.0f, -1.1f, -0.9f, -2.0f, -2.0f, -2.0f)
+                close()
+                moveTo(19.0f, 20.0f)
+                horizontalLineTo(5.0f)
+                verticalLineTo(9.0f)
+                horizontalLineToRelative(14.0f)
+                verticalLineToRelative(11.0f)
+                close()
+            }
+        }
+
+    val AccessTime: ImageVector
+        get() = materialIcon(name = "Filled.AccessTime") {
+            materialPath {
+                moveTo(11.99f, 2.0f)
+                curveTo(6.47f, 2.0f, 2.0f, 6.48f, 2.0f, 12.0f)
+                reflectiveCurveToRelative(4.47f, 10.0f, 9.99f, 10.0f)
+                curveTo(17.52f, 22.0f, 22.0f, 17.52f, 22.0f, 12.0f)
+                reflectiveCurveTo(17.52f, 2.0f, 11.99f, 2.0f)
+                close()
+                moveTo(12.0f, 20.0f)
+                curveToRelative(-4.42f, 0.0f, -8.0f, -3.58f, -8.0f, -8.0f)
+                reflectiveCurveToRelative(3.58f, -8.0f, 8.0f, -8.0f)
+                reflectiveCurveToRelative(8.0f, 3.58f, 8.0f, 8.0f)
+                reflectiveCurveToRelative(-3.58f, 8.0f, -8.0f, 8.0f)
+                close()
+                moveTo(12.5f, 7.0f)
+                horizontalLineTo(11.0f)
+                verticalLineToRelative(6.0f)
+                lineToRelative(5.25f, 3.15f)
+                lineToRelative(0.75f, -1.23f)
+                lineToRelative(-4.75f, -2.82f)
+                close()
+            }
+        }
+
     val Edit: ImageVector
         get() = materialIcon(name = "Filled.Edit") {
             materialPath {

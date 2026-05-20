@@ -77,7 +77,40 @@ fun NavigationActionFields(
                     onValueChange = { if (expandedPageSelect) pageSearchQuery = it },
                     readOnly = !expandedPageSelect,
                     label = { Text(stringResource(R.string.button_target_page_label)) },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedPageSelect) },
+                    trailingIcon = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (navigateToPageId.isNotEmpty() && onNavigateToPage != null) {
+                                androidx.compose.material3.IconButton(
+                                    onClick = {
+                                        onDismissDialog()
+                                        onNavigateToPage(navigateToPageId)
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.Edit,
+                                        contentDescription = stringResource(R.string.page_manage_target),
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                            if (onCreatePage != null) {
+                                androidx.compose.material3.IconButton(
+                                    onClick = { 
+                                        if (onBeforeCreatePage == null || onBeforeCreatePage()) {
+                                            showAddPageDialogState.value = true 
+                                        }
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Add,
+                                        contentDescription = stringResource(R.string.page_create_new_target),
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedPageSelect)
+                        }
+                    },
                     colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
                     shape = MaterialTheme.shapes.large,
                     modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable).fillMaxWidth()
@@ -110,37 +143,6 @@ fun NavigationActionFields(
                         )
                     }
                 }
-            }
-        }
-
-        if (navigateToPageId.isNotEmpty() && onNavigateToPage != null) {
-            FilledIconButton(
-                onClick = {
-                    onDismissDialog()
-                    onNavigateToPage(navigateToPageId)
-                },
-                modifier = Modifier.size(56.dp)
-            ) {
-                Icon(
-                    imageVector = com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.Edit,
-                    contentDescription = stringResource(R.string.page_manage_target)
-                )
-            }
-        }
-
-        if (onCreatePage != null) {
-            FilledIconButton(
-                onClick = { 
-                    if (onBeforeCreatePage == null || onBeforeCreatePage()) {
-                        showAddPageDialogState.value = true 
-                    }
-                },
-                modifier = Modifier.size(56.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = stringResource(R.string.page_create_new_target)
-                )
             }
         }
     }

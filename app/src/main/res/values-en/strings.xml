@@ -81,7 +81,12 @@
     <string name="button_action_gemini_nano">Use Gemini Nano (Offline)</string>
     <string name="button_action_frequent_action">Most Frequent Action</string>
     <string name="button_action_smart_prediction">Gemini Prediction</string>
-    <string name="button_action_notification">Notification (Auditory Cue)</string>
+    <string name="button_action_notification">Read Notifications</string>
+    <string name="button_action_clear_notifications">Clear Notifications</string>
+    <string name="notification_permission_dialog_title">Notification Access Required</string>
+    <string name="notification_permission_dialog_message">To read or clear notifications, the app needs access to your notifications.\n\nPlease enable the switch for \"GoSTalk\" in the settings screen that opens next.</string>
+    <string name="notification_permission_dialog_confirm">Go to Settings</string>
+    <string name="notification_permission_dialog_dismiss">Cancel</string>
 
     <string name="button_action_control_device">Device Functions</string>
     <string name="button_action_weather">Read Weather</string>
@@ -132,6 +137,7 @@
     <string name="button_google_home_value_number_hint">e.g. 50</string>
 
     <string name="button_play_as_cue">Play as Auditory Cue</string>
+    <string name="button_play_as_cue_short">Auditory Cue</string>
     <string name="button_google_home_device_label">Device</string>
     <string name="button_google_home_command_label">Command</string>
     <string name="button_google_home_value_label">Value</string>

@@ -9,7 +9,7 @@
     <string name="settings_category_smart_home">Smart Home (Experimental)</string>
     <string name="settings_category_gemini">Gemini AI Assistant</string>
     <string name="settings_category_elevenlabs">ElevenLabs</string>
-    <string name="settings_category_notifications">Permissions</string>
+    <string name="settings_category_notifications">Notifications &amp; Permissions</string>
     <string name="settings_category_cloud_book">Backup</string>
     <string name="settings_category_cloud_sync">Synchronization</string>
     <string name="settings_category_advanced">Advanced Settings</string>
@@ -135,9 +135,13 @@
     <string name="settings_gemini_tool_status_pending">Pending…</string>
     
     <!-- Permissions -->
-    <string name="settings_notifications_enable">Read notifications aloud</string>
-    <string name="settings_notifications_enable_desc">Allows automatic reading of notifications from selected apps as an auditory cue.</string>
+    <string name="settings_notifications_enable">Allow System Access</string>
+    <string name="settings_notifications_enable_desc">Required for the app to read and process incoming notifications.</string>
     <string name="settings_notifications_permission_button">Grant Permission</string>
+    <string name="settings_notifications_feature_enable">Enable Reading</string>
+    <string name="settings_notifications_feature_enable_desc">Read incoming notifications from selected apps out loud or as an auditory cue.</string>
+    <string name="settings_notifications_apps_header">Select Apps</string>
+    <string name="settings_notifications_apps_reset">Reset app selection to messengers</string>
     <string name="settings_permission_camera">Camera</string>
     <string name="settings_permission_camera_desc">Required for photos to describe the environment via Gemini.</string>
     <string name="settings_permission_location">Location</string>

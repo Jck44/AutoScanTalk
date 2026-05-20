@@ -13,15 +13,19 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Info
@@ -503,19 +507,78 @@ fun ButtonConfigDialog(
                                 }
                             )
 
-                            SettingsToggleItem(
-                                label = stringResource(R.string.button_is_active_label),
-                                checked = isActive,
-                                onCheckedChange = { isActive = it },
-                                onValueChangeFinished = handleAutoSave
-                            )
+                            androidx.compose.material3.Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = LocalDimensions.current.paddingSmall),
+                                colors = androidx.compose.material3.CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                ),
+                                shape = MaterialTheme.shapes.medium
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                                    horizontalArrangement = Arrangement.SpaceEvenly,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clickable { 
+                                                isActive = !isActive 
+                                                handleAutoSave()
+                                            }
+                                            .padding(vertical = 4.dp)
+                                    ) {
+                                        androidx.compose.material3.Switch(
+                                            checked = isActive,
+                                            onCheckedChange = { 
+                                                isActive = it
+                                                handleAutoSave()
+                                            },
+                                            thumbContent = if (isActive) {
+                                                { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(androidx.compose.material3.SwitchDefaults.IconSize)) }
+                                            } else null
+                                        )
+                                        Text(
+                                            text = stringResource(R.string.button_is_active_label),
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                    }
 
-                            SettingsToggleItem(
-                                label = stringResource(R.string.button_play_as_cue),
-                                checked = playActionAsAuditoryCue,
-                                onCheckedChange = { playActionAsAuditoryCue = it },
-                                onValueChangeFinished = handleAutoSave
-                            )
+                                    androidx.compose.foundation.layout.Spacer(modifier = Modifier.width(8.dp))
+                                    androidx.compose.material3.VerticalDivider(modifier = Modifier.height(32.dp))
+                                    androidx.compose.foundation.layout.Spacer(modifier = Modifier.width(8.dp))
+
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clickable { 
+                                                playActionAsAuditoryCue = !playActionAsAuditoryCue
+                                                handleAutoSave()
+                                            }
+                                            .padding(vertical = 4.dp)
+                                    ) {
+                                        androidx.compose.material3.Switch(
+                                            checked = playActionAsAuditoryCue,
+                                            onCheckedChange = { 
+                                                playActionAsAuditoryCue = it
+                                                handleAutoSave()
+                                            }
+                                        )
+                                        Text(
+                                            text = stringResource(R.string.button_play_as_cue_short),
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                    }
+                                }
+                            }
 
                             featureGuard?.let { guard ->
                                 val currentAction = buttonConfig.buttonAction
@@ -593,6 +656,21 @@ fun ButtonConfigDialog(
                                 label = stringResource(R.string.button_action_label),
                                 selectedOption = selectedActionType,
                                 groups = dropdownGroups,
+                                iconProvider = { actionType ->
+                                    val icon = when (actionType) {
+                                        actionTypeSpeak -> Icons.Default.PlayArrow
+                                        actionTypeNavigate -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.ArrowForward
+                                        actionTypeGemini, actionTypeGeminiSearch, actionTypeGeminiNano, actionTypeGeminiVision -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.AutoAwesome
+                                        actionTypeWeather -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.Cloud
+                                        actionTypeSmartHome -> Icons.Default.Home
+                                        actionTypeDevice -> Icons.Default.Settings
+                                        actionTypeFrequent, actionTypePrevious, actionTypeSmart -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.History
+                                        else -> null
+                                    }
+                                    if (icon != null) {
+                                        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                    }
+                                },
                                 onValueChangeFinished = handleAutoSave
                             )
 
@@ -835,7 +913,7 @@ private fun PreviewTabContent(
                             DeviceActionType.MEDIA_PREVIOUS -> "Vorheriges Lied abspielen"
                             DeviceActionType.TOGGLE_SCANNING -> "Scannen pausieren/fortsetzen"
                             DeviceActionType.READ_NOTIFICATIONS -> "Benachrichtigungen vorlesen"
-                            else -> "Aktion ausführen"
+                            DeviceActionType.CLEAR_NOTIFICATIONS -> "Benachrichtigungen löschen"
                         }
                         val specificText = try {
                             val calendar = java.util.Calendar.getInstance()

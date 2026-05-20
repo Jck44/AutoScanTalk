@@ -325,6 +325,7 @@ fun SettingsGroupedDropdownItem(
     selectedOption: String,
     groups: List<DropdownGroup>,
     modifier: Modifier = Modifier,
+    iconProvider: (@Composable (String) -> Unit)? = null,
     onValueChangeFinished: (() -> Unit)? = null
 ) {
     val dimensions = LocalDimensions.current
@@ -351,6 +352,7 @@ fun SettingsGroupedDropdownItem(
                 value = selectedOption,
                 onValueChange = {},
                 readOnly = true,
+                leadingIcon = iconProvider?.let { { it(selectedOption) } },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
                 shape = MaterialTheme.shapes.large,
@@ -374,7 +376,8 @@ fun SettingsGroupedDropdownItem(
                     }
                     group.items.forEach { (optionLabel, onClick) ->
                         DropdownMenuItem(
-                            text = { Text(optionLabel, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(start = if (group.name.isNotBlank()) 12.dp else 0.dp)) },
+                            text = { Text(optionLabel, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(start = if (group.name.isNotBlank() && iconProvider == null) 12.dp else 0.dp)) },
+                            leadingIcon = iconProvider?.let { { it(optionLabel) } },
                             onClick = {
                                 onClick()
                                 focusManager.clearFocus()

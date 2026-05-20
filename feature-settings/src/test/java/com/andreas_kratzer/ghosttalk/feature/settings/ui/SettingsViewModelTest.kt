@@ -189,4 +189,9 @@ class SettingsViewModelTest {
         coVerify { importExportManager.importCloudBackup(json, null) }
         assertEquals("new-book-id", successId)
     }
+
+    @Test
+    fun `resetMonitoredNotificationAppsToMessagingDefaults does not crash under test context`() = runTest {
+        viewModel.resetMonitoredNotificationAppsToMessagingDefaults()
+    }
 }
