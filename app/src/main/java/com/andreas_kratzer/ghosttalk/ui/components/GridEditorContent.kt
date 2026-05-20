@@ -82,8 +82,10 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.animation.core.*
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.rememberModalBottomSheetState
 
 data class GridCellTarget(val index: Int)
 data class InsertTarget(val index: Int)
@@ -128,6 +130,9 @@ fun GridEditorContent(
         }
         val snackbarHostState = remember { SnackbarHostState() }
         val scope = rememberCoroutineScope()
+
+        var showLayoutSettingsSheet by remember { mutableStateOf(false) }
+        val sheetState = rememberModalBottomSheetState()
 
         LaunchedEffect(initialButtonId, item) {
             if (initialButtonId != null && item is Page) {
@@ -352,7 +357,15 @@ fun GridEditorContent(
                         .padding(bottom = if (isLandscape) dimensions.paddingMedium else dimensions.paddingLarge),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    GridEditorControls(item = item, actions = actions)
+                    // Responsive Logik: Wir erzwingen den Kompakt-Modus auf allen Geräten, die schmaler als 720dp sind
+                    // ODER im Portrait-Modus auf dem Telefon sind.
+                    val useCompactMode = configuration.screenWidthDp < 720 || (!isLandscape && !dimensions.isTablet)
+                    
+                    if (useCompactMode) {
+                        GridEditorSummaryBar(item = item, onClick = { showLayoutSettingsSheet = true })
+                    } else {
+                        GridEditorControls(item = item, actions = actions)
+                    }
 
                     val effectiveScanPattern = item.scanPattern ?: bookDefaultScanPattern
                     val isRowByRow = effectiveScanPattern == "row_by_row" || effectiveScanPattern == "row_column"
@@ -430,6 +443,47 @@ fun GridEditorContent(
                             .fillMaxHeight()
                             .dropTarget(key = TemplatesPanelTarget)
                     )
+                }
+            }
+
+            // Layout Settings Bottom Sheet
+            if (showLayoutSettingsSheet) {
+                ModalBottomSheet(
+                    onDismissRequest = { showLayoutSettingsSheet = false },
+                    sheetState = sheetState,
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    dragHandle = {
+                        Box(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .padding(vertical = 12.dp)
+                                    .size(32.dp, 4.dp)
+                                    .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f), RoundedCornerShape(2.dp))
+                            )
+                        }
+                    }
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 32.dp)
+                            .padding(horizontal = 24.dp)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.page_scan_pattern_override),
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
+                        GridEditorControls(
+                            item = item,
+                            actions = actions,
+                            forceVertical = true
+                        )
+                    }
                 }
             }
 
