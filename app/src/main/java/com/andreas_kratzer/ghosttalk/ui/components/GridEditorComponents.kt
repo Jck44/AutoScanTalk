@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.FlowRowScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -42,7 +41,7 @@ import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions
 import kotlinx.coroutines.delay
 
-@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun GridEditorControls(
     item: GridItem,
@@ -57,7 +56,9 @@ fun GridEditorControls(
             modifier = modifier.fillMaxWidth().padding(horizontal = dimensions.paddingMedium),
             verticalArrangement = Arrangement.spacedBy(dimensions.paddingLarge)
         ) {
-            GridEditorControlsContent(item, actions, Modifier.fillMaxWidth())
+            GridEditorRowsControl(item, actions, Modifier.fillMaxWidth())
+            GridEditorColsControl(item, actions, Modifier.fillMaxWidth())
+            GridEditorPatternControl(item, actions, Modifier.fillMaxWidth())
         }
     } else {
         FlowRow(
@@ -66,74 +67,67 @@ fun GridEditorControls(
             verticalArrangement = Arrangement.spacedBy(dimensions.paddingMedium),
             maxItemsInEachRow = 3
         ) {
-            GridEditorControlsContent(item, actions, Modifier.weight(1f).widthIn(min = 250.dp))
+            // Hier verzichten wir auf weight(), um Inkompatibilitäten in FlowRow zu vermeiden
+            val itemModifier = Modifier.widthIn(min = 200.dp, max = 300.dp)
+            GridEditorRowsControl(item, actions, itemModifier)
+            GridEditorColsControl(item, actions, itemModifier)
+            GridEditorPatternControl(item, actions, itemModifier)
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun GridEditorControlsContent(
-    item: GridItem,
-    actions: GridEditorActions,
-    itemModifier: Modifier
-) {
-    val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
-    
+private fun GridEditorRowsControl(item: GridItem, actions: GridEditorActions, modifier: Modifier) {
     var localRows by remember(item.rows) { mutableIntStateOf(item.rows) }
-    var localCols by remember(item.columns) { mutableIntStateOf(item.columns) }
-
-    LaunchedEffect(localRows, localCols) {
-        if (localRows != item.rows || localCols != item.columns) {
+    LaunchedEffect(localRows) {
+        if (localRows != item.rows) {
             delay(50)
-            actions.updateGridSettings(
-                itemId = item.id,
-                update = GridSettingsUpdate(
-                    scanPattern = com.andreas_kratzer.ghosttalk.core.model.OptionalProperty(item.scanPattern),
-                    rows = localRows,
-                    columns = localCols
-                )
-            )
+            actions.updateGridSettings(item.id, GridSettingsUpdate(rows = localRows))
         }
     }
-
-    // Rows Slider
-    Column(modifier = itemModifier) {
-        val rowsLabel = stringResource(R.string.page_rows_field) + ": $localRows"
+    Column(modifier = modifier) {
         Text(
-            text = rowsLabel,
+            text = "${stringResource(R.string.page_rows_field)}: $localRows",
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.primary
         )
         Slider(
             value = localRows.toFloat(),
-            onValueChange = { newValue ->
-                localRows = Math.round(newValue)
-            },
+            onValueChange = { localRows = Math.round(it) },
             valueRange = 1f..7f,
             steps = 5
         )
     }
+}
 
-    // Columns Slider
-    Column(modifier = itemModifier) {
-        val colsLabel = stringResource(R.string.page_cols_field) + ": $localCols"
+@Composable
+private fun GridEditorColsControl(item: GridItem, actions: GridEditorActions, modifier: Modifier) {
+    var localCols by remember(item.columns) { mutableIntStateOf(item.columns) }
+    LaunchedEffect(localCols) {
+        if (localCols != item.columns) {
+            delay(50)
+            actions.updateGridSettings(item.id, GridSettingsUpdate(columns = localCols))
+        }
+    }
+    Column(modifier = modifier) {
         Text(
-            text = colsLabel,
+            text = "${stringResource(R.string.page_cols_field)}: $localCols",
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.primary
         )
         Slider(
             value = localCols.toFloat(),
-            onValueChange = { newValue ->
-                localCols = Math.round(newValue)
-            },
+            onValueChange = { localCols = Math.round(it) },
             valueRange = 1f..7f,
             steps = 5
         )
     }
+}
 
-    // Scan Pattern Dropdown
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun GridEditorPatternControl(item: GridItem, actions: GridEditorActions, modifier: Modifier) {
+    val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
     var expandedPattern by remember { mutableStateOf(false) }
     val options = listOf(
         null to stringResource(R.string.page_pattern_default),
@@ -145,7 +139,7 @@ private fun GridEditorControlsContent(
     ExposedDropdownMenuBox(
         expanded = expandedPattern,
         onExpandedChange = { expandedPattern = !expandedPattern },
-        modifier = itemModifier
+        modifier = modifier
     ) {
         OutlinedTextField(
             value = currentPatternLabel,
@@ -240,26 +234,17 @@ fun calculateGridSize(
     isTablet: Boolean,
     dimensions: com.andreas_kratzer.ghosttalk.core.ui.theme.Dimensions
 ): GridSizeInfo {
-    // Precise width if row handles are present: 
-    // icon box (48dp) + inner Row padding (8dp left + 8dp right = 16dp total horizontally)
     val rowHandleWidth = if (isRowByRow) 64.dp else 0.dp
-    
-    // Subtract a small safety margin (2dp) to prevent sub-pixel rounding issues
     val availableWidth = maxWidth - (horizontalPadding * 2) - 2.dp - rowHandleWidth
     val availableHeight = maxHeight - (horizontalPadding * 2) - 2.dp
 
     var buttonWidthToFit = (availableWidth - (dimensions.gridSpacing * (cols - 1))) / cols
-    // When in row-by-row mode, each row has a Row wrapper with its own padding/border (approx 16dp total height offset per row)
     val heightOffsetPerRow = if (isRowByRow) 16.dp else 0.dp
     var buttonHeightToFit = ((availableHeight - (dimensions.gridSpacing * (rows - 1))) / rows) - heightOffsetPerRow
 
     val maxButtonSize = 180.dp
-    
-    // We allow the buttons to go below minButtonWidth if necessary to fit the screen width
     var optimalWidth = buttonWidthToFit.coerceAtMost(maxButtonSize)
     
-    // On phones, we enforce a minimum height to ensure readability, even if it requires scrolling.
-    // On tablets, we continue to fit the entire grid on the screen.
     val minEditorButtonHeight = if (isTablet) 0.dp else 45.dp
     val maxButtonHeight = if (isTablet) 180.dp else 120.dp
     var optimalHeight = buttonHeightToFit.coerceIn(minEditorButtonHeight, maxButtonHeight)
@@ -271,7 +256,6 @@ fun calculateGridSize(
         optimalHeight = optimalWidth * maxRatio
     }
 
-    // The container width and height must include the contentPadding and row handles
     val totalWidth = (optimalWidth * cols) + (dimensions.gridSpacing * (cols - 1)) + (horizontalPadding * 2) + rowHandleWidth
     val totalHeight = ((optimalHeight + heightOffsetPerRow) * rows) + (dimensions.gridSpacing * (rows - 1)) + (dimensions.paddingMedium * 2)
 

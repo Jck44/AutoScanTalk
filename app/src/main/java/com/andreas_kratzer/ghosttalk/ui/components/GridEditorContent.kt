@@ -86,6 +86,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.rememberModalBottomSheetState
+import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 
 data class GridCellTarget(val index: Int)
 data class InsertTarget(val index: Int)
@@ -357,15 +358,9 @@ fun GridEditorContent(
                         .padding(bottom = if (isLandscape) dimensions.paddingMedium else dimensions.paddingLarge),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Responsive Logik: Wir erzwingen den Kompakt-Modus auf allen Geräten, die schmaler als 720dp sind
-                    // ODER im Portrait-Modus auf dem Telefon sind.
-                    val useCompactMode = configuration.screenWidthDp < 720 || (!isLandscape && !dimensions.isTablet)
-                    
-                    if (useCompactMode) {
-                        GridEditorSummaryBar(item = item, onClick = { showLayoutSettingsSheet = true })
-                    } else {
-                        GridEditorControls(item = item, actions = actions)
-                    }
+                    // Standardmäßig zeigen wir jetzt die Chips-Bar an. 
+                    // Diese öffnet bei Klick das Bottom Sheet mit den detaillierten Einstellungen.
+                    GridEditorSummaryBar(item = item, onClick = { showLayoutSettingsSheet = true })
 
                     val effectiveScanPattern = item.scanPattern ?: bookDefaultScanPattern
                     val isRowByRow = effectiveScanPattern == "row_by_row" || effectiveScanPattern == "row_column"
@@ -407,6 +402,7 @@ fun GridEditorContent(
                                     dimensions = dimensions,
                                     density = density,
                                     gridSpacingPx = gridSpacingPx,
+                                    availablePages = availablePages,
                                     onEditRow = { editingRowIndex = it; showRowEditDialog = true },
                                     onEditButton = { index ->
                                         selectedButtonIndex = index
@@ -423,6 +419,7 @@ fun GridEditorContent(
                                     dimensions = dimensions,
                                     density = density,
                                     gridSpacingPx = gridSpacingPx,
+                                    availablePages = availablePages,
                                     onEditButton = { index ->
                                         selectedButtonIndex = index
                                         showDialog = true
@@ -433,13 +430,14 @@ fun GridEditorContent(
                     }
                 }
 
-                // Right Panel: Button Templates Panel (only visible in Landscape mode and if pageViewModel is provided)
-                if (isLandscape && pageViewModel != null) {
+                // Right Panel: Button Templates Panel
+                // Visible in Landscape mode OR on Tablets, if pageViewModel is provided
+                if ((isLandscape || dimensions.isTablet) && pageViewModel != null) {
                     ButtonTemplatesPanel(
                         viewModel = pageViewModel,
                         onEditTemplate = { template -> editingTemplate = template },
                         modifier = Modifier
-                            .width(320.dp)
+                            .width(if (isLandscape) 320.dp else 280.dp)
                             .fillMaxHeight()
                             .dropTarget(key = TemplatesPanelTarget)
                     )
@@ -454,12 +452,11 @@ fun GridEditorContent(
                     containerColor = MaterialTheme.colorScheme.surface,
                     dragHandle = {
                         Box(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .padding(vertical = 12.dp)
                                     .size(32.dp, 4.dp)
                                     .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f), RoundedCornerShape(2.dp))
                             )
@@ -473,7 +470,7 @@ fun GridEditorContent(
                             .padding(horizontal = 24.dp)
                     ) {
                         Text(
-                            text = stringResource(R.string.page_scan_pattern_override),
+                            text = stringResource(R.string.page_grid_info, item.rows, item.columns),
                             style = MaterialTheme.typography.titleLarge,
                             color = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.padding(bottom = 16.dp)
@@ -637,6 +634,7 @@ private fun EditorButtonCell(
     height: Dp,
     numCols: Int,
     gridSpacing: Dp,
+    targetPageName: String? = null,
     onDragEnd: (Int) -> Unit,
     onClick: () -> Unit
 ) {
@@ -681,6 +679,7 @@ private fun EditorButtonCell(
         GridButton(
             buttonConfig = buttonConfig,
             isFocused = false,
+            targetPageName = targetPageName,
             onClick = onClick,
             modifier = Modifier
                 .fillMaxSize()
@@ -766,6 +765,7 @@ private fun LazyGridScope.renderRowByRowGrid(
     dimensions: com.andreas_kratzer.ghosttalk.core.ui.theme.Dimensions,
     density: Float,
     gridSpacingPx: Float,
+    availablePages: List<Page>,
     onEditRow: (Int) -> Unit,
     onEditButton: (Int) -> Unit
 ) {
@@ -833,16 +833,22 @@ private fun LazyGridScope.renderRowByRowGrid(
                 ) {
                     for (c in 0 until item.columns) {
                         val globalIndex = GridUtils.getGlobalIndex(r, c)
+                        val buttonConfig = item.buttonConfigs.getOrNull(globalIndex)
+                        val targetPageName = (buttonConfig?.buttonAction as? NavigateToPageButtonAction)?.let { action ->
+                            availablePages.find { it.id == action.pageId }?.name
+                        }
+                        
                         EditorButtonCell(
                             localIndex = globalIndex, // In RowByRow, buttons are NOT grid items, so we use globalIndex for visual reorder
                             globalIndex = globalIndex,
-                            buttonConfig = item.buttonConfigs.getOrNull(globalIndex),
+                            buttonConfig = buttonConfig,
                             reorderState = buttonReorderState,
                             isTarget = buttonTargetIndex == globalIndex,
                             width = sizeInfo.optimalWidth,
                             height = sizeInfo.optimalHeight,
                             numCols = item.columns,
                             gridSpacing = dimensions.gridSpacing,
+                            targetPageName = targetPageName,
                             onDragEnd = { fromIdx ->
                                 val to = buttonReorderState.findTargetButtonIndex(
                                     gridState = gridState,
@@ -873,6 +879,7 @@ private fun LazyGridScope.renderLinearGrid(
     dimensions: com.andreas_kratzer.ghosttalk.core.ui.theme.Dimensions,
     density: Float,
     gridSpacingPx: Float,
+    availablePages: List<Page>,
     onEditButton: (Int) -> Unit
 ) {
     val buttonTargetIndex = buttonReorderState.findTargetButtonIndex(
@@ -885,16 +892,22 @@ private fun LazyGridScope.renderLinearGrid(
     
     items(item.rows * item.columns) { localIndex ->
         val globalIndex = GridUtils.localToGlobalIndex(localIndex, item.columns)
+        val buttonConfig = item.buttonConfigs.getOrNull(globalIndex)
+        val targetPageName = (buttonConfig?.buttonAction as? NavigateToPageButtonAction)?.let { action ->
+            availablePages.find { it.id == action.pageId }?.name
+        }
+
         EditorButtonCell(
                             localIndex = localIndex, // In Linear Grid, buttons ARE grid items, so we use localIndex to match LazyGridState
                             globalIndex = globalIndex,
-            buttonConfig = item.buttonConfigs.getOrNull(globalIndex),
+            buttonConfig = buttonConfig,
             reorderState = buttonReorderState,
             isTarget = buttonTargetIndex == globalIndex,
             width = sizeInfo.optimalWidth,
             height = sizeInfo.optimalHeight,
             numCols = item.columns,
             gridSpacing = dimensions.gridSpacing,
+            targetPageName = targetPageName,
             onDragEnd = { fromLocalIdx ->
                 val toGlobal = buttonReorderState.findTargetButtonIndex(
                     gridState = gridState,

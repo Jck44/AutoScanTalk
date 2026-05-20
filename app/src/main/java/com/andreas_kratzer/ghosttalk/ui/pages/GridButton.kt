@@ -9,11 +9,13 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Card
@@ -36,20 +38,22 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.andreas_kratzer.ghosttalk.core.model.ActionCategoryRegistry
 import com.andreas_kratzer.ghosttalk.core.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.SmartHomeButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.GeminiButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.GeminiSearchButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.GeminiNanoButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.ControlDeviceButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.WeatherButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.FrequentActionButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.GeminiButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.GeminiNanoButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.GeminiSearchButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.PreviousActionButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.SmartHomeButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.WeatherButtonAction
+import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalIsUserModeActive
 
@@ -84,10 +88,6 @@ object GridButtonColors {
                 if (isDark) Color(0xFF263238) to Color(0xFFCFD8DC)
                 else Color(0xFFECEFF1) to Color(0xFF37474F)
             }
-            else -> {
-                if (isDark) Color(0xFF333333) to Color(0xFFCCCCCC)
-                else Color(0xFFEEEEEE) to Color(0xFF333333)
-            }
         }
     }
 }
@@ -100,6 +100,7 @@ fun GridButton(
     isRowFocused: Boolean = false,
     isEditorMode: Boolean = !LocalIsUserModeActive.current,
     overrideLabel: String? = null,
+    targetPageName: String? = null,
     onClick: () -> Unit
 ) {
     val dimensions = LocalDimensions.current
@@ -158,14 +159,13 @@ fun GridButton(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         // Action badge at top
+                        // Centralized icon lookup via ActionCategoryRegistry
+                        val category = ActionCategoryRegistry.getCategoryForAction(buttonConfig.buttonAction)
+                        val actionIcon = GhostTalkIcons.getIconForCategory(category)
+
                         val actionBadgeText = when (buttonConfig.buttonAction) {
-                            is SpeakTextButtonAction -> "Sprechen"
-                            is NavigateToPageButtonAction -> "Nav"
-                            is SmartHomeButtonAction -> "Home"
-                            is GeminiButtonAction, is GeminiSearchButtonAction, is GeminiNanoButtonAction, is GeminiVisionButtonAction -> "KI"
-                            is ControlDeviceButtonAction -> "Gerät"
-                            is WeatherButtonAction -> "Wetter"
-                            is FrequentActionButtonAction, is SmartPredictionButtonAction, is PreviousActionButtonAction -> "Verlauf"
+                            is NavigateToPageButtonAction -> targetPageName
+                            else -> null
                         }
                         
                         val isDark = isSystemInDarkTheme()
@@ -175,13 +175,31 @@ fun GridButton(
                             color = badgeBgColor,
                             contentColor = badgeTxtColor,
                             shape = MaterialTheme.shapes.extraSmall,
-                            modifier = Modifier.align(Alignment.Start)
+                            modifier = Modifier
+                                .align(Alignment.Start)
+                                .padding(start = 8.dp, top = 8.dp)
+                                .padding(end = 8.dp)
                         ) {
-                            Text(
-                                text = actionBadgeText,
-                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier.padding(horizontal = 3.dp, vertical = 1.dp)
-                            )
+                            ) {
+                                Icon(
+                                    imageVector = actionIcon,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(10.dp)
+                                )
+                                
+                                if (actionBadgeText != null) {
+                                    Spacer(modifier = Modifier.width(3.dp))
+                                    Text(
+                                        text = actionBadgeText,
+                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            }
                         }
                         
                         // Label centered in remaining space

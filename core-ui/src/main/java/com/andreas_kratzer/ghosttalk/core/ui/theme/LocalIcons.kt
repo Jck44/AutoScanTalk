@@ -19,15 +19,41 @@
 
 package com.andreas_kratzer.ghosttalk.core.ui.theme
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.materialIcon
 import androidx.compose.material.icons.materialPath
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.andreas_kratzer.ghosttalk.core.model.ActionCategory
 
 /**
  * Local definitions for Icons that are normally only in material-icons-extended.
  * This allows us to remove the large dependency.
  */
 object GhostTalkIcons {
+
+    /**
+     * Central provider for action icons based on the ActionCategory.
+     * Ensures consistency across the entire app (Buttons, Editor, Dialogs).
+     */
+    fun getIconForCategory(category: ActionCategory): ImageVector {
+        return when (category) {
+            ActionCategory.SPEAK_TEXT -> Icons.Default.PlayArrow
+            ActionCategory.NAVIGATE_PAGE -> ArrowForward
+            ActionCategory.GEMINI,
+            ActionCategory.GEMINI_SEARCH,
+            ActionCategory.GEMINI_NANO,
+            ActionCategory.GEMINI_VISION -> AutoAwesome
+            ActionCategory.WEATHER -> Cloud
+            ActionCategory.SMART_HOME -> Icons.Default.Home
+            ActionCategory.CONTROL_DEVICE -> Icons.Default.Settings
+            ActionCategory.FREQUENT_ACTION,
+            ActionCategory.PREVIOUS_ACTION,
+            ActionCategory.SMART_PREDICTION -> History
+        }
+    }
 
     val Sort: ImageVector
         get() = materialIcon(name = "AutoMirrored.Filled.Sort", autoMirror = true) {
@@ -826,7 +852,7 @@ object GhostTalkIcons {
                 close()
                 moveTo(3.5f, 9.72f)
                 curveToRelative(-0.1f, 0.0f, -0.2f, -0.03f, -0.29f, -0.09f)
-                curveToRelative(-0.23f, -0.16f, -0.28f, -0.47f, -0.12f, -0.7f)
+                curveTo(-0.23f, -0.16f, -0.28f, -0.47f, -0.12f, -0.7f)
                 curveToRelative(0.99f, -1.4f, 2.25f, -2.5f, 3.75f, -3.27f)
                 curveTo(9.98f, 4.04f, 14.0f, 4.03f, 17.15f, 5.65f)
                 curveToRelative(1.5f, 0.77f, 2.76f, 1.86f, 3.75f, 3.25f)
