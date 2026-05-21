@@ -42,7 +42,6 @@
             android:exported="true"
             android:theme="@style/Theme.GhostTalk"
             android:windowSoftInputMode="adjustResize"
-            android:screenOrientation="landscape"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
