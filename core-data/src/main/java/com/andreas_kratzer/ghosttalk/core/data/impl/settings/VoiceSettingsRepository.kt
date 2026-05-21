@@ -1,7 +1,9 @@
 package com.andreas_kratzer.ghosttalk.core.data.impl.settings
 
 import android.content.SharedPreferences
+import android.media.MediaRecorder
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_CUES_AUDIO_DEVICE
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_RECORDING_AUDIO_SOURCE
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_TTS_AUDIO_DEVICE
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_TTS_LANGUAGE
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_TTS_VOICE_NAME
@@ -21,6 +23,7 @@ class VoiceSettingsRepository(
     private val _googleTtsVoiceName = StringSetting(SettingsConstants.KEY_GOOGLE_TTS_VOICE_NAME)
     private val _elevenLabsTtsLanguage = StringSetting(SettingsConstants.KEY_ELEVENLABS_TTS_LANGUAGE)
     private val _elevenLabsTtsVoiceName = StringSetting(SettingsConstants.KEY_ELEVENLABS_TTS_VOICE_NAME)
+    private val _recordingAudioSource = IntSetting(KEY_RECORDING_AUDIO_SOURCE, MediaRecorder.AudioSource.VOICE_COMMUNICATION, isScoped = false)
 
     val ttsLanguageFlow = _ttsLanguage.flow
     val ttsVoiceNameFlow = _ttsVoiceName.flow
@@ -31,6 +34,7 @@ class VoiceSettingsRepository(
     val googleTtsVoiceNameFlow = _googleTtsVoiceName.flow
     val elevenLabsTtsLanguageFlow = _elevenLabsTtsLanguage.flow
     val elevenLabsTtsVoiceNameFlow = _elevenLabsTtsVoiceName.flow
+    val recordingAudioSourceFlow = _recordingAudioSource.flow
 
     var ttsLanguage: String? by _ttsLanguage
     var ttsVoiceName: String? by _ttsVoiceName
@@ -41,6 +45,7 @@ class VoiceSettingsRepository(
     var googleTtsVoiceName: String? by _googleTtsVoiceName
     var elevenLabsTtsLanguage: String? by _elevenLabsTtsLanguage
     var elevenLabsTtsVoiceName: String? by _elevenLabsTtsVoiceName
+    var recordingAudioSource: Int by _recordingAudioSource
 
 
     override fun refresh() {
@@ -53,5 +58,6 @@ class VoiceSettingsRepository(
         _googleTtsVoiceName.refresh()
         _elevenLabsTtsLanguage.refresh()
         _elevenLabsTtsVoiceName.refresh()
+        _recordingAudioSource.refresh()
     }
 }

@@ -73,4 +73,5 @@ object SettingsConstants {
     const val KEY_ELEVENLABS_TTS_VOICE_NAME = "elevenlabs_tts_voice_name"
     const val KEY_ELEVENLABS_STABILITY = "elevenlabs_stability"
     const val KEY_ELEVENLABS_SIMILARITY_BOOST = "elevenlabs_similarity_boost"
+    const val KEY_RECORDING_AUDIO_SOURCE = "recording_audio_source"
 }

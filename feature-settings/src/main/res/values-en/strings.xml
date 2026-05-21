@@ -54,6 +54,10 @@
     <string name="settings_audio_cues">Output: Auditory Cue</string>
     <string name="settings_audio_default">System Default (Automatic)</string>
     <string name="settings_category_audio_hardware">Audio Hardware</string>
+    <string name="settings_recording_source">Recording Audio Source</string>
+    <string name="settings_recording_source_voice_recognition">Voice Optimized (Quieter, Noise Suppressed)</string>
+    <string name="settings_recording_source_voice_communication">Amplified &amp; Noise Suppressed (VoIP)</string>
+    <string name="settings_recording_source_mic">Standard Microphone (Louder, Raw)</string>
     
     <!-- Scanning Settings -->
     <string name="settings_auto_scan">Start Scan Automatically</string>

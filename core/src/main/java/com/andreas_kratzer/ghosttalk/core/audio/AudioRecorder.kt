@@ -28,8 +28,11 @@ class AudioRecorder(private val context: Context) {
                 MediaRecorder()
             }
 
+            val prefs = context.getSharedPreferences("ghosttalk_settings", Context.MODE_PRIVATE)
+            val audioSource = prefs.getInt("recording_audio_source", MediaRecorder.AudioSource.VOICE_COMMUNICATION)
+
             recorder.apply {
-                setAudioSource(MediaRecorder.AudioSource.VOICE_RECOGNITION)
+                setAudioSource(audioSource)
                 setOutputFormat(MediaRecorder.OutputFormat.OGG)
                 setAudioEncoder(MediaRecorder.AudioEncoder.OPUS)
                 setOutputFile(outputFile.absolutePath)

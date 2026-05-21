@@ -133,6 +133,7 @@ class SettingsRepositoryImpl @Inject constructor(
     
     // --- Other Flows ---
     override val ttsAudioDeviceAddressFlow: StateFlow<String?> get() = voiceSettings.ttsAudioDeviceAddressFlow
+    override val recordingAudioSourceFlow: StateFlow<Int> get() = voiceSettings.recordingAudioSourceFlow
     override val holdingTimeMillisFlow: StateFlow<Long> get() = scanningSettings.holdingTimeMillisFlow
     override val switchActivationKeyFlow: StateFlow<String> get() = scanningSettings.switchActivationKeyFlow
     override val volumeKeysActivateFlow: StateFlow<Boolean> get() = scanningSettings.volumeKeysActivateFlow
@@ -210,6 +211,10 @@ class SettingsRepositoryImpl @Inject constructor(
     override var ttsAudioDeviceAddress: String?
         get() = voiceSettings.ttsAudioDeviceAddress
         set(value) { voiceSettings.ttsAudioDeviceAddress = value }
+
+    override var recordingAudioSource: Int
+        get() = voiceSettings.recordingAudioSource
+        set(value) { voiceSettings.recordingAudioSource = value }
 
     override var cuesAudioDeviceAddress: String?
         get() = voiceSettings.cuesAudioDeviceAddress

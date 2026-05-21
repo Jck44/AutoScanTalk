@@ -100,6 +100,7 @@ class SettingsViewModel @Inject constructor(
     val defaultStartPageId = settingsRepository.defaultStartPageIdFlow
     val selectedTtsAudioDeviceAddress = settingsRepository.ttsAudioDeviceAddressFlow
     val selectedCuesAudioDeviceAddress = settingsRepository.cuesAudioDeviceAddressFlow
+    val recordingAudioSource = settingsRepository.recordingAudioSourceFlow
     
     val persistActionLogs = settingsRepository.persistActionLogsFlow
     val switchActivationKey = settingsRepository.switchActivationKeyFlow
@@ -273,6 +274,9 @@ class SettingsViewModel @Inject constructor(
     fun setTtsVoice(name: String?) = ttsDelegate.setTtsVoice(name)
     fun setTtsAudioDevice(addr: String?) = ttsDelegate.setTtsAudioDevice(addr)
     fun setCuesAudioDevice(addr: String?) = ttsDelegate.setCuesAudioDevice(addr)
+    fun setRecordingAudioSource(source: Int) {
+        settingsRepository.recordingAudioSource = source
+    }
     fun getResolvedDeviceName(addr: String?) = ttsDelegate.getResolvedDeviceName(addr)
 
     fun setAutoStartScanning(enabled: Boolean) = scanningDelegate.setAutoStartScanning(enabled)

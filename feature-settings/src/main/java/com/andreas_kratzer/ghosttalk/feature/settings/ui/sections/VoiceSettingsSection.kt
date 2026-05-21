@@ -31,6 +31,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import android.media.MediaRecorder
 import java.util.Locale
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -272,6 +273,28 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                     label = stringResource(R.string.settings_audio_cues),
                     selectedOption = viewModel.getResolvedDeviceName(selectedCuesAddress),
                     options = cuesOptions
+                )
+
+                // Recording Audio Source Select
+                val recordingSource by viewModel.recordingAudioSource.collectAsState(MediaRecorder.AudioSource.VOICE_COMMUNICATION)
+                val recordingSourceOptions = listOf(
+                    MediaRecorder.AudioSource.VOICE_RECOGNITION to R.string.settings_recording_source_voice_recognition,
+                    MediaRecorder.AudioSource.VOICE_COMMUNICATION to R.string.settings_recording_source_voice_communication,
+                    MediaRecorder.AudioSource.MIC to R.string.settings_recording_source_mic
+                ).map { (source, resId) ->
+                    stringResource(resId) to { viewModel.setRecordingAudioSource(source) }
+                }
+
+                val currentRecordingSourceLabel = when (recordingSource) {
+                    MediaRecorder.AudioSource.VOICE_COMMUNICATION -> stringResource(R.string.settings_recording_source_voice_communication)
+                    MediaRecorder.AudioSource.MIC -> stringResource(R.string.settings_recording_source_mic)
+                    else -> stringResource(R.string.settings_recording_source_voice_recognition)
+                }
+
+                com.andreas_kratzer.ghosttalk.core.ui.components.SettingsDropdownItem(
+                    label = stringResource(R.string.settings_recording_source),
+                    selectedOption = currentRecordingSourceLabel,
+                    options = recordingSourceOptions
                 )
             }
         }
