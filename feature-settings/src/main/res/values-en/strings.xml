@@ -280,4 +280,13 @@
     <string name="settings_maintenance_check_update_none">The app is up to date.</string>
     <string name="settings_maintenance_check_update_error">Error checking for updates: %s</string>
 
+    <!-- App Picker Notification Access Strings -->
+    <string name="settings_notifications_no_preferred_apps">No preferred apps selected</string>
+    <string name="settings_notifications_one_app_selected">1 app selected</string>
+    <string name="settings_notifications_multiple_apps_selected">%d apps selected</string>
+    <string name="settings_notifications_apps_more_format">%1$s and %2$d more</string>
+    <string name="settings_notifications_manage_preferred_apps">Manage preferred apps:</string>
+    <string name="settings_notifications_loading_apps">Loading apps…</string>
+    <string name="settings_notifications_select_all">Select all</string>
+    <string name="settings_notifications_deselect_all">Deselect all</string>
 </resources>

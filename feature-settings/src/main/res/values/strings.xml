@@ -281,4 +281,13 @@
     <string name="settings_maintenance_check_update_none">Die App ist auf dem neuesten Stand.</string>
     <string name="settings_maintenance_check_update_error">Fehler bei der Update-Prüfung: %s</string>
 
+    <!-- App Picker Notification Access Strings -->
+    <string name="settings_notifications_no_preferred_apps">Keine bevorzugten Apps ausgewählt</string>
+    <string name="settings_notifications_one_app_selected">1 App ausgewählt</string>
+    <string name="settings_notifications_multiple_apps_selected">%d Apps ausgewählt</string>
+    <string name="settings_notifications_apps_more_format">%1$s und %2$d weitere</string>
+    <string name="settings_notifications_manage_preferred_apps">Bevorzugte Apps verwalten:</string>
+    <string name="settings_notifications_loading_apps">Lade Apps…</string>
+    <string name="settings_notifications_select_all">Alle auswählen</string>
+    <string name="settings_notifications_deselect_all">Alle abwählen</string>
 </resources>

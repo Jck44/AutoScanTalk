@@ -229,4 +229,45 @@
     <string name="action_previous_action">Vorherige Aktion</string>
     <string name="action_previous_action_rank">Aktions-Nummer (1=letzte, 2=vorletzte…)</string>
     <string name="action_previous_action_empty">Keine vorherige Aktion gefunden</string>
+
+    <!-- UI Redundancy Cleanup Strings -->
+    <string name="editor_template_move_not_supported">Verschieben für Vorlagen nicht unterstützt</string>
+    <string name="editor_template_duplicate_not_supported">Duplizieren für Vorlagen nicht unterstützt</string>
+    <string name="editor_template_saved">Vorlage gespeichert</string>
+    <string name="template_panel_title">Button-Vorlagen</string>
+    <string name="template_search_placeholder">Vorlagen durchsuchen…</string>
+    <string name="template_drag_drop_hint">💡 Vorlage auf Gitter ziehen zum Platzieren. Button aus Gitter hierhin ziehen, um Vorlage zu erstellen.</string>
+    <string name="content_desc_collapse">Einklappen</string>
+    <string name="content_desc_expand">Ausklappen</string>
+    <string name="template_speaks_format">Spricht: \"%s\"</string>
+    <string name="device_control_time_preset_standard">Standard (\"Es ist ... Uhr\")</string>
+    <string name="device_control_time_preset_short">Kurz (\"14:30\")</string>
+    <string name="device_control_time_preset_plus5">+5 Min.</string>
+    <string name="device_control_time_preset_minus5">-5 Min.</string>
+    <string name="device_control_date_preset_weekday_date">Wochentag &amp; Datum</string>
+    <string name="device_control_date_preset_only_date">Nur Datum</string>
+    <string name="device_control_date_preset_tomorrow">Morgen</string>
+    <string name="device_control_date_preset_yesterday">Gestern</string>
+    <string name="device_control_calendar_appointments_placeholder">[Termine]</string>
+    <string name="device_control_calendar_read_count_suffix"> (Liest %d Kalendereinträge vor)</string>
+    <string name="device_control_spoken_preview_label">Gesprochener Text (Vorschau):</string>
+    <string name="device_control_notifications_preferred_apps">Bevorzugte Apps (Einstellungen)</string>
+    <string name="device_control_notifications_one_app_selected">1 App ausgewählt</string>
+    <string name="device_control_notifications_multiple_apps_selected">%d Apps ausgewählt</string>
+    <string name="device_control_notifications_apps_more_format">%1$s und %2$d weitere</string>
+    <string name="device_control_notifications_read_from_app_label">Vorlesen von App:</string>
+    <string name="template_save_as_title">Als Vorlage speichern</string>
+    <string name="template_enter_name_prompt">Geben Sie einen Namen für die Button-Vorlage ein:</string>
+    <string name="template_none_found">Keine Vorlagen gefunden.</string>
+    <string name="settings_notifications_select_all">Alle auswählen</string>
+    <string name="settings_notifications_deselect_all">Alle abwählen</string>
+    <string name="device_control_time_prefix_std">Es ist</string>
+    <string name="device_control_time_suffix_std">Uhr</string>
+    <string name="device_control_time_prefix_plus5">In fünf Minuten ist es</string>
+    <string name="device_control_time_prefix_minus5">Vor fünf Minuten war es</string>
+    <string name="device_control_date_prefix_weekday_date">Heute ist</string>
+    <string name="device_control_date_prefix_only_date">Heute ist der</string>
+    <string name="device_control_date_prefix_tomorrow">Morgen ist</string>
+    <string name="device_control_date_prefix_yesterday">Gestern war</string>
 </resources>
+

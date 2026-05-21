@@ -53,40 +53,38 @@ import com.andreas_kratzer.ghosttalk.core.model.SmartHomeButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.WeatherButtonAction
-import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
-import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
-import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalIsUserModeActive
+import com.andreas_kratzer.ghosttalk.core.ui.theme.*
 
 object GridButtonColors {
     fun getBadgeColors(action: ButtonAction, isDark: Boolean): Pair<Color, Color> {
         return when (action) {
             is SpeakTextButtonAction -> {
-                if (isDark) Color(0xFF1B5E20) to Color(0xFFC8E6C9)
-                else Color(0xFFE8F5E9) to Color(0xFF2E7D32)
+                if (isDark) SpeakTextBadgeBgDark to SpeakTextBadgeTextDark
+                else SpeakTextBadgeBgLight to SpeakTextBadgeTextLight
             }
             is NavigateToPageButtonAction -> {
-                if (isDark) Color(0xFF0D47A1) to Color(0xFFBBDEFB)
-                else Color(0xFFE3F2FD) to Color(0xFF1565C0)
+                if (isDark) NavigateBadgeBgDark to NavigateBadgeTextDark
+                else NavigateBadgeBgLight to NavigateBadgeTextLight
             }
             is SmartHomeButtonAction -> {
-                if (isDark) Color(0xFF4A148C) to Color(0xFFE1BEE7)
-                else Color(0xFFF3E5F5) to Color(0xFF6A1B9A)
+                if (isDark) SmartHomeBadgeBgDark to SmartHomeBadgeTextDark
+                else SmartHomeBadgeBgLight to SmartHomeBadgeTextLight
             }
             is GeminiButtonAction, is GeminiSearchButtonAction, is GeminiNanoButtonAction, is GeminiVisionButtonAction -> {
-                if (isDark) Color(0xFF1A237E) to Color(0xFFC5CAE9)
-                else Color(0xFFE8EAF6) to Color(0xFF283593)
+                if (isDark) GeminiBadgeBgDark to GeminiBadgeTextDark
+                else GeminiBadgeBgLight to GeminiBadgeTextLight
             }
             is ControlDeviceButtonAction -> {
-                if (isDark) Color(0xFF004D40) to Color(0xFFB2DFDB)
-                else Color(0xFFE0F2F1) to Color(0xFF00695C)
+                if (isDark) ControlDeviceBadgeBgDark to ControlDeviceBadgeTextDark
+                else ControlDeviceBadgeBgLight to ControlDeviceBadgeTextLight
             }
             is WeatherButtonAction -> {
-                if (isDark) Color(0xFF5D4037) to Color(0xFFFFE0B2) // Amber/Orange-ish brown
-                else Color(0xFFFFF3E0) to Color(0xFFE65100)
+                if (isDark) WeatherBadgeBgDark to WeatherBadgeTextDark
+                else WeatherBadgeBgLight to WeatherBadgeTextLight
             }
             is FrequentActionButtonAction, is SmartPredictionButtonAction, is PreviousActionButtonAction -> {
-                if (isDark) Color(0xFF263238) to Color(0xFFCFD8DC)
-                else Color(0xFFECEFF1) to Color(0xFF37474F)
+                if (isDark) FrequentActionBadgeBgDark to FrequentActionBadgeTextDark
+                else FrequentActionBadgeBgLight to FrequentActionBadgeTextLight
             }
         }
     }

@@ -446,7 +446,7 @@ fun ButtonConfigDialog(
                                 },
                                 isPlaying = playingField == "label",
                                 isLoading = isLabelPrefetching,
-                                playPauseIconTint = if (isLabelCached) androidx.compose.ui.graphics.Color(0xFF2196F3) else null,
+                                playPauseIconTint = if (isLabelCached) MaterialTheme.colorScheme.primary else null,
                                 onPlayPauseClick = onPlayTts?.let { play ->
                                     {
                                         handlePlayClick(
@@ -470,7 +470,7 @@ fun ButtonConfigDialog(
                                 },
                                 isPlaying = playingField == "spokenText",
                                 isLoading = isSpokenTextPrefetching,
-                                playPauseIconTint = if (isSpokenTextCached) androidx.compose.ui.graphics.Color(0xFF2196F3) else null,
+                                playPauseIconTint = if (isSpokenTextCached) MaterialTheme.colorScheme.primary else null,
                                 onPlayPauseClick = onPlayTts?.let { play ->
                                     {
                                         handlePlayClick(
@@ -494,7 +494,7 @@ fun ButtonConfigDialog(
                                 },
                                 isPlaying = playingField == "auditoryCueText",
                                 isLoading = isAuditoryCueTextPrefetching,
-                                playPauseIconTint = if (isAuditoryCueTextCached) androidx.compose.ui.graphics.Color(0xFF2196F3) else null,
+                                playPauseIconTint = if (isAuditoryCueTextCached) MaterialTheme.colorScheme.primary else null,
                                 onPlayPauseClick = onPlayTts?.let { play ->
                                     {
                                         handlePlayClick(

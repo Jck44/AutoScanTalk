@@ -113,7 +113,7 @@ fun ActionHistoryDialog(
     if (previewImagePath != null) {
         BasicAlertDialog(
             onDismissRequest = { previewImagePath = null },
-            modifier = Modifier.fillMaxSize().padding(16.dp)
+            modifier = Modifier.fillMaxSize().padding(dimensions.paddingLarge)
         ) {
             val bitmap = remember(previewImagePath) {
                 try {
@@ -152,6 +152,7 @@ private fun HistoryDetailDialog(
     event: ButtonUsageRepository.ButtonUsageEvent,
     onDismiss: () -> Unit
 ) {
+    val dimensions = LocalDimensions.current
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
@@ -163,7 +164,7 @@ private fun HistoryDetailDialog(
         text = {
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(dimensions.paddingLarge),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 if (event.imagePath != null) {
@@ -199,7 +200,7 @@ private fun HistoryDetailDialog(
                     )
                     
                     if (event.geminiResponse != null) {
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                        HorizontalDivider(modifier = Modifier.padding(vertical = dimensions.paddingMedium))
                         Text(
                             text = stringResource(R.string.history_details_response),
                             style = MaterialTheme.typography.labelMedium,

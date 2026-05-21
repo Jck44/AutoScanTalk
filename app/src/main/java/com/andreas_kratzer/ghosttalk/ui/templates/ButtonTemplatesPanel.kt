@@ -94,28 +94,28 @@ fun ButtonTemplatesPanel(
                 color = MaterialTheme.colorScheme.outlineVariant,
                 shape = RoundedCornerShape(topStart = 16.dp, bottomStart = 16.dp)
             )
-            .padding(12.dp)
+            .padding(dimensions.paddingMedium)
     ) {
         Text(
-            text = "Button-Vorlagen",
+            text = stringResource(R.string.template_panel_title),
             style = MaterialTheme.typography.titleMedium.copy(
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary
             ),
-            modifier = Modifier.padding(bottom = 8.dp)
+            modifier = Modifier.padding(bottom = dimensions.paddingMedium)
         )
 
         // Search Bar
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { searchQuery = it },
-            placeholder = { Text("Vorlagen durchsuchen...", fontSize = 14.sp) },
+            placeholder = { Text(stringResource(R.string.template_search_placeholder), fontSize = 14.sp) },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 12.dp),
+                .padding(bottom = dimensions.paddingMedium),
             singleLine = true,
-            shape = RoundedCornerShape(12.dp),
+            shape = MaterialTheme.shapes.small,
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = MaterialTheme.colorScheme.primary,
                 unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
@@ -128,13 +128,13 @@ fun ButtonTemplatesPanel(
             shape = MaterialTheme.shapes.small,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 8.dp)
+                .padding(bottom = dimensions.paddingMedium)
         ) {
             Text(
-                text = "💡 Vorlage auf Gitter ziehen zum Platzieren. Button aus Gitter hierhin ziehen, um Vorlage zu erstellen.",
+                text = stringResource(R.string.template_drag_drop_hint),
                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.padding(8.dp)
+                modifier = Modifier.padding(dimensions.paddingMedium)
             )
         }
 
@@ -146,7 +146,7 @@ fun ButtonTemplatesPanel(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "Keine Vorlagen gefunden.",
+                    text = stringResource(R.string.template_none_found),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -155,8 +155,8 @@ fun ButtonTemplatesPanel(
             LazyColumn(
                 state = lazyListState,
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(bottom = 24.dp)
+                verticalArrangement = Arrangement.spacedBy(dimensions.paddingMedium),
+                contentPadding = PaddingValues(bottom = dimensions.paddingExtraLarge)
             ) {
                 flatItems.forEachIndexed { globalListIdx, item ->
                     when (item) {
@@ -212,16 +212,17 @@ fun CategoryHeader(
     isExpanded: Boolean,
     onToggle: () -> Unit
 ) {
+    val dimensions = LocalDimensions.current
     Surface(
         onClick = onToggle,
         color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f),
-        shape = RoundedCornerShape(6.dp),
+        shape = MaterialTheme.shapes.small,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp)
+            .padding(vertical = dimensions.paddingSmall)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+            modifier = Modifier.padding(horizontal = dimensions.paddingMedium, vertical = dimensions.paddingSmall),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
@@ -234,7 +235,7 @@ fun CategoryHeader(
             )
             Icon(
                 imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                contentDescription = if (isExpanded) "Einklappen" else "Ausklappen",
+                contentDescription = stringResource(if (isExpanded) R.string.content_desc_collapse else R.string.content_desc_expand),
                 tint = MaterialTheme.colorScheme.onSecondaryContainer,
                 modifier = Modifier.size(16.dp)
             )
@@ -248,6 +249,7 @@ fun TemplateItemCard(
     onEditTemplate: (ButtonTemplate) -> Unit = {},
     onDelete: () -> Unit
 ) {
+    val dimensions = LocalDimensions.current
     Card(
         shape = MaterialTheme.shapes.small,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
@@ -262,7 +264,7 @@ fun TemplateItemCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(8.dp),
+                .padding(dimensions.paddingMedium),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Visual Mini Button representation
@@ -273,12 +275,12 @@ fun TemplateItemCard(
             Box(
                 modifier = Modifier
                     .size(width = 56.dp, height = 36.dp)
-                    .clip(RoundedCornerShape(6.dp))
+                    .clip(MaterialTheme.shapes.small)
                     .background(badgeBgColor)
                     .border(
                         width = 1.dp,
                         color = badgeTxtColor.copy(alpha = 0.5f),
-                        shape = RoundedCornerShape(6.dp)
+                        shape = MaterialTheme.shapes.small
                     ),
                 contentAlignment = Alignment.Center
             ) {
@@ -291,7 +293,7 @@ fun TemplateItemCard(
                 )
             }
 
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(dimensions.paddingMedium))
 
             // Template Name and Details
             Column(modifier = Modifier.weight(1f)) {
@@ -301,9 +303,10 @@ fun TemplateItemCard(
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1
                 )
-                if (template.buttonConfig.spokenText != null) {
+                val spokenText = template.buttonConfig.spokenText
+                if (spokenText != null) {
                     Text(
-                        text = "Spricht: \"${template.buttonConfig.spokenText}\"",
+                        text = stringResource(R.string.template_speaks_format, spokenText),
                         fontSize = 10.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1
@@ -319,7 +322,7 @@ fun TemplateItemCard(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Delete,
-                        contentDescription = "Vorlage löschen",
+                        contentDescription = stringResource(R.string.template_delete_title),
                         tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f),
                         modifier = Modifier.size(16.dp)
                     )

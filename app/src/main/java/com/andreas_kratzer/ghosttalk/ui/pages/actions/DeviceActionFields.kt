@@ -278,12 +278,12 @@ fun DeviceActionFields(
                 if (selectedType == DeviceActionType.READ_TIME) {
                     SuggestionChip(
                         onClick = {
-                            onPrefixTextChange("Es ist")
-                            onSuffixTextChange("Uhr")
+                            onPrefixTextChange(context.getString(R.string.device_control_time_prefix_std))
+                            onSuffixTextChange(context.getString(R.string.device_control_time_suffix_std))
                             onOffsetValueChange("0")
                             onAutoSave()
                         },
-                        label = { Text("Standard (\"Es ist ... Uhr\")") }
+                        label = { Text(stringResource(R.string.device_control_time_preset_standard)) }
                     )
                     SuggestionChip(
                         onClick = {
@@ -292,66 +292,66 @@ fun DeviceActionFields(
                             onOffsetValueChange("0")
                             onAutoSave()
                         },
-                        label = { Text("Kurz (\"14:30\")") }
+                        label = { Text(stringResource(R.string.device_control_time_preset_short)) }
                     )
                     SuggestionChip(
                         onClick = {
-                            onPrefixTextChange("In fünf Minuten ist es")
-                            onSuffixTextChange("Uhr")
+                            onPrefixTextChange(context.getString(R.string.device_control_time_prefix_plus5))
+                            onSuffixTextChange(context.getString(R.string.device_control_time_suffix_std))
                             onOffsetValueChange("5")
                             onAutoSave()
                         },
-                        label = { Text("+5 Min.") }
+                        label = { Text(stringResource(R.string.device_control_time_preset_plus5)) }
                     )
                     SuggestionChip(
                         onClick = {
-                            onPrefixTextChange("Vor fünf Minuten war es")
-                            onSuffixTextChange("Uhr")
+                            onPrefixTextChange(context.getString(R.string.device_control_time_prefix_minus5))
+                            onSuffixTextChange(context.getString(R.string.device_control_time_suffix_std))
                             onOffsetValueChange("-5")
                             onAutoSave()
                         },
-                        label = { Text("-5 Min.") }
+                        label = { Text(stringResource(R.string.device_control_time_preset_minus5)) }
                     )
                 } else if (selectedType == DeviceActionType.READ_DATE) {
                     SuggestionChip(
                         onClick = {
-                            onPrefixTextChange("Heute ist")
+                            onPrefixTextChange(context.getString(R.string.device_control_date_prefix_weekday_date))
                             onSuffixTextChange("")
                             onIncludeWeekdayChange(true)
                             onOffsetValueChange("0")
                             onAutoSave()
                         },
-                        label = { Text("Wochentag & Datum") }
+                        label = { Text(stringResource(R.string.device_control_date_preset_weekday_date)) }
                     )
                     SuggestionChip(
                         onClick = {
-                            onPrefixTextChange("Heute ist der")
+                            onPrefixTextChange(context.getString(R.string.device_control_date_prefix_only_date))
                             onSuffixTextChange("")
                             onIncludeWeekdayChange(false)
                             onOffsetValueChange("0")
                             onAutoSave()
                         },
-                        label = { Text("Nur Datum") }
+                        label = { Text(stringResource(R.string.device_control_date_preset_only_date)) }
                     )
                     SuggestionChip(
                         onClick = {
-                            onPrefixTextChange("Morgen ist")
+                            onPrefixTextChange(context.getString(R.string.device_control_date_prefix_tomorrow))
                             onSuffixTextChange("")
                             onIncludeWeekdayChange(true)
                             onOffsetValueChange("1")
                             onAutoSave()
                         },
-                        label = { Text("Morgen") }
+                        label = { Text(stringResource(R.string.device_control_date_preset_tomorrow)) }
                     )
                     SuggestionChip(
                         onClick = {
-                            onPrefixTextChange("Gestern war")
+                            onPrefixTextChange(context.getString(R.string.device_control_date_prefix_yesterday))
                             onSuffixTextChange("")
                             onIncludeWeekdayChange(true)
                             onOffsetValueChange("-1")
                             onAutoSave()
                         },
-                        label = { Text("Gestern") }
+                        label = { Text(stringResource(R.string.device_control_date_preset_yesterday)) }
                     )
                 }
             }
@@ -461,7 +461,9 @@ fun DeviceActionFields(
                         val count = offsetInt.coerceAtLeast(1)
                         val prefix = prefixText.takeIf { it.isNotBlank() }?.let { if (it.endsWith(" ")) it else "$it " } ?: ""
                         val suffix = suffixText.takeIf { it.isNotBlank() }?.let { if (it.startsWith(" ")) it else " $it" } ?: ""
-                        "$prefix[Termine]$suffix (Liest $count Kalendereinträge vor)"
+                        val appointmentsPlaceholder = context.getString(R.string.device_control_calendar_appointments_placeholder)
+                        val countSuffix = context.getString(R.string.device_control_calendar_read_count_suffix, count)
+                        "$prefix$appointmentsPlaceholder$suffix$countSuffix"
                     } else {
                         ""
                     }
@@ -703,9 +705,13 @@ private fun NotificationAppPicker(
 
     val currentLabel = remember(selectedPackages, installedApps, selectedLabel) {
         if (selectedPackages.isEmpty()) {
-            "Bevorzugte Apps (Einstellungen)"
+            context.getString(R.string.device_control_notifications_preferred_apps)
         } else if (installedApps.isEmpty()) {
-            if (selectedPackages.size == 1) "1 App ausgewählt" else "${selectedPackages.size} Apps ausgewählt"
+            if (selectedPackages.size == 1) {
+                context.getString(R.string.device_control_notifications_one_app_selected)
+            } else {
+                context.getString(R.string.device_control_notifications_multiple_apps_selected, selectedPackages.size)
+            }
         } else {
             val selectedLabels = selectedPackages.mapNotNull { pkg ->
                 installedApps.find { it.packageName == pkg }?.label
@@ -729,7 +735,7 @@ private fun NotificationAppPicker(
             } else {
                 val firstThree = displayLabels.take(3).joinToString(", ")
                 val remaining = displayLabels.size - 3
-                "$firstThree und $remaining weitere"
+                context.getString(R.string.device_control_notifications_apps_more_format, firstThree, remaining)
             }
         }
     }
@@ -759,7 +765,7 @@ private fun NotificationAppPicker(
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)) {
-        Text("Vorlesen von App:", style = MaterialTheme.typography.labelMedium)
+        Text(stringResource(R.string.device_control_notifications_read_from_app_label), style = MaterialTheme.typography.labelMedium)
         
         ExposedDropdownMenuBox(
             expanded = expanded,
@@ -793,7 +799,7 @@ private fun NotificationAppPicker(
             ) {
                 // Option for "Bevorzugte Apps (Einstellungen)"
                 DropdownMenuItem(
-                    text = { Text("Bevorzugte Apps (Einstellungen)") },
+                    text = { Text(stringResource(R.string.device_control_notifications_preferred_apps)) },
                     leadingIcon = {
                         Icon(
                             imageVector = getDeviceActionIcon(DeviceActionType.READ_NOTIFICATIONS),
@@ -833,14 +839,14 @@ private fun NotificationAppPicker(
                                 onAppSelected(newName, newPhone)
                             }
                         ) {
-                            Text("Alle auswählen")
+                            Text(stringResource(R.string.settings_notifications_select_all))
                         }
                         TextButton(
                             onClick = {
                                 onAppSelected("", "")
                             }
                         ) {
-                            Text("Alle abwählen")
+                            Text(stringResource(R.string.settings_notifications_deselect_all))
                         }
                     }
                     androidx.compose.material3.HorizontalDivider(modifier = Modifier.padding(bottom = dimensions.paddingSmall))

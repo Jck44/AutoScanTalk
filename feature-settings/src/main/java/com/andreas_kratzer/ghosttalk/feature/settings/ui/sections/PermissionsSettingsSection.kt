@@ -52,6 +52,14 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.andreas_kratzer.ghosttalk.core.ui.components.PreferenceCategory
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
+import com.andreas_kratzer.ghosttalk.core.ui.theme.StatusActiveBgDark
+import com.andreas_kratzer.ghosttalk.core.ui.theme.StatusActiveBgLight
+import com.andreas_kratzer.ghosttalk.core.ui.theme.StatusActiveTextDark
+import com.andreas_kratzer.ghosttalk.core.ui.theme.StatusActiveTextLight
+import com.andreas_kratzer.ghosttalk.core.ui.theme.StatusInactiveBgDark
+import com.andreas_kratzer.ghosttalk.core.ui.theme.StatusInactiveBgLight
+import com.andreas_kratzer.ghosttalk.core.ui.theme.StatusInactiveTextDark
+import com.andreas_kratzer.ghosttalk.core.ui.theme.StatusInactiveTextLight
 import com.andreas_kratzer.ghosttalk.feature.settings.R
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
 import kotlinx.coroutines.Dispatchers
@@ -186,11 +194,11 @@ private fun PermissionRow(
     
     // Status-colors matching design guidelines
     val (chipBg, chipContentColor) = if (isGranted) {
-        if (isDark) androidx.compose.ui.graphics.Color(0xFF1B5E20) to androidx.compose.ui.graphics.Color(0xFFC8E6C9)
-        else androidx.compose.ui.graphics.Color(0xFFE8F5E9) to androidx.compose.ui.graphics.Color(0xFF2E7D32)
+        if (isDark) StatusActiveBgDark to StatusActiveTextDark
+        else StatusActiveBgLight to StatusActiveTextLight
     } else {
-        if (isDark) androidx.compose.ui.graphics.Color(0xFFC62828).copy(alpha = 0.2f) to androidx.compose.ui.graphics.Color(0xFFFFCDD2)
-        else androidx.compose.ui.graphics.Color(0xFFFFEBEE) to androidx.compose.ui.graphics.Color(0xFFC62828)
+        if (isDark) StatusInactiveBgDark to StatusInactiveTextDark
+        else StatusInactiveBgLight to StatusInactiveTextLight
     }
     
     val chipIcon = if (isGranted) Icons.Default.Check else Icons.Default.Warning
@@ -353,9 +361,13 @@ private fun PreferredAppsPicker(
 
     val currentLabel = remember(monitoredApps, installedApps) {
         if (monitoredApps.isEmpty()) {
-            "Keine bevorzugten Apps ausgewählt"
+            context.getString(R.string.settings_notifications_no_preferred_apps)
         } else if (installedApps.isEmpty()) {
-            if (monitoredApps.size == 1) "1 App ausgewählt" else "${monitoredApps.size} Apps ausgewählt"
+            if (monitoredApps.size == 1) {
+                context.getString(R.string.settings_notifications_one_app_selected)
+            } else {
+                context.getString(R.string.settings_notifications_multiple_apps_selected, monitoredApps.size)
+            }
         } else {
             val selectedLabels = monitoredApps.mapNotNull { pkg ->
                 installedApps.find { it.packageName == pkg }?.label
@@ -374,13 +386,13 @@ private fun PreferredAppsPicker(
             } else {
                 val firstThree = displayLabels.take(3).joinToString(", ")
                 val remaining = displayLabels.size - 3
-                "$firstThree und $remaining weitere"
+                context.getString(R.string.settings_notifications_apps_more_format, firstThree, remaining)
             }
         }
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)) {
-        Text("Bevorzugte Apps verwalten:", style = MaterialTheme.typography.titleSmall)
+        Text(stringResource(R.string.settings_notifications_manage_preferred_apps), style = MaterialTheme.typography.titleSmall)
         
         ExposedDropdownMenuBox(
             expanded = expanded,
@@ -406,7 +418,7 @@ private fun PreferredAppsPicker(
             ) {
                 if (installedApps.isEmpty()) {
                     DropdownMenuItem(
-                        text = { Text("Lade Apps...") },
+                        text = { Text(stringResource(R.string.settings_notifications_loading_apps)) },
                         onClick = {}
                     )
                 } else {
@@ -419,12 +431,12 @@ private fun PreferredAppsPicker(
                         TextButton(
                             onClick = { onToggleAll(installedApps.map { it.packageName }.toSet()) }
                         ) {
-                            Text("Alle auswählen")
+                            Text(stringResource(R.string.settings_notifications_select_all))
                         }
                         TextButton(
                             onClick = { onToggleAll(emptySet()) }
                         ) {
-                            Text("Alle abwählen")
+                            Text(stringResource(R.string.settings_notifications_deselect_all))
                         }
                     }
                     HorizontalDivider(modifier = Modifier.padding(bottom = dimensions.paddingSmall))

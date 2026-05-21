@@ -464,7 +464,7 @@ fun GridEditorContent(
                             Box(
                                 modifier = Modifier
                                     .size(32.dp, 4.dp)
-                                    .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f), RoundedCornerShape(2.dp))
+                                    .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f), MaterialTheme.shapes.extraSmall)
                             )
                         }
                     }
@@ -472,14 +472,14 @@ fun GridEditorContent(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 32.dp)
-                            .padding(horizontal = 24.dp)
+                            .padding(bottom = dimensions.paddingDoubleExtraLarge)
+                            .padding(horizontal = dimensions.paddingExtraLarge)
                     ) {
                         Text(
                             text = stringResource(R.string.page_grid_info, item.rows, item.columns),
                             style = MaterialTheme.typography.titleLarge,
                             color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.padding(bottom = 16.dp)
+                            modifier = Modifier.padding(bottom = dimensions.paddingLarge)
                         )
                         GridEditorControls(
                             item = item,
@@ -494,7 +494,7 @@ fun GridEditorContent(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(16.dp),
+                    .padding(dimensions.paddingLarge),
                 contentAlignment = Alignment.BottomCenter
             ) {
                 SnackbarHost(hostState = snackbarHostState)
@@ -555,10 +555,10 @@ fun GridEditorContent(
                         actions.executeButtonAction(config)
                     },
                     onMove = {
-                        android.widget.Toast.makeText(context, "Verschieben für Vorlagen nicht unterstützt", android.widget.Toast.LENGTH_SHORT).show()
+                        android.widget.Toast.makeText(context, context.getString(R.string.editor_template_move_not_supported), android.widget.Toast.LENGTH_SHORT).show()
                     },
                     onDuplicate = {
-                        android.widget.Toast.makeText(context, "Duplizieren für Vorlagen nicht unterstützt", android.widget.Toast.LENGTH_SHORT).show()
+                        android.widget.Toast.makeText(context, context.getString(R.string.editor_template_duplicate_not_supported), android.widget.Toast.LENGTH_SHORT).show()
                     },
                     onDelete = {
                         pageViewModel?.deleteButtonTemplate(template)
@@ -590,15 +590,15 @@ fun GridEditorContent(
             if (showSaveTemplateDialogConfig != null) {
                 AlertDialog(
                     onDismissRequest = { showSaveTemplateDialogConfig = null },
-                    title = { Text("Als Vorlage speichern") },
+                    title = { Text(stringResource(R.string.template_save_as_title)) },
                     text = {
                         Column {
-                            Text("Geben Sie einen Namen für die Button-Vorlage ein:")
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(stringResource(R.string.template_enter_name_prompt))
+                            Spacer(modifier = Modifier.height(dimensions.paddingMedium))
                             OutlinedTextField(
                                 value = newTemplateName,
                                 onValueChange = { newTemplateName = it },
-                                label = { Text("Name der Vorlage") },
+                                label = { Text(stringResource(R.string.template_name_label)) },
                                 singleLine = true,
                                 modifier = Modifier.fillMaxWidth()
                             )
@@ -610,17 +610,17 @@ fun GridEditorContent(
                                 val config = showSaveTemplateDialogConfig
                                 if (config != null && newTemplateName.isNotBlank() && pageViewModel != null) {
                                     pageViewModel.saveButtonAsTemplate(newTemplateName, config)
-                                    android.widget.Toast.makeText(context, "Vorlage gespeichert", android.widget.Toast.LENGTH_SHORT).show()
+                                    android.widget.Toast.makeText(context, context.getString(R.string.editor_template_saved), android.widget.Toast.LENGTH_SHORT).show()
                                 }
                                 showSaveTemplateDialogConfig = null
                             }
                         ) {
-                            Text("Speichern")
+                            Text(stringResource(R.string.action_save))
                         }
                     },
                     dismissButton = {
                         TextButton(onClick = { showSaveTemplateDialogConfig = null }) {
-                            Text("Abbrechen")
+                            Text(stringResource(R.string.action_cancel))
                         }
                     }
                 )
@@ -724,7 +724,7 @@ private fun EditorButtonCell(
                             .fillMaxHeight(0.85f)
                             .background(
                                 color = MaterialTheme.colorScheme.primary,
-                                shape = RoundedCornerShape(2.dp)
+                                shape = MaterialTheme.shapes.extraSmall
                             )
                     )
                 }
@@ -751,7 +751,7 @@ private fun EditorButtonCell(
                                 .fillMaxHeight(0.85f)
                                 .background(
                                     color = MaterialTheme.colorScheme.primary,
-                                    shape = RoundedCornerShape(2.dp)
+                                    shape = MaterialTheme.shapes.extraSmall
                                 )
                         )
                     }
@@ -834,7 +834,7 @@ private fun LazyGridScope.renderRowByRowGrid(
 
                 // Row Buttons
                 Row(
-                    modifier = Modifier.weight(1f).padding(8.dp),
+                    modifier = Modifier.weight(1f).padding(dimensions.paddingMedium),
                     horizontalArrangement = Arrangement.spacedBy(dimensions.gridSpacing)
                 ) {
                     for (c in 0 until item.columns) {
