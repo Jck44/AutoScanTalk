@@ -563,43 +563,50 @@ fun ButtonConfigDialog(
                                     .fillMaxWidth()
                                     .padding(vertical = LocalDimensions.current.paddingSmall)
                             ) {
-                                Text(
-                                    text = stringResource(R.string.button_spoken_text_mode_label),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.padding(bottom = 8.dp)
-                                )
-
-                                SingleChoiceSegmentedButtonRow(
-                                    modifier = Modifier.fillMaxWidth()
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(bottom = 8.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    val modes = listOf(SpokenTextMode.TTS, SpokenTextMode.AUDIO)
-                                    modes.forEachIndexed { index, mode ->
-                                        SegmentedButton(
-                                            selected = spokenTextMode == mode,
-                                            onClick = { 
-                                                spokenTextMode = mode
-                                                handleAutoSave()
-                                            },
-                                            shape = SegmentedButtonDefaults.itemShape(index = index, count = modes.size),
-                                            label = { 
-                                                Text(
-                                                    text = if (mode == SpokenTextMode.TTS) {
-                                                        stringResource(R.string.button_spoken_text_mode_tts)
-                                                    } else {
-                                                        stringResource(R.string.button_spoken_text_mode_audio)
-                                                    },
-                                                    maxLines = 1
-                                                )
-                                            }
-                                        )
+                                    Text(
+                                        text = stringResource(R.string.button_spoken_text_field),
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+
+                                    SingleChoiceSegmentedButtonRow(
+                                        modifier = Modifier.width(200.dp)
+                                    ) {
+                                        val modes = listOf(SpokenTextMode.TTS, SpokenTextMode.AUDIO)
+                                        modes.forEachIndexed { index, mode ->
+                                            SegmentedButton(
+                                                selected = spokenTextMode == mode,
+                                                onClick = { 
+                                                    spokenTextMode = mode
+                                                    handleAutoSave()
+                                                },
+                                                shape = SegmentedButtonDefaults.itemShape(index = index, count = modes.size),
+                                                label = { 
+                                                    Text(
+                                                        text = if (mode == SpokenTextMode.TTS) {
+                                                            stringResource(R.string.button_spoken_text_mode_tts)
+                                                        } else {
+                                                            stringResource(R.string.button_spoken_text_mode_audio)
+                                                        },
+                                                        maxLines = 1,
+                                                        style = MaterialTheme.typography.bodySmall
+                                                    )
+                                                }
+                                            )
+                                        }
                                     }
                                 }
-                            }
 
-                            if (spokenTextMode == SpokenTextMode.TTS) {
-                                SettingsEditTextItem(
-                                    label = stringResource(R.string.button_spoken_text_field),
+                                if (spokenTextMode == SpokenTextMode.TTS) {
+                                    SettingsEditTextItem(
+                                        label = "",
                                     value = spokenText,
                                     onValueChange = { spokenText = it },
                                     onFocusLost = {
@@ -800,6 +807,7 @@ fun ButtonConfigDialog(
                                         }
                                     )
                                 }
+                            }
                             }
 
                             SettingsEditTextItem(

@@ -170,7 +170,9 @@ fun SettingsEditTextItem(
                 localValue = newValue
             }
         },
-        label = { Text(label, style = MaterialTheme.typography.bodyMedium) },
+        label = if (label.isNotEmpty()) {
+            { Text(label, style = MaterialTheme.typography.bodyMedium) }
+        } else null,
         textStyle = MaterialTheme.typography.bodyLarge,
         shape = MaterialTheme.shapes.large,
         modifier = Modifier
