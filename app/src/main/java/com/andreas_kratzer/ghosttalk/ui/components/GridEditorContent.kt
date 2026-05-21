@@ -30,6 +30,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -119,20 +121,20 @@ fun GridEditorContent(
         val density = LocalDensity.current.density
         val context = LocalContext.current
 
-        var selectedButtonIndex by remember { mutableStateOf<Int?>(null) }
-        var showDialog by remember { mutableStateOf(false) }
-        var editingRowIndex by remember { mutableStateOf<Int?>(null) }
-        var showRowEditDialog by remember { mutableStateOf(false) }
-        var showMoveDialog by remember { mutableStateOf(false) }
-        var showDuplicateDialog by remember { mutableStateOf(false) }
-        var isDuplicating by remember { mutableStateOf(false) }
+        var selectedButtonIndex by rememberSaveable { mutableStateOf<Int?>(null) }
+        var showDialog by rememberSaveable { mutableStateOf(false) }
+        var editingRowIndex by rememberSaveable { mutableStateOf<Int?>(null) }
+        var showRowEditDialog by rememberSaveable { mutableStateOf(false) }
+        var showMoveDialog by rememberSaveable { mutableStateOf(false) }
+        var showDuplicateDialog by rememberSaveable { mutableStateOf(false) }
+        var isDuplicating by rememberSaveable { mutableStateOf(false) }
         var showHiddenPrompt by remember { 
             mutableStateOf<com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.NeedsConfirmation?>(null) 
         }
         val snackbarHostState = remember { SnackbarHostState() }
         val scope = rememberCoroutineScope()
 
-        var showLayoutSettingsSheet by remember { mutableStateOf(false) }
+        var showLayoutSettingsSheet by rememberSaveable { mutableStateOf(false) }
         val sheetState = rememberModalBottomSheetState()
 
         LaunchedEffect(initialButtonId, item) {
@@ -153,7 +155,11 @@ fun GridEditorContent(
         val dragDropState = rememberDragDropState()
         var showSaveTemplateDialogConfig by remember { mutableStateOf<ButtonConfig?>(null) }
         var newTemplateName by remember { mutableStateOf("") }
-        var editingTemplate by remember { mutableStateOf<com.andreas_kratzer.ghosttalk.core.model.ButtonTemplate?>(null) }
+        var editingTemplateId by rememberSaveable { mutableStateOf<String?>(null) }
+        val buttonTemplates by pageViewModel?.buttonTemplates?.collectAsState(initial = emptyList()) ?: remember { mutableStateOf(emptyList()) }
+        val editingTemplate = remember(editingTemplateId, buttonTemplates) {
+            buttonTemplates.find { it.id == editingTemplateId }
+        }
 
         fun showUndoSnackbar(message: String) {
             scope.launch {
@@ -435,7 +441,7 @@ fun GridEditorContent(
                 if ((isLandscape || dimensions.isTablet) && pageViewModel != null) {
                     ButtonTemplatesPanel(
                         viewModel = pageViewModel,
-                        onEditTemplate = { template -> editingTemplate = template },
+                        onEditTemplate = { template -> editingTemplateId = template.id },
                         modifier = Modifier
                             .width(if (isLandscape) 320.dp else 280.dp)
                             .fillMaxHeight()
@@ -535,15 +541,15 @@ fun GridEditorContent(
             )
 
             if (editingTemplate != null) {
-                val template = editingTemplate!!
+                val template = editingTemplate
                 com.andreas_kratzer.ghosttalk.ui.pages.ButtonConfigDialog(
                     buttonConfig = template.buttonConfig,
                     pages = availablePages,
                     templates = templates,
-                    onDismiss = { editingTemplate = null },
+                    onDismiss = { editingTemplateId = null },
                     onSave = { newConfig ->
                         pageViewModel?.updateButtonTemplate(template.copy(name = newConfig.label, buttonConfig = newConfig))
-                        editingTemplate = null
+                        // Fixed: Removed editingTemplateId = null here to prevent dialog from closing during AutoSave (e.g. when permissions are requested)
                     },
                     onTest = { config ->
                         actions.executeButtonAction(config)
@@ -556,7 +562,7 @@ fun GridEditorContent(
                     },
                     onDelete = {
                         pageViewModel?.deleteButtonTemplate(template)
-                        editingTemplate = null
+                        editingTemplateId = null
                     },
                     onNavigateToPage = onEditPage,
                     availableGeminiTools = actions.availableGeminiTools,
