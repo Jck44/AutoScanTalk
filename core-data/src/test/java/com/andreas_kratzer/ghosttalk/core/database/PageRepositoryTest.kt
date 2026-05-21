@@ -1,17 +1,24 @@
 package com.andreas_kratzer.ghosttalk.core.database
 
+import androidx.room.RoomDatabase
+import androidx.room.withTransaction
 import com.andreas_kratzer.ghosttalk.core.data.impl.PageRepositoryImpl
-
+import com.andreas_kratzer.ghosttalk.core.database.AppDatabase
+import com.andreas_kratzer.ghosttalk.core.database.PageDao
+import com.andreas_kratzer.ghosttalk.core.database.ButtonDao
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Before
+import org.junit.After
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -19,11 +26,22 @@ class PageRepositoryTest {
 
     private val mockPageDao = mockk<PageDao>(relaxed = true)
     private val mockButtonDao = mockk<ButtonDao>(relaxed = true)
+    private val mockDatabase = mockk<AppDatabase>(relaxed = true)
     private lateinit var pageRepository: PageRepositoryImpl
 
     @Before
     fun setup() {
-        pageRepository = PageRepositoryImpl(mockPageDao, mockButtonDao)
+        mockkStatic("androidx.room.RoomDatabaseKt")
+        coEvery { any<RoomDatabase>().withTransaction<Any?>(any()) } coAnswers {
+            val block = secondArg<suspend () -> Any?>()
+            block()
+        }
+        pageRepository = PageRepositoryImpl(mockPageDao, mockButtonDao, mockDatabase)
+    }
+
+    @After
+    fun teardown() {
+        unmockkStatic("androidx.room.RoomDatabaseKt")
     }
 
     @Test

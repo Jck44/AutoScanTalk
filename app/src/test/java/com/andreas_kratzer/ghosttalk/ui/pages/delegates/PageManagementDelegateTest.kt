@@ -185,7 +185,7 @@ class PageManagementDelegateTest {
         val page = Page(id = "1", name = "Test", bookId = "book1", rows = 1, columns = 1, buttonConfigs = emptyList())
         delegate.deletePage(page)
         
-        coVerify { deletePageUseCase.execute(page) }
+        coVerify { deletePageUseCase.execute(page, false) }
     }
     
     @Test

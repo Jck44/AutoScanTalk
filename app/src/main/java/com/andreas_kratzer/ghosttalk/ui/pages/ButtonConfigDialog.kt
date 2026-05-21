@@ -83,6 +83,7 @@ import com.andreas_kratzer.ghosttalk.core.model.SmartHomeProvider
 import com.andreas_kratzer.ghosttalk.core.model.PreviousActionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.SpokenTextMode
 import com.andreas_kratzer.ghosttalk.core.model.WeatherButtonAction
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsDropdownItem
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsGroupedDropdownItem
@@ -93,6 +94,16 @@ import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.feature.settings.domain.FeatureGuard
 import kotlinx.coroutines.launch
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
+import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
+import java.io.File
 
 @Composable
 fun ButtonConfigDialog(
@@ -124,6 +135,34 @@ fun ButtonConfigDialog(
     val context = LocalContext.current
     var label by remember { mutableStateOf(buttonConfig.label) }
     var spokenText by remember { mutableStateOf(buttonConfig.spokenText ?: "") }
+    var spokenTextMode by remember { mutableStateOf(buttonConfig.spokenTextMode) }
+    var audioFileNameState by remember { mutableStateOf(buttonConfig.audioFileName) }
+
+    val audioRecorder = remember(context) { com.andreas_kratzer.ghosttalk.core.audio.AudioRecorder(context) }
+    var isRecording by remember { mutableStateOf(false) }
+    var isPlayingAudio by remember { mutableStateOf(false) }
+    var mediaPlayer by remember { mutableStateOf<android.media.MediaPlayer?>(null) }
+    var showDeleteConfirmation by remember { mutableStateOf(false) }
+
+    val micPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            try {
+                val dir = context.filesDir.resolve("audio_recordings")
+                if (!dir.exists()) {
+                    dir.mkdirs()
+                }
+                val recordingFile = File(dir, "audio_${buttonConfig.id}.ogg")
+                audioRecorder.startRecording(recordingFile)
+                isRecording = true
+            } catch (e: Exception) {
+                Toast.makeText(context, "Fehler bei der Aufnahme: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+            }
+        } else {
+            Toast.makeText(context, R.string.error_microphone_permission_missing, Toast.LENGTH_LONG).show()
+        }
+    }
     
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -164,6 +203,8 @@ fun ButtonConfigDialog(
     DisposableEffect(Unit) {
         onDispose {
             onStopTts?.invoke()
+            audioRecorder.stopRecording()
+            mediaPlayer?.release()
         }
     }
 
@@ -324,19 +365,75 @@ fun ButtonConfigDialog(
         }
     }
 
-    val handleAutoSave = {
+    val handleAutoSave: () -> Unit = {
         if (label.isNotBlank()) {
             val action = buildCurrentAction()
 
             val config = buttonConfig.copy(
                 label = label,
                 spokenText = if (spokenText.isNotBlank()) spokenText else null,
+                spokenTextMode = spokenTextMode,
+                audioFileName = audioFileNameState,
                 auditoryCue = if (auditoryCueText.isNotBlank()) AuditoryCue.TextToSpeechCue(auditoryCueText) else null,
                 isActive = isActive,
                 playActionAsAuditoryCue = playActionAsAuditoryCue,
                 buttonAction = action
             )
             onSave(config)
+        }
+    }
+
+    fun startVoiceRecording() {
+        try {
+            val dir = context.filesDir.resolve("audio_recordings")
+            if (!dir.exists()) {
+                dir.mkdirs()
+            }
+            val recordingFile = File(dir, "audio_${buttonConfig.id}.ogg")
+            audioRecorder.startRecording(recordingFile)
+            isRecording = true
+        } catch (e: Exception) {
+            Toast.makeText(context, "Fehler bei der Aufnahme: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    fun stopVoiceRecording() {
+        try {
+            audioRecorder.stopRecording()
+            isRecording = false
+            audioFileNameState = "audio_${buttonConfig.id}.ogg"
+            handleAutoSave()
+            Toast.makeText(context, R.string.button_audio_saved, Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Toast.makeText(context, "Fehler beim Stoppen: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    fun playRecording(file: File) {
+        if (isPlayingAudio) {
+            mediaPlayer?.stop()
+            mediaPlayer?.release()
+            mediaPlayer = null
+            isPlayingAudio = false
+            return
+        }
+
+        try {
+            val player = android.media.MediaPlayer().apply {
+                setDataSource(file.absolutePath)
+                prepare()
+                setOnCompletionListener {
+                    isPlayingAudio = false
+                    it.release()
+                    mediaPlayer = null
+                }
+                start()
+            }
+            mediaPlayer = player
+            isPlayingAudio = true
+        } catch (e: Exception) {
+            android.util.Log.e("ButtonConfigDialog", "Error playing recording", e)
+            Toast.makeText(context, "Fehler beim Abspielen: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -461,29 +558,249 @@ fun ButtonConfigDialog(
                                 }
                             )
                             
-                            SettingsEditTextItem(
-                                label = stringResource(R.string.button_spoken_text_field),
-                                value = spokenText,
-                                onValueChange = { spokenText = it },
-                                onFocusLost = {
-                                    handleFocusLost(spokenText, { isSpokenTextCached = it }, { isSpokenTextPrefetching = it })
-                                },
-                                isPlaying = playingField == "spokenText",
-                                isLoading = isSpokenTextPrefetching,
-                                playPauseIconTint = if (isSpokenTextCached) MaterialTheme.colorScheme.primary else null,
-                                onPlayPauseClick = onPlayTts?.let { play ->
-                                    {
-                                        handlePlayClick(
-                                            fieldName = "spokenText",
-                                            text = spokenText,
-                                            isCached = isSpokenTextCached,
-                                            setCached = { isSpokenTextCached = it },
-                                            setPrefetching = { isSpokenTextPrefetching = it },
-                                            play = play
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = LocalDimensions.current.paddingSmall)
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.button_spoken_text_mode_label),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(bottom = 8.dp)
+                                )
+
+                                SingleChoiceSegmentedButtonRow(
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    val modes = listOf(SpokenTextMode.TTS, SpokenTextMode.AUDIO)
+                                    modes.forEachIndexed { index, mode ->
+                                        SegmentedButton(
+                                            selected = spokenTextMode == mode,
+                                            onClick = { 
+                                                spokenTextMode = mode
+                                                handleAutoSave()
+                                            },
+                                            shape = SegmentedButtonDefaults.itemShape(index = index, count = modes.size),
+                                            label = { 
+                                                Text(
+                                                    text = if (mode == SpokenTextMode.TTS) {
+                                                        stringResource(R.string.button_spoken_text_mode_tts)
+                                                    } else {
+                                                        stringResource(R.string.button_spoken_text_mode_audio)
+                                                    },
+                                                    maxLines = 1
+                                                )
+                                            }
                                         )
                                     }
                                 }
-                            )
+                            }
+
+                            if (spokenTextMode == SpokenTextMode.TTS) {
+                                SettingsEditTextItem(
+                                    label = stringResource(R.string.button_spoken_text_field),
+                                    value = spokenText,
+                                    onValueChange = { spokenText = it },
+                                    onFocusLost = {
+                                        handleFocusLost(spokenText, { isSpokenTextCached = it }, { isSpokenTextPrefetching = it })
+                                    },
+                                    isPlaying = playingField == "spokenText",
+                                    isLoading = isSpokenTextPrefetching,
+                                    playPauseIconTint = if (isSpokenTextCached) MaterialTheme.colorScheme.primary else null,
+                                    onPlayPauseClick = onPlayTts?.let { play ->
+                                        {
+                                            handlePlayClick(
+                                                fieldName = "spokenText",
+                                                text = spokenText,
+                                                isCached = isSpokenTextCached,
+                                                setCached = { isSpokenTextCached = it },
+                                                setPrefetching = { isSpokenTextPrefetching = it },
+                                                play = play
+                                            )
+                                        }
+                                    }
+                                )
+                            } else {
+                                val audioFileExists = remember(audioFileNameState) {
+                                    if (audioFileNameState.isNullOrBlank()) false
+                                    else File(context.filesDir.resolve("audio_recordings"), audioFileNameState!!).exists()
+                                }
+
+                                val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+                                val pulseAlpha by if (isRecording) {
+                                    infiniteTransition.animateFloat(
+                                        initialValue = 0.4f,
+                                        targetValue = 1f,
+                                        animationSpec = infiniteRepeatable(
+                                            animation = tween(durationMillis = 800, easing = LinearEasing),
+                                            repeatMode = RepeatMode.Reverse
+                                        ),
+                                        label = "pulseAlpha"
+                                    )
+                                } else {
+                                    remember { mutableStateOf(1f) }
+                                }
+
+                                androidx.compose.material3.Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = LocalDimensions.current.paddingSmall),
+                                    colors = androidx.compose.material3.CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                    ),
+                                    shape = MaterialTheme.shapes.medium
+                                ) {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            if (isRecording) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .size(12.dp)
+                                                        .background(
+                                                            color = MaterialTheme.colorScheme.error.copy(alpha = pulseAlpha),
+                                                            shape = CircleShape
+                                                        )
+                                                )
+                                                Text(
+                                                    text = stringResource(R.string.button_audio_recording),
+                                                    style = MaterialTheme.typography.bodyMedium,
+                                                    color = MaterialTheme.colorScheme.error
+                                                )
+                                            } else if (audioFileExists) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Check,
+                                                    contentDescription = null,
+                                                    tint = MaterialTheme.colorScheme.primary,
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                                Text(
+                                                    text = stringResource(R.string.button_audio_saved),
+                                                    style = MaterialTheme.typography.bodyMedium,
+                                                    color = MaterialTheme.colorScheme.primary
+                                                )
+                                            } else {
+                                                Icon(
+                                                    imageVector = Icons.Default.Info,
+                                                    contentDescription = null,
+                                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                                Text(
+                                                    text = stringResource(R.string.button_audio_ready),
+                                                    style = MaterialTheme.typography.bodyMedium,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+                                        }
+
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceEvenly,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Button(
+                                                onClick = {
+                                                    if (isRecording) {
+                                                        stopVoiceRecording()
+                                                    } else {
+                                                        val hasMicPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+                                                        if (hasMicPermission) {
+                                                            startVoiceRecording()
+                                                        } else {
+                                                            micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                                                        }
+                                                    }
+                                                },
+                                                colors = ButtonDefaults.buttonColors(
+                                                    containerColor = if (isRecording) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                                                )
+                                            ) {
+                                                Icon(
+                                                    imageVector = if (isRecording) GhostTalkIcons.Stop else GhostTalkIcons.RecordVoiceOver,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.padding(end = 4.dp).size(20.dp)
+                                                )
+                                                Text(
+                                                    text = if (isRecording) stringResource(R.string.button_audio_stop) else stringResource(R.string.button_audio_record)
+                                                )
+                                            }
+
+                                            OutlinedButton(
+                                                onClick = {
+                                                    val file = File(context.filesDir.resolve("audio_recordings"), audioFileNameState ?: "")
+                                                    playRecording(file)
+                                                },
+                                                enabled = audioFileExists && !isRecording,
+                                                colors = ButtonDefaults.outlinedButtonColors(
+                                                    contentColor = if (isPlayingAudio) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
+                                                )
+                                            ) {
+                                                Icon(
+                                                    imageVector = if (isPlayingAudio) GhostTalkIcons.Stop else Icons.Default.PlayArrow,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.padding(end = 4.dp).size(20.dp)
+                                                )
+                                                Text(
+                                                    text = if (isPlayingAudio) stringResource(R.string.button_audio_stop) else stringResource(R.string.button_audio_play)
+                                                )
+                                            }
+
+                                            IconButton(
+                                                onClick = { showDeleteConfirmation = true },
+                                                enabled = audioFileExists && !isRecording,
+                                                colors = androidx.compose.material3.IconButtonDefaults.iconButtonColors(
+                                                    contentColor = MaterialTheme.colorScheme.error
+                                                )
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Delete,
+                                                    contentDescription = stringResource(R.string.button_audio_delete)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if (showDeleteConfirmation) {
+                                    AlertDialog(
+                                        onDismissRequest = { showDeleteConfirmation = false },
+                                        title = { Text(stringResource(R.string.button_audio_delete)) },
+                                        text = { Text(stringResource(R.string.button_audio_delete_confirm)) },
+                                        confirmButton = {
+                                            TextButton(
+                                                onClick = {
+                                                    showDeleteConfirmation = false
+                                                    val file = File(context.filesDir.resolve("audio_recordings"), audioFileNameState ?: "")
+                                                    if (file.exists()) {
+                                                        file.delete()
+                                                    }
+                                                    audioFileNameState = null
+                                                    handleAutoSave()
+                                                    Toast.makeText(context, "Aufnahme gelöscht", Toast.LENGTH_SHORT).show()
+                                                },
+                                                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                                            ) {
+                                                Text(stringResource(R.string.button_audio_delete))
+                                            }
+                                        },
+                                        dismissButton = {
+                                            TextButton(onClick = { showDeleteConfirmation = false }) {
+                                                Text(stringResource(CoreR.string.dialog_close))
+                                            }
+                                        }
+                                    )
+                                }
+                            }
 
                             SettingsEditTextItem(
                                 label = stringResource(R.string.button_auditory_cue_field),
@@ -769,16 +1086,18 @@ fun ButtonConfigDialog(
 
             // Action Bar (Fixed at the bottom)
             DialogActionBar(
-                buttonConfig = buttonConfig,
-                label = label,
-                spokenText = spokenText,
-                buildCurrentAction = buildCurrentAction,
-                onDismiss = onDismiss,
-                onTest = onTest,
-                onMove = onMove,
-                onDuplicate = onDuplicate,
-                onDelete = onDelete,
-                onSaveAsTemplate = onSaveAsTemplate
+                                buttonConfig = buttonConfig,
+                                label = label,
+                                spokenText = spokenText,
+                                spokenTextMode = spokenTextMode,
+                                audioFileName = audioFileNameState,
+                                buildCurrentAction = buildCurrentAction,
+                                onDismiss = onDismiss,
+                                onTest = onTest,
+                                onMove = onMove,
+                                onDuplicate = onDuplicate,
+                                onDelete = onDelete,
+                                onSaveAsTemplate = onSaveAsTemplate
             )
         }
     },
@@ -1033,6 +1352,8 @@ private fun DialogActionBar(
     buttonConfig: ButtonConfig,
     label: String,
     spokenText: String,
+    spokenTextMode: SpokenTextMode,
+    audioFileName: String?,
     buildCurrentAction: () -> ButtonAction,
     onDismiss: () -> Unit,
     onTest: (ButtonConfig) -> Unit,
@@ -1072,6 +1393,8 @@ private fun DialogActionBar(
                         onTest(buttonConfig.copy(
                             label = label,
                             spokenText = if (spokenText.isNotBlank()) spokenText else null,
+                            spokenTextMode = spokenTextMode,
+                            audioFileName = audioFileName,
                             buttonAction = currentAction
                         ))
                         Toast.makeText(context, R.string.button_test_started, Toast.LENGTH_SHORT).show()
@@ -1146,6 +1469,8 @@ private fun DialogActionBar(
                                     onSaveAsTemplate(buttonConfig.copy(
                                         label = label,
                                         spokenText = if (spokenText.isNotBlank()) spokenText else null,
+                                        spokenTextMode = spokenTextMode,
+                                        audioFileName = audioFileName,
                                         buttonAction = currentAction
                                     ))
                                 }
@@ -1161,6 +1486,8 @@ private fun DialogActionBar(
                                     onTest(buttonConfig.copy(
                                         label = label,
                                         spokenText = if (spokenText.isNotBlank()) spokenText else null,
+                                        spokenTextMode = spokenTextMode,
+                                        audioFileName = audioFileName,
                                         buttonAction = currentAction
                                     ))
                                     Toast.makeText(context, R.string.button_test_started, Toast.LENGTH_SHORT).show()

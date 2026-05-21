@@ -7,6 +7,7 @@ import androidx.room.PrimaryKey
 import com.andreas_kratzer.ghosttalk.core.model.AuditoryCue
 import com.andreas_kratzer.ghosttalk.core.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.Page
+import com.andreas_kratzer.ghosttalk.core.model.SpokenTextMode
 
 @Entity(
     tableName = "buttons",
@@ -26,8 +27,11 @@ data class ButtonEntity(
     val globalIndex: Int,
     val label: String,
     val spokenText: String? = null,
+    val spokenTextMode: SpokenTextMode = SpokenTextMode.TTS,
+    val audioFileName: String? = null,
     val auditoryCue: AuditoryCue? = null,
     val buttonAction: ButtonAction,
     val isActive: Boolean = true,
     val playActionAsAuditoryCue: Boolean = false
 )
+

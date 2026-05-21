@@ -105,6 +105,8 @@ data class ImportButton(
     val label: String = "",
     val auditoryCueText: String? = null,
     val spokenText: String? = null,
+    val spokenTextMode: String? = null,
+    val audioFileName: String? = null,
     val active: Boolean? = true,
     val playActionAsAuditoryCue: Boolean? = false,
     val action: ImportAction? = null

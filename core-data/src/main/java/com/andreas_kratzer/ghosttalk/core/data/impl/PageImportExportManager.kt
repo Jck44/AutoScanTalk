@@ -78,12 +78,14 @@ class PageImportExportManager @Inject constructor(
                             index = index.toLong(),
                             label = config?.label ?: "",
                             spokenText = config?.spokenText,
+                            spokenTextMode = config?.spokenTextMode?.name,
+                            audioFileName = config?.audioFileName,
                             auditoryCueText = config?.auditoryCue?.let { if (it is AuditoryCue.TextToSpeechCue) it.text else "" },
                             active = config?.isActive,
                             playActionAsAuditoryCue = config?.playActionAsAuditoryCue,
                             action = config?.buttonAction?.let { actionMapper.exportAction(it, config.spokenText) }
                         )
-                    }.filter { it.label.isNotEmpty() || it.action != null || it.auditoryCueText != null }
+                    }.filter { it.label.isNotEmpty() || it.action != null || it.auditoryCueText != null || it.audioFileName != null }
                 )
             }
         )
@@ -106,6 +108,8 @@ class PageImportExportManager @Inject constructor(
                     index = 0,
                     label = template.buttonConfig.label,
                     spokenText = template.buttonConfig.spokenText,
+                    spokenTextMode = template.buttonConfig.spokenTextMode.name,
+                    audioFileName = template.buttonConfig.audioFileName,
                     auditoryCueText = (template.buttonConfig.auditoryCue as? AuditoryCue.TextToSpeechCue)?.text,
                     active = template.buttonConfig.isActive,
                     playActionAsAuditoryCue = template.buttonConfig.playActionAsAuditoryCue,
@@ -140,6 +144,8 @@ class PageImportExportManager @Inject constructor(
                                 id = it.id,
                                 label = it.label,
                                 spokenText = it.spokenText,
+                                spokenTextMode = it.spokenTextMode.name,
+                                audioFileName = it.audioFileName,
                                 auditoryCueText = (it.auditoryCue as? AuditoryCue.TextToSpeechCue)?.text,
                                 active = it.isActive,
                                 playActionAsAuditoryCue = it.playActionAsAuditoryCue,
@@ -251,16 +257,28 @@ class PageImportExportManager @Inject constructor(
                 importPage.buttons.forEach { importButton ->
                     val action = importButton.action?.let { actionMapper.importAction(it, idMap) }
                     
-                    if (importButton.label.isEmpty() && action == null && importButton.auditoryCueText == null) {
+                    if (importButton.label.isEmpty() && action == null && importButton.auditoryCueText == null && importButton.audioFileName == null) {
                         return@forEach
                     }
 
                     val finalAction = action ?: SpeakTextButtonAction()
                     val pageRegenerated = regeneratedPages.contains(importPage.importId)
+                    val modeString = importButton.spokenTextMode
+                    val spokenTextMode = if (modeString != null) {
+                        try {
+                            com.andreas_kratzer.ghosttalk.core.model.SpokenTextMode.valueOf(modeString)
+                        } catch (e: IllegalArgumentException) {
+                            com.andreas_kratzer.ghosttalk.core.model.SpokenTextMode.TTS
+                        }
+                    } else {
+                        com.andreas_kratzer.ghosttalk.core.model.SpokenTextMode.TTS
+                    }
                     val config = ButtonConfig(
                         id = if (forceRegeneration || pageRegenerated) UUID.randomUUID().toString() else (importButton.id ?: UUID.randomUUID().toString()),
                         label = importButton.label,
                         spokenText = importButton.spokenText ?: importButton.action?.textToSpeech,
+                        spokenTextMode = spokenTextMode,
+                        audioFileName = importButton.audioFileName,
                         auditoryCue = importButton.auditoryCueText?.let { AuditoryCue.TextToSpeechCue(it) },
                         isActive = importButton.active ?: true,
                         playActionAsAuditoryCue = importButton.playActionAsAuditoryCue ?: false,
@@ -319,10 +337,22 @@ class PageImportExportManager @Inject constructor(
                     if (button != null) {
                         val action = button.action?.let { actionMapper.importAction(it, idMap) } ?: SpeakTextButtonAction()
                         
+                        val modeString = button.spokenTextMode
+                        val spokenTextMode = if (modeString != null) {
+                            try {
+                                com.andreas_kratzer.ghosttalk.core.model.SpokenTextMode.valueOf(modeString)
+                            } catch (e: IllegalArgumentException) {
+                                com.andreas_kratzer.ghosttalk.core.model.SpokenTextMode.TTS
+                            }
+                        } else {
+                            com.andreas_kratzer.ghosttalk.core.model.SpokenTextMode.TTS
+                        }
                         val config = ButtonConfig(
                             id = button.id ?: UUID.randomUUID().toString(),
                             label = button.label,
                             spokenText = button.spokenText ?: button.action?.textToSpeech,
+                            spokenTextMode = spokenTextMode,
+                            audioFileName = button.audioFileName,
                             auditoryCue = button.auditoryCueText?.let { text -> AuditoryCue.TextToSpeechCue(text) },
                             isActive = button.active ?: true,
                             playActionAsAuditoryCue = button.playActionAsAuditoryCue ?: false,
@@ -425,20 +455,32 @@ class PageImportExportManager @Inject constructor(
             zip.closeEntry()
             onProgress(0.1f, "Database exported.")
 
-            // 2. Write the elevenlabs cache files (10-100%)
+            // 2. Gather all files to compress (10-100%)
+            val filesToCompress = mutableListOf<Pair<File, String>>()
+            
             val cacheDir = File(context.filesDir, "elevenlabs")
             if (cacheDir.exists() && cacheDir.isDirectory) {
-                val files = cacheDir.listFiles()?.filter { it.isFile && it.name.endsWith(".mp3") } ?: emptyList()
-                val totalFiles = files.size
-                files.forEachIndexed { index, file ->
-                    val fileProgress = 0.1f + (index.toFloat() / totalFiles) * 0.9f
-                    onProgress(fileProgress, "Compressing audio: ${file.name}")
-                    zip.putNextEntry(ZipEntry("tts_cache/${file.name}"))
-                    file.inputStream().use { input ->
-                        input.copyTo(zip)
-                    }
-                    zip.closeEntry()
+                cacheDir.listFiles()?.filter { it.isFile && it.name.endsWith(".mp3") }?.forEach { file ->
+                    filesToCompress.add(file to "tts_cache/${file.name}")
                 }
+            }
+            
+            val audioDir = File(context.filesDir, "audio_recordings")
+            if (audioDir.exists() && audioDir.isDirectory) {
+                audioDir.listFiles()?.filter { it.isFile && it.name.endsWith(".ogg") }?.forEach { file ->
+                    filesToCompress.add(file to "audio_recordings/${file.name}")
+                }
+            }
+            
+            val totalFiles = filesToCompress.size
+            filesToCompress.forEachIndexed { index, (file, entryPath) ->
+                val fileProgress = 0.1f + (index.toFloat() / totalFiles.coerceAtLeast(1)) * 0.9f
+                onProgress(fileProgress, "Compressing audio: ${file.name}")
+                zip.putNextEntry(ZipEntry(entryPath))
+                file.inputStream().use { input ->
+                    input.copyTo(zip)
+                }
+                zip.closeEntry()
             }
             onProgress(1f, "Backup complete.")
         }
@@ -458,16 +500,12 @@ class PageImportExportManager @Inject constructor(
             val ttsCacheDir = File(context.filesDir, "elevenlabs")
             if (!ttsCacheDir.exists()) ttsCacheDir.mkdirs()
 
-            // Since we don't know the number of entries in advance easily with ZipInputStream
-            // We'll just report progress based on entries processed if we can, 
-            // but usually we'd need a ZipFile for that.
-            // Let's at least report filenames.
+            val audioDir = File(context.filesDir, "audio_recordings")
+            if (!audioDir.exists()) audioDir.mkdirs()
             
             var entry = zipIn.nextEntry
-            var entriesProcessed = 0
             while (entry != null) {
-                entriesProcessed++
-                onProgress(0.1f, "Extracting: ${entry.name}") // Qualitative progress
+                onProgress(0.1f, "Extracting: ${entry.name}")
                 
                 if (entry.name == "backup.json") {
                     val bytes = zipIn.readBytes()
@@ -478,11 +516,22 @@ class PageImportExportManager @Inject constructor(
                         val targetFile = File(ttsCacheDir, fileName)
                         val shouldExtract = !targetFile.exists() || (entry.time > targetFile.lastModified())
                         if (shouldExtract) {
-                            val out = FileOutputStream(targetFile)
-                            try {
+                            FileOutputStream(targetFile).use { out ->
                                 zipIn.copyTo(out)
-                            } finally {
-                                out.close()
+                            }
+                            if (entry.time != -1L) {
+                                targetFile.setLastModified(entry.time)
+                            }
+                        }
+                    }
+                } else if (entry.name.startsWith("audio_recordings/")) {
+                    val fileName = entry.name.substringAfter("audio_recordings/")
+                    if (fileName.isNotEmpty()) {
+                        val targetFile = File(audioDir, fileName)
+                        val shouldExtract = !targetFile.exists() || (entry.time > targetFile.lastModified())
+                        if (shouldExtract) {
+                            FileOutputStream(targetFile).use { out ->
+                                zipIn.copyTo(out)
                             }
                             if (entry.time != -1L) {
                                 targetFile.setLastModified(entry.time)
@@ -519,6 +568,9 @@ class PageImportExportManager @Inject constructor(
             val ttsCacheDir = File(context.filesDir, "elevenlabs")
             if (!ttsCacheDir.exists()) ttsCacheDir.mkdirs()
 
+            val audioDir = File(context.filesDir, "audio_recordings")
+            if (!audioDir.exists()) audioDir.mkdirs()
+
             var entry = zipIn.nextEntry
             while (entry != null) {
                 onProgress(0.1f, "Extracting: ${entry.name}")
@@ -529,6 +581,20 @@ class PageImportExportManager @Inject constructor(
                     val fileName = entry.name.substringAfter("tts_cache/")
                     if (fileName.isNotEmpty()) {
                         val targetFile = File(ttsCacheDir, fileName)
+                        val shouldExtract = !targetFile.exists() || (entry.time > targetFile.lastModified())
+                        if (shouldExtract) {
+                            FileOutputStream(targetFile).use { out ->
+                                zipIn.copyTo(out)
+                            }
+                            if (entry.time != -1L) {
+                                targetFile.setLastModified(entry.time)
+                            }
+                        }
+                    }
+                } else if (entry.name.startsWith("audio_recordings/")) {
+                    val fileName = entry.name.substringAfter("audio_recordings/")
+                    if (fileName.isNotEmpty()) {
+                        val targetFile = File(audioDir, fileName)
                         val shouldExtract = !targetFile.exists() || (entry.time > targetFile.lastModified())
                         if (shouldExtract) {
                             FileOutputStream(targetFile).use { out ->

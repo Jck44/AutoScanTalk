@@ -1,11 +1,13 @@
 package com.andreas_kratzer.ghosttalk.core.data.impl
 
 import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository
+import com.andreas_kratzer.ghosttalk.core.database.AppDatabase
 import com.andreas_kratzer.ghosttalk.core.database.ButtonUsageDao
 import com.andreas_kratzer.ghosttalk.core.database.ButtonUsageHistoryEntity
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.ButtonUsageStat
 import com.andreas_kratzer.ghosttalk.core.model.GroupedButtonUsageStat
+import androidx.room.withTransaction
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
@@ -22,7 +24,8 @@ import javax.inject.Inject
 class ButtonUsageRepositoryImpl @Inject constructor(
     private val dao: ButtonUsageDao,
     private val settingsRepository: com.andreas_kratzer.ghosttalk.core.data.SettingsRepository,
-    @param:com.andreas_kratzer.ghosttalk.core.di.ApplicationScope private val scope: kotlinx.coroutines.CoroutineScope
+    @param:com.andreas_kratzer.ghosttalk.core.di.ApplicationScope private val scope: kotlinx.coroutines.CoroutineScope,
+    private val appDatabase: AppDatabase
 ) : ButtonUsageRepository {
     private val json = Json {
         ignoreUnknownKeys = true
@@ -47,42 +50,44 @@ class ButtonUsageRepositoryImpl @Inject constructor(
      * Records a button press. Increments the usage counter or creates a new entry.
      */
     override suspend fun recordUsage(bookId: String, pageId: String, buttonConfig: ButtonConfig, rows: Int, columns: Int, indexInPage: Int) {
-        val existing = dao.getStatForButton(bookId, buttonConfig.id)
-        val stat = if (existing != null) {
-            existing.copy(
-                label = buttonConfig.label,
-                actionJson = json.encodeToString(buttonConfig.buttonAction),
-                pageId = pageId, // Update pageId (last used location)
-                usageCount = existing.usageCount + 1,
-                lastUsedAt = System.currentTimeMillis()
-            )
-        } else {
-            ButtonUsageStat(
+        appDatabase.withTransaction {
+            val existing = dao.getStatForButton(bookId, buttonConfig.id)
+            val stat = if (existing != null) {
+                existing.copy(
+                    label = buttonConfig.label,
+                    actionJson = json.encodeToString(buttonConfig.buttonAction),
+                    pageId = pageId, // Update pageId (last used location)
+                    usageCount = existing.usageCount + 1,
+                    lastUsedAt = System.currentTimeMillis()
+                )
+            } else {
+                ButtonUsageStat(
+                    bookId = bookId,
+                    buttonConfigId = buttonConfig.id,
+                    pageId = pageId,
+                    label = buttonConfig.label,
+                    actionJson = json.encodeToString(buttonConfig.buttonAction),
+                    usageCount = 1,
+                    lastUsedAt = System.currentTimeMillis()
+                )
+            }
+            dao.upsert(stat)
+
+            // Persistent history event
+            val event = ButtonUsageHistoryEntity(
                 bookId = bookId,
-                buttonConfigId = buttonConfig.id,
-                pageId = pageId,
+                timestamp = System.currentTimeMillis(),
                 label = buttonConfig.label,
-                actionJson = json.encodeToString(buttonConfig.buttonAction),
-                usageCount = 1,
-                lastUsedAt = System.currentTimeMillis()
+                actionType = buttonConfig.buttonAction::class.simpleName ?: "Unknown",
+                buttonId = buttonConfig.id,
+                pageId = pageId
             )
+            dao.insertHistoryEvent(event)
+
+            // Pruning based on active book settings
+            val limit = settingsRepository.actionLogLimit 
+            dao.pruneHistory(bookId, limit)
         }
-        dao.upsert(stat)
-
-        // Persistent history event
-        val event = ButtonUsageHistoryEntity(
-            bookId = bookId,
-            timestamp = System.currentTimeMillis(),
-            label = buttonConfig.label,
-            actionType = buttonConfig.buttonAction::class.simpleName ?: "Unknown",
-            buttonId = buttonConfig.id,
-            pageId = pageId
-        )
-        dao.insertHistoryEvent(event)
-
-        // Pruning based on active book settings
-        val limit = settingsRepository.actionLogLimit 
-        dao.pruneHistory(bookId, limit)
     }
 
     override suspend fun updateLastEventImage(imagePath: String) {
@@ -133,8 +138,10 @@ class ButtonUsageRepositoryImpl @Inject constructor(
      * Clears all statistics for a book.
      */
     override suspend fun clearStats(bookId: String) {
-        dao.clearHistoryForBook(bookId)
-        dao.clearStatsForBook(bookId)
+        appDatabase.withTransaction {
+            dao.clearHistoryForBook(bookId)
+            dao.clearStatsForBook(bookId)
+        }
     }
 
     private fun ButtonUsageHistoryEntity.toDomain() = ButtonUsageRepository.ButtonUsageEvent(

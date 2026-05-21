@@ -117,6 +117,7 @@ class ScanCoordinator @Inject constructor(
                         stopScanning()
                         _isStoppedDueToLimit.value = false
                         _currentCycleCount.value = 0
+                        _isPausedManually.value = false
                     } else {
                         debugLog("Scanning is manually paused.")
                         stopScanningTemporarily()

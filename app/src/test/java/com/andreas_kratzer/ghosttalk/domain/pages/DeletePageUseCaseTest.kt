@@ -22,6 +22,8 @@ class DeletePageUseCaseTest {
         pageRepository = mockk(relaxed = true)
         bookRepository = mockk(relaxed = true)
         templateRepository = mockk(relaxed = true)
+        io.mockk.every { templateRepository.getAllTemplates() } returns kotlinx.coroutines.flow.flowOf(emptyList())
+        io.mockk.coEvery { pageRepository.getAllPages() } returns emptyList()
         useCase = DeletePageUseCase(pageRepository, templateRepository, bookRepository)
     }
 

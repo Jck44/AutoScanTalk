@@ -1,14 +1,20 @@
 package com.andreas_kratzer.ghosttalk.core.actions
 
+import android.content.Context
+import com.andreas_kratzer.ghosttalk.core.audio.RoutedAudioPlayer
 import com.andreas_kratzer.ghosttalk.core.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
-
+import com.andreas_kratzer.ghosttalk.core.model.SpokenTextMode
+import dagger.hilt.android.qualifiers.ApplicationContext
+import java.io.File
 import javax.inject.Inject
 
 class SpeechActionHandler @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val settings: SpeechSettings,
     private val ttsProxyLazy: dagger.Lazy<ActionTtsProxy>,
+    private val audioPlayerLazy: dagger.Lazy<RoutedAudioPlayer>,
     private val actionLogger: ActionLogger
 ) : ActionHandler {
 
@@ -20,15 +26,30 @@ class SpeechActionHandler @Inject constructor(
         executionId: Int,
         onFinish: (Int) -> Unit
     ) {
-        val textToSpeak = buttonConfig.spokenText?.takeIf { it.isNotBlank() }
-            ?: buttonConfig.label
-            
         val targetDeviceAddress = if (buttonConfig.playActionAsAuditoryCue) {
             settings.cuesAudioDeviceAddress
         } else {
             settings.ttsAudioDeviceAddress
         }
         
+        // 1. Play recorded custom audio if mode is AUDIO and file exists
+        if (buttonConfig.spokenTextMode == SpokenTextMode.AUDIO && !buttonConfig.audioFileName.isNullOrBlank()) {
+            val audioFile = File(context.filesDir.resolve("audio_recordings"), buttonConfig.audioFileName)
+            if (audioFile.exists()) {
+                audioPlayerLazy.get().playAudioFile(
+                    file = audioFile,
+                    deviceAddress = targetDeviceAddress,
+                    onCompletion = { onFinish(executionId) }
+                )
+                actionLogger.log("Sprachaufnahme abgespielt: \"${buttonConfig.audioFileName}\"", action, buttonConfig.label)
+                return
+            }
+        }
+
+        // 2. Fallback to TTS (using spokenText or label)
+        val textToSpeak = buttonConfig.spokenText?.takeIf { it.isNotBlank() }
+            ?: buttonConfig.label
+            
         val tts = ttsProxyLazy.get()
         if (tts.isReady) {
             tts.speakRouted(

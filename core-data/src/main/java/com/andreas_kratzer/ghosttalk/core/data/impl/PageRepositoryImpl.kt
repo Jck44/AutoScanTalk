@@ -1,7 +1,8 @@
 package com.andreas_kratzer.ghosttalk.core.data.impl
 
-import androidx.room.Transaction
+import androidx.room.withTransaction
 import com.andreas_kratzer.ghosttalk.core.data.PageRepository
+import com.andreas_kratzer.ghosttalk.core.database.AppDatabase
 import com.andreas_kratzer.ghosttalk.core.database.ButtonDao
 import com.andreas_kratzer.ghosttalk.core.database.PageDao
 import com.andreas_kratzer.ghosttalk.core.database.toButtonEntities
@@ -11,7 +12,8 @@ import kotlinx.coroutines.flow.map
 
 class PageRepositoryImpl(
     private val pageDao: PageDao,
-    private val buttonDao: ButtonDao
+    private val buttonDao: ButtonDao,
+    private val appDatabase: AppDatabase
 ) : PageRepository {
 
     override fun getAllPagesFlow(): Flow<List<Page>> {
@@ -35,15 +37,19 @@ class PageRepositoryImpl(
     }
 
     override suspend fun insertPage(page: Page) {
-        pageDao.insertPageEntity(page)
-        buttonDao.insertButtons(page.toButtonEntities())
+        appDatabase.withTransaction {
+            pageDao.insertPageEntity(page)
+            buttonDao.insertButtons(page.toButtonEntities())
+        }
     }
 
     override suspend fun updatePage(page: Page) {
-        pageDao.updatePageEntity(page)
-        // Refresh buttons: delete old and insert new
-        buttonDao.deleteButtonsForPage(page.id)
-        buttonDao.insertButtons(page.toButtonEntities())
+        appDatabase.withTransaction {
+            pageDao.updatePageEntity(page)
+            // Refresh buttons: delete old and insert new
+            buttonDao.deleteButtonsForPage(page.id)
+            buttonDao.insertButtons(page.toButtonEntities())
+        }
     }
 
     override suspend fun updatePageSettingsOnly(page: Page) {
@@ -51,8 +57,10 @@ class PageRepositoryImpl(
     }
 
     override suspend fun movePages(fromPage: Page, toPage: Page) {
-        updatePage(fromPage)
-        updatePage(toPage)
+        appDatabase.withTransaction {
+            updatePage(fromPage)
+            updatePage(toPage)
+        }
     }
 
     override suspend fun deletePage(page: Page) {
@@ -64,28 +72,29 @@ class PageRepositoryImpl(
         pageDao.deletePagesForBook(bookId)
     }
 
-    @Transaction
     override suspend fun duplicatePage(pageId: String, duplicateSuffix: String): String? {
-        val original = pageDao.getPageWithButtonsById(pageId) ?: return null
-        val newPageId = java.util.UUID.randomUUID().toString()
-        
-        val newPage = original.page.copy(
-            id = newPageId,
-            name = "${original.page.name}${duplicateSuffix}",
-            createdAt = System.currentTimeMillis()
-        )
-        
-        val newButtons = original.buttons.map { entity ->
-            entity.copy(
-                id = java.util.UUID.randomUUID().toString(),
-                pageId = newPageId
+        return appDatabase.withTransaction {
+            val original = pageDao.getPageWithButtonsById(pageId) ?: return@withTransaction null
+            val newPageId = java.util.UUID.randomUUID().toString()
+            
+            val newPage = original.page.copy(
+                id = newPageId,
+                name = "${original.page.name}${duplicateSuffix}",
+                createdAt = System.currentTimeMillis()
             )
+            
+            val newButtons = original.buttons.map { entity ->
+                entity.copy(
+                    id = java.util.UUID.randomUUID().toString(),
+                    pageId = newPageId
+                )
+            }
+            
+            pageDao.insertPageEntity(newPage)
+            buttonDao.insertButtons(newButtons)
+            
+            newPageId
         }
-        
-        pageDao.insertPageEntity(newPage)
-        buttonDao.insertButtons(newButtons)
-        
-        return newPageId
     }
 
     override fun getUsedTemplateIdsFlow(): Flow<Set<String>> {

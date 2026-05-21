@@ -28,6 +28,7 @@ import com.andreas_kratzer.ghosttalk.core.data.impl.TemplateRepositoryImpl
 import com.andreas_kratzer.ghosttalk.core.data.impl.WeatherRepositoryImpl
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsRepositoryImpl
+import com.andreas_kratzer.ghosttalk.core.database.AppDatabase
 import com.andreas_kratzer.ghosttalk.core.database.BookDao
 import com.andreas_kratzer.ghosttalk.core.database.ButtonDao
 import com.andreas_kratzer.ghosttalk.core.database.ButtonUsageDao
@@ -104,8 +105,12 @@ abstract class DataModule {
 
         @Provides
         @Singleton
-        fun providePageRepositoryImpl(pageDao: PageDao, buttonDao: ButtonDao): PageRepositoryImpl {
-            return PageRepositoryImpl(pageDao, buttonDao)
+        fun providePageRepositoryImpl(
+            pageDao: PageDao,
+            buttonDao: ButtonDao,
+            appDatabase: AppDatabase
+        ): PageRepositoryImpl {
+            return PageRepositoryImpl(pageDao, buttonDao, appDatabase)
         }
 
         @Provides
@@ -131,9 +136,10 @@ abstract class DataModule {
         fun provideButtonUsageRepositoryImpl(
             buttonUsageDao: ButtonUsageDao,
             settingsRepository: SettingsRepository,
-            @ApplicationScope scope: CoroutineScope
+            @ApplicationScope scope: CoroutineScope,
+            appDatabase: AppDatabase
         ): ButtonUsageRepositoryImpl {
-            return ButtonUsageRepositoryImpl(buttonUsageDao, settingsRepository, scope)
+            return ButtonUsageRepositoryImpl(buttonUsageDao, settingsRepository, scope, appDatabase)
         }
 
         @Provides

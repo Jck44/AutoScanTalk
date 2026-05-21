@@ -1,5 +1,7 @@
 package com.andreas_kratzer.ghosttalk.core.database
 
+import androidx.room.RoomDatabase
+import androidx.room.withTransaction
 import com.andreas_kratzer.ghosttalk.core.data.impl.ButtonUsageRepositoryImpl
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.ButtonUsageStat
@@ -7,8 +9,11 @@ import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import io.mockk.slot
 import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -19,12 +24,23 @@ class ButtonUsageRepositoryTest {
     private val mockButtonUsageDao = mockk<ButtonUsageDao>(relaxed = true)
     private val mockSettingsRepository = mockk<com.andreas_kratzer.ghosttalk.core.data.SettingsRepository>(relaxed = true)
     private val testScope = kotlinx.coroutines.test.TestScope()
+    private val mockDatabase = mockk<AppDatabase>(relaxed = true)
     private lateinit var buttonUsageRepository: ButtonUsageRepositoryImpl
 
     @Before
     fun setup() {
+        mockkStatic("androidx.room.RoomDatabaseKt")
+        coEvery { any<RoomDatabase>().withTransaction<Any?>(any()) } coAnswers {
+            val block = secondArg<suspend () -> Any?>()
+            block()
+        }
         coEvery { mockSettingsRepository.activeBookIdFlow } returns kotlinx.coroutines.flow.MutableStateFlow("book1")
-        buttonUsageRepository = ButtonUsageRepositoryImpl(mockButtonUsageDao, mockSettingsRepository, testScope)
+        buttonUsageRepository = ButtonUsageRepositoryImpl(mockButtonUsageDao, mockSettingsRepository, testScope, mockDatabase)
+    }
+
+    @After
+    fun teardown() {
+        unmockkStatic("androidx.room.RoomDatabaseKt")
     }
     
     private val testButton = ButtonConfig(

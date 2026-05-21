@@ -13,7 +13,7 @@ class DeletePageUseCase @Inject constructor(
     private val templateRepository: TemplateRepository,
     private val bookRepository: BookRepository
 ) {
-    suspend fun execute(page: Page, deleteUsages: Boolean = false) {
+    suspend fun execute(page: Page, deleteUsages: Boolean = true) {
         if (deleteUsages) {
             val pageId = page.id
             

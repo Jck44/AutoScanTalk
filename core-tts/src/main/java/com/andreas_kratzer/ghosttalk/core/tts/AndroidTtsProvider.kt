@@ -165,7 +165,14 @@ open class AndroidTtsProvider @Inject constructor(
                 if (onDone != null) {
                     directCallbacks[utteranceId] = onDone
                 }
-                tts?.speak(text, actualQueueMode, null, utteranceId)
+                val result = tts?.speak(text, actualQueueMode, null, utteranceId)
+                if (result == TextToSpeech.ERROR) {
+                    Log.e("AndroidTtsProvider", "tts.speak returned ERROR for utteranceId: $utteranceId")
+                    directCallbacks.remove(utteranceId)
+                    onDone?.let { callback ->
+                        handler.post { callback() }
+                    }
+                }
             } else {
                 val utteranceId = "routed_${System.currentTimeMillis()}_${text.hashCode()}"
                 val cacheFile = File(context.cacheDir, "$utteranceId.wav")
@@ -174,7 +181,15 @@ open class AndroidTtsProvider @Inject constructor(
                 val params = android.os.Bundle().apply {
                     putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, utteranceId)
                 }
-                tts?.synthesizeToFile(text, params, cacheFile, utteranceId)
+                val result = tts?.synthesizeToFile(text, params, cacheFile, utteranceId)
+                if (result == TextToSpeech.ERROR) {
+                    Log.e("AndroidTtsProvider", "tts.synthesizeToFile returned ERROR for utteranceId: $utteranceId")
+                    playRequests.remove(utteranceId)
+                    cacheFile.delete()
+                    onDone?.let { callback ->
+                        handler.post { callback() }
+                    }
+                }
             }
         }
 

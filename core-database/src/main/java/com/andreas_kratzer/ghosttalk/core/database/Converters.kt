@@ -4,6 +4,7 @@ import androidx.room.TypeConverter
 import com.andreas_kratzer.ghosttalk.core.model.AuditoryCue
 import com.andreas_kratzer.ghosttalk.core.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.SpokenTextMode
 import kotlinx.serialization.json.Json
 
 class Converters {
@@ -11,6 +12,22 @@ class Converters {
         ignoreUnknownKeys = true
         encodeDefaults = true
     }
+
+    @TypeConverter
+    fun fromSpokenTextMode(mode: SpokenTextMode?): String? {
+        return mode?.name
+    }
+
+    @TypeConverter
+    fun toSpokenTextMode(modeString: String?): SpokenTextMode? {
+        if (modeString == null) return null
+        return try {
+            SpokenTextMode.valueOf(modeString)
+        } catch (e: IllegalArgumentException) {
+            SpokenTextMode.TTS
+        }
+    }
+
 
     @TypeConverter
     fun fromButtonConfig(config: ButtonConfig?): String? {
