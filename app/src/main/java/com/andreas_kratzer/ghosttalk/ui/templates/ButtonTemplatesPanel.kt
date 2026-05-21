@@ -1,5 +1,6 @@
 package com.andreas_kratzer.ghosttalk.ui.templates
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -124,7 +125,7 @@ fun ButtonTemplatesPanel(
         // Drag/Drop hint
         Surface(
             color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
-            shape = RoundedCornerShape(8.dp),
+            shape = MaterialTheme.shapes.small,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 8.dp)
@@ -248,15 +249,12 @@ fun TemplateItemCard(
     onDelete: () -> Unit
 ) {
     Card(
+        shape = MaterialTheme.shapes.small,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         modifier = Modifier
             .fillMaxWidth()
             .dragSource(item = template)
-            .clickable { onEditTemplate(template) }
-            .border(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant,
-                shape = RoundedCornerShape(8.dp)
-            ),
+            .clickable { onEditTemplate(template) },
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         )

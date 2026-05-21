@@ -698,7 +698,7 @@ private fun EditorButtonCell(
                     color = if (isDraggedHovered) MaterialTheme.colorScheme.primary.copy(alpha = pulseAlpha)
                             else if (isTarget) MaterialTheme.colorScheme.primary
                             else Color.Transparent,
-                    shape = MaterialTheme.shapes.medium
+                    shape = MaterialTheme.shapes.small
                 )
         )
 
@@ -799,7 +799,7 @@ private fun LazyGridScope.renderRowByRowGrid(
                         width = if (isRowTarget) 3.dp else 2.dp,
                         color = if (isRowTarget) MaterialTheme.colorScheme.primary 
                                  else MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-                        shape = MaterialTheme.shapes.medium
+                        shape = MaterialTheme.shapes.small
                     )
                     .height(IntrinsicSize.Min),
                 verticalAlignment = Alignment.CenterVertically

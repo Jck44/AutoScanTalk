@@ -131,7 +131,7 @@ fun GridButton(
                 .scale(scale)
                 .alpha(if (isEditorMode && !isActive) 0.5f else 1f)
                 .testTag(stateTag),
-            shape = MaterialTheme.shapes.medium,
+            shape = MaterialTheme.shapes.small,
             elevation = CardDefaults.cardElevation(
                 defaultElevation = if (buttonConfig != null) dimensions.cardElevation else 0.dp
             ),

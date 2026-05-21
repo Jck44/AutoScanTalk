@@ -105,7 +105,7 @@ fun ButtonGrid(
                                 border(
                                     width = 3.dp,
                                     color = MaterialTheme.colorScheme.secondary,
-                                    shape = MaterialTheme.shapes.medium
+                                    shape = MaterialTheme.shapes.small
                                 ).padding(4.dp)
                             } else this
                         },

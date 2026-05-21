@@ -27,7 +27,7 @@ fun ControlButtons(
         Button(
             onClick = onStartScanning,
             modifier = Modifier.weight(1f),
-            shape = MaterialTheme.shapes.medium
+            shape = MaterialTheme.shapes.small
         ) {
             Text(stringResource(R.string.page_action_start_scan))
         }
@@ -35,14 +35,14 @@ fun ControlButtons(
             onClick = onActivateFocused,
             enabled = isFocused,
             modifier = Modifier.weight(1f),
-            shape = MaterialTheme.shapes.medium
+            shape = MaterialTheme.shapes.small
         ) {
             Text(stringResource(R.string.page_action_activate_focused))
         }
         Button(
             onClick = onStopScanning,
             modifier = Modifier.weight(1f),
-            shape = MaterialTheme.shapes.medium
+            shape = MaterialTheme.shapes.small
         ) {
             Text(stringResource(R.string.page_action_stop_scan))
         }
