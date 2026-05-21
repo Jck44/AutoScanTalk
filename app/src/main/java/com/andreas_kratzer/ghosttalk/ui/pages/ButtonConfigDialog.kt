@@ -45,6 +45,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -558,256 +560,260 @@ fun ButtonConfigDialog(
                                 }
                             )
                             
-                            Column(
+                            Text(
+                                text = stringResource(R.string.button_spoken_text_field),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(start = 4.dp, bottom = 2.dp)
+                            )
+                            androidx.compose.material3.OutlinedCard(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(vertical = LocalDimensions.current.paddingSmall)
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(bottom = 8.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = stringResource(R.string.button_spoken_text_field),
-                                        style = MaterialTheme.typography.labelMedium,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-
-                                    SingleChoiceSegmentedButtonRow(
-                                        modifier = Modifier.width(200.dp)
-                                    ) {
-                                        val modes = listOf(SpokenTextMode.TTS, SpokenTextMode.AUDIO)
-                                        modes.forEachIndexed { index, mode ->
-                                            SegmentedButton(
-                                                selected = spokenTextMode == mode,
-                                                onClick = { 
-                                                    spokenTextMode = mode
-                                                    handleAutoSave()
-                                                },
-                                                shape = SegmentedButtonDefaults.itemShape(index = index, count = modes.size),
-                                                label = { 
-                                                    Text(
-                                                        text = if (mode == SpokenTextMode.TTS) {
-                                                            stringResource(R.string.button_spoken_text_mode_tts)
-                                                        } else {
-                                                            stringResource(R.string.button_spoken_text_mode_audio)
-                                                        },
-                                                        maxLines = 1,
-                                                        style = MaterialTheme.typography.bodySmall
-                                                    )
-                                                }
-                                            )
-                                        }
-                                    }
-                                }
-
-                                if (spokenTextMode == SpokenTextMode.TTS) {
-                                    SettingsEditTextItem(
-                                        label = "",
-                                    value = spokenText,
-                                    onValueChange = { spokenText = it },
-                                    onFocusLost = {
-                                        handleFocusLost(spokenText, { isSpokenTextCached = it }, { isSpokenTextPrefetching = it })
-                                    },
-                                    isPlaying = playingField == "spokenText",
-                                    isLoading = isSpokenTextPrefetching,
-                                    playPauseIconTint = if (isSpokenTextCached) MaterialTheme.colorScheme.primary else null,
-                                    onPlayPauseClick = onPlayTts?.let { play ->
-                                        {
-                                            handlePlayClick(
-                                                fieldName = "spokenText",
-                                                text = spokenText,
-                                                isCached = isSpokenTextCached,
-                                                setCached = { isSpokenTextCached = it },
-                                                setPrefetching = { isSpokenTextPrefetching = it },
-                                                play = play
-                                            )
-                                        }
-                                    }
+                                    .padding(vertical = LocalDimensions.current.paddingSmall),
+                                colors = androidx.compose.material3.CardDefaults.outlinedCardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
                                 )
-                            } else {
-                                val audioFileExists = remember(audioFileNameState) {
-                                    if (audioFileNameState.isNullOrBlank()) false
-                                    else File(context.filesDir.resolve("audio_recordings"), audioFileNameState!!).exists()
-                                }
-
-                                val infiniteTransition = rememberInfiniteTransition(label = "pulse")
-                                val pulseAlpha by if (isRecording) {
-                                    infiniteTransition.animateFloat(
-                                        initialValue = 0.4f,
-                                        targetValue = 1f,
-                                        animationSpec = infiniteRepeatable(
-                                            animation = tween(durationMillis = 800, easing = LinearEasing),
-                                            repeatMode = RepeatMode.Reverse
-                                        ),
-                                        label = "pulseAlpha"
-                                    )
-                                } else {
-                                    remember { mutableStateOf(1f) }
-                                }
-
-                                androidx.compose.material3.Card(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = LocalDimensions.current.paddingSmall),
-                                    colors = androidx.compose.material3.CardDefaults.cardColors(
-                                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                                    ),
-                                    shape = MaterialTheme.shapes.medium
+                            ) {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    Column(
+                                    Box(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(16.dp),
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                                            .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 12.dp)
                                     ) {
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        SingleChoiceSegmentedButtonRow(
+                                            modifier = Modifier.fillMaxWidth()
                                         ) {
-                                            if (isRecording) {
-                                                Box(
-                                                    modifier = Modifier
-                                                        .size(12.dp)
-                                                        .background(
-                                                            color = MaterialTheme.colorScheme.error.copy(alpha = pulseAlpha),
-                                                            shape = CircleShape
+                                            val modes = listOf(SpokenTextMode.TTS, SpokenTextMode.AUDIO)
+                                            modes.forEachIndexed { index, mode ->
+                                                SegmentedButton(
+                                                    selected = spokenTextMode == mode,
+                                                    onClick = { 
+                                                        spokenTextMode = mode
+                                                        handleAutoSave()
+                                                    },
+                                                    shape = SegmentedButtonDefaults.itemShape(index = index, count = modes.size),
+                                                    label = { 
+                                                        Text(
+                                                            text = if (mode == SpokenTextMode.TTS) {
+                                                                stringResource(R.string.button_spoken_text_mode_tts)
+                                                            } else {
+                                                                stringResource(R.string.button_spoken_text_mode_audio)
+                                                            },
+                                                            maxLines = 1
                                                         )
-                                                )
-                                                Text(
-                                                    text = stringResource(R.string.button_audio_recording),
-                                                    style = MaterialTheme.typography.bodyMedium,
-                                                    color = MaterialTheme.colorScheme.error
-                                                )
-                                            } else if (audioFileExists) {
-                                                Icon(
-                                                    imageVector = Icons.Default.Check,
-                                                    contentDescription = null,
-                                                    tint = MaterialTheme.colorScheme.primary,
-                                                    modifier = Modifier.size(16.dp)
-                                                )
-                                                Text(
-                                                    text = stringResource(R.string.button_audio_saved),
-                                                    style = MaterialTheme.typography.bodyMedium,
-                                                    color = MaterialTheme.colorScheme.primary
-                                                )
-                                            } else {
-                                                Icon(
-                                                    imageVector = Icons.Default.Info,
-                                                    contentDescription = null,
-                                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                    modifier = Modifier.size(16.dp)
-                                                )
-                                                Text(
-                                                    text = stringResource(R.string.button_audio_ready),
-                                                    style = MaterialTheme.typography.bodyMedium,
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    }
                                                 )
                                             }
                                         }
+                                    }
 
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceEvenly,
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Button(
-                                                onClick = {
-                                                    if (isRecording) {
-                                                        stopVoiceRecording()
-                                                    } else {
-                                                        val hasMicPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
-                                                        if (hasMicPermission) {
-                                                            startVoiceRecording()
-                                                        } else {
-                                                            micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                                                        }
+                                    HorizontalDivider(
+                                        color = MaterialTheme.colorScheme.outlineVariant
+                                    )
+
+                                    Box(
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        if (spokenTextMode == SpokenTextMode.TTS) {
+                                            SettingsEditTextItem(
+                                                label = "",
+                                                placeholder = stringResource(R.string.button_spoken_text_placeholder),
+                                                value = spokenText,
+                                                onValueChange = { spokenText = it },
+                                                onFocusLost = {
+                                                    handleFocusLost(spokenText, { isSpokenTextCached = it }, { isSpokenTextPrefetching = it })
+                                                },
+                                                isPlaying = playingField == "spokenText",
+                                                isLoading = isSpokenTextPrefetching,
+                                                playPauseIconTint = if (isSpokenTextCached) MaterialTheme.colorScheme.primary else null,
+                                                onPlayPauseClick = onPlayTts?.let { play ->
+                                                    {
+                                                        handlePlayClick(
+                                                            fieldName = "spokenText",
+                                                            text = spokenText,
+                                                            isCached = isSpokenTextCached,
+                                                            setCached = { isSpokenTextCached = it },
+                                                            setPrefetching = { isSpokenTextPrefetching = it },
+                                                            play = play
+                                                        )
                                                     }
                                                 },
-                                                colors = ButtonDefaults.buttonColors(
-                                                    containerColor = if (isRecording) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
-                                                )
-                                            ) {
-                                                Icon(
-                                                    imageVector = if (isRecording) GhostTalkIcons.Stop else GhostTalkIcons.RecordVoiceOver,
-                                                    contentDescription = null,
-                                                    modifier = Modifier.padding(end = 4.dp).size(20.dp)
-                                                )
-                                                Text(
-                                                    text = if (isRecording) stringResource(R.string.button_audio_stop) else stringResource(R.string.button_audio_record)
-                                                )
+                                                borderless = true
+                                            )
+                                        } else {
+                                            val audioFileExists = remember(audioFileNameState) {
+                                                if (audioFileNameState.isNullOrBlank()) false
+                                                else File(context.filesDir.resolve("audio_recordings"), audioFileNameState!!).exists()
                                             }
 
-                                            OutlinedButton(
-                                                onClick = {
-                                                    val file = File(context.filesDir.resolve("audio_recordings"), audioFileNameState ?: "")
-                                                    playRecording(file)
-                                                },
-                                                enabled = audioFileExists && !isRecording,
-                                                colors = ButtonDefaults.outlinedButtonColors(
-                                                    contentColor = if (isPlayingAudio) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
+                                            val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+                                            val pulseAlpha by if (isRecording) {
+                                                infiniteTransition.animateFloat(
+                                                    initialValue = 0.4f,
+                                                    targetValue = 1f,
+                                                    animationSpec = infiniteRepeatable(
+                                                        animation = tween(durationMillis = 800, easing = LinearEasing),
+                                                        repeatMode = RepeatMode.Reverse
+                                                    ),
+                                                    label = "pulseAlpha"
                                                 )
-                                            ) {
-                                                Icon(
-                                                    imageVector = if (isPlayingAudio) GhostTalkIcons.Stop else Icons.Default.PlayArrow,
-                                                    contentDescription = null,
-                                                    modifier = Modifier.padding(end = 4.dp).size(20.dp)
-                                                )
-                                                Text(
-                                                    text = if (isPlayingAudio) stringResource(R.string.button_audio_stop) else stringResource(R.string.button_audio_play)
-                                                )
+                                            } else {
+                                                remember { mutableStateOf(1f) }
                                             }
 
-                                            IconButton(
-                                                onClick = { showDeleteConfirmation = true },
-                                                enabled = audioFileExists && !isRecording,
-                                                colors = androidx.compose.material3.IconButtonDefaults.iconButtonColors(
-                                                    contentColor = MaterialTheme.colorScheme.error
-                                                )
+                                            Column(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 16.dp),
+                                                horizontalAlignment = Alignment.CenterHorizontally,
+                                                verticalArrangement = Arrangement.spacedBy(12.dp)
                                             ) {
-                                                Icon(
-                                                    imageVector = Icons.Default.Delete,
-                                                    contentDescription = stringResource(R.string.button_audio_delete)
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                                ) {
+                                                    if (isRecording) {
+                                                        Box(
+                                                            modifier = Modifier
+                                                                .size(12.dp)
+                                                                .background(
+                                                                    color = MaterialTheme.colorScheme.error.copy(alpha = pulseAlpha),
+                                                                    shape = CircleShape
+                                                                )
+                                                        )
+                                                        Text(
+                                                            text = stringResource(R.string.button_audio_recording),
+                                                            style = MaterialTheme.typography.bodyMedium,
+                                                            color = MaterialTheme.colorScheme.error
+                                                        )
+                                                    } else if (audioFileExists) {
+                                                        Icon(
+                                                            imageVector = Icons.Default.Check,
+                                                            contentDescription = null,
+                                                            tint = MaterialTheme.colorScheme.primary,
+                                                            modifier = Modifier.size(16.dp)
+                                                        )
+                                                        Text(
+                                                            text = stringResource(R.string.button_audio_saved),
+                                                            style = MaterialTheme.typography.bodyMedium,
+                                                            color = MaterialTheme.colorScheme.primary
+                                                        )
+                                                    } else {
+                                                        Icon(
+                                                            imageVector = Icons.Default.Info,
+                                                            contentDescription = null,
+                                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                            modifier = Modifier.size(16.dp)
+                                                        )
+                                                        Text(
+                                                            text = stringResource(R.string.button_audio_ready),
+                                                            style = MaterialTheme.typography.bodyMedium,
+                                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                        )
+                                                    }
+                                                }
+
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.SpaceEvenly,
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Button(
+                                                        onClick = {
+                                                            if (isRecording) {
+                                                                stopVoiceRecording()
+                                                            } else {
+                                                                val hasMicPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+                                                                if (hasMicPermission) {
+                                                                    startVoiceRecording()
+                                                                } else {
+                                                                    micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                                                                }
+                                                            }
+                                                        },
+                                                        colors = ButtonDefaults.buttonColors(
+                                                            containerColor = if (isRecording) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                                                        )
+                                                    ) {
+                                                        Icon(
+                                                            imageVector = if (isRecording) GhostTalkIcons.Stop else GhostTalkIcons.RecordVoiceOver,
+                                                            contentDescription = null,
+                                                            modifier = Modifier.padding(end = 4.dp).size(20.dp)
+                                                        )
+                                                        Text(
+                                                            text = if (isRecording) stringResource(R.string.button_audio_stop) else stringResource(R.string.button_audio_record)
+                                                        )
+                                                    }
+
+                                                    OutlinedButton(
+                                                        onClick = {
+                                                            val file = File(context.filesDir.resolve("audio_recordings"), audioFileNameState ?: "")
+                                                            playRecording(file)
+                                                        },
+                                                        enabled = audioFileExists && !isRecording,
+                                                        colors = ButtonDefaults.outlinedButtonColors(
+                                                            contentColor = if (isPlayingAudio) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
+                                                        )
+                                                    ) {
+                                                        Icon(
+                                                            imageVector = if (isPlayingAudio) GhostTalkIcons.Stop else Icons.Default.PlayArrow,
+                                                            contentDescription = null,
+                                                            modifier = Modifier.padding(end = 4.dp).size(20.dp)
+                                                        )
+                                                        Text(
+                                                            text = if (isPlayingAudio) stringResource(R.string.button_audio_stop) else stringResource(R.string.button_audio_play)
+                                                        )
+                                                    }
+
+                                                    IconButton(
+                                                        onClick = { showDeleteConfirmation = true },
+                                                        enabled = audioFileExists && !isRecording,
+                                                        colors = androidx.compose.material3.IconButtonDefaults.iconButtonColors(
+                                                            contentColor = MaterialTheme.colorScheme.error
+                                                        )
+                                                    ) {
+                                                        Icon(
+                                                            imageVector = Icons.Default.Delete,
+                                                            contentDescription = stringResource(R.string.button_audio_delete)
+                                                        )
+                                                    }
+                                                }
+                                            }
+
+                                            if (showDeleteConfirmation) {
+                                                AlertDialog(
+                                                    onDismissRequest = { showDeleteConfirmation = false },
+                                                    title = { Text(stringResource(R.string.button_audio_delete)) },
+                                                    text = { Text(stringResource(R.string.button_audio_delete_confirm)) },
+                                                    confirmButton = {
+                                                        TextButton(
+                                                            onClick = {
+                                                                showDeleteConfirmation = false
+                                                                val file = File(context.filesDir.resolve("audio_recordings"), audioFileNameState ?: "")
+                                                                if (file.exists()) {
+                                                                    file.delete()
+                                                                }
+                                                                audioFileNameState = null
+                                                                handleAutoSave()
+                                                                Toast.makeText(context, "Aufnahme gelöscht", Toast.LENGTH_SHORT).show()
+                                                            },
+                                                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                                                        ) {
+                                                            Text(stringResource(R.string.button_audio_delete))
+                                                        }
+                                                    },
+                                                    dismissButton = {
+                                                        TextButton(onClick = { showDeleteConfirmation = false }) {
+                                                            Text(stringResource(CoreR.string.dialog_close))
+                                                        }
+                                                    }
                                                 )
                                             }
                                         }
                                     }
                                 }
-
-                                if (showDeleteConfirmation) {
-                                    AlertDialog(
-                                        onDismissRequest = { showDeleteConfirmation = false },
-                                        title = { Text(stringResource(R.string.button_audio_delete)) },
-                                        text = { Text(stringResource(R.string.button_audio_delete_confirm)) },
-                                        confirmButton = {
-                                            TextButton(
-                                                onClick = {
-                                                    showDeleteConfirmation = false
-                                                    val file = File(context.filesDir.resolve("audio_recordings"), audioFileNameState ?: "")
-                                                    if (file.exists()) {
-                                                        file.delete()
-                                                    }
-                                                    audioFileNameState = null
-                                                    handleAutoSave()
-                                                    Toast.makeText(context, "Aufnahme gelöscht", Toast.LENGTH_SHORT).show()
-                                                },
-                                                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                                            ) {
-                                                Text(stringResource(R.string.button_audio_delete))
-                                            }
-                                        },
-                                        dismissButton = {
-                                            TextButton(onClick = { showDeleteConfirmation = false }) {
-                                                Text(stringResource(CoreR.string.dialog_close))
-                                            }
-                                        }
-                                    )
-                                }
-                            }
                             }
 
                             SettingsEditTextItem(

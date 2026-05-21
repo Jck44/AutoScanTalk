@@ -18,6 +18,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -134,7 +135,9 @@ fun SettingsEditTextItem(
     isPlaying: Boolean = false,
     onPlayPauseClick: (() -> Unit)? = null,
     isLoading: Boolean = false,
-    playPauseIconTint: androidx.compose.ui.graphics.Color? = null
+    playPauseIconTint: androidx.compose.ui.graphics.Color? = null,
+    borderless: Boolean = false,
+    placeholder: String = ""
 ) {
     val dimensions = LocalDimensions.current
     var localValue by remember(value) { mutableStateOf(value) }
@@ -173,6 +176,9 @@ fun SettingsEditTextItem(
         label = if (label.isNotEmpty()) {
             { Text(label, style = MaterialTheme.typography.bodyMedium) }
         } else null,
+        placeholder = if (placeholder.isNotEmpty()) {
+            { Text(placeholder, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)) }
+        } else null,
         textStyle = MaterialTheme.typography.bodyLarge,
         shape = MaterialTheme.shapes.large,
         modifier = Modifier
@@ -188,6 +194,16 @@ fun SettingsEditTextItem(
             },
         keyboardOptions = keyboardOptions ?: defaultKeyboardOptions,
         singleLine = true,
+        colors = if (borderless) {
+            OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = androidx.compose.ui.graphics.Color.Transparent,
+                unfocusedBorderColor = androidx.compose.ui.graphics.Color.Transparent,
+                disabledBorderColor = androidx.compose.ui.graphics.Color.Transparent,
+                errorBorderColor = androidx.compose.ui.graphics.Color.Transparent
+            )
+        } else {
+            OutlinedTextFieldDefaults.colors()
+        },
         trailingIcon = if (onPlayPauseClick != null && localValue.isNotBlank()) {
             {
                 if (isLoading) {

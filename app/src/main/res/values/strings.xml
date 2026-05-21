@@ -71,6 +71,7 @@
     <string name="button_dialog_edit_title">Button bearbeiten</string>
     <string name="button_label_field">Aufschrift (Label)</string>
     <string name="button_spoken_text_field">Gesprochener Text (Optional)</string>
+    <string name="button_spoken_text_placeholder">Geben Sie hier den zu sprechenden Text ein…</string>
     <string name="button_spoken_text_mode_label">Sprechmodus</string>
     <string name="button_spoken_text_mode_tts">TTS</string>
     <string name="button_spoken_text_mode_audio">Mikrofon</string>
