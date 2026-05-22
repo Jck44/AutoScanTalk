@@ -9,13 +9,13 @@ plugins {
 
 android {
     namespace = "com.andreas_kratzer.ghosttalk"
-    compileSdk = 36
+    compileSdk = 37
     ndkVersion = "26.1.10909125"
 
     defaultConfig {
         applicationId = "com.andreas_kratzer.ghosttalk"
         minSdk = 35
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 71
         versionName = "1.1.1"
 

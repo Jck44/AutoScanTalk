@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.andreas_kratzer.ghosttalk.core.ui"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         minSdk = 35
