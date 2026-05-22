@@ -76,12 +76,13 @@ class InteractionDelegateTest {
     }
 
     @Test
-    fun `setUserModeActive(false) should stop notification TTS`() {
+    fun `setUserModeActive(false) should stop notification TTS and actions`() {
         delegate.init(scope, actionExecutor, {}, MutableStateFlow(null), MutableStateFlow("b1"))
         
         delegate.setUserModeActive(false)
         
         verify { ttsHelper.stopNotificationTTS() }
+        verify { actionExecutor.stopActions() }
         verify { appStateRepository.setUserModeActive(false) }
     }
 }

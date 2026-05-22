@@ -1,6 +1,7 @@
 package com.andreas_kratzer.ghosttalk.core.actions
 
 import android.content.Context
+import androidx.core.graphics.createBitmap
 import com.andreas_kratzer.ghosttalk.core.ai.LocalIntentRouter
 import com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase
 import com.andreas_kratzer.ghosttalk.core.ai.domain.VisionUseCase
@@ -93,8 +94,7 @@ class GeminiActionHandler @Inject constructor(
                         capturedBitmap
                     } else {
                         actionLogger.log("Kamerazugriff fehlgeschlagen. Simuliere Bild...", action, buttonConfig.label)
-                        // Simulated camera capture fallback
-                        android.graphics.Bitmap.createBitmap(1024, 1024, android.graphics.Bitmap.Config.ARGB_8888).also {
+                        createBitmap(1024, 1024).also {
                             val canvas = android.graphics.Canvas(it)
                             canvas.drawColor(android.graphics.Color.LTGRAY)
                             val paint = android.graphics.Paint().apply {

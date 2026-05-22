@@ -87,6 +87,7 @@ import androidx.compose.animation.core.*
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarResult
+import android.annotation.SuppressLint
 import androidx.compose.material3.rememberModalBottomSheetState
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 
@@ -96,6 +97,7 @@ object TemplatesPanelTarget
 data class DraggedGridCell(val index: Int, val config: ButtonConfig)
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@SuppressLint("LocalContextGetResourceValueCall")
 @Composable
 fun GridEditorContent(
     item: GridItem,

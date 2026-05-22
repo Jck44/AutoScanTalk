@@ -179,7 +179,7 @@
     
     <!-- Action Localizations -->
     <string name="action_battery_ssml">&lt;speak&gt;Der Akkustand beträgt &lt;say-as interpret-as=\"cardinal\"&gt;%1$d&lt;/say-as&gt; Prozent.&lt;/speak&gt;</string>
-    <string name="action_battery_plain">Der Akkustand beträgt %1$d Prozent.</string>
+    <string name="action_battery_plain" tools:ignore="PluralsCandidate">Der Akkustand beträgt %1$d Prozent.</string>
     <string name="action_time_ssml">&lt;speak&gt;Es ist &lt;say-as interpret-as=\"time\" format=\"hm24\"&gt;%1$s&lt;/say-as&gt;&lt;/speak&gt;</string>
     <string name="action_time_plain">Es ist %1$s Uhr.</string>
     <string name="action_date_ssml">&lt;speak&gt;Heute ist der &lt;say-as interpret-as=\"date\" format=\"dm\"&gt;%1$s&lt;/say-as&gt;&lt;/speak&gt;</string>
@@ -262,12 +262,20 @@
     <string name="device_control_date_preset_tomorrow">Morgen</string>
     <string name="device_control_date_preset_yesterday">Gestern</string>
     <string name="device_control_calendar_appointments_placeholder">[Termine]</string>
-    <string name="device_control_calendar_read_count_suffix"> (Liest %d Kalendereinträge vor)</string>
+    <plurals name="device_control_calendar_read_count_suffix">
+        <item quantity="one"> (Liest %d Kalendereintrag vor)</item>
+        <item quantity="other"> (Liest %d Kalendereinträge vor)</item>
+    </plurals>
     <string name="device_control_spoken_preview_label">Gesprochener Text (Vorschau):</string>
     <string name="device_control_notifications_preferred_apps">Bevorzugte Apps (Einstellungen)</string>
-    <string name="device_control_notifications_one_app_selected">1 App ausgewählt</string>
-    <string name="device_control_notifications_multiple_apps_selected">%d Apps ausgewählt</string>
-    <string name="device_control_notifications_apps_more_format">%1$s und %2$d weitere</string>
+    <plurals name="device_control_notifications_apps_selected">
+        <item quantity="one">1 App ausgewählt</item>
+        <item quantity="other">%d Apps ausgewählt</item>
+    </plurals>
+    <plurals name="device_control_notifications_apps_more_format">
+        <item quantity="one">%1$s und %2$d weitere</item>
+        <item quantity="other">%1$s und %2$d weitere</item>
+    </plurals>
     <string name="device_control_notifications_read_from_app_label">Vorlesen von App:</string>
     <string name="template_save_as_title">Als Vorlage speichern</string>
     <string name="template_enter_name_prompt">Geben Sie einen Namen für die Button-Vorlage ein:</string>

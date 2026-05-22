@@ -1,10 +1,13 @@
 package com.andreas_kratzer.ghosttalk.ui.pages.actions
 
+import android.annotation.SuppressLint
 import android.Manifest
 import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.provider.ContactsContract
+import androidx.compose.ui.res.pluralStringResource
+import androidx.core.graphics.createBitmap
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -94,6 +97,7 @@ private fun getDeviceActionIcon(type: DeviceActionType): ImageVector {
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
+@SuppressLint("LocalContextGetResourceValueCall")
 @Composable
 fun DeviceActionFields(
     selectedType: DeviceActionType,
@@ -433,11 +437,15 @@ fun DeviceActionFields(
                 )
             }
 
+            val appointmentsPlaceholder = stringResource(R.string.device_control_calendar_appointments_placeholder)
+            val offsetInt = offsetValue.toIntOrNull() ?: 0
+            val count = offsetInt.coerceAtLeast(1)
+            val countSuffix = pluralStringResource(R.plurals.device_control_calendar_read_count_suffix, count, count)
+
             // Spoken text preview
-            val previewText = remember(selectedType, prefixText, suffixText, includeWeekday, offsetValue) {
+            val previewText = remember(selectedType, prefixText, suffixText, includeWeekday, offsetValue, appointmentsPlaceholder, countSuffix) {
                 try {
                     val calendar = java.util.Calendar.getInstance()
-                    val offsetInt = offsetValue.toIntOrNull() ?: 0
                     if (selectedType == DeviceActionType.READ_TIME) {
                         if (offsetInt != 0) {
                             calendar.add(java.util.Calendar.MINUTE, offsetInt)
@@ -458,11 +466,8 @@ fun DeviceActionFields(
                         val suffix = suffixText.takeIf { it.isNotBlank() }?.let { if (it.startsWith(" ")) it else " $it" } ?: ""
                         "$prefix$dateString$suffix"
                     } else if (selectedType == DeviceActionType.READ_CALENDAR_ENTRIES) {
-                        val count = offsetInt.coerceAtLeast(1)
                         val prefix = prefixText.takeIf { it.isNotBlank() }?.let { if (it.endsWith(" ")) it else "$it " } ?: ""
                         val suffix = suffixText.takeIf { it.isNotBlank() }?.let { if (it.startsWith(" ")) it else " $it" } ?: ""
-                        val appointmentsPlaceholder = context.getString(R.string.device_control_calendar_appointments_placeholder)
-                        val countSuffix = context.getString(R.string.device_control_calendar_read_count_suffix, count)
                         "$prefix$appointmentsPlaceholder$suffix$countSuffix"
                     } else {
                         ""
@@ -649,10 +654,9 @@ private data class InstalledAppInfo(
 
 private fun android.graphics.drawable.Drawable.toBitmapOrNull(): android.graphics.Bitmap? {
     try {
-        val bitmap = android.graphics.Bitmap.createBitmap(
+        val bitmap = createBitmap(
             intrinsicWidth.coerceAtLeast(1),
-            intrinsicHeight.coerceAtLeast(1),
-            android.graphics.Bitmap.Config.ARGB_8888
+            intrinsicHeight.coerceAtLeast(1)
         )
         val canvas = android.graphics.Canvas(bitmap)
         setBounds(0, 0, canvas.width, canvas.height)
@@ -703,21 +707,22 @@ private fun NotificationAppPicker(
         selectedPackage?.split(",")?.filter { it.isNotBlank() }?.toSet() ?: emptySet()
     }
 
-    val currentLabel = remember(selectedPackages, installedApps, selectedLabel) {
-        if (selectedPackages.isEmpty()) {
-            context.getString(R.string.device_control_notifications_preferred_apps)
-        } else if (installedApps.isEmpty()) {
-            if (selectedPackages.size == 1) {
-                context.getString(R.string.device_control_notifications_one_app_selected)
-            } else {
-                context.getString(R.string.device_control_notifications_multiple_apps_selected, selectedPackages.size)
-            }
+    val preferredAppsStr = stringResource(R.string.device_control_notifications_preferred_apps)
+    val appsSelectedStr = pluralStringResource(
+        R.plurals.device_control_notifications_apps_selected,
+        selectedPackages.size,
+        selectedPackages.size
+    )
+
+    val displayLabels = remember(selectedPackages, installedApps, selectedLabel) {
+        if (selectedPackages.isEmpty() || installedApps.isEmpty()) {
+            emptyList()
         } else {
             val selectedLabels = selectedPackages.mapNotNull { pkg ->
                 installedApps.find { it.packageName == pkg }?.label
             }.filter { it.isNotEmpty() && !it.contains(".") }
             
-            val displayLabels = if (selectedLabels.size == selectedPackages.size) {
+            if (selectedLabels.size == selectedPackages.size) {
                 selectedLabels
             } else {
                 val splitLabels = selectedLabel?.split(",")?.map { it.trim() }?.filter { it.isNotBlank() && !it.contains(".") } ?: emptyList()
@@ -729,15 +734,26 @@ private fun NotificationAppPicker(
                     }
                 }
             }
-
-            if (displayLabels.size <= 3) {
-                displayLabels.joinToString(", ")
-            } else {
-                val firstThree = displayLabels.take(3).joinToString(", ")
-                val remaining = displayLabels.size - 3
-                context.getString(R.string.device_control_notifications_apps_more_format, firstThree, remaining)
-            }
         }
+    }
+
+    val firstThree = remember(displayLabels) {
+        displayLabels.take(3).joinToString(", ")
+    }
+    val remaining = (displayLabels.size - 3).coerceAtLeast(0)
+
+    val appsMoreFormatStr = pluralStringResource(
+        R.plurals.device_control_notifications_apps_more_format,
+        remaining,
+        firstThree,
+        remaining
+    )
+
+    val currentLabel = when {
+        selectedPackages.isEmpty() -> preferredAppsStr
+        installedApps.isEmpty() -> appsSelectedStr
+        displayLabels.size <= 3 -> displayLabels.joinToString(", ")
+        else -> appsMoreFormatStr
     }
 
     val singleSelectedApp = remember(selectedPackages, installedApps) {

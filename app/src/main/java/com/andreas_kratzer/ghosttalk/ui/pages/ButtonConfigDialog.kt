@@ -52,6 +52,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -660,7 +661,7 @@ fun ButtonConfigDialog(
                                                     label = "pulseAlpha"
                                                 )
                                             } else {
-                                                remember { mutableStateOf(1f) }
+                                                remember { mutableFloatStateOf(1f) }
                                             }
 
                                             Column(

@@ -46,12 +46,29 @@ class ActivateButtonUseCaseTest {
     }
 
     @Test
-    fun `execute ignores click if actionExecutor is executing`() = runTest {
+    fun `execute ignores click if actionExecutor is executing a different button`() = runTest {
         every { actionExecutor.isExecuting } returns MutableStateFlow(true)
+        every { actionExecutor.lastExecutedButtonId } returns "btn_other"
 
-        useCase.execute(0, null, null, true, emptyList(), actionExecutor, scanCoordinator)
+        val testButton = ButtonConfig(id = "btn1", label = "Test", auditoryCue = null, buttonAction = SpeakTextButtonAction())
+        val testPage = Page(id = "p1", bookId = "b1", name = "P1", buttonConfigs = MutableList(36) { if (it == 0) testButton else null }, rows = 2, columns = 2)
+
+        useCase.execute(0, testPage, "b1", true, emptyList(), actionExecutor, scanCoordinator)
 
         verify(exactly = 0) { ttsHelper.stopNotificationTTS() }
+    }
+
+    @Test
+    fun `execute does NOT ignore click if actionExecutor is executing the same button`() = runTest {
+        every { actionExecutor.isExecuting } returns MutableStateFlow(true)
+        every { actionExecutor.lastExecutedButtonId } returns "btn1"
+
+        val testButton = ButtonConfig(id = "btn1", label = "Test", auditoryCue = null, buttonAction = SpeakTextButtonAction())
+        val testPage = Page(id = "p1", bookId = "b1", name = "P1", buttonConfigs = MutableList(36) { if (it == 0) testButton else null }, rows = 2, columns = 2)
+
+        useCase.execute(0, testPage, "b1", true, emptyList(), actionExecutor, scanCoordinator)
+
+        verify { ttsHelper.stopNotificationTTS() }
     }
 
     @Test

@@ -37,6 +37,9 @@ class ActionExecutor @Inject constructor(
 
     private var lastExecutionTime = -1L
     private var activeExecutionId = 0
+    
+    var lastExecutedButtonId: String? = null
+        private set
 
     private fun log(message: String, action: com.andreas_kratzer.ghosttalk.core.model.ButtonAction? = null, label: String? = null) {
         actionCoordinator.log(message, action, label)
@@ -63,6 +66,10 @@ class ActionExecutor @Inject constructor(
             }
             
             if (_isExecuting.value) {
+                if (buttonConfig.id == lastExecutedButtonId) {
+                    stopActions(skipLog)
+                    return
+                }
                 if (!skipLog) {
                     log("Aktion ignoriert (Aktion läuft bereits)", buttonConfig.buttonAction)
                 }
@@ -70,6 +77,7 @@ class ActionExecutor @Inject constructor(
             }
 
             lastExecutionTime = currentTime
+            lastExecutedButtonId = buttonConfig.id
             _isExecuting.value = true
         }
 
@@ -124,6 +132,7 @@ class ActionExecutor @Inject constructor(
         // Incremenet execution ID to orphan ANY current callbacks, just in case
         activeExecutionId++
         _isExecuting.value = false
+        lastExecutedButtonId = null
         
         // Actually tell the TTS helper to stop audio
         ttsHelper.stopAll()

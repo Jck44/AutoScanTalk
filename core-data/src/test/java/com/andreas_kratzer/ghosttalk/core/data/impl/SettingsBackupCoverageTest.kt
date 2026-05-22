@@ -23,6 +23,8 @@ class SettingsBackupCoverageTest {
         "ttsAudioDeviceAddressFlow",
         "cuesAudioDeviceAddress",  // Hardware-specific
         "cuesAudioDeviceAddressFlow",
+        "recordingAudioSource",     // Hardware-specific
+        "recordingAudioSourceFlow",
         "googleHomeProjectId",     // Security / Secret
         "googleHomeProjectIdFlow",
         "hueBridgeIp",             // Security / Secret

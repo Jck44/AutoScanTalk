@@ -253,15 +253,15 @@
     <string name="prefetch_progress_count">Progress: %1$d / %2$d</string>
     <string name="prefetch_cancel">Cancel</string>
     <string name="prefetch_start">Start</string>
-    <string name="prefetch_in_progress">Prefetching in progress...</string>
+    <string name="prefetch_in_progress">Prefetching in progress…</string>
     <string name="prefetch_complete">Prefetching complete.</string>
     <string name="prefetch_select_all">Select all</string>
     <string name="prefetch_deselect_all">Deselect all</string>
-    <string name="backup_progress_exporting">Exporting data...</string>
+    <string name="backup_progress_exporting">Exporting data…</string>
     <string name="backup_progress_compressing">Compressing audio: %s</string>
     <string name="backup_progress_complete">Backup created successfully.</string>
     <string name="restore_progress_extracting">Extracting files: %s</string>
-    <string name="restore_progress_importing">Importing data...</string>
+    <string name="restore_progress_importing">Importing data…</string>
     <string name="restore_progress_complete">Restore completed successfully.</string>
     <string name="cloud_progress_uploading">Cloud Backup: Uploading file…</string>
     <string name="cloud_progress_downloading">Cloud Restore: Downloading file…</string>
@@ -276,7 +276,10 @@
     <string name="settings_maintenance_delete_empty_buttons_desc">Deletes all buttons without a label from all pages.</string>
     <string name="settings_maintenance_delete_empty_buttons_confirm_title">Delete buttons?</string>
     <string name="settings_maintenance_delete_empty_buttons_confirm_text">Are you sure you want to delete all buttons without a label? This cannot be undone.</string>
-    <string name="settings_maintenance_delete_empty_buttons_success">%d buttons were deleted.</string>
+    <plurals name="settings_maintenance_delete_empty_buttons_success">
+        <item quantity="one">1 button was deleted.</item>
+        <item quantity="other">%d buttons were deleted.</item>
+    </plurals>
     
     <string name="settings_maintenance_check_update_title">Check for Update</string>
     <string name="settings_maintenance_check_update_desc">Manually checks if a newer version of the app is available in the Google Play Store.</string>
@@ -286,9 +289,14 @@
 
     <!-- App Picker Notification Access Strings -->
     <string name="settings_notifications_no_preferred_apps">No preferred apps selected</string>
-    <string name="settings_notifications_one_app_selected">1 app selected</string>
-    <string name="settings_notifications_multiple_apps_selected">%d apps selected</string>
-    <string name="settings_notifications_apps_more_format">%1$s and %2$d more</string>
+    <plurals name="settings_notifications_apps_selected">
+        <item quantity="one">1 app selected</item>
+        <item quantity="other">%d apps selected</item>
+    </plurals>
+    <plurals name="settings_notifications_apps_more_format">
+        <item quantity="one">%1$s and 1 more</item>
+        <item quantity="other">%1$s and %2$d more</item>
+    </plurals>
     <string name="settings_notifications_manage_preferred_apps">Manage preferred apps:</string>
     <string name="settings_notifications_loading_apps">Loading apps…</string>
     <string name="settings_notifications_select_all">Select all</string>

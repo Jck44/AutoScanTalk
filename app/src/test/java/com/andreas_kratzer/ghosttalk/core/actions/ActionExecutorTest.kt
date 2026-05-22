@@ -130,4 +130,70 @@ class ActionExecutorTest {
         
         coVerify { buttonUsageRepository.recordUsage("b1", "", button, 1, 1, 5) }
     }
+
+    @Test
+    fun `executeButtonAction stops actions if clicked again with same button id outside holding time`() {
+        val action = SpeakTextButtonAction()
+        val button = ButtonConfig(id = "1", label = "Test", buttonAction = action, auditoryCue = null)
+        every { mockHandler.canHandle(action) } returns true
+        every { settingsRepository.holdingTimeMillis } returns 1000L
+        
+        // First click
+        actionExecutor.setTimeProviderForTest { 0L }
+        actionExecutor.executeButtonAction(button)
+        assertTrue(actionExecutor.isExecuting.value)
+        
+        // Second click after holding time (e.g. 1500ms) with same button ID
+        actionExecutor.setTimeProviderForTest { 1500L }
+        actionExecutor.executeButtonAction(button)
+        
+        // It should call stopActions and set isExecuting to false
+        assertFalse(actionExecutor.isExecuting.value)
+        verify { ttsHelper.stopAll() }
+    }
+
+    @Test
+    fun `executeButtonAction ignores if clicked again with same button id within holding time`() {
+        val action = SpeakTextButtonAction()
+        val button = ButtonConfig(id = "1", label = "Test", buttonAction = action, auditoryCue = null)
+        every { mockHandler.canHandle(action) } returns true
+        every { settingsRepository.holdingTimeMillis } returns 1000L
+        
+        // First click
+        actionExecutor.setTimeProviderForTest { 0L }
+        actionExecutor.executeButtonAction(button)
+        assertTrue(actionExecutor.isExecuting.value)
+        
+        // Second click within holding time (e.g. 500ms)
+        actionExecutor.setTimeProviderForTest { 500L }
+        actionExecutor.executeButtonAction(button)
+        
+        // It should be ignored due to holding time, and isExecuting should still be true
+        assertTrue(actionExecutor.isExecuting.value)
+        // handler should only be called once
+        verify(exactly = 1) { mockHandler.handle(button, action, any(), any()) }
+    }
+
+    @Test
+    fun `executeButtonAction ignores if different button is clicked while executing outside holding time`() {
+        val action = SpeakTextButtonAction()
+        val button1 = ButtonConfig(id = "1", label = "Test1", buttonAction = action, auditoryCue = null)
+        val button2 = ButtonConfig(id = "2", label = "Test2", buttonAction = action, auditoryCue = null)
+        every { mockHandler.canHandle(action) } returns true
+        every { settingsRepository.holdingTimeMillis } returns 1000L
+        
+        // First click (button 1)
+        actionExecutor.setTimeProviderForTest { 0L }
+        actionExecutor.executeButtonAction(button1)
+        assertTrue(actionExecutor.isExecuting.value)
+        
+        // Second click (button 2) after holding time (e.g. 1500ms)
+        actionExecutor.setTimeProviderForTest { 1500L }
+        actionExecutor.executeButtonAction(button2)
+        
+        // It should be ignored because different button is executing, and isExecuting remains true
+        assertTrue(actionExecutor.isExecuting.value)
+        // button2 handler should not be called
+        verify(exactly = 0) { mockHandler.handle(button2, action, any(), any()) }
+    }
 }

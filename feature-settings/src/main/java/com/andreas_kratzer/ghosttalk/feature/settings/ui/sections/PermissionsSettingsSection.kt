@@ -1,7 +1,9 @@
 package com.andreas_kratzer.ghosttalk.feature.settings.ui.sections
 
+import android.annotation.SuppressLint
 import android.Manifest
 import android.content.Intent
+import androidx.core.graphics.createBitmap
 import android.content.pm.PackageManager
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -309,10 +311,9 @@ private data class InstalledAppInfo(
 
 private fun android.graphics.drawable.Drawable.toBitmapOrNull(): android.graphics.Bitmap? {
     try {
-        val bitmap = android.graphics.Bitmap.createBitmap(
+        val bitmap = createBitmap(
             intrinsicWidth.coerceAtLeast(1),
-            intrinsicHeight.coerceAtLeast(1),
-            android.graphics.Bitmap.Config.ARGB_8888
+            intrinsicHeight.coerceAtLeast(1)
         )
         val canvas = android.graphics.Canvas(bitmap)
         setBounds(0, 0, canvas.width, canvas.height)
@@ -324,6 +325,7 @@ private fun android.graphics.drawable.Drawable.toBitmapOrNull(): android.graphic
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
+@SuppressLint("QueryPermissionsNeeded", "LocalContextGetResourceValueCall")
 @Composable
 private fun PreferredAppsPicker(
     monitoredApps: Set<String>,
@@ -359,15 +361,15 @@ private fun PreferredAppsPicker(
         }
     }
 
-    val currentLabel = remember(monitoredApps, installedApps) {
+    val currentLabel = remember(monitoredApps, installedApps, context) {
         if (monitoredApps.isEmpty()) {
             context.getString(R.string.settings_notifications_no_preferred_apps)
         } else if (installedApps.isEmpty()) {
-            if (monitoredApps.size == 1) {
-                context.getString(R.string.settings_notifications_one_app_selected)
-            } else {
-                context.getString(R.string.settings_notifications_multiple_apps_selected, monitoredApps.size)
-            }
+            context.resources.getQuantityString(
+                R.plurals.settings_notifications_apps_selected,
+                monitoredApps.size,
+                monitoredApps.size
+            )
         } else {
             val selectedLabels = monitoredApps.mapNotNull { pkg ->
                 installedApps.find { it.packageName == pkg }?.label
@@ -386,7 +388,12 @@ private fun PreferredAppsPicker(
             } else {
                 val firstThree = displayLabels.take(3).joinToString(", ")
                 val remaining = displayLabels.size - 3
-                context.getString(R.string.settings_notifications_apps_more_format, firstThree, remaining)
+                context.resources.getQuantityString(
+                    R.plurals.settings_notifications_apps_more_format,
+                    remaining,
+                    firstThree,
+                    remaining
+                )
             }
         }
     }

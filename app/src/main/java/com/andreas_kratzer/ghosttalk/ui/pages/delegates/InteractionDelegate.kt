@@ -113,6 +113,7 @@ class InteractionDelegate @Inject constructor(
             }
         } else {
             ttsHelper.stopNotificationTTS()
+            actionExecutor.stopActions()
         }
     }
 

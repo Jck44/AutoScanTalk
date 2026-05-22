@@ -1,8 +1,11 @@
 package com.andreas_kratzer.ghosttalk.feature.settings.ui
 
+import android.annotation.SuppressLint
 import android.app.Application
 import android.content.Context
 import android.content.Intent
+import androidx.core.content.edit
+import androidx.core.net.toUri
 import android.content.pm.PackageManager
 import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
@@ -486,7 +489,7 @@ class SettingsViewModel @Inject constructor(
                 "&response_type=code" +
                 "&state=hue_auth_state" // In a real app, use a random state
 
-        val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(authUrl)).apply {
+        val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, authUrl.toUri()).apply {
             addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         application.startActivity(intent)
@@ -1028,6 +1031,7 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    @SuppressLint("QueryPermissionsNeeded")
     private fun initializeDefaultMessagingAppsIfNeeded() {
         try {
             val sharedPrefs = application.getSharedPreferences("ghosttalk_app_meta", android.content.Context.MODE_PRIVATE) ?: return
@@ -1062,7 +1066,7 @@ class SettingsViewModel @Inject constructor(
                                 current.addAll(detectedApps)
                                 settingsRepository.monitoredNotificationApps = current
                             }
-                            sharedPrefs.edit().putBoolean("has_initialized_monitored_apps", true).apply()
+                            sharedPrefs.edit { putBoolean("has_initialized_monitored_apps", true) }
                         }
                     } catch (e: Exception) {
                         // ignore background thread exceptions under test/mock environment
@@ -1074,6 +1078,7 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    @SuppressLint("QueryPermissionsNeeded")
     fun resetMonitoredNotificationAppsToMessagingDefaults() {
         viewModelScope.launch(Dispatchers.IO) {
             try {
@@ -1144,11 +1149,9 @@ class SettingsViewModel @Inject constructor(
             return true
         }
 
-        // 2. Check if category is social (API 26+)
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            if (appInfo.category == android.content.pm.ApplicationInfo.CATEGORY_SOCIAL) {
-                return true
-            }
+        // 2. Check if category is social
+        if (appInfo.category == android.content.pm.ApplicationInfo.CATEGORY_SOCIAL) {
+            return true
         }
         
         // 3. Fallback to general keywords (only if not excluded by excludeKeywords)

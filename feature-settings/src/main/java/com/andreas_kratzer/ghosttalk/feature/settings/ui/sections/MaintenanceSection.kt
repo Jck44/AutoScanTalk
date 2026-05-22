@@ -1,5 +1,6 @@
 package com.andreas_kratzer.ghosttalk.feature.settings.ui.sections
 
+import android.annotation.SuppressLint
 import android.widget.Toast
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -32,6 +33,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
 
+@SuppressLint("LocalContextGetResourceValueCall")
 @Composable
 fun MaintenanceSection(
     viewModel: SettingsViewModel,
@@ -40,6 +42,7 @@ fun MaintenanceSection(
     onLocalImport: () -> Unit
 ) {
     val context = LocalContext.current
+    val updateErrorFormat = stringResource(R.string.settings_maintenance_check_update_error)
     var showDeleteEmptyButtonsConfirmation by remember { mutableStateOf(false) }
     val updateStatus by viewModel.updateCheckStatus.collectAsState()
 
@@ -50,7 +53,7 @@ fun MaintenanceSection(
                 viewModel.setUpdateCheckStatus(null)
             }
             is SettingsViewModel.UpdateCheckStatus.Error -> {
-                val message = context.getString(R.string.settings_maintenance_check_update_error, status.message)
+                val message = String.format(updateErrorFormat, status.message)
                 Toast.makeText(context, message, Toast.LENGTH_LONG).show()
                 viewModel.setUpdateCheckStatus(null)
             }
@@ -150,7 +153,7 @@ fun MaintenanceSection(
                         viewModel.deleteEmptyButtons { count ->
                             Toast.makeText(
                                 context,
-                                context.getString(R.string.settings_maintenance_delete_empty_buttons_success, count),
+                                context.resources.getQuantityString(R.plurals.settings_maintenance_delete_empty_buttons_success, count, count),
                                 Toast.LENGTH_LONG
                             ).show()
                         }

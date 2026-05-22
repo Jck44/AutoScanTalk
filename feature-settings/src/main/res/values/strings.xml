@@ -120,15 +120,15 @@
     <string name="prefetch_progress_count">Fortschritt: %1$d / %2$d</string>
     <string name="prefetch_cancel">Abbrechen</string>
     <string name="prefetch_start">Starten</string>
-    <string name="prefetch_in_progress">Vorladen läuft...</string>
+    <string name="prefetch_in_progress">Vorladen läuft…</string>
     <string name="prefetch_complete">Vorladen abgeschlossen.</string>
     <string name="prefetch_select_all">Alle auswählen</string>
     <string name="prefetch_deselect_all">Alle abwählen</string>
-    <string name="backup_progress_exporting">Daten werden exportiert...</string>
+    <string name="backup_progress_exporting">Daten werden exportiert…</string>
     <string name="backup_progress_compressing">Audios werden komprimiert: %s</string>
     <string name="backup_progress_complete">Backup erfolgreich erstellt.</string>
     <string name="restore_progress_extracting">Dateien werden entpackt: %s</string>
-    <string name="restore_progress_importing">Daten werden importiert...</string>
+    <string name="restore_progress_importing">Daten werden importiert…</string>
     <string name="restore_progress_complete">Wiederherstellung abgeschlossen.</string>
     <string name="cloud_progress_uploading">Cloud-Backup: Datei wird hochgeladen…</string>
     <string name="cloud_progress_downloading">Cloud-Restore: Datei wird heruntergeladen…</string>
@@ -277,7 +277,10 @@
     <string name="settings_maintenance_delete_empty_buttons_desc">Löscht alle Buttons ohne Beschriftung aus allen Seiten.</string>
     <string name="settings_maintenance_delete_empty_buttons_confirm_title">Buttons löschen?</string>
     <string name="settings_maintenance_delete_empty_buttons_confirm_text">Bist du sicher, dass du alle Buttons ohne Beschriftung löschen möchtest? Dies kann nicht rückgängig gemacht werden.</string>
-    <string name="settings_maintenance_delete_empty_buttons_success">%d Buttons wurden gelöscht.</string>
+    <plurals name="settings_maintenance_delete_empty_buttons_success">
+        <item quantity="one">1 Button wurde gelöscht.</item>
+        <item quantity="other">%d Buttons wurden gelöscht.</item>
+    </plurals>
 
     <string name="settings_maintenance_check_update_title">Auf Update prüfen</string>
     <string name="settings_maintenance_check_update_desc">Prüft manuell, ob eine neuere Version der App im Google Play Store verfügbar ist.</string>
@@ -287,9 +290,14 @@
 
     <!-- App Picker Notification Access Strings -->
     <string name="settings_notifications_no_preferred_apps">Keine bevorzugten Apps ausgewählt</string>
-    <string name="settings_notifications_one_app_selected">1 App ausgewählt</string>
-    <string name="settings_notifications_multiple_apps_selected">%d Apps ausgewählt</string>
-    <string name="settings_notifications_apps_more_format">%1$s und %2$d weitere</string>
+    <plurals name="settings_notifications_apps_selected">
+        <item quantity="one">1 App ausgewählt</item>
+        <item quantity="other">%d Apps ausgewählt</item>
+    </plurals>
+    <plurals name="settings_notifications_apps_more_format">
+        <item quantity="one">%1$s und 1 weitere</item>
+        <item quantity="other">%1$s und %2$d weitere</item>
+    </plurals>
     <string name="settings_notifications_manage_preferred_apps">Bevorzugte Apps verwalten:</string>
     <string name="settings_notifications_loading_apps">Lade Apps…</string>
     <string name="settings_notifications_select_all">Alle auswählen</string>

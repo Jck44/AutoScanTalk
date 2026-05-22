@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">GhostTalk</string>
     <string name="settings_pattern_linear">Button by Button</string>
     <string name="settings_pattern_row_by_row">Row by Row</string>
@@ -35,7 +35,7 @@
     <!-- Page List Screen -->
 
     <string name="page_add_description">Add new page</string>
-    <string name="page_grid_info">Grid: %1$d Rows x %2$d Columns</string>
+    <string name="page_grid_info" tools:ignore="PluralsCandidate">Grid: %1$d Rows x %2$d Columns</string>
     <string name="search_hint">Search…</string>
     <string name="page_dialog_delete_title">Delete Page?</string>
     <string name="page_dialog_delete_confirm">Do you really want to delete the page \"%s\"?</string>
@@ -168,14 +168,14 @@
     <string name="page_no_actions_yet">No actions executed yet.</string>
 
 
-    <string name="error_gemini_quota_reached">Gemini limit reached. Please wait %d seconds.</string>
+    <string name="error_gemini_quota_reached" tools:ignore="PluralsCandidate">Gemini limit reached. Please wait %d seconds.</string>
 
     <!-- Shared -->
     <string name="error_page_not_found">Page not found</string>
 
     <!-- Action Localizations -->
     <string name="action_battery_ssml">&lt;speak&gt;The battery level is &lt;say-as interpret-as=\"cardinal\"&gt;%1$d&lt;/say-as&gt; percent.&lt;/speak&gt;</string>
-    <string name="action_battery_plain">The battery level is %1$d percent.</string>
+    <string name="action_battery_plain" tools:ignore="PluralsCandidate">The battery level is %1$d percent.</string>
     <string name="action_time_ssml">&lt;speak&gt;It is &lt;say-as interpret-as=\"time\" format=\"hm24\"&gt;%1$s&lt;/say-as&gt;&lt;/speak&gt;</string>
     <string name="action_time_plain">It is %1$s.</string>
     <string name="action_date_ssml">&lt;speak&gt;Today is &lt;say-as interpret-as=\"date\" format=\"dm\"&gt;%1$s&lt;/say-as&gt;&lt;/speak&gt;</string>
@@ -258,12 +258,20 @@
     <string name="device_control_date_preset_tomorrow">Tomorrow</string>
     <string name="device_control_date_preset_yesterday">Yesterday</string>
     <string name="device_control_calendar_appointments_placeholder">[Appointments]</string>
-    <string name="device_control_calendar_read_count_suffix"> (Reads %d calendar entries)</string>
+    <plurals name="device_control_calendar_read_count_suffix">
+        <item quantity="one"> (Reads %d calendar entry)</item>
+        <item quantity="other"> (Reads %d calendar entries)</item>
+    </plurals>
     <string name="device_control_spoken_preview_label">Spoken text (preview):</string>
     <string name="device_control_notifications_preferred_apps">Preferred Apps (Settings)</string>
-    <string name="device_control_notifications_one_app_selected">1 app selected</string>
-    <string name="device_control_notifications_multiple_apps_selected">%d apps selected</string>
-    <string name="device_control_notifications_apps_more_format">%1$s and %2$d more</string>
+    <plurals name="device_control_notifications_apps_selected">
+        <item quantity="one">1 app selected</item>
+        <item quantity="other">%d apps selected</item>
+    </plurals>
+    <plurals name="device_control_notifications_apps_more_format">
+        <item quantity="one">%1$s and %2$d more</item>
+        <item quantity="other">%1$s and %2$d more</item>
+    </plurals>
     <string name="device_control_notifications_read_from_app_label">Read notifications from:</string>
     <string name="template_save_as_title">Save as Template</string>
     <string name="template_enter_name_prompt">Enter a name for the button template:</string>

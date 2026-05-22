@@ -23,15 +23,15 @@ class ActivateButtonUseCase @Inject constructor(
         actionExecutor: ActionExecutor,
         scanCoordinator: ScanCoordinator
     ) {
-        if (actionExecutor.isExecuting.value) {
-            Log.d("ActivateButtonUseCase", "Ignoring button click at index $index as ActionExecutor is currently executing.")
+        val page = currentPage ?: return
+        val buttonConfig = page.buttonConfigs.getOrNull(index) ?: return
+
+        if (actionExecutor.isExecuting.value && buttonConfig.id != actionExecutor.lastExecutedButtonId) {
+            Log.d("ActivateButtonUseCase", "Ignoring button click at index $index as ActionExecutor is currently executing a different button.")
             return
         }
 
         ttsHelper.stopNotificationTTS()
-        
-        val page = currentPage ?: return
-        val buttonConfig = page.buttonConfigs.getOrNull(index) ?: return
         
         scanCoordinator.setFocusedIndex(index)
         

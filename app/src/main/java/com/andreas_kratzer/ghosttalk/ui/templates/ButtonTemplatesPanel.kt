@@ -39,8 +39,8 @@ import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
 @Composable
 fun ButtonTemplatesPanel(
     viewModel: PageViewModel,
-    onEditTemplate: (ButtonTemplate) -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onEditTemplate: (ButtonTemplate) -> Unit = {}
 ) {
     val templates by viewModel.buttonTemplates.collectAsState()
     val dimensions = LocalDimensions.current
