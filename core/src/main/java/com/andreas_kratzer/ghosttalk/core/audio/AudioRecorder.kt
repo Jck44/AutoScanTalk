@@ -2,7 +2,6 @@ package com.andreas_kratzer.ghosttalk.core.audio
 
 import android.content.Context
 import android.media.MediaRecorder
-import android.os.Build
 import android.util.Log
 import java.io.File
 
@@ -21,12 +20,7 @@ class AudioRecorder(private val context: Context) {
             // Ensure parent directories exist
             outputFile.parentFile?.mkdirs()
 
-            val recorder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                MediaRecorder(context)
-            } else {
-                @Suppress("DEPRECATION")
-                MediaRecorder()
-            }
+            val recorder = MediaRecorder(context)
 
             val prefs = context.getSharedPreferences("ghosttalk_settings", Context.MODE_PRIVATE)
             val audioSource = prefs.getInt("recording_audio_source", MediaRecorder.AudioSource.VOICE_COMMUNICATION)
