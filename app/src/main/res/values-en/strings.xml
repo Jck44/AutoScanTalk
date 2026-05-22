@@ -249,7 +249,7 @@
     <string name="content_desc_collapse">Collapse</string>
     <string name="content_desc_expand">Expand</string>
     <string name="template_speaks_format">Speaks: \"%s\"</string>
-    <string name="device_control_time_preset_standard">Standard (\"It is ... o\'clock\")</string>
+    <string name="device_control_time_preset_standard">Standard (\"It is … o\'clock\")</string>
     <string name="device_control_time_preset_short">Short (\"14:30\")</string>
     <string name="device_control_time_preset_plus5">+5 min.</string>
     <string name="device_control_time_preset_minus5">-5 min.</string>

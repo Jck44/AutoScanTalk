@@ -37,7 +37,7 @@ class AudioRecorder(private val context: Context) {
                 setAudioEncoder(MediaRecorder.AudioEncoder.OPUS)
                 setOutputFile(outputFile.absolutePath)
                 setAudioChannels(1) // Mono for voice recording
-                setAudioSamplingRate(44100) // 44.1 kHz sampling rate
+                setAudioSamplingRate(48000) // 48 kHz sampling rate (native for Opus)
                 setAudioEncodingBitRate(64000) // 64 kbps is highly optimized for Opus speech
                 
                 prepare()
