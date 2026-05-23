@@ -15,6 +15,7 @@ import com.andreas_kratzer.ghosttalk.core.cloud.PhilipsHueManager
 import com.andreas_kratzer.ghosttalk.core.data.BookRepository
 import com.andreas_kratzer.ghosttalk.core.data.PageRepository
 import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository
+import com.andreas_kratzer.ghosttalk.core.data.UserModeSessionRepository
 import com.andreas_kratzer.ghosttalk.core.data.GetPagesUseCase
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.data.export.PageImportExportProvider
@@ -56,6 +57,7 @@ class SettingsViewModel @Inject constructor(
     val settingsRepository: SettingsRepository,
     private val bookRepository: BookRepository,
     private val buttonUsageRepository: ButtonUsageRepository,
+    private val userModeSessionRepository: UserModeSessionRepository,
     val securityManager: SecurityManager,
     getPagesUseCase: GetPagesUseCase,
     val ttsDelegate: TtsSettingsDelegate,
@@ -141,6 +143,18 @@ class SettingsViewModel @Inject constructor(
     val themeMode = settingsRepository.themeModeFlow
     val buttonHistory = buttonUsageRepository.buttonHistory
 
+    val userModeSessions: StateFlow<List<com.andreas_kratzer.ghosttalk.core.model.UserModeSession>> =
+        settingsRepository.activeBookIdFlow
+            .flatMapLatest { bookId ->
+                if (bookId == null) flowOf(emptyList())
+                else userModeSessionRepository.getSessionsForBook(bookId)
+            }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = emptyList()
+            )
+
     val keepScreenOnUserMode = settingsRepository.keepScreenOnUserModeFlow
     val userModeScreenBehavior = settingsRepository.userModeScreenBehaviorFlow
     val geminiTimeout = settingsRepository.geminiTimeoutFlow
@@ -174,6 +188,9 @@ class SettingsViewModel @Inject constructor(
 
     private val _showPrefetchDialog = MutableStateFlow(false)
     val showPrefetchDialog = _showPrefetchDialog.asStateFlow()
+
+    private val _showUserModeSessionsDialog = MutableStateFlow(false)
+    val showUserModeSessionsDialog = _showUserModeSessionsDialog.asStateFlow()
 
     private val _topButtonUsage = MutableStateFlow<List<com.andreas_kratzer.ghosttalk.core.model.GroupedButtonUsageStat>>(emptyList())
     val topButtonUsage = _topButtonUsage.asStateFlow()
@@ -572,6 +589,16 @@ class SettingsViewModel @Inject constructor(
 
     fun setShowPrefetchDialog(show: Boolean) {
         _showPrefetchDialog.value = show
+    }
+
+    fun setShowUserModeSessionsDialog(show: Boolean) {
+        _showUserModeSessionsDialog.value = show
+    }
+
+    fun clearUserModeSessions() {
+        viewModelScope.launch {
+            userModeSessionRepository.clearSessions(activeBookId)
+        }
     }
 
     fun refreshTopButtonUsage() {

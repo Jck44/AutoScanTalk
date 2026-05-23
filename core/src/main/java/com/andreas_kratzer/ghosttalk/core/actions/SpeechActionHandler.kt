@@ -11,7 +11,7 @@ import java.io.File
 import javax.inject.Inject
 
 class SpeechActionHandler @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val settings: SpeechSettings,
     private val ttsProxyLazy: dagger.Lazy<ActionTtsProxy>,
     private val audioPlayerLazy: dagger.Lazy<RoutedAudioPlayer>,

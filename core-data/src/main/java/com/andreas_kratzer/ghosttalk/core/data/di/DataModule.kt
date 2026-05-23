@@ -14,6 +14,7 @@ import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.core.data.PageRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.data.TemplateRepository
+import com.andreas_kratzer.ghosttalk.core.data.UserModeSessionRepository
 import com.andreas_kratzer.ghosttalk.core.data.ButtonTemplateRepository
 import com.andreas_kratzer.ghosttalk.core.data.WeatherRepository
 import com.andreas_kratzer.ghosttalk.core.data.export.PageImportExportProvider
@@ -26,6 +27,7 @@ import com.andreas_kratzer.ghosttalk.core.data.impl.PageRepositoryImpl
 import com.andreas_kratzer.ghosttalk.core.data.impl.SampleDataInitializer
 import com.andreas_kratzer.ghosttalk.core.data.impl.TemplateRepositoryImpl
 import com.andreas_kratzer.ghosttalk.core.data.impl.WeatherRepositoryImpl
+import com.andreas_kratzer.ghosttalk.core.data.impl.UserModeSessionRepositoryImpl
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsRepositoryImpl
 import com.andreas_kratzer.ghosttalk.core.database.AppDatabase
@@ -83,6 +85,10 @@ abstract class DataModule {
     @Binds
     @Singleton
     abstract fun bindAppStateRepository(impl: AppStateRepositoryImpl): AppStateRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindUserModeSessionRepository(impl: UserModeSessionRepositoryImpl): UserModeSessionRepository
 
     @Binds
     @Singleton

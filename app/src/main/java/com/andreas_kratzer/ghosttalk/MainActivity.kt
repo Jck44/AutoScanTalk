@@ -44,6 +44,7 @@ import com.andreas_kratzer.ghosttalk.core.UpdateManager
 import com.andreas_kratzer.ghosttalk.core.data.PageRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.data.impl.SampleDataInitializer
+import com.andreas_kratzer.ghosttalk.core.data.impl.UserModeSessionTracker
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkTheme
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalActiveBookId
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalCurrentPageId
@@ -66,6 +67,7 @@ class MainActivity : AppCompatActivity() {
     @Inject lateinit var sampleDataInitializer: SampleDataInitializer
     @Inject lateinit var keyEventCoordinator: KeyEventCoordinator
     @Inject lateinit var securityManager: SecurityManager
+    @Inject lateinit var userModeSessionTracker: UserModeSessionTracker
 
     private val bookViewModel: BookViewModel by viewModels()
     private val pageViewModel: PageViewModel by viewModels()
@@ -102,6 +104,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         
         com.andreas_kratzer.ghosttalk.core.tts.VoiceDebugger(applicationContext).start()
+        userModeSessionTracker.start()
         
         updateManager = UpdateManager(applicationContext)
         updateManager.checkForUpdates(updateLauncher)

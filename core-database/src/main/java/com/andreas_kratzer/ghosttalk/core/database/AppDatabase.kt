@@ -28,7 +28,7 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonPrimitive
 import java.util.UUID
 
-@Database(entities = [Page::class, Book::class, ButtonUsageStat::class, PageTemplate::class, ButtonEntity::class, ButtonUsageHistoryEntity::class, ButtonTemplateEntity::class], version = 18, exportSchema = false)
+@Database(entities = [Page::class, Book::class, ButtonUsageStat::class, PageTemplate::class, ButtonEntity::class, ButtonUsageHistoryEntity::class, ButtonTemplateEntity::class, UserModeSessionEntity::class], version = 19, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
 
@@ -38,6 +38,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun templateDao(): TemplateDao
     abstract fun buttonDao(): ButtonDao
     abstract fun buttonTemplateDao(): ButtonTemplateDao
+    abstract fun userModeSessionDao(): UserModeSessionDao
 
     companion object {
         @Volatile
@@ -62,6 +63,20 @@ abstract class AppDatabase : RoomDatabase() {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE `buttons` ADD COLUMN `spokenTextMode` TEXT NOT NULL DEFAULT 'TTS'")
                 db.execSQL("ALTER TABLE `buttons` ADD COLUMN `audioFileName` TEXT DEFAULT NULL")
+            }
+        }
+
+        val MIGRATION_18_19: Migration = object : Migration(18, 19) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `user_mode_sessions` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                        `bookId` TEXT NOT NULL, 
+                        `startTime` INTEGER NOT NULL, 
+                        `endTime` INTEGER NOT NULL
+                    )
+                """)
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_user_mode_sessions_bookId` ON `user_mode_sessions` (`bookId`)")
             }
         }
 
@@ -412,7 +427,8 @@ abstract class AppDatabase : RoomDatabase() {
                     MIGRATION_14_15,
                     MIGRATION_15_16,
                     MIGRATION_16_17,
-                    MIGRATION_17_18
+                    MIGRATION_17_18,
+                    MIGRATION_18_19
                 )
                 .build()
                 INSTANCE = instance

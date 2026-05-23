@@ -8,6 +8,7 @@ import com.andreas_kratzer.ghosttalk.core.database.ButtonUsageDao
 import com.andreas_kratzer.ghosttalk.core.database.PageDao
 import com.andreas_kratzer.ghosttalk.core.database.TemplateDao
 import com.andreas_kratzer.ghosttalk.core.database.ButtonTemplateDao
+import com.andreas_kratzer.ghosttalk.core.database.UserModeSessionDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -53,5 +54,10 @@ object DatabaseModule {
     @Provides
     fun provideButtonTemplateDao(database: AppDatabase): ButtonTemplateDao {
         return database.buttonTemplateDao()
+    }
+
+    @Provides
+    fun provideUserModeSessionDao(database: AppDatabase): UserModeSessionDao {
+        return database.userModeSessionDao()
     }
 }

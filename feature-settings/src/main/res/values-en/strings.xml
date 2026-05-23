@@ -301,4 +301,14 @@
     <string name="settings_notifications_loading_apps">Loading apps…</string>
     <string name="settings_notifications_select_all">Select all</string>
     <string name="settings_notifications_deselect_all">Deselect all</string>
+
+    <!-- User Mode Session Log Strings -->
+    <string name="settings_user_mode_sessions_title">User Mode Log</string>
+    <string name="settings_user_mode_sessions_empty">No User Mode sessions recorded yet.</string>
+    <string name="settings_user_mode_sessions_summary_total">Total usage time</string>
+    <string name="settings_user_mode_sessions_summary_count">Total sessions</string>
+    <string name="settings_user_mode_sessions_summary_avg">Ø Duration / Session</string>
+    <string name="settings_user_mode_sessions_clear">Clear Log</string>
+    <string name="settings_user_mode_sessions_clear_confirm">Do you really want to clear the entire User Mode session log for this book?</string>
+    <string name="settings_user_mode_sessions_duration_less_than_minute">&lt; 1 Min.</string>
 </resources>

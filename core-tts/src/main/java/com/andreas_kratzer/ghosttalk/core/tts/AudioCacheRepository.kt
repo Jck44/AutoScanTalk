@@ -19,7 +19,7 @@ data class CachedAudioItem(
 
 @Singleton
 class AudioCacheRepository @Inject constructor(
-    @ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context
 ) {
     suspend fun getCachedAudios(): List<CachedAudioItem> = withContext(Dispatchers.IO) {
         val cacheDir = File(context.filesDir, "elevenlabs")

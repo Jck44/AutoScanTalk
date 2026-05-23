@@ -54,6 +54,7 @@ import com.andreas_kratzer.ghosttalk.feature.settings.R
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.ActionHistoryDialog
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.BackupRestoreProgressDialog
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.UsageStatisticsDialog
+import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.UserModeSessionsDialog
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.CloudSettingsSection
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.ExperimentalSettingsSection
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.GenAiSettingsSection
@@ -188,6 +189,7 @@ fun SettingsScreen(
 
     val showActionHistory by viewModel.showActionHistoryDialog.collectAsState()
     val showUsageStats by viewModel.showUsageStatsDialog.collectAsState()
+    val showUserModeSessions by viewModel.showUserModeSessionsDialog.collectAsState()
 
     if (showActionHistory) {
         ActionHistoryDialog(
@@ -200,6 +202,13 @@ fun SettingsScreen(
         UsageStatisticsDialog(
             viewModel = viewModel,
             onDismiss = { viewModel.setShowUsageStatsDialog(false) }
+        )
+    }
+
+    if (showUserModeSessions) {
+        UserModeSessionsDialog(
+            viewModel = viewModel,
+            onDismiss = { viewModel.setShowUserModeSessionsDialog(false) }
         )
     }
 

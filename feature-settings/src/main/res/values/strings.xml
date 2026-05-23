@@ -302,4 +302,14 @@
     <string name="settings_notifications_loading_apps">Lade Apps…</string>
     <string name="settings_notifications_select_all">Alle auswählen</string>
     <string name="settings_notifications_deselect_all">Alle abwählen</string>
+
+    <!-- User Mode Session Log Strings -->
+    <string name="settings_user_mode_sessions_title">Benutzermodus-Protokoll</string>
+    <string name="settings_user_mode_sessions_empty">Noch keine Benutzermodus-Sitzungen aufgezeichnet.</string>
+    <string name="settings_user_mode_sessions_summary_total">Gesamte Nutzungszeit</string>
+    <string name="settings_user_mode_sessions_summary_count">Sitzungen gesamt</string>
+    <string name="settings_user_mode_sessions_summary_avg">Ø Dauer / Sitzung</string>
+    <string name="settings_user_mode_sessions_clear">Protokoll leeren</string>
+    <string name="settings_user_mode_sessions_clear_confirm">Möchtest du das gesamte Benutzermodus-Protokoll für dieses Buch wirklich löschen?</string>
+    <string name="settings_user_mode_sessions_duration_less_than_minute">&lt; 1 Min.</string>
 </resources>
