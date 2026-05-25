@@ -158,5 +158,6 @@ enum class DeviceActionType {
     READ_TIME,
     READ_DATE,
     READ_CALENDAR_ENTRIES,
-    TOGGLE_SCANNING
+    TOGGLE_SCANNING,
+    START_CALL
 }

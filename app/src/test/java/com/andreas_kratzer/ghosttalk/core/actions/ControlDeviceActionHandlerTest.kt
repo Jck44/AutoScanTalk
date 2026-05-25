@@ -28,6 +28,7 @@ class ControlDeviceActionHandlerTest {
     private lateinit var actionLogger: ActionLogger
     private lateinit var actionEventEmitter: ActionEventEmitter
     private lateinit var scannerController: ScannerController
+    private lateinit var callActionProxy: CallActionProxy
     private lateinit var handler: ControlDeviceActionHandler
 
     @Before
@@ -39,6 +40,7 @@ class ControlDeviceActionHandlerTest {
         actionLogger = mockk(relaxed = true)
         actionEventEmitter = mockk(relaxed = true)
         scannerController = mockk(relaxed = true)
+        callActionProxy = mockk(relaxed = true)
 
         every { context.getSystemService(Context.AUDIO_SERVICE) } returns audioManager
         
@@ -50,6 +52,9 @@ class ControlDeviceActionHandlerTest {
             },
             scanControllerLazy = object : dagger.Lazy<ScannerController> {
                 override fun get() = scannerController
+            },
+            callActionProxy = object : dagger.Lazy<CallActionProxy> {
+                override fun get() = callActionProxy
             },
             actionLogger = actionLogger,
             actionEventEmitter = actionEventEmitter
@@ -313,5 +318,39 @@ class ControlDeviceActionHandlerTest {
         val ssml = ssmlSlot.captured
         assert(ssml.contains("Meeting 1"))
         assert(ssml.contains("Meeting 2"))
+    }
+
+    @Test
+    fun `handle START_CALL with simulateCallsEnabled true calls simulateOutgoingCall`() {
+        val action = ControlDeviceButtonAction(
+            actionType = DeviceActionType.START_CALL,
+            contactName = "Test Name",
+            contactPhone = "123456"
+        )
+        val config = ButtonConfig(id = "b1", label = "Call", buttonAction = action, auditoryCue = null)
+
+        every { settings.simulateCallsEnabled } returns true
+
+        handler.handle(config, action, 1) {}
+
+        verify { callActionProxy.simulateOutgoingCall("Test Name", "123456") }
+        verify { actionLogger.log("Anruf simulieren an Test Name (123456)", action, "Call") }
+    }
+
+    @Test
+    fun `handle START_CALL with simulateCallsEnabled false calls startCall`() {
+        val action = ControlDeviceButtonAction(
+            actionType = DeviceActionType.START_CALL,
+            contactName = "Test Name",
+            contactPhone = "123456"
+        )
+        val config = ButtonConfig(id = "b1", label = "Call", buttonAction = action, auditoryCue = null)
+
+        every { settings.simulateCallsEnabled } returns false
+
+        handler.handle(config, action, 1) {}
+
+        verify { callActionProxy.startCall("Test Name", "123456") }
+        verify { actionLogger.log("Anruf starten an Test Name (123456)", action, "Call") }
     }
 }

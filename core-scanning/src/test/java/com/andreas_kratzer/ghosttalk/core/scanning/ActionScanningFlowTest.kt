@@ -1,5 +1,6 @@
 package com.andreas_kratzer.ghosttalk.core.scanning
 
+import com.andreas_kratzer.ghosttalk.core.actions.CallActionProxy
 import com.andreas_kratzer.ghosttalk.core.actions.ScannerActionProvider
 import com.andreas_kratzer.ghosttalk.core.ai.domain.CheckForPredictorUseCase
 import com.andreas_kratzer.ghosttalk.core.model.Page
@@ -27,6 +28,7 @@ class ActionScanningFlowTest {
     private val actionProvider = mockk<ScannerActionProvider>(relaxed = true)
     private val checkForPredictorUseCase = mockk<CheckForPredictorUseCase>(relaxed = true)
     private val ttsHelper = mockk<TextToSpeechHelper>(relaxed = true)
+    private val callActionProxy = mockk<CallActionProxy>(relaxed = true)
 
     private val isExecuting = MutableStateFlow(false)
     private val currentPage = MutableStateFlow<Page?>(null)
@@ -48,6 +50,7 @@ class ActionScanningFlowTest {
         every { scannerEngine.focusedRowIndex } returns MutableStateFlow(null)
         every { scannerEngine.isScanning } returns MutableStateFlow(false)
         every { scannerEngine.onCycleCompleted } returns MutableSharedFlow<Unit>()
+        every { callActionProxy.isInCall } returns MutableStateFlow(false)
     }
 
     @Test
@@ -60,7 +63,8 @@ class ActionScanningFlowTest {
             featureSettings = featureSettings,
             actionProvider = actionProvider,
             checkForPredictorUseCase = checkForPredictorUseCase,
-            ttsHelper = ttsHelper
+            ttsHelper = ttsHelper,
+            callActionProxy = callActionProxy
         )
         
         val page = Page(id = "p1", bookId = "b1", name = "Test", rows = 1, columns = 1, buttonConfigs = emptyList())

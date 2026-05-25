@@ -94,7 +94,17 @@ class SettingsMapper @Inject constructor(
             elevenLabsTtsLanguage = settingsRepository.elevenLabsTtsLanguage,
             elevenLabsTtsVoiceName = settingsRepository.elevenLabsTtsVoiceName,
             elevenLabsStability = settingsRepository.elevenLabsStability,
-            elevenLabsSimilarityBoost = settingsRepository.elevenLabsSimilarityBoost
+            elevenLabsSimilarityBoost = settingsRepository.elevenLabsSimilarityBoost,
+            maxCallDurationSeconds = settingsRepository.maxCallDurationSeconds,
+            callDurationFeedbackIntervalSeconds = settingsRepository.callDurationFeedbackIntervalSeconds,
+            outgoingCallIntro = settingsRepository.outgoingCallIntro,
+            incomingCallIntro = settingsRepository.incomingCallIntro,
+            incomingCallScanLimitUserModeActive = settingsRepository.incomingCallScanLimitUserModeActive,
+            incomingCallAutoActionUserModeActive = settingsRepository.incomingCallAutoActionUserModeActive,
+            incomingCallDelayUserModeInactive = settingsRepository.incomingCallDelayUserModeInactive,
+            incomingCallAutoActionUserModeInactive = settingsRepository.incomingCallAutoActionUserModeInactive,
+            callAnnouncementAsCue = settingsRepository.callAnnouncementAsCue,
+            autoEnableSpeakerphone = settingsRepository.autoEnableSpeakerphone
         )
     }
 
@@ -151,6 +161,17 @@ class SettingsMapper @Inject constructor(
         data.elevenLabsTtsVoiceName?.let { settingsRepository.elevenLabsTtsVoiceName = it }
         data.elevenLabsStability?.let { settingsRepository.elevenLabsStability = it }
         data.elevenLabsSimilarityBoost?.let { settingsRepository.elevenLabsSimilarityBoost = it }
+        
+        data.maxCallDurationSeconds?.let { settingsRepository.maxCallDurationSeconds = it }
+        data.callDurationFeedbackIntervalSeconds?.let { settingsRepository.callDurationFeedbackIntervalSeconds = it }
+        data.outgoingCallIntro?.let { settingsRepository.outgoingCallIntro = it }
+        data.incomingCallIntro?.let { settingsRepository.incomingCallIntro = it }
+        data.incomingCallScanLimitUserModeActive?.let { settingsRepository.incomingCallScanLimitUserModeActive = it }
+        data.incomingCallAutoActionUserModeActive?.let { settingsRepository.incomingCallAutoActionUserModeActive = it }
+        data.incomingCallDelayUserModeInactive?.let { settingsRepository.incomingCallDelayUserModeInactive = it }
+        data.incomingCallAutoActionUserModeInactive?.let { settingsRepository.incomingCallAutoActionUserModeInactive = it }
+        data.callAnnouncementAsCue?.let { settingsRepository.callAnnouncementAsCue = it }
+        data.autoEnableSpeakerphone?.let { settingsRepository.autoEnableSpeakerphone = it }
         
         data.elevenLabsApiKey?.let { encryptedKey ->
             val userEmail = authManager.userEmail.value

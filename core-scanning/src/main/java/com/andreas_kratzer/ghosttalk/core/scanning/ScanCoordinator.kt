@@ -1,5 +1,6 @@
 package com.andreas_kratzer.ghosttalk.core.scanning
 
+import com.andreas_kratzer.ghosttalk.core.actions.CallActionProxy
 import com.andreas_kratzer.ghosttalk.core.actions.ScannerActionProvider
 import com.andreas_kratzer.ghosttalk.core.actions.ScannerController
 import com.andreas_kratzer.ghosttalk.core.ai.domain.CheckForPredictorUseCase
@@ -25,7 +26,8 @@ class ScanCoordinator @Inject constructor(
     private val featureSettings: FeatureSettings,
     private val actionProvider: ScannerActionProvider,
     private val checkForPredictorUseCase: CheckForPredictorUseCase,
-    private val ttsHelper: TextToSpeechHelper
+    private val ttsHelper: TextToSpeechHelper,
+    private val callActionProxy: CallActionProxy
 ) : ScannerController {
     private var currentPage: StateFlow<Page?>? = null
     private var isUserModeActive: StateFlow<Boolean>? = null
@@ -40,7 +42,8 @@ class ScanCoordinator @Inject constructor(
         val rawPage: Page?,
         val isActive: Boolean,
         val isLoading: Boolean,
-        val predictions: List<String>?
+        val predictions: List<String>?,
+        val isInCall: Boolean
     )
 
     val focusedButtonIndex: StateFlow<Int?> = scannerEngine.focusedButtonIndex
@@ -100,7 +103,8 @@ class ScanCoordinator @Inject constructor(
                 resolvedPage,
                 isSmartPredictionLoading,
                 smartPredictions,
-                isPausedManually
+                isPausedManually,
+                callActionProxy.isInCall
             ) { array ->
                 Data(
                     isExecuting = array[1] as Boolean,
@@ -108,16 +112,20 @@ class ScanCoordinator @Inject constructor(
                     rawPage = array[2] as? Page,
                     isActive = array[0] as Boolean,
                     isLoading = array[4] as Boolean,
-                    predictions = (array[5] as? List<*>)?.filterIsInstance<String>()
+                    predictions = (array[5] as? List<*>)?.filterIsInstance<String>(),
+                    isInCall = array[7] as Boolean
                 )
             }.collect { data ->
-                if (!data.isActive || _isPausedManually.value) {
+                if (!data.isActive || _isPausedManually.value || data.isInCall) {
                     if (!data.isActive) {
                         debugLog("User mode deactivated. Stopping scan.")
                         stopScanning()
                         _isStoppedDueToLimit.value = false
                         _currentCycleCount.value = 0
                         _isPausedManually.value = false
+                    } else if (data.isInCall) {
+                        debugLog("In a call. Stopping scan.")
+                        stopScanningTemporarily()
                     } else {
                         debugLog("Scanning is manually paused.")
                         stopScanningTemporarily()
@@ -189,6 +197,7 @@ class ScanCoordinator @Inject constructor(
         if (_isStoppedDueToLimit.value) return
         if (_isPausedManually.value) return
         if (actionProvider.isExecuting.value) return
+        if (callActionProxy.isInCall.value) return
         
         val page = resolvedPage?.value ?: return
         

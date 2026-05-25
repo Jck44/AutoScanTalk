@@ -93,6 +93,7 @@ private fun getDeviceActionIcon(type: DeviceActionType): ImageVector {
         DeviceActionType.READ_TIME -> GhostTalkIcons.AccessTime
         DeviceActionType.READ_CALENDAR_ENTRIES -> GhostTalkIcons.DateRange
         DeviceActionType.TOGGLE_SCANNING -> Icons.Default.Refresh
+        DeviceActionType.START_CALL -> Icons.Default.Phone
     }
 }
 
@@ -146,7 +147,8 @@ fun DeviceActionFields(
         DeviceActionType.READ_DATE to stringResource(R.string.button_device_control_date),
         DeviceActionType.READ_TIME to stringResource(R.string.button_device_control_time),
         DeviceActionType.READ_CALENDAR_ENTRIES to stringResource(R.string.button_device_control_calendar),
-        DeviceActionType.TOGGLE_SCANNING to stringResource(R.string.button_device_control_toggle_scanning)
+        DeviceActionType.TOGGLE_SCANNING to stringResource(R.string.button_device_control_toggle_scanning),
+        DeviceActionType.START_CALL to stringResource(R.string.action_start_call)
     )
 
     val currentLabel = types.find { it.first == selectedType }?.second ?: types.first().second
@@ -213,6 +215,13 @@ fun DeviceActionFields(
                                 )
                             }
 
+                            // Permission check for Call
+                            if (type == DeviceActionType.START_CALL) {
+                                permissionLauncher.launch(
+                                    arrayOf(Manifest.permission.CALL_PHONE, Manifest.permission.READ_CONTACTS)
+                                )
+                            }
+
                             // Permission check for Calendar
                             if (type == DeviceActionType.READ_CALENDAR_ENTRIES) {
                                 permissionLauncher.launch(
@@ -263,6 +272,15 @@ fun DeviceActionFields(
                 onContactSelected = onContactSelected,
                 messageText = messageText ?: "",
                 onMessageTextChange = onMessageTextChange,
+                onAutoSave = onAutoSave
+            )
+        }
+
+        // Call parameters
+        if (selectedType == DeviceActionType.START_CALL) {
+            CallFields(
+                contactName = contactName ?: stringResource(R.string.contact_picker_title),
+                onContactSelected = onContactSelected,
                 onAutoSave = onAutoSave
             )
         }
@@ -641,6 +659,89 @@ fun MessagingFields(
             },
             supportingText = {
                 Text(stringResource(R.string.message_emojis_hint))
+            }
+        )
+    }
+}
+
+@Composable
+fun CallFields(
+    contactName: String,
+    onContactSelected: (String, String) -> Unit,
+    onAutoSave: () -> Unit = {}
+) {
+    val dimensions = LocalDimensions.current
+    val context = LocalContext.current
+
+    val contactLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickContact()
+    ) { uri ->
+        uri?.let {
+            val projection = arrayOf(
+                ContactsContract.Contacts._ID,
+                ContactsContract.Contacts.DISPLAY_NAME_PRIMARY
+            )
+            context.contentResolver.query(it, projection, null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val id = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts._ID))
+                    val name = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME_PRIMARY))
+                    
+                    // Now get the first phone number for this contact
+                    context.contentResolver.query(
+                        ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                        arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER),
+                        "${ContactsContract.CommonDataKinds.Phone.CONTACT_ID} = ?",
+                        arrayOf(id),
+                        null
+                    )?.use { phoneCursor ->
+                        if (phoneCursor.moveToFirst()) {
+                            val phone = phoneCursor.getString(phoneCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER))
+                            onContactSelected(name, phone)
+                        } else {
+                            onContactSelected(name, "")
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    val callPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { _ -> }
+
+    // Proactive check
+    fun checkCallPermission() {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
+            callPermissionLauncher.launch(Manifest.permission.CALL_PHONE)
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        checkCallPermission()
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)) {
+        // Contact Selection
+        OutlinedTextField(
+            value = contactName,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(stringResource(R.string.contact_picker_title)) },
+            shape = MaterialTheme.shapes.large,
+            modifier = Modifier.fillMaxWidth(),
+            trailingIcon = {
+                IconButton(
+                    onClick = { 
+                        checkCallPermission()
+                        contactLauncher.launch(null)
+                    }
+                ) {
+                    Icon(
+                        imageVector = com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.Edit,
+                        contentDescription = stringResource(R.string.contact_picker_title)
+                    )
+                }
             }
         )
     }

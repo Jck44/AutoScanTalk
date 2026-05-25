@@ -2,6 +2,7 @@ package com.andreas_kratzer.ghosttalk.core.scanning
 
 import com.andreas_kratzer.ghosttalk.core.actions.ActionCoordinator
 import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
+import com.andreas_kratzer.ghosttalk.core.actions.CallActionProxy
 import com.andreas_kratzer.ghosttalk.core.ai.domain.CheckForPredictorUseCase
 import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
@@ -50,6 +51,7 @@ class ScanningIntegrationTest {
     private val ttsHelper = mockk<TextToSpeechHelper>(relaxed = true)
     private val checkForPredictorUseCase = mockk<CheckForPredictorUseCase>(relaxed = true)
     private val featureGuard = mockk<FeatureGuardProxy>(relaxed = true)
+    private val callActionProxy = mockk<CallActionProxy>(relaxed = true)
 
     @Before
     fun setup() {
@@ -65,6 +67,7 @@ class ScanningIntegrationTest {
         every { scanningSettings.autoStartScanning } returns true
         every { scanningSettings.resumeScanningFromStart } returns true
         every { scanningSettings.defaultScanPattern } returns "linear"
+        every { callActionProxy.isInCall } returns MutableStateFlow(false)
         
         componentJob = SupervisorJob()
         componentScope = CoroutineScope(testDispatcher + componentJob)
@@ -93,7 +96,8 @@ class ScanningIntegrationTest {
             featureSettings = featureSettings,
             actionProvider = actionExecutor,
             checkForPredictorUseCase = checkForPredictorUseCase,
-            ttsHelper = ttsHelper
+            ttsHelper = ttsHelper,
+            callActionProxy = callActionProxy
         )
     }
 

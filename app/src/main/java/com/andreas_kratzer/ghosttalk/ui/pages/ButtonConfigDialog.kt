@@ -386,6 +386,22 @@ fun ButtonConfigDialog(
         }
     }
 
+    val saveWithAction: (ButtonAction) -> Unit = { action ->
+        if (label.isNotBlank()) {
+            val config = buttonConfig.copy(
+                label = label,
+                spokenText = if (spokenText.isNotBlank()) spokenText else null,
+                spokenTextMode = spokenTextMode,
+                audioFileName = audioFileNameState,
+                auditoryCue = if (auditoryCueText.isNotBlank()) AuditoryCue.TextToSpeechCue(auditoryCueText) else null,
+                isActive = isActive,
+                playActionAsAuditoryCue = playActionAsAuditoryCue,
+                buttonAction = action
+            )
+            onSave(config)
+        }
+    }
+
     fun startVoiceRecording() {
         try {
             val dir = context.filesDir.resolve("audio_recordings")
@@ -1027,6 +1043,22 @@ fun ButtonConfigDialog(
                                 onContactNameChange = { contactName = it },
                                 contactPhone = contactPhone,
                                 onContactPhoneChange = { contactPhone = it },
+                                onContactSelected = { name, phone ->
+                                    contactName = name
+                                    contactPhone = phone
+                                    val updatedAction = ControlDeviceButtonAction(
+                                        actionType = deviceActionType,
+                                        volumeValue = volumeValue,
+                                        contactName = name,
+                                        contactPhone = phone,
+                                        messageText = messageText,
+                                        includeWeekday = includeWeekday,
+                                        prefixText = prefixText.takeIf { it.isNotBlank() },
+                                        suffixText = suffixText.takeIf { it.isNotBlank() },
+                                        offsetValue = offsetValue.toIntOrNull() ?: 0
+                                    )
+                                    saveWithAction(updatedAction)
+                                },
                                 messageText = messageText,
                                 onMessageTextChange = { messageText = it },
                                 includeWeekday = includeWeekday,
@@ -1088,6 +1120,7 @@ fun ButtonConfigDialog(
                                 prefixText = prefixText,
                                 suffixText = suffixText,
                                 contactName = contactName,
+                                contactPhone = contactPhone,
                                 messageText = messageText,
                                 smartHomeDeviceName = smartHomeDeviceName,
                                 playActionAsAuditoryCue = playActionAsAuditoryCue,
@@ -1186,6 +1219,7 @@ private fun PreviewTabContent(
     prefixText: String,
     suffixText: String,
     contactName: String,
+    contactPhone: String,
     messageText: String,
     smartHomeDeviceName: String,
     playActionAsAuditoryCue: Boolean,
@@ -1208,7 +1242,7 @@ private fun PreviewTabContent(
     val speakDescription = remember(
         selectedActionType, spokenText, label, geminiPrompt, targetPageId,
         deviceActionType, includeWeekday, offsetValue, prefixText, suffixText,
-        contactName, messageText, smartHomeDeviceName
+        contactName, contactPhone, messageText, smartHomeDeviceName
     ) {
         when {
             isSpeech -> {
@@ -1238,6 +1272,7 @@ private fun PreviewTabContent(
                             DeviceActionType.READ_BATTERY -> "Batteriestand vorlesen"
                             DeviceActionType.READ_CALENDAR_ENTRIES -> "Kalender vorlesen"
                             DeviceActionType.SEND_MESSAGE -> "SMS senden"
+                            DeviceActionType.START_CALL -> "Anruf starten"
                             DeviceActionType.VOLUME_MEDIA -> "Medien-Lautstärke ändern"
                             DeviceActionType.VOLUME_NOTIFICATION -> "Benachrichtigungs-Lautstärke ändern"
                             DeviceActionType.VOLUME_ALARM -> "Wecker-Lautstärke ändern"
@@ -1282,6 +1317,8 @@ private fun PreviewTabContent(
                                 "\n\nGesprochener Text:\n\"Batteriestand ist bei 85 Prozent\""
                             } else if (deviceActionType == DeviceActionType.SEND_MESSAGE) {
                                 "\n\nSendet SMS an $contactName:\n\"$messageText\""
+                            } else if (deviceActionType == DeviceActionType.START_CALL) {
+                                "\n\nRuft $contactName an ($contactPhone)"
                             } else {
                                 ""
                             }

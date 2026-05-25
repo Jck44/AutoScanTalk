@@ -7,6 +7,7 @@ import com.andreas_kratzer.ghosttalk.core.data.BookRepository
 import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.core.data.GetPagesUseCase
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.data.UserModeSessionRepository
 import com.andreas_kratzer.ghosttalk.core.data.impl.PageImportExportManager
 import com.andreas_kratzer.ghosttalk.feature.settings.domain.DeleteBookUseCase
 import com.andreas_kratzer.ghosttalk.feature.settings.domain.UpdateActionLogLimitUseCase
@@ -43,6 +44,7 @@ class SettingsViewModelTest {
     private lateinit var settingsRepository: SettingsRepository
     private lateinit var bookRepository: BookRepository
     private lateinit var buttonUsageRepository: ButtonUsageRepository
+    private lateinit var userModeSessionRepository: UserModeSessionRepository
     private lateinit var securityManager: SecurityManager
     private lateinit var getPagesUseCase: GetPagesUseCase
     
@@ -69,6 +71,7 @@ class SettingsViewModelTest {
         settingsRepository = mockk(relaxed = true)
         bookRepository = mockk(relaxed = true)
         buttonUsageRepository = mockk(relaxed = true)
+        userModeSessionRepository = mockk(relaxed = true)
         securityManager = mockk(relaxed = true)
         getPagesUseCase = mockk(relaxed = true)
         
@@ -101,6 +104,7 @@ class SettingsViewModelTest {
             settingsRepository = settingsRepository,
             bookRepository = bookRepository,
             buttonUsageRepository = buttonUsageRepository,
+            userModeSessionRepository = userModeSessionRepository,
             securityManager = securityManager,
             getPagesUseCase = getPagesUseCase,
             ttsDelegate = ttsDelegate,
@@ -116,7 +120,8 @@ class SettingsViewModelTest {
             ttsHelper = ttsHelper,
             audioCacheRepository = audioCacheRepository,
             pageRepository = mockk(relaxed = true),
-            syncLogProvider = mockk(relaxed = true)
+            syncLogProvider = mockk(relaxed = true),
+            callActionProxy = dagger.Lazy { mockk(relaxed = true) }
         )
     }
 
@@ -193,5 +198,11 @@ class SettingsViewModelTest {
     @Test
     fun `resetMonitoredNotificationAppsToMessagingDefaults does not crash under test context`() = runTest {
         viewModel.resetMonitoredNotificationAppsToMessagingDefaults()
+    }
+
+    @Test
+    fun `setCallDurationFeedbackIntervalSeconds updates repository`() {
+        viewModel.setCallDurationFeedbackIntervalSeconds(30)
+        verify { settingsRepository.callDurationFeedbackIntervalSeconds = 30 }
     }
 }

@@ -16,8 +16,8 @@ android {
         applicationId = "com.andreas_kratzer.ghosttalk"
         minSdk = 35
         targetSdk = 37
-        versionCode = 72
-        versionName = "1.1.2"
+        versionCode = 73
+        versionName = "1.2.0"
 
         testInstrumentationRunner = "com.andreas_kratzer.ghosttalk.HiltTestRunner"
         
@@ -122,6 +122,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.compose.material.icons.core)
+    implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.ui.text.google.fonts)
     
     testImplementation(libs.junit)

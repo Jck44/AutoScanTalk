@@ -312,4 +312,32 @@
     <string name="settings_user_mode_sessions_clear">Protokoll leeren</string>
     <string name="settings_user_mode_sessions_clear_confirm">Möchtest du das gesamte Benutzermodus-Protokoll für dieses Buch wirklich löschen?</string>
     <string name="settings_user_mode_sessions_duration_less_than_minute">&lt; 1 Min.</string>
+    <string name="settings_user_mode_sessions_summary_avg_30_days">Ø Verwendung / Tag (letzte 30 Tage)</string>
+
+    <!-- Call Settings -->
+    <string name="settings_category_call">Telefonie-Einstellungen</string>
+    <string name="settings_max_call_duration">Maximale Anrufdauer</string>
+    <string name="settings_call_duration_feedback_interval">Audio-Feedback zur Anrufdauer</string>
+    <string name="settings_call_duration_feedback_off">Aus (Kein Feedback)</string>
+    <string name="settings_call_duration_feedback_15s">Alle 15 Sekunden</string>
+    <string name="settings_call_duration_feedback_30s">Alle 30 Sekunden</string>
+    <string name="settings_call_duration_feedback_1m">Jede Minute</string>
+    <string name="settings_call_duration_feedback_2m">Alle 2 Minuten</string>
+    <string name="settings_call_duration_feedback_5m">Alle 5 Minuten</string>
+    <string name="settings_call_intro_outgoing">Einleitungstext (ausgehend)</string>
+    <string name="settings_call_intro_incoming">Einleitungstext (eingehend)</string>
+    <string name="settings_call_announcement_as_cue">Anruferansage als Audio-Hinweis ausgeben</string>
+    <string name="settings_call_auto_enable_speakerphone">Freisprechfunktion automatisch aktivieren</string>
+    <string name="settings_call_behavior_active">Automatisches Anrufverhalten (Benutzermodus aktiv)</string>
+    <string name="settings_call_scan_limit">Scanning-Durchläufe</string>
+    <string name="settings_call_auto_action">Aktion nach Limit</string>
+    <string name="settings_call_behavior_inactive">Automatisches Anrufverhalten (Benutzermodus inaktiv)</string>
+    <string name="settings_call_delay">Wartezeit (Sekunden)</string>
+    <string name="settings_call_auto_action_inactive">Aktion nach Wartezeit</string>
+    <string name="settings_call_action_none">Keine Aktion</string>
+    <string name="settings_call_action_answer">Annehmen</string>
+    <string name="settings_call_action_reject">Ablehnen</string>
+    <string name="settings_dialer_register_title">Als Standard-Telefon-App festlegen</string>
+    <string name="settings_dialer_register_desc">Registriert GhostTalk im System als Standard-Telefon-App (Dialer), um Anrufe direkt annehmen und steuern zu können.</string>
+    <string name="settings_dialer_registered">Bereits als Standard-Telefon-App registriert</string>
 </resources>

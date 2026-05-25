@@ -41,6 +41,7 @@ fun ActionConfigFields(
     onContactPhoneChange: (String) -> Unit,
     messageText: String,
     onMessageTextChange: (String) -> Unit,
+    onContactSelected: (String, String) -> Unit = { _, _ -> },
     // New fields for Date/Time
     includeWeekday: Boolean = false,
     onIncludeWeekdayChange: (Boolean) -> Unit = {},
@@ -157,10 +158,7 @@ fun ActionConfigFields(
                     onVolumeValueChange = onVolumeValueChange,
                     contactName = contactName,
                     contactPhone = contactPhone,
-                    onContactSelected = { name, phone ->
-                        onContactNameChange(name)
-                        onContactPhoneChange(phone)
-                    },
+                    onContactSelected = onContactSelected,
                     messageText = messageText,
                     onMessageTextChange = onMessageTextChange,
                     includeWeekday = includeWeekday,

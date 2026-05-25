@@ -21,6 +21,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -55,6 +56,7 @@ import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.ActionHistoryDi
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.BackupRestoreProgressDialog
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.UsageStatisticsDialog
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.UserModeSessionsDialog
+import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.CallSettingsSection
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.CloudSettingsSection
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.ExperimentalSettingsSection
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.GenAiSettingsSection
@@ -78,6 +80,7 @@ enum class SettingsSection(private val titleRes: Int, val icon: ImageVector, val
     VOICE(R.string.settings_category_voice, GhostTalkIcons.RecordVoiceOver, isGlobal = false, isScoped = true),
     SCANNING(R.string.settings_category_scanning, GhostTalkIcons.SettingsAccessibility, isGlobal = false, isScoped = true),
     SECURITY(R.string.settings_category_security, GhostTalkIcons.Security, isGlobal = true, isScoped = false),
+    TELEPHONY(R.string.settings_category_call, Icons.Default.Phone, isGlobal = true, isScoped = false),
     CLOUD(R.string.settings_category_cloud, GhostTalkIcons.Cloud, isGlobal = true, isScoped = true),
     SMART_HOME(R.string.settings_category_smart_home, Icons.Default.Home, isGlobal = true, isScoped = false),
     GEMINI(R.string.settings_category_gemini, GhostTalkIcons.AutoAwesome, isGlobal = false, isScoped = true),
@@ -517,6 +520,9 @@ fun SubmenuContent(
         }
         SettingsSection.NOTIFICATIONS -> {
             PermissionsSettingsSection(viewModel)
+        }
+        SettingsSection.TELEPHONY -> {
+            CallSettingsSection(viewModel)
         }
         SettingsSection.ADVANCED -> {
             if (isGlobal) {

@@ -187,6 +187,7 @@
     <string name="time_format_pattern">h:mm a</string>
     <string name="contact_picker_title">Select Contact</string>
     <string name="action_send_message">Send Message</string>
+    <string name="action_start_call">Start phone call</string>
     <string name="volume_media">Media Volume</string>
     <string name="volume_notification">Notification Volume</string>
     <string name="volume_alarm">Alarm Volume</string>
@@ -286,5 +287,15 @@
     <string name="device_control_date_prefix_only_date">Today is</string>
     <string name="device_control_date_prefix_tomorrow">Tomorrow is</string>
     <string name="device_control_date_prefix_yesterday">Yesterday was</string>
+
+    <!-- Call Screen -->
+    <string name="call_incoming_title">Incoming Call</string>
+    <string name="call_outgoing_title">Outgoing Call</string>
+    <string name="call_active_title">Active Call</string>
+    <string name="call_answer">Answer</string>
+    <string name="call_reject">Reject</string>
+    <string name="call_hang_up">Hang Up</string>
+    <string name="call_unknown_caller">Unknown Caller</string>
+    <string name="call_connecting">Connecting…</string>
 </resources>
 

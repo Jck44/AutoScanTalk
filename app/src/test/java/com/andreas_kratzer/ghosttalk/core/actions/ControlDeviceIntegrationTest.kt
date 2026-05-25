@@ -42,6 +42,9 @@ class ControlDeviceIntegrationTest {
                 scanControllerLazy = object : dagger.Lazy<ScannerController> {
                     override fun get() = mockk<ScannerController>(relaxed = true)
                 },
+                callActionProxy = object : dagger.Lazy<CallActionProxy> {
+                    override fun get() = mockk<CallActionProxy>(relaxed = true)
+                },
                 actionLogger = actionCoordinator,
                 actionEventEmitter = actionCoordinator
             )

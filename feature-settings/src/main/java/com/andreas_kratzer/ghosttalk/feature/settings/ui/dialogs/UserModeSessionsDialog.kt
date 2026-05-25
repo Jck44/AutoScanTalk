@@ -54,6 +54,16 @@ fun UserModeSessionsDialog(
     val totalDuration = remember(sessions) { sessions.sumOf { it.endTime - it.startTime } }
     val sessionCount = sessions.size
     val avgDuration = remember(sessions) { if (sessionCount > 0) totalDuration / sessionCount else 0L }
+    val avgUsagePerDayLast30Days = remember(sessions) {
+        val now = System.currentTimeMillis()
+        val thirtyDaysAgo = now - 30L * 24 * 60 * 60 * 1000
+        val totalDurationInLast30Days = sessions.sumOf { session ->
+            val overlapStart = maxOf(session.startTime, thirtyDaysAgo)
+            val overlapEnd = session.endTime
+            if (overlapEnd > overlapStart) overlapEnd - overlapStart else 0L
+        }
+        totalDurationInLast30Days / 30
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -80,31 +90,51 @@ fun UserModeSessionsDialog(
                     .fillMaxWidth()
                     .height(450.dp)
             ) {
-                // Statistics Summary Row
-                Row(
+                // Statistics Summary Container
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(MaterialTheme.shapes.medium)
                         .background(MaterialTheme.colorScheme.surfaceContainerLow)
                         .padding(dimensions.paddingMedium),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)
                 ) {
-                    SummaryStatItem(
-                        label = stringResource(R.string.settings_user_mode_sessions_summary_total),
-                        value = formatDuration(totalDuration),
-                        modifier = Modifier.weight(1f)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        SummaryStatItem(
+                            label = stringResource(R.string.settings_user_mode_sessions_summary_total),
+                            value = formatDuration(totalDuration),
+                            modifier = Modifier.weight(1f)
+                        )
+                        SummaryStatItem(
+                            label = stringResource(R.string.settings_user_mode_sessions_summary_count),
+                            value = "$sessionCount",
+                            modifier = Modifier.weight(0.7f)
+                        )
+                        SummaryStatItem(
+                            label = stringResource(R.string.settings_user_mode_sessions_summary_avg),
+                            value = formatDuration(avgDuration),
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    HorizontalDivider(
+                        thickness = 0.5.dp,
+                        color = MaterialTheme.colorScheme.outlineVariant
                     )
-                    SummaryStatItem(
-                        label = stringResource(R.string.settings_user_mode_sessions_summary_count),
-                        value = "$sessionCount",
-                        modifier = Modifier.weight(0.7f)
-                    )
-                    SummaryStatItem(
-                        label = stringResource(R.string.settings_user_mode_sessions_summary_avg),
-                        value = formatDuration(avgDuration),
-                        modifier = Modifier.weight(1f)
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        SummaryStatItem(
+                            label = stringResource(R.string.settings_user_mode_sessions_summary_avg_30_days),
+                            value = formatDuration(avgUsagePerDayLast30Days),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 }
 
                 HorizontalDivider(

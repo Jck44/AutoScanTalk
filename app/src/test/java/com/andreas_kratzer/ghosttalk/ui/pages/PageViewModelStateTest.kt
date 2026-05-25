@@ -46,8 +46,24 @@ class PageViewModelStateTest {
         Dispatchers.setMain(testDispatcher)
         
         pageManagementDelegate = mockk(relaxed = true)
+        every { pageManagementDelegate.activeBookId } returns MutableStateFlow<String?>("b1")
+        every { pageManagementDelegate.currentPageId } returns MutableStateFlow<String?>("p1")
+        every { pageManagementDelegate.searchQuery } returns MutableStateFlow("")
+        every { pageManagementDelegate.filteredPages } returns MutableStateFlow<List<Page>>(emptyList())
+        every { pageManagementDelegate.unfilteredPages } returns MutableStateFlow<List<Page>>(emptyList())
+        every { pageManagementDelegate.currentPage } returns MutableStateFlow<Page?>(null)
+        every { pageManagementDelegate.templates } returns MutableStateFlow<List<com.andreas_kratzer.ghosttalk.core.model.PageTemplate>>(emptyList())
+        every { pageManagementDelegate.activeTargetPageIds } returns MutableStateFlow<Set<String>>(emptySet())
+        every { pageManagementDelegate.allPagesFlow } returns MutableStateFlow<List<Page>>(emptyList())
+
         interactionDelegate = mockk(relaxed = true)
+        every { interactionDelegate.isUserModeActive } returns MutableStateFlow(true)
+        
         scanCoordinator = mockk(relaxed = true)
+        every { scanCoordinator.focusedButtonIndex } returns MutableStateFlow<Int?>(null)
+        every { scanCoordinator.focusedRowIndex } returns MutableStateFlow<Int?>(null)
+        every { scanCoordinator.isStoppedDueToLimit } returns MutableStateFlow(false)
+        every { scanCoordinator.isScanning } returns MutableStateFlow(false)
         every { scanCoordinator.currentCycleCount } returns MutableStateFlow(0)
     }
 
@@ -71,6 +87,14 @@ class PageViewModelStateTest {
         
         coEvery { pageManagementDelegate.getPageById(preservedId) } returns mockPage
 
+        val systemCallManager = mockk<com.andreas_kratzer.ghosttalk.core.call.SystemCallManager>(relaxed = true).apply {
+            every { callState } returns MutableStateFlow(com.andreas_kratzer.ghosttalk.core.call.CallState.NONE)
+            every { callerName } returns MutableStateFlow(null)
+            every { callerPhone } returns MutableStateFlow(null)
+            every { callDurationSeconds } returns MutableStateFlow(0)
+            every { isOutgoing } returns MutableStateFlow(false)
+        }
+
         // WHEN
         val viewModel = PageViewModel(
             application = application,
@@ -92,7 +116,8 @@ class PageViewModelStateTest {
             scanCoordinator = scanCoordinator,
             geminiUseCase = mockk(relaxed = true),
             googleHomeManager = mockk(relaxed = true),
-            buttonTemplateRepository = mockk(relaxed = true)
+            buttonTemplateRepository = mockk(relaxed = true),
+            systemCallManager = systemCallManager
         )
         
         // Advance to allow launch in init to execute

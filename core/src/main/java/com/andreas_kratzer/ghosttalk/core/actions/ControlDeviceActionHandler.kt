@@ -32,6 +32,7 @@ class ControlDeviceActionHandler @Inject constructor(
     private val settings: ControlDeviceSettings,
     private val ttsProxyLazy: dagger.Lazy<ControlDeviceTtsProxy>,
     private val scanControllerLazy: dagger.Lazy<ScannerController>,
+    private val callActionProxy: dagger.Lazy<CallActionProxy>,
     private val actionLogger: ActionLogger,
     private val actionEventEmitter: ActionEventEmitter
 ) : ActionHandler {
@@ -82,6 +83,19 @@ class ControlDeviceActionHandler @Inject constructor(
 
             DeviceActionType.CLEAR_NOTIFICATIONS -> {
                 handleClearNotifications(deviceAction, buttonConfig.label, executionId, onFinish)
+            }
+
+            DeviceActionType.START_CALL -> {
+                val phone = deviceAction.contactPhone ?: ""
+                val name = deviceAction.contactName ?: ""
+                if (settings.simulateCallsEnabled) {
+                    callActionProxy.get().simulateOutgoingCall(name, phone)
+                    actionLogger.log("Anruf simulieren an $name ($phone)", action, buttonConfig.label)
+                } else {
+                    callActionProxy.get().startCall(name, phone)
+                    actionLogger.log("Anruf starten an $name ($phone)", action, buttonConfig.label)
+                }
+                onFinish(executionId)
             }
         }
     }

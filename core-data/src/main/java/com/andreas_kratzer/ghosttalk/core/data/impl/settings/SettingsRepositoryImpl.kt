@@ -46,6 +46,7 @@ class SettingsRepositoryImpl @Inject constructor(
     private val notificationSettings = NotificationSettingsRepository(prefs, activeBookIdFlow)
     private val advancedSettings = AdvancedSettingsRepository(prefs, activeBookIdFlow)
     private val userSettings = UserSettingsRepository(prefs, activeBookIdFlow)
+    private val callSettings = CallSettingsRepository(prefs, activeBookIdFlow)
 
     init {
         cleanupLegacyBookPins()
@@ -83,6 +84,7 @@ class SettingsRepositoryImpl @Inject constructor(
         notificationSettings.refresh()
         advancedSettings.refresh()
         userSettings.refresh()
+        callSettings.refresh()
     }
 
     // ── Public API: Flows ────────────────────────────────────────────────
@@ -167,6 +169,19 @@ class SettingsRepositoryImpl @Inject constructor(
     override val googleTtsVoiceNameFlow: StateFlow<String?> get() = voiceSettings.googleTtsVoiceNameFlow
     override val elevenLabsTtsLanguageFlow: StateFlow<String?> get() = voiceSettings.elevenLabsTtsLanguageFlow
     override val elevenLabsTtsVoiceNameFlow: StateFlow<String?> get() = voiceSettings.elevenLabsTtsVoiceNameFlow
+
+    // --- CallSettings Flows ---
+    override val maxCallDurationSecondsFlow: StateFlow<Int> get() = callSettings.maxCallDurationSecondsFlow
+    override val callDurationFeedbackIntervalSecondsFlow: StateFlow<Int> get() = callSettings.callDurationFeedbackIntervalSecondsFlow
+    override val outgoingCallIntroFlow: StateFlow<String> get() = callSettings.outgoingCallIntroFlow
+    override val incomingCallIntroFlow: StateFlow<String> get() = callSettings.incomingCallIntroFlow
+    override val incomingCallScanLimitUserModeActiveFlow: StateFlow<Int> get() = callSettings.incomingCallScanLimitUserModeActiveFlow
+    override val incomingCallAutoActionUserModeActiveFlow: StateFlow<String> get() = callSettings.incomingCallAutoActionUserModeActiveFlow
+    override val incomingCallDelayUserModeInactiveFlow: StateFlow<Int> get() = callSettings.incomingCallDelayUserModeInactiveFlow
+    override val incomingCallAutoActionUserModeInactiveFlow: StateFlow<String> get() = callSettings.incomingCallAutoActionUserModeInactiveFlow
+    override val callAnnouncementAsCueFlow: StateFlow<Boolean> get() = callSettings.callAnnouncementAsCueFlow
+    override val autoEnableSpeakerphoneFlow: StateFlow<Boolean> get() = callSettings.autoEnableSpeakerphoneFlow
+    override val simulateCallsEnabledFlow: StateFlow<Boolean> get() = callSettings.simulateCallsEnabledFlow
 
     // ── Public API: Properties ───────────────────────────────────────────
 
@@ -608,4 +623,49 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override fun getLogStopActionsForBook(bookId: String): Boolean =
         advancedSettings.getBooleanForBook(bookId, SettingsConstants.KEY_LOG_STOP_ACTIONS, false)
+
+    // --- CallSettings Properties ---
+    override var maxCallDurationSeconds: Int
+        get() = callSettings.maxCallDurationSeconds
+        set(value) { callSettings.maxCallDurationSeconds = value }
+    
+    override var callDurationFeedbackIntervalSeconds: Int
+        get() = callSettings.callDurationFeedbackIntervalSeconds
+        set(value) { callSettings.callDurationFeedbackIntervalSeconds = value }
+
+    override var outgoingCallIntro: String
+        get() = callSettings.outgoingCallIntro
+        set(value) { callSettings.outgoingCallIntro = value }
+
+    override var incomingCallIntro: String
+        get() = callSettings.incomingCallIntro
+        set(value) { callSettings.incomingCallIntro = value }
+
+    override var incomingCallScanLimitUserModeActive: Int
+        get() = callSettings.incomingCallScanLimitUserModeActive
+        set(value) { callSettings.incomingCallScanLimitUserModeActive = value }
+
+    override var incomingCallAutoActionUserModeActive: String
+        get() = callSettings.incomingCallAutoActionUserModeActive
+        set(value) { callSettings.incomingCallAutoActionUserModeActive = value }
+
+    override var incomingCallDelayUserModeInactive: Int
+        get() = callSettings.incomingCallDelayUserModeInactive
+        set(value) { callSettings.incomingCallDelayUserModeInactive = value }
+
+    override var incomingCallAutoActionUserModeInactive: String
+        get() = callSettings.incomingCallAutoActionUserModeInactive
+        set(value) { callSettings.incomingCallAutoActionUserModeInactive = value }
+
+    override var callAnnouncementAsCue: Boolean
+        get() = callSettings.callAnnouncementAsCue
+        set(value) { callSettings.callAnnouncementAsCue = value }
+
+    override var autoEnableSpeakerphone: Boolean
+        get() = callSettings.autoEnableSpeakerphone
+        set(value) { callSettings.autoEnableSpeakerphone = value }
+
+    override var simulateCallsEnabled: Boolean
+        get() = callSettings.simulateCallsEnabled
+        set(value) { callSettings.simulateCallsEnabled = value }
 }

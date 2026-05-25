@@ -10,6 +10,9 @@ interface ControlDeviceSettings {
     var monitoredNotificationApps: Set<String>
     val monitoredNotificationAppsFlow: kotlinx.coroutines.flow.StateFlow<Set<String>>
 
+    var simulateCallsEnabled: Boolean
+    val simulateCallsEnabledFlow: kotlinx.coroutines.flow.StateFlow<Boolean>
+
     fun getDeviceName(persistentId: String): String?
     fun saveDeviceName(persistentId: String, name: String)
     fun cleanupDeviceCache(keepPersistentIds: Set<String>)

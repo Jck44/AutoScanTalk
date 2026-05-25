@@ -1,5 +1,6 @@
 package com.andreas_kratzer.ghosttalk.core.scanning
 
+import com.andreas_kratzer.ghosttalk.core.actions.CallActionProxy
 import com.andreas_kratzer.ghosttalk.core.actions.ScannerActionProvider
 import com.andreas_kratzer.ghosttalk.core.ai.domain.CheckForPredictorUseCase
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
@@ -35,6 +36,7 @@ class ScanCoordinatorTest {
     private lateinit var actionProvider: ScannerActionProvider
     private lateinit var checkForPredictorUseCase: CheckForPredictorUseCase
     private lateinit var ttsHelper: TextToSpeechHelper
+    private lateinit var callActionProxy: CallActionProxy
 
     private val isExecuting = MutableStateFlow(false)
     private val currentPage = MutableStateFlow<Page?>(null)
@@ -52,7 +54,8 @@ class ScanCoordinatorTest {
         featureSettings = featureSettings,
         actionProvider = actionProvider,
         checkForPredictorUseCase = checkForPredictorUseCase,
-        ttsHelper = ttsHelper
+        ttsHelper = ttsHelper,
+        callActionProxy = callActionProxy
     ).apply {
         init(
             isUserModeActive = isUserModeActive,
@@ -71,6 +74,7 @@ class ScanCoordinatorTest {
         actionProvider = mockk(relaxed = true)
         checkForPredictorUseCase = mockk(relaxed = true)
         ttsHelper = mockk(relaxed = true)
+        callActionProxy = mockk(relaxed = true)
 
         every { scanningSettings.scanDelayFlow } returns MutableStateFlow(1000L)
         every { featureSettings.isSmartPredictionEnabled } returns true
@@ -80,6 +84,7 @@ class ScanCoordinatorTest {
         every { scannerEngine.focusedRowIndex } returns MutableStateFlow(null)
         every { scannerEngine.isScanning } returns MutableStateFlow(false)
         every { scannerEngine.onCycleCompleted } returns onCycleCompletedFlow
+        every { callActionProxy.isInCall } returns MutableStateFlow(false)
         
         // Reset state flows for each test
         isExecuting.value = false

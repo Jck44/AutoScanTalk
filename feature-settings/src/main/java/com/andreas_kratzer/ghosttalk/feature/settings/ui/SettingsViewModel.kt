@@ -7,6 +7,7 @@ import android.content.Intent
 import androidx.core.content.edit
 import androidx.core.net.toUri
 import android.content.pm.PackageManager
+import android.os.Build
 import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -23,6 +24,7 @@ import com.andreas_kratzer.ghosttalk.core.data.SyncLogProvider
 import com.andreas_kratzer.ghosttalk.core.model.Book
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.tts.AudioCacheRepository
+import com.andreas_kratzer.ghosttalk.core.actions.CallActionProxy
 import com.andreas_kratzer.ghosttalk.core.tts.CachedAudioItem
 import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
 import com.andreas_kratzer.ghosttalk.feature.settings.R
@@ -73,7 +75,8 @@ class SettingsViewModel @Inject constructor(
     private val ttsHelper: TextToSpeechHelper,
     private val audioCacheRepository: AudioCacheRepository,
     private val pageRepository: PageRepository,
-    private val syncLogProvider: SyncLogProvider
+    private val syncLogProvider: SyncLogProvider,
+    private val callActionProxy: dagger.Lazy<CallActionProxy>
 ) : AndroidViewModel(application) {
 
     private val _activeBookId = settingsRepository.activeBookIdFlow
@@ -179,6 +182,19 @@ class SettingsViewModel @Inject constructor(
     val elevenLabsModel = settingsRepository.elevenLabsModelFlow
     val elevenLabsStability = settingsRepository.elevenLabsStabilityFlow
     val elevenLabsSimilarityBoost = settingsRepository.elevenLabsSimilarityBoostFlow
+
+    // --- CallSettings ---
+    val maxCallDurationSeconds = settingsRepository.maxCallDurationSecondsFlow
+    val callDurationFeedbackIntervalSeconds = settingsRepository.callDurationFeedbackIntervalSecondsFlow
+    val outgoingCallIntro = settingsRepository.outgoingCallIntroFlow
+    val incomingCallIntro = settingsRepository.incomingCallIntroFlow
+    val incomingCallScanLimitUserModeActive = settingsRepository.incomingCallScanLimitUserModeActiveFlow
+    val incomingCallAutoActionUserModeActive = settingsRepository.incomingCallAutoActionUserModeActiveFlow
+    val incomingCallDelayUserModeInactive = settingsRepository.incomingCallDelayUserModeInactiveFlow
+    val incomingCallAutoActionUserModeInactive = settingsRepository.incomingCallAutoActionUserModeInactiveFlow
+    val callAnnouncementAsCue = settingsRepository.callAnnouncementAsCueFlow
+    val autoEnableSpeakerphone = settingsRepository.autoEnableSpeakerphoneFlow
+    val simulateCallsEnabled = settingsRepository.simulateCallsEnabledFlow
     
     private val _showActionHistoryDialog = MutableStateFlow(false)
     val showActionHistoryDialog = _showActionHistoryDialog.asStateFlow()
@@ -675,6 +691,65 @@ class SettingsViewModel @Inject constructor(
     val weatherCacheTimeout = settingsRepository.weatherCacheTimeoutFlow
     fun setWeatherCacheTimeoutInput(input: String) {
         input.toLongOrNull()?.let { settingsRepository.weatherCacheTimeout = it }
+    }
+
+    // --- CallSettings Setters ---
+    fun setMaxCallDurationSeconds(seconds: Int) {
+        settingsRepository.maxCallDurationSeconds = seconds
+    }
+    fun setCallDurationFeedbackIntervalSeconds(seconds: Int) {
+        settingsRepository.callDurationFeedbackIntervalSeconds = seconds
+    }
+    fun setOutgoingCallIntro(text: String) {
+        settingsRepository.outgoingCallIntro = text
+    }
+    fun setIncomingCallIntro(text: String) {
+        settingsRepository.incomingCallIntro = text
+    }
+    fun setIncomingCallScanLimitUserModeActive(limit: Int) {
+        settingsRepository.incomingCallScanLimitUserModeActive = limit
+    }
+    fun setIncomingCallAutoActionUserModeActive(action: String) {
+        settingsRepository.incomingCallAutoActionUserModeActive = action
+    }
+    fun setIncomingCallDelayUserModeInactive(seconds: Int) {
+        settingsRepository.incomingCallDelayUserModeInactive = seconds
+    }
+    fun setIncomingCallAutoActionUserModeInactive(action: String) {
+        settingsRepository.incomingCallAutoActionUserModeInactive = action
+    }
+    fun setCallAnnouncementAsCue(asCue: Boolean) {
+        settingsRepository.callAnnouncementAsCue = asCue
+    }
+    fun setAutoEnableSpeakerphone(enable: Boolean) {
+        settingsRepository.autoEnableSpeakerphone = enable
+    }
+    fun setSimulateCallsEnabled(enable: Boolean) {
+        settingsRepository.simulateCallsEnabled = enable
+    }
+
+    val isDefaultDialer: Boolean
+        get() {
+            val telecomManager = application.getSystemService(Context.TELECOM_SERVICE) as android.telecom.TelecomManager
+            return telecomManager.defaultDialerPackage == application.packageName
+        }
+
+    fun requestDefaultDialer(activity: android.app.Activity) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val roleManager = activity.getSystemService(android.app.role.RoleManager::class.java)
+            if (roleManager != null && roleManager.isRoleAvailable(android.app.role.RoleManager.ROLE_DIALER) && !roleManager.isRoleHeld(android.app.role.RoleManager.ROLE_DIALER)) {
+                val intent = roleManager.createRequestRoleIntent(android.app.role.RoleManager.ROLE_DIALER)
+                activity.startActivityForResult(intent, 123)
+                return
+            }
+        }
+        val telecomManager = activity.getSystemService(android.telecom.TelecomManager::class.java)
+        if (telecomManager != null && telecomManager.defaultDialerPackage != activity.packageName) {
+            val intent = Intent(android.telecom.TelecomManager.ACTION_CHANGE_DEFAULT_DIALER).apply {
+                putExtra(android.telecom.TelecomManager.EXTRA_CHANGE_DEFAULT_DIALER_PACKAGE_NAME, activity.packageName)
+            }
+            activity.startActivityForResult(intent, 123)
+        }
     }
 
     val activeBookId: String
@@ -1191,6 +1266,14 @@ class SettingsViewModel @Inject constructor(
         }
         
         return false
+    }
+
+    fun simulateIncomingCall(name: String, phone: String) {
+        callActionProxy.get().simulateIncomingCall(name, phone)
+    }
+
+    fun simulateOutgoingCall(name: String, phone: String) {
+        callActionProxy.get().simulateOutgoingCall(name, phone)
     }
 }
 

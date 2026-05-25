@@ -7,6 +7,7 @@ import com.andreas_kratzer.ghosttalk.core.data.BookRepository
 import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.core.data.GetPagesUseCase
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.data.UserModeSessionRepository
 import com.andreas_kratzer.ghosttalk.core.data.export.PageImportExportProvider
 import com.andreas_kratzer.ghosttalk.core.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
@@ -90,10 +91,12 @@ class TtsPrefetchTest {
         
         viewModel = SettingsViewModel(
             application, settingsRepository, bookRepository, buttonUsageRepository, 
+            mockk(relaxed = true),
             securityManager, getPagesUseCase, ttsDelegate, scanningDelegate, 
             cloudSyncDelegate, genAiDelegate, experimentalDelegate, 
             updateActiveBookNameUseCase, deleteBookUseCase, updateActionLogLimitUseCase, 
-            importExportManager, hueManager, ttsHelper, audioCacheRepository, mockk(relaxed = true), mockk(relaxed = true)
+            importExportManager, hueManager, ttsHelper, audioCacheRepository, mockk(relaxed = true), mockk(relaxed = true),
+            dagger.Lazy { mockk(relaxed = true) }
         )
     }
 

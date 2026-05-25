@@ -6,6 +6,7 @@ import com.andreas_kratzer.ghosttalk.core.actions.ControlDeviceSettings
 import com.andreas_kratzer.ghosttalk.core.actions.SpeechSettings
 import com.andreas_kratzer.ghosttalk.core.audio.AudioSettings
 import com.andreas_kratzer.ghosttalk.core.settings.AdvancedSettings
+import com.andreas_kratzer.ghosttalk.core.settings.CallSettings
 import com.andreas_kratzer.ghosttalk.core.settings.CloudSettings
 import com.andreas_kratzer.ghosttalk.core.settings.DatabaseSettings
 import com.andreas_kratzer.ghosttalk.core.settings.FeatureSettings
@@ -27,7 +28,8 @@ import kotlinx.coroutines.flow.StateFlow
 interface SettingsRepository : SecuritySettings, KeyEventSettings, AudioSettings, 
     ControlDeviceSettings, SpeechSettings, GenAiSettings, DatabaseSettings, 
     TtsSettings, ImportExportSettings, CloudSettings, ScanningSettings, FeatureSettings,
-    GeneralSettings, UserSettings, AdvancedSettings, NotificationSettings, SmartHomeSettings {
+    GeneralSettings, UserSettings, AdvancedSettings, NotificationSettings, SmartHomeSettings,
+    CallSettings {
     
     override var activeBookId: String
     override val activeBookIdFlow: StateFlow<String?>

@@ -30,6 +30,10 @@ interface ActionInfrastructureModule {
     @Binds
     @Singleton
     fun bindCameraProvider(impl: CameraProviderImpl): CameraProvider
+
+    @Binds
+    @Singleton
+    fun bindCallActionProxy(impl: com.andreas_kratzer.ghosttalk.core.call.SystemCallManager): com.andreas_kratzer.ghosttalk.core.actions.CallActionProxy
 }
 
 @Module

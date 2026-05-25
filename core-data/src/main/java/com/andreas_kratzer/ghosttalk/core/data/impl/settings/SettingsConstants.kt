@@ -74,4 +74,17 @@ object SettingsConstants {
     const val KEY_ELEVENLABS_STABILITY = "elevenlabs_stability"
     const val KEY_ELEVENLABS_SIMILARITY_BOOST = "elevenlabs_similarity_boost"
     const val KEY_RECORDING_AUDIO_SOURCE = "recording_audio_source"
+    
+    // Call Settings
+    const val KEY_MAX_CALL_DURATION_SECONDS = "pref_max_call_duration_seconds"
+    const val KEY_CALL_DURATION_FEEDBACK_INTERVAL_SECONDS = "pref_call_duration_feedback_interval_seconds"
+    const val KEY_OUTGOING_CALL_INTRO = "pref_call_intro_outgoing"
+    const val KEY_INCOMING_CALL_INTRO = "pref_call_intro_incoming"
+    const val KEY_INCOMING_CALL_SCAN_LIMIT_ACTIVE = "pref_call_incoming_scan_limit_active"
+    const val KEY_INCOMING_CALL_AUTO_ACTION_ACTIVE = "pref_call_incoming_auto_action_active"
+    const val KEY_INCOMING_CALL_DELAY_INACTIVE = "pref_call_incoming_delay_inactive"
+    const val KEY_INCOMING_CALL_AUTO_ACTION_INACTIVE = "pref_call_incoming_auto_action_inactive"
+    const val KEY_CALL_ANNOUNCEMENT_AS_CUE = "pref_call_announcement_as_cue"
+    const val KEY_CALL_AUTO_ENABLE_SPEAKERPHONE = "pref_call_auto_enable_speakerphone"
+    const val KEY_SIMULATE_CALLS_ENABLED = "pref_simulate_calls_enabled"
 }

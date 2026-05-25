@@ -108,6 +108,8 @@ class PageViewModelTest {
     private lateinit var identifyActivePageLinksUseCase: com.andreas_kratzer.ghosttalk.domain.pages.IdentifyActivePageLinksUseCase
 
     private lateinit var viewModel: PageViewModel
+    private lateinit var systemCallManager: com.andreas_kratzer.ghosttalk.core.call.SystemCallManager
+    private val mockCallStateFlow = MutableStateFlow(com.andreas_kratzer.ghosttalk.core.call.CallState.NONE)
 
     @Before
     fun setup() {
@@ -159,6 +161,7 @@ class PageViewModelTest {
         every { settingsRepository.defaultScanPatternFlow } returns MutableStateFlow<String>("linear")
         every { settingsRepository.showTestButtonsFlow } returns MutableStateFlow<Boolean>(false)
         every { settingsRepository.scanDelayFlow } returns MutableStateFlow<Long>(3000L)
+        every { settingsRepository.scanDelayMillis } returns 3000L
         every { settingsRepository.persistActionLogsFlow } returns MutableStateFlow<Boolean>(false)
         every { settingsRepository.keepScreenOnUserModeFlow } returns MutableStateFlow<Boolean>(false)
         every { settingsRepository.userModeScreenBehaviorFlow } returns MutableStateFlow<String>("NONE")
@@ -179,6 +182,8 @@ class PageViewModelTest {
 
     @After
     fun tearDown() {
+        mockCallStateFlow.value = com.andreas_kratzer.ghosttalk.core.call.CallState.NONE
+        testDispatcher.scheduler.runCurrent()
         Dispatchers.resetMain()
         unmockkAll()
     }
@@ -224,7 +229,10 @@ class PageViewModelTest {
         val smartPredictionDelegate = SmartPredictionDelegate(
             updateSmartPredictionsUseCase = updateSmartPredictionsUseCase
         )
-        val screenManagementDelegate = ScreenManagementDelegate(settingsRepository)
+        val screenManagementDelegate = ScreenManagementDelegate(
+            settingsRepository = settingsRepository,
+            callActionProxy = mockk(relaxed = true)
+        )
         
         val actionCoordinator = ActionCoordinator(
             scope = kotlinx.coroutines.CoroutineScope(testDispatcher),
@@ -255,6 +263,16 @@ class PageViewModelTest {
         every { scanCoordinator.focusedRowIndex } returns MutableStateFlow<Int?>(null)
         every { scanCoordinator.currentCycleCount } returns MutableStateFlow(0)
 
+        mockCallStateFlow.value = com.andreas_kratzer.ghosttalk.core.call.CallState.NONE
+        systemCallManager = mockk(relaxed = true) {
+            every { callState } returns mockCallStateFlow
+            every { callerName } returns MutableStateFlow(null)
+            every { callerPhone } returns MutableStateFlow(null)
+            every { callDurationSeconds } returns MutableStateFlow(0)
+            every { isOutgoing } returns MutableStateFlow(false)
+            every { isSimulatedFlow } returns MutableStateFlow(false)
+        }
+
         return PageViewModel(
             application = application,
             savedStateHandle = SavedStateHandle(),
@@ -275,7 +293,8 @@ class PageViewModelTest {
             scanCoordinator = scanCoordinator,
             geminiUseCase = geminiUseCase,
             googleHomeManager = googleHomeManager,
-            buttonTemplateRepository = mockk(relaxed = true)
+            buttonTemplateRepository = mockk(relaxed = true),
+            systemCallManager = systemCallManager
         )
     }
 
@@ -311,5 +330,84 @@ class PageViewModelTest {
 
         assertEquals(p2.id, viewModel.currentPage.value?.id)
         assertEquals(p2.name, viewModel.currentPage.value?.name)
+    }
+
+    @Test
+    fun `when callState becomes RINGING call scanning starts and answer is announced`() = runTest {
+        every { application.getString(com.andreas_kratzer.ghosttalk.R.string.call_answer) } returns "Answer"
+
+        viewModel = createViewModel()
+        testScheduler.runCurrent()
+
+        mockCallStateFlow.value = com.andreas_kratzer.ghosttalk.core.call.CallState.RINGING
+        testScheduler.runCurrent()
+
+        assertEquals("ANNEHMEN", viewModel.focusedCallScreenButton.value)
+
+        io.mockk.verify {
+            ttsHelper.speakRouted(
+                text = "Answer",
+                deviceAddress = any(),
+                queueMode = android.speech.tts.TextToSpeech.QUEUE_ADD,
+                isForCues = true
+            )
+        }
+
+        // Clean up call state to stop scanning loop coroutine
+        mockCallStateFlow.value = com.andreas_kratzer.ghosttalk.core.call.CallState.NONE
+        testScheduler.runCurrent()
+    }
+
+    @Test
+    fun `activateFocusedButton answers call when ringing and focused on ANNEHMEN`() = runTest {
+        viewModel = createViewModel()
+        mockCallStateFlow.value = com.andreas_kratzer.ghosttalk.core.call.CallState.RINGING
+        viewModel.focusedCallScreenButton.value = "ANNEHMEN"
+        testScheduler.runCurrent()
+
+        viewModel.activateFocusedButton()
+
+        io.mockk.verify { systemCallManager.answerCall() }
+
+        // Clean up
+        mockCallStateFlow.value = com.andreas_kratzer.ghosttalk.core.call.CallState.NONE
+        testScheduler.runCurrent()
+    }
+
+    @Test
+    fun `activateFocusedButton rejects call when ringing and focused on ABLEHNEN`() = runTest {
+        viewModel = createViewModel()
+        mockCallStateFlow.value = com.andreas_kratzer.ghosttalk.core.call.CallState.RINGING
+        viewModel.focusedCallScreenButton.value = "ABLEHNEN"
+        testScheduler.runCurrent()
+
+        viewModel.activateFocusedButton()
+
+        io.mockk.verify { systemCallManager.hangUp() }
+
+        // Clean up
+        mockCallStateFlow.value = com.andreas_kratzer.ghosttalk.core.call.CallState.NONE
+        testScheduler.runCurrent()
+    }
+
+    @Test
+    fun `activateFocusedButton focuses hang up on first press and hangs up on second press`() = runTest {
+        every { application.getString(com.andreas_kratzer.ghosttalk.R.string.call_hang_up) } returns "Hang Up"
+        viewModel = createViewModel()
+        mockCallStateFlow.value = com.andreas_kratzer.ghosttalk.core.call.CallState.ACTIVE
+        testScheduler.runCurrent()
+
+        viewModel.activateFocusedButton()
+        assertEquals(true, viewModel.isHangUpButtonFocused.value)
+        io.mockk.verify {
+            ttsHelper.speakRouted("Hang Up", any(), any(), isForCues = true)
+        }
+
+        viewModel.activateFocusedButton()
+        io.mockk.verify { systemCallManager.hangUp() }
+
+        // Clean up
+        mockCallStateFlow.value = com.andreas_kratzer.ghosttalk.core.call.CallState.NONE
+        testScheduler.runCurrent()
     }
 }

@@ -67,7 +67,8 @@ class PageViewModel @Inject constructor(
     private val scanCoordinator: ScanCoordinator,
     geminiUseCase: GeminiUseCase,
     val googleHomeManager: GoogleHomeManager,
-    private val buttonTemplateRepository: ButtonTemplateRepository
+    private val buttonTemplateRepository: ButtonTemplateRepository,
+    val systemCallManager: com.andreas_kratzer.ghosttalk.core.call.SystemCallManager
 ) : AndroidViewModel(application), com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions {
 
     val buttonTemplates: StateFlow<List<ButtonTemplate>> = buttonTemplateRepository.getTemplates()
@@ -149,6 +150,66 @@ class PageViewModel @Inject constructor(
     val isStoppedDueToLimit = scanCoordinator.isStoppedDueToLimit
     val isScanning = scanCoordinator.isScanning
 
+    // --- Telephony Call States ---
+    val callState = systemCallManager.callState
+    val callerName = systemCallManager.callerName
+    val callerPhone = systemCallManager.callerPhone
+    val callDurationSeconds = systemCallManager.callDurationSeconds
+    val isOutgoing = systemCallManager.isOutgoing
+    val isSimulatedCall = systemCallManager.isSimulatedFlow
+    val isHangUpButtonFocused = MutableStateFlow(false)
+    val focusedCallScreenButton = MutableStateFlow("ANNEHMEN") // "ANNEHMEN" or "ABLEHNEN"
+    private var callScanJob: kotlinx.coroutines.Job? = null
+
+    private fun speakCallScreenButton(button: String, isInitial: Boolean) {
+        val textRes = if (button == "ANNEHMEN") {
+            com.andreas_kratzer.ghosttalk.R.string.call_answer
+        } else {
+            com.andreas_kratzer.ghosttalk.R.string.call_reject
+        }
+        val text = getApplication<Application>().getString(textRes)
+        val cueDevice = settingsRepository.cuesAudioDeviceAddress
+        val queueMode = if (isInitial) {
+            android.speech.tts.TextToSpeech.QUEUE_ADD
+        } else {
+            android.speech.tts.TextToSpeech.QUEUE_FLUSH
+        }
+        ttsHelper.speakRouted(text, cueDevice, queueMode = queueMode, isForCues = true)
+    }
+
+    private fun startCallScanning() {
+        callScanJob?.cancel()
+        focusedCallScreenButton.value = "ANNEHMEN"
+        speakCallScreenButton("ANNEHMEN", isInitial = true)
+        val scanDelay = settingsRepository.scanDelayMillis
+        callScanJob = viewModelScope.launch {
+            while (true) {
+                kotlinx.coroutines.delay(scanDelay)
+                if (focusedCallScreenButton.value == "ANNEHMEN") {
+                    focusedCallScreenButton.value = "ABLEHNEN"
+                } else {
+                    focusedCallScreenButton.value = "ANNEHMEN"
+                    systemCallManager.incrementScanCycle()
+                }
+                speakCallScreenButton(focusedCallScreenButton.value, isInitial = false)
+            }
+        }
+    }
+
+    private fun stopCallScanning() {
+        callScanJob?.cancel()
+        callScanJob = null
+    }
+
+    fun loadStartPage() {
+        val allPages = pageManagementDelegate.allPagesFlow.value
+        val startId = settingsRepository.defaultStartPageId ?: allPages.firstOrNull()?.id
+        val startPage = allPages.find { it.id == startId }
+        if (startPage != null) {
+            loadPage(startPage)
+        }
+    }
+
     val activeBook: StateFlow<Book?> = activeBookId.flatMapLatest { id ->
         if (id != null) bookRepository.getBookByIdFlow(id) else flowOf(null)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
@@ -185,6 +246,37 @@ class PageViewModel @Inject constructor(
             activeBook.collect { book ->
                 if (book != null) {
                     scanCoordinator.setScanLimitSettings(book.limitScanCycles, book.scanCycleLimit)
+                }
+            }
+        }
+
+        // Observe Call State for scanning and page reset
+        viewModelScope.launch {
+            systemCallManager.callState.collect { state ->
+                when (state) {
+                    com.andreas_kratzer.ghosttalk.core.call.CallState.RINGING -> {
+                        scanCoordinator.stopScanning()
+                        ttsHelper.stopAll()
+                        actionExecutor.stopActions()
+                        startCallScanning()
+                    }
+                    com.andreas_kratzer.ghosttalk.core.call.CallState.DIALING,
+                    com.andreas_kratzer.ghosttalk.core.call.CallState.ACTIVE -> {
+                        scanCoordinator.stopScanning()
+                        ttsHelper.stopAll()
+                        actionExecutor.stopActions()
+                        stopCallScanning()
+                        isHangUpButtonFocused.value = false
+                    }
+                    com.andreas_kratzer.ghosttalk.core.call.CallState.NONE -> {
+                        stopCallScanning()
+                        isHangUpButtonFocused.value = false
+                        if (isUserModeActive.value) {
+                            loadStartPage()
+                            scanCoordinator.restartScanning()
+                        }
+                    }
+                    else -> {}
                 }
             }
         }
@@ -286,7 +378,32 @@ class PageViewModel @Inject constructor(
         savedStateHandle["isUserModeActive"] = isActive
     }
     fun activateButtonAtIndex(index: Int) = interactionDelegate.activateButtonAtIndex(index, resolvedPage.value, activeBookId.value)
-    fun activateFocusedButton() = interactionDelegate.activateFocusedButton(resolvedPage.value, activeBookId.value)
+    fun activateFocusedButton() {
+        val state = systemCallManager.callState.value
+        if (state == com.andreas_kratzer.ghosttalk.core.call.CallState.RINGING) {
+            if (focusedCallScreenButton.value == "ANNEHMEN") {
+                systemCallManager.answerCall()
+            } else {
+                systemCallManager.hangUp()
+            }
+            return
+        }
+        
+        if (state == com.andreas_kratzer.ghosttalk.core.call.CallState.ACTIVE ||
+            state == com.andreas_kratzer.ghosttalk.core.call.CallState.DIALING) {
+            if (isHangUpButtonFocused.value) {
+                systemCallManager.hangUp()
+            } else {
+                isHangUpButtonFocused.value = true
+                val cueDevice = settingsRepository.cuesAudioDeviceAddress
+                val text = getApplication<Application>().getString(com.andreas_kratzer.ghosttalk.R.string.call_hang_up)
+                ttsHelper.speakRouted(text, cueDevice, isForCues = true)
+            }
+            return
+        }
+
+        interactionDelegate.activateFocusedButton(resolvedPage.value, activeBookId.value)
+    }
     fun clearActionLogs() = interactionDelegate.clearActionLogs()
 
     fun resumeScanningIfEnabled() = scanCoordinator.resumeScanningIfEnabled()

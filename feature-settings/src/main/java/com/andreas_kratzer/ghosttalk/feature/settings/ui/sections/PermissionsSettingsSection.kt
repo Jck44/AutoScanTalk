@@ -6,6 +6,8 @@ import android.content.Intent
 import androidx.core.graphics.createBitmap
 import android.content.pm.PackageManager
 import android.provider.Settings
+import android.content.Context
+import androidx.compose.runtime.DisposableEffect
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -19,10 +21,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -180,6 +186,109 @@ fun PermissionsSettingsSection(viewModel: SettingsViewModel) {
                 isGranted = calendarGranted,
                 onRequest = { calendarLauncher.launch(Manifest.permission.READ_CALENDAR) }
             )
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = dimensions.paddingMedium))
+
+            // 5. Default Dialer Role
+            var isDefaultDialer by remember { mutableStateOf(false) }
+            val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+            DisposableEffect(lifecycleOwner) {
+                val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+                    if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                        val telecomManager = context.getSystemService(Context.TELECOM_SERVICE) as android.telecom.TelecomManager
+                        isDefaultDialer = telecomManager.defaultDialerPackage == context.packageName
+                    }
+                }
+                lifecycleOwner.lifecycle.addObserver(observer)
+                onDispose {
+                    lifecycleOwner.lifecycle.removeObserver(observer)
+                }
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = dimensions.paddingSmall)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.settings_dialer_register_title),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Text(
+                            text = stringResource(R.string.settings_dialer_register_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    
+                    // Chip indicating status
+                    val isDark = isSystemInDarkTheme()
+                    val (chipBg, chipContentColor) = if (isDefaultDialer) {
+                        if (isDark) StatusActiveBgDark to StatusActiveTextDark
+                        else StatusActiveBgLight to StatusActiveTextLight
+                    } else {
+                        if (isDark) StatusInactiveBgDark to StatusInactiveTextDark
+                        else StatusInactiveBgLight to StatusInactiveTextLight
+                    }
+                    val chipIcon = if (isDefaultDialer) Icons.Default.Check else Icons.Default.Warning
+                    val chipText = if (isDefaultDialer) {
+                        stringResource(R.string.settings_permission_active)
+                    } else {
+                        stringResource(R.string.settings_permission_inactive)
+                    }
+                    
+                    Surface(
+                        color = chipBg,
+                        contentColor = chipContentColor,
+                        shape = MaterialTheme.shapes.large,
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                imageVector = chipIcon,
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Text(
+                                text = chipText,
+                                style = MaterialTheme.typography.labelSmall
+                            )
+                        }
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(dimensions.paddingSmall))
+                
+                val activity = context.findActivity()
+                if (activity != null) {
+                    Button(
+                        onClick = { viewModel.requestDefaultDialer(activity) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.medium,
+                        enabled = !isDefaultDialer
+                    ) {
+                        if (isDefaultDialer) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(dimensions.paddingSmall))
+                            Text(stringResource(R.string.settings_dialer_registered))
+                        } else {
+                            Text(stringResource(R.string.settings_dialer_register_title))
+                        }
+                    }
+                }
+            }
         }
     }
 }

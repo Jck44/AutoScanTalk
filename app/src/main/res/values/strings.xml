@@ -191,6 +191,7 @@
     <string name="time_format_pattern">HH:mm</string>
     <string name="contact_picker_title">Kontakt wählen</string>
     <string name="action_send_message">Nachricht senden</string>
+    <string name="action_start_call">Telefonanruf starten</string>
     <string name="volume_media">Lautstärke Medien</string>
     <string name="volume_notification">Lautstärke Benachrichtigung</string>
     <string name="volume_alarm">Lautstärke Alarm</string>
@@ -290,5 +291,15 @@
     <string name="device_control_date_prefix_only_date">Heute ist der</string>
     <string name="device_control_date_prefix_tomorrow">Morgen ist</string>
     <string name="device_control_date_prefix_yesterday">Gestern war</string>
+
+    <!-- Call Screen -->
+    <string name="call_incoming_title">Eingehender Anruf</string>
+    <string name="call_outgoing_title">Ausgehender Anruf</string>
+    <string name="call_active_title">Aktives Gespräch</string>
+    <string name="call_answer">Annehmen</string>
+    <string name="call_reject">Ablehnen</string>
+    <string name="call_hang_up">Auflegen</string>
+    <string name="call_unknown_caller">Unbekannter Anrufer</string>
+    <string name="call_connecting">Verbindung wird aufgebaut…</string>
 </resources>
 

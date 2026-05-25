@@ -311,4 +311,32 @@
     <string name="settings_user_mode_sessions_clear">Clear Log</string>
     <string name="settings_user_mode_sessions_clear_confirm">Do you really want to clear the entire User Mode session log for this book?</string>
     <string name="settings_user_mode_sessions_duration_less_than_minute">&lt; 1 Min.</string>
+    <string name="settings_user_mode_sessions_summary_avg_30_days">Ø Usage / Day (last 30 days)</string>
+
+    <!-- Call Settings -->
+    <string name="settings_category_call">Telephony Settings</string>
+    <string name="settings_max_call_duration">Maximum Call Duration</string>
+    <string name="settings_call_duration_feedback_interval">Call Duration Audio Feedback</string>
+    <string name="settings_call_duration_feedback_off">Off (No feedback)</string>
+    <string name="settings_call_duration_feedback_15s">Every 15 seconds</string>
+    <string name="settings_call_duration_feedback_30s">Every 30 seconds</string>
+    <string name="settings_call_duration_feedback_1m">Every minute</string>
+    <string name="settings_call_duration_feedback_2m">Every 2 minutes</string>
+    <string name="settings_call_duration_feedback_5m">Every 5 minutes</string>
+    <string name="settings_call_intro_outgoing">Introduction Text (Outgoing)</string>
+    <string name="settings_call_intro_incoming">Introduction Text (Incoming)</string>
+    <string name="settings_call_announcement_as_cue">Play caller announcement as Auditory Cue</string>
+    <string name="settings_call_auto_enable_speakerphone">Automatically enable speakerphone</string>
+    <string name="settings_call_behavior_active">Auto-action on incoming call (Active User Mode)</string>
+    <string name="settings_call_scan_limit">Scanning cycles</string>
+    <string name="settings_call_auto_action">Action after limit</string>
+    <string name="settings_call_behavior_inactive">Auto-action on incoming call (Inactive User Mode)</string>
+    <string name="settings_call_delay">Delay (seconds)</string>
+    <string name="settings_call_auto_action_inactive">Action after delay</string>
+    <string name="settings_call_action_none">No action</string>
+    <string name="settings_call_action_answer">Answer</string>
+    <string name="settings_call_action_reject">Reject</string>
+    <string name="settings_dialer_register_title">Set as default phone app</string>
+    <string name="settings_dialer_register_desc">Registers GhostTalk as the system\'s default phone app (dialer) to receive and control calls.</string>
+    <string name="settings_dialer_registered">Already set as default phone app</string>
 </resources>

@@ -183,6 +183,17 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // --- Lockscreen Wake Management for Calls ---
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                pageViewModel.callState.collect { callState ->
+                    val isInCall = callState != com.andreas_kratzer.ghosttalk.core.call.CallState.NONE
+                    setShowWhenLocked(isInCall)
+                    setTurnScreenOn(isInCall)
+                }
+            }
+        }
+
         // Timeout check loop
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -200,6 +211,15 @@ class MainActivity : AppCompatActivity() {
             val isUserModeActive by pageViewModel.isUserModeActive.collectAsState()
             val activeBookId by pageViewModel.activeBookId.collectAsState()
             val currentPageId by pageViewModel.currentPageId.collectAsState()
+
+            val callState by pageViewModel.callState.collectAsState()
+            val callerName by pageViewModel.callerName.collectAsState()
+            val callerPhone by pageViewModel.callerPhone.collectAsState()
+            val callDurationSeconds by pageViewModel.callDurationSeconds.collectAsState()
+            val isOutgoing by pageViewModel.isOutgoing.collectAsState()
+            val isHangUpButtonFocused by pageViewModel.isHangUpButtonFocused.collectAsState()
+            val focusedCallScreenButton by pageViewModel.focusedCallScreenButton.collectAsState()
+            val isSimulatedCall by pageViewModel.isSimulatedCall.collectAsState()
             
             GhostTalkTheme(themeMode = themeMode) {
                 CompositionLocalProvider(
@@ -207,6 +227,10 @@ class MainActivity : AppCompatActivity() {
                     LocalActiveBookId provides activeBookId,
                     LocalCurrentPageId provides currentPageId
                 ) {
+                    androidx.activity.compose.BackHandler(enabled = callState != com.andreas_kratzer.ghosttalk.core.call.CallState.NONE) {
+                        // Block back key action during call
+                    }
+
                     Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
@@ -223,6 +247,41 @@ class MainActivity : AppCompatActivity() {
                             pageRepository = pageRepository,
                             securityManager = securityManager
                         )
+
+                        if (callState != com.andreas_kratzer.ghosttalk.core.call.CallState.NONE) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(MaterialTheme.colorScheme.background)
+                            ) {
+                                when (callState) {
+                                    com.andreas_kratzer.ghosttalk.core.call.CallState.RINGING -> {
+                                        com.andreas_kratzer.ghosttalk.ui.pages.sections.IncomingCallOverlay(
+                                            callerName = callerName,
+                                            callerPhone = callerPhone,
+                                            focusedButton = focusedCallScreenButton,
+                                            onAnswer = { pageViewModel.systemCallManager.answerCall() },
+                                            onReject = { pageViewModel.systemCallManager.hangUp() },
+                                            isSimulated = isSimulatedCall
+                                        )
+                                    }
+                                    com.andreas_kratzer.ghosttalk.core.call.CallState.DIALING, 
+                                    com.andreas_kratzer.ghosttalk.core.call.CallState.ACTIVE -> {
+                                        com.andreas_kratzer.ghosttalk.ui.pages.sections.ActiveCallOverlay(
+                                            callerName = callerName,
+                                            callerPhone = callerPhone,
+                                            durationSeconds = callDurationSeconds,
+                                            isDialing = callState == com.andreas_kratzer.ghosttalk.core.call.CallState.DIALING,
+                                            isOutgoing = isOutgoing,
+                                            isHangUpFocused = isHangUpButtonFocused,
+                                            onHangUp = { pageViewModel.systemCallManager.hangUp() },
+                                            isSimulated = isSimulatedCall
+                                        )
+                                    }
+                                    else -> {}
+                                }
+                            }
+                        }
 
                         // The "Black Mode" overlay. 
                         // It stays interactive in terms of hardware/switch events because dispatchKeyEvent 
@@ -273,8 +332,13 @@ class MainActivity : AppCompatActivity() {
     @SuppressLint("RestrictedApi")
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         securityManager.updateActivity()
+        val isCallActive = if (::globalPageViewModel.isInitialized) {
+            globalPageViewModel.systemCallManager.callState.value != com.andreas_kratzer.ghosttalk.core.call.CallState.NONE
+        } else {
+            false
+        }
         val isUserMode = if (::globalPageViewModel.isInitialized) {
-            globalPageViewModel.isUserModeActive.value
+            globalPageViewModel.isUserModeActive.value || isCallActive
         } else {
             false
         }
