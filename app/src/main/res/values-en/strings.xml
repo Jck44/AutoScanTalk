@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">GhostTalk</string>
+    <string name="asset_statements" translatable="false">[{\"include\": \"https://gostalk.andreas-kratzer.com/.well-known/assetlinks.json\"}]</string>
     <string name="settings_pattern_linear">Button by Button</string>
     <string name="settings_pattern_row_by_row">Row by Row</string>
     <string name="settings_screen_black_overlay_text">Battery saving mode.\nReturn to app via Back button</string>

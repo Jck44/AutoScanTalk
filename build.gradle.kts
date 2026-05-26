@@ -8,3 +8,4 @@ plugins {
     alias(libs.plugins.play.publisher) apply false
     alias(libs.plugins.hilt) apply false
 }
+
