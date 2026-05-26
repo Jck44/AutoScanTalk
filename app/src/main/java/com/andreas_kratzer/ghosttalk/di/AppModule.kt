@@ -1,7 +1,7 @@
 package com.andreas_kratzer.ghosttalk.di
 
-import com.andreas_kratzer.ghosttalk.domain.actions.ActionLogUseCase
-import com.andreas_kratzer.ghosttalk.domain.actions.SyncLogUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.actions.ActionLogUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.actions.SyncLogUseCase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

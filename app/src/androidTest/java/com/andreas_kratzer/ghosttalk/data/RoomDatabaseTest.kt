@@ -45,7 +45,7 @@ class RoomDatabaseTest {
         bookDao = db.bookDao()
         pageDao = db.pageDao()
         buttonDao = db.buttonDao()
-        pageRepository = PageRepositoryImpl(pageDao, buttonDao)
+        pageRepository = PageRepositoryImpl(pageDao, buttonDao, db)
     }
 
     @After

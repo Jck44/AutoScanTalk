@@ -104,7 +104,8 @@ class SettingsMapper @Inject constructor(
             incomingCallDelayUserModeInactive = settingsRepository.incomingCallDelayUserModeInactive,
             incomingCallAutoActionUserModeInactive = settingsRepository.incomingCallAutoActionUserModeInactive,
             callAnnouncementAsCue = settingsRepository.callAnnouncementAsCue,
-            autoEnableSpeakerphone = settingsRepository.autoEnableSpeakerphone
+            autoEnableSpeakerphone = settingsRepository.autoEnableSpeakerphone,
+            simulateCallsEnabled = settingsRepository.simulateCallsEnabled
         )
     }
 
@@ -172,6 +173,7 @@ class SettingsMapper @Inject constructor(
         data.incomingCallAutoActionUserModeInactive?.let { settingsRepository.incomingCallAutoActionUserModeInactive = it }
         data.callAnnouncementAsCue?.let { settingsRepository.callAnnouncementAsCue = it }
         data.autoEnableSpeakerphone?.let { settingsRepository.autoEnableSpeakerphone = it }
+        data.simulateCallsEnabled?.let { settingsRepository.simulateCallsEnabled = it }
         
         data.elevenLabsApiKey?.let { encryptedKey ->
             val userEmail = authManager.userEmail.value

@@ -27,48 +27,69 @@ class NavigationIntegrationTest {
     @Inject
     lateinit var dataResetHelper: TestDataResetHelper
 
-    @get:Rule(order = 1)
-    val composeTestRule = createAndroidComposeRule<MainActivity>()
-
     @Inject
     lateinit var settingsRepository: SettingsRepository
 
-    @Before
-    fun setup() {
-        hiltRule.inject()
-        dataResetHelper.resetData()
-        // Ensure auto-scanning is disabled for navigation tests to avoid interference
-        settingsRepository.autoStartScanning = false
+    @get:Rule(order = 1)
+    val clearDataRule = org.junit.rules.TestRule { base, _ ->
+        object : org.junit.runners.model.Statement() {
+            override fun evaluate() {
+                hiltRule.inject()
+                dataResetHelper.resetData()
+                // Ensure auto-scanning is disabled for navigation tests to avoid interference
+                settingsRepository.autoStartScanning = false
+                base.evaluate()
+            }
+        }
     }
+
+    @get:Rule(order = 2)
+    val composeTestRule = createAndroidComposeRule<MainActivity>()
+
 
     @Test
     fun bookList_to_startScreen_to_userMode_andBack() {
+        val waitForRouteAndResumedState = { expectedRoute: String ->
+            composeTestRule.waitUntil(10000) {
+                var isResumed = false
+                composeTestRule.runOnUiThread {
+                    val navController = composeTestRule.activity.navControllerForTesting
+                    val currentEntry = navController?.currentBackStackEntry
+                    isResumed = currentEntry?.destination?.route == expectedRoute &&
+                            currentEntry.lifecycle.currentState == androidx.lifecycle.Lifecycle.State.RESUMED
+                }
+                isResumed
+            }
+            composeTestRule.waitForIdle()
+        }
+
         // 1. Wait for BookListScreen and select "Standardbuch"
         composeTestRule.waitUntil(15000) {
             composeTestRule.onAllNodesWithText("Standardbuch", substring = true)
                 .fetchSemanticsNodes().isNotEmpty()
         }
         composeTestRule.onNodeWithText("Standardbuch", substring = true).performClick()
+        
+        // Wait until we reach "start" and it is resumed
+        waitForRouteAndResumedState("start")
 
-        // 2. We should now be on StartScreen. Verify "User Mode" card exists.
-        composeTestRule.waitUntil(10000) {
-            composeTestRule.onAllNodesWithTag("start_card_user_mode")
-                .fetchSemanticsNodes().isNotEmpty()
-        }
+        // 2. Verify "User Mode" card exists.
         composeTestRule.onNodeWithTag("start_card_user_mode").assertExists()
 
         // 3. Click "User Mode" to go to PageScreen
         composeTestRule.onNodeWithTag("start_card_user_mode").performClick()
+        
+        // Wait until we reach "main" and it is resumed
+        waitForRouteAndResumedState("main")
 
         // 4. Verify PageScreen by checking back button
-        composeTestRule.waitUntil(10000) {
-            composeTestRule.onAllNodesWithTag("page_screen_back_button")
-                .fetchSemanticsNodes().isNotEmpty()
-        }
         composeTestRule.onNodeWithTag("page_screen_back_button").assertExists()
 
         // 5. Navigate back to StartScreen
         composeTestRule.onNodeWithTag("page_screen_back_button").performClick()
+        
+        // Wait until we return to "start" and it is resumed
+        waitForRouteAndResumedState("start")
 
         // 6. Verify back on StartScreen
         composeTestRule.onNodeWithTag("start_card_user_mode").assertExists()
@@ -77,11 +98,11 @@ class NavigationIntegrationTest {
         val backDesc = composeTestRule.activity.getString(R.string.start_back_to_books)
         composeTestRule.onNodeWithContentDescription(backDesc).performClick()
         
-        // Wait for BookListScreen
-        composeTestRule.waitUntil(10000) {
-            composeTestRule.onAllNodesWithText("Standardbuch", substring = true)
-                .fetchSemanticsNodes().isNotEmpty()
-        }
+        // Wait until we return to "book_list" and it is resumed
+        waitForRouteAndResumedState("book_list")
+        
+        // Verify BookListScreen elements exist
+        composeTestRule.onNodeWithTag("book_add_fab").assertExists()
     }
 
     @Test

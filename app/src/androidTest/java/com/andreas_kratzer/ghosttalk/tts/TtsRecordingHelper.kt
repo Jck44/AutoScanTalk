@@ -90,7 +90,7 @@ class TtsRecordingHelper @Inject constructor(
         context: Context, 
         deviceManager: AudioDeviceManager, 
         settings: AudioSettings
-    ) : RoutedAudioPlayer(context, deviceManager, settings) {
+    ) : RoutedAudioPlayer(context, deviceManager, settings, CoroutineScope(Dispatchers.Main)) {
         override fun playAudioFile(file: File, deviceAddress: String?, volumeMultiplier: Float, onCompletion: (() -> Unit)?) {
             onCompletion?.invoke()
         }

@@ -3,7 +3,7 @@ package com.andreas_kratzer.ghosttalk.di
 import com.andreas_kratzer.ghosttalk.core.ai.ClockExecutor
 import com.andreas_kratzer.ghosttalk.core.ai.LocalIntentRouter
 import com.andreas_kratzer.ghosttalk.core.ai.domain.LocalIntentRouterImpl
-import com.andreas_kratzer.ghosttalk.domain.executors.AndroidClockExecutor
+import com.andreas_kratzer.ghosttalk.core.domain.executors.AndroidClockExecutor
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn

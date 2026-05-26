@@ -65,7 +65,11 @@ class SettingsRoundTripTest {
             "themeMode", "securityPinTimeoutMinutes", "isPinRequiredForDeletion",
             "isBiometricEnabled", "isSecurityRequiredForEdit", "isSecurityRequiredForSettings",
             "startupBehavior", "weatherCacheTimeout", "securityPinHash",
-            "securityPinSalt", "appLanguage", "isNotificationReadingEnabled"
+            "securityPinSalt", "appLanguage", "isNotificationReadingEnabled",
+            "maxCallDurationSeconds", "callDurationFeedbackIntervalSeconds", "outgoingCallIntro",
+            "incomingCallIntro", "incomingCallScanLimitUserModeActive", "incomingCallAutoActionUserModeActive",
+            "incomingCallDelayUserModeInactive", "incomingCallAutoActionUserModeInactive", "callAnnouncementAsCue",
+            "autoEnableSpeakerphone", "simulateCallsEnabled"
         )
 
         for (propertyName in mappedProperties) {

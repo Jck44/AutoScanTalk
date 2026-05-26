@@ -4,10 +4,10 @@ import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.data.TemplateRepository
 import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.core.model.SortOrder
-import com.andreas_kratzer.ghosttalk.domain.templates.CreateTemplateUseCase
-import com.andreas_kratzer.ghosttalk.domain.templates.DeleteTemplateUseCase
-import com.andreas_kratzer.ghosttalk.domain.templates.GetTemplateUsagesUseCase
-import com.andreas_kratzer.ghosttalk.domain.templates.UpdateButtonConfigInTemplateUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.templates.CreateTemplateUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.templates.DeleteTemplateUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.templates.GetTemplateUsagesUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.templates.UpdateButtonConfigInTemplateUseCase
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk

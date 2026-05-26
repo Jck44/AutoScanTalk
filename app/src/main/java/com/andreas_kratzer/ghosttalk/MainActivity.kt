@@ -73,6 +73,8 @@ class MainActivity : AppCompatActivity() {
     private val pageViewModel: PageViewModel by viewModels()
     private val settingsViewModel: SettingsViewModel by viewModels()
 
+    var navControllerForTesting: androidx.navigation.NavHostController? = null
+
     private lateinit var globalPageViewModel: PageViewModel
     private lateinit var updateManager: UpdateManager
 
@@ -236,6 +238,7 @@ class MainActivity : AppCompatActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     val navController = rememberNavController()
+                    navControllerForTesting = navController
 
                     Box(modifier = Modifier.fillMaxSize()) {
                         GhostTalkNavHost(

@@ -62,7 +62,7 @@ import com.andreas_kratzer.ghosttalk.core.model.SortOrder
 import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkCard
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
-import com.andreas_kratzer.ghosttalk.domain.pages.UsageLocation
+import com.andreas_kratzer.ghosttalk.core.domain.pages.UsageLocation
 import kotlinx.coroutines.launch
 import java.io.BufferedReader
 import java.io.InputStreamReader

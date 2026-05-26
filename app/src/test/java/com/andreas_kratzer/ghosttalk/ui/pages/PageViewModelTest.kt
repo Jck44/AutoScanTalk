@@ -26,23 +26,23 @@ import com.andreas_kratzer.ghosttalk.core.scanning.ScanCoordinator
 import com.andreas_kratzer.ghosttalk.core.scanning.ScannerEngine
 import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
 import com.andreas_kratzer.ghosttalk.core.util.Logger
-import com.andreas_kratzer.ghosttalk.domain.actions.ActionLogUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.actions.ActionLogUseCase
 import com.andreas_kratzer.ghosttalk.domain.actions.ActivateButtonUseCase
 import com.andreas_kratzer.ghosttalk.domain.actions.HandleActionExecutionEventUseCase
 import com.andreas_kratzer.ghosttalk.domain.actions.ResolveDynamicButtonsUseCase
 import com.andreas_kratzer.ghosttalk.domain.actions.ResolveSmartPredictionUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.CreatePageUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.DeletePageUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.DuplicateButtonToPageUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.ExportPageUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.GetFilteredPagesUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.GetPageUsagesUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.ImportPageUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.MoveRowUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.UpdateButtonConfigUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.UpdatePageSettingsUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.UpdateRowNameUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.pages.CreatePageUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.pages.DeletePageUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.pages.DuplicateButtonToPageUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.pages.ExportPageUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.pages.GetFilteredPagesUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.pages.GetPageUsagesUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.pages.ImportPageUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.pages.MoveRowUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.pages.UpdateButtonConfigUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.pages.UpdatePageSettingsUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.pages.UpdateRowNameUseCase
 import com.andreas_kratzer.ghosttalk.feature.settings.domain.FeatureGuard
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.InteractionDelegate
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.PageManagementDelegate
@@ -95,7 +95,7 @@ class PageViewModelTest {
     private lateinit var updateRowNameUseCase: UpdateRowNameUseCase
     private lateinit var moveRowUseCase: MoveRowUseCase
     private lateinit var moveButtonUseCase: MoveButtonUseCase
-    private lateinit var moveButtonToPageUseCase: com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase
+    private lateinit var moveButtonToPageUseCase: com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase
     private lateinit var duplicateButtonToPageUseCase: DuplicateButtonToPageUseCase
     private lateinit var importPageUseCase: ImportPageUseCase
     private lateinit var exportPageUseCase: ExportPageUseCase
@@ -104,8 +104,8 @@ class PageViewModelTest {
     private lateinit var resolveDynamicButtonsUseCase: ResolveDynamicButtonsUseCase
     private lateinit var updateSmartPredictionsUseCase: UpdateSmartPredictionsUseCase
     private lateinit var getPageUsagesUseCase: GetPageUsagesUseCase
-    private lateinit var updateMultipleButtonsUseCase: com.andreas_kratzer.ghosttalk.domain.pages.UpdateMultipleButtonsUseCase
-    private lateinit var identifyActivePageLinksUseCase: com.andreas_kratzer.ghosttalk.domain.pages.IdentifyActivePageLinksUseCase
+    private lateinit var updateMultipleButtonsUseCase: com.andreas_kratzer.ghosttalk.core.domain.pages.UpdateMultipleButtonsUseCase
+    private lateinit var identifyActivePageLinksUseCase: com.andreas_kratzer.ghosttalk.core.domain.pages.IdentifyActivePageLinksUseCase
 
     private lateinit var viewModel: PageViewModel
     private lateinit var systemCallManager: com.andreas_kratzer.ghosttalk.core.call.SystemCallManager
@@ -141,7 +141,7 @@ class PageViewModelTest {
         updateRowNameUseCase = mockk<UpdateRowNameUseCase>(relaxed = true)
         moveRowUseCase = mockk<MoveRowUseCase>(relaxed = true)
         moveButtonUseCase = mockk<MoveButtonUseCase>(relaxed = true)
-        moveButtonToPageUseCase = mockk<com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase>(relaxed = true)
+        moveButtonToPageUseCase = mockk<com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase>(relaxed = true)
         duplicateButtonToPageUseCase = mockk<DuplicateButtonToPageUseCase>(relaxed = true)
         importPageUseCase = mockk<ImportPageUseCase>(relaxed = true)
         exportPageUseCase = mockk<ExportPageUseCase>(relaxed = true)
@@ -150,8 +150,8 @@ class PageViewModelTest {
         resolveDynamicButtonsUseCase = mockk<ResolveDynamicButtonsUseCase>(relaxed = true)
         updateSmartPredictionsUseCase = mockk<UpdateSmartPredictionsUseCase>(relaxed = true)
         getPageUsagesUseCase = mockk<GetPageUsagesUseCase>(relaxed = true)
-        updateMultipleButtonsUseCase = mockk<com.andreas_kratzer.ghosttalk.domain.pages.UpdateMultipleButtonsUseCase>(relaxed = true)
-        identifyActivePageLinksUseCase = mockk<com.andreas_kratzer.ghosttalk.domain.pages.IdentifyActivePageLinksUseCase>(relaxed = true)
+        updateMultipleButtonsUseCase = mockk<com.andreas_kratzer.ghosttalk.core.domain.pages.UpdateMultipleButtonsUseCase>(relaxed = true)
+        identifyActivePageLinksUseCase = mockk<com.andreas_kratzer.ghosttalk.core.domain.pages.IdentifyActivePageLinksUseCase>(relaxed = true)
 
         // Mock common flows with explicit types to avoid Nothing exceptions
         every { settingsRepository.activeBookIdFlow } returns MutableStateFlow<String>("b1")

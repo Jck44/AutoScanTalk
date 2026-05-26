@@ -33,7 +33,7 @@ import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.model.ActionLogEntry
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
-import com.andreas_kratzer.ghosttalk.domain.actions.ActionLogUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.actions.ActionLogUseCase
 
 @Composable
 fun ActionLogCard(

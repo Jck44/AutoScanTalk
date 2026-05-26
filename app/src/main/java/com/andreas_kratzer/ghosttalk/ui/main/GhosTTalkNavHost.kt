@@ -66,7 +66,7 @@ fun GhostTalkNavHost(
         if (!isUnlocked && isProtected) {
             pendingRoute = route
         } else {
-            navController.navigate(route)
+            navController.safeNavigate(route)
         }
     }
 
@@ -79,7 +79,7 @@ fun GhostTalkNavHost(
                 if (success) {
                     val route = pendingRoute!!
                     pendingRoute = null
-                    navController.navigate(route)
+                    navController.safeNavigate(route)
                 } else {
                     pendingRoute = null
                 }
@@ -111,18 +111,26 @@ fun GhostTalkNavHost(
                     
                     if (finalPage != null) {
                         pageViewModel.loadPage(finalPage)
-                        navController.navigate("main") {
-                            popUpTo("book_list") { inclusive = true }
+                        runOnMainThread {
+                            navController.navigate("main") {
+                                popUpTo("book_list") { inclusive = true }
+                                launchSingleTop = true
+                            }
                         }
                     } else {
                         // Fallback to start screen if no pages
-                        navController.navigate("start") {
-                            popUpTo("book_list") { inclusive = true }
+                        runOnMainThread {
+                            navController.navigate("start") {
+                                popUpTo("book_list") { inclusive = true }
+                                launchSingleTop = true
+                            }
                         }
                     }
                 } else {
-                    navController.navigate("start") {
-                        popUpTo("book_list") { inclusive = true }
+                    runOnMainThread {
+                        navController.navigate("start") {
+                            popUpTo("book_list") { inclusive = true }
+                        }
                     }
                 }
             }
@@ -132,12 +140,14 @@ fun GhostTalkNavHost(
     // Handle Settings Navigation Events
     LaunchedEffect(Unit) {
         settingsViewModel.navigationEvents.collect { event ->
-            when (event) {
-                is SettingsViewModel.SettingsNavigationEvent.EditButton -> {
-                    navController.navigate("page_editor/${event.pageId}?buttonId=${event.buttonId}")
-                }
-                is SettingsViewModel.SettingsNavigationEvent.JumpToPage -> {
-                    navController.navigate("page_editor/${event.pageId}")
+            runOnMainThread {
+                when (event) {
+                    is SettingsViewModel.SettingsNavigationEvent.EditButton -> {
+                        navController.navigate("page_editor/${event.pageId}?buttonId=${event.buttonId}")
+                    }
+                    is SettingsViewModel.SettingsNavigationEvent.JumpToPage -> {
+                        navController.navigate("page_editor/${event.pageId}")
+                    }
                 }
             }
         }
@@ -174,6 +184,7 @@ fun GhostTalkNavHost(
                 onNavigateToUserMode = {
                     val startId = settingsRepository.defaultStartPageId
                     coroutineScope.launch {
+                        android.util.Log.d("NAV_DEBUG", "onNavigateToUserMode clicked")
                         val startPage = if (startId != null) {
                             withContext(Dispatchers.IO) { pageRepository.getPageById(startId) }
                         } else null
@@ -184,13 +195,14 @@ fun GhostTalkNavHost(
                         
                         if (finalPage != null) {
                             pageViewModel.loadPage(finalPage)
-                            navController.navigate("main")
+                            android.util.Log.d("NAV_DEBUG", "onNavigateToUserMode: loaded page ${finalPage.id}, navigating to main")
+                            navigateWithSecurity("main")
                         }
                     }
                 },
                 onNavigateToSettings = { navigateWithSecurity("settings?isGlobal=false") },
                 onNavigateToContentManagement = { navigateWithSecurity("content_management") },
-                onNavigateToBooks = { navController.navigate("book_list") }
+                onNavigateToBooks = { navController.safePopBackStack() }
             )
         }
         composable("content_management") {
@@ -203,7 +215,7 @@ fun GhostTalkNavHost(
         composable("main") {
             PageScreen(
                 pageViewModel = pageViewModel,
-                onNavigateBack = { navController.safeNavigate("start") },
+                onNavigateBack = { navController.safePopBackStack() },
                 modifier = Modifier.fillMaxSize()
             )
         }
@@ -289,14 +301,38 @@ fun GhostTalkNavHost(
     }
 }
 
+private fun runOnMainThread(action: () -> Unit) {
+    if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper()) {
+        action()
+    } else {
+        android.os.Handler(android.os.Looper.getMainLooper()).post(action)
+    }
+}
+
 private fun NavHostController.safePopBackStack() {
-    if (currentBackStackEntry?.lifecycle?.currentState == Lifecycle.State.RESUMED) {
-        popBackStack()
+    runOnMainThread {
+        val state = currentBackStackEntry?.lifecycle?.currentState
+        android.util.Log.d("NAV_DEBUG", "safePopBackStack called. currentDestination=${currentDestination?.route} state=$state")
+        if (state != null && state.isAtLeast(Lifecycle.State.STARTED)) {
+            popBackStack()
+        }
     }
 }
 
 private fun NavHostController.safeNavigate(route: String) {
-    if (currentBackStackEntry?.lifecycle?.currentState == Lifecycle.State.RESUMED) {
-        navigate(route)
+    runOnMainThread {
+        val currentRoute = currentDestination?.route
+        val state = currentBackStackEntry?.lifecycle?.currentState
+        android.util.Log.d("NAV_DEBUG", "safeNavigate called. route=$route currentRoute=$currentRoute state=$state")
+        if (currentRoute == route) {
+            return@runOnMainThread
+        }
+        if (state != null && state.isAtLeast(Lifecycle.State.STARTED)) {
+            navigate(route) {
+                launchSingleTop = true
+            }
+        }
     }
 }
+
+

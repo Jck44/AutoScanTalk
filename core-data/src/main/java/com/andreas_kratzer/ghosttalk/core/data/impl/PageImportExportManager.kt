@@ -54,7 +54,7 @@ class PageImportExportManager @Inject constructor(
         encodeDefaults = true
     }
 
-    suspend fun exportPageListToJson(pages: List<Page>): String = withContext(Dispatchers.IO) {
+    override suspend fun exportPageListToJson(pages: List<Page>): String = withContext(Dispatchers.IO) {
         val exportData = ImportExportData(
             ghosttalk_import_version = "1.1",
             appName = "GhostTalk",

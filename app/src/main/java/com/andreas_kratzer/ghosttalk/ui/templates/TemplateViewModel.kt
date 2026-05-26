@@ -8,11 +8,11 @@ import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.GridSettingsUpdate
 import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.core.model.SortOrder
-import com.andreas_kratzer.ghosttalk.domain.templates.CreateTemplateUseCase
-import com.andreas_kratzer.ghosttalk.domain.templates.DeleteTemplateUseCase
-import com.andreas_kratzer.ghosttalk.domain.templates.GetTemplateUsagesUseCase
-import com.andreas_kratzer.ghosttalk.domain.templates.UpdateButtonConfigInTemplateUseCase
-import com.andreas_kratzer.ghosttalk.ui.util.filterAndSort
+import com.andreas_kratzer.ghosttalk.core.domain.templates.CreateTemplateUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.templates.DeleteTemplateUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.templates.GetTemplateUsagesUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.templates.UpdateButtonConfigInTemplateUseCase
+import com.andreas_kratzer.ghosttalk.core.util.filterAndSort
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -204,11 +204,11 @@ class TemplateViewModel @Inject constructor(
         if (fromRow == toRow) return
         
         saveUndoState(itemId)
-        val maxCols = com.andreas_kratzer.ghosttalk.ui.util.GridUtils.MAX_GRID_SIZE
+        val maxCols = com.andreas_kratzer.ghosttalk.core.util.GridUtils.MAX_GRID_SIZE
         val newButtonConfigs = current.buttonConfigs.toMutableList()
         
         // Ensure 49 slots
-        while (newButtonConfigs.size < com.andreas_kratzer.ghosttalk.ui.util.GridUtils.TOTAL_SLOTS) {
+        while (newButtonConfigs.size < com.andreas_kratzer.ghosttalk.core.util.GridUtils.TOTAL_SLOTS) {
             newButtonConfigs.add(null)
         }
 
@@ -235,7 +235,7 @@ class TemplateViewModel @Inject constructor(
         saveUndoState(itemId)
         val newButtonConfigs = current.buttonConfigs.toMutableList()
         // Ensure 49 slots
-        while (newButtonConfigs.size < com.andreas_kratzer.ghosttalk.ui.util.GridUtils.TOTAL_SLOTS) {
+        while (newButtonConfigs.size < com.andreas_kratzer.ghosttalk.core.util.GridUtils.TOTAL_SLOTS) {
             newButtonConfigs.add(null)
         }
         
@@ -255,14 +255,14 @@ class TemplateViewModel @Inject constructor(
         val current = templates.value.find { it.id == itemId } ?: return
         val newButtonConfigs = current.buttonConfigs.toMutableList()
         
-        while (newButtonConfigs.size < com.andreas_kratzer.ghosttalk.ui.util.GridUtils.TOTAL_SLOTS) {
+        while (newButtonConfigs.size < com.andreas_kratzer.ghosttalk.core.util.GridUtils.TOTAL_SLOTS) {
             newButtonConfigs.add(null)
         }
         
         val visibleIndices = mutableListOf<Int>()
         for (r in 0 until current.rows) {
             for (c in 0 until current.columns) {
-                visibleIndices.add(r * com.andreas_kratzer.ghosttalk.ui.util.GridUtils.MAX_GRID_SIZE + c)
+                visibleIndices.add(r * com.andreas_kratzer.ghosttalk.core.util.GridUtils.MAX_GRID_SIZE + c)
             }
         }
         
@@ -300,7 +300,7 @@ class TemplateViewModel @Inject constructor(
         fromIndex: Int,
         toPageId: String,
         forceMove: Boolean,
-        onResult: (com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult) -> Unit
+        onResult: (com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult) -> Unit
     ) {
         // Not implemented for templates
     }
@@ -310,7 +310,7 @@ class TemplateViewModel @Inject constructor(
         fromIndex: Int,
         toPageId: String,
         forceMove: Boolean,
-        onResult: (com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult) -> Unit
+        onResult: (com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult) -> Unit
     ) {
         // Not implemented for templates
     }

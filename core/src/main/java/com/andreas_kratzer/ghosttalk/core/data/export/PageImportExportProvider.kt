@@ -1,6 +1,9 @@
 package com.andreas_kratzer.ghosttalk.core.data.export
 
+import com.andreas_kratzer.ghosttalk.core.model.Page
+
 interface PageImportExportProvider {
+    suspend fun exportPageListToJson(pages: List<Page>): String
     suspend fun exportBookToJson(bookId: String): String
     suspend fun importFromJson(
         jsonString: String,

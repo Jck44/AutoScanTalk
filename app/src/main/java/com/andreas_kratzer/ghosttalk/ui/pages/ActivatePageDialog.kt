@@ -26,7 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
-import com.andreas_kratzer.ghosttalk.domain.pages.UsageLocation
+import com.andreas_kratzer.ghosttalk.core.domain.pages.UsageLocation
 
 @Composable
 fun ActivatePageDialog(

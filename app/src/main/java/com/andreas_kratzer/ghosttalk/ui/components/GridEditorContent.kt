@@ -63,7 +63,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.ui.platform.LocalContext
 import com.andreas_kratzer.ghosttalk.ui.pages.GridButton
 import com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions
-import com.andreas_kratzer.ghosttalk.ui.util.GridUtils
+import com.andreas_kratzer.ghosttalk.core.util.GridUtils
 import com.andreas_kratzer.ghosttalk.core.model.ButtonTemplate
 import com.andreas_kratzer.ghosttalk.core.model.ActionCategoryRegistry
 import com.andreas_kratzer.ghosttalk.ui.components.TemplateDropTarget
@@ -131,7 +131,7 @@ fun GridEditorContent(
         var showDuplicateDialog by rememberSaveable { mutableStateOf(false) }
         var isDuplicating by rememberSaveable { mutableStateOf(false) }
         var showHiddenPrompt by remember { 
-            mutableStateOf<com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.NeedsConfirmation?>(null) 
+            mutableStateOf<com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.NeedsConfirmation?>(null) 
         }
         val snackbarHostState = remember { SnackbarHostState() }
         val scope = rememberCoroutineScope()

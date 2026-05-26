@@ -46,12 +46,12 @@ fun EditorDialogs(
     showMoveDialog: Boolean,
     showDuplicateDialog: Boolean,
     isDuplicating: Boolean,
-    showHiddenPrompt: com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.NeedsConfirmation?,
+    showHiddenPrompt: com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.NeedsConfirmation?,
     snackbarHostState: SnackbarHostState,
     scope: CoroutineScope,
     onShowMoveDialog: (Boolean) -> Unit,
     onShowDuplicateDialog: (Boolean) -> Unit,
-    onShowHiddenPrompt: (com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.NeedsConfirmation?) -> Unit,
+    onShowHiddenPrompt: (com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.NeedsConfirmation?) -> Unit,
     onDismissRowDialog: () -> Unit,
     onDismissButtonDialog: () -> Unit,
     onEditPage: ((String) -> Unit)?,
@@ -152,7 +152,7 @@ fun EditorDialogs(
                 // We DON'T clear selectedButtonIndex yet, because we might need it for forceMove
                 actions.moveButtonToPage(item.id, sourceIndex, targetPage.id) { result -> 
                     when (result) {
-                        is com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.Success -> {
+                        is com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.Success -> {
                             onDismissButtonDialog()
                             scope.launch {
                                 snackbarHostState.currentSnackbarData?.dismiss()
@@ -170,10 +170,10 @@ fun EditorDialogs(
                                 }
                             }
                         }
-                        is com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.NeedsConfirmation -> {
+                        is com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.NeedsConfirmation -> {
                             onShowHiddenPrompt(result)
                         }
-                        is com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.TargetFull -> {
+                        is com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.TargetFull -> {
                             onDismissButtonDialog()
                             scope.launch {
                                 snackbarHostState.showSnackbar("Zielseite ist voll")
@@ -204,7 +204,7 @@ fun EditorDialogs(
                 onShowDuplicateDialog(false)
                 actions.duplicateButtonToPage(item.id, sourceIndex, targetPage.id) { result -> 
                     when (result) {
-                        is com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.Success -> {
+                        is com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.Success -> {
                             onDismissButtonDialog()
                             scope.launch {
                                 snackbarHostState.currentSnackbarData?.dismiss()
@@ -222,10 +222,10 @@ fun EditorDialogs(
                                 }
                             }
                         }
-                        is com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.NeedsConfirmation -> {
+                        is com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.NeedsConfirmation -> {
                             onShowHiddenPrompt(result)
                         }
-                        is com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.TargetFull -> {
+                        is com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.TargetFull -> {
                             onDismissButtonDialog()
                             scope.launch {
                                 snackbarHostState.showSnackbar("Zielseite ist voll")
@@ -255,7 +255,7 @@ fun EditorDialogs(
                 if (isDuplicating) {
                     actions.duplicateButtonToPage(item.id, selectedButtonIndex!!, targetId, forceMove = true) { result ->
                         onDismissButtonDialog()
-                        if (result is com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.Success) {
+                        if (result is com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.Success) {
                             scope.launch {
                                 snackbarHostState.showSnackbar(duplicateSuccessText)
                             }
@@ -264,7 +264,7 @@ fun EditorDialogs(
                 } else {
                     actions.moveButtonToPage(item.id, selectedButtonIndex!!, targetId, forceMove = true) { result ->
                         onDismissButtonDialog()
-                        if (result is com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult.Success) {
+                        if (result is com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.Success) {
                             scope.launch {
                                 snackbarHostState.showSnackbar(moveSuccessText)
                             }
