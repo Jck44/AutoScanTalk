@@ -67,7 +67,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import com.andreas_kratzer.ghosttalk.R
-import com.andreas_kratzer.ghosttalk.core.cloud.GoogleHomeManager
+import com.andreas_kratzer.ghosttalk.core.cloud.PhilipsHueManager
 import com.andreas_kratzer.ghosttalk.core.cloud.HomeDevice
 import com.andreas_kratzer.ghosttalk.core.model.AuditoryCue
 import com.andreas_kratzer.ghosttalk.core.model.ButtonAction
@@ -126,9 +126,10 @@ fun ButtonConfigDialog(
     onPrefetchText: ((String, () -> Unit) -> Unit)? = null,
     // AI Tools
     availableGeminiTools: List<com.andreas_kratzer.ghosttalk.core.ai.domain.AiTool> = emptyList(),
-    // Google Home Support
-    googleHomeManager: GoogleHomeManager? = null,
-    googleHomeProjectId: String = "",
+    // Philips Hue Support
+    philipsHueManager: PhilipsHueManager? = null,
+    hueBridgeIp: String = "",
+    hueUsername: String = "",
     featureGuard: FeatureGuard? = null,
     onPlayTts: ((String, () -> Unit) -> Unit)? = null,
     onStopTts: (() -> Unit)? = null,
@@ -1082,10 +1083,10 @@ fun ButtonConfigDialog(
                                 availableHomeDevices = availableHomeDevices,
                                 isFetchingDevices = isFetchingDevices,
                                 onFetchDevices = {
-                                    if (googleHomeManager != null && googleHomeProjectId.isNotBlank()) {
+                                    if (smartHomeProvider == SmartHomeProvider.PHILIPS_HUE && philipsHueManager != null) {
                                         scope.launch {
                                             isFetchingDevices = true
-                                            availableHomeDevices = googleHomeManager.listDevices(googleHomeProjectId)
+                                            availableHomeDevices = philipsHueManager.getLocalLights(hueBridgeIp, hueUsername)
                                             isFetchingDevices = false
                                         }
                                     }

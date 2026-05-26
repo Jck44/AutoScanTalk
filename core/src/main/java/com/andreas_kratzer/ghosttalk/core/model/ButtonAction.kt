@@ -126,7 +126,7 @@ data class WeatherButtonAction(
 @Serializable
 @SerialName("SmartHomeButtonAction")
 data class SmartHomeButtonAction(
-    val provider: SmartHomeProvider = SmartHomeProvider.GOOGLE_HOME,
+    val provider: SmartHomeProvider = SmartHomeProvider.PHILIPS_HUE,
     val deviceId: String = "",
     val deviceName: String = "",
     val intent: String = "",

@@ -4,12 +4,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -30,92 +33,116 @@ fun SmartHomeSettingsSection(
 ) {
     val dimensions = LocalDimensions.current
     
-    val googleHomeProjectId by viewModel.googleHomeProjectId.collectAsState("")
     val hueBridgeIp by viewModel.hueBridgeIp.collectAsState("")
     val hueUsername by viewModel.hueUsername.collectAsState("")
-    val hueAccessToken by viewModel.hueAccessToken.collectAsState("")
-    val hueClientId by viewModel.hueClientId.collectAsState("")
-    val hueClientSecret by viewModel.hueClientSecret.collectAsState("")
+    val huePairingStatus by viewModel.huePairingStatus.collectAsState(null)
+    val pendingCertInfo by viewModel.pendingCertificateInfo.collectAsState(null)
+
+    pendingCertInfo?.let { cert ->
+        AlertDialog(
+            onDismissRequest = { viewModel.cancelHueBridgeCertificate() },
+            title = {
+                Text(
+                    text = "SSL-Zertifikat verifizieren",
+                    style = MaterialTheme.typography.titleLarge
+                )
+            },
+            text = {
+                Column {
+                    Text(
+                        text = "GhosTTalk stellt eine verschlüsselte Verbindung zur Bridge her. Bitte überprüfen Sie die folgenden Zertifikatsdetails:",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
+                    Text(
+                        text = "Name (Subject): ${cert.subject}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "Aussteller (Issuer): ${cert.issuer}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "Gültig ab: ${cert.validFrom}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "Gültig bis: ${cert.validTo}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "SHA-256 Fingerprint:",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = cert.fingerprint,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { viewModel.confirmHueBridgeCertificate() }) {
+                    Text("Zertifikat vertrauen")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.cancelHueBridgeCertificate() }) {
+                    Text("Abbrechen")
+                }
+            }
+        )
+    }
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(dimensions.paddingMedium)
     ) {
-        // --- Google Home Section ---
-        PreferenceCategory(stringResource(R.string.smart_home_provider_google_home)) {
-            SettingsEditTextItem(
-                label = stringResource(R.string.settings_google_home_project_id),
-                value = googleHomeProjectId,
-                onValueChange = { viewModel.setGoogleHomeProjectId(it) }
-            )
-            Text(
-                text = stringResource(R.string.settings_google_home_project_id_desc),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 16.dp, top = 4.dp)
-            )
-        }
-
-        // --- Philips Hue Section ---
+        // --- Philips Hue Section (Local Only) ---
         PreferenceCategory(stringResource(R.string.smart_home_provider_philips_hue)) {
-            val isHueConnected = hueAccessToken.isNotEmpty()
-            
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                Text(
-                    text = if (isHueConnected) 
-                        stringResource(R.string.settings_hue_status_connected) 
-                    else 
-                        stringResource(R.string.settings_hue_status_disconnected),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (isHueConnected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
-                )
-                
-                Row(modifier = Modifier.padding(top = 8.dp)) {
-                    if (!isHueConnected) {
-                        Button(onClick = { viewModel.startHueOAuth() }) {
-                            Text(stringResource(R.string.settings_hue_connect))
-                        }
-                    } else {
-                        OutlinedButton(onClick = { viewModel.setHueAccessToken("") }) {
-                            Text(stringResource(R.string.settings_hue_disconnect))
-                        }
-                    }
-                    
-                    Spacer(modifier = Modifier.width(8.dp))
-                    
-                    OutlinedButton(onClick = { viewModel.discoverHueBridges() }) {
-                        Text(stringResource(R.string.settings_hue_discover_bridges))
-                    }
-                }
-            }
-
-            if (!isHueConnected) {
-                Text(
-                    text = "Alternative (Local):",
-                    style = MaterialTheme.typography.labelMedium,
-                    modifier = Modifier.padding(start = 16.dp, top = 8.dp)
-                )
                 SettingsEditTextItem(
                     label = stringResource(R.string.settings_hue_bridge_ip),
                     value = hueBridgeIp,
                     onValueChange = { viewModel.setHueBridgeIp(it) }
                 )
-                SettingsEditTextItem(
-                    label = "Hue Remote Client ID",
-                    value = hueClientId,
-                    onValueChange = { viewModel.setHueClientId(it) }
-                )
-                SettingsEditTextItem(
-                    label = "Hue Remote Client Secret",
-                    value = hueClientSecret,
-                    onValueChange = { viewModel.setHueClientSecret(it) }
-                )
+                
                 SettingsEditTextItem(
                     label = stringResource(R.string.settings_hue_username),
                     value = hueUsername,
                     onValueChange = { viewModel.setHueUsername(it) }
                 )
+                
+                huePairingStatus?.let { status ->
+                    Text(
+                        text = status,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                }
+
+                Row(modifier = Modifier.padding(top = 8.dp)) {
+                    OutlinedButton(onClick = { viewModel.discoverHueBridges() }) {
+                        Text(stringResource(R.string.settings_hue_discover_bridges))
+                    }
+                    
+                    Spacer(modifier = Modifier.width(8.dp))
+                    
+                    Button(
+                        onClick = { viewModel.registerLocalHueBridge() },
+                        enabled = hueBridgeIp.isNotBlank()
+                    ) {
+                        Text("Verbindung herstellen")
+                    }
+                }
             }
         }
 

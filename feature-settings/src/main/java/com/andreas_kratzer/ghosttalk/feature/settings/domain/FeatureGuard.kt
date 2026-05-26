@@ -36,8 +36,10 @@ class FeatureGuard @Inject constructor(
             }
             is SmartHomeButtonAction -> {
                 when (action.provider) {
-                    SmartHomeProvider.GOOGLE_HOME -> settingsRepository.googleHomeProjectId.isNotBlank()
-                    SmartHomeProvider.PHILIPS_HUE -> settingsRepository.hueAccessToken.isNotBlank()
+                    SmartHomeProvider.GOOGLE_HOME -> false
+                    SmartHomeProvider.PHILIPS_HUE -> {
+                        settingsRepository.hueUsername.isNotBlank() && settingsRepository.hueBridgeIp.isNotBlank()
+                    }
                 }
             }
             is ControlDeviceButtonAction -> true

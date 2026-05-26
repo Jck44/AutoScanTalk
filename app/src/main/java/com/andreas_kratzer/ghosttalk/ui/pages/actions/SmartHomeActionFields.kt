@@ -51,19 +51,12 @@ fun SmartHomeActionFields(
     val selectedDevice = devices.find { it.id == deviceId }
     
     val availableIntents = remember(selectedDevice, selectedProvider) {
-        if (selectedProvider == SmartHomeProvider.GOOGLE_HOME) {
-            selectedDevice?.traits?.flatMap { trait ->
-                when (trait) {
-                    "sdm.devices.traits.OnOff" -> listOf("sdm.devices.commands.OnOff.On", "sdm.devices.commands.OnOff.Off")
-                    "sdm.devices.traits.Brightness" -> listOf("sdm.devices.commands.Brightness.Brightness")
-                    "sdm.devices.traits.TemperatureSetting" -> listOf("sdm.devices.commands.TemperatureSetting.SetPoint")
-                    else -> emptyList()
-                }
-            }?.map { it to it.substringAfterLast(".") } ?: emptyList()
-        } else {
-            // Skeleton for Hue
-            listOf("action.on" to "An", "action.off" to "Aus")
-        }
+        listOf(
+            "action.on" to "An",
+            "action.off" to "Aus",
+            "action.brightness" to "Helligkeit",
+            "action.color" to "Farbe"
+        )
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)) {
@@ -85,28 +78,26 @@ fun SmartHomeActionFields(
                 expanded = expandedProvider,
                 onDismissRequest = { expandedProvider = false }
             ) {
-                SmartHomeProvider.entries.forEach { provider ->
-                    DropdownMenuItem(
-                        text = { Text(provider.getDisplayName()) },
-                        onClick = {
-                            onProviderSelected(provider)
-                            expandedProvider = false
-                            onAutoSave()
-                        }
-                    )
-                }
+                DropdownMenuItem(
+                    text = { Text(SmartHomeProvider.PHILIPS_HUE.getDisplayName()) },
+                    onClick = {
+                        onProviderSelected(SmartHomeProvider.PHILIPS_HUE)
+                        expandedProvider = false
+                        onAutoSave()
+                    }
+                )
             }
         }
 
         // Step 2: Device
-        Text(stringResource(R.string.button_google_home_device_label), style = MaterialTheme.typography.labelMedium)
+        Text("Gerät (Lampe)", style = MaterialTheme.typography.labelMedium)
         ExposedDropdownMenuBox(
             expanded = expandedDevice,
             onExpandedChange = { expandedDevice = !expandedDevice }
         ) {
             OutlinedTextField(
                 readOnly = true,
-                value = if (isFetching) stringResource(R.string.button_google_home_loading_devices) else deviceName.ifEmpty { stringResource(R.string.button_google_home_no_devices) },
+                value = if (isFetching) "Lade Lampen..." else deviceName.ifEmpty { "Keine Lampen gefunden" },
                 onValueChange = { },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedDevice) },
                 shape = MaterialTheme.shapes.large,
@@ -117,7 +108,7 @@ fun SmartHomeActionFields(
                 onDismissRequest = { expandedDevice = false }
             ) {
                 if (devices.isEmpty() && !isFetching) {
-                    DropdownMenuItem(text = { Text(stringResource(R.string.button_google_home_no_devices)) }, onClick = { onRefresh(); expandedDevice = false })
+                    DropdownMenuItem(text = { Text("Suche Lampen...") }, onClick = { onRefresh(); expandedDevice = false })
                 }
                 devices.forEach { device ->
                     DropdownMenuItem(
@@ -134,7 +125,7 @@ fun SmartHomeActionFields(
 
         // Step 3: Intent/Command
         if (deviceId.isNotEmpty()) {
-            Text(stringResource(R.string.button_google_home_command_label), style = MaterialTheme.typography.labelMedium)
+            Text("Befehl", style = MaterialTheme.typography.labelMedium)
             ExposedDropdownMenuBox(
                 expanded = expandedIntent,
                 onExpandedChange = { expandedIntent = !expandedIntent }
@@ -158,6 +149,14 @@ fun SmartHomeActionFields(
                             onClick = {
                                 onIntentSelected(intent)
                                 expandedIntent = false
+                                // Set a valid default when switching modes
+                                if (intent == "action.brightness") {
+                                    onValueChange("100")
+                                } else if (intent == "action.color") {
+                                    onValueChange("Warmweiß")
+                                } else {
+                                    onValueChange("")
+                                }
                                 onAutoSave()
                             }
                         )
@@ -166,26 +165,58 @@ fun SmartHomeActionFields(
             }
 
             // Step 4: Value (Optional)
-            if (selectedIntent.contains("Brightness") || selectedIntent.contains("SetPoint")) {
+            if (selectedIntent == "action.brightness") {
                 OutlinedTextField(
                     value = value,
                     onValueChange = { newValue ->
-                        if (newValue.isEmpty() || newValue.all { it.isDigit() }) {
+                        if (newValue.isEmpty() || (newValue.all { it.isDigit() } && newValue.toInt() <= 100)) {
                             onValueChange(newValue)
                         }
                     },
-                    label = { Text(stringResource(R.string.button_google_home_value_label)) },
+                    label = { Text("Helligkeit (0 - 100%)") },
                     shape = MaterialTheme.shapes.large,
                     keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth().onFocusChanged { 
                         if (!it.isFocused) onAutoSave()
                     }
                 )
+            } else if (selectedIntent == "action.color") {
+                var expandedColor by remember { mutableStateOf(false) }
+                val colors = listOf("Rot", "Grün", "Blau", "Gelb", "Orange", "Pink", "Lila", "Warmweiß", "Kaltweiß")
+                Text("Farbe", style = MaterialTheme.typography.labelMedium)
+                ExposedDropdownMenuBox(
+                    expanded = expandedColor,
+                    onExpandedChange = { expandedColor = !expandedColor }
+                ) {
+                    OutlinedTextField(
+                        readOnly = true,
+                        value = value.ifEmpty { "Warmweiß" },
+                        onValueChange = { },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedColor) },
+                        shape = MaterialTheme.shapes.large,
+                        modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expandedColor,
+                        onDismissRequest = { expandedColor = false }
+                    ) {
+                        colors.forEach { color ->
+                            DropdownMenuItem(
+                                text = { Text(color) },
+                                onClick = {
+                                    onValueChange(color)
+                                    expandedColor = false
+                                    onAutoSave()
+                                }
+                            )
+                        }
+                    }
+                }
             }
         }
     }
 
     LaunchedEffect(selectedProvider) {
-        if (selectedProvider == SmartHomeProvider.GOOGLE_HOME && devices.isEmpty()) onRefresh()
+        if (selectedProvider == SmartHomeProvider.PHILIPS_HUE && devices.isEmpty()) onRefresh()
     }
 }

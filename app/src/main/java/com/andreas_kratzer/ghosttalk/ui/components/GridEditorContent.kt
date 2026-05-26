@@ -50,7 +50,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import com.andreas_kratzer.ghosttalk.R
-import com.andreas_kratzer.ghosttalk.core.cloud.GoogleHomeManager
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.GridItem
 import com.andreas_kratzer.ghosttalk.core.model.Page
@@ -108,8 +107,6 @@ fun GridEditorContent(
     bookDefaultScanPattern: String?,
     paddingValues: PaddingValues,
     onEditPage: ((String) -> Unit)? = null,
-    googleHomeManager: GoogleHomeManager? = null,
-    googleHomeProjectId: String = "",
     initialButtonId: String? = null,
     pageViewModel: PageViewModel? = null
 ) {
@@ -538,8 +535,7 @@ fun GridEditorContent(
                     }
                 },
                 onEditPage = onEditPage,
-                googleHomeManager = googleHomeManager,
-                googleHomeProjectId = googleHomeProjectId
+                philipsHueManager = pageViewModel?.philipsHueManager
             )
 
             if (editingTemplate != null) {
@@ -576,8 +572,9 @@ fun GridEditorContent(
                     },
                     isTextCached = { actions.isTextCached(it) },
                     onPrefetchText = { text, onComplete -> actions.prefetchText(text, onComplete) },
-                    googleHomeManager = googleHomeManager,
-                    googleHomeProjectId = googleHomeProjectId,
+                    philipsHueManager = pageViewModel?.philipsHueManager,
+                    hueBridgeIp = pageViewModel?.settingsRepository?.hueBridgeIp ?: "",
+                    hueUsername = pageViewModel?.settingsRepository?.hueUsername ?: "",
                     featureGuard = featureGuard,
                     onPlayTts = { text, onDone -> actions.speakTtsPreview(text, onDone) },
                     onStopTts = { actions.stopTtsPreview() },

@@ -56,6 +56,7 @@ object SettingsConstants {
     const val KEY_GOOGLE_HOME_PROJECT_ID = "google_home_project_id"
     const val KEY_HUE_BRIDGE_IP = "hue_bridge_ip"
     const val KEY_HUE_USERNAME = "hue_username"
+    const val KEY_HUE_BRIDGE_FINGERPRINT = "hue_bridge_fingerprint"
     const val KEY_HUE_ACCESS_TOKEN = "hue_access_token"
     const val KEY_HUE_REFRESH_TOKEN = "hue_refresh_token"
     const val KEY_HUE_CLIENT_ID = "hue_client_id"

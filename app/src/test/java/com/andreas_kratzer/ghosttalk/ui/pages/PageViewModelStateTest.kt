@@ -3,6 +3,7 @@ package com.andreas_kratzer.ghosttalk.ui.pages
 import android.app.Application
 import androidx.lifecycle.SavedStateHandle
 import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
+import com.andreas_kratzer.ghosttalk.core.cloud.PhilipsHueManager
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.scanning.ScanCoordinator
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.InteractionDelegate
@@ -115,9 +116,9 @@ class PageViewModelStateTest {
             actionExecutor = actionExecutor,
             scanCoordinator = scanCoordinator,
             geminiUseCase = mockk(relaxed = true),
-            googleHomeManager = mockk(relaxed = true),
             buttonTemplateRepository = mockk(relaxed = true),
-            systemCallManager = systemCallManager
+            systemCallManager = systemCallManager,
+            philipsHueManager = mockk(relaxed = true)
         )
         
         // Advance to allow launch in init to execute

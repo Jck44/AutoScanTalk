@@ -84,8 +84,6 @@ class SettingsMapper @Inject constructor(
             monitoredNotificationApps = settingsRepository.monitoredNotificationApps.toList(),
             showPageIdInLog = settingsRepository.showPageIdInLog,
             bluetoothDelay = settingsRepository.bluetoothDelay,
-            hueClientId = settingsRepository.hueClientId,
-            hueClientSecret = settingsRepository.hueClientSecret,
             ttsEngine = settingsRepository.ttsEngine,
             elevenLabsModel = settingsRepository.elevenLabsModel,
             elevenLabsApiKey = encryptedKey,
@@ -152,8 +150,6 @@ class SettingsMapper @Inject constructor(
         data.monitoredNotificationApps?.let { settingsRepository.monitoredNotificationApps = it.toSet() }
         data.showPageIdInLog?.let { settingsRepository.showPageIdInLog = it }
         data.bluetoothDelay?.let { settingsRepository.bluetoothDelay = it }
-        data.hueClientId?.let { settingsRepository.hueClientId = it }
-        data.hueClientSecret?.let { settingsRepository.hueClientSecret = it }
         data.ttsEngine?.let { settingsRepository.ttsEngine = it }
         data.elevenLabsModel?.let { settingsRepository.elevenLabsModel = it }
         data.googleTtsLanguage?.let { settingsRepository.googleTtsLanguage = it }

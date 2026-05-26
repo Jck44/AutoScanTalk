@@ -144,13 +144,9 @@ class SettingsRepositoryImpl @Inject constructor(
     override val syncIntervalMinutesFlow: StateFlow<Long> get() = cloudSettings.syncIntervalMinutesFlow
     override val syncModeFlow: StateFlow<String> get() = cloudSettings.syncModeFlow
     override val lastSuccessfulSyncTimeFlow: StateFlow<Long> get() = cloudSettings.lastSuccessfulSyncTimeFlow
-    override val googleHomeProjectIdFlow: StateFlow<String> get() = smartHomeSettings.googleHomeProjectIdFlow
     override val hueBridgeIpFlow: StateFlow<String> get() = smartHomeSettings.hueBridgeIpFlow
     override val hueUsernameFlow: StateFlow<String> get() = smartHomeSettings.hueUsernameFlow
-    override val hueAccessTokenFlow: StateFlow<String> get() = smartHomeSettings.hueAccessTokenFlow
-    override val hueRefreshTokenFlow: StateFlow<String> get() = smartHomeSettings.hueRefreshTokenFlow
-    override val hueClientIdFlow: StateFlow<String> get() = smartHomeSettings.hueClientIdFlow
-    override val hueClientSecretFlow: StateFlow<String> get() = smartHomeSettings.hueClientSecretFlow
+    override val hueBridgeFingerprintFlow: StateFlow<String> get() = smartHomeSettings.hueBridgeFingerprintFlow
     override val cuesAudioDeviceAddressFlow: StateFlow<String?> get() = voiceSettings.cuesAudioDeviceAddressFlow
     override val securityPinFlow: StateFlow<String?> get() = securitySettings.securityPinFlow
     override val securityPinHashFlow: StateFlow<String?> get() = securitySettings.securityPinHashFlow
@@ -298,11 +294,6 @@ class SettingsRepositoryImpl @Inject constructor(
     override var syncMode: String
         get() = cloudSettings.syncMode
         set(value) { cloudSettings.syncMode = value }
-
-    override var googleHomeProjectId: String
-        get() = smartHomeSettings.googleHomeProjectId
-        set(value) { smartHomeSettings.googleHomeProjectId = value }
-
     override var hueBridgeIp: String
         get() = smartHomeSettings.hueBridgeIp
         set(value) { smartHomeSettings.hueBridgeIp = value }
@@ -311,21 +302,9 @@ class SettingsRepositoryImpl @Inject constructor(
         get() = smartHomeSettings.hueUsername
         set(value) { smartHomeSettings.hueUsername = value }
 
-    override var hueAccessToken: String
-        get() = smartHomeSettings.hueAccessToken
-        set(value) { smartHomeSettings.hueAccessToken = value }
-
-    override var hueRefreshToken: String
-        get() = smartHomeSettings.hueRefreshToken
-        set(value) { smartHomeSettings.hueRefreshToken = value }
-
-    override var hueClientId: String
-        get() = smartHomeSettings.hueClientId
-        set(value) { smartHomeSettings.hueClientId = value }
-
-    override var hueClientSecret: String
-        get() = smartHomeSettings.hueClientSecret
-        set(value) { smartHomeSettings.hueClientSecret = value }
+    override var hueBridgeFingerprint: String
+        get() = smartHomeSettings.hueBridgeFingerprint
+        set(value) { smartHomeSettings.hueBridgeFingerprint = value }
 
     override var isGeminiEnabled: Boolean
         get() = genAiSettings.isGeminiEnabled

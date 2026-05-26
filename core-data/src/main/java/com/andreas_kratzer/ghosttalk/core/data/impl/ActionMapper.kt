@@ -104,7 +104,7 @@ class ActionMapper @Inject constructor() {
                 value = importAction.googleHomeValue
             )
             "SMART_HOME" -> SmartHomeButtonAction(
-                provider = SmartHomeProvider.valueOf(importAction.smartHomeProvider ?: "GOOGLE_HOME"),
+                provider = SmartHomeProvider.valueOf(importAction.smartHomeProvider ?: "PHILIPS_HUE"),
                 deviceId = importAction.smartHomeDeviceId ?: "",
                 deviceName = importAction.smartHomeDeviceName ?: "",
                 intent = importAction.smartHomeIntent ?: "",

@@ -120,12 +120,13 @@ class SettingsViewModel @Inject constructor(
     val syncMode = settingsRepository.syncModeFlow
     val lastSuccessfulSyncTime = settingsRepository.lastSuccessfulSyncTimeFlow
     val syncIntervalMinutes = settingsRepository.syncIntervalMinutesFlow
-    val googleHomeProjectId = settingsRepository.googleHomeProjectIdFlow
     val hueBridgeIp = settingsRepository.hueBridgeIpFlow
     val hueUsername = settingsRepository.hueUsernameFlow
-    val hueAccessToken = settingsRepository.hueAccessTokenFlow
-    val hueClientId = settingsRepository.hueClientIdFlow
-    val hueClientSecret = settingsRepository.hueClientSecretFlow
+    private val _huePairingStatus = MutableStateFlow<String?>(null)
+    val huePairingStatus: StateFlow<String?> = _huePairingStatus.asStateFlow()
+    
+    private val _pendingCertificateInfo = MutableStateFlow<com.andreas_kratzer.ghosttalk.core.cloud.BridgeCertificateInfo?>(null)
+    val pendingCertificateInfo: StateFlow<com.andreas_kratzer.ghosttalk.core.cloud.BridgeCertificateInfo?> = _pendingCertificateInfo.asStateFlow()
     val isSyncing = cloudSyncDelegate.isSyncing
     val userEmail = cloudSyncDelegate.userEmail
     
@@ -397,12 +398,8 @@ class SettingsViewModel @Inject constructor(
     
     fun setSyncMode(m: String) { settingsRepository.syncMode = m }
     fun setSyncIntervalMinutes(minutes: Long) { settingsRepository.syncIntervalMinutes = minutes }
-    fun setGoogleHomeProjectId(id: String) { settingsRepository.googleHomeProjectId = id }
     fun setHueBridgeIp(ip: String) { settingsRepository.hueBridgeIp = ip }
     fun setHueUsername(username: String) { settingsRepository.hueUsername = username }
-    fun setHueAccessToken(token: String) { settingsRepository.hueAccessToken = token }
-    fun setHueClientId(id: String) { settingsRepository.hueClientId = id }
-    fun setHueClientSecret(secret: String) { settingsRepository.hueClientSecret = secret }
 
     fun setTtsEngine(engine: String?) { 
         ttsDelegate.setTtsEngine(engine)
@@ -511,21 +508,70 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun startHueOAuth() {
-        if (hueClientId.value.isBlank()) {
-            Toast.makeText(application, "Bitte zuerst die Client ID eintragen.", Toast.LENGTH_LONG).show()
+    fun registerLocalHueBridge() {
+        val ip = settingsRepository.hueBridgeIp
+        if (ip.isBlank()) {
+            Toast.makeText(application, "Bitte zuerst die Bridge-IP angeben oder suchen.", Toast.LENGTH_LONG).show()
             return
         }
+        viewModelScope.launch {
+            _huePairingStatus.value = "Zertifikat wird abgefragt (HTTPS)..."
+            val certInfo = hueManager.fetchBridgeCertificateInfo(ip)
+            if (certInfo == null) {
+                _huePairingStatus.value = "Zertifikatsabfrage fehlgeschlagen."
+                Toast.makeText(application, "Zertifikat konnte nicht abgerufen werden.", Toast.LENGTH_LONG).show()
+                return@launch
+            }
 
-        val authUrl = "https://api.meethue.com/v2/oauth2/authorize" +
-                "?client_id=${hueClientId}" +
-                "&response_type=code" +
-                "&state=hue_auth_state" // In a real app, use a random state
-
-        val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, authUrl.toUri()).apply {
-            addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            val storedFingerprint = settingsRepository.hueBridgeFingerprint
+            if (storedFingerprint.isBlank() || !storedFingerprint.equals(certInfo.fingerprint, ignoreCase = true)) {
+                _pendingCertificateInfo.value = certInfo
+                _huePairingStatus.value = "Zertifikatsfreigabe erforderlich."
+            } else {
+                proceedWithPairing(ip)
+            }
         }
-        application.startActivity(intent)
+    }
+
+    fun confirmHueBridgeCertificate() {
+        val certInfo = _pendingCertificateInfo.value ?: return
+        val ip = settingsRepository.hueBridgeIp
+        settingsRepository.hueBridgeFingerprint = certInfo.fingerprint
+        _pendingCertificateInfo.value = null
+        viewModelScope.launch {
+            proceedWithPairing(ip)
+        }
+    }
+
+    fun cancelHueBridgeCertificate() {
+        _pendingCertificateInfo.value = null
+        _huePairingStatus.value = "Kopplung abgebrochen."
+    }
+
+    private suspend fun proceedWithPairing(ip: String) {
+        _huePairingStatus.value = "Bitte drücken Sie jetzt den Link-Button auf Ihrer Hue Bridge..."
+        Toast.makeText(application, "Zertifikat akzeptiert. Bitte den Knopf auf der Bridge drücken!", Toast.LENGTH_LONG).show()
+        var success = false
+        val maxRetries = 15 // 30 seconds
+        for (i in 1..maxRetries) {
+            val username = hueManager.registerLocalUser(ip)
+            if (username != null) {
+                settingsRepository.hueUsername = username
+                _huePairingStatus.value = "Erfolgreich gekoppelt!"
+                Toast.makeText(application, "Erfolgreich gekoppelt!", Toast.LENGTH_LONG).show()
+                success = true
+                break
+            }
+            _huePairingStatus.value = "Warte auf Knopfdruck... (Versuch $i von $maxRetries)"
+            delay(2000)
+        }
+        if (!success) {
+            _huePairingStatus.value = "Kopplung fehlgeschlagen. Zeitüberschreitung."
+            Toast.makeText(application, "Kopplung fehlgeschlagen. Haben Sie den Knopf gedrückt?", Toast.LENGTH_LONG).show()
+        } else {
+            delay(3000)
+            _huePairingStatus.value = null
+        }
     }
 
     fun setGeminiEnabled(ctx: Context, e: Boolean) {

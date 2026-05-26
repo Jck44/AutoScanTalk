@@ -3,24 +3,13 @@ package com.andreas_kratzer.ghosttalk.core.settings
 import kotlinx.coroutines.flow.StateFlow
 
 interface SmartHomeSettings {
-    var googleHomeProjectId: String
-    val googleHomeProjectIdFlow: StateFlow<String>
-    
     var hueBridgeIp: String
     val hueBridgeIpFlow: StateFlow<String>
     
     var hueUsername: String
     val hueUsernameFlow: StateFlow<String>
 
-    var hueAccessToken: String
-    val hueAccessTokenFlow: StateFlow<String>
-
-    var hueRefreshToken: String
-    val hueRefreshTokenFlow: StateFlow<String>
-
-    var hueClientId: String
-    val hueClientIdFlow: StateFlow<String>
-
-    var hueClientSecret: String
-    val hueClientSecretFlow: StateFlow<String>
+    var hueBridgeFingerprint: String
+    val hueBridgeFingerprintFlow: StateFlow<String>
 }
+

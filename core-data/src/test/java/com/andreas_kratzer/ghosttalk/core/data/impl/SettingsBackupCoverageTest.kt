@@ -25,16 +25,12 @@ class SettingsBackupCoverageTest {
         "cuesAudioDeviceAddressFlow",
         "recordingAudioSource",     // Hardware-specific
         "recordingAudioSourceFlow",
-        "googleHomeProjectId",     // Security / Secret
-        "googleHomeProjectIdFlow",
         "hueBridgeIp",             // Security / Secret
         "hueBridgeIpFlow",
         "hueUsername",             // Security / Secret
         "hueUsernameFlow",
-        "hueAccessToken",          // Security / Secret
-        "hueAccessTokenFlow",
-        "hueRefreshToken",         // Security / Secret
-        "hueRefreshTokenFlow",
+        "hueBridgeFingerprint",     // Security / Secret
+        "hueBridgeFingerprintFlow",
         "securityPin",             // Deprecated (use Hash/Salt)
         "securityPinFlow",
         "forceSoftKeyboard",       // UI specific

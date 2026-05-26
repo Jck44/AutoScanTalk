@@ -44,6 +44,7 @@ import com.andreas_kratzer.ghosttalk.core.settings.FeatureSettings
 import com.andreas_kratzer.ghosttalk.core.settings.GenAiSettings
 import com.andreas_kratzer.ghosttalk.core.settings.ImportExportSettings
 import com.andreas_kratzer.ghosttalk.core.settings.ScanningSettings
+import com.andreas_kratzer.ghosttalk.core.settings.SmartHomeSettings
 import com.andreas_kratzer.ghosttalk.core.settings.TtsSettings
 import dagger.Binds
 import dagger.Module
@@ -181,6 +182,10 @@ abstract class DataModule {
         @Provides
         @Singleton
         fun provideCloudSettings(impl: SettingsRepositoryImpl): CloudSettings = impl
+
+        @Provides
+        @Singleton
+        fun provideSmartHomeSettings(impl: SettingsRepositoryImpl): SmartHomeSettings = impl
 
         @Provides
         @Singleton

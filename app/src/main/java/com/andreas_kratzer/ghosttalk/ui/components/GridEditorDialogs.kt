@@ -19,7 +19,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
-import com.andreas_kratzer.ghosttalk.core.cloud.GoogleHomeManager
+import com.andreas_kratzer.ghosttalk.core.cloud.PhilipsHueManager
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.GridItem
 import com.andreas_kratzer.ghosttalk.core.model.Page
@@ -55,8 +55,7 @@ fun EditorDialogs(
     onDismissRowDialog: () -> Unit,
     onDismissButtonDialog: () -> Unit,
     onEditPage: ((String) -> Unit)?,
-    googleHomeManager: GoogleHomeManager? = null,
-    googleHomeProjectId: String = ""
+    philipsHueManager: PhilipsHueManager? = null
 ) {
     val context = LocalContext.current
     val moveSuccessText = stringResource(R.string.button_move_success)
@@ -129,8 +128,9 @@ fun EditorDialogs(
             currentPageId = item.id,
             isTextCached = { actions.isTextCached(it) },
             onPrefetchText = { text, onComplete -> actions.prefetchText(text, onComplete) },
-            googleHomeManager = googleHomeManager,
-            googleHomeProjectId = googleHomeProjectId,
+            philipsHueManager = philipsHueManager,
+            hueBridgeIp = (actions as? PageViewModel)?.settingsRepository?.hueBridgeIp ?: "",
+            hueUsername = (actions as? PageViewModel)?.settingsRepository?.hueUsername ?: "",
             featureGuard = featureGuard,
             onPlayTts = { text, onDone -> actions.speakTtsPreview(text, onDone) },
             onStopTts = { actions.stopTtsPreview() },

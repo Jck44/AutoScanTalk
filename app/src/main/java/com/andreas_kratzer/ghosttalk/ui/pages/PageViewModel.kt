@@ -10,7 +10,6 @@ import androidx.lifecycle.viewModelScope
 import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
 import com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase
 import com.andreas_kratzer.ghosttalk.core.ai.domain.UpdateSmartPredictionsUseCase
-import com.andreas_kratzer.ghosttalk.core.cloud.GoogleHomeManager
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.data.impl.PageImportExportManager
 import com.andreas_kratzer.ghosttalk.core.model.Book
@@ -43,6 +42,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import com.andreas_kratzer.ghosttalk.core.cloud.PhilipsHueManager
 import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -66,9 +66,9 @@ class PageViewModel @Inject constructor(
     val actionExecutor: ActionExecutor,
     private val scanCoordinator: ScanCoordinator,
     geminiUseCase: GeminiUseCase,
-    val googleHomeManager: GoogleHomeManager,
     private val buttonTemplateRepository: ButtonTemplateRepository,
-    val systemCallManager: com.andreas_kratzer.ghosttalk.core.call.SystemCallManager
+    val systemCallManager: com.andreas_kratzer.ghosttalk.core.call.SystemCallManager,
+    val philipsHueManager: PhilipsHueManager
 ) : AndroidViewModel(application), com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions {
 
     val buttonTemplates: StateFlow<List<ButtonTemplate>> = buttonTemplateRepository.getTemplates()
@@ -126,7 +126,6 @@ class PageViewModel @Inject constructor(
 
     val defaultScanPattern = settingsRepository.defaultScanPatternFlow
     val showTestButtons = settingsRepository.showTestButtonsFlow
-    val googleHomeProjectId = settingsRepository.googleHomeProjectIdFlow
 
     val resolvedPage: StateFlow<Page?> = combine(
         currentPage,

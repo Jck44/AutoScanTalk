@@ -1,6 +1,5 @@
 package com.andreas_kratzer.ghosttalk.core.actions
 
-import com.andreas_kratzer.ghosttalk.core.cloud.GoogleHomeManager
 import com.andreas_kratzer.ghosttalk.core.cloud.PhilipsHueManager
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.di.ApplicationScope
@@ -18,7 +17,6 @@ import javax.inject.Inject
  */
 class SmartHomeActionHandler @Inject constructor(
     @param:ApplicationScope private val scope: CoroutineScope,
-    private val googleHomeManagerLazy: Lazy<GoogleHomeManager>,
     private val hueManagerLazy: Lazy<PhilipsHueManager>,
     private val actionLogger: ActionLogger,
     private val ttsProxyLazy: Lazy<ActionTtsProxy>,
@@ -38,7 +36,10 @@ class SmartHomeActionHandler @Inject constructor(
         scope.launch {
             try {
                 when (smartHomeAction.provider) {
-                    SmartHomeProvider.GOOGLE_HOME -> handleGoogleHome(smartHomeAction, buttonConfig.label, executionId, onFinish)
+                    SmartHomeProvider.GOOGLE_HOME -> {
+                        actionLogger.log("Google Home wird nicht mehr unterstützt.", smartHomeAction, buttonConfig.label)
+                        speakResponse("Google Home wird nicht mehr unterstützt.", executionId, buttonConfig.label, smartHomeAction, onFinish)
+                    }
                     SmartHomeProvider.PHILIPS_HUE -> handlePhilipsHue(smartHomeAction, buttonConfig.label, executionId, onFinish)
                 }
             } catch (e: Exception) {
@@ -48,55 +49,35 @@ class SmartHomeActionHandler @Inject constructor(
         }
     }
 
-    private suspend fun handleGoogleHome(action: SmartHomeButtonAction, label: String, executionId: Int, onFinish: (Int) -> Unit) {
-        actionLogger.log("Steuere Google Home Gerät: ${action.deviceName} (${action.intent})", action, label)
-        
-        val params = mutableMapOf<String, Any>()
-        action.value?.let { params["value"] = it }
-        
-        val success = googleHomeManagerLazy.get().executeCommand(
-            projectId = settingsRepository.googleHomeProjectId,
-            deviceId = action.deviceId,
-            trait = action.intent.substringBeforeLast(".", ""), // Legacy trait mapping if needed, or just use intent
-            command = action.intent,
-            params = params
-        )
-        
-        if (success) {
-            val message = "${action.deviceName} wurde auf '${action.intent.substringAfterLast(".")}' gesetzt."
-            speakResponse(message, executionId, label, action, onFinish)
-        } else {
-            speakResponse("Fehler beim Steuern von ${action.deviceName}.", executionId, label, action, onFinish)
-        }
-    }
-
     private suspend fun handlePhilipsHue(action: SmartHomeButtonAction, label: String, executionId: Int, onFinish: (Int) -> Unit) {
         actionLogger.log("Steuere Philips Hue: ${action.deviceName} (${action.intent})", action, label)
         
-        // Use OAuth tokens if available, otherwise fallback to local bridge
-        val success = if (settingsRepository.hueAccessToken.isNotEmpty()) {
-            hueManagerLazy.get().executeRemoteCommand(
-                accessToken = settingsRepository.hueAccessToken,
-                bridgeId = settingsRepository.hueBridgeIp, // Using bridgeIp as bridgeId for remote API mapping
-                lightId = action.deviceId,
-                intent = action.intent,
-                value = action.value
-            )
-        } else {
-            hueManagerLazy.get().executeLocalCommand(
-                bridgeIp = settingsRepository.hueBridgeIp,
-                username = settingsRepository.hueUsername,
-                lightId = action.deviceId,
-                intent = action.intent,
-                value = action.value
-            )
-        }
+        val success = hueManagerLazy.get().executeLocalCommand(
+            bridgeIp = settingsRepository.hueBridgeIp,
+            username = settingsRepository.hueUsername,
+            lightId = action.deviceId,
+            intent = action.intent,
+            value = action.value
+        )
         
         if (success) {
-            val message = "${action.deviceName} (Hue) wurde auf '${action.intent.substringAfterLast(".")}' gesetzt."
+            val actionText = when (action.intent) {
+                "action.on" -> "eingeschaltet"
+                "action.off" -> "ausgeschaltet"
+                "action.brightness" -> {
+                    val percent = action.value?.toIntOrNull() ?: 100
+                    "auf $percent Prozent Helligkeit gesetzt"
+                }
+                "action.color" -> {
+                    val colorName = action.value ?: "Standard"
+                    "auf Farbe $colorName gesetzt"
+                }
+                else -> "auf '${action.intent.substringAfterLast(".")}' gesetzt"
+            }
+            val message = "${action.deviceName} wurde $actionText."
             speakResponse(message, executionId, label, action, onFinish)
         } else {
-            speakResponse("Fehler beim Steuern von ${action.deviceName} (Hue).", executionId, label, action, onFinish)
+            speakResponse("Fehler beim Steuern von ${action.deviceName}.", executionId, label, action, onFinish)
         }
     }
     
@@ -114,3 +95,4 @@ class SmartHomeActionHandler @Inject constructor(
         }
     }
 }
+
