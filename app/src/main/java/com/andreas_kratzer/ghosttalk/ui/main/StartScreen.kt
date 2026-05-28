@@ -13,9 +13,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
+import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -107,7 +107,7 @@ fun StartScreen(
                 
                 GhostTalkCard(
                     title = stringResource(CoreR.string.start_manage_content),
-                    icon = Icons.Filled.Edit,
+                    icon = GhostTalkIcons.Edit,
                     onClick = onNavigateToContentManagement,
                     modifier = cardModifier.testTag("start_card_manage"),
                     containerColor = MaterialTheme.colorScheme.tertiaryContainer,

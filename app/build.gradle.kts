@@ -22,11 +22,11 @@ android {
         testInstrumentationRunner = "com.andreas_kratzer.ghosttalk.HiltTestRunner"
         
         ndk {
-            // Deaktiviere Debug-Symbole in CI, um Zeit zu sparen
-            debugSymbolLevel = if (project.hasProperty("isCI")) {
-                "none"
-            } else {
+            // Deaktiviere Debug-Symbole standardmaessig, um Zeit zu sparen (kein C++ Code)
+            debugSymbolLevel = if (project.hasProperty("enableLocalNativeDebugging")) {
                 "full"
+            } else {
+                "none"
             }
         }
     }
@@ -66,8 +66,8 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     packaging {
         resources {
@@ -80,7 +80,7 @@ android {
     }
     buildFeatures {
         compose = true
-        prefab = true
+        prefab = false
     }
 }
 
@@ -91,7 +91,7 @@ composeCompiler {
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile>().configureEach {
     compilerOptions {
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     }
 }
 
@@ -113,7 +113,6 @@ dependencies {
     implementation(project(":feature-settings"))
 
     implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.appcompat)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.process)
     implementation(libs.androidx.activity.compose)
@@ -123,7 +122,6 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.compose.material.icons.core)
-    implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.ui.text.google.fonts)
     
     testImplementation(libs.junit)
