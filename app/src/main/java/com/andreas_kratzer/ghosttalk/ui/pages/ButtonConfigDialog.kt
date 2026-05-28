@@ -51,6 +51,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -130,6 +131,8 @@ fun ButtonConfigDialog(
     philipsHueManager: PhilipsHueManager? = null,
     hueBridgeIp: String = "",
     hueUsername: String = "",
+    hueCachedDevices: String = "",
+    onRefreshHueCache: ((silentOnFailure: Boolean, onResult: (Boolean) -> Unit) -> Unit)? = null,
     featureGuard: FeatureGuard? = null,
     onPlayTts: ((String, () -> Unit) -> Unit)? = null,
     onStopTts: (() -> Unit)? = null,
@@ -332,8 +335,44 @@ fun ButtonConfigDialog(
         mutableStateOf((buttonConfig.buttonAction as? SmartHomeButtonAction)?.value ?: "")
     }
     
-    var availableHomeDevices by remember { mutableStateOf<List<HomeDevice>>(emptyList()) }
+    val parsedCachedDevices = remember(hueCachedDevices) {
+        val list = mutableListOf<HomeDevice>()
+        if (hueCachedDevices.isNotBlank()) {
+            try {
+                val array = org.json.JSONArray(hueCachedDevices)
+                for (i in 0 until array.length()) {
+                    val obj = array.getJSONObject(i)
+                    list.add(
+                        HomeDevice(
+                            id = obj.getString("id"),
+                            name = obj.getString("name"),
+                            type = obj.optString("type", "LIGHT")
+                        )
+                    )
+                }
+            } catch (e: Exception) {
+                // Ignore parsing errors
+            }
+        }
+        list
+    }
+
+    var availableHomeDevices by remember { mutableStateOf<List<HomeDevice>>(parsedCachedDevices) }
     var isFetchingDevices by remember { mutableStateOf(false) }
+
+    LaunchedEffect(parsedCachedDevices) {
+        if (parsedCachedDevices.isNotEmpty() || availableHomeDevices.isEmpty()) {
+            availableHomeDevices = parsedCachedDevices
+        }
+    }
+
+    LaunchedEffect(smartHomeProvider) {
+        if (smartHomeProvider == SmartHomeProvider.PHILIPS_HUE && onRefreshHueCache != null) {
+            onRefreshHueCache(true) { success ->
+                // Silently refreshed cache if bridge is reachable
+            }
+        }
+    }
     val scope = rememberCoroutineScope()
 
     val buildCurrentAction = {
@@ -1083,11 +1122,21 @@ fun ButtonConfigDialog(
                                 availableHomeDevices = availableHomeDevices,
                                 isFetchingDevices = isFetchingDevices,
                                 onFetchDevices = {
-                                    if (smartHomeProvider == SmartHomeProvider.PHILIPS_HUE && philipsHueManager != null) {
-                                        scope.launch {
+                                    if (smartHomeProvider == SmartHomeProvider.PHILIPS_HUE) {
+                                        if (onRefreshHueCache != null) {
                                             isFetchingDevices = true
-                                            availableHomeDevices = philipsHueManager.getLocalLights(hueBridgeIp, hueUsername)
-                                            isFetchingDevices = false
+                                            onRefreshHueCache(false) { success ->
+                                                isFetchingDevices = false
+                                            }
+                                        } else if (philipsHueManager != null) {
+                                            scope.launch {
+                                                isFetchingDevices = true
+                                                val list = philipsHueManager.getLocalLights(hueBridgeIp, hueUsername)
+                                                if (list.isNotEmpty()) {
+                                                    availableHomeDevices = list
+                                                }
+                                                isFetchingDevices = false
+                                            }
                                         }
                                     }
                                 },

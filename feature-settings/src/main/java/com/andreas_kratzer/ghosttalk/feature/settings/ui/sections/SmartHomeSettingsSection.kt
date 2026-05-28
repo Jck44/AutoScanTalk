@@ -37,6 +37,18 @@ fun SmartHomeSettingsSection(
     val hueUsername by viewModel.hueUsername.collectAsState("")
     val huePairingStatus by viewModel.huePairingStatus.collectAsState(null)
     val pendingCertInfo by viewModel.pendingCertificateInfo.collectAsState(null)
+    val hueCachedDevices by viewModel.hueCachedDevices.collectAsState("")
+    val isUpdatingHueCache by viewModel.isUpdatingHueCache.collectAsState(false)
+
+    val cachedCount = androidx.compose.runtime.remember(hueCachedDevices) {
+        if (hueCachedDevices.isBlank()) 0 else {
+            try {
+                org.json.JSONArray(hueCachedDevices).length()
+            } catch (e: Exception) {
+                0
+            }
+        }
+    }
 
     pendingCertInfo?.let { cert ->
         AlertDialog(
@@ -129,6 +141,13 @@ fun SmartHomeSettingsSection(
                     )
                 }
 
+                Text(
+                    text = if (cachedCount > 0) "Geräteliste geladen: $cachedCount Lampen im Cache" else "Keine Lampen im Cache",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(vertical = 4.dp)
+                )
+
                 Row(modifier = Modifier.padding(top = 8.dp)) {
                     OutlinedButton(onClick = { viewModel.discoverHueBridges() }) {
                         Text(stringResource(R.string.settings_hue_discover_bridges))
@@ -141,6 +160,15 @@ fun SmartHomeSettingsSection(
                         enabled = hueBridgeIp.isNotBlank()
                     ) {
                         Text("Verbindung herstellen")
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+                    
+                    Button(
+                        onClick = { viewModel.refreshHueDevicesCache() },
+                        enabled = hueBridgeIp.isNotBlank() && hueUsername.isNotBlank() && !isUpdatingHueCache
+                    ) {
+                        Text(if (isUpdatingHueCache) "Lade..." else "Geräteliste laden")
                     }
                 }
             }

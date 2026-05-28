@@ -76,6 +76,7 @@ data class ImportExportData(
     val callAnnouncementAsCue: Boolean? = null,
     val autoEnableSpeakerphone: Boolean? = null,
     val simulateCallsEnabled: Boolean? = null,
+    val hueCachedDevices: String? = null,
     val templates: List<ImportTemplate>? = null,
     val buttonTemplates: List<ImportButtonTemplate>? = null,
     val pages: List<ImportPage> = emptyList()

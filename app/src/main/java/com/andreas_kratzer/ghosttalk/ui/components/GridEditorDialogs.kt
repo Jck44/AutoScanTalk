@@ -131,6 +131,8 @@ fun EditorDialogs(
             philipsHueManager = philipsHueManager,
             hueBridgeIp = (actions as? PageViewModel)?.settingsRepository?.hueBridgeIp ?: "",
             hueUsername = (actions as? PageViewModel)?.settingsRepository?.hueUsername ?: "",
+            hueCachedDevices = (actions as? PageViewModel)?.settingsRepository?.hueCachedDevices ?: "",
+            onRefreshHueCache = { silent, callback -> (actions as? PageViewModel)?.refreshHueDevicesCache(silent, callback) },
             featureGuard = featureGuard,
             onPlayTts = { text, onDone -> actions.speakTtsPreview(text, onDone) },
             onStopTts = { actions.stopTtsPreview() },

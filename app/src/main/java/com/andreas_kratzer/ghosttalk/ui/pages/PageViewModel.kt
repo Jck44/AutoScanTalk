@@ -529,6 +529,41 @@ class PageViewModel @Inject constructor(
         ttsHelper.stopAll()
     }
 
+    fun refreshHueDevicesCache(silentOnFailure: Boolean = false, onResult: ((Boolean) -> Unit)? = null) {
+        val ip = settingsRepository.hueBridgeIp
+        val username = settingsRepository.hueUsername
+        if (ip.isBlank() || username.isBlank()) {
+            if (!silentOnFailure) {
+                android.widget.Toast.makeText(getApplication(), "Bitte zuerst in den Einstellungen koppeln.", android.widget.Toast.LENGTH_LONG).show()
+            }
+            onResult?.invoke(false)
+            return
+        }
+
+        viewModelScope.launch {
+            val fetchedDevices = philipsHueManager.getLocalLights(ip, username)
+            if (fetchedDevices.isNotEmpty()) {
+                val array = org.json.JSONArray()
+                fetchedDevices.forEach { device ->
+                    val obj = org.json.JSONObject().apply {
+                        put("id", device.id)
+                        put("name", device.name)
+                        put("type", device.type)
+                    }
+                    array.put(obj)
+                }
+                settingsRepository.hueCachedDevices = array.toString()
+                android.widget.Toast.makeText(getApplication(), "${fetchedDevices.size} Lampen geladen und im Cache gespeichert.", android.widget.Toast.LENGTH_LONG).show()
+                onResult?.invoke(true)
+            } else {
+                if (!silentOnFailure) {
+                    android.widget.Toast.makeText(getApplication(), "Konnte Bridge nicht erreichen. Alter Cache wird beibehalten.", android.widget.Toast.LENGTH_LONG).show()
+                }
+                onResult?.invoke(false)
+            }
+        }
+    }
+
     override fun onCleared() {
         super.onCleared()
         actionExecutor.stopActions()

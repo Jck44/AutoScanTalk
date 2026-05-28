@@ -127,6 +127,10 @@ class SettingsViewModel @Inject constructor(
     
     private val _pendingCertificateInfo = MutableStateFlow<com.andreas_kratzer.ghosttalk.core.cloud.BridgeCertificateInfo?>(null)
     val pendingCertificateInfo: StateFlow<com.andreas_kratzer.ghosttalk.core.cloud.BridgeCertificateInfo?> = _pendingCertificateInfo.asStateFlow()
+    
+    val hueCachedDevices = settingsRepository.hueCachedDevicesFlow
+    private val _isUpdatingHueCache = MutableStateFlow(false)
+    val isUpdatingHueCache: StateFlow<Boolean> = _isUpdatingHueCache.asStateFlow()
     val isSyncing = cloudSyncDelegate.isSyncing
     val userEmail = cloudSyncDelegate.userEmail
     
@@ -546,6 +550,43 @@ class SettingsViewModel @Inject constructor(
     fun cancelHueBridgeCertificate() {
         _pendingCertificateInfo.value = null
         _huePairingStatus.value = "Kopplung abgebrochen."
+    }
+
+    fun refreshHueDevicesCache(silentOnFailure: Boolean = false, onResult: ((Boolean) -> Unit)? = null) {
+        val ip = settingsRepository.hueBridgeIp
+        val username = settingsRepository.hueUsername
+        if (ip.isBlank() || username.isBlank()) {
+            if (!silentOnFailure) {
+                Toast.makeText(application, "Bitte zuerst koppeln (IP und Benutzername erforderlich).", Toast.LENGTH_LONG).show()
+            }
+            onResult?.invoke(false)
+            return
+        }
+
+        viewModelScope.launch {
+            _isUpdatingHueCache.value = true
+            val fetchedDevices = hueManager.getLocalLights(ip, username)
+            if (fetchedDevices.isNotEmpty()) {
+                val array = org.json.JSONArray()
+                fetchedDevices.forEach { device ->
+                    val obj = org.json.JSONObject().apply {
+                        put("id", device.id)
+                        put("name", device.name)
+                        put("type", device.type)
+                    }
+                    array.put(obj)
+                }
+                settingsRepository.hueCachedDevices = array.toString()
+                Toast.makeText(application, "${fetchedDevices.size} Lampen geladen und im Cache gespeichert.", Toast.LENGTH_LONG).show()
+                onResult?.invoke(true)
+            } else {
+                if (!silentOnFailure) {
+                    Toast.makeText(application, "Konnte Bridge nicht erreichen. Alter Cache wird beibehalten.", Toast.LENGTH_LONG).show()
+                }
+                onResult?.invoke(false)
+            }
+            _isUpdatingHueCache.value = false
+        }
     }
 
     private suspend fun proceedWithPairing(ip: String) {

@@ -147,6 +147,7 @@ class SettingsRepositoryImpl @Inject constructor(
     override val hueBridgeIpFlow: StateFlow<String> get() = smartHomeSettings.hueBridgeIpFlow
     override val hueUsernameFlow: StateFlow<String> get() = smartHomeSettings.hueUsernameFlow
     override val hueBridgeFingerprintFlow: StateFlow<String> get() = smartHomeSettings.hueBridgeFingerprintFlow
+    override val hueCachedDevicesFlow: StateFlow<String> get() = smartHomeSettings.hueCachedDevicesFlow
     override val cuesAudioDeviceAddressFlow: StateFlow<String?> get() = voiceSettings.cuesAudioDeviceAddressFlow
     override val securityPinFlow: StateFlow<String?> get() = securitySettings.securityPinFlow
     override val securityPinHashFlow: StateFlow<String?> get() = securitySettings.securityPinHashFlow
@@ -305,6 +306,10 @@ class SettingsRepositoryImpl @Inject constructor(
     override var hueBridgeFingerprint: String
         get() = smartHomeSettings.hueBridgeFingerprint
         set(value) { smartHomeSettings.hueBridgeFingerprint = value }
+
+    override var hueCachedDevices: String
+        get() = smartHomeSettings.hueCachedDevices
+        set(value) { smartHomeSettings.hueCachedDevices = value }
 
     override var isGeminiEnabled: Boolean
         get() = genAiSettings.isGeminiEnabled

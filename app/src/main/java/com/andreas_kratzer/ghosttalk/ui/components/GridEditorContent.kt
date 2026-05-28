@@ -575,6 +575,8 @@ fun GridEditorContent(
                     philipsHueManager = pageViewModel?.philipsHueManager,
                     hueBridgeIp = pageViewModel?.settingsRepository?.hueBridgeIp ?: "",
                     hueUsername = pageViewModel?.settingsRepository?.hueUsername ?: "",
+                    hueCachedDevices = pageViewModel?.settingsRepository?.hueCachedDevices ?: "",
+                    onRefreshHueCache = { silent, callback -> pageViewModel?.refreshHueDevicesCache(silent, callback) },
                     featureGuard = featureGuard,
                     onPlayTts = { text, onDone -> actions.speakTtsPreview(text, onDone) },
                     onStopTts = { actions.stopTtsPreview() },

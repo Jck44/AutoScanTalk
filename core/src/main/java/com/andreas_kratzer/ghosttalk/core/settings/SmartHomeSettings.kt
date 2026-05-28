@@ -11,5 +11,8 @@ interface SmartHomeSettings {
 
     var hueBridgeFingerprint: String
     val hueBridgeFingerprintFlow: StateFlow<String>
+
+    var hueCachedDevices: String
+    val hueCachedDevicesFlow: StateFlow<String>
 }
 

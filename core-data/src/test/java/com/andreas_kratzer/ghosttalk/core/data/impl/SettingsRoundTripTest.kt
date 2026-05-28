@@ -69,7 +69,7 @@ class SettingsRoundTripTest {
             "maxCallDurationSeconds", "callDurationFeedbackIntervalSeconds", "outgoingCallIntro",
             "incomingCallIntro", "incomingCallScanLimitUserModeActive", "incomingCallAutoActionUserModeActive",
             "incomingCallDelayUserModeInactive", "incomingCallAutoActionUserModeInactive", "callAnnouncementAsCue",
-            "autoEnableSpeakerphone", "simulateCallsEnabled"
+            "autoEnableSpeakerphone", "simulateCallsEnabled", "hueCachedDevices"
         )
 
         for (propertyName in mappedProperties) {

@@ -17,16 +17,20 @@ import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.ExperimentalS
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.GenAiSettingsDelegate
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.ScanningSettingsDelegate
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.TtsSettingsDelegate
+import android.widget.Toast
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -38,7 +42,7 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class SettingsViewModelTest {
 
-    private val testDispatcher = StandardTestDispatcher()
+    private val testDispatcher = UnconfinedTestDispatcher()
     
     private lateinit var application: Application
     private lateinit var settingsRepository: SettingsRepository
@@ -123,10 +127,15 @@ class SettingsViewModelTest {
             syncLogProvider = mockk(relaxed = true),
             callActionProxy = dagger.Lazy { mockk(relaxed = true) }
         )
+
+        mockkStatic(Toast::class)
+        every { Toast.makeText(any(), any<Int>(), any()) } returns mockk(relaxed = true)
+        every { Toast.makeText(any(), any<CharSequence>(), any()) } returns mockk(relaxed = true)
     }
 
     @After
     fun tearDown() {
+        unmockkStatic(Toast::class)
         Dispatchers.resetMain()
     }
 
@@ -204,5 +213,45 @@ class SettingsViewModelTest {
     fun `setCallDurationFeedbackIntervalSeconds updates repository`() {
         viewModel.setCallDurationFeedbackIntervalSeconds(30)
         verify { settingsRepository.callDurationFeedbackIntervalSeconds = 30 }
+    }
+
+    @Test
+    fun `refreshHueDevicesCache success updates repository cache`() = runTest(testDispatcher) {
+        every { settingsRepository.hueBridgeIp } returns "192.168.1.50"
+        every { settingsRepository.hueUsername } returns "some-token"
+        val mockDevices = listOf(
+            com.andreas_kratzer.ghosttalk.core.cloud.HomeDevice(id = "1", name = "Hue light 1")
+        )
+        coEvery { hueManager.getLocalLights(any(), any()) } returns mockDevices
+
+        var success: Boolean? = null
+        println("TEST DEBUG START")
+        viewModel.refreshHueDevicesCache(silentOnFailure = false) {
+            println("TEST DEBUG CALLBACK: $it")
+            success = it
+        }
+        println("TEST DEBUG BEFORE ADVANCE")
+        testDispatcher.scheduler.advanceUntilIdle()
+        println("TEST DEBUG AFTER ADVANCE")
+
+        verify { settingsRepository.hueCachedDevices = any() }
+        assertEquals(true, success)
+    }
+
+    @Test
+    fun `refreshHueDevicesCache failure keeps existing repository cache`() = runTest(testDispatcher) {
+        every { settingsRepository.hueBridgeIp } returns "192.168.1.50"
+        every { settingsRepository.hueUsername } returns "some-token"
+        coEvery { hueManager.getLocalLights(any(), any()) } returns emptyList()
+
+        var success: Boolean? = null
+        viewModel.refreshHueDevicesCache(silentOnFailure = true) {
+            success = it
+        }
+
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        verify(exactly = 0) { settingsRepository.hueCachedDevices = any() }
+        assertEquals(false, success)
     }
 }
