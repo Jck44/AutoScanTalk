@@ -1,4 +1,4 @@
-GhosTTalk is a powerful, customizable Augmentative and Alternative Communication (AAC) app designed to give a voice to those with speech impairments. 
+GhostTalk is a powerful, customizable Augmentative and Alternative Communication (AAC) app designed to give a voice to those with speech impairments. 
 
 Features:
 - **Customizable Books & Pages**: Create structured communication boards tailored to your needs.
@@ -8,4 +8,4 @@ Features:
 - **Row-by-Row Scanning**: Efficient navigation through grid layouts.
 - **Generative AI (Coming Soon)**: Integration with Gemini for dynamic communication.
 
-Empower your communication with GhosTTalk.
+Empower your communication with GhostTalk.

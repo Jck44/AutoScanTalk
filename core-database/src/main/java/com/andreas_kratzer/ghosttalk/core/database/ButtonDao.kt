@@ -1,0 +1,21 @@
+package com.andreas_kratzer.ghosttalk.core.database
+
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+
+@Dao
+interface ButtonDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertButtons(buttons: List<ButtonEntity>)
+
+    @Query("DELETE FROM buttons WHERE pageId = :pageId")
+    suspend fun deleteButtonsForPage(pageId: String)
+    
+    @Query("SELECT * FROM buttons WHERE pageId = :pageId")
+    suspend fun getButtonsForPage(pageId: String): List<ButtonEntity>
+
+    @Query("DELETE FROM buttons WHERE label = ''")
+    suspend fun deleteEmptyButtons(): Int
+}

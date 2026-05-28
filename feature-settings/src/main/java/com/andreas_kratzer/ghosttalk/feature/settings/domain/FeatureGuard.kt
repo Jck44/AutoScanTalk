@@ -1,0 +1,56 @@
+package com.andreas_kratzer.ghosttalk.feature.settings.domain
+
+import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.model.ButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.ControlDeviceButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.DeviceActionType
+import com.andreas_kratzer.ghosttalk.core.model.GeminiButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.GeminiNanoButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.GeminiSearchButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.SmartHomeButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.SmartHomeProvider
+import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
+import com.andreas_kratzer.ghosttalk.core.scanning.FeatureGuardProxy
+import javax.inject.Inject
+import javax.inject.Singleton
+
+/**
+ * Centrally manages feature-related visibility and availability logic for buttons.
+ */
+@Singleton
+class FeatureGuard @Inject constructor(
+    private val settingsRepository: SettingsRepository
+) : FeatureGuardProxy {
+    /**
+     * Checks if a specific action is currently enabled based on global settings.
+     */
+    override fun isActionEnabled(action: ButtonAction): Boolean {
+        return when (action) {
+            is SmartPredictionButtonAction -> settingsRepository.isSmartPredictionEnabled
+            is GeminiButtonAction, is GeminiSearchButtonAction -> {
+                settingsRepository.isGeminiEnabled
+            }
+            is GeminiNanoButtonAction -> {
+                settingsRepository.useLocalGenerativeAi
+            }
+            is SmartHomeButtonAction -> {
+                when (action.provider) {
+                    SmartHomeProvider.GOOGLE_HOME -> false
+                    SmartHomeProvider.PHILIPS_HUE -> {
+                        settingsRepository.hueUsername.isNotBlank() && settingsRepository.hueBridgeIp.isNotBlank()
+                    }
+                }
+            }
+            is ControlDeviceButtonAction -> true
+            else -> true
+        }
+    }
+
+    /**
+     * Checks if a button should be visible/active in the UI based on its action and settings.
+     */
+    override fun isButtonVisible(config: ButtonConfig): Boolean {
+        return isActionEnabled(config.buttonAction)
+    }
+}

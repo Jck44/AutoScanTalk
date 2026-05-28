@@ -1,9 +1,9 @@
-# Datenschutzerklärung für GhosTTalk
+# Datenschutzerklärung für GhostTalk
 
-Diese Datenschutzerklärung informiert Sie über die Art, den Umfang und den Zweck der Erhebung und Verwendung personenbezogener Daten durch die App **GhosTTalk**.
+Diese Datenschutzerklärung informiert Sie über die Art, den Umfang und den Zweck der Erhebung und Verwendung personenbezogener Daten durch die App **GhostTalk**.
 
 ## 1. Grundsätzliches
-GhosTTalk ist eine Kommunikations-App (AAC - Augmentative and Alternative Communication), die lokal auf Ihrem Android-Gerät arbeitet. Der Schutz Ihrer persönlichen Daten ist uns ein wichtiges Anliegen.
+GhostTalk ist eine Kommunikations-App (AAC - Augmentative and Alternative Communication), die lokal auf Ihrem Android-Gerät arbeitet. Der Schutz Ihrer persönlichen Daten ist uns ein wichtiges Anliegen.
 
 ## 2. Erhebung und Verarbeitung von Daten
 Die App erhebt von sich aus **keine** personenbezogenen Daten und übermittelt keine Daten an unsere eigenen Server.

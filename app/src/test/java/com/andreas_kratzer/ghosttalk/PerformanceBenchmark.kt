@@ -1,11 +1,11 @@
 package com.andreas_kratzer.ghosttalk
 
-import com.andreas_kratzer.ghosttalk.data.Converters
-import com.andreas_kratzer.ghosttalk.model.AuditoryCue
-import com.andreas_kratzer.ghosttalk.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
-import com.andreas_kratzer.ghosttalk.model.Page
-import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
+import com.andreas_kratzer.ghosttalk.core.database.Converters
+import com.andreas_kratzer.ghosttalk.core.model.AuditoryCue
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.Page
+import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import org.junit.Test
 import kotlin.system.measureTimeMillis
 
@@ -86,11 +86,9 @@ class PerformanceBenchmark {
         // Pass 2: Cached build (simulating the new logic)
         var lastPagesRef = pages
         val lookupTime2 = measureTimeMillis {
-            if (lastPagesRef === pages) {
-                // Return cached version (simulated)
-                val _b = buttonLookup
-                val _p = pageLookup
-            }
+            // Return cached version (simulated)
+            buttonLookup
+            pageLookup
         }
         println("Lookup Map Creation Pass 2 (Cached): ${lookupTime2}ms")
         

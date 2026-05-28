@@ -7,6 +7,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -15,19 +16,20 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import androidx.lifecycle.Lifecycle
 import com.andreas_kratzer.ghosttalk.core.SecurityManager
-import com.andreas_kratzer.ghosttalk.data.PageRepository
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.data.PageRepository
+import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.ui.components.SecurityEntryDialog
+import com.andreas_kratzer.ghosttalk.feature.settings.ui.ContentManagementScreen
+import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsScreen
+import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
 import com.andreas_kratzer.ghosttalk.ui.books.BookListScreen
 import com.andreas_kratzer.ghosttalk.ui.books.BookViewModel
-import com.andreas_kratzer.ghosttalk.ui.components.SecurityEntryDialog
 import com.andreas_kratzer.ghosttalk.ui.pages.PageEditorScreen
 import com.andreas_kratzer.ghosttalk.ui.pages.PageListScreen
 import com.andreas_kratzer.ghosttalk.ui.pages.PageScreen
 import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
-import com.andreas_kratzer.ghosttalk.ui.settings.ContentManagementScreen
-import com.andreas_kratzer.ghosttalk.ui.settings.SettingsScreen
-import com.andreas_kratzer.ghosttalk.ui.settings.SettingsViewModel
 import com.andreas_kratzer.ghosttalk.ui.templates.TemplateEditorScreen
 import com.andreas_kratzer.ghosttalk.ui.templates.TemplateScreen
 import com.andreas_kratzer.ghosttalk.ui.templates.TemplateViewModel
@@ -37,7 +39,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Composable
-fun GhosTTalkNavHost(
+fun GhostTalkNavHost(
     navController: NavHostController,
     bookViewModel: BookViewModel,
     pageViewModel: PageViewModel,
@@ -47,6 +49,7 @@ fun GhosTTalkNavHost(
     securityManager: SecurityManager
 ) {
     val isUnlocked by securityManager.isUnlocked.collectAsState()
+    val coroutineScope = rememberCoroutineScope()
     var pendingRoute by remember { mutableStateOf<String?>(null) }
 
     val navigateWithSecurity: (String) -> Unit = { route ->
@@ -63,7 +66,7 @@ fun GhosTTalkNavHost(
         if (!isUnlocked && isProtected) {
             pendingRoute = route
         } else {
-            navController.navigate(route)
+            navController.safeNavigate(route)
         }
     }
 
@@ -72,11 +75,11 @@ fun GhosTTalkNavHost(
             onDismiss = { 
                 pendingRoute = null
             },
-            onConfirm = { success ->
+            onConfirm = { success: Boolean ->
                 if (success) {
                     val route = pendingRoute!!
                     pendingRoute = null
-                    navController.navigate(route)
+                    navController.safeNavigate(route)
                 } else {
                     pendingRoute = null
                 }
@@ -98,39 +101,66 @@ fun GhosTTalkNavHost(
                 if (behavior == "USER_MODE") {
                     // Navigate directly to user mode
                     val startId = settingsRepository.defaultStartPageId
-                    CoroutineScope(Dispatchers.IO).launch {
-                        val startPage = if (startId != null) {
-                            pageRepository.getPageById(startId)
-                        } else null
+                    val startPage = if (startId != null) {
+                        withContext(Dispatchers.IO) { pageRepository.getPageById(startId) }
+                    } else null
 
-                        val finalPage = startPage ?: pageRepository.getPagesForBook(selectedBookId).firstOrNull()
-                        
-                        if (finalPage != null) {
-                            withContext(Dispatchers.Main) {
-                                pageViewModel.loadPage(finalPage)
-                                navController.navigate("main") {
-                                    popUpTo("book_list") { inclusive = true }
-                                }
+                    val finalPage = startPage ?: withContext(Dispatchers.IO) {
+                        pageRepository.getPagesForBook(selectedBookId).firstOrNull()
+                    }
+                    
+                    if (finalPage != null) {
+                        pageViewModel.loadPage(finalPage)
+                        runOnMainThread {
+                            navController.navigate("main") {
+                                popUpTo("book_list") { inclusive = true }
+                                launchSingleTop = true
                             }
-                        } else {
-                            // Fallback to start screen if no pages
-                            withContext(Dispatchers.Main) {
-                                navController.navigate("start") {
-                                    popUpTo("book_list") { inclusive = true }
-                                }
+                        }
+                    } else {
+                        // Fallback to start screen if no pages
+                        runOnMainThread {
+                            navController.navigate("start") {
+                                popUpTo("book_list") { inclusive = true }
+                                launchSingleTop = true
                             }
                         }
                     }
                 } else {
-                    navController.navigate("start") {
-                        popUpTo("book_list") { inclusive = true }
+                    runOnMainThread {
+                        navController.navigate("start") {
+                            popUpTo("book_list") { inclusive = true }
+                        }
                     }
                 }
             }
         }
     }
 
-    NavHost(navController = navController, startDestination = "book_list") {
+    // Handle Settings Navigation Events
+    LaunchedEffect(Unit) {
+        settingsViewModel.navigationEvents.collect { event ->
+            runOnMainThread {
+                when (event) {
+                    is SettingsViewModel.SettingsNavigationEvent.EditButton -> {
+                        navController.navigate("page_editor/${event.pageId}?buttonId=${event.buttonId}")
+                    }
+                    is SettingsViewModel.SettingsNavigationEvent.JumpToPage -> {
+                        navController.navigate("page_editor/${event.pageId}")
+                    }
+                }
+            }
+        }
+    }
+
+    NavHost(
+        navController = navController, 
+        startDestination = "book_list",
+        enterTransition = { androidx.compose.animation.EnterTransition.None },
+        exitTransition = { androidx.compose.animation.ExitTransition.None },
+        popEnterTransition = { androidx.compose.animation.EnterTransition.None },
+        popExitTransition = { androidx.compose.animation.ExitTransition.None }
+    ) {
         composable("book_list") {
             BookListScreen(
                 bookViewModel = bookViewModel,
@@ -153,37 +183,39 @@ fun GhosTTalkNavHost(
                 bookName = activeBook?.name ?: "GhostTalk",
                 onNavigateToUserMode = {
                     val startId = settingsRepository.defaultStartPageId
-                    CoroutineScope(Dispatchers.IO).launch {
+                    coroutineScope.launch {
+                        android.util.Log.d("NAV_DEBUG", "onNavigateToUserMode clicked")
                         val startPage = if (startId != null) {
-                            pageRepository.getPageById(startId)
+                            withContext(Dispatchers.IO) { pageRepository.getPageById(startId) }
                         } else null
 
-                        val finalPage = startPage ?: pageRepository.getPagesForBook(activeBookId ?: "book-default").firstOrNull()
+                        val finalPage = startPage ?: withContext(Dispatchers.IO) {
+                            pageRepository.getPagesForBook(activeBookId ?: "book-default").firstOrNull()
+                        }
                         
                         if (finalPage != null) {
-                            withContext(Dispatchers.Main) {
-                                pageViewModel.loadPage(finalPage)
-                                navController.navigate("main")
-                            }
+                            pageViewModel.loadPage(finalPage)
+                            android.util.Log.d("NAV_DEBUG", "onNavigateToUserMode: loaded page ${finalPage.id}, navigating to main")
+                            navigateWithSecurity("main")
                         }
                     }
                 },
                 onNavigateToSettings = { navigateWithSecurity("settings?isGlobal=false") },
                 onNavigateToContentManagement = { navigateWithSecurity("content_management") },
-                onNavigateToBooks = { navController.navigate("book_list") }
+                onNavigateToBooks = { navController.safePopBackStack() }
             )
         }
         composable("content_management") {
             ContentManagementScreen(
-                onNavigateToPageManager = { navController.navigate("page_list") },
-                onNavigateToTemplateManager = { navController.navigate("templates") },
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateToPageManager = { navController.safeNavigate("page_list") },
+                onNavigateToTemplateManager = { navController.safeNavigate("templates") },
+                onNavigateBack = { navController.safePopBackStack() }
             )
         }
         composable("main") {
             PageScreen(
                 pageViewModel = pageViewModel,
-                onNavigateBack = { navController.navigate("start") },
+                onNavigateBack = { navController.safePopBackStack() },
                 modifier = Modifier.fillMaxSize()
             )
         }
@@ -198,7 +230,12 @@ fun GhosTTalkNavHost(
             SettingsScreen(
                 viewModel = settingsViewModel,
                 isGlobal = isGlobal,
-                onNavigateBack = { navController.popBackStack() },
+                onNavigateBack = { navController.safePopBackStack() },
+                onBookDeleted = {
+                    navController.navigate("book_list") {
+                        popUpTo("book_list") { inclusive = true }
+                    }
+                },
                 onNavigateToStart = {
                     navController.navigate("start") {
                         popUpTo("start") { inclusive = true }
@@ -210,9 +247,9 @@ fun GhosTTalkNavHost(
             val templateViewModel = hiltViewModel<TemplateViewModel>()
             TemplateScreen(
                 templateViewModel = templateViewModel,
-                onNavigateBack = { navController.popBackStack() },
+                onNavigateBack = { navController.safePopBackStack() },
                 onTemplateClick = { templateId ->
-                    navController.navigate("template_editor/$templateId")
+                    navController.safeNavigate("template_editor/$templateId")
                 }
             )
         }
@@ -224,31 +261,78 @@ fun GhosTTalkNavHost(
                     templateId = templateId,
                     templateViewModel = templateViewModel,
                     pageViewModel = pageViewModel,
-                    onNavigateBack = { navController.popBackStack() }
+                    onNavigateBack = { navController.safePopBackStack() }
                 )
             }
         }
         composable("page_list") {
             PageListScreen(
                 pageViewModel = pageViewModel,
-                onNavigateBack = { navController.popBackStack() },
+                onNavigateBack = { navController.safePopBackStack() },
                 onEditPage = { pageId: String ->
-                    navController.navigate("page_editor/$pageId")
+                    navController.safeNavigate("page_editor/$pageId")
+                },
+                onEditTemplate = { templateId: String ->
+                    navController.safeNavigate("template_editor/$templateId")
                 }
             )
         }
-        composable("page_editor/{pageId}") { backStackEntry ->
+        composable(
+            "page_editor/{pageId}?buttonId={buttonId}",
+            arguments = listOf(
+                navArgument("pageId") { type = NavType.StringType },
+                navArgument("buttonId") { type = NavType.StringType; nullable = true; defaultValue = null }
+            )
+        ) { backStackEntry ->
             val pageId = backStackEntry.arguments?.getString("pageId")
+            val buttonId = backStackEntry.arguments?.getString("buttonId")
             if (pageId != null) {
                 PageEditorScreen(
                     pageId = pageId,
+                    initialButtonId = buttonId,
                     pageViewModel = pageViewModel,
-                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateBack = { navController.safePopBackStack() },
                     onEditPage = { targetPageId ->
-                        navController.navigate("page_editor/$targetPageId")
+                        navController.safeNavigate("page_editor/$targetPageId")
                     }
                 )
             }
         }
     }
 }
+
+private fun runOnMainThread(action: () -> Unit) {
+    if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper()) {
+        action()
+    } else {
+        android.os.Handler(android.os.Looper.getMainLooper()).post(action)
+    }
+}
+
+private fun NavHostController.safePopBackStack() {
+    runOnMainThread {
+        val state = currentBackStackEntry?.lifecycle?.currentState
+        android.util.Log.d("NAV_DEBUG", "safePopBackStack called. currentDestination=${currentDestination?.route} state=$state")
+        if (state != null && state.isAtLeast(Lifecycle.State.STARTED)) {
+            popBackStack()
+        }
+    }
+}
+
+private fun NavHostController.safeNavigate(route: String) {
+    runOnMainThread {
+        val currentRoute = currentDestination?.route
+        val state = currentBackStackEntry?.lifecycle?.currentState
+        android.util.Log.d("NAV_DEBUG", "safeNavigate called. route=$route currentRoute=$currentRoute state=$state")
+        if (currentRoute == route) {
+            return@runOnMainThread
+        }
+        if (state != null && state.isAtLeast(Lifecycle.State.STARTED)) {
+            navigate(route) {
+                launchSingleTop = true
+            }
+        }
+    }
+}
+
+

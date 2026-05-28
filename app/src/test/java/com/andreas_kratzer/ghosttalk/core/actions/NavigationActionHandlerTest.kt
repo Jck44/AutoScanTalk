@@ -1,9 +1,8 @@
 package com.andreas_kratzer.ghosttalk.core.actions
 
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
-import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
+import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
@@ -19,32 +18,44 @@ import org.junit.Test
 class NavigationActionHandlerTest {
 
     private lateinit var settingsRepository: SettingsRepository
-    private lateinit var ttsHelper: TextToSpeechHelper
-    private lateinit var log: (String) -> Unit
-    private lateinit var emitEvent: suspend (ActionExecutor.ExecutionEvent) -> Unit
+    private lateinit var ttsProxy: ActionTtsProxy
+    private lateinit var actionLogger: ActionLogger
+    private lateinit var actionEventEmitter: ActionEventEmitter
     private lateinit var handler: NavigationActionHandler
 
     @Before
     fun setup() {
         settingsRepository = mockk(relaxed = true)
-        ttsHelper = mockk(relaxed = true)
-        log = mockk(relaxed = true)
-        emitEvent = mockk(relaxed = true)
+        ttsProxy = mockk(relaxed = true)
+        actionLogger = mockk(relaxed = true)
+        actionEventEmitter = mockk(relaxed = true)
     }
 
     @Test
     fun `canHandle returns true for NavigateToPageButtonAction`() = runTest {
-        handler = NavigationActionHandler(this, settingsRepository, object : dagger.Lazy<TextToSpeechHelper> {
-            override fun get() = ttsHelper
-        }, emitEvent, log)
+        handler = NavigationActionHandler(
+            scope = this,
+            settingsRepository = settingsRepository,
+            ttsProxyLazy = object : dagger.Lazy<ActionTtsProxy> {
+                override fun get() = ttsProxy
+            },
+            actionLogger = actionLogger,
+            actionEventEmitter = actionEventEmitter
+        )
         assert(handler.canHandle(NavigateToPageButtonAction("p1")))
     }
 
     @Test
     fun `handle navigates immediately if no feedback provided`() = runTest {
-        handler = NavigationActionHandler(this, settingsRepository, object : dagger.Lazy<TextToSpeechHelper> {
-            override fun get() = ttsHelper
-        }, emitEvent, log)
+        handler = NavigationActionHandler(
+            scope = this,
+            settingsRepository = settingsRepository,
+            ttsProxyLazy = object : dagger.Lazy<ActionTtsProxy> {
+                override fun get() = ttsProxy
+            },
+            actionLogger = actionLogger,
+            actionEventEmitter = actionEventEmitter
+        )
         val action = NavigateToPageButtonAction("p2")
         val config = ButtonConfig(id = "b1", label = "Go", spokenText = null, buttonAction = action, auditoryCue = null)
         val onFinish = mockk<(Int) -> Unit>(relaxed = true)
@@ -52,15 +63,21 @@ class NavigationActionHandlerTest {
         handler.handle(config, action, 1, onFinish)
         runCurrent()
 
-        coVerify { emitEvent(ActionExecutor.ExecutionEvent.NavigateToPage("p2")) }
+        coVerify { actionEventEmitter.emitEvent(match { it is ActionEvent.NavigateToPage && it.pageId == "p2" && it.label == "Go" }) }
         verify { onFinish(1) }
     }
 
     @Test
     fun `handle navigates immediately if feedback is blank`() = runTest {
-        handler = NavigationActionHandler(this, settingsRepository, object : dagger.Lazy<TextToSpeechHelper> {
-            override fun get() = ttsHelper
-        }, emitEvent, log)
+        handler = NavigationActionHandler(
+            scope = this,
+            settingsRepository = settingsRepository,
+            ttsProxyLazy = object : dagger.Lazy<ActionTtsProxy> {
+                override fun get() = ttsProxy
+            },
+            actionLogger = actionLogger,
+            actionEventEmitter = actionEventEmitter
+        )
         val action = NavigateToPageButtonAction("p2")
         val config = ButtonConfig(id = "b1", label = "Go", spokenText = "", buttonAction = action, auditoryCue = null)
         val onFinish = mockk<(Int) -> Unit>(relaxed = true)
@@ -68,54 +85,66 @@ class NavigationActionHandlerTest {
         handler.handle(config, action, 1, onFinish)
         runCurrent()
 
-        coVerify { emitEvent(ActionExecutor.ExecutionEvent.NavigateToPage("p2")) }
+        coVerify { actionEventEmitter.emitEvent(match { it is ActionEvent.NavigateToPage && it.pageId == "p2" && it.label == "Go" }) }
         verify { onFinish(1) }
     }
 
     @Test
     fun `handle navigates after tts speech if feedback provided`() = runTest {
-        handler = NavigationActionHandler(this, settingsRepository, object : dagger.Lazy<TextToSpeechHelper> {
-            override fun get() = ttsHelper
-        }, emitEvent, log)
+        handler = NavigationActionHandler(
+            scope = this,
+            settingsRepository = settingsRepository,
+            ttsProxyLazy = object : dagger.Lazy<ActionTtsProxy> {
+                override fun get() = ttsProxy
+            },
+            actionLogger = actionLogger,
+            actionEventEmitter = actionEventEmitter
+        )
         val action = NavigateToPageButtonAction("p2")
         val config = ButtonConfig(id = "b1", label = "Go", spokenText = "Navigating", buttonAction = action, auditoryCue = null)
         val onFinish = mockk<(Int) -> Unit>(relaxed = true)
 
-        every { ttsHelper.isReady } returns true
+        every { ttsProxy.isReady } returns true
         val onCompleteSlot = slot<() -> Unit>()
-        every { ttsHelper.speakRouted(any(), any(), any(), any(), capture(onCompleteSlot)) } returns Unit
+        every { ttsProxy.speakRouted(any(), any(), any(), any(), capture(onCompleteSlot)) } returns Unit
 
         handler.handle(config, action, 1, onFinish)
         runCurrent()
 
         // Navigation should NOT have happened yet
-        coVerify(exactly = 0) { emitEvent(any()) }
+        coVerify(exactly = 0) { actionEventEmitter.emitEvent(any()) }
         
         // Trigger completion
         onCompleteSlot.captured.invoke()
         runCurrent()
 
-        coVerify { emitEvent(ActionExecutor.ExecutionEvent.NavigateToPage("p2")) }
+        coVerify { actionEventEmitter.emitEvent(match { it is ActionEvent.NavigateToPage && it.pageId == "p2" && it.label == "Go" }) }
         verify { onFinish(1) }
-        verify { log("Navigations-Feedback: \"Navigating\"") }
+        verify { actionLogger.log(any(), any(), config.label) }
     }
 
     @Test
     fun `handle navigates immediately and logs if feedback provided but tts not ready`() = runTest {
-        handler = NavigationActionHandler(this, settingsRepository, object : dagger.Lazy<TextToSpeechHelper> {
-            override fun get() = ttsHelper
-        }, emitEvent, log)
+        handler = NavigationActionHandler(
+            scope = this,
+            settingsRepository = settingsRepository,
+            ttsProxyLazy = object : dagger.Lazy<ActionTtsProxy> {
+                override fun get() = ttsProxy
+            },
+            actionLogger = actionLogger,
+            actionEventEmitter = actionEventEmitter
+        )
         val action = NavigateToPageButtonAction("p2")
         val config = ButtonConfig(id = "b1", label = "Go", spokenText = "Navigating", buttonAction = action, auditoryCue = null)
         val onFinish = mockk<(Int) -> Unit>(relaxed = true)
 
-        every { ttsHelper.isReady } returns false
+        every { ttsProxy.isReady } returns false
 
         handler.handle(config, action, 1, onFinish)
         runCurrent()
 
-        coVerify { emitEvent(ActionExecutor.ExecutionEvent.NavigateToPage("p2")) }
-        verify { log("Nav-Feedback (TTS nicht bereit): \"Navigating\"") }
+        coVerify { actionEventEmitter.emitEvent(match { it is ActionEvent.NavigateToPage && it.pageId == "p2" && it.label == "Go" }) }
+        verify { actionLogger.log(any(), any(), config.label) }
         verify { onFinish(1) }
     }
 }

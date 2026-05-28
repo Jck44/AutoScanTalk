@@ -1,7 +1,9 @@
 package com.andreas_kratzer.ghosttalk.di
 
+import com.andreas_kratzer.ghosttalk.core.scanning.FeatureGuardProxy
 import com.andreas_kratzer.ghosttalk.core.scanning.ScannerFeedbackProvider
 import com.andreas_kratzer.ghosttalk.core.scanning.TtsScannerFeedbackProvider
+import com.andreas_kratzer.ghosttalk.feature.settings.domain.FeatureGuard
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -17,4 +19,22 @@ abstract class ScannerModule {
     abstract fun bindScannerFeedbackProvider(
         ttsScannerFeedbackProvider: TtsScannerFeedbackProvider
     ): ScannerFeedbackProvider
+
+    @Binds
+    @Singleton
+    abstract fun bindFeatureGuardProxy(
+        featureGuard: FeatureGuard
+    ): FeatureGuardProxy
+
+    @Binds
+    @Singleton
+    abstract fun bindScannerActionProvider(
+        actionExecutor: com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
+    ): com.andreas_kratzer.ghosttalk.core.actions.ScannerActionProvider
+
+    @Binds
+    @Singleton
+    abstract fun bindScannerController(
+        scanCoordinator: com.andreas_kratzer.ghosttalk.core.scanning.ScanCoordinator
+    ): com.andreas_kratzer.ghosttalk.core.actions.ScannerController
 }

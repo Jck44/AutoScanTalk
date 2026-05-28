@@ -13,16 +13,16 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
+import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,11 +30,11 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
-import com.andreas_kratzer.ghosttalk.ui.components.GhostTalkCard
-import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkCard
+import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
+import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -48,7 +48,7 @@ fun StartScreen(
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     val dimensions = LocalDimensions.current
-    val vSpacing = if (isLandscape) dimensions.paddingLarge else dimensions.paddingExtraLarge
+    if (isLandscape) dimensions.paddingLarge else dimensions.paddingExtraLarge
 
     BackHandler {
         onNavigateToBooks()
@@ -56,13 +56,11 @@ fun StartScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
+            CenterAlignedTopAppBar(
                 title = {
                     Text(
                         text = bookName,
-                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center
+                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold)
                     )
                 },
                 navigationIcon = {
@@ -108,8 +106,8 @@ fun StartScreen(
                 )
                 
                 GhostTalkCard(
-                    title = stringResource(R.string.start_manage_content),
-                    icon = Icons.Filled.Edit,
+                    title = stringResource(CoreR.string.start_manage_content),
+                    icon = GhostTalkIcons.Edit,
                     onClick = onNavigateToContentManagement,
                     modifier = cardModifier.testTag("start_card_manage"),
                     containerColor = MaterialTheme.colorScheme.tertiaryContainer,
@@ -118,7 +116,7 @@ fun StartScreen(
                 )
                 
                 GhostTalkCard(
-                    title = stringResource(R.string.settings_title_book),
+                    title = stringResource(CoreR.string.settings_title_book),
                     icon = Icons.Filled.Settings,
                     onClick = onNavigateToSettings,
                     modifier = cardModifier.testTag("start_card_settings"),

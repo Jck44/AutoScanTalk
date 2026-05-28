@@ -1,13 +1,13 @@
 package com.andreas_kratzer.ghosttalk.ui.templates
 
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.data.TemplateRepository
-import com.andreas_kratzer.ghosttalk.domain.templates.CreateTemplateUseCase
-import com.andreas_kratzer.ghosttalk.domain.templates.DeleteTemplateUseCase
-import com.andreas_kratzer.ghosttalk.domain.templates.GetTemplateUsagesUseCase
-import com.andreas_kratzer.ghosttalk.domain.templates.UpdateButtonConfigInTemplateUseCase
-import com.andreas_kratzer.ghosttalk.model.PageTemplate
-import com.andreas_kratzer.ghosttalk.model.SortOrder
+import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.data.TemplateRepository
+import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
+import com.andreas_kratzer.ghosttalk.core.model.SortOrder
+import com.andreas_kratzer.ghosttalk.core.domain.templates.CreateTemplateUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.templates.DeleteTemplateUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.templates.GetTemplateUsagesUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.templates.UpdateButtonConfigInTemplateUseCase
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
@@ -30,33 +30,40 @@ class TemplateViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var templateRepository: TemplateRepository
+    private lateinit var pageRepository: com.andreas_kratzer.ghosttalk.core.data.PageRepository
     private lateinit var settingsRepository: SettingsRepository
     private lateinit var createTemplateUseCase: CreateTemplateUseCase
     private lateinit var deleteTemplateUseCase: DeleteTemplateUseCase
     private lateinit var updateButtonConfigInTemplateUseCase: UpdateButtonConfigInTemplateUseCase
     private lateinit var getTemplateUsagesUseCase: GetTemplateUsagesUseCase
+    private lateinit var geminiUseCase: com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase
     private lateinit var viewModel: TemplateViewModel
 
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         templateRepository = mockk(relaxed = true)
+        pageRepository = mockk(relaxed = true)
         settingsRepository = mockk(relaxed = true)
         createTemplateUseCase = mockk<CreateTemplateUseCase>(relaxed = true)
         deleteTemplateUseCase = mockk<DeleteTemplateUseCase>(relaxed = true)
         updateButtonConfigInTemplateUseCase = mockk<UpdateButtonConfigInTemplateUseCase>(relaxed = true)
         getTemplateUsagesUseCase = mockk<GetTemplateUsagesUseCase>(relaxed = true)
+        geminiUseCase = mockk<com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase>(relaxed = true)
 
         every { settingsRepository.templateSortOrderFlow } returns MutableStateFlow(SortOrder.A_Z.name)
         every { templateRepository.getAllTemplates() } returns flowOf(emptyList())
+        every { pageRepository.getUsedTemplateIdsFlow() } returns flowOf(emptySet())
 
         viewModel = TemplateViewModel(
             templateRepository,
+            pageRepository,
             settingsRepository,
             createTemplateUseCase,
             deleteTemplateUseCase,
             updateButtonConfigInTemplateUseCase,
-            getTemplateUsagesUseCase
+            getTemplateUsagesUseCase,
+            geminiUseCase
         )
     }
 
@@ -98,11 +105,13 @@ class TemplateViewModelTest {
 
         viewModel = TemplateViewModel(
             templateRepository,
+            pageRepository,
             settingsRepository,
             createTemplateUseCase,
             deleteTemplateUseCase,
             updateButtonConfigInTemplateUseCase,
-            getTemplateUsagesUseCase
+            getTemplateUsagesUseCase,
+            geminiUseCase
         )
         advanceUntilIdle()
 

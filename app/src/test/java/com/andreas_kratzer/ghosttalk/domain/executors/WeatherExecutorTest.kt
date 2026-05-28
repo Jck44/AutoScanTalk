@@ -5,13 +5,8 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import com.andreas_kratzer.ghosttalk.core.util.Logger
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.data.WeatherRepository
-import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.verify
-import io.mockk.coEvery
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -20,8 +15,7 @@ import org.junit.Test
 class WeatherExecutorTest {
 
     private lateinit var context: Context
-    private lateinit var repository: WeatherRepository
-    private lateinit var settingsRepository: SettingsRepository
+    private lateinit var weatherUseCase: com.andreas_kratzer.ghosttalk.core.domain.WeatherUseCase
     private lateinit var locationExecutor: LocationExecutor
     private lateinit var logger: Logger
     private lateinit var connectivityManager: ConnectivityManager
@@ -30,8 +24,7 @@ class WeatherExecutorTest {
     @Before
     fun setup() {
         context = mockk(relaxed = true)
-        repository = mockk(relaxed = true)
-        settingsRepository = mockk(relaxed = true)
+        weatherUseCase = mockk(relaxed = true)
         locationExecutor = mockk(relaxed = true)
         logger = mockk(relaxed = true)
         connectivityManager = mockk(relaxed = true)
@@ -40,84 +33,74 @@ class WeatherExecutorTest {
         
         weatherExecutor = WeatherExecutor(
             context,
-            repository,
-            settingsRepository,
+            weatherUseCase,
             locationExecutor,
             logger
         )
     }
 
     @Test
-    fun `getWeatherInfo returns cached weather when offline`() = runTest {
+    fun `getWeatherInfo returns Success from useCase when online`() = runTest {
         // Arrange
-        val network = mockk<Network>()
-        val capabilities = mockk<NetworkCapabilities>()
-        every { connectivityManager.activeNetwork } returns network
-        every { connectivityManager.getNetworkCapabilities(network) } returns capabilities
-        every { capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) } returns false
-        
-        every { repository.getLastWeather() } returns "Sonnig, 20 °C"
-        every { repository.getLastTimestamp() } returns System.currentTimeMillis()
-
-        // Act
-        val result = weatherExecutor.getWeatherInfo()
-
-        // Assert
-        assert(result.contains("Sonnig, 20 °C"))
-        assert(result.contains("Stand vom"))
-    }
-
-    @Test
-    fun `getWeatherInfo returns cached weather when cache not expired`() = runTest {
-        // Arrange
-        val now = System.currentTimeMillis()
         val network = mockk<Network>()
         val capabilities = mockk<NetworkCapabilities>()
         every { connectivityManager.activeNetwork } returns network
         every { connectivityManager.getNetworkCapabilities(network) } returns capabilities
         every { capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) } returns true
         
-        every { settingsRepository.weatherCacheTimeout } returns 30
-        every { repository.getLastTimestamp() } returns now - (10 * 60 * 1000) // 10 mins ago (not expired)
-        every { repository.getLastWeather() } returns "Bewölkt, 18 °C"
+        val location = mockk<android.location.Location>()
+        every { location.latitude } returns 52.52
+        every { location.longitude } returns 13.40
+        io.mockk.coEvery { locationExecutor.getCurrentLocation() } returns location
+
+        io.mockk.coEvery { weatherUseCase.getWeatherInfo(52.52, 13.40) } returns 
+            com.andreas_kratzer.ghosttalk.core.domain.WeatherUseCase.WeatherResult.Success("Sonnig", 20.0)
 
         // Act
         val result = weatherExecutor.getWeatherInfo()
 
         // Assert
-        assert(result.contains("Bewölkt, 18 °C"))
-        coVerify(exactly = 0) { locationExecutor.getCurrentLocation(any()) }
+        assert(result is WeatherExecutor.WeatherResult.Success)
+        val success = result as WeatherExecutor.WeatherResult.Success
+        assertEquals("Sonnig", success.condition)
+        assertEquals(20.0, success.temperature, 0.1)
     }
 
     @Test
-    fun `getWeatherInfo returns offline message when no cache and offline`() = runTest {
+    fun `getWeatherInfo returns Error from useCase when online`() = runTest {
+        // Arrange
+        val network = mockk<Network>()
+        val capabilities = mockk<NetworkCapabilities>()
+        every { connectivityManager.activeNetwork } returns network
+        every { connectivityManager.getNetworkCapabilities(network) } returns capabilities
+        every { capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) } returns true
+        
+        val location = mockk<android.location.Location>()
+        every { location.latitude } returns 52.52
+        every { location.longitude } returns 13.40
+        io.mockk.coEvery { locationExecutor.getCurrentLocation() } returns location
+
+        io.mockk.coEvery { weatherUseCase.getWeatherInfo(52.52, 13.40) } returns 
+            com.andreas_kratzer.ghosttalk.core.domain.WeatherUseCase.WeatherResult.Error("API failed")
+
+        // Act
+        val result = weatherExecutor.getWeatherInfo()
+
+        // Assert
+        assert(result is WeatherExecutor.WeatherResult.Error)
+        assertEquals("API failed", (result as WeatherExecutor.WeatherResult.Error).message)
+    }
+
+    @Test
+    fun `getWeatherInfo returns offline message when offline`() = runTest {
         // Arrange
         every { connectivityManager.activeNetwork } returns null
-        every { repository.getLastWeather() } returns null
 
         // Act
         val result = weatherExecutor.getWeatherInfo()
 
         // Assert
-        assertEquals("Keine Wetterdaten verfügbar (offline).", result)
-    }
-
-    // Helper to test private mapWeatherCode via reflection if needed, 
-    // but better to just test it via a mocked fetch if we can.
-    // Or we could make mapWeatherCode internal.
-    
-    @Test
-    fun `mapWeatherCode returns correct strings`() {
-        // Using reflection to test the private method 'mapWeatherCode'
-        val method = weatherExecutor.javaClass.getDeclaredMethod("mapWeatherCode", Int::class.java)
-        method.isAccessible = true
-        
-        assertEquals("Klarer Himmel", method.invoke(weatherExecutor, 0))
-        assertEquals("Leicht bewölkt", method.invoke(weatherExecutor, 1))
-        assertEquals("Leicht bewölkt", method.invoke(weatherExecutor, 2))
-        assertEquals("Leicht bewölkt", method.invoke(weatherExecutor, 3))
-        assertEquals("Nebel", method.invoke(weatherExecutor, 45))
-        assertEquals("Gewitter", method.invoke(weatherExecutor, 95))
-        assertEquals("Unbekannte Wetterlage", method.invoke(weatherExecutor, 999))
+        assert(result is WeatherExecutor.WeatherResult.Error)
+        assertEquals("Keine Wetterdaten verfügbar (offline).", (result as WeatherExecutor.WeatherResult.Error).message)
     }
 }

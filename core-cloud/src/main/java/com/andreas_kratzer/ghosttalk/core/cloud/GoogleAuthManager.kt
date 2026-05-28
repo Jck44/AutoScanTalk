@@ -1,0 +1,210 @@
+package com.andreas_kratzer.ghosttalk.core.cloud
+
+import android.content.Context
+import android.util.Log
+import androidx.core.content.edit
+import androidx.credentials.ClearCredentialStateRequest
+import androidx.credentials.CreatePasswordRequest
+import androidx.credentials.CredentialManager
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.GetCredentialResponse
+import androidx.credentials.GetPasswordOption
+import androidx.credentials.PasswordCredential
+import androidx.credentials.exceptions.GetCredentialException
+import androidx.credentials.exceptions.NoCredentialException
+import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
+import com.google.api.services.drive.DriveScopes
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+
+@javax.inject.Singleton
+class GoogleAuthManager @javax.inject.Inject constructor(
+    @dagger.hilt.android.qualifiers.ApplicationContext context: Context
+) : AuthManager {
+    private val appContext = context.applicationContext
+    private val prefs = appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private val credentialManager = CredentialManager.create(appContext)
+    
+    private val _userEmail = MutableStateFlow<String?>(prefs.getString(KEY_USER_EMAIL, null))
+    override val userEmail: StateFlow<String?> = _userEmail.asStateFlow()
+
+    companion object {
+        private const val TAG = "GoogleAuthManager"
+        private const val PREFS_NAME = "google_auth_prefs"
+        private const val KEY_USER_EMAIL = "user_email"
+    }
+
+    override suspend fun signIn(activity: android.app.Activity): Boolean {
+        Log.d(TAG, "Starting signIn process...")
+        return try {
+            val serverClientId = "974414517482-m4ibjmnj0js4j6tpm3a78r18og3jksdq.apps.googleusercontent.com"
+            @Suppress("KotlinConstantConditions")
+            if (serverClientId == "YOUR_SERVER_CLIENT_ID_PLACEHOLDER") {
+                Log.w(TAG, "Using placeholder Server Client ID! This will likely fail.")
+            }
+
+            Log.d(TAG, "App Signature (SHA-1): ${getAppSignature(appContext)}")
+
+            val signInWithGoogleOption = GetSignInWithGoogleOption.Builder(serverClientId)
+                .build()
+
+            val request = GetCredentialRequest(
+                listOf(signInWithGoogleOption)
+            )
+
+            Log.d(TAG, "Calling getCredential...")
+            val result = credentialManager.getCredential(activity, request)
+            Log.d(TAG, "getCredential result received")
+            handleSignInResult(result)
+        } catch (e: NoCredentialException) {
+            Log.w(TAG, "NoCredentialException: No accounts found or user cancelled. ${e.message}")
+            false
+        } catch (e: GetCredentialException) {
+            Log.e(TAG, "GetCredentialException: ${e.message}", e)
+            false
+        } catch (e: Exception) {
+            Log.e(TAG, "Exception during sign-in: ${e.message}", e)
+            false
+        }
+    }
+
+    private fun handleSignInResult(result: GetCredentialResponse): Boolean {
+        val credential = result.credential
+        Log.d(TAG, "handleSignInResult: Received credential type: ${credential::class.java.simpleName}")
+        
+        var email: String? = null
+        
+        if (credential is GoogleIdTokenCredential) {
+            Log.d(TAG, "Credential is GoogleIdTokenCredential")
+            email = credential.id
+            Log.d(TAG, "Email from ID: $email")
+        } else if (credential is androidx.credentials.CustomCredential && 
+                   credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+            Log.d(TAG, "Credential is CustomCredential of type TYPE_GOOGLE_ID_TOKEN_CREDENTIAL")
+            try {
+                val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
+                email = googleIdTokenCredential.id
+                Log.d(TAG, "Email from Custom ID: $email")
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to create GoogleIdTokenCredential from data", e)
+            }
+        }
+        
+        if (email.isNullOrEmpty()) {
+            Log.e(TAG, "Sign-in successful but email is null or empty!")
+            return false
+        }
+
+        _userEmail.value = email
+        prefs.edit { putString(KEY_USER_EMAIL, email) }
+        Log.i(TAG, "Sign-in verified. User email stored: $email")
+        
+        return true
+    }
+
+    override suspend fun signOut() {
+        Log.d(TAG, "Signing out...")
+        credentialManager.clearCredentialState(ClearCredentialStateRequest())
+        _userEmail.value = null
+        prefs.edit { remove(KEY_USER_EMAIL) }
+    }
+
+    override suspend fun saveApiKeyToPasswordManager(activity: android.app.Activity, apiKey: String): Result<Unit> {
+        val email = _userEmail.value ?: return Result.failure(IllegalStateException("User not signed in"))
+        Log.d(TAG, "Saving API Key to Password Manager for $email")
+
+        return try {
+            val createPasswordRequest = CreatePasswordRequest(
+                id = email,
+                password = apiKey
+            )
+            credentialManager.createCredential(activity, createPasswordRequest)
+            Log.i(TAG, "Successfully saved ElevenLabs API Key to Google Password Manager")
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to save API Key to Password Manager: ${e.message}")
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getApiKeyFromPasswordManager(activity: android.app.Activity): Result<String?> {
+        Log.d(TAG, "Retrieving API Key from Password Manager")
+        
+        return try {
+            val getPasswordOption = GetPasswordOption()
+
+            val request = GetCredentialRequest(
+                listOf(getPasswordOption)
+            )
+
+            val result = credentialManager.getCredential(activity, request)
+            val credential = result.credential
+            
+            if (credential is PasswordCredential) {
+                Log.i(TAG, "Successfully retrieved password credential from Manager")
+                Result.success(credential.password)
+            } else {
+                Log.w(TAG, "Retrieved credential is not a PasswordCredential")
+                Result.success(null)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to retrieve API Key from Password Manager: ${e.message}")
+            Result.failure(e)
+        }
+    }
+
+    override fun getGoogleCredential(scopes: List<String>?): GoogleAccountCredential? {
+        val email = _userEmail.value
+        Log.d(TAG, "getGoogleCredential: stored email is '$email'")
+        
+        if (email.isNullOrEmpty()) {
+            Log.e(TAG, "getGoogleCredential: email is null or empty, returning null")
+            return null
+        }
+
+        val finalScopes = (scopes ?: listOf(
+            DriveScopes.DRIVE_FILE,
+            "https://www.googleapis.com/auth/generative-language.retriever"
+        )).distinct()
+
+        Log.d(TAG, "Creating credential with scopes: $finalScopes")
+
+        val credential = GoogleAccountCredential.usingOAuth2(
+            appContext, finalScopes
+        )
+        
+        try {
+            val account = android.accounts.Account(email, "com.google")
+            credential.selectedAccount = account
+            Log.i(TAG, "Created fresh GoogleAccountCredential with Account object for ${account.name}")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to create Account object for $email", e)
+            credential.selectedAccountName = email
+        }
+        
+        return credential
+    }
+
+    private fun getAppSignature(context: Context): String {
+        return try {
+            val packageInfo = context.packageManager.getPackageInfo(
+                context.packageName,
+                android.content.pm.PackageManager.PackageInfoFlags.of(android.content.pm.PackageManager.GET_SIGNING_CERTIFICATES.toLong())
+            )
+
+            val signatures = packageInfo.signingInfo?.apkContentsSigners
+            
+            val md = java.security.MessageDigest.getInstance("SHA-1")
+            val signature = signatures?.firstOrNull()?.toByteArray()
+            if (signature != null) {
+                val digest = md.digest(signature)
+                digest.joinToString(":") { "%02X".format(it) }
+            } else "No signature found"
+        } catch (e: Exception) {
+            "Error getting signature: ${e.message}"
+        }
+    }
+}

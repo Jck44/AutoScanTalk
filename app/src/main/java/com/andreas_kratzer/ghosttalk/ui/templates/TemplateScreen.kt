@@ -42,16 +42,18 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
-import com.andreas_kratzer.ghosttalk.domain.pages.UsageLocation
-import com.andreas_kratzer.ghosttalk.model.PageTemplate
-import com.andreas_kratzer.ghosttalk.model.SortOrder
-import com.andreas_kratzer.ghosttalk.ui.components.GhostTalkCard
-import com.andreas_kratzer.ghosttalk.ui.theme.GhosTTalkIcons
-import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
+import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
+import com.andreas_kratzer.ghosttalk.core.model.SortOrder
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkCard
+import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
+import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
+import com.andreas_kratzer.ghosttalk.core.domain.pages.UsageLocation
 import kotlinx.coroutines.launch
+import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -72,10 +74,10 @@ fun TemplateScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.template_manage_title)) },
+                title = { Text(stringResource(CoreR.string.template_manage_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_button_content_description))
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(CoreR.string.back_button_content_description))
                     }
                 },
                 actions = {
@@ -83,7 +85,7 @@ fun TemplateScreen(
                     val templateSortOrder by templateViewModel.settingsRepository.templateSortOrderFlow.collectAsState("MANUAL")
                     
                     IconButton(onClick = { showSortMenu = true }) {
-                        Icon(GhosTTalkIcons.Sort, contentDescription = "Sortieren")
+                        Icon(GhostTalkIcons.Sort, contentDescription = "Sortieren")
                     }
                     DropdownMenu(expanded = showSortMenu, onDismissRequest = { showSortMenu = false }) {
                         SortOrder.entries.filter { it != SortOrder.MANUAL }.forEach { order ->
@@ -93,6 +95,8 @@ fun TemplateScreen(
                                 SortOrder.OLDEST -> "Älteste zuerst"
                                 SortOrder.A_Z -> "A -> Z"
                                 SortOrder.Z_A -> "Z -> A"
+                                SortOrder.ACTIVE_FIRST -> stringResource(R.string.sort_active_first)
+                                SortOrder.INACTIVE_FIRST -> stringResource(R.string.sort_inactive_first)
                             }
                             DropdownMenuItem(
                                 text = { Text(label) },
@@ -167,10 +171,16 @@ fun TemplateScreen(
                         GhostTalkCard(
                             title = template.name,
                             subtitle = "Raster: ${template.rows}x${template.columns} " + if (template.isBuiltIn) "(${stringResource(R.string.template_built_in_label)})" else "(${stringResource(R.string.template_custom_label)})",
-                            icon = GhosTTalkIcons.GridView,
+                            icon = GhostTalkIcons.GridView,
                             onClick = { onTemplateClick(template.id) },
                             height = dynamicCardHeight,
-                            modifier = Modifier,
+                            modifier = Modifier.then(
+                                if (!templateViewModel.pageRepository.getUsedTemplateIdsFlow().collectAsState(emptySet()).value.contains(template.id)) {
+                                    Modifier.alpha(0.6f)
+                                } else {
+                                    Modifier
+                                }
+                            ),
                             trailingAction = {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     var showMenu by remember { mutableStateOf(false) }
@@ -199,11 +209,11 @@ fun TemplateScreen(
                                                 }
                                             },
                                             leadingIcon = {
-                                                Icon(GhosTTalkIcons.Copy, contentDescription = null)
+                                                Icon(GhostTalkIcons.Copy, contentDescription = null)
                                             }
                                         )
                                         DropdownMenuItem(
-                                            text = { Text(stringResource(R.string.action_delete)) },
+                                            text = { Text(stringResource(CoreR.string.action_delete)) },
                                             onClick = {
                                                 showMenu = false
                                                 templateToDelete = template
@@ -267,7 +277,7 @@ fun TemplateScreen(
                             text = { 
                                 Column {
                                     Text("Die Vorlage \"${template.name}\" wurde zur Erstellung folgender Seiten verwendet:")
-                                    usagesToDelete.forEach { usage ->
+                                    for (usage in usagesToDelete) {
                                         Text("• Seite: ${usage.name}", modifier = Modifier.padding(start = 8.dp, top = 4.dp))
                                     }
                                     Text("\nBeim Löschen der Vorlage wird die Verknüpfung in diesen Seiten aufgehoben.", style = MaterialTheme.typography.bodySmall)
@@ -295,7 +305,7 @@ fun TemplateScreen(
                                     shape = MaterialTheme.shapes.medium,
                                     colors = ButtonDefaults.textButtonColors()
                                 ) {
-                                    Text(stringResource(R.string.action_cancel))
+                                    Text(stringResource(CoreR.string.action_cancel))
                                 }
                             }
                         )

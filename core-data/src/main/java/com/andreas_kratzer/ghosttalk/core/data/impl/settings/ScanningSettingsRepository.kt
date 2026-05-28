@@ -1,0 +1,65 @@
+package com.andreas_kratzer.ghosttalk.core.data.impl.settings
+
+import android.content.SharedPreferences
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_AUTO_START_SCANNING
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_BLUETOOTH_DELAY
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_DEFAULT_SCAN_PATTERN
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_HOLDING_TIME_MILLIS
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_RESUME_SCANNING_FROM_START
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SCAN_DELAY_MILLIS
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SWITCH_ACTIVATION_KEY
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_VOLUME_KEYS_ACTIVATE
+import kotlinx.coroutines.flow.StateFlow
+
+class ScanningSettingsRepository(
+    prefs: SharedPreferences,
+    activeBookIdFlow: StateFlow<String?>
+) : BaseSettingsRepository(prefs, activeBookIdFlow) {
+
+    private val _autoStartScanning = BooleanSetting(KEY_AUTO_START_SCANNING, true)
+    private val _scanDelay = LongSetting(KEY_SCAN_DELAY_MILLIS, 3000L)
+    private val _resumeScanningFromStart = BooleanSetting(KEY_RESUME_SCANNING_FROM_START, true)
+    private val _holdingTimeMillis = LongSetting(KEY_HOLDING_TIME_MILLIS, 250L)
+    private val _switchActivationKey = NonNullStringSetting(KEY_SWITCH_ACTIVATION_KEY, "~3")
+    private val _volumeKeysActivate = BooleanSetting(KEY_VOLUME_KEYS_ACTIVATE, false)
+    private val _defaultScanPattern = NonNullStringSetting(KEY_DEFAULT_SCAN_PATTERN, "linear")
+    private val _bluetoothDelay = LongSetting(KEY_BLUETOOTH_DELAY, 100L, isScoped = false)
+    private val _limitScanCycles = BooleanSetting(SettingsConstants.KEY_LIMIT_SCAN_CYCLES, false)
+    private val _scanCycleLimit = IntSetting(SettingsConstants.KEY_SCAN_CYCLE_LIMIT, 2)
+
+    val autoStartScanningFlow = _autoStartScanning.flow
+    val scanDelayFlow = _scanDelay.flow
+    val resumeScanningFromStartFlow = _resumeScanningFromStart.flow
+    val holdingTimeMillisFlow = _holdingTimeMillis.flow
+    val switchActivationKeyFlow = _switchActivationKey.flow
+    val volumeKeysActivateFlow = _volumeKeysActivate.flow
+    val defaultScanPatternFlow = _defaultScanPattern.flow
+    val bluetoothDelayFlow = _bluetoothDelay.flow
+    val limitScanCyclesFlow = _limitScanCycles.flow
+    val scanCycleLimitFlow = _scanCycleLimit.flow
+
+    var autoStartScanning: Boolean by _autoStartScanning
+    var scanDelayMillis: Long by _scanDelay
+    var resumeScanningFromStart: Boolean by _resumeScanningFromStart
+    var holdingTimeMillis: Long by _holdingTimeMillis
+    var switchActivationKey: String by _switchActivationKey
+    var volumeKeysActivate: Boolean by _volumeKeysActivate
+    var defaultScanPattern: String by _defaultScanPattern
+    var bluetoothDelay: Long by _bluetoothDelay
+    var limitScanCycles: Boolean by _limitScanCycles
+    var scanCycleLimit: Int by _scanCycleLimit
+
+
+    override fun refresh() {
+        _autoStartScanning.refresh()
+        _scanDelay.refresh()
+        _resumeScanningFromStart.refresh()
+        _holdingTimeMillis.refresh()
+        _switchActivationKey.refresh()
+        _volumeKeysActivate.refresh()
+        _defaultScanPattern.refresh()
+        _bluetoothDelay.refresh()
+        _limitScanCycles.refresh()
+        _scanCycleLimit.refresh()
+    }
+}

@@ -1,8 +1,8 @@
 package com.andreas_kratzer.ghosttalk.core.scanning
 
-import com.andreas_kratzer.ghosttalk.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
-import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -15,7 +15,7 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class CoreLogicTest {
 
-    private lateinit var ttsHelper: com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
+    private lateinit var ttsHelper: com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
 
     @Before
     fun setup() {
@@ -28,7 +28,7 @@ class CoreLogicTest {
 
     @Test
     fun testSpeakAction_Initialization() = runTest {
-        val action = SpeakTextButtonAction()
+        SpeakTextButtonAction()
     }
 
     @Test
@@ -55,11 +55,11 @@ class CoreLogicTest {
 
     @Test
     fun testScannerEngine_RowByRowScanning() = runTest {
-        val settingsRepo = mockk<com.andreas_kratzer.ghosttalk.data.SettingsRepository>(relaxed = true)
+        val settingsRepo = mockk<com.andreas_kratzer.ghosttalk.core.data.SettingsRepository>(relaxed = true)
         every { settingsRepo.scanDelayMillis } returns 10L
         every { ttsHelper.isReady } returns true
         
-        val featureGuard = mockk<com.andreas_kratzer.ghosttalk.domain.settings.FeatureGuard>(relaxed = true) {
+        val featureGuard = mockk<com.andreas_kratzer.ghosttalk.feature.settings.domain.FeatureGuard>(relaxed = true) {
             every { isButtonVisible(any()) } returns true
             every { isActionEnabled(any()) } returns true
         }

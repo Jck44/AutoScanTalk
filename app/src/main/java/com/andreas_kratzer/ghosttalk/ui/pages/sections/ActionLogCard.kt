@@ -1,5 +1,6 @@
 package com.andreas_kratzer.ghosttalk.ui.pages.sections
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,24 +22,42 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
-import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
+import com.andreas_kratzer.ghosttalk.core.model.ActionLogEntry
+import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
+import com.andreas_kratzer.ghosttalk.core.domain.actions.ActionLogUseCase
 
 @Composable
 fun ActionLogCard(
-    lastActions: List<String>,
+    lastActions: List<ActionLogEntry>,
     onClearLogs: () -> Unit,
+    actionLogUseCase: ActionLogUseCase,
     modifier: Modifier = Modifier
 ) {
     val dimensions = LocalDimensions.current
-    Card(
-        modifier = modifier
+    var showDetailDialog by remember { mutableStateOf(false) }
+    val isLandscape = androidx.compose.ui.platform.LocalConfiguration.current.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+
+    val cardModifier = if (isLandscape) {
+        modifier
             .fillMaxWidth()
-            .heightIn(min = 80.dp, max = 180.dp),
+    } else {
+        modifier
+            .fillMaxWidth()
+            .heightIn(min = 80.dp, max = 180.dp)
+    }
+
+    Card(
+        modifier = cardModifier
+            .clickable { showDetailDialog = true },
         shape = MaterialTheme.shapes.large,
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         colors = CardDefaults.cardColors(
@@ -91,9 +110,11 @@ fun ActionLogCard(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxWidth().weight(1f),
-                    contentPadding = PaddingValues(bottom = 4.dp)
+                    contentPadding = PaddingValues(bottom = 4.dp),
+                    userScrollEnabled = false // Prevent scroll conflict with card click
                 ) {
-                    items(lastActions) { actionText ->
+                    val maxItems = if (isLandscape) 10 else 5
+                    items(lastActions.take(maxItems)) { entry ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -107,14 +128,24 @@ fun ActionLogCard(
                                 modifier = Modifier.padding(end = 8.dp)
                             )
                             Text(
-                                text = actionText,
+                                text = actionLogUseCase.formatEntryForDisplay(entry),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                             )
                         }
                     }
                 }
             }
         }
+    }
+
+    if (showDetailDialog) {
+        ActionLogDialog(
+            lastActions = lastActions,
+            onDismiss = { showDetailDialog = false },
+            actionLogUseCase = actionLogUseCase
+        )
     }
 }

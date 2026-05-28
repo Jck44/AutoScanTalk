@@ -1,11 +1,17 @@
 package com.andreas_kratzer.ghosttalk.ui.pages
 
-import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import com.andreas_kratzer.ghosttalk.MainActivity
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
+import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
 import com.andreas_kratzer.ghosttalk.tts.TtsRecordingHelper
+import com.andreas_kratzer.ghosttalk.utils.TestDataResetHelper
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import org.junit.Assert.assertEquals
@@ -20,6 +26,9 @@ class TtsIntegrationTest {
 
     @get:Rule(order = 0)
     val hiltRule = HiltAndroidRule(this)
+
+    @Inject
+    lateinit var dataResetHelper: TestDataResetHelper
 
     @get:Rule(order = 1)
     val composeTestRule = createAndroidComposeRule<MainActivity>()
@@ -36,6 +45,7 @@ class TtsIntegrationTest {
     @Before
     fun setup() {
         hiltRule.inject()
+        dataResetHelper.resetData()
         settingsRepository.autoStartScanning = false
         recordingHelper.clear()
     }
@@ -80,6 +90,9 @@ class TtsIntegrationTest {
         composeTestRule.onAllNodesWithTag("button_idle").onFirst().performClick()
 
         // 4. Verify TTS recording
+        composeTestRule.waitUntil(10000) {
+            recordingHelper.spokenTexts.value.isNotEmpty()
+        }
         val spoken = recordingHelper.spokenTexts.value
         assertEquals("Expected exactly one TTS announcement for a button click", 1, spoken.size)
     }

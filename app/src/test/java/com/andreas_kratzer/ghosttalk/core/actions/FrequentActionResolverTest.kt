@@ -1,11 +1,11 @@
 package com.andreas_kratzer.ghosttalk.core.actions
 
-import com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository
-import com.andreas_kratzer.ghosttalk.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.model.ButtonUsageStat
-import com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction
-import com.andreas_kratzer.ghosttalk.model.Page
-import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
+import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.ButtonUsageStat
+import com.andreas_kratzer.ghosttalk.core.model.FrequentActionButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.Page
+import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
@@ -46,8 +46,8 @@ class FrequentActionResolverTest {
         )
 
         val stats = listOf(
-            ButtonUsageStat("b1", "orig1", "Yes", """{"type":"SpeakTextButtonAction","data":{"textToSpeech":"Yes"}}""", 10),
-            ButtonUsageStat("b1", "orig2", "No", """{"type":"SpeakTextButtonAction","data":{"textToSpeech":"No"}}""", 5)
+            ButtonUsageStat("b1", "orig1", "p1", "Yes", """{"type":"SpeakTextButtonAction","data":{"textToSpeech":"Yes"}}""", 10L),
+            ButtonUsageStat("b1", "orig2", "p1", "No", """{"type":"SpeakTextButtonAction","data":{"textToSpeech":"No"}}""", 5L)
         )
         coEvery { buttonUsageRepository.getTopActions("b1", 2) } returns stats
 
@@ -74,7 +74,7 @@ class FrequentActionResolverTest {
         )
 
         val stats = listOf(
-            ButtonUsageStat("b1", "orig1", "Yes", """{"type":"SpeakTextButtonAction","data":{"textToSpeech":"Yes"}}""", 10)
+            ButtonUsageStat("b1", "orig1", "p1", "Yes", """{"type":"SpeakTextButtonAction","data":{"textToSpeech":"Yes"}}""", 10L)
         )
         // Only 1 stat available
         coEvery { buttonUsageRepository.getTopActions("b1", 2) } returns stats

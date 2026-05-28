@@ -3,9 +3,9 @@ package com.andreas_kratzer.ghosttalk.ui.books
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.andreas_kratzer.ghosttalk.data.BookRepository
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.model.Book
+import com.andreas_kratzer.ghosttalk.core.data.BookRepository
+import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.model.Book
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -26,6 +26,7 @@ class BookViewModel @Inject constructor(
 ) : AndroidViewModel(application) {
 
     val favoriteBookId = settingsRepository.favoriteBookIdFlow
+    val forceSoftKeyboard = settingsRepository.forceSoftKeyboardFlow
 
     private val _allBooks = MutableStateFlow<List<Book>>(emptyList())
     val allBooks: StateFlow<List<Book>> = _allBooks.asStateFlow()
@@ -80,16 +81,49 @@ class BookViewModel @Inject constructor(
     }
 
 
-    fun createNewBook(name: String) {
+    fun createNewBook(
+        name: String, 
+        actionLogLimit: Int = 100,
+        limitScanCycles: Boolean = false,
+        scanCycleLimit: Int = 2,
+        logIgnoredActions: Boolean = true,
+        logStopActions: Boolean = true
+    ) {
         val now = System.currentTimeMillis()
-        val newBook = Book(id = UUID.randomUUID().toString(), name = name, createdAt = now, updatedAt = now)
+        val newBook = Book(
+            id = UUID.randomUUID().toString(), 
+            name = name, 
+            createdAt = now, 
+            updatedAt = now,
+            actionLogLimit = actionLogLimit,
+            limitScanCycles = limitScanCycles,
+            scanCycleLimit = scanCycleLimit,
+            logIgnoredActions = logIgnoredActions,
+            logStopActions = logStopActions
+        )
         viewModelScope.launch(Dispatchers.IO) {
             bookRepository.insertBook(newBook)
         }
     }
 
-    fun updateBookName(book: Book, newName: String) {
-        val updatedBook = book.copy(name = newName, updatedAt = System.currentTimeMillis())
+    fun updateBook(
+        book: Book, 
+        newName: String, 
+        actionLogLimit: Int,
+        limitScanCycles: Boolean,
+        scanCycleLimit: Int,
+        logIgnoredActions: Boolean,
+        logStopActions: Boolean
+    ) {
+        val updatedBook = book.copy(
+            name = newName, 
+            actionLogLimit = actionLogLimit,
+            limitScanCycles = limitScanCycles,
+            scanCycleLimit = scanCycleLimit,
+            logIgnoredActions = logIgnoredActions,
+            logStopActions = logStopActions,
+            updatedAt = System.currentTimeMillis()
+        )
         viewModelScope.launch(Dispatchers.IO) {
             bookRepository.updateBook(updatedBook)
         }

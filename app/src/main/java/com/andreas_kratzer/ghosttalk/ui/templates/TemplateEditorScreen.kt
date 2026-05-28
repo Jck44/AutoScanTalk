@@ -27,11 +27,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.ui.components.GridEditorContent
 import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
-import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,7 +45,7 @@ fun TemplateEditorScreen(
     val scope = rememberCoroutineScope()
     val templates by templateViewModel.templates.collectAsState()
     val unfilteredPages by pageViewModel.unfilteredPages.collectAsState()
-    val bookDefaultScanPattern by pageViewModel.defaultScanPattern.collectAsState()
+    val bookDefaultScanPattern by pageViewModel.defaultScanPattern.collectAsState(initial = "linear")
     val template = templates.find { it.id == templateId }
     val dimensions = LocalDimensions.current
 
@@ -83,7 +84,7 @@ fun TemplateEditorScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_button_content_description))
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(CoreR.string.back_button_content_description))
                     }
                 }
             )
@@ -97,7 +98,7 @@ fun TemplateEditorScreen(
             featureGuard = pageViewModel.featureGuard,
             bookDefaultScanPattern = bookDefaultScanPattern,
             paddingValues = paddingValues,
-            onEditPage = { pageId ->
+            onEditPage = { pageId: String ->
                 scope.launch {
                     val target = pageViewModel.pageManagementDelegate.getPageById(pageId)
                     if (target != null) {
@@ -105,7 +106,8 @@ fun TemplateEditorScreen(
                         pageViewModel.loadPage(target)
                     }
                 }
-            }
+            },
+            pageViewModel = pageViewModel
         )
     }
 }

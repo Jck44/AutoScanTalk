@@ -2,11 +2,12 @@ package com.andreas_kratzer.ghosttalk.domain.actions
 
 
 import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
-import com.andreas_kratzer.ghosttalk.data.PageRepository
-import com.andreas_kratzer.ghosttalk.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
-import com.andreas_kratzer.ghosttalk.model.Page
-import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
+import com.andreas_kratzer.ghosttalk.core.data.BookRepository
+import com.andreas_kratzer.ghosttalk.core.data.PageRepository
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.Page
+import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -20,13 +21,18 @@ class ResolveSmartPredictionUseCaseTest {
 
     private lateinit var pageRepository: PageRepository
     private lateinit var actionExecutor: ActionExecutor
+    private lateinit var bookRepository: BookRepository
     private lateinit var useCase: ResolveSmartPredictionUseCase
 
     @Before
     fun setup() {
         pageRepository = mockk(relaxed = true)
+        bookRepository = mockk(relaxed = true)
         actionExecutor = mockk(relaxed = true)
-        useCase = ResolveSmartPredictionUseCase(pageRepository)
+        useCase = ResolveSmartPredictionUseCase(pageRepository, bookRepository)
+        
+        val testBook = com.andreas_kratzer.ghosttalk.core.model.Book(id = "b1", name = "Test Book", logIgnoredActions = true)
+        coEvery { bookRepository.getBookById(any()) } returns testBook
     }
 
     @Test
@@ -36,7 +42,16 @@ class ResolveSmartPredictionUseCaseTest {
 
         useCase.execute("btn1", currentPage, "b1", true, actionExecutor)
 
-        coVerify { actionExecutor.executeButtonAction(button, bookId = "b1", rows = any(), columns = any(), index = any()) }
+        coVerify { 
+            actionExecutor.executeButtonAction(
+                buttonConfig = button, 
+                bookId = "b1", 
+                pageId = "p1",
+                rows = 4, 
+                columns = 4,
+                skipLog = false
+            ) 
+        }
     }
 
     @Test
@@ -48,11 +63,12 @@ class ResolveSmartPredictionUseCaseTest {
 
         coVerify { 
             actionExecutor.executeButtonAction(
-                match { it.id == "p2" && it.label == "Target" && it.buttonAction is NavigateToPageButtonAction },
+                buttonConfig = match { it.id == "p2" && it.label == "Target" && it.buttonAction is NavigateToPageButtonAction },
                 bookId = "b1",
-                rows = any(),
-                columns = any(),
-                index = any()
+                pageId = "p2",
+                rows = 1,
+                columns = 1,
+                skipLog = false
             ) 
         }
     }
@@ -64,6 +80,15 @@ class ResolveSmartPredictionUseCaseTest {
 
         useCase.execute("btn1", currentPage, "b1", false, actionExecutor)
 
-        coVerify { actionExecutor.executeButtonAction(button, bookId = null, rows = any(), columns = any(), index = any()) }
+        coVerify { 
+            actionExecutor.executeButtonAction(
+                buttonConfig = button, 
+                bookId = null, 
+                pageId = "p1",
+                rows = 4, 
+                columns = 4,
+                skipLog = false
+            ) 
+        }
     }
 }

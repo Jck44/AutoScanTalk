@@ -1,6 +1,7 @@
 package com.andreas_kratzer.ghosttalk.ui.pages.delegates
 
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.actions.CallActionProxy
+import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,7 +17,8 @@ data class UserModeScreenState(
 )
 
 class ScreenManagementDelegate @Inject constructor(
-    private val settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository,
+    private val callActionProxy: CallActionProxy
 ) {
     private val _screenState = MutableStateFlow(UserModeScreenState())
     val screenState: StateFlow<UserModeScreenState> = _screenState.asStateFlow()
@@ -26,9 +28,16 @@ class ScreenManagementDelegate @Inject constructor(
             combine(
                 isUserModeActiveFlow,
                 settingsRepository.keepScreenOnUserModeFlow,
-                settingsRepository.userModeScreenBehaviorFlow
-            ) { isUserMode, keepOn, behavior ->
-                if (isUserMode && keepOn) {
+                settingsRepository.userModeScreenBehaviorFlow,
+                callActionProxy.isInCall
+            ) { isUserMode, keepOn, behavior, isInCall ->
+                if (isInCall) {
+                    UserModeScreenState(
+                        keepScreenOn = true,
+                        dimAmount = null,
+                        isBlackOverlayVisible = false
+                    )
+                } else if (isUserMode && keepOn) {
                     UserModeScreenState(
                         keepScreenOn = true,
                         dimAmount = if (behavior == "DIMMED") 0.01f else null,

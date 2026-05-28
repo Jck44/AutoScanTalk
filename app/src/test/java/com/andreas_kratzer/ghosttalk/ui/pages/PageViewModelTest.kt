@@ -1,43 +1,49 @@
 package com.andreas_kratzer.ghosttalk.ui.pages
 
 import android.app.Application
+import androidx.lifecycle.SavedStateHandle
+import com.andreas_kratzer.ghosttalk.core.actions.ActionCoordinator
 import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
-import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
-import com.andreas_kratzer.ghosttalk.core.pages.PageImportExportManager
+import com.andreas_kratzer.ghosttalk.core.actions.NavigationActionHandler
+import com.andreas_kratzer.ghosttalk.core.actions.ActionTtsProxy
+import com.andreas_kratzer.ghosttalk.core.ai.LocalIntentRouter
+import com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase
+import com.andreas_kratzer.ghosttalk.core.ai.domain.PredictNextActionUseCase
+import com.andreas_kratzer.ghosttalk.core.ai.domain.UpdateSmartPredictionsUseCase
+import com.andreas_kratzer.ghosttalk.core.cloud.PhilipsHueManager
+import com.andreas_kratzer.ghosttalk.core.data.BookRepository
+import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository
+import com.andreas_kratzer.ghosttalk.core.data.GetPagesUseCase
+import com.andreas_kratzer.ghosttalk.core.data.PageRepository
+import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.data.TemplateRepository
+import com.andreas_kratzer.ghosttalk.core.data.impl.PageImportExportManager
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.Page
+import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
+import com.andreas_kratzer.ghosttalk.core.scanning.ScanCoordinator
 import com.andreas_kratzer.ghosttalk.core.scanning.ScannerEngine
+import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
 import com.andreas_kratzer.ghosttalk.core.util.Logger
-import com.andreas_kratzer.ghosttalk.data.BookRepository
-import com.andreas_kratzer.ghosttalk.data.ButtonUsageRepository
-import com.andreas_kratzer.ghosttalk.data.PageRepository
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.data.TemplateRepository
-import com.andreas_kratzer.ghosttalk.domain.actions.ActionLogUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.actions.ActionLogUseCase
 import com.andreas_kratzer.ghosttalk.domain.actions.ActivateButtonUseCase
 import com.andreas_kratzer.ghosttalk.domain.actions.HandleActionExecutionEventUseCase
-import com.andreas_kratzer.ghosttalk.domain.actions.PredictNextActionUseCase
 import com.andreas_kratzer.ghosttalk.domain.actions.ResolveDynamicButtonsUseCase
 import com.andreas_kratzer.ghosttalk.domain.actions.ResolveSmartPredictionUseCase
-import com.andreas_kratzer.ghosttalk.domain.actions.UpdateSmartPredictionsUseCase
-import com.andreas_kratzer.ghosttalk.domain.executors.LocalIntentRouter
-import com.andreas_kratzer.ghosttalk.domain.genai.GeminiUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.CreatePageUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.DeletePageUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.ExportPageUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.GetFilteredPagesUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.GetPageUsagesUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.GetPagesUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.ImportPageUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.MoveRowUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.UpdateButtonConfigUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.UpdatePageSettingsUseCase
-import com.andreas_kratzer.ghosttalk.domain.pages.UpdateRowNameUseCase
-import com.andreas_kratzer.ghosttalk.domain.settings.FeatureGuard
-import com.andreas_kratzer.ghosttalk.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
-import com.andreas_kratzer.ghosttalk.model.Page
-import com.andreas_kratzer.ghosttalk.model.PageTemplate
-import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
+import com.andreas_kratzer.ghosttalk.core.domain.pages.CreatePageUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.pages.DeletePageUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.pages.DuplicateButtonToPageUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.pages.ExportPageUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.pages.GetFilteredPagesUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.pages.GetPageUsagesUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.pages.ImportPageUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.pages.MoveRowUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.pages.UpdateButtonConfigUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.pages.UpdatePageSettingsUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.pages.UpdateRowNameUseCase
+import com.andreas_kratzer.ghosttalk.feature.settings.domain.FeatureGuard
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.InteractionDelegate
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.PageManagementDelegate
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.ScreenManagementDelegate
@@ -70,7 +76,6 @@ class PageViewModelTest {
     private lateinit var templateRepository: TemplateRepository
     private lateinit var importExportManager: PageImportExportManager
     private lateinit var scannerEngine: ScannerEngine
-    private lateinit var googleAuthManager: GoogleAuthManager
     private lateinit var geminiUseCase: GeminiUseCase
     private lateinit var ttsHelper: TextToSpeechHelper
     private lateinit var localIntentRouter: LocalIntentRouter
@@ -79,6 +84,7 @@ class PageViewModelTest {
     private lateinit var locationExecutor: com.andreas_kratzer.ghosttalk.domain.executors.LocationExecutor
     private lateinit var buttonUsageRepository: ButtonUsageRepository
     private lateinit var featureGuard: FeatureGuard
+    private lateinit var philipsHueManager: PhilipsHueManager
     
     private lateinit var actionLogUseCase: ActionLogUseCase
     private lateinit var getPagesUseCase: GetPagesUseCase
@@ -89,16 +95,21 @@ class PageViewModelTest {
     private lateinit var updateRowNameUseCase: UpdateRowNameUseCase
     private lateinit var moveRowUseCase: MoveRowUseCase
     private lateinit var moveButtonUseCase: MoveButtonUseCase
-    private lateinit var moveButtonToPageUseCase: com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase
+    private lateinit var moveButtonToPageUseCase: com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase
+    private lateinit var duplicateButtonToPageUseCase: DuplicateButtonToPageUseCase
     private lateinit var importPageUseCase: ImportPageUseCase
     private lateinit var exportPageUseCase: ExportPageUseCase
     private lateinit var predictNextActionUseCase: PredictNextActionUseCase
-    private lateinit var checkForPredictorUseCase: com.andreas_kratzer.ghosttalk.domain.settings.CheckForPredictorUseCase
+    private lateinit var checkForPredictorUseCase: com.andreas_kratzer.ghosttalk.core.ai.domain.CheckForPredictorUseCase
     private lateinit var resolveDynamicButtonsUseCase: ResolveDynamicButtonsUseCase
     private lateinit var updateSmartPredictionsUseCase: UpdateSmartPredictionsUseCase
     private lateinit var getPageUsagesUseCase: GetPageUsagesUseCase
+    private lateinit var updateMultipleButtonsUseCase: com.andreas_kratzer.ghosttalk.core.domain.pages.UpdateMultipleButtonsUseCase
+    private lateinit var identifyActivePageLinksUseCase: com.andreas_kratzer.ghosttalk.core.domain.pages.IdentifyActivePageLinksUseCase
 
     private lateinit var viewModel: PageViewModel
+    private lateinit var systemCallManager: com.andreas_kratzer.ghosttalk.core.call.SystemCallManager
+    private val mockCallStateFlow = MutableStateFlow(com.andreas_kratzer.ghosttalk.core.call.CallState.NONE)
 
     @Before
     fun setup() {
@@ -111,7 +122,6 @@ class PageViewModelTest {
         templateRepository = mockk<TemplateRepository>(relaxed = true)
         importExportManager = mockk<PageImportExportManager>(relaxed = true)
         scannerEngine = mockk<ScannerEngine>(relaxed = true)
-        googleAuthManager = mockk<GoogleAuthManager>(relaxed = true)
         geminiUseCase = mockk<GeminiUseCase>(relaxed = true)
         ttsHelper = mockk<TextToSpeechHelper>(relaxed = true)
         localIntentRouter = mockk<LocalIntentRouter>(relaxed = true)
@@ -120,6 +130,7 @@ class PageViewModelTest {
         logger = mockk<Logger>(relaxed = true)
         buttonUsageRepository = mockk<ButtonUsageRepository>(relaxed = true)
         featureGuard = mockk<FeatureGuard>(relaxed = true)
+        philipsHueManager = mockk<PhilipsHueManager>(relaxed = true)
 
         actionLogUseCase = mockk<ActionLogUseCase>(relaxed = true)
         getPagesUseCase = mockk<GetPagesUseCase>(relaxed = true)
@@ -130,14 +141,17 @@ class PageViewModelTest {
         updateRowNameUseCase = mockk<UpdateRowNameUseCase>(relaxed = true)
         moveRowUseCase = mockk<MoveRowUseCase>(relaxed = true)
         moveButtonUseCase = mockk<MoveButtonUseCase>(relaxed = true)
-        moveButtonToPageUseCase = mockk<com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase>(relaxed = true)
+        moveButtonToPageUseCase = mockk<com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase>(relaxed = true)
+        duplicateButtonToPageUseCase = mockk<DuplicateButtonToPageUseCase>(relaxed = true)
         importPageUseCase = mockk<ImportPageUseCase>(relaxed = true)
         exportPageUseCase = mockk<ExportPageUseCase>(relaxed = true)
         predictNextActionUseCase = mockk<PredictNextActionUseCase>(relaxed = true)
-        checkForPredictorUseCase = mockk<com.andreas_kratzer.ghosttalk.domain.settings.CheckForPredictorUseCase>(relaxed = true)
+        checkForPredictorUseCase = mockk<com.andreas_kratzer.ghosttalk.core.ai.domain.CheckForPredictorUseCase>(relaxed = true)
         resolveDynamicButtonsUseCase = mockk<ResolveDynamicButtonsUseCase>(relaxed = true)
         updateSmartPredictionsUseCase = mockk<UpdateSmartPredictionsUseCase>(relaxed = true)
         getPageUsagesUseCase = mockk<GetPageUsagesUseCase>(relaxed = true)
+        updateMultipleButtonsUseCase = mockk<com.andreas_kratzer.ghosttalk.core.domain.pages.UpdateMultipleButtonsUseCase>(relaxed = true)
+        identifyActivePageLinksUseCase = mockk<com.andreas_kratzer.ghosttalk.core.domain.pages.IdentifyActivePageLinksUseCase>(relaxed = true)
 
         // Mock common flows with explicit types to avoid Nothing exceptions
         every { settingsRepository.activeBookIdFlow } returns MutableStateFlow<String>("b1")
@@ -147,6 +161,7 @@ class PageViewModelTest {
         every { settingsRepository.defaultScanPatternFlow } returns MutableStateFlow<String>("linear")
         every { settingsRepository.showTestButtonsFlow } returns MutableStateFlow<Boolean>(false)
         every { settingsRepository.scanDelayFlow } returns MutableStateFlow<Long>(3000L)
+        every { settingsRepository.scanDelayMillis } returns 3000L
         every { settingsRepository.persistActionLogsFlow } returns MutableStateFlow<Boolean>(false)
         every { settingsRepository.keepScreenOnUserModeFlow } returns MutableStateFlow<Boolean>(false)
         every { settingsRepository.userModeScreenBehaviorFlow } returns MutableStateFlow<String>("NONE")
@@ -167,12 +182,17 @@ class PageViewModelTest {
 
     @After
     fun tearDown() {
+        mockCallStateFlow.value = com.andreas_kratzer.ghosttalk.core.call.CallState.NONE
+        testDispatcher.scheduler.runCurrent()
         Dispatchers.resetMain()
         unmockkAll()
     }
 
     private fun createViewModel(): PageViewModel {
-        val appStateRepository = com.andreas_kratzer.ghosttalk.data.AppStateRepository()
+        val appStateRepository = mockk<com.andreas_kratzer.ghosttalk.core.data.AppStateRepository>(relaxed = true)
+        every { appStateRepository.isUserModeActive } returns MutableStateFlow(true)
+        every { appStateRepository.activeBookId } returns MutableStateFlow("b1")
+        every { appStateRepository.currentPageId } returns MutableStateFlow("p1")
         
         val pageManagementDelegate = PageManagementDelegate(
             pageRepository = pageRepository,
@@ -187,56 +207,78 @@ class PageViewModelTest {
             moveRowUseCase = moveRowUseCase,
             moveButtonUseCase = moveButtonUseCase,
             moveButtonToPageUseCase = moveButtonToPageUseCase,
+            duplicateButtonToPageUseCase = duplicateButtonToPageUseCase,
             importPageUseCase = importPageUseCase,
             exportPageUseCase = exportPageUseCase,
             getFilteredPagesUseCase = GetFilteredPagesUseCase(settingsRepository),
             getPageUsagesUseCase = getPageUsagesUseCase,
+            updateMultipleButtonsUseCase = updateMultipleButtonsUseCase,
+            identifyActivePageLinksUseCase = identifyActivePageLinksUseCase,
             appStateRepository = appStateRepository
         )
         val interactionDelegate = InteractionDelegate(
             application = application,
             actionLogUseCase = actionLogUseCase,
             ttsHelper = ttsHelper,
-            activateButtonUseCase = ActivateButtonUseCase(ttsHelper, ResolveSmartPredictionUseCase(pageRepository)),
+            activateButtonUseCase = ActivateButtonUseCase(ttsHelper, ResolveSmartPredictionUseCase(pageRepository, bookRepository), bookRepository),
             handleActionExecutionEventUseCase = HandleActionExecutionEventUseCase(pageRepository, settingsRepository),
             locationExecutor = locationExecutor,
-            appStateRepository = appStateRepository
+            appStateRepository = appStateRepository,
+            bookRepository = bookRepository
         )
         val smartPredictionDelegate = SmartPredictionDelegate(
             updateSmartPredictionsUseCase = updateSmartPredictionsUseCase
         )
-        val screenManagementDelegate = ScreenManagementDelegate(settingsRepository)
-
-        val actionExecutor = ActionExecutor(
-            application = application,
+        val screenManagementDelegate = ScreenManagementDelegate(
+            settingsRepository = settingsRepository,
+            callActionProxy = mockk(relaxed = true)
+        )
+        
+        val actionCoordinator = ActionCoordinator(
+            scope = kotlinx.coroutines.CoroutineScope(testDispatcher),
+            logger = logger
+        )
+        
+        val navHandler = NavigationActionHandler(
             scope = kotlinx.coroutines.CoroutineScope(testDispatcher),
             settingsRepository = settingsRepository,
-            logger = logger,
-            localIntentRouter = localIntentRouter,
-            weatherExecutor = weatherExecutor,
-            buttonUsageRepository = buttonUsageRepository,
-            geminiUseCaseLazy = object : dagger.Lazy<GeminiUseCase> {
-                override fun get() = geminiUseCase
+            ttsProxyLazy = object : dagger.Lazy<ActionTtsProxy> {
+                override fun get(): ActionTtsProxy = mockk(relaxed = true)
             },
-            ttsHelperLazy = object : dagger.Lazy<TextToSpeechHelper> {
-                override fun get() = ttsHelper
-            }
+            actionEventEmitter = actionCoordinator,
+            actionLogger = actionCoordinator
         )
 
-        val scanCoordinator = ScanCoordinator(
+        val actionExecutor = ActionExecutor(
             scope = kotlinx.coroutines.CoroutineScope(testDispatcher),
-            scannerEngine = scannerEngine,
             settingsRepository = settingsRepository,
-            actionExecutor = actionExecutor,
-            checkForPredictorUseCase = checkForPredictorUseCase,
+            buttonUsageRepository = buttonUsageRepository,
+            handlers = setOf(navHandler),
+            actionCoordinator = actionCoordinator,
             ttsHelper = ttsHelper
         )
 
+        val scanCoordinator = mockk<ScanCoordinator>(relaxed = true)
+        every { scanCoordinator.focusedButtonIndex } returns MutableStateFlow<Int?>(null)
+        every { scanCoordinator.focusedRowIndex } returns MutableStateFlow<Int?>(null)
+        every { scanCoordinator.currentCycleCount } returns MutableStateFlow(0)
+
+        mockCallStateFlow.value = com.andreas_kratzer.ghosttalk.core.call.CallState.NONE
+        systemCallManager = mockk(relaxed = true) {
+            every { callState } returns mockCallStateFlow
+            every { callerName } returns MutableStateFlow(null)
+            every { callerPhone } returns MutableStateFlow(null)
+            every { callDurationSeconds } returns MutableStateFlow(0)
+            every { isOutgoing } returns MutableStateFlow(false)
+            every { isSimulatedFlow } returns MutableStateFlow(false)
+        }
+
         return PageViewModel(
             application = application,
+            savedStateHandle = SavedStateHandle(),
             settingsRepository = settingsRepository,
+            bookRepository = bookRepository,
             importExportManager = importExportManager,
-            googleAuthManager = googleAuthManager,
             ttsHelper = ttsHelper,
             logger = logger,
             weatherExecutor = weatherExecutor,
@@ -249,7 +291,10 @@ class PageViewModelTest {
             updateSmartPredictionsUseCase = updateSmartPredictionsUseCase,
             actionExecutor = actionExecutor,
             scanCoordinator = scanCoordinator,
-            geminiUseCase = geminiUseCase
+            geminiUseCase = geminiUseCase,
+            buttonTemplateRepository = mockk(relaxed = true),
+            systemCallManager = systemCallManager,
+            philipsHueManager = philipsHueManager
         )
     }
 
@@ -281,8 +326,88 @@ class PageViewModelTest {
 
         // Bypass resolvedPage by calling interactionDelegate directly to avoid flowOn(Dispatchers.Default) issues in test
         viewModel.interactionDelegate.activateButtonAtIndex(0, p1, "b1")
+        testScheduler.advanceUntilIdle()
 
         assertEquals(p2.id, viewModel.currentPage.value?.id)
         assertEquals(p2.name, viewModel.currentPage.value?.name)
+    }
+
+    @Test
+    fun `when callState becomes RINGING call scanning starts and answer is announced`() = runTest {
+        every { application.getString(com.andreas_kratzer.ghosttalk.R.string.call_answer) } returns "Answer"
+
+        viewModel = createViewModel()
+        testScheduler.runCurrent()
+
+        mockCallStateFlow.value = com.andreas_kratzer.ghosttalk.core.call.CallState.RINGING
+        testScheduler.runCurrent()
+
+        assertEquals("ANNEHMEN", viewModel.focusedCallScreenButton.value)
+
+        io.mockk.verify {
+            ttsHelper.speakRouted(
+                text = "Answer",
+                deviceAddress = any(),
+                queueMode = android.speech.tts.TextToSpeech.QUEUE_ADD,
+                isForCues = true
+            )
+        }
+
+        // Clean up call state to stop scanning loop coroutine
+        mockCallStateFlow.value = com.andreas_kratzer.ghosttalk.core.call.CallState.NONE
+        testScheduler.runCurrent()
+    }
+
+    @Test
+    fun `activateFocusedButton answers call when ringing and focused on ANNEHMEN`() = runTest {
+        viewModel = createViewModel()
+        mockCallStateFlow.value = com.andreas_kratzer.ghosttalk.core.call.CallState.RINGING
+        viewModel.focusedCallScreenButton.value = "ANNEHMEN"
+        testScheduler.runCurrent()
+
+        viewModel.activateFocusedButton()
+
+        io.mockk.verify { systemCallManager.answerCall() }
+
+        // Clean up
+        mockCallStateFlow.value = com.andreas_kratzer.ghosttalk.core.call.CallState.NONE
+        testScheduler.runCurrent()
+    }
+
+    @Test
+    fun `activateFocusedButton rejects call when ringing and focused on ABLEHNEN`() = runTest {
+        viewModel = createViewModel()
+        mockCallStateFlow.value = com.andreas_kratzer.ghosttalk.core.call.CallState.RINGING
+        viewModel.focusedCallScreenButton.value = "ABLEHNEN"
+        testScheduler.runCurrent()
+
+        viewModel.activateFocusedButton()
+
+        io.mockk.verify { systemCallManager.hangUp() }
+
+        // Clean up
+        mockCallStateFlow.value = com.andreas_kratzer.ghosttalk.core.call.CallState.NONE
+        testScheduler.runCurrent()
+    }
+
+    @Test
+    fun `activateFocusedButton focuses hang up on first press and hangs up on second press`() = runTest {
+        every { application.getString(com.andreas_kratzer.ghosttalk.R.string.call_hang_up) } returns "Hang Up"
+        viewModel = createViewModel()
+        mockCallStateFlow.value = com.andreas_kratzer.ghosttalk.core.call.CallState.ACTIVE
+        testScheduler.runCurrent()
+
+        viewModel.activateFocusedButton()
+        assertEquals(true, viewModel.isHangUpButtonFocused.value)
+        io.mockk.verify {
+            ttsHelper.speakRouted("Hang Up", any(), any(), isForCues = true)
+        }
+
+        viewModel.activateFocusedButton()
+        io.mockk.verify { systemCallManager.hangUp() }
+
+        // Clean up
+        mockCallStateFlow.value = com.andreas_kratzer.ghosttalk.core.call.CallState.NONE
+        testScheduler.runCurrent()
     }
 }

@@ -2,19 +2,21 @@ package com.andreas_kratzer.ghosttalk.ui.pages
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import com.andreas_kratzer.ghosttalk.core.model.GridSettingsUpdate
+import com.andreas_kratzer.ghosttalk.ui.components.ValidatedTextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -24,16 +26,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.ui.components.GridEditorContent
-import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
 import kotlinx.coroutines.delay
+import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PageEditorScreen(
     pageId: String,
+    initialButtonId: String? = null,
     pageViewModel: PageViewModel,
     onNavigateBack: () -> Unit,
     onEditPage: ((String) -> Unit)? = null
@@ -50,42 +56,57 @@ fun PageEditorScreen(
         return
     }
 
+    var localName by remember(page.name) { mutableStateOf(page.name) }
+
+    val handleNavigateBack = {
+        if (localName.isNotBlank()) {
+            onNavigateBack()
+        }
+    }
+
     BackHandler {
-        onNavigateBack()
+        handleNavigateBack()
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
+                windowInsets = WindowInsets.statusBars,
                 title = { 
-                    var localName by remember(page.name) { mutableStateOf(page.name) }
-                    
                     LaunchedEffect(localName) {
-                        if (localName != page.name) {
+                        if (localName != page.name && localName.isNotBlank()) {
                             delay(500)
                             pageViewModel.updatePageSettings(
                                 pageId = page.id,
-                                newName = localName,
-                                newScanPattern = page.scanPattern,
-                                newRowNames = page.rowNames,
-                                newRows = page.rows,
-                                newColumns = page.columns
+                                update = GridSettingsUpdate(name = localName)
                             )
                         }
                     }
 
-                    OutlinedTextField(
+                    ValidatedTextField(
                         value = localName,
                         onValueChange = { localName = it },
-                        label = { Text(stringResource(R.string.page_name_label)) },
-                        singleLine = true,
-                        shape = MaterialTheme.shapes.large,
-                        modifier = Modifier.fillMaxWidth().padding(end = dimensions.paddingLarge)
+                        isRequired = true,
+                        errorMessage = stringResource(R.string.error_page_name_required),
+                        onFocusLost = {
+                            if (it.isNotBlank() && it != page.name) {
+                                pageViewModel.updatePageSettings(
+                                    pageId = page.id,
+                                    update = GridSettingsUpdate(name = it)
+                                )
+                            }
+                        },
+                        placeholder = { Text(stringResource(R.string.page_name_label)) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(end = dimensions.paddingLarge)
+                            .padding(vertical = 4.dp) // Reduce vertical impact
+                            .testTag("page_editor_name_field")
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_button_content_description))
+                    IconButton(onClick = handleNavigateBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(CoreR.string.back_button_content_description))
                     }
                 }
             )
@@ -101,7 +122,9 @@ fun PageEditorScreen(
             featureGuard = pageViewModel.featureGuard,
             bookDefaultScanPattern = bookDefaultScanPattern,
             paddingValues = paddingValues,
-            onEditPage = onEditPage
+            onEditPage = onEditPage,
+            initialButtonId = initialButtonId,
+            pageViewModel = pageViewModel
         )
     }
 }

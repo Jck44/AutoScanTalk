@@ -1,44 +1,47 @@
 package com.andreas_kratzer.ghosttalk.core.actions
 
-import android.content.Context
+import android.app.Application
 import com.andreas_kratzer.ghosttalk.R
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.WeatherButtonAction
 import com.andreas_kratzer.ghosttalk.domain.executors.WeatherExecutor
-import com.andreas_kratzer.ghosttalk.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.model.WeatherButtonAction
-import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class WeatherActionHandlerTest {
 
-    private lateinit var context: Context
+    private lateinit var application: Application
     private lateinit var settingsRepository: SettingsRepository
-    private lateinit var ttsHelper: TextToSpeechHelper
+    private lateinit var ttsProxy: ActionTtsProxy
     private lateinit var weatherExecutor: WeatherExecutor
-    private lateinit var log: (String) -> Unit
+    private lateinit var actionLogger: ActionLogger
+    private lateinit var actionEventEmitter: ActionEventEmitter
     private lateinit var handler: WeatherActionHandler
     private val testDispatcher = UnconfinedTestDispatcher()
     private val testScope = TestScope(testDispatcher)
 
     @Before
     fun setup() {
-        context = mockk(relaxed = true)
+        application = mockk(relaxed = true)
         settingsRepository = mockk(relaxed = true)
-        ttsHelper = mockk(relaxed = true)
+        ttsProxy = mockk(relaxed = true)
         weatherExecutor = mockk(relaxed = true)
-        log = mockk(relaxed = true)
+        actionLogger = mockk(relaxed = true)
+        actionEventEmitter = mockk(relaxed = true)
         
-        every { context.getString(R.string.action_weather_fetching) } returns "Wetterdaten werden abgerufen..."
-        every { context.getString(any(), *anyVararg()) } answers {
+        every { application.getString(R.string.action_weather_fetching) } returns "Wetterdaten werden abgerufen..."
+        every { application.getString(any(), *anyVararg()) } answers {
             val resId = it.invocation.args[0] as Int
             if (resId == R.string.action_weather_format) {
                 "Das aktuelle Wetter: Regen bei 15 Grad"
@@ -47,9 +50,17 @@ class WeatherActionHandlerTest {
             }
         }
         
-        handler = WeatherActionHandler(context, settingsRepository, object : dagger.Lazy<TextToSpeechHelper> {
-            override fun get() = ttsHelper
-        }, weatherExecutor, testScope, log)
+        handler = WeatherActionHandler(
+            context = application,
+            settingsRepository = settingsRepository,
+            ttsProxyLazy = object : dagger.Lazy<ActionTtsProxy> {
+                override fun get() = ttsProxy
+            },
+            weatherExecutor = weatherExecutor,
+            scope = testScope,
+            actionLogger = actionLogger,
+            actionEventEmitter = actionEventEmitter
+        )
     }
 
     @Test
@@ -62,19 +73,35 @@ class WeatherActionHandlerTest {
         val action = WeatherButtonAction()
         val config = ButtonConfig(id = "b1", label = "Weather", buttonAction = action, auditoryCue = null)
         
-        coEvery { weatherExecutor.getWeatherInfo() } returns "Regen, 15.0 °C"
+        coEvery { weatherExecutor.getWeatherInfo() } returns WeatherExecutor.WeatherResult.Success("Regen", 15.0)
         val onDoneSlot = slot<() -> Unit>()
-        every { ttsHelper.speakRouted(any(), any(), any(), any(), capture(onDoneSlot)) } answers {
+        every { ttsProxy.speakRouted(any(), any(), any(), any(), capture(onDoneSlot)) } answers {
             onDoneSlot.captured.invoke()
         }
-        every { ttsHelper.isReady } returns true
+        every { ttsProxy.isReady } returns true
         
         val onFinish = mockk<(Int) -> Unit>(relaxed = true)
         
         handler.handle(config, action, 1, onFinish)
         
-        verify { log("Wetterdaten werden abgerufen...") }
-        verify { ttsHelper.speakRouted(match { it.contains("Das aktuelle Wetter: Regen bei 15 Grad") }, any(), any(), any(), any()) }
+        verify { actionLogger.log("Wetterdaten werden abgerufen...", action, config.label) }
+        verify { ttsProxy.speakRouted("Das aktuelle Wetter: Regen bei 15 Grad", any(), any(), any(), any()) }
+        verify { onFinish(1) }
+    }
+
+    @Test
+    fun `handle logs error when weather fetch fails`() = runTest(testDispatcher) {
+        val action = WeatherButtonAction()
+        val config = ButtonConfig(id = "b1", label = "Weather", buttonAction = action, auditoryCue = null)
+        
+        coEvery { weatherExecutor.getWeatherInfo() } returns WeatherExecutor.WeatherResult.Error("Timeout")
+        every { application.getString(R.string.action_weather_error, "Timeout") } returns "Fehler: Timeout"
+        
+        val onFinish = mockk<(Int) -> Unit>(relaxed = true)
+        
+        handler.handle(config, action, 1, onFinish)
+        
+        verify { actionLogger.log("Fehler: Timeout", action, config.label) }
         verify { onFinish(1) }
     }
 }

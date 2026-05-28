@@ -1,4 +1,4 @@
-GhosTTalk ist eine leistungsstarke, anpassbare App für Unterstützte Kommunikation (UK), die Menschen mit Sprachbeeinträchtigungen eine Stimme gibt.
+GhostTalk ist eine leistungsstarke, anpassbare App für Unterstützte Kommunikation (UK), die Menschen mit Sprachbeeinträchtigungen eine Stimme gibt.
 
 Funktionen:
 - **Anpassbare Bücher & Seiten**: Erstelle strukturierte Kommunikationstafeln, die exakt auf deine Bedürfnisse zugeschnitten sind.
@@ -8,4 +8,4 @@ Funktionen:
 - **Zeilenweises Scannen**: Effiziente Navigation durch Raster-Layouts.
 - **Generative KI (Demnächst)**: Integration von Gemini für dynamische Kommunikation.
 
-Stärken Sie Ihre Kommunikation mit GhosTTalk.
+Stärken Sie Ihre Kommunikation mit GhostTalk.

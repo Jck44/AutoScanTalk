@@ -3,12 +3,10 @@ package com.andreas_kratzer.ghosttalk.core.actions
 import android.content.Context
 import android.media.AudioManager
 import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.ControlDeviceButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.DeviceActionType
 import com.andreas_kratzer.ghosttalk.core.services.NotificationReaderService
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.model.ControlDeviceButtonAction
-import com.andreas_kratzer.ghosttalk.model.DeviceActionType
-import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
 import io.mockk.Runs
 import io.mockk.every
 import io.mockk.just
@@ -25,26 +23,44 @@ class ControlDeviceActionHandlerTest {
 
     private lateinit var context: Context
     private lateinit var audioManager: AudioManager
-    private lateinit var settingsRepository: SettingsRepository
-    private lateinit var ttsHelper: TextToSpeechHelper
-    private lateinit var log: (String) -> Unit
+    private lateinit var settings: ControlDeviceSettings
+    private lateinit var ttsProxy: ControlDeviceTtsProxy
+    private lateinit var actionLogger: ActionLogger
+    private lateinit var actionEventEmitter: ActionEventEmitter
+    private lateinit var scannerController: ScannerController
+    private lateinit var callActionProxy: CallActionProxy
     private lateinit var handler: ControlDeviceActionHandler
 
     @Before
     fun setup() {
         context = mockk(relaxed = true)
         audioManager = mockk(relaxed = true)
-        settingsRepository = mockk(relaxed = true)
-        ttsHelper = mockk(relaxed = true)
-        log = mockk(relaxed = true)
+        settings = mockk(relaxed = true)
+        ttsProxy = mockk(relaxed = true)
+        actionLogger = mockk(relaxed = true)
+        actionEventEmitter = mockk(relaxed = true)
+        scannerController = mockk(relaxed = true)
+        callActionProxy = mockk(relaxed = true)
 
         every { context.getSystemService(Context.AUDIO_SERVICE) } returns audioManager
         
-        handler = ControlDeviceActionHandler(context, settingsRepository, object : dagger.Lazy<TextToSpeechHelper> {
-            override fun get() = ttsHelper
-        }, log)
+        handler = ControlDeviceActionHandler(
+            context = context,
+            settings = settings,
+            ttsProxyLazy = object : dagger.Lazy<ControlDeviceTtsProxy> {
+                override fun get() = ttsProxy
+            },
+            scanControllerLazy = object : dagger.Lazy<ScannerController> {
+                override fun get() = scannerController
+            },
+            callActionProxy = object : dagger.Lazy<CallActionProxy> {
+                override fun get() = callActionProxy
+            },
+            actionLogger = actionLogger,
+            actionEventEmitter = actionEventEmitter
+        )
         
-        every { ttsHelper.isReadingNotification = any() } just Runs
+        every { ttsProxy.isReadingNotification = any() } just Runs
         
         mockkObject(NotificationReaderService)
         
@@ -79,7 +95,7 @@ class ControlDeviceActionHandlerTest {
         verify { 
             audioManager.dispatchMediaKeyEvent(any())
         }
-        verify { log("Nächstes Lied") }
+        verify { actionLogger.log("Nächstes Lied", action, "Next") }
     }
 
     @Test
@@ -89,8 +105,7 @@ class ControlDeviceActionHandlerTest {
         
         val service = mockk<NotificationReaderService>(relaxed = true)
         every { NotificationReaderService.instance } returns service
-        every { settingsRepository.isNotificationReadingEnabled } returns true
-        every { ttsHelper.isReady } returns true
+        every { ttsProxy.isReady } returns true
         
         val sbn = mockk<android.service.notification.StatusBarNotification>(relaxed = true)
         val notification = mockk<android.app.Notification>(relaxed = true)
@@ -103,11 +118,11 @@ class ControlDeviceActionHandlerTest {
         notification.extras = extras
         
         every { service.activeNotifications } returns arrayOf(sbn)
-        every { settingsRepository.monitoredNotificationApps } returns setOf("com.whatsapp")
+        every { settings.monitoredNotificationApps } returns setOf("com.whatsapp")
 
         val onFinish = mockk<(Int) -> Unit>(relaxed = true)
         val onCompleteSlot = slot<() -> Unit>()
-        every { ttsHelper.speakRouted("Von Test Sender: Hello World", any(), any(), any(), capture(onCompleteSlot)) } returns Unit
+        every { ttsProxy.speakRouted("Von Test Sender: Hello World", any(), capture(onCompleteSlot)) } returns Unit
 
         handler.handle(config, action, 1, onFinish)
         
@@ -116,7 +131,7 @@ class ControlDeviceActionHandlerTest {
             onCompleteSlot.captured.invoke()
         }
 
-        verify { ttsHelper.isReadingNotification = false }
+        verify { ttsProxy.isReadingNotification = false }
         verify { onFinish(1) }
     }
 
@@ -128,55 +143,214 @@ class ControlDeviceActionHandlerTest {
         
         every { context.getSystemService(Context.BATTERY_SERVICE) } returns batteryManager
         every { batteryManager.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CAPACITY) } returns 85
-        every { ttsHelper.isReady } returns true
+        every { ttsProxy.isReady } returns true
         
         val onFinish = mockk<(Int) -> Unit>(relaxed = true)
         val onDoneSlot = slot<() -> Unit>()
-        every { ttsHelper.speakRouted(any(), any(), any(), any(), capture(onDoneSlot)) } answers {
+        every { ttsProxy.speakRouted(any(), any(), capture(onDoneSlot)) } answers {
             onDoneSlot.captured.invoke()
         }
         
         handler.handle(config, action, 1, onFinish)
         
-        verify { ttsHelper.speakRouted(match { it.contains("Battery SSML") }, any(), any<Int>(), any<Boolean>(), any()) }
+        verify { ttsProxy.speakRouted(any(), any(), any()) }
         verify { onFinish(1) }
     }
 
     @Test
-    fun `handle READ_TIME calls tts with current time`() {
-        val action = ControlDeviceButtonAction(DeviceActionType.READ_TIME)
+    fun `handle READ_TIME with offset and prefix-suffix builds correct plain and SSML strings`() {
+        val action = ControlDeviceButtonAction(
+            actionType = DeviceActionType.READ_TIME,
+            prefixText = "Es ist jetzt",
+            suffixText = "Uhr heute",
+            offsetValue = 5
+        )
         val config = ButtonConfig(id = "b1", label = "Time", buttonAction = action, auditoryCue = null)
         
-        every { ttsHelper.isReady } returns true
-        
-        val onFinish = mockk<(Int) -> Unit>(relaxed = true)
+        every { ttsProxy.isReady } returns true
+        val ssmlSlot = slot<String>()
+        val plainSlot = slot<String>()
         val onDoneSlot = slot<() -> Unit>()
-        every { ttsHelper.speakRouted(any(), any(), any(), any(), capture(onDoneSlot)) } answers {
+        
+        every { ttsProxy.speakRouted(capture(ssmlSlot), any(), capture(onDoneSlot)) } answers {
             onDoneSlot.captured.invoke()
         }
+        mockkObject(actionLogger)
+        every { actionLogger.log(capture(plainSlot), any(), any()) } just Runs
+
+        handler.handle(config, action, 1) {}
         
-        handler.handle(config, action, 1, onFinish)
+        val ssml = ssmlSlot.captured
+        val plain = plainSlot.captured
         
-        verify { ttsHelper.speakRouted(match { it.contains("Time SSML") }, any(), any<Int>(), any<Boolean>(), any()) }
-        verify { onFinish(1) }
+        assert(plain.startsWith("Es ist jetzt "))
+        assert(plain.endsWith(" Uhr heute"))
+        
+        // Verify SSML is simply wrapped plain text
+        assert(ssml == "<speak>$plain</speak>")
     }
 
     @Test
-    fun `handle READ_DATE calls tts with current date`() {
-        val action = ControlDeviceButtonAction(DeviceActionType.READ_DATE)
+    fun `handle READ_DATE with offset, weekday and prefix-suffix builds correct plain and SSML strings`() {
+        val action = ControlDeviceButtonAction(
+            actionType = DeviceActionType.READ_DATE,
+            prefixText = "Heute ist der",
+            suffixText = "bald ist Ostern",
+            includeWeekday = true,
+            offsetValue = 2
+        )
         val config = ButtonConfig(id = "b1", label = "Date", buttonAction = action, auditoryCue = null)
         
-        every { ttsHelper.isReady } returns true
-        
-        val onFinish = mockk<(Int) -> Unit>(relaxed = true)
+        every { ttsProxy.isReady } returns true
+        val ssmlSlot = slot<String>()
+        val plainSlot = slot<String>()
         val onDoneSlot = slot<() -> Unit>()
-        every { ttsHelper.speakRouted(any(), any(), any(), any(), capture(onDoneSlot)) } answers {
+        
+        every { ttsProxy.speakRouted(capture(ssmlSlot), any(), capture(onDoneSlot)) } answers {
             onDoneSlot.captured.invoke()
         }
+        every { actionLogger.log(capture(plainSlot), any(), any()) } just Runs
+
+        handler.handle(config, action, 1) {}
         
-        handler.handle(config, action, 1, onFinish)
+        val ssml = ssmlSlot.captured
+        val plain = plainSlot.captured
         
-        verify { ttsHelper.speakRouted(match { it.contains("Date SSML") }, any(), any<Int>(), any<Boolean>(), any()) }
-        verify { onFinish(1) }
+        assert(plain.startsWith("Heute ist der "))
+        assert(plain.contains(","))
+        
+        // Verify SSML is simply wrapped plain text
+        assert(ssml == "<speak>$plain</speak>")
+    }
+
+    @Test
+    fun `smart space logic adds spaces when missing`() {
+        val action = ControlDeviceButtonAction(
+            actionType = DeviceActionType.READ_TIME,
+            prefixText = "Zeit:", // No space at end
+            suffixText = "jetzt", // No space at start
+            offsetValue = 0
+        )
+        val config = ButtonConfig(id = "b1", label = "Time", buttonAction = action, auditoryCue = null)
+        
+        every { ttsProxy.isReady } returns true
+        val ssmlSlot = slot<String>()
+        every { ttsProxy.speakRouted(capture(ssmlSlot), any(), any()) } just Runs
+        
+        handler.handle(config, action, 1) {}
+        
+        val ssml = ssmlSlot.captured
+        // Verify SSML includes prefix with space and suffix with space
+        assert(ssml.startsWith("<speak>Zeit: "))
+        assert(ssml.endsWith(" jetzt</speak>"))
+    }
+
+    @Test
+    fun `smart space logic does not add extra spaces if already present`() {
+        val action = ControlDeviceButtonAction(
+            actionType = DeviceActionType.READ_TIME,
+            prefixText = "Zeit: ", // Has space
+            suffixText = " jetzt", // Has space
+            offsetValue = 0
+        )
+        val config = ButtonConfig(id = "b1", label = "Time", buttonAction = action, auditoryCue = null)
+        
+        every { ttsProxy.isReady } returns true
+        val ssmlSlot = slot<String>()
+        every { ttsProxy.speakRouted(capture(ssmlSlot), any(), any()) } just Runs
+        
+        handler.handle(config, action, 1) {}
+        
+        val ssml = ssmlSlot.captured
+        // Verify no double spaces
+        assert(!ssml.contains("Zeit:  "))
+        assert(!ssml.contains("  jetzt"))
+    }
+
+    @Test
+    fun `handle READ_CALENDAR_ENTRIES reads next events and speaks them`() {
+        val action = ControlDeviceButtonAction(
+            actionType = DeviceActionType.READ_CALENDAR_ENTRIES,
+            offsetValue = 2
+        )
+        val config = ButtonConfig(id = "b1", label = "Calendar", buttonAction = action, auditoryCue = null)
+        
+        val contentResolver = mockk<android.content.ContentResolver>(relaxed = true)
+        every { context.contentResolver } returns contentResolver
+        
+        val cursor = mockk<android.database.Cursor>(relaxed = true)
+        every { contentResolver.query(any(), any(), any(), any(), any()) } returns cursor
+        
+        // Mock 2 events
+        every { cursor.moveToNext() } returnsMany listOf(true, true, false)
+        
+        // Mock column indices
+        every { cursor.getColumnIndex(android.provider.CalendarContract.Events.TITLE) } returns 0
+        every { cursor.getColumnIndex(android.provider.CalendarContract.Events.DTSTART) } returns 1
+        every { cursor.getColumnIndex(android.provider.CalendarContract.Events.DTEND) } returns 2
+        every { cursor.getColumnIndex(android.provider.CalendarContract.Events.ALL_DAY) } returns 3
+        
+        // Use a list to return different values for different calls if needed, 
+        // but here we just need to return title and times correctly for each row.
+        // Mocking getString(0) to return different values on subsequent calls
+        var callCount = 0
+        every { cursor.getString(0) } answers { 
+            if (callCount == 0) "Meeting 1" else "Meeting 2" 
+        }
+        every { cursor.getLong(1) } answers { 
+            if (callCount == 0) 1712836800000L else 1712844000000L 
+        }
+        every { cursor.getLong(2) } answers { 
+            if (callCount == 0) 1712840400000L else 1712847600000L 
+        }
+        every { cursor.getInt(3) } answers { 
+            val res = 0
+            callCount++
+            res
+        }
+
+        every { ttsProxy.isReady } returns true
+        val ssmlSlot = slot<String>()
+        every { ttsProxy.speakRouted(capture(ssmlSlot), any(), any()) } just Runs
+        
+        handler.handle(config, action, 1) {}
+        
+        val ssml = ssmlSlot.captured
+        assert(ssml.contains("Meeting 1"))
+        assert(ssml.contains("Meeting 2"))
+    }
+
+    @Test
+    fun `handle START_CALL with simulateCallsEnabled true calls simulateOutgoingCall`() {
+        val action = ControlDeviceButtonAction(
+            actionType = DeviceActionType.START_CALL,
+            contactName = "Test Name",
+            contactPhone = "123456"
+        )
+        val config = ButtonConfig(id = "b1", label = "Call", buttonAction = action, auditoryCue = null)
+
+        every { settings.simulateCallsEnabled } returns true
+
+        handler.handle(config, action, 1) {}
+
+        verify { callActionProxy.simulateOutgoingCall("Test Name", "123456") }
+        verify { actionLogger.log("Anruf simulieren an Test Name (123456)", action, "Call") }
+    }
+
+    @Test
+    fun `handle START_CALL with simulateCallsEnabled false calls startCall`() {
+        val action = ControlDeviceButtonAction(
+            actionType = DeviceActionType.START_CALL,
+            contactName = "Test Name",
+            contactPhone = "123456"
+        )
+        val config = ButtonConfig(id = "b1", label = "Call", buttonAction = action, auditoryCue = null)
+
+        every { settings.simulateCallsEnabled } returns false
+
+        handler.handle(config, action, 1) {}
+
+        verify { callActionProxy.startCall("Test Name", "123456") }
+        verify { actionLogger.log("Anruf starten an Test Name (123456)", action, "Call") }
     }
 }

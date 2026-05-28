@@ -2,15 +2,17 @@ package com.andreas_kratzer.ghosttalk.ui.templates
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.data.TemplateRepository
-import com.andreas_kratzer.ghosttalk.domain.templates.CreateTemplateUseCase
-import com.andreas_kratzer.ghosttalk.domain.templates.DeleteTemplateUseCase
-import com.andreas_kratzer.ghosttalk.domain.templates.GetTemplateUsagesUseCase
-import com.andreas_kratzer.ghosttalk.domain.templates.UpdateButtonConfigInTemplateUseCase
-import com.andreas_kratzer.ghosttalk.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.model.PageTemplate
-import com.andreas_kratzer.ghosttalk.ui.util.filterAndSort
+import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.data.TemplateRepository
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.GridSettingsUpdate
+import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
+import com.andreas_kratzer.ghosttalk.core.model.SortOrder
+import com.andreas_kratzer.ghosttalk.core.domain.templates.CreateTemplateUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.templates.DeleteTemplateUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.templates.GetTemplateUsagesUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.templates.UpdateButtonConfigInTemplateUseCase
+import com.andreas_kratzer.ghosttalk.core.util.filterAndSort
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -24,13 +26,41 @@ import javax.inject.Inject
 @HiltViewModel
 class TemplateViewModel @Inject constructor(
     private val templateRepository: TemplateRepository,
+    internal val pageRepository: com.andreas_kratzer.ghosttalk.core.data.PageRepository,
     val settingsRepository: SettingsRepository,
     private val createTemplateUseCase: CreateTemplateUseCase,
     private val deleteTemplateUseCase: DeleteTemplateUseCase,
     private val updateButtonConfigInTemplateUseCase: UpdateButtonConfigInTemplateUseCase,
-    private val getTemplateUsagesUseCase: GetTemplateUsagesUseCase
+    private val getTemplateUsagesUseCase: GetTemplateUsagesUseCase,
+    private val geminiUseCase: com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase
 ) : ViewModel(), com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions {
 
+    override val availableGeminiTools = geminiUseCase.getAvailableTools()
+
+    private val undoStack = mutableListOf<PageTemplate>()
+    private val _canUndo = MutableStateFlow(false)
+    override val canUndo: StateFlow<Boolean> = _canUndo.asStateFlow()
+
+    private fun saveUndoState(templateId: String) {
+        templates.value.find { it.id == templateId }?.let { current ->
+            if (undoStack.size >= 10) {
+                undoStack.removeAt(0)
+            }
+            undoStack.add(current.copy(buttonConfigs = current.buttonConfigs.toList()))
+            _canUndo.value = true
+        }
+    }
+
+    override fun undo(onSuccess: (String) -> Unit) {
+        if (undoStack.isNotEmpty()) {
+            val previousState = undoStack.removeLast()
+            if (undoStack.isEmpty()) {
+                _canUndo.value = false
+            }
+            updateTemplate(previousState)
+            onSuccess("Aktion rückgängig gemacht")
+        }
+    }
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
@@ -42,10 +72,11 @@ class TemplateViewModel @Inject constructor(
     val templates: StateFlow<List<PageTemplate>> = combine(
         templateRepository.getAllTemplates(),
         settingsRepository.templateSortOrderFlow,
-        _searchQuery
-    ) { templates, sortOrderStr, query ->
-        val sortOrder = try { com.andreas_kratzer.ghosttalk.model.SortOrder.valueOf(sortOrderStr) } catch (_: Exception) { com.andreas_kratzer.ghosttalk.model.SortOrder.MANUAL }
-        templates.filterAndSort(query, sortOrder)
+        _searchQuery,
+        pageRepository.getUsedTemplateIdsFlow()
+    ) { templates: List<PageTemplate>, sortOrderStr: String, query: String, activeIds: Set<String> ->
+        val sortOrder = try { SortOrder.valueOf(sortOrderStr) } catch (_: Exception) { SortOrder.MANUAL }
+        templates.filterAndSort(query, sortOrder, activeIds)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.Eagerly,
@@ -79,29 +110,89 @@ class TemplateViewModel @Inject constructor(
 
     override fun updateGridSettings(
         itemId: String,
-        newName: String,
-        newScanPattern: String?,
-        newRowNames: List<String>,
-        newRows: Int?,
-        newColumns: Int?
+        update: GridSettingsUpdate
     ) {
         val current = templates.value.find { it.id == itemId } ?: return
+        saveUndoState(itemId)
         updateTemplate(current.copy(
-            name = newName,
-            scanPattern = newScanPattern,
-            rowNames = newRowNames,
-            rows = newRows ?: current.rows,
-            columns = newColumns ?: current.columns
+            name = update.name ?: current.name,
+            scanPattern = update.scanPattern?.value ?: current.scanPattern,
+            rowNames = update.rowNames ?: current.rowNames,
+            rows = update.rows ?: current.rows,
+            columns = update.columns ?: current.columns
         ))
     }
 
     override fun updateButtonConfig(itemId: String, index: Int, newConfig: ButtonConfig?) {
         val current = templates.value.find { it.id == itemId } ?: return
+        saveUndoState(itemId)
         updateButtonConfig(current, index, newConfig)
+    }
+
+    override fun insertButtonConfig(itemId: String, index: Int, newConfig: ButtonConfig, forceShift: Boolean, onResult: (Boolean) -> Unit) {
+        val current = templates.value.find { it.id == itemId } ?: return
+        val newButtonConfigs = current.buttonConfigs.toMutableList()
+        
+        // Ensure 49 slots
+        while (newButtonConfigs.size < com.andreas_kratzer.ghosttalk.core.util.GridUtils.TOTAL_SLOTS) {
+            newButtonConfigs.add(null)
+        }
+        
+        if (index in newButtonConfigs.indices) {
+            // Check if the entire 49 slots are completely full
+            if ((newButtonConfigs[index] != null || forceShift) && newButtonConfigs.none { it == null }) {
+                onResult(false)
+                return
+            }
+            
+            saveUndoState(itemId)
+            if (newButtonConfigs[index] == null && !forceShift) {
+                // Target is empty, just replace
+                newButtonConfigs[index] = newConfig
+            } else {
+                // Target is not empty or we force shift, shift items down following the visible layout flow
+                val visibleIndices = mutableListOf<Int>()
+                for (r in 0 until current.rows) {
+                    for (c in 0 until current.columns) {
+                        visibleIndices.add(r * com.andreas_kratzer.ghosttalk.core.util.GridUtils.MAX_GRID_SIZE + c)
+                    }
+                }
+                
+                val dropVisiblePos = visibleIndices.indexOf(index)
+                if (dropVisiblePos != -1) {
+                    val lastVisibleGlobal = visibleIndices.last()
+                    val lastItem = newButtonConfigs[lastVisibleGlobal]
+                    
+                    // Shift visible items down by 1
+                    for (i in visibleIndices.size - 1 downTo dropVisiblePos + 1) {
+                        val currentGlobal = visibleIndices[i]
+                        val prevGlobal = visibleIndices[i - 1]
+                        newButtonConfigs[currentGlobal] = newButtonConfigs[prevGlobal]
+                    }
+                    
+                    // Rescue the last item by placing it in the first available invisible slot
+                    if (lastItem != null) {
+                        for (i in 0 until com.andreas_kratzer.ghosttalk.core.util.GridUtils.TOTAL_SLOTS) {
+                            if (i !in visibleIndices && newButtonConfigs[i] == null) {
+                                newButtonConfigs[i] = lastItem
+                                break
+                            }
+                        }
+                    }
+                }
+                
+                // Insert new config
+                newButtonConfigs[index] = newConfig
+            }
+            
+            updateTemplate(current.copy(buttonConfigs = newButtonConfigs))
+            onResult(true)
+        }
     }
 
     override fun updateRowName(itemId: String, rowIndex: Int, newName: String) {
         val current = templates.value.find { it.id == itemId } ?: return
+        saveUndoState(itemId)
         val updatedNames = current.rowNames.toMutableList()
         while (updatedNames.size <= rowIndex) updatedNames.add("Row ${updatedNames.size + 1}")
         updatedNames[rowIndex] = newName
@@ -112,11 +203,12 @@ class TemplateViewModel @Inject constructor(
         val current = templates.value.find { it.id == itemId } ?: return
         if (fromRow == toRow) return
         
-        val maxCols = com.andreas_kratzer.ghosttalk.ui.util.GridUtils.MAX_GRID_SIZE
+        saveUndoState(itemId)
+        val maxCols = com.andreas_kratzer.ghosttalk.core.util.GridUtils.MAX_GRID_SIZE
         val newButtonConfigs = current.buttonConfigs.toMutableList()
         
         // Ensure 49 slots
-        while (newButtonConfigs.size < com.andreas_kratzer.ghosttalk.ui.util.GridUtils.TOTAL_SLOTS) {
+        while (newButtonConfigs.size < com.andreas_kratzer.ghosttalk.core.util.GridUtils.TOTAL_SLOTS) {
             newButtonConfigs.add(null)
         }
 
@@ -140,9 +232,10 @@ class TemplateViewModel @Inject constructor(
         val current = templates.value.find { it.id == itemId } ?: return
         if (fromIndex == toIndex) return
         
+        saveUndoState(itemId)
         val newButtonConfigs = current.buttonConfigs.toMutableList()
         // Ensure 49 slots
-        while (newButtonConfigs.size < com.andreas_kratzer.ghosttalk.ui.util.GridUtils.TOTAL_SLOTS) {
+        while (newButtonConfigs.size < com.andreas_kratzer.ghosttalk.core.util.GridUtils.TOTAL_SLOTS) {
             newButtonConfigs.add(null)
         }
         
@@ -157,12 +250,67 @@ class TemplateViewModel @Inject constructor(
         updateTemplate(current.copy(buttonConfigs = newButtonConfigs))
     }
 
+    override fun moveButtonWithInsert(itemId: String, fromIndex: Int, toIndex: Int) {
+        if (fromIndex == toIndex || fromIndex == toIndex - 1) return
+        val current = templates.value.find { it.id == itemId } ?: return
+        val newButtonConfigs = current.buttonConfigs.toMutableList()
+        
+        while (newButtonConfigs.size < com.andreas_kratzer.ghosttalk.core.util.GridUtils.TOTAL_SLOTS) {
+            newButtonConfigs.add(null)
+        }
+        
+        val visibleIndices = mutableListOf<Int>()
+        for (r in 0 until current.rows) {
+            for (c in 0 until current.columns) {
+                visibleIndices.add(r * com.andreas_kratzer.ghosttalk.core.util.GridUtils.MAX_GRID_SIZE + c)
+            }
+        }
+        
+        if (fromIndex in visibleIndices && toIndex <= visibleIndices.size) {
+            val movedItem = newButtonConfigs[fromIndex] ?: return
+            saveUndoState(itemId)
+            newButtonConfigs[fromIndex] = null
+            
+            if (fromIndex < toIndex) {
+                for (i in fromIndex until toIndex - 1) {
+                    if (i < visibleIndices.size - 1) {
+                        val currentGlobal = visibleIndices[i]
+                        val nextGlobal = visibleIndices[i + 1]
+                        newButtonConfigs[currentGlobal] = newButtonConfigs[nextGlobal]
+                    }
+                }
+                val targetGlobal = visibleIndices[toIndex - 1]
+                newButtonConfigs[targetGlobal] = movedItem
+            } else if (fromIndex > toIndex) {
+                for (i in fromIndex downTo toIndex + 1) {
+                    val currentGlobal = visibleIndices[i]
+                    val prevGlobal = visibleIndices[i - 1]
+                    newButtonConfigs[currentGlobal] = newButtonConfigs[prevGlobal]
+                }
+                val targetGlobal = visibleIndices[toIndex]
+                newButtonConfigs[targetGlobal] = movedItem
+            }
+            
+            updateTemplate(current.copy(buttonConfigs = newButtonConfigs))
+        }
+    }
+
     override fun moveButtonToPage(
         fromPageId: String,
         fromIndex: Int,
         toPageId: String,
         forceMove: Boolean,
-        onResult: (com.andreas_kratzer.ghosttalk.domain.pages.MoveButtonToPageUseCase.MoveResult) -> Unit
+        onResult: (com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult) -> Unit
+    ) {
+        // Not implemented for templates
+    }
+
+    override fun duplicateButtonToPage(
+        fromPageId: String,
+        fromIndex: Int,
+        toPageId: String,
+        forceMove: Boolean,
+        onResult: (com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult) -> Unit
     ) {
         // Not implemented for templates
     }

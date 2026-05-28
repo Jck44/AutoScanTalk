@@ -1,0 +1,80 @@
+package com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates
+
+import com.andreas_kratzer.ghosttalk.core.audio.AudioDeviceManager
+import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.model.AudioOutputDevice
+import com.andreas_kratzer.ghosttalk.core.tts.GetAudioDevicesUseCase
+import com.andreas_kratzer.ghosttalk.core.tts.SetTtsLanguageUseCase
+import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
+import org.junit.Before
+import org.junit.Test
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class TtsSettingsDelegateTest {
+
+    private lateinit var context: android.content.Context
+    private lateinit var settingsRepository: SettingsRepository
+    private lateinit var audioDeviceManager: AudioDeviceManager
+    private lateinit var getAudioDevicesUseCase: GetAudioDevicesUseCase
+    private lateinit var setTtsLanguageUseCase: SetTtsLanguageUseCase
+    private lateinit var ttsHelper: TextToSpeechHelper
+    private lateinit var authManager: com.andreas_kratzer.ghosttalk.core.cloud.AuthManager
+    private lateinit var delegate: TtsSettingsDelegate
+
+    @Before
+    fun setup() {
+        context = mockk(relaxed = true)
+        settingsRepository = mockk(relaxed = true)
+        audioDeviceManager = mockk(relaxed = true)
+        getAudioDevicesUseCase = mockk(relaxed = true)
+        setTtsLanguageUseCase = mockk(relaxed = true)
+        ttsHelper = mockk(relaxed = true)
+        authManager = mockk(relaxed = true)
+        every { ttsHelper.availableVoicesFlow } returns MutableStateFlow(emptyList())
+        every { ttsHelper.getAvailableLanguages() } returns emptyList()
+
+        delegate = TtsSettingsDelegate(
+            context,
+            settingsRepository,
+            audioDeviceManager,
+            getAudioDevicesUseCase,
+            setTtsLanguageUseCase,
+            ttsHelper,
+            authManager
+        )
+    }
+
+    @Test
+    fun `loadAvailableAudioDevices updates state flow`() = runTest {
+        val mockDevices = listOf(
+            AudioOutputDevice(address = "0|test_address", name = "Test Device", type = 0, isBuiltIn = true)
+        )
+        val devicesFlow = MutableStateFlow(mockDevices)
+        every { audioDeviceManager.availableDevicesFlow } returns devicesFlow
+
+        delegate.initialize(backgroundScope) { _, _ -> }
+        runCurrent()
+
+        assertEquals(mockDevices, delegate.availableAudioDevices.value)
+    }
+
+    @Test
+    fun `setTtsLanguage calls use case`() {
+        delegate.setTtsLanguage("de-DE")
+        verify { setTtsLanguageUseCase.invoke("de-DE") }
+    }
+
+    @Test
+    fun `setTtsVoice updates settings`() {
+        delegate.setTtsVoice("test-voice")
+        verify { settingsRepository.ttsVoiceName = "test-voice" }
+    }
+}

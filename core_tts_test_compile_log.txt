@@ -1,0 +1,51 @@
+Calculating task graph as no cached configuration is available for tasks: :core-tts:compileDebugUnitTestKotlin
+> Task :core:preBuild UP-TO-DATE
+> Task :core-tts:preBuild UP-TO-DATE
+> Task :core:preDebugBuild UP-TO-DATE
+> Task :core-tts:preDebugBuild UP-TO-DATE
+> Task :core-tts:preDebugUnitTestBuild UP-TO-DATE
+> Task :core:javaPreCompileDebug UP-TO-DATE
+> Task :core-tts:processDebugNavigationResources UP-TO-DATE
+> Task :core:generateDebugResources UP-TO-DATE
+> Task :core-tts:generateDebugResources UP-TO-DATE
+> Task :core:processDebugNavigationResources UP-TO-DATE
+> Task :core-tts:javaPreCompileDebug UP-TO-DATE
+> Task :core-tts:packageDebugResources UP-TO-DATE
+> Task :core:packageDebugResources UP-TO-DATE
+> Task :core:parseDebugLocalResources UP-TO-DATE
+> Task :core-tts:parseDebugLocalResources UP-TO-DATE
+> Task :core:generateDebugRFile UP-TO-DATE
+> Task :core-tts:generateDebugRFile UP-TO-DATE
+> Task :core-tts:generateDebugUnitTestStubRFile UP-TO-DATE
+> Task :core:kspDebugKotlin UP-TO-DATE
+> Task :core:compileDebugKotlin UP-TO-DATE
+> Task :core:compileDebugJavaWithJavac UP-TO-DATE
+> Task :core:transformDebugClassesWithAsm UP-TO-DATE
+> Task :core:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :core:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :core-tts:kspDebugKotlin UP-TO-DATE
+> Task :core-tts:compileDebugKotlin UP-TO-DATE
+> Task :core-tts:compileDebugJavaWithJavac UP-TO-DATE
+> Task :core-tts:transformDebugClassesWithAsm UP-TO-DATE
+> Task :core-tts:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :core-tts:kspDebugUnitTestKotlin UP-TO-DATE
+
+> Task :core-tts:compileDebugUnitTestKotlin FAILED
+e: file:///Users/andreas.kratzer/AndroidStudioProjects/GoSTalk/core-tts/src/test/java/com/andreas_kratzer/ghosttalk/core/tts/SetTtsLanguageUseCaseTest.kt:20:61 Too many arguments for 'constructor(settingsRepository: SettingsRepository): SetTtsLanguageUseCase'.
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':core-tts:compileDebugUnitTestKotlin'.
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 1s
+26 actionable tasks: 1 executed, 25 up-to-date
+Configuration cache entry stored.

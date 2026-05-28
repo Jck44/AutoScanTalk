@@ -1,0 +1,143 @@
+Reusing configuration cache.
+> Task :core-tts:preBuild UP-TO-DATE
+> Task :core-ai:preBuild UP-TO-DATE
+> Task :core-cloud:preBuild UP-TO-DATE
+> Task :app:preBuild UP-TO-DATE
+> Task :core:preBuild UP-TO-DATE
+> Task :core-database:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :core-database:preDebugBuild UP-TO-DATE
+> Task :core-tts:preDebugBuild UP-TO-DATE
+> Task :core:preDebugBuild UP-TO-DATE
+> Task :core-cloud:preDebugBuild UP-TO-DATE
+> Task :core-ai:preDebugBuild UP-TO-DATE
+> Task :core-tts:processDebugNavigationResources UP-TO-DATE
+> Task :core:processDebugNavigationResources UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :core-cloud:generateDebugResources UP-TO-DATE
+> Task :core-database:processDebugNavigationResources UP-TO-DATE
+> Task :core-ai:generateDebugResources UP-TO-DATE
+> Task :core:generateDebugResources UP-TO-DATE
+> Task :core-cloud:processDebugNavigationResources UP-TO-DATE
+> Task :core-ai:processDebugNavigationResources UP-TO-DATE
+> Task :core-database:generateDebugResources UP-TO-DATE
+> Task :core:javaPreCompileDebug UP-TO-DATE
+> Task :core-ai:javaPreCompileDebug UP-TO-DATE
+> Task :core-tts:generateDebugResources UP-TO-DATE
+> Task :core-database:javaPreCompileDebug UP-TO-DATE
+> Task :core-cloud:javaPreCompileDebug UP-TO-DATE
+> Task :core-tts:javaPreCompileDebug UP-TO-DATE
+> Task :core:writeDebugAarMetadata UP-TO-DATE
+> Task :core-ai:writeDebugAarMetadata UP-TO-DATE
+> Task :core-cloud:writeDebugAarMetadata UP-TO-DATE
+> Task :core-database:writeDebugAarMetadata UP-TO-DATE
+> Task :core-tts:writeDebugAarMetadata UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :core-ai:packageDebugResources UP-TO-DATE
+> Task :core-tts:packageDebugResources UP-TO-DATE
+> Task :core:packageDebugResources UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :core-database:packageDebugResources UP-TO-DATE
+> Task :core-cloud:packageDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :core:extractDeepLinksDebug UP-TO-DATE
+> Task :core-tts:parseDebugLocalResources UP-TO-DATE
+> Task :core-ai:parseDebugLocalResources UP-TO-DATE
+> Task :core-database:parseDebugLocalResources UP-TO-DATE
+> Task :core-cloud:parseDebugLocalResources UP-TO-DATE
+> Task :core:parseDebugLocalResources UP-TO-DATE
+> Task :core:processDebugManifest UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :core-tts:generateDebugRFile UP-TO-DATE
+> Task :core-ai:extractDeepLinksDebug UP-TO-DATE
+> Task :core-ai:processDebugManifest UP-TO-DATE
+> Task :core-ai:generateDebugRFile UP-TO-DATE
+> Task :core:generateDebugRFile UP-TO-DATE
+> Task :core-cloud:generateDebugRFile UP-TO-DATE
+> Task :core-cloud:extractDeepLinksDebug UP-TO-DATE
+> Task :core-database:generateDebugRFile UP-TO-DATE
+> Task :core-database:processDebugManifest UP-TO-DATE
+> Task :core-database:extractDeepLinksDebug UP-TO-DATE
+> Task :core-cloud:processDebugManifest UP-TO-DATE
+> Task :core-database:mapDebugSourceSetPaths UP-TO-DATE
+> Task :core:mapDebugSourceSetPaths UP-TO-DATE
+> Task :core-cloud:mapDebugSourceSetPaths UP-TO-DATE
+> Task :core-cloud:compileDebugLibraryResources UP-TO-DATE
+> Task :core-tts:mapDebugSourceSetPaths UP-TO-DATE
+> Task :core-tts:processDebugManifest UP-TO-DATE
+> Task :core-ai:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+> Task :core-database:compileDebugLibraryResources UP-TO-DATE
+> Task :core:compileDebugLibraryResources UP-TO-DATE
+> Task :core-tts:compileDebugLibraryResources UP-TO-DATE
+> Task :core-tts:extractDeepLinksDebug UP-TO-DATE
+> Task :core-ai:compileDebugLibraryResources UP-TO-DATE
+> Task :app:processDebugNavigationResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:compileDebugNavigationResources UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:generateDebugRFile UP-TO-DATE
+> Task :core:kspDebugKotlin UP-TO-DATE
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:processDebugManifestForPackage UP-TO-DATE
+> Task :core:compileDebugKotlin UP-TO-DATE
+> Task :core:compileDebugJavaWithJavac UP-TO-DATE
+> Task :core:transformDebugClassesWithAsm UP-TO-DATE
+> Task :core:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :core:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :core-tts:kspDebugKotlin UP-TO-DATE
+> Task :core-database:kspDebugKotlin UP-TO-DATE
+> Task :app:processDebugResources UP-TO-DATE
+> Task :core-tts:compileDebugKotlin UP-TO-DATE
+> Task :core-database:compileDebugKotlin UP-TO-DATE
+> Task :core-tts:compileDebugJavaWithJavac UP-TO-DATE
+> Task :core-database:compileDebugJavaWithJavac UP-TO-DATE
+> Task :core-database:transformDebugClassesWithAsm UP-TO-DATE
+> Task :core-tts:transformDebugClassesWithAsm UP-TO-DATE
+> Task :core-database:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :core-tts:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :core-database:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :core-tts:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :core-cloud:kspDebugKotlin UP-TO-DATE
+> Task :core-cloud:compileDebugKotlin UP-TO-DATE
+> Task :core-cloud:compileDebugJavaWithJavac UP-TO-DATE
+> Task :core-cloud:transformDebugClassesWithAsm UP-TO-DATE
+> Task :core-cloud:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :core-cloud:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :core-ai:kspDebugKotlin UP-TO-DATE
+> Task :core-ai:compileDebugKotlin UP-TO-DATE
+> Task :core-ai:compileDebugJavaWithJavac UP-TO-DATE
+> Task :core-ai:transformDebugClassesWithAsm UP-TO-DATE
+> Task :core-ai:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :core-ai:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :app:kspDebugKotlin UP-TO-DATE
+> Task :app:compileDebugKotlin UP-TO-DATE
+> Task :app:compileDebugJavaWithJavac UP-TO-DATE
+> Task :app:hiltSyncDebug UP-TO-DATE
+> Task :app:hiltAggregateDepsDebug UP-TO-DATE
+> Task :app:hiltJavaCompileDebug UP-TO-DATE
+> Task :app:bundleDebugClassesToCompileJar UP-TO-DATE
+> Task :app:kspDebugUnitTestKotlin UP-TO-DATE
+
+> Task :app:compileDebugUnitTestKotlin FAILED
+e: file:///Users/andreas.kratzer/AndroidStudioProjects/GoSTalk/app/src/test/java/com/andreas_kratzer/ghosttalk/core/pages/PageImportExportManagerTest.kt:35:27 Unresolved reference 'PageImportExportManager'.
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileDebugUnitTestKotlin'.
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 3s
+109 actionable tasks: 1 executed, 108 up-to-date
+Configuration cache entry reused.

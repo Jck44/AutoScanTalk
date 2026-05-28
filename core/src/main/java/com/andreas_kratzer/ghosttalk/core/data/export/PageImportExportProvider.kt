@@ -1,0 +1,33 @@
+package com.andreas_kratzer.ghosttalk.core.data.export
+
+import com.andreas_kratzer.ghosttalk.core.model.Page
+
+interface PageImportExportProvider {
+    suspend fun exportPageListToJson(pages: List<Page>): String
+    suspend fun exportBookToJson(bookId: String): String
+    suspend fun importFromJson(
+        jsonString: String,
+        bookId: String,
+        regenerateIds: Boolean = false,
+        restoreSyncSettings: Boolean = false
+    ): Result<Int>
+    suspend fun exportBookToZip(
+        bookId: String, 
+        outputStream: java.io.OutputStream,
+        onProgress: (Float, String) -> Unit = { _, _ -> }
+    )
+    suspend fun importFromZip(
+        inputStream: java.io.InputStream,
+        bookId: String,
+        regenerateIds: Boolean = false,
+        restoreSyncSettings: Boolean = false,
+        onProgress: (Float, String) -> Unit = { _, _ -> }
+    ): Result<Int>
+    suspend fun extractBookIdFromJson(jsonString: String): String?
+    suspend fun importCloudBackup(jsonString: String, cloudFileId: String?): Result<String>
+    suspend fun importCloudBackupFromZip(
+        inputStream: java.io.InputStream,
+        cloudFileId: String?,
+        onProgress: (Float, String) -> Unit = { _, _ -> }
+    ): Result<String>
+}

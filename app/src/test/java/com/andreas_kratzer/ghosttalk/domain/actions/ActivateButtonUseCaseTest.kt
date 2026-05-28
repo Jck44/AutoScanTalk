@@ -1,12 +1,13 @@
 package com.andreas_kratzer.ghosttalk.domain.actions
 
 import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
-import com.andreas_kratzer.ghosttalk.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.model.Page
-import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
-import com.andreas_kratzer.ghosttalk.model.SpeakTextButtonAction
-import com.andreas_kratzer.ghosttalk.tts.TextToSpeechHelper
-import com.andreas_kratzer.ghosttalk.ui.pages.ScanCoordinator
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.Page
+import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
+import com.andreas_kratzer.ghosttalk.core.scanning.ScanCoordinator
+import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
+import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
@@ -24,6 +25,7 @@ class ActivateButtonUseCaseTest {
     private lateinit var resolveSmartPredictionUseCase: ResolveSmartPredictionUseCase
     private lateinit var actionExecutor: ActionExecutor
     private lateinit var scanCoordinator: ScanCoordinator
+    private lateinit var bookRepository: com.andreas_kratzer.ghosttalk.core.data.BookRepository
     private lateinit var useCase: ActivateButtonUseCase
 
     @Before
@@ -32,20 +34,41 @@ class ActivateButtonUseCaseTest {
         resolveSmartPredictionUseCase = mockk(relaxed = true)
         actionExecutor = mockk(relaxed = true)
         scanCoordinator = mockk(relaxed = true)
-        useCase = ActivateButtonUseCase(ttsHelper, resolveSmartPredictionUseCase)
+        bookRepository = mockk(relaxed = true)
+        useCase = ActivateButtonUseCase(ttsHelper, resolveSmartPredictionUseCase, bookRepository)
         
         every { actionExecutor.isExecuting } returns MutableStateFlow(false)
         io.mockk.mockkStatic(android.util.Log::class)
         every { android.util.Log.d(any(), any()) } returns 0
+        
+        val testBook = com.andreas_kratzer.ghosttalk.core.model.Book(id = "b1", name = "Test Book", logIgnoredActions = true)
+        coEvery { bookRepository.getBookById(any()) } returns testBook
     }
 
     @Test
-    fun `execute ignores click if actionExecutor is executing`() = runTest {
+    fun `execute ignores click if actionExecutor is executing a different button`() = runTest {
         every { actionExecutor.isExecuting } returns MutableStateFlow(true)
+        every { actionExecutor.lastExecutedButtonId } returns "btn_other"
 
-        useCase.execute(0, null, null, true, emptyList(), actionExecutor, scanCoordinator)
+        val testButton = ButtonConfig(id = "btn1", label = "Test", auditoryCue = null, buttonAction = SpeakTextButtonAction())
+        val testPage = Page(id = "p1", bookId = "b1", name = "P1", buttonConfigs = MutableList(36) { if (it == 0) testButton else null }, rows = 2, columns = 2)
+
+        useCase.execute(0, testPage, "b1", true, emptyList(), actionExecutor, scanCoordinator)
 
         verify(exactly = 0) { ttsHelper.stopNotificationTTS() }
+    }
+
+    @Test
+    fun `execute does NOT ignore click if actionExecutor is executing the same button`() = runTest {
+        every { actionExecutor.isExecuting } returns MutableStateFlow(true)
+        every { actionExecutor.lastExecutedButtonId } returns "btn1"
+
+        val testButton = ButtonConfig(id = "btn1", label = "Test", auditoryCue = null, buttonAction = SpeakTextButtonAction())
+        val testPage = Page(id = "p1", bookId = "b1", name = "P1", buttonConfigs = MutableList(36) { if (it == 0) testButton else null }, rows = 2, columns = 2)
+
+        useCase.execute(0, testPage, "b1", true, emptyList(), actionExecutor, scanCoordinator)
+
+        verify { ttsHelper.stopNotificationTTS() }
     }
 
     @Test
@@ -66,7 +89,17 @@ class ActivateButtonUseCaseTest {
 
         useCase.execute(0, execPage, "b1", true, emptyList(), actionExecutor, scanCoordinator)
 
-        verify { actionExecutor.executeButtonAction(execButton, bookId = "b1", rows = 2, columns = 2, index = 0) }
+        verify { 
+            actionExecutor.executeButtonAction(
+                buttonConfig = execButton, 
+                bookId = "b1",
+                pageId = "p1",
+                rows = 2,
+                columns = 2, 
+                index = 0,
+                skipLog = false
+            ) 
+        }
     }
 
     @Test

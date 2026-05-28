@@ -22,6 +22,7 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 
 @Composable
 fun RowEditDialog(
@@ -60,12 +61,12 @@ fun RowEditDialog(
         },
         confirmButton = {
             TextButton(onClick = { onSave(textFieldValue.text) }) {
-                Text(stringResource(R.string.action_save))
+                Text(stringResource(CoreR.string.action_save))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.action_cancel))
+                Text(stringResource(CoreR.string.action_cancel))
             }
         }
     )

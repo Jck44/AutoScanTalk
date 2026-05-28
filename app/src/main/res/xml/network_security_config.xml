@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- 
+      Cleartext-Traffic ist standardmäßig global deaktiviert.
+      Alle Verbindungen (lokal und remote) müssen über sicheres HTTPS laufen.
+    -->
+    <base-config cleartextTrafficPermitted="false" />
+</network-security-config>

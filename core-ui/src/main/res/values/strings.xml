@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">GhostTalk</string>
+    <string name="start_tagline">Deine Stimme, unterstützt durch KI.</string>
+    
+    <!-- Shared Strings -->
+    <string name="settings_title_global">App Einstellungen</string>
+    <string name="settings_title_book">Buch Einstellungen</string>
+    <string name="start_manage_content">Inhalte verwalten</string>
+    <string name="page_list_title">Seiten verwalten</string>
+    <string name="template_manage_title">Vorlagen verwalten</string>
+    <string name="back_button_content_description">Zurück</string>
+    <string name="page_import_success">Import erfolgreich!</string>
+    <string name="page_export_success">Export erfolgreich!</string>
+
+    <!-- Security Strings -->
+    <string name="security_pin_title">Sicherheits-Check</string>
+    <string name="security_use_biometric">Mit Fingerabdruck entsperren</string>
+    <string name="settings_security_pin_label">PIN Schutz</string>
+    <string name="security_pin_entry_title">PIN eingeben</string>
+    
+    <!-- Common Actions -->
+    <string name="action_cancel">Abbrechen</string>
+    <string name="action_delete">Löschen</string>
+    <string name="action_create">Erstellen</string>
+    <string name="action_save">Speichern</string>
+    <string name="dialog_confirm">Bestätigen</string>
+    <string name="dialog_close">Schließen</string>
+    <string name="dialog_back">Zurück</string>
+</resources>

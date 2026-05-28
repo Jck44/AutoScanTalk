@@ -31,12 +31,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.foundation.background
+import androidx.compose.material3.MaterialTheme
 import com.andreas_kratzer.ghosttalk.R
-import com.andreas_kratzer.ghosttalk.ui.components.AppBrandHeader
+import com.andreas_kratzer.ghosttalk.core.call.CallState
+import com.andreas_kratzer.ghosttalk.core.ui.components.AppBrandHeader
+import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.ui.pages.sections.ActionLogCard
 import com.andreas_kratzer.ghosttalk.ui.pages.sections.ButtonGrid
 import com.andreas_kratzer.ghosttalk.ui.pages.sections.ControlButtons
-import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
+import com.andreas_kratzer.ghosttalk.ui.pages.sections.ActiveCallOverlay
+import com.andreas_kratzer.ghosttalk.ui.pages.sections.IncomingCallOverlay
+import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,9 +55,18 @@ fun PageScreen(
     val focusedButtonIndex by pageViewModel.focusedButtonIndex.collectAsState()
     val focusedRowIndex by pageViewModel.focusedRowIndex.collectAsState()
     val lastActions by pageViewModel.lastActions.collectAsState()
-    val smartPredictions by pageViewModel.smartPredictions.collectAsState()
     val showTestButtons by pageViewModel.showTestButtons.collectAsState()
+    val isScanning by pageViewModel.isScanning.collectAsState()
     val dimensions = LocalDimensions.current
+
+    // Call Screen States
+    val callState by pageViewModel.callState.collectAsState()
+    val callerName by pageViewModel.callerName.collectAsState()
+    val callerPhone by pageViewModel.callerPhone.collectAsState()
+    val callDurationSeconds by pageViewModel.callDurationSeconds.collectAsState()
+    val isOutgoing by pageViewModel.isOutgoing.collectAsState()
+    val isHangUpButtonFocused by pageViewModel.isHangUpButtonFocused.collectAsState()
+    val focusedCallScreenButton by pageViewModel.focusedCallScreenButton.collectAsState()
 
     val page = currentPage
 
@@ -79,15 +94,17 @@ fun PageScreen(
         onDispose {
             pageViewModel.setUserModeActive(false)
             lifecycleOwner.lifecycle.removeObserver(observer)
-            pageViewModel.stopScanning()
         }
     }
 
-    BackHandler {
+
+
+    BackHandler(enabled = callState == CallState.NONE) {
         onNavigateBack()
     }
 
     Scaffold(
+        modifier = modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
                 title = { 
@@ -105,7 +122,7 @@ fun PageScreen(
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.back_button_content_description)
+                            contentDescription = stringResource(CoreR.string.back_button_content_description)
                         )
                     }
                 }
@@ -117,28 +134,28 @@ fun PageScreen(
 
         if (isLandscape) {
             Row(
-                modifier = modifier
+                modifier = Modifier
                     .padding(paddingValues)
                     .padding(horizontal = dimensions.paddingLarge)
                     .padding(bottom = dimensions.paddingLarge)
                     .fillMaxSize(),
                 horizontalArrangement = Arrangement.spacedBy(dimensions.paddingLarge)
             ) {
-                Box(modifier = Modifier.weight(0.7f)) {
+                Box(modifier = Modifier.weight(0.65f)) {
                     ButtonGrid(
                         page = page,
                         focusedButtonIndex = focusedButtonIndex,
                         focusedRowIndex = focusedRowIndex,
+                        isScanning = isScanning,
                         pageViewModel = pageViewModel
                     )
                 }
 
                 Column(
                     modifier = Modifier
-                        .weight(0.3f)
-                        .fillMaxHeight()
-                        .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.Bottom
+                        .weight(0.35f)
+                        .fillMaxHeight(),
+                    verticalArrangement = Arrangement.spacedBy(dimensions.paddingMedium)
                 ) {
                     if (showTestButtons) {
                         ControlButtons(
@@ -147,20 +164,21 @@ fun PageScreen(
                             onStopScanning = { pageViewModel.stopScanning() },
                             isFocused = focusedButtonIndex != null || focusedRowIndex != null
                         )
-                        Spacer(modifier = Modifier.height(dimensions.paddingLarge))
                     }
                     ActionLogCard(
                         lastActions = lastActions,
-                        onClearLogs = { pageViewModel.clearActionLogs() }
+                        onClearLogs = { pageViewModel.clearActionLogs() },
+                        actionLogUseCase = pageViewModel.interactionDelegate.actionLogUseCase,
+                        modifier = Modifier.weight(1f)
                     )
                 }
             }
         } else {
             Column(
-                modifier = modifier
+                modifier = Modifier
                     .padding(paddingValues)
                     .padding(horizontal = dimensions.paddingLarge)
-                    .padding(bottom = dimensions.paddingLarge)
+                    .padding(bottom = dimensions.paddingMedium)
                     .fillMaxSize()
             ) {
                 Box(modifier = Modifier.weight(1f)) {
@@ -168,10 +186,11 @@ fun PageScreen(
                         page = page,
                         focusedButtonIndex = focusedButtonIndex,
                         focusedRowIndex = focusedRowIndex,
+                        isScanning = isScanning,
                         pageViewModel = pageViewModel
                     )
                 }
-                Spacer(modifier = Modifier.height(dimensions.paddingLarge))
+                Spacer(modifier = Modifier.height(dimensions.paddingMedium))
                 if (showTestButtons) {
                     ControlButtons(
                         onStartScanning = { pageViewModel.startScanning() },
@@ -183,7 +202,8 @@ fun PageScreen(
                 }
                 ActionLogCard(
                     lastActions = lastActions,
-                    onClearLogs = { pageViewModel.clearActionLogs() }
+                    onClearLogs = { pageViewModel.clearActionLogs() },
+                    actionLogUseCase = pageViewModel.interactionDelegate.actionLogUseCase
                 )
             }
         }

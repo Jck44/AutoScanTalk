@@ -1,7 +1,7 @@
 package com.andreas_kratzer.ghosttalk.domain.actions
 
 import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
-import com.andreas_kratzer.ghosttalk.ui.pages.ScanCoordinator
+import com.andreas_kratzer.ghosttalk.core.scanning.ScanCoordinator
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk

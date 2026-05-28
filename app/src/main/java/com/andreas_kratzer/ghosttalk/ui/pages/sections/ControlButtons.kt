@@ -10,7 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.andreas_kratzer.ghosttalk.R
-import com.andreas_kratzer.ghosttalk.ui.theme.LocalDimensions
+import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 
 @Composable
 fun ControlButtons(
@@ -27,7 +27,7 @@ fun ControlButtons(
         Button(
             onClick = onStartScanning,
             modifier = Modifier.weight(1f),
-            shape = MaterialTheme.shapes.medium
+            shape = MaterialTheme.shapes.small
         ) {
             Text(stringResource(R.string.page_action_start_scan))
         }
@@ -35,14 +35,14 @@ fun ControlButtons(
             onClick = onActivateFocused,
             enabled = isFocused,
             modifier = Modifier.weight(1f),
-            shape = MaterialTheme.shapes.medium
+            shape = MaterialTheme.shapes.small
         ) {
             Text(stringResource(R.string.page_action_activate_focused))
         }
         Button(
             onClick = onStopScanning,
             modifier = Modifier.weight(1f),
-            shape = MaterialTheme.shapes.medium
+            shape = MaterialTheme.shapes.small
         ) {
             Text(stringResource(R.string.page_action_stop_scan))
         }

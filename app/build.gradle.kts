@@ -9,20 +9,25 @@ plugins {
 
 android {
     namespace = "com.andreas_kratzer.ghosttalk"
-    compileSdk = 36
+    compileSdk = 37
     ndkVersion = "26.1.10909125"
 
     defaultConfig {
         applicationId = "com.andreas_kratzer.ghosttalk"
         minSdk = 35
-        targetSdk = 36
-        versionCode = 31
-        versionName = "0.9.8"
+        targetSdk = 37
+        versionCode = 73
+        versionName = "1.2.0"
 
         testInstrumentationRunner = "com.andreas_kratzer.ghosttalk.HiltTestRunner"
         
         ndk {
-            debugSymbolLevel = "full"
+            // Deaktiviere Debug-Symbole standardmaessig, um Zeit zu sparen (kein C++ Code)
+            debugSymbolLevel = if (project.hasProperty("enableLocalNativeDebugging")) {
+                "full"
+            } else {
+                "none"
+            }
         }
     }
 
@@ -61,8 +66,8 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
     packaging {
         resources {
@@ -70,11 +75,12 @@ android {
             excludes += "/META-INF/DEPENDENCIES"
             excludes += "/META-INF/LICENSE"
             excludes += "/META-INF/NOTICE"
+            excludes += "/META-INF/INDEX.LIST"
         }
     }
     buildFeatures {
         compose = true
-        prefab = true
+        prefab = false
     }
 }
 
@@ -85,7 +91,7 @@ composeCompiler {
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile>().configureEach {
     compilerOptions {
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
     }
 }
 
@@ -96,10 +102,19 @@ play {
 }
 
 dependencies {
+    implementation(project(":core"))
+    implementation(project(":core-data"))
+    implementation(project(":core-ai"))
+    implementation(project(":core-cloud"))
+    implementation(project(":core-database"))
+    implementation(project(":core-tts"))
+    implementation(project(":core-scanning"))
+    implementation(project(":core-ui"))
+    implementation(project(":feature-settings"))
 
     implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.appcompat)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.process)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
@@ -165,6 +180,12 @@ dependencies {
     implementation(libs.androidx.hilt.work)
     implementation(libs.androidx.biometric)
     implementation(libs.kotlinx.serialization.json)
+    
+    // CameraX
+    implementation(libs.androidx.camera.core)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.view)
     androidTestImplementation(libs.androidx.work.testing)
     ksp(libs.androidx.hilt.compiler)
 }

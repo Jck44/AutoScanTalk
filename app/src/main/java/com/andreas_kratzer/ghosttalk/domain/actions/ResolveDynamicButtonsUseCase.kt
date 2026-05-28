@@ -1,13 +1,16 @@
 package com.andreas_kratzer.ghosttalk.domain.actions
 
 import com.andreas_kratzer.ghosttalk.core.actions.FrequentActionResolver
-import com.andreas_kratzer.ghosttalk.model.AuditoryCue
-import com.andreas_kratzer.ghosttalk.model.ButtonAction
-import com.andreas_kratzer.ghosttalk.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.model.FrequentActionButtonAction
-import com.andreas_kratzer.ghosttalk.model.NavigateToPageButtonAction
-import com.andreas_kratzer.ghosttalk.model.Page
-import com.andreas_kratzer.ghosttalk.model.SmartPredictionButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.AuditoryCue
+import com.andreas_kratzer.ghosttalk.core.model.ButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.FrequentActionButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.Page
+import com.andreas_kratzer.ghosttalk.core.data.ActionLogProvider
+import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.PreviousActionButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import javax.inject.Inject
 
 /**
@@ -15,7 +18,8 @@ import javax.inject.Inject
  * into concrete buttons at load time.
  */
 class ResolveDynamicButtonsUseCase @Inject constructor(
-    private val frequentActionResolver: FrequentActionResolver
+    private val frequentActionResolver: FrequentActionResolver,
+    private val actionLogProvider: ActionLogProvider
 ) {
 
     private var lastAllPagesRef: List<Page>? = null
@@ -49,7 +53,20 @@ class ResolveDynamicButtonsUseCase @Inject constructor(
         // Step 2: Resolve Frequent Actions
         val frequentlyResolvedPage = frequentActionResolver.resolve(page, bookId)
 
-        // Step 3: Resolve Smart Predictions
+        // Step 3: Load history once for all "Previous Action" buttons on this page
+        // Filter out dynamic actions to prevent recursion and ensure we resolve to actual tasks.
+        val hasPreviousActionButtons = page.buttonConfigs.any { it?.buttonAction is PreviousActionButtonAction }
+        val filteredHistory = if (hasPreviousActionButtons) {
+            val fullHistory = actionLogProvider.loadSavedLogEntries()
+            fullHistory.filter { entry ->
+                val hAction = entry.action
+                hAction != null && !isDynamic(hAction)
+            }
+        } else {
+            emptyList()
+        }
+
+        // Step 4: Resolve Smart Predictions and Previous Actions
         var changed = frequentlyResolvedPage !== page
         val finalConfigs = frequentlyResolvedPage.buttonConfigs.map { config ->
             val action = config?.buttonAction
@@ -62,6 +79,23 @@ class ResolveDynamicButtonsUseCase @Inject constructor(
                     resolveSmartPrediction(predictionId, frequentlyResolvedPage, config, buttonLookup, pageLookup)
                 } else {
                     null // No prediction available for this rank, deactivate/hide button
+                }
+                if (resolved !== config) changed = true
+                resolved
+            } else if (action is PreviousActionButtonAction && config.isActive) {
+                val entry = filteredHistory.getOrNull(action.rank - 1)
+                val historicalAction = entry?.action
+                val resolved = if (historicalAction != null) {
+                    val label = entry.label ?: entry.message
+                    config.copy(label = label, buttonAction = historicalAction)
+                } else {
+                    // No history available, provide feedback in ear (auditory cue)
+                    config.copy(
+                        label = "No History",
+                        buttonAction = SpeakTextButtonAction(),
+                        spokenText = "Keine vorherige Aktion gefunden", 
+                        playActionAsAuditoryCue = true
+                    )
                 }
                 if (resolved !== config) changed = true
                 resolved
@@ -109,6 +143,6 @@ class ResolveDynamicButtonsUseCase @Inject constructor(
     }
 
     private fun isDynamic(action: ButtonAction): Boolean {
-        return action is SmartPredictionButtonAction || action is FrequentActionButtonAction
+        return action is SmartPredictionButtonAction || action is FrequentActionButtonAction || action is PreviousActionButtonAction
     }
 }

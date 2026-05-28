@@ -44,7 +44,7 @@
 
 # Keep models to avoid serialization/reflection issues
 -keep class com.andreas_kratzer.ghosttalk.model.** { *; }
--keep class com.andreas_kratzer.ghosttalk.model.importexport.** { *; }
+-keep class com.andreas_kratzer.ghosttalk.core.model.importexport.** { *; }
 
 # Google Drive API
 -keep class com.google.api.services.drive.** { *; }

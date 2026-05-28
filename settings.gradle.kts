@@ -26,3 +26,12 @@ dependencyResolutionManagement {
 
 rootProject.name = "GhosTTalk"
 include(":app")
+include(":core")
+include(":core-ai")
+include(":core-cloud")
+include(":core-database")
+include(":core-tts")
+include(":core-scanning")
+include(":core-data")
+include(":core-ui")
+include(":feature-settings")

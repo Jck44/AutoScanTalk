@@ -1,0 +1,343 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Settings Screen Labels -->
+    <string name="settings_category_general">Allgemein</string>
+    <string name="settings_category_voice">Text-to-Speech</string>
+    <string name="settings_category_scanning">Scannen &amp; Bedienung</string>
+    <string name="settings_category_security">Sicherheit &amp; PIN</string>
+    <string name="settings_category_cloud">Konten &amp; Import</string>
+    <string name="settings_category_smart_home">Smart Home (Experimentell)</string>
+    <string name="settings_category_gemini">Gemini KI-Assistent</string>
+    <string name="settings_category_elevenlabs">Eleven Labs</string>
+    <string name="settings_category_notifications">Benachrichtigungen &amp; Berechtigungen</string>
+    <string name="settings_category_cloud_book">Sicherung</string>
+    <string name="settings_category_cloud_sync">Synchronisierung</string>
+    <string name="settings_category_advanced">Erweiterte Einstellungen</string>
+
+    <!-- General Settings -->
+    <string name="settings_start_page">Startseite</string>
+    <string name="settings_start_page_auto">Automatisch (Erste Seite)</string>
+    <string name="settings_scan_pattern">Standard Scan Muster</string>
+    <string name="settings_pattern_linear">Button für Button</string>
+    <string name="settings_pattern_row_by_row">Zeilenweise</string>
+    <string name="settings_app_language">App-Sprache</string>
+    <string name="settings_theme_mode">App-Design</string>
+    <string name="settings_theme_system">System-Standard</string>
+    <string name="settings_theme_light">Hell</string>
+    <string name="settings_theme_dark">Dunkel</string>
+    <string name="settings_keep_screen_on">Bildschirm im Nutzer-Modus eingeschaltet lassen</string>
+    <string name="settings_screen_behavior">Bildschirm-Verhalten</string>
+    <string name="settings_screen_behavior_normal">Normal</string>
+    <string name="settings_screen_behavior_dimmed">Gedimmt (Akku sparen)</string>
+    <string name="settings_screen_behavior_on">An</string>
+    <string name="settings_screen_behavior_black">Schwarz (OLED)</string>
+    <string name="settings_screen_black_overlay_text">Akku Sparmodus.\nÜber Zurück zur App zurückkehren</string>
+    <string name="settings_startup_behavior">App öffnen in:</string>
+    <string name="settings_startup_behavior_book_list">Buchauswahl</string>
+    <string name="settings_startup_behavior_last_book">Ausgewähltes Buch</string>
+    <string name="settings_startup_behavior_user_mode">Nutzer Modus (gewähltes Buch)</string>
+    <string name="settings_bluetooth_delay">Bluetooth-Verzögerung (ms)</string>
+    <string name="settings_force_soft_keyboard">Bildschirmtastatur erzwingen</string>
+    <string name="settings_force_soft_keyboard_desc">Blendet die Bildschirmtastatur auch dann ein, wenn ein Hardware-Taster (Tastatur-Emulation) angeschlossen ist.</string>
+
+    <!-- TTS Settings -->
+    <string name="settings_tts_language">TTS-Sprache</string>
+    <string name="settings_tts_engine">Sprach-Engine</string>
+    <string name="settings_tts_engine_google">Google TTS (System)</string>
+    <string name="settings_tts_engine_elevenlabs">ElevenLabs TTS (Cloud)</string>
+    <string name="settings_system_default">System-Standard</string>
+    <string name="settings_select_voice">Stimme wählen</string>
+    <string name="settings_voice_default">Standard</string>
+    <string name="settings_voice_local_hint"> (Lokal)</string>
+    <string name="settings_audio_tts">Ausgabe: Laut Sprechen</string>
+    <string name="settings_audio_cues">Ausgabe: Audio-Hinweis</string>
+    <string name="settings_audio_default">System-Standard (Automatisch)</string>
+    <string name="settings_category_audio_hardware">Audio-Hardware</string>
+    <string name="settings_recording_source">Audio-Aufnahme Signalquelle</string>
+    <string name="settings_recording_source_voice_recognition">Sprach-Optimiert (Leiser, Rauschunterdrückt)</string>
+    <string name="settings_recording_source_voice_communication">Verstärkt &amp; Rauschunterdrückt (VoIP)</string>
+    <string name="settings_recording_source_mic">Standard-Mikrofon (Lauter, Roh)</string>
+
+    <!-- Scanning Settings -->
+    <string name="settings_auto_scan">Scannen automatisch starten</string>
+    <string name="settings_restart_scan">Nach Aktion von Anfang scannen</string>
+    <string name="settings_scan_delay">Scangeschwindigkeit (ms)</string>
+    <string name="settings_holding_time">Haltezeit / Doppelklick-Schutz (ms)</string>
+
+    <!-- Security Settings -->
+    <string name="settings_security_require_pin">PIN Schutz für Einstellungen / Bearbeitung</string>
+    <string name="settings_security_pin_label">PIN Schutz</string>
+    <string name="settings_security_set_pin_title">Sicherheits-PIN festlegen</string>
+    <string name="settings_security_pin_timeout">PIN Timeout (Minuten)</string>
+    <string name="settings_security_pin_required_for_deletion">PIN-Abfrage beim Löschen von Büchern</string>
+    <string name="settings_security_lock_now">Sofort Sperren</string>
+    <string name="settings_security_pin_active">Aktiviert</string>
+    <string name="settings_security_pin_inactive">Deaktiviert</string>
+    <string name="settings_security_biometric_enabled">Fingerabdruck zum Entsperren nutzen</string>
+    <string name="settings_security_require_for_edit">Buch-Bearbeitung schützen</string>
+    <string name="settings_security_require_for_settings">Zugriff auf Einstellungen schützen</string>
+    <string name="settings_security_biometric_unsupported">Nicht vom Gerät unterstützt</string>
+
+    <!-- Cloud Sync Settings -->
+    <string name="settings_cloud_sync_enabled">Automatischer Sync</string>
+    <string name="settings_cloud_sync_mode">Sync-Modus</string>
+    <string name="settings_cloud_sync_interval">Sync-Intervall (Minuten)</string>
+    <string name="settings_cloud_sync_mode_two_way">2-Wege (Sichern &amp; Wiederherstellen)</string>
+    <string name="settings_cloud_sync_mode_backup">Einseitig (Nur Sicherung zu Google Drive)</string>
+    <string name="settings_cloud_sync_mode_restore">Einseitig (Nur Wiederherstellung von Google Drive)</string>
+    <string name="settings_cloud_sync_now">Synchronisieren</string>
+    <string name="settings_cloud_backup_now">Sicherung</string>
+    <string name="settings_cloud_restore_now">Wiederherstellen</string>
+    <string name="settings_cloud_sync_started">Cloud-Abgleich gestartet…</string>
+    <string name="settings_cloud_sync_success">Synchronisierung erfolgreich abgeschlossen.</string>
+    <string name="settings_cloud_backup_success">Sicherung erfolgreich erstellt.</string>
+    <string name="settings_cloud_restore_success">Wiederherstellung erfolgreich abgeschlossen.</string>
+    <string name="settings_cloud_sync_error">Fehler beim Cloud-Abgleich: %1$s</string>
+    <string name="settings_cloud_backup_selection_title">Sicherung auswählen</string>
+    <string name="settings_cloud_backup_selection_description">Es wurde keine passende Sicherung für dieses Buch gefunden. Bitte wähle eine Sicherung aus der Liste aus:</string>
+    <string name="settings_cloud_backup_date_format">Sicherungsdatum: %1$s</string>
+    <string name="settings_cloud_signed_in_as">Angemeldet als %s</string>
+    <string name="settings_cloud_last_sync">Letzter Sync: %s</string>
+    <string name="settings_elevenlabs_api_key">ElevenLabs API-Schlüssel</string>
+    <string name="settings_elevenlabs_api_key_description">Der API-Schlüssel wird benötigt, um die Stimmen von ElevenLabs zu nutzen.</string>
+    <string name="settings_elevenlabs_test_button">Verbindung testen</string>
+    <string name="settings_elevenlabs_test_success">Verbindung erfolgreich! Eine Testansage wurde gesendet.</string>
+    <string name="settings_elevenlabs_test_failure">Verbindung fehlgeschlagen: %s</string>
+    <string name="settings_elevenlabs_test_sample_text">Dies ist eine Testansage von ElevenLabs.</string>
+    <string name="settings_voice_preview_button">Hörprobe abspielen</string>
+    <string name="settings_voice_preview_sample_text">Dies ist eine Hörprobe für die ausgewählte Stimme in GhostTalk.</string>
+    <string name="settings_clear_tts_cache_summary">Entfernt alle bereits heruntergeladenen ElevenLabs MP3-Dateien.</string>
+    <string name="settings_prefetch_tts_title">TTS MP3-Speicher vorfüllen</string>
+    <string name="settings_prefetch_tts_summary">Lädt benötigte Sprachdateien für gewählte Seiten vorab herunter.</string>
+    <string name="prefetch_dialog_select_pages">Seiten auswählen</string>
+    <string name="prefetch_dialog_title">TTS-Vorladen</string>
+    <string name="prefetch_stats_title">Zusammenfassung</string>
+    <string name="prefetch_stats_unique">Verschiedene Texte: %d</string>
+    <string name="prefetch_stats_duplicates">Duplikate (übersprungen): %d</string>
+    <string name="prefetch_stats_words">Wort-Anzahl gesamt: %d</string>
+    <string name="prefetch_stats_chars">Zeichen-Anzahl gesamt: %d</string>
+    <string name="prefetch_stats_cached">Bereits im Cache: %d</string>
+    <string name="prefetch_progress_count">Fortschritt: %1$d / %2$d</string>
+    <string name="prefetch_cancel">Abbrechen</string>
+    <string name="prefetch_start">Starten</string>
+    <string name="prefetch_in_progress">Vorladen läuft…</string>
+    <string name="prefetch_complete">Vorladen abgeschlossen.</string>
+    <string name="prefetch_select_all">Alle auswählen</string>
+    <string name="prefetch_deselect_all">Alle abwählen</string>
+    <string name="backup_progress_exporting">Daten werden exportiert…</string>
+    <string name="backup_progress_compressing">Audios werden komprimiert: %s</string>
+    <string name="backup_progress_complete">Backup erfolgreich erstellt.</string>
+    <string name="restore_progress_extracting">Dateien werden entpackt: %s</string>
+    <string name="restore_progress_importing">Daten werden importiert…</string>
+    <string name="restore_progress_complete">Wiederherstellung abgeschlossen.</string>
+    <string name="cloud_progress_uploading">Cloud-Backup: Datei wird hochgeladen…</string>
+    <string name="cloud_progress_downloading">Cloud-Restore: Datei wird heruntergeladen…</string>
+    <string name="book_import_cloud_success">Buch erfolgreich aus der Cloud geladen.</string>
+    <string name="book_import_cloud_error">Fehler beim Laden aus der Cloud: %s</string>
+    <string name="settings_cloud_logs_title">Cloud Sync Protokoll</string>
+    <string name="settings_cloud_logs_clear">Protokoll löschen</string>
+    <string name="settings_cloud_logs_empty">Noch keine Sync-Einträge vorhanden.</string>
+    <string name="settings_cloud_logs_view">Verlauf anzeigen</string>
+
+    <!-- Gemini Settings -->
+    <string name="settings_gemini_activate_button">Gemini Initialisieren / Testen</string>
+    <string name="settings_gemini_activation_desc">Tippe auf den Button, um Gemini zu initialisieren und die notwendigen Berechtigungen abzufragen.</string>
+    <string name="settings_gemini_activation_success">Gemini erfolgreich aktiviert!</string>
+    <string name="settings_gemini_enable">Gemini (Cloud)</string>
+    <string name="settings_gemini_local_enable">Gemini Nano (offline)</string>
+    <string name="settings_gemini_local_desc">Schneller, komplett offline und kostenlos. Nutzt ein kleines KI-Modell auf deinem Gerät für Smart Home und Uhrzeit. Keine Internetverbindung nötig.</string>
+    <string name="settings_smart_prediction_enable">Gemini Vorhersage (Experimentell)</string>
+    <string name="elevenlabs_api_key_saved_google">API-Key im Google Passwort-Manager gespeichert.</string>
+    <string name="elevenlabs_api_key_imported_google">API-Key aus Google Passwort-Manager importiert.</string>
+    <string name="elevenlabs_api_key_not_found_google">Kein API-Key im Google Passwort-Manager gefunden.</string>
+    <string name="elevenlabs_api_key_error_google">Fehler beim Zugriff auf Google Passwort-Manager: %s</string>
+    <string name="elevenlabs_api_key_no_manager_google">Google Passwort-Manager ist auf diesem Gerät nicht verfügbar oder nicht aktuell.</string>
+    <string name="settings_smart_prediction_hint">Ermöglicht Buttons, die dynamisch die nächste wahrscheinliche Aktion vorhersagen.</string>
+    <string name="settings_gemini_redo_prediction">Bei Navigation auf die gleiche Seite erneut Prediction machen</string>
+    <string name="settings_gemini_redo_prediction_hint">Erzwingt eine neue KI-Vorhersage, auch wenn dieselbe Seite erneut aufgerufen wird.</string>
+    <string name="settings_gemini_tools_title">Verfügbare Funktionen (Tools):</string>
+    <string name="settings_gemini_tool_status_active">Aktiv</string>
+    <string name="settings_gemini_tool_status_requires_auth">Anmeldung erforderlich</string>
+    <string name="settings_gemini_tool_status_failed">Nicht verfügbar</string>
+    <string name="settings_gemini_tool_status_pending">Ausstehend…</string>
+
+    <!-- Notification Settings -->
+    <string name="settings_notifications_enable">System-Zugriff erlauben</string>
+    <string name="settings_notifications_enable_desc">Erforderlich, damit die App eingehende Benachrichtigungen lesen und verarbeiten kann.</string>
+    <string name="settings_notifications_permission_button">Berechtigung</string>
+    <string name="settings_notifications_apps_header">Bevorzugte Apps</string>
+    <string name="settings_notifications_apps_reset">Bevorzugte Apps auf Messenger zurücksetzen</string>
+    <string name="settings_permission_camera">Kamera</string>
+    <string name="settings_permission_camera_desc">Wird für Fotos zur Beschreibung der Umgebung über Gemini benötigt.</string>
+    <string name="settings_permission_location">Standort</string>
+    <string name="settings_permission_location_desc">Wird für Funktionen wie das Abrufen von Wetterinformationen benötigt.</string>
+    <string name="settings_permission_calendar">Kalender</string>
+    <string name="settings_permission_calendar_desc">Wird benötigt, um Kalendereinträge vorzulesen.</string>
+    <string name="settings_permission_active">Erteilt</string>
+    <string name="settings_permission_inactive">Nicht erteilt</string>
+    <string name="settings_permission_request">Anfordern</string>
+    
+    <string name="settings_category_limits">Begrenzungen</string>
+    <string name="settings_limit_scan_cycles">Anzahl von Scandurchläufen begrenzen</string>
+    <string name="settings_scan_cycle_limit">Anzahl der Scandurchläufe</string>
+    <string name="settings_action_log_limit">Limit für die Aktionsliste</string>
+    <string name="settings_log_ignored_actions">Ignorierte Aktionen im Verlauf protokollieren</string>
+    <string name="settings_log_stop_actions">Stopp-Befehle im Verlauf protokollieren</string>
+    <string name="book_name_label">Name des Buches</string>
+    <string name="book_delete_description">Buch löschen</string>
+    <string name="book_dialog_delete_title">Buch löschen?</string>
+    <string name="book_dialog_delete_confirm">Möchtest du das Buch \"%s\" wirklich unwiderruflich löschen? Alle darin enthaltenen Seiten gehen verloren.</string>
+
+    <!-- Advanced / Maintenance -->
+    <string name="settings_weather_cache_timeout_label">Wetter Cache Dauer (Minuten)</string>
+    <string name="settings_usage_stats_title">Nutzungsstatistiken</string>
+    <string name="settings_usage_stats_empty">Noch keine Nutzungsdaten vorhanden.</string>
+    <string name="settings_usage_stats_label">Klicks: %d</string>
+    <string name="settings_top_buttons_title">Button Nutzungsstatistik</string>
+    <string name="settings_clear_usage_stats">Statistiken leeren</string>
+    <string name="settings_clear_usage_stats_confirm">Möchtest du alle Nutzungsstatistiken für dieses Buch wirklich leeren?</string>
+    <string name="settings_action_history_title">Aktionsverlauf</string>
+    <string name="settings_category_local_backup">Lokale Datensicherung</string>
+    <string name="settings_local_backup_create">Sicherung erstellen</string>
+    <string name="settings_local_backup_restore">Sicherung wiederherstellen</string>
+    <string name="settings_local_backup_import">Sicherung importieren</string>
+    <string name="settings_local_backup_describe_create">Sichert das aktuelle Buch in einer lokalen Datei.</string>
+    <string name="settings_local_backup_describe_restore">Aktualisiert dieses Buch mit Daten aus einer Sicherung (IDs müssen übereinstimmen).</string>
+    <string name="settings_local_backup_describe_global_import">Importiert ein neues Buch aus einer lokalen Sicherungsdatei.</string>
+
+    <!-- Test Settings -->
+    <string name="settings_show_test_buttons">Test-Buttons auf Seite anzeigen</string>
+    <string name="settings_persist_logs">Aktionen persistent protokollieren</string>
+    <string name="settings_show_page_id_in_log">Page ID im Verlauf anzeigen</string>
+
+    <!-- Other UI -->
+    <string name="settings_category_button_history">Aktionsverlauf</string>
+    <string name="settings_history_empty">Noch keine Aktionen aufgezeichnet.</string>
+    <string name="history_edit_button">Button bearbeiten</string>
+    <string name="history_jump_to_page">Seite aufrufen</string>
+    <string name="history_delete">Eintrag löschen</string>
+    <string name="history_details_title">Aktionsdetails</string>
+    <string name="history_details_response">KI-Antwort:</string>
+    <string name="settings_category_experimental">Experimentelle Funktionen</string>
+    <string name="settings_volume_keys_trigger">Lautstärketasten zum Auslösen nutzen</string>
+    <string name="settings_category_test">Test-Einstellungen</string>
+    <string name="settings_category_hardware">Hardware &amp; Tasten</string>
+    <string name="settings_switch_key">Externer Taster (Tastenfolge)</string>
+    <string name="settings_category_google_account">Google Konto</string>
+    <string name="settings_google_account_status_not_signed_in">Nicht angemeldet</string>
+    <string name="settings_google_account_sign_in">Anmelden</string>
+    <string name="settings_google_account_sign_out">Abmelden</string>
+    <string name="settings_category_ui">Benutzeroberfläche</string>
+    <string name="settings_category_maintenance">Erweiterte Wartung</string>
+    <string name="settings_category_behavior">Verhalten</string>
+    <string name="settings_gemini_nano_deactivated_title">Gemini Nano deaktiviert</string>
+    <string name="settings_gemini_nano_deactivated_message">Das On-Device KI-Modell wurde auf diesem Gerät deaktiviert oder ist nicht verfügbar.</string>
+    <string name="settings_category_gemini_nano">Gemini Nano (Lokale KI)</string>
+    <string name="gemini_download_title">Gemini Nano Modell</string>
+    <string name="gemini_download_confirm">Herunterladen</string>
+    <string name="gemini_download_background">Im Hintergrund fortsetzen</string>
+    <string name="gemini_download_cancel">Abbrechen</string>
+    <string name="settings_category_cloud_account">Google Konto</string>
+    <string name="settings_cloud_sign_in">Anmelden</string>
+    <string name="settings_cloud_sign_out">Abmelden</string>
+    <string name="settings_category_cloud_import">Google Drive Import</string>
+    <string name="settings_cloud_import_as_new">Cloud-Import</string>
+    <string name="settings_cloud_import_explanation">Importiere ein Buch aus deinem Google Drive als neues Buch. Ein Überschreiben lokaler Bücher mit der gleichen ID wird verhindert.</string>
+    <string name="page_list_show">Seiten verwalten</string>
+
+    <!-- Smart Home -->
+    <string name="settings_google_home_project_id">Google Home Projekt-ID (Device Access)</string>
+    <string name="settings_google_home_project_id_desc">Die ID deines Device Access Projekts aus der Google Cloud Console.</string>
+    <string name="settings_hue_bridge_ip">Philips Hue Bridge IP</string>
+    <string name="settings_hue_username">Philips Hue Benutzername (Whitelist Token)</string>
+
+    <string name="settings_hue_connect">Konto verknüpfen</string>
+    <string name="settings_hue_disconnect">Verknüpfung aufheben</string>
+    <string name="settings_hue_discover_bridges">Nach Bridges suchen</string>
+    <string name="settings_hue_status_connected">Verbunden</string>
+    <string name="settings_hue_status_disconnected">Nicht verbunden</string>
+
+    <string name="settings_elevenlabs_model">Modell</string>
+    <string name="settings_elevenlabs_model_multilingual">Multilingual v2 (Beste Qualität)</string>
+    <string name="settings_elevenlabs_model_turbo">Turbo v2.5 (Schnell, ~200ms)</string>
+    <string name="settings_elevenlabs_model_flash">Flash v2.5 (Am schnellsten, ~75ms)</string>
+    <string name="settings_elevenlabs_model_v3">Multilingual v3 (Beste Qualität &amp; Emotionen)</string>
+    <string name="elevenlabs_stability">Stabilität</string>
+    <string name="elevenlabs_stability_desc">Bestimmt, wie ausdrucksstark oder neutral die Stimme klingt.</string>
+    <string name="elevenlabs_similarity_boost">Ähnlichkeits-Boost</string>
+    <string name="elevenlabs_similarity_boost_desc">Verstärkt den ursprünglichen Charakter der Stimme.</string>
+    <string name="settings_voice_engine">Sprach-Engine</string>
+
+    <!-- Smart Home Providers -->
+    <string name="smart_home_provider_google_home">Google Home</string>
+    <string name="smart_home_provider_philips_hue">Philips Hue</string>
+
+    <!-- Maintenance / Cleanup -->
+    <string name="settings_maintenance_delete_empty_buttons_title">Leere Buttons löschen</string>
+    <string name="settings_maintenance_delete_empty_buttons_desc">Löscht alle Buttons ohne Beschriftung aus allen Seiten.</string>
+    <string name="settings_maintenance_delete_empty_buttons_confirm_title">Buttons löschen?</string>
+    <string name="settings_maintenance_delete_empty_buttons_confirm_text">Bist du sicher, dass du alle Buttons ohne Beschriftung löschen möchtest? Dies kann nicht rückgängig gemacht werden.</string>
+    <plurals name="settings_maintenance_delete_empty_buttons_success">
+        <item quantity="one">1 Button wurde gelöscht.</item>
+        <item quantity="other">%d Buttons wurden gelöscht.</item>
+    </plurals>
+
+    <string name="settings_maintenance_check_update_title">Auf Update prüfen</string>
+    <string name="settings_maintenance_check_update_desc">Prüft manuell, ob eine neuere Version der App im Google Play Store verfügbar ist.</string>
+    <string name="settings_maintenance_check_update_started">Suche nach Updates…</string>
+    <string name="settings_maintenance_check_update_none">Die App ist auf dem neuesten Stand.</string>
+    <string name="settings_maintenance_check_update_error">Fehler bei der Update-Prüfung: %s</string>
+
+    <!-- App Picker Notification Access Strings -->
+    <string name="settings_notifications_no_preferred_apps">Keine bevorzugten Apps ausgewählt</string>
+    <plurals name="settings_notifications_apps_selected">
+        <item quantity="one">1 App ausgewählt</item>
+        <item quantity="other">%d Apps ausgewählt</item>
+    </plurals>
+    <plurals name="settings_notifications_apps_more_format">
+        <item quantity="one">%1$s und 1 weitere</item>
+        <item quantity="other">%1$s und %2$d weitere</item>
+    </plurals>
+    <string name="settings_notifications_manage_preferred_apps">Bevorzugte Apps verwalten:</string>
+    <string name="settings_notifications_loading_apps">Lade Apps…</string>
+    <string name="settings_notifications_select_all">Alle auswählen</string>
+    <string name="settings_notifications_deselect_all">Alle abwählen</string>
+
+    <!-- User Mode Session Log Strings -->
+    <string name="settings_user_mode_sessions_title">Benutzermodus-Protokoll</string>
+    <string name="settings_user_mode_sessions_empty">Noch keine Benutzermodus-Sitzungen aufgezeichnet.</string>
+    <string name="settings_user_mode_sessions_summary_total">Gesamte Nutzungszeit</string>
+    <string name="settings_user_mode_sessions_summary_count">Sitzungen gesamt</string>
+    <string name="settings_user_mode_sessions_summary_avg">Ø Dauer / Sitzung</string>
+    <string name="settings_user_mode_sessions_clear">Protokoll leeren</string>
+    <string name="settings_user_mode_sessions_clear_confirm">Möchtest du das gesamte Benutzermodus-Protokoll für dieses Buch wirklich löschen?</string>
+    <string name="settings_user_mode_sessions_duration_less_than_minute">&lt; 1 Min.</string>
+    <string name="settings_user_mode_sessions_summary_avg_30_days">Ø Verwendung / Tag (letzte 30 Tage)</string>
+
+    <!-- Call Settings -->
+    <string name="settings_category_call">Telefonie-Einstellungen</string>
+    <string name="settings_max_call_duration">Maximale Anrufdauer</string>
+    <string name="settings_call_duration_feedback_interval">Audio-Feedback zur Anrufdauer</string>
+    <string name="settings_call_duration_feedback_off">Aus (Kein Feedback)</string>
+    <string name="settings_call_duration_feedback_15s">Alle 15 Sekunden</string>
+    <string name="settings_call_duration_feedback_30s">Alle 30 Sekunden</string>
+    <string name="settings_call_duration_feedback_1m">Jede Minute</string>
+    <string name="settings_call_duration_feedback_2m">Alle 2 Minuten</string>
+    <string name="settings_call_duration_feedback_5m">Alle 5 Minuten</string>
+    <string name="settings_call_intro_outgoing">Einleitungstext (ausgehend)</string>
+    <string name="settings_call_intro_incoming">Einleitungstext (eingehend)</string>
+    <string name="settings_call_announcement_as_cue">Anruferansage als Audio-Hinweis ausgeben</string>
+    <string name="settings_call_auto_enable_speakerphone">Freisprechfunktion automatisch aktivieren</string>
+    <string name="settings_call_behavior_active">Automatisches Anrufverhalten (Benutzermodus aktiv)</string>
+    <string name="settings_call_scan_limit">Scanning-Durchläufe</string>
+    <string name="settings_call_auto_action">Aktion nach Limit</string>
+    <string name="settings_call_behavior_inactive">Automatisches Anrufverhalten (Benutzermodus inaktiv)</string>
+    <string name="settings_call_delay">Wartezeit (Sekunden)</string>
+    <string name="settings_call_auto_action_inactive">Aktion nach Wartezeit</string>
+    <string name="settings_call_action_none">Keine Aktion</string>
+    <string name="settings_call_action_answer">Annehmen</string>
+    <string name="settings_call_action_reject">Ablehnen</string>
+    <string name="settings_dialer_register_title">Als Standard-Telefon-App festlegen</string>
+    <string name="settings_dialer_register_desc">Registriert GhostTalk im System als Standard-Telefon-App (Dialer), um Anrufe direkt annehmen und steuern zu können.</string>
+    <string name="settings_dialer_registered">Bereits als Standard-Telefon-App registriert</string>
+</resources>

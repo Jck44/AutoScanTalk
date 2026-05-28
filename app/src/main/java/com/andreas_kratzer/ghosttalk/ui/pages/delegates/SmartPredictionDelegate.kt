@@ -1,7 +1,7 @@
 package com.andreas_kratzer.ghosttalk.ui.pages.delegates
 
-import com.andreas_kratzer.ghosttalk.domain.actions.UpdateSmartPredictionsUseCase
-import com.andreas_kratzer.ghosttalk.model.Page
+import com.andreas_kratzer.ghosttalk.core.ai.domain.UpdateSmartPredictionsUseCase
+import com.andreas_kratzer.ghosttalk.core.model.Page
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -14,7 +14,7 @@ class SmartPredictionDelegate @Inject constructor(
         scope: CoroutineScope,
         currentPage: StateFlow<Page?>,
         allPages: StateFlow<List<Page>>,
-        lastActions: StateFlow<List<String>>,
+        lastActions: StateFlow<List<com.andreas_kratzer.ghosttalk.core.model.ActionLogEntry>>,
         activeBookId: StateFlow<String?>,
         isUserModeActive: StateFlow<Boolean>,
         onPredictionsUpdated: (List<String>?) -> Unit

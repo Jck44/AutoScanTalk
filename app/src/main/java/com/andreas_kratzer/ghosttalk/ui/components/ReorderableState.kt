@@ -1,5 +1,6 @@
 package com.andreas_kratzer.ghosttalk.ui.components
 
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.LazyGridState
@@ -61,27 +62,45 @@ class ReorderableState {
 
     /**
      * Finds the index of the button (global index) even if it's nested in a row-item.
+     * @param gridState The state of the LazyVerticalGrid.
+     * @param numCols The number of columns currently displayed.
+     * @param isRowByRow Whether the grid is in row-by-row mode (rows are grid items).
+     * @param density The screen density for DP to PX conversion.
+     * @param gridSpacingPx The spacing between grid items in pixels.
+     * @return The global target index (7-wide storage) or null.
      */
-    fun findTargetButtonIndex(gridState: LazyGridState, numCols: Int, isRowByRow: Boolean, density: Float = 1f): Int? {
+    fun findTargetButtonIndex(
+        gridState: LazyGridState,
+        numCols: Int,
+        isRowByRow: Boolean,
+        density: Float = 1f,
+        gridSpacingPx: Float = 0f
+    ): Int? {
         val draggedIdx = draggedIndex ?: return null
         val info = gridState.layoutInfo
         
         if (isRowByRow) {
+            // In row-by-row mode, draggedIdx is the global index (7-wide).
+            // Rows are grid items, so their index matches the storage row index.
             val draggedRow = draggedIdx / 7
             val draggedCol = draggedIdx % 7
             val draggedItem = info.visibleItemsInfo.find { it.index == draggedRow } ?: return null
             
-            // Edit handle is 48dp, padding is 8dp. 
+            // Edit handle is 48dp, row padding is 8dp. Total leading space is 56dp.
             val handleWidthPx = 48 * density
             val paddingPx = 8 * density
             
             // Calculate row content width (excluding handle and padding)
+            // Note: calculateGridSize uses 64dp (48+8+8) for rowHandleWidth.
             val rowContentWidth = draggedItem.size.width - handleWidthPx - (paddingPx * 2)
-            val colWidth = rowContentWidth / numCols
+            
+            // Button width accounting for spacing
+            val buttonWidth = (rowContentWidth - (gridSpacingPx * (numCols - 1))) / numCols
             
             // Calculate center of dragged button in global coordinates
+            val colStartOffset = draggedCol * (buttonWidth + gridSpacingPx)
             val draggedCenterX = draggedItem.offset.x + handleWidthPx + paddingPx + 
-                                (draggedCol * colWidth) + (colWidth / 2) + dragOffset.x
+                                colStartOffset + (buttonWidth / 2) + dragOffset.x
             val draggedCenterY = draggedItem.offset.y + draggedItem.size.height / 2 + dragOffset.y
 
             // Find target row
@@ -90,17 +109,22 @@ class ReorderableState {
             } ?: return null
             
             val targetRow = targetRowInfo.index
-            val targetRowContentWidth = targetRowInfo.size.width - handleWidthPx - (paddingPx * 2)
-            val targetColWidth = targetRowContentWidth / numCols
-            
+            val targetRowContentAreaWidth = targetRowInfo.size.width - handleWidthPx - (paddingPx * 2)
             val relativeX = draggedCenterX - targetRowInfo.offset.x - handleWidthPx - paddingPx
-            val targetCol = (relativeX / targetColWidth).toInt().coerceIn(0, numCols - 1)
             
+            // Calculate target column by reverse-engineering the position with spacing
+            // x = col * (buttonWidth + spacing) -> col = x / (buttonWidth + spacing)
+            val targetColWidthWithSpacing = (targetRowContentAreaWidth + gridSpacingPx) / numCols
+            val targetCol = (relativeX / targetColWidthWithSpacing).toInt().coerceIn(0, numCols - 1)
+            
+            // Always return global index (7-wide storage)
             return targetRow * 7 + targetCol
         } else {
+            // In linear mode, draggedIdx should be the local grid index (index in LazyVerticalGrid).
             val localIndex = findTargetIndexForGrid(gridState) ?: return null
             val r = localIndex / numCols
             val c = localIndex % numCols
+            // Map back to 7-wide global storage
             return r * 7 + c
         }
     }
@@ -155,27 +179,50 @@ fun Modifier.dragHandle(
     index: Int,
     onDragStart: () -> Unit = {},
     onDragEnd: (Int?) -> Unit = {},
-    onDrag: () -> Unit = {}
+    onDrag: () -> Unit = {},
+    longPress: Boolean = true
 ): Modifier = this.pointerInput(index) {
-    detectDragGesturesAfterLongPress(
-        onDragStart = {
-            state.onDragStart(index)
-            onDragStart()
-        },
-        onDragEnd = {
-            onDragEnd(state.draggedIndex)
-            state.onDragEnd()
-        },
-        onDragCancel = {
-            state.onDragEnd()
-            onDragEnd(null)
-        },
-        onDrag = { change, dragAmount ->
-            change.consume()
-            state.onDrag(dragAmount)
-            onDrag()
-        }
-    )
+    if (longPress) {
+        detectDragGesturesAfterLongPress(
+            onDragStart = {
+                state.onDragStart(index)
+                onDragStart()
+            },
+            onDragEnd = {
+                onDragEnd(state.draggedIndex)
+                state.onDragEnd()
+            },
+            onDragCancel = {
+                state.onDragEnd()
+                onDragEnd(null)
+            },
+            onDrag = { change, dragAmount ->
+                change.consume()
+                state.onDrag(dragAmount)
+                onDrag()
+            }
+        )
+    } else {
+        detectDragGestures(
+            onDragStart = {
+                state.onDragStart(index)
+                onDragStart()
+            },
+            onDragEnd = {
+                onDragEnd(state.draggedIndex)
+                state.onDragEnd()
+            },
+            onDragCancel = {
+                state.onDragEnd()
+                onDragEnd(null)
+            },
+            onDrag = { change, dragAmount ->
+                change.consume()
+                state.onDrag(dragAmount)
+                onDrag()
+            }
+        )
+    }
 }
 
 /**

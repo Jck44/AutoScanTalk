@@ -12,7 +12,7 @@ import android.view.WindowManager
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.FragmentActivity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -41,35 +41,39 @@ import androidx.navigation.compose.rememberNavController
 import com.andreas_kratzer.ghosttalk.core.KeyEventCoordinator
 import com.andreas_kratzer.ghosttalk.core.SecurityManager
 import com.andreas_kratzer.ghosttalk.core.UpdateManager
-import com.andreas_kratzer.ghosttalk.data.PageRepository
-import com.andreas_kratzer.ghosttalk.data.SampleDataInitializer
-import com.andreas_kratzer.ghosttalk.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.data.PageRepository
+import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.data.impl.SampleDataInitializer
+import com.andreas_kratzer.ghosttalk.core.data.impl.UserModeSessionTracker
+import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkTheme
+import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalActiveBookId
+import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalCurrentPageId
+import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalIsUserModeActive
+import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
 import com.andreas_kratzer.ghosttalk.ui.books.BookViewModel
-import com.andreas_kratzer.ghosttalk.ui.main.GhosTTalkNavHost
+import com.andreas_kratzer.ghosttalk.ui.main.GhostTalkNavHost
 import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
-import com.andreas_kratzer.ghosttalk.ui.settings.SettingsViewModel
-import com.andreas_kratzer.ghosttalk.ui.theme.GhosTTalkTheme
-import com.andreas_kratzer.ghosttalk.ui.theme.LocalActiveBookId
-import com.andreas_kratzer.ghosttalk.ui.theme.LocalCurrentPageId
-import com.andreas_kratzer.ghosttalk.ui.theme.LocalIsUserModeActive
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class MainActivity : AppCompatActivity() {
+class MainActivity : FragmentActivity() {
 
     @Inject lateinit var settingsRepository: SettingsRepository
     @Inject lateinit var pageRepository: PageRepository
-    @Inject lateinit var bookRepository: com.andreas_kratzer.ghosttalk.data.BookRepository
+    @Inject lateinit var bookRepository: com.andreas_kratzer.ghosttalk.core.data.BookRepository
     @Inject lateinit var sampleDataInitializer: SampleDataInitializer
     @Inject lateinit var keyEventCoordinator: KeyEventCoordinator
     @Inject lateinit var securityManager: SecurityManager
+    @Inject lateinit var userModeSessionTracker: UserModeSessionTracker
 
     private val bookViewModel: BookViewModel by viewModels()
     private val pageViewModel: PageViewModel by viewModels()
     private val settingsViewModel: SettingsViewModel by viewModels()
+
+    var navControllerForTesting: androidx.navigation.NavHostController? = null
 
     private lateinit var globalPageViewModel: PageViewModel
     private lateinit var updateManager: UpdateManager
@@ -101,9 +105,10 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        com.andreas_kratzer.ghosttalk.tts.VoiceDebugger(applicationContext).start()
+        com.andreas_kratzer.ghosttalk.core.tts.VoiceDebugger(applicationContext).start()
+        userModeSessionTracker.start()
         
-        updateManager = UpdateManager(this)
+        updateManager = UpdateManager(applicationContext)
         updateManager.checkForUpdates(updateLauncher)
 
         // Android 14+ requires export flags for receivers
@@ -144,6 +149,24 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // Observe Manual Update Check
+        lifecycleScope.launch {
+            settingsViewModel.manualUpdateCheckTrigger.collect {
+                updateManager.checkManualUpdate(
+                    updateLauncher = updateLauncher,
+                    onUpdateFound = {
+                        settingsViewModel.setUpdateCheckStatus(null) // Reset on success/found
+                    },
+                    onUpToDate = {
+                        settingsViewModel.setUpdateCheckStatus(SettingsViewModel.UpdateCheckStatus.UpToDate)
+                    },
+                    onError = { error ->
+                        settingsViewModel.setUpdateCheckStatus(SettingsViewModel.UpdateCheckStatus.Error(error))
+                    }
+                )
+            }
+        }
+
         // --- Screen Behavior Management ---
         // We only "apply" the state here. The logic (decision making) resides in the ScreenManagementDelegate.
         lifecycleScope.launch {
@@ -158,6 +181,17 @@ class MainActivity : AppCompatActivity() {
                     val params = window.attributes
                     params.screenBrightness = state.dimAmount ?: WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
                     window.attributes = params
+                }
+            }
+        }
+
+        // --- Lockscreen Wake Management for Calls ---
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                pageViewModel.callState.collect { callState ->
+                    val isInCall = callState != com.andreas_kratzer.ghosttalk.core.call.CallState.NONE
+                    setShowWhenLocked(isInCall)
+                    setTurnScreenOn(isInCall)
                 }
             }
         }
@@ -179,21 +213,35 @@ class MainActivity : AppCompatActivity() {
             val isUserModeActive by pageViewModel.isUserModeActive.collectAsState()
             val activeBookId by pageViewModel.activeBookId.collectAsState()
             val currentPageId by pageViewModel.currentPageId.collectAsState()
+
+            val callState by pageViewModel.callState.collectAsState()
+            val callerName by pageViewModel.callerName.collectAsState()
+            val callerPhone by pageViewModel.callerPhone.collectAsState()
+            val callDurationSeconds by pageViewModel.callDurationSeconds.collectAsState()
+            val isOutgoing by pageViewModel.isOutgoing.collectAsState()
+            val isHangUpButtonFocused by pageViewModel.isHangUpButtonFocused.collectAsState()
+            val focusedCallScreenButton by pageViewModel.focusedCallScreenButton.collectAsState()
+            val isSimulatedCall by pageViewModel.isSimulatedCall.collectAsState()
             
-            GhosTTalkTheme(themeMode = themeMode) {
+            GhostTalkTheme(themeMode = themeMode) {
                 CompositionLocalProvider(
                     LocalIsUserModeActive provides isUserModeActive,
                     LocalActiveBookId provides activeBookId,
                     LocalCurrentPageId provides currentPageId
                 ) {
+                    androidx.activity.compose.BackHandler(enabled = callState != com.andreas_kratzer.ghosttalk.core.call.CallState.NONE) {
+                        // Block back key action during call
+                    }
+
                     Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
                     val navController = rememberNavController()
+                    navControllerForTesting = navController
 
                     Box(modifier = Modifier.fillMaxSize()) {
-                        GhosTTalkNavHost(
+                        GhostTalkNavHost(
                             navController = navController,
                             bookViewModel = bookViewModel,
                             pageViewModel = pageViewModel,
@@ -202,6 +250,41 @@ class MainActivity : AppCompatActivity() {
                             pageRepository = pageRepository,
                             securityManager = securityManager
                         )
+
+                        if (callState != com.andreas_kratzer.ghosttalk.core.call.CallState.NONE) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(MaterialTheme.colorScheme.background)
+                            ) {
+                                when (callState) {
+                                    com.andreas_kratzer.ghosttalk.core.call.CallState.RINGING -> {
+                                        com.andreas_kratzer.ghosttalk.ui.pages.sections.IncomingCallOverlay(
+                                            callerName = callerName,
+                                            callerPhone = callerPhone,
+                                            focusedButton = focusedCallScreenButton,
+                                            onAnswer = { pageViewModel.systemCallManager.answerCall() },
+                                            onReject = { pageViewModel.systemCallManager.hangUp() },
+                                            isSimulated = isSimulatedCall
+                                        )
+                                    }
+                                    com.andreas_kratzer.ghosttalk.core.call.CallState.DIALING, 
+                                    com.andreas_kratzer.ghosttalk.core.call.CallState.ACTIVE -> {
+                                        com.andreas_kratzer.ghosttalk.ui.pages.sections.ActiveCallOverlay(
+                                            callerName = callerName,
+                                            callerPhone = callerPhone,
+                                            durationSeconds = callDurationSeconds,
+                                            isDialing = callState == com.andreas_kratzer.ghosttalk.core.call.CallState.DIALING,
+                                            isOutgoing = isOutgoing,
+                                            isHangUpFocused = isHangUpButtonFocused,
+                                            onHangUp = { pageViewModel.systemCallManager.hangUp() },
+                                            isSimulated = isSimulatedCall
+                                        )
+                                    }
+                                    else -> {}
+                                }
+                            }
+                        }
 
                         // The "Black Mode" overlay. 
                         // It stays interactive in terms of hardware/switch events because dispatchKeyEvent 
@@ -236,7 +319,7 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         if (::updateManager.isInitialized) {
-            updateManager.resumeUpdateIfInProgress()
+            updateManager.resumeUpdateIfInProgress(this)
         }
     }
 
@@ -252,8 +335,13 @@ class MainActivity : AppCompatActivity() {
     @SuppressLint("RestrictedApi")
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         securityManager.updateActivity()
+        val isCallActive = if (::globalPageViewModel.isInitialized) {
+            globalPageViewModel.systemCallManager.callState.value != com.andreas_kratzer.ghosttalk.core.call.CallState.NONE
+        } else {
+            false
+        }
         val isUserMode = if (::globalPageViewModel.isInitialized) {
-            globalPageViewModel.isUserModeActive.value
+            globalPageViewModel.isUserModeActive.value || isCallActive
         } else {
             false
         }
