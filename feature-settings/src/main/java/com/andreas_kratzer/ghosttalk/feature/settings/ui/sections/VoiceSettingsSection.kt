@@ -12,6 +12,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import com.andreas_kratzer.ghosttalk.core.tts.VoiceUtils
 import com.andreas_kratzer.ghosttalk.core.ui.components.PreferenceCategory
@@ -59,6 +60,7 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
     }
 
     val dimensions = LocalDimensions.current
+    val currentLocale = LocalConfiguration.current.locales[0]
 
     FlowRow(
         modifier = Modifier.fillMaxWidth(),
@@ -134,7 +136,7 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                 // Language Select
                 val context = androidx.compose.ui.platform.LocalContext.current
                 val currentLangLabel = if (selectedLanguage == "default" || selectedLanguage.isNullOrEmpty()) {
-                    "${stringResource(R.string.settings_system_default)} (${Locale.getDefault().displayName})"
+                    "${stringResource(R.string.settings_system_default)} (${currentLocale.displayName})"
                 } else Locale.forLanguageTag(selectedLanguage!!).displayName
 
                 val languageOptions = mutableListOf<Pair<String, () -> Unit>>()
@@ -152,13 +154,13 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                 )
 
                 // Voice Select - FILTERED by selected language
-                val filteredVoices = remember(availableVoices, selectedLanguage, ttsEngine) {
+                val filteredVoices = remember(availableVoices, selectedLanguage, ttsEngine, currentLocale) {
                     if (ttsEngine == "elevenlabs") {
                         // ElevenLabs voices are currently multilingual or not strictly tied to system locales in our mapping
                         availableVoices
                     } else {
                         val targetLocale = if (selectedLanguage == "default" || selectedLanguage.isNullOrEmpty()) {
-                            Locale.getDefault()
+                            currentLocale
                         } else {
                             Locale.forLanguageTag(selectedLanguage!!)
                         }

@@ -38,6 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository
@@ -78,7 +79,8 @@ fun ActionHistoryDialog(
                         modifier = Modifier.padding(dimensions.paddingMedium)
                     )
                 } else {
-                    val sdf = SimpleDateFormat("dd.MM HH:mm:ss", Locale.getDefault())
+                    val locale = LocalConfiguration.current.locales[0]
+                    val sdf = SimpleDateFormat("dd.MM HH:mm:ss", locale)
                     LazyColumn(modifier = Modifier.fillMaxWidth()) {
                         itemsIndexed(buttonHistory.take(100)) { index, event ->
                             HistoryItem(
@@ -193,8 +195,9 @@ private fun HistoryDetailDialog(
                         text = event.label,
                         style = MaterialTheme.typography.titleMedium
                     )
+                    val locale = LocalConfiguration.current.locales[0]
                     Text(
-                        text = SimpleDateFormat("dd.MM.yyyy HH:mm:ss", Locale.getDefault()).format(Date(event.timestamp)),
+                        text = SimpleDateFormat("dd.MM.yyyy HH:mm:ss", locale).format(Date(event.timestamp)),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

@@ -21,6 +21,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.RemoteBackupInfo
+import androidx.compose.ui.platform.LocalConfiguration
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.feature.settings.R
 import java.text.SimpleDateFormat
@@ -34,7 +35,8 @@ fun BackupSelectionDialog(
     onDismiss: () -> Unit
 ) {
     val dimensions = LocalDimensions.current
-    val dateFormat = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
+    val locale = LocalConfiguration.current.locales[0]
+    val dateFormat = SimpleDateFormat("dd.MM.yyyy HH:mm", locale)
 
     AlertDialog(
         onDismissRequest = onDismiss,

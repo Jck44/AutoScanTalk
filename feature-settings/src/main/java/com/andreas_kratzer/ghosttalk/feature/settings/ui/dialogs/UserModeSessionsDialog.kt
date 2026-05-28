@@ -35,6 +35,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.core.model.UserModeSession
+import androidx.compose.ui.platform.LocalConfiguration
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.feature.settings.R
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
@@ -156,8 +157,9 @@ fun UserModeSessionsDialog(
                             textAlign = TextAlign.Center
                         )
                     } else {
-                        val sdfDate = remember { SimpleDateFormat("dd.MM.yyyy", Locale.getDefault()) }
-                        val sdfTime = remember { SimpleDateFormat("HH:mm:ss", Locale.getDefault()) }
+                        val locale = LocalConfiguration.current.locales[0]
+                        val sdfDate = remember(locale) { SimpleDateFormat("dd.MM.yyyy", locale) }
+                        val sdfTime = remember(locale) { SimpleDateFormat("HH:mm:ss", locale) }
                         
                         LazyColumn(modifier = Modifier.fillMaxWidth()) {
                             itemsIndexed(sessions) { index, session ->
