@@ -132,10 +132,9 @@ abstract class DataModule {
         @Provides
         @Singleton
         fun provideButtonTemplateRepositoryImpl(
-            buttonTemplateDao: ButtonTemplateDao,
-            settings: DatabaseSettings
+            buttonTemplateDao: ButtonTemplateDao
         ): ButtonTemplateRepositoryImpl {
-            return ButtonTemplateRepositoryImpl(buttonTemplateDao, settings)
+            return ButtonTemplateRepositoryImpl(buttonTemplateDao)
         }
 
         @Provides

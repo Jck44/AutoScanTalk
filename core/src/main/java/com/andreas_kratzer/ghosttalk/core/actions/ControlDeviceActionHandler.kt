@@ -1,5 +1,6 @@
 package com.andreas_kratzer.ghosttalk.core.actions
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -33,8 +34,7 @@ class ControlDeviceActionHandler @Inject constructor(
     private val ttsProxyLazy: dagger.Lazy<ControlDeviceTtsProxy>,
     private val scanControllerLazy: dagger.Lazy<ScannerController>,
     private val callActionProxy: dagger.Lazy<CallActionProxy>,
-    private val actionLogger: ActionLogger,
-    private val actionEventEmitter: ActionEventEmitter
+    private val actionLogger: ActionLogger
 ) : ActionHandler {
     
     private val getString: (Int, Array<out Any?>) -> String = { id, args -> 
@@ -372,10 +372,6 @@ class ControlDeviceActionHandler @Inject constructor(
         val sdfDisplay = java.text.SimpleDateFormat(fullPattern, java.util.Locale.getDefault())
         val dateString = sdfDisplay.format(calendar.time)
         
-        // For SSML we use yyyyMMdd format which is more robust for say-as interpretation
-        val sdfSsml = java.text.SimpleDateFormat("yyyyMMdd", java.util.Locale.getDefault())
-        val ssmlDate = sdfSsml.format(calendar.time)
-        
         val prefix = action.prefixText?.takeIf { it.isNotBlank() }?.let { if (it.endsWith(" ")) it else "$it " } ?: ""
         val suffix = action.suffixText?.takeIf { it.isNotBlank() }?.let { if (it.startsWith(" ")) it else " $it" } ?: ""
         
@@ -550,6 +546,7 @@ class ControlDeviceActionHandler @Inject constructor(
         }
     }
 
+    @SuppressLint("DiscouragedApi")
     private fun getAppString(name: String, vararg args: Any?): String {
         val resId = context.resources.getIdentifier(name, "string", context.packageName)
         return if (resId != 0) {

@@ -12,6 +12,7 @@ import dagger.multibindings.IntoSet
 
 @Module
 @InstallIn(SingletonComponent::class)
+@Suppress("unused")
 interface CoreActionHandlerModule {
 
     @Binds

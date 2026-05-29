@@ -1,7 +1,5 @@
 package com.andreas_kratzer.ghosttalk.core.actions
 
-import android.app.ActivityOptions
-import android.app.PendingIntent
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -10,6 +8,7 @@ import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import androidx.core.net.toUri
 import com.andreas_kratzer.ghosttalk.core.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.MediaProvider
@@ -69,7 +68,7 @@ class PlayMediaActionHandler @Inject constructor(
                     uriString == "spotify:collection:tracks" -> uriString // Liked Songs: no :play suffix
                     else -> "$uriString:play"
                 }
-                Intent(Intent.ACTION_VIEW, Uri.parse(playUri)).apply {
+                Intent(Intent.ACTION_VIEW, playUri.toUri()).apply {
                     `package` = "com.spotify.music"
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
@@ -93,13 +92,13 @@ class PlayMediaActionHandler @Inject constructor(
                     // Anything else (full URL etc.) – pass through
                     else -> contentUri
                 }
-                Intent(Intent.ACTION_VIEW, Uri.parse(ytUri)).apply {
+                Intent(Intent.ACTION_VIEW, ytUri.toUri()).apply {
                     `package` = "com.google.android.youtube"
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
             }
             MediaProvider.YOUTUBE_MUSIC -> {
-                Intent(Intent.ACTION_VIEW, Uri.parse(contentUri)).apply {
+                Intent(Intent.ACTION_VIEW, contentUri.toUri()).apply {
                     `package` = "com.google.android.apps.youtube.music"
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
@@ -110,7 +109,7 @@ class PlayMediaActionHandler @Inject constructor(
                 } else {
                     "audible://play?asin=$contentUri"
                 }
-                Intent(Intent.ACTION_VIEW, Uri.parse(audibleUri)).apply {
+                Intent(Intent.ACTION_VIEW, audibleUri.toUri()).apply {
                     `package` = "com.audible.application"
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }

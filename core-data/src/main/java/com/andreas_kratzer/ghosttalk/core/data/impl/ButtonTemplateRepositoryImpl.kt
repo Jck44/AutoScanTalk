@@ -11,8 +11,7 @@ import java.util.UUID
 import javax.inject.Inject
 
 class ButtonTemplateRepositoryImpl @Inject constructor(
-    private val buttonTemplateDao: ButtonTemplateDao,
-    private val settingsRepository: DatabaseSettings
+    private val buttonTemplateDao: ButtonTemplateDao
 ) : ButtonTemplateRepository {
 
     override fun getTemplates(): Flow<List<ButtonTemplate>> {

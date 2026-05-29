@@ -87,7 +87,7 @@ class WeatherUseCase @Inject constructor(
             } else {
                 WeatherResult.Success(weather, 0.0)
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             WeatherResult.Success(weather, 0.0)
         }
     }
@@ -103,7 +103,7 @@ class WeatherUseCase @Inject constructor(
             } else {
                 WeatherResult.Success(cached, 0.0, isCached = true)
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             WeatherResult.Success(cached, 0.0, isCached = true)
         }
     }
