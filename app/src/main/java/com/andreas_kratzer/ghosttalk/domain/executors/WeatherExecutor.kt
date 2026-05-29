@@ -10,6 +10,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
+import com.andreas_kratzer.ghosttalk.R
+
 class WeatherExecutor @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val weatherUseCase: WeatherUseCase,
@@ -30,17 +32,39 @@ class WeatherExecutor @Inject constructor(
             val location = locationExecutor.getCurrentLocation()
             if (location != null) {
                 val result = weatherUseCase.getWeatherInfo(location.latitude, location.longitude)
-                return@withContext when (result) {
-                    is WeatherUseCase.WeatherResult.Success -> WeatherResult.Success(result.condition, result.temperature)
-                    is WeatherUseCase.WeatherResult.Error -> WeatherResult.Error(result.message)
+                when (result) {
+                    is WeatherUseCase.WeatherResult.Success -> {
+                        return@withContext WeatherResult.Success(result.condition, result.temperature)
+                    }
+                    is WeatherUseCase.WeatherResult.Error -> {
+                        // Fallback to cache if request fails
+                        val cached = weatherUseCase.getCachedWeather()
+                        if (cached is WeatherUseCase.WeatherResult.Success) {
+                            return@withContext WeatherResult.Success(cached.condition, cached.temperature)
+                        } else {
+                            return@withContext WeatherResult.Error(result.message)
+                        }
+                    }
+                }
+            } else {
+                // Location is null but online. Try cache fallback
+                val cached = weatherUseCase.getCachedWeather()
+                if (cached is WeatherUseCase.WeatherResult.Success) {
+                    return@withContext WeatherResult.Success(cached.condition, cached.temperature)
+                } else {
+                    val locError = context.getString(R.string.error_location_unavailable_weather)
+                    return@withContext WeatherResult.Error(locError)
                 }
             }
-        }
-
-        return@withContext if (online) {
-            WeatherResult.Error("Standort konnte nicht ermittelt werden.")
         } else {
-            WeatherResult.Error("Keine Wetterdaten verfügbar (offline).")
+            // Offline. Try cache fallback
+            val cached = weatherUseCase.getCachedWeather()
+            if (cached is WeatherUseCase.WeatherResult.Success) {
+                return@withContext WeatherResult.Success(cached.condition, cached.temperature)
+            } else {
+                val netError = context.getString(R.string.error_no_internet_weather)
+                return@withContext WeatherResult.Error(netError)
+            }
         }
     }
 

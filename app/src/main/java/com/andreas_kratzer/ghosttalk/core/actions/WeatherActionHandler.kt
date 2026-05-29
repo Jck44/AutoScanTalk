@@ -58,13 +58,27 @@ class WeatherActionHandler @Inject constructor(
                     is WeatherExecutor.WeatherResult.Error -> {
                         val errorMessage = context.getString(com.andreas_kratzer.ghosttalk.R.string.action_weather_error, result.message)
                         actionLogger.log(errorMessage, action, buttonConfig.label)
-                        onFinish(executionId)
+                        val tts = ttsProxyLazy.get()
+                        if (tts.isReady) {
+                            tts.speakRouted(errorMessage, targetDeviceAddress) {
+                                onFinish(executionId)
+                            }
+                        } else {
+                            onFinish(executionId)
+                        }
                     }
                 }
             } catch (e: Exception) {
                 val errorMessage = context.getString(com.andreas_kratzer.ghosttalk.R.string.action_weather_error, e.message ?: "Unknown error")
                 actionLogger.log(errorMessage, action, buttonConfig.label)
-                onFinish(executionId)
+                val tts = ttsProxyLazy.get()
+                if (tts.isReady) {
+                    tts.speakRouted(errorMessage, targetDeviceAddress) {
+                        onFinish(executionId)
+                    }
+                } else {
+                    onFinish(executionId)
+                }
             }
         }
     }

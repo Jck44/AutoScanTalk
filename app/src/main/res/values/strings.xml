@@ -302,5 +302,13 @@
     <string name="call_hang_up">Auflegen</string>
     <string name="call_unknown_caller">Unbekannter Anrufer</string>
     <string name="call_connecting">Verbindung wird aufgebaut…</string>
+    <string name="calendar_today">Heute</string>
+    <string name="calendar_tomorrow">Morgen</string>
+    <string name="calendar_on_date">Am %s</string>
+    <string name="calendar_all_day">ganztägig</string>
+    <string name="calendar_time_range">von %1$s bis %2$s Uhr</string>
+    <string name="calendar_and"> und </string>
+    <string name="error_no_internet_weather">Keine Internetverbindung verfügbar.</string>
+    <string name="error_location_unavailable_weather">Standort konnte nicht ermittelt werden.</string>
 </resources>
 

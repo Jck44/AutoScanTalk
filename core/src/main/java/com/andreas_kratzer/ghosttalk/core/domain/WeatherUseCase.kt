@@ -67,6 +67,16 @@ class WeatherUseCase @Inject constructor(
         }
     }
 
+    fun getCachedWeather(): WeatherResult {
+        val cached = repository.getLastWeather()
+        val timestamp = repository.getLastTimestamp()
+        return if (cached != null) {
+            parseCachedWeather(cached, timestamp)
+        } else {
+            WeatherResult.Error("Kein Cache vorhanden.")
+        }
+    }
+
     private fun parseWttrIn(weather: String): WeatherResult {
         return try {
             val parts = weather.split(",")

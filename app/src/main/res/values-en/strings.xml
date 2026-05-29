@@ -298,5 +298,13 @@
     <string name="call_hang_up">Hang Up</string>
     <string name="call_unknown_caller">Unknown Caller</string>
     <string name="call_connecting">Connecting…</string>
+    <string name="calendar_today">Today</string>
+    <string name="calendar_tomorrow">Tomorrow</string>
+    <string name="calendar_on_date">On %s</string>
+    <string name="calendar_all_day">all day</string>
+    <string name="calendar_time_range">from %1$s to %2$s</string>
+    <string name="calendar_and"> and </string>
+    <string name="error_no_internet_weather">No internet connection available.</string>
+    <string name="error_location_unavailable_weather">Location could not be determined.</string>
 </resources>
 

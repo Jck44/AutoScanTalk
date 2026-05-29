@@ -428,13 +428,17 @@ class ControlDeviceActionHandler @Inject constructor(
         val count = action.offsetValue.coerceAtLeast(1)
         val resolver = context.contentResolver
         
-        // Calculate start of today and end time (next 7 days)
-        val calendar = java.util.Calendar.getInstance()
-        calendar.set(java.util.Calendar.HOUR_OF_DAY, 0)
-        calendar.set(java.util.Calendar.MINUTE, 0)
-        calendar.set(java.util.Calendar.SECOND, 0)
-        calendar.set(java.util.Calendar.MILLISECOND, 0)
-        val startOfToday = calendar.timeInMillis
+        // Calculate start of today and tomorrow in default local timezone
+        val todayCal = java.util.Calendar.getInstance().apply {
+            set(java.util.Calendar.HOUR_OF_DAY, 0)
+            set(java.util.Calendar.MINUTE, 0)
+            set(java.util.Calendar.SECOND, 0)
+            set(java.util.Calendar.MILLISECOND, 0)
+        }
+        val startOfToday = todayCal.timeInMillis
+        todayCal.add(java.util.Calendar.DAY_OF_YEAR, 1)
+        val startOfTomorrow = todayCal.timeInMillis
+        
         val endOfRange = startOfToday + 7 * 24 * 60 * 60 * 1000L // 7 days range
         
         val contentUri = android.provider.CalendarContract.Instances.CONTENT_URI
@@ -464,6 +468,24 @@ class ControlDeviceActionHandler @Inject constructor(
             != android.content.pm.PackageManager.PERMISSION_GRANTED) {
             errorMsg = "Berechtigung für den Kalender ist nicht erteilt."
         } else {
+            val entriesByDay = LinkedHashMap<String, MutableList<String>>()
+            val sdfDate = java.text.SimpleDateFormat("d. MMMM", java.util.Locale.getDefault())
+            
+            fun getDayKey(startMillis: Long): String {
+                val eventCal = java.util.Calendar.getInstance().apply { timeInMillis = startMillis }
+                eventCal.set(java.util.Calendar.HOUR_OF_DAY, 0)
+                eventCal.set(java.util.Calendar.MINUTE, 0)
+                eventCal.set(java.util.Calendar.SECOND, 0)
+                eventCal.set(java.util.Calendar.MILLISECOND, 0)
+                val eventDayStart = eventCal.timeInMillis
+
+                return when (eventDayStart) {
+                    startOfToday -> getAppString("calendar_today")
+                    startOfTomorrow -> getAppString("calendar_tomorrow")
+                    else -> getAppString("calendar_on_date", sdfDate.format(java.util.Date(startMillis)))
+                }
+            }
+
             try {
                 resolver.query(uri, projection, null, null, sortOrder)?.use { cursor ->
                     var found = 0
@@ -478,17 +500,30 @@ class ControlDeviceActionHandler @Inject constructor(
                         val end = if (endIdx >= 0) cursor.getLong(endIdx) else 0L
                         val allDay = if (allDayIdx >= 0) cursor.getInt(allDayIdx) == 1 else false
                         
-                        val dateStr = java.text.SimpleDateFormat("dd. MMMM", java.util.Locale.getDefault()).format(java.util.Date(start))
+                        val dayKey = getDayKey(start)
                         val timeStr = if (allDay) {
-                             "ganztägig"
+                             getAppString("calendar_all_day")
                         } else {
                             val stTime = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date(start))
                             val enTime = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date(end))
-                            "von $stTime bis $enTime Uhr"
+                            getAppString("calendar_time_range", stTime, enTime)
                         }
                         
-                        messages.add("Am $dateStr, $timeStr: $title")
+                        val itemText = "$timeStr: $title"
+                        entriesByDay.getOrPut(dayKey) { mutableListOf() }.add(itemText)
                         found++
+                    }
+                }
+                
+                val calendarAnd = getAppString("calendar_and")
+                val onDatePrefix = getAppString("calendar_on_date", "").trim()
+                
+                for ((day, items) in entriesByDay) {
+                    val itemsText = items.joinToString(calendarAnd)
+                    if (onDatePrefix.isNotEmpty() && day.startsWith(onDatePrefix)) {
+                        messages.add("$day, $itemsText")
+                    } else {
+                        messages.add("$day $itemsText")
                     }
                 }
             } catch (e: SecurityException) {
@@ -512,6 +547,31 @@ class ControlDeviceActionHandler @Inject constructor(
             val plain = prefix + messages.joinToString(". ") + suffix
             val ssml = "<speak>$plain</speak>"
             speakRoutedWithLogging(ssml, plain, config, action, executionId, onFinish)
+        }
+    }
+
+    private fun getAppString(name: String, vararg args: Any?): String {
+        val resId = context.resources.getIdentifier(name, "string", context.packageName)
+        return if (resId != 0) {
+            context.getString(resId, *args)
+        } else {
+            val isEn = java.util.Locale.getDefault().language == "en"
+            when (name) {
+                "calendar_today" -> if (isEn) "Today" else "Heute"
+                "calendar_tomorrow" -> if (isEn) "Tomorrow" else "Morgen"
+                "calendar_all_day" -> if (isEn) "all day" else "ganztägig"
+                "calendar_and" -> if (isEn) " and " else " und "
+                "calendar_on_date" -> {
+                    val dateArg = args.getOrNull(0)?.toString() ?: ""
+                    if (isEn) "On $dateArg" else "Am $dateArg"
+                }
+                "calendar_time_range" -> {
+                    val start = args.getOrNull(0)?.toString() ?: ""
+                    val end = args.getOrNull(1)?.toString() ?: ""
+                    if (isEn) "from $start to $end" else "von $start bis $end Uhr"
+                }
+                else -> ""
+            }
         }
     }
 
