@@ -140,6 +140,10 @@
     <string name="settings_cloud_logs_view">Verlauf anzeigen</string>
 
     <!-- Gemini Settings -->
+    <string name="settings_gemini_api_key">Gemini API-Schlüssel</string>
+    <string name="settings_gemini_api_key_description">Eigener API-Schlüssel für die Gemini Cloud API zur Vermeidung von Quotenbegrenzungen.</string>
+    <string name="settings_gemini_api_key_link_button">API-Schlüssel in Google AI Studio erstellen</string>
+    <string name="settings_gemini_api_key_smart_paste">API-Schlüssel aus Zwischenablage einfügen</string>
     <string name="settings_gemini_activate_button">Gemini Initialisieren / Testen</string>
     <string name="settings_gemini_activation_desc">Tippe auf den Button, um Gemini zu initialisieren und die notwendigen Berechtigungen abzufragen.</string>
     <string name="settings_gemini_activation_success">Gemini erfolgreich aktiviert!</string>

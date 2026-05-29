@@ -103,7 +103,8 @@ class GenAiSettingsDelegate @Inject constructor(
     }
 
     fun setGeminiCloudEnabled(context: Context, enabled: Boolean, scope: CoroutineScope) {
-        if (enabled && authManager.userEmail.value == null) {
+        val hasApiKey = !settingsRepository.geminiApiKey.isNullOrBlank()
+        if (enabled && authManager.userEmail.value == null && !hasApiKey) {
             val activity = findActivity(context) ?: return
             scope.launch {
                 val result = signInUseCase.execute(activity)

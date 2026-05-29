@@ -141,6 +141,7 @@ class SettingsViewModel @Inject constructor(
     val isGeminiEnabled = settingsRepository.isGeminiEnabledFlow
     val useLocalGenerativeAi = settingsRepository.useLocalGenerativeAiFlow
     val geminiToolStatus = genAiDelegate.geminiToolStatus
+    val geminiApiKey = settingsRepository.geminiApiKeyFlow
     
     val isSmartPredictionEnabled = settingsRepository.isSmartPredictionEnabledFlow
     
@@ -728,6 +729,9 @@ class SettingsViewModel @Inject constructor(
         input.toLongOrNull()?.let { settingsRepository.geminiTimeout = it }
     }
     fun setGeminiRedoPrediction(e: Boolean) { settingsRepository.geminiRedoPrediction = e }
+    fun setGeminiApiKey(key: String?) {
+        settingsRepository.geminiApiKey = key
+    }
 
     fun setLimitScanCycles(e: Boolean) = scanningDelegate.setLimitScanCycles(e)
     fun setScanCycleLimitInput(input: String) = scanningDelegate.setScanCycleLimitInput(input)

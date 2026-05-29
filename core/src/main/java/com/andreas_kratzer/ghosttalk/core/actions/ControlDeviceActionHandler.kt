@@ -428,7 +428,14 @@ class ControlDeviceActionHandler @Inject constructor(
         val count = action.offsetValue.coerceAtLeast(1)
         val resolver = context.contentResolver
         val uri = android.provider.CalendarContract.Events.CONTENT_URI
-        val now = System.currentTimeMillis()
+        
+        // Calculate the beginning of today in local time
+        val calendar = java.util.Calendar.getInstance()
+        calendar.set(java.util.Calendar.HOUR_OF_DAY, 0)
+        calendar.set(java.util.Calendar.MINUTE, 0)
+        calendar.set(java.util.Calendar.SECOND, 0)
+        calendar.set(java.util.Calendar.MILLISECOND, 0)
+        val startOfToday = calendar.timeInMillis
         
         val projection = arrayOf(
             android.provider.CalendarContract.Events.TITLE,
@@ -438,43 +445,56 @@ class ControlDeviceActionHandler @Inject constructor(
         )
         
         val selection = "${android.provider.CalendarContract.Events.DTSTART} >= ?"
-        val selectionArgs = arrayOf(now.toString())
+        val selectionArgs = arrayOf(startOfToday.toString())
         val sortOrder = "${android.provider.CalendarContract.Events.DTSTART} ASC"
         
         val messages = mutableListOf<String>()
+        var errorMsg: String? = null
         
-        try {
-            resolver.query(uri, projection, selection, selectionArgs, sortOrder)?.use { cursor ->
-                var found = 0
-                while (cursor.moveToNext() && found < count) {
-                    val titleIdx = cursor.getColumnIndex(android.provider.CalendarContract.Events.TITLE)
-                    val startIdx = cursor.getColumnIndex(android.provider.CalendarContract.Events.DTSTART)
-                    val endIdx = cursor.getColumnIndex(android.provider.CalendarContract.Events.DTEND)
-                    val allDayIdx = cursor.getColumnIndex(android.provider.CalendarContract.Events.ALL_DAY)
-                    
-                    val title = if (titleIdx >= 0) cursor.getString(titleIdx) else "Unbekannt"
-                    val start = if (startIdx >= 0) cursor.getLong(startIdx) else 0L
-                    val end = if (endIdx >= 0) cursor.getLong(endIdx) else 0L
-                    val allDay = if (allDayIdx >= 0) cursor.getInt(allDayIdx) == 1 else false
-                    
-                    val dateStr = java.text.SimpleDateFormat("dd. MMMM", java.util.Locale.getDefault()).format(java.util.Date(start))
-                    val timeStr = if (allDay) {
-                         "ganztägig"
-                    } else {
-                        val stTime = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date(start))
-                        val enTime = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date(end))
-                        "von $stTime bis $enTime Uhr"
+        // Check permission first
+        if (androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.READ_CALENDAR) 
+            != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            errorMsg = "Berechtigung für den Kalender ist nicht erteilt."
+        } else {
+            try {
+                resolver.query(uri, projection, selection, selectionArgs, sortOrder)?.use { cursor ->
+                    var found = 0
+                    while (cursor.moveToNext() && found < count) {
+                        val titleIdx = cursor.getColumnIndex(android.provider.CalendarContract.Events.TITLE)
+                        val startIdx = cursor.getColumnIndex(android.provider.CalendarContract.Events.DTSTART)
+                        val endIdx = cursor.getColumnIndex(android.provider.CalendarContract.Events.DTEND)
+                        val allDayIdx = cursor.getColumnIndex(android.provider.CalendarContract.Events.ALL_DAY)
+                        
+                        val title = if (titleIdx >= 0) cursor.getString(titleIdx) else "Unbekannt"
+                        val start = if (startIdx >= 0) cursor.getLong(startIdx) else 0L
+                        val end = if (endIdx >= 0) cursor.getLong(endIdx) else 0L
+                        val allDay = if (allDayIdx >= 0) cursor.getInt(allDayIdx) == 1 else false
+                        
+                        val dateStr = java.text.SimpleDateFormat("dd. MMMM", java.util.Locale.getDefault()).format(java.util.Date(start))
+                        val timeStr = if (allDay) {
+                             "ganztägig"
+                        } else {
+                            val stTime = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date(start))
+                            val enTime = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date(end))
+                            "von $stTime bis $enTime Uhr"
+                        }
+                        
+                        messages.add("Am $dateStr, $timeStr: $title")
+                        found++
                     }
-                    
-                    messages.add("Am $dateStr, $timeStr: $title")
-                    found++
                 }
+            } catch (e: SecurityException) {
+                errorMsg = "Kalenderberechtigung nicht erteilt."
+                actionLogger.log("Sicherheitsfehler beim Kalenderzugriff: ${e.message}", action, config.label)
+            } catch (e: Exception) {
+                errorMsg = "Fehler beim Kalenderzugriff."
+                actionLogger.log("Fehler beim Kalenderzugriff: ${e.message}", action, config.label)
             }
-        } catch (e: Exception) {
-            actionLogger.log("Fehler beim Kalenderzugriff: ${e.message}", action, config.label)
         }
 
-        if (messages.isEmpty()) {
+        if (errorMsg != null) {
+            speakRoutedWithLogging("<speak>$errorMsg</speak>", errorMsg, config, action, executionId, onFinish)
+        } else if (messages.isEmpty()) {
             val msg = "Keine anstehenden Kalendereinträge gefunden."
             speakRoutedWithLogging("<speak>$msg</speak>", msg, config, action, executionId, onFinish)
         } else {

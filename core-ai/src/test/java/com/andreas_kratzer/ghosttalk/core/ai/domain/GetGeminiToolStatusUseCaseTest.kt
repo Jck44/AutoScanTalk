@@ -11,15 +11,17 @@ import org.junit.Test
 class GetGeminiToolStatusUseCaseTest {
 
     private lateinit var googleAuthManager: GoogleAuthManager
+    private lateinit var settingsRepository: com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
     private lateinit var geminiUseCase: GeminiUseCase
     private lateinit var useCase: GetGeminiToolStatusUseCase
 
     @Before
     fun setup() {
         googleAuthManager = mockk()
+        settingsRepository = mockk(relaxed = true)
         geminiUseCase = mockk()
         
-        useCase = GetGeminiToolStatusUseCase(geminiUseCase, googleAuthManager)
+        useCase = GetGeminiToolStatusUseCase(geminiUseCase, googleAuthManager, settingsRepository)
     }
 
     @Test

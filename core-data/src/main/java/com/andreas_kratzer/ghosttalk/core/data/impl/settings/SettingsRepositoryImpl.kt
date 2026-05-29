@@ -316,6 +316,11 @@ class SettingsRepositoryImpl @Inject constructor(
         set(value) { genAiSettings.isGeminiEnabled = value }
     override val isGeminiEnabledFlow: StateFlow<Boolean> get() = genAiSettings.isGeminiEnabledFlow
 
+    override var geminiApiKey: String?
+        get() = genAiSettings.geminiApiKey
+        set(value) { genAiSettings.geminiApiKey = value }
+    override val geminiApiKeyFlow: StateFlow<String?> get() = genAiSettings.geminiApiKeyFlow
+
     override var isSmartPredictionEnabled: Boolean
         get() = advancedSettings.isSmartPredictionEnabled
         set(value) { advancedSettings.isSmartPredictionEnabled = value }

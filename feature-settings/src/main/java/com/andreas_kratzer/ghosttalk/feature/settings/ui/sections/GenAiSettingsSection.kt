@@ -11,11 +11,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase
@@ -34,6 +40,7 @@ fun GenAiSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
     val isEnabled by viewModel.isGeminiEnabled.collectAsState(false)
     val useLocal by viewModel.useLocalGenerativeAi.collectAsState(false)
     val toolStatus by viewModel.geminiToolStatus.collectAsState(emptyMap())
+    val geminiApiKey by viewModel.geminiApiKey.collectAsState("")
     
     val isDownloadDialogVisible by viewModel.isDownloadDialogVisible.collectAsState()
     val downloadProgress by viewModel.downloadProgress.collectAsState()
@@ -49,6 +56,20 @@ fun GenAiSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
 
     val context = LocalContext.current
     val dimensions = LocalDimensions.current
+
+    var clipboardKey by remember { mutableStateOf<String?>(null) }
+    val clipboardManager = LocalClipboardManager.current
+
+    LaunchedEffect(Unit) {
+        try {
+            val text = clipboardManager.getText()?.text
+            if (text != null && text.trim().matches(Regex("^AIzaSy[A-Za-z0-9_-]{33}$"))) {
+                clipboardKey = text.trim()
+            }
+        } catch (_: Exception) {
+            // Ignore clipboard errors
+        }
+    }
 
     FlowRow(
         modifier = Modifier.fillMaxWidth(),
@@ -127,6 +148,52 @@ fun GenAiSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                 viewModel.setGeminiEnabled(context, it) 
             }
             
+            SettingsEditTextItem(
+                label = stringResource(R.string.settings_gemini_api_key),
+                value = geminiApiKey ?: "",
+                onValueChange = { viewModel.setGeminiApiKey(it) }
+            )
+            Text(
+                text = stringResource(R.string.settings_gemini_api_key_description),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = dimensions.paddingMedium)
+            )
+
+            Spacer(modifier = Modifier.height(dimensions.paddingSmall))
+
+            Column(modifier = Modifier.fillMaxWidth().padding(horizontal = dimensions.paddingMedium)) {
+                OutlinedButton(
+                    onClick = {
+                        val intent = android.content.Intent(
+                            android.content.Intent.ACTION_VIEW,
+                            android.net.Uri.parse("https://aistudio.google.com/app/apikey")
+                        )
+                        context.startActivity(intent)
+                    },
+                    shape = MaterialTheme.shapes.medium,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(stringResource(R.string.settings_gemini_api_key_link_button))
+                }
+
+                if (clipboardKey != null) {
+                    Spacer(modifier = Modifier.height(dimensions.paddingSmall))
+                    Button(
+                        onClick = {
+                            viewModel.setGeminiApiKey(clipboardKey)
+                            clipboardKey = null
+                        },
+                        shape = MaterialTheme.shapes.medium,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(R.string.settings_gemini_api_key_smart_paste))
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(dimensions.paddingMedium))
+
             if (isEnabled) {
                 Column(modifier = Modifier.fillMaxWidth().padding(dimensions.paddingMedium)) {
                     Text(

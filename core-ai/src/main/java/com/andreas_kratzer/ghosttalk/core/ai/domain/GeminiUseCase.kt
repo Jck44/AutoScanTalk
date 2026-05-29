@@ -12,6 +12,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.net.URL
+import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import javax.inject.Inject
 import javax.inject.Singleton
 import javax.net.ssl.HttpsURLConnection
@@ -24,7 +25,8 @@ import javax.net.ssl.HttpsURLConnection
 class GeminiUseCase @Inject constructor(
     private val googleAuthManager: GoogleAuthManager,
     private val logger: com.andreas_kratzer.ghosttalk.core.util.Logger,
-    private val aiTools: Set<@JvmSuppressWildcards AiTool>
+    private val aiTools: Set<@JvmSuppressWildcards AiTool>,
+    private val settingsRepository: SettingsRepository
 ) {
     private val oauthTokenProvider: suspend () -> String? = {
         googleAuthManager.getGoogleCredential()?.getToken()
@@ -77,7 +79,12 @@ class GeminiUseCase @Inject constructor(
         useGoogleSearch: Boolean = false,
         image: Bitmap? = null
     ): String = withContext(Dispatchers.IO) {
-        val token = oauthTokenProvider() ?: return@withContext "Fehler: Nicht angemeldet (OAuth Token fehlt)."
+        val apiKey = settingsRepository.geminiApiKey
+        val token = if (!apiKey.isNullOrBlank()) {
+            ""
+        } else {
+            oauthTokenProvider() ?: return@withContext "Fehler: Nicht angemeldet (OAuth Token fehlt)."
+        }
         
         val now = System.currentTimeMillis()
         if (now < lockoutUntilTime) {
@@ -280,11 +287,20 @@ class GeminiUseCase @Inject constructor(
     }
 
     suspend fun listModels(): String = withContext(Dispatchers.IO) {
-        val token = oauthTokenProvider() ?: return@withContext "Fehler: Kein Token."
-        val url = URL(LIST_MODELS_URL)
-        val connection = url.openConnection() as HttpsURLConnection
-        connection.requestMethod = "GET"
-        connection.setRequestProperty("Authorization", "Bearer $token")
+        val apiKey = settingsRepository.geminiApiKey
+        val url: URL
+        val connection: HttpsURLConnection
+        if (!apiKey.isNullOrBlank()) {
+            url = URL("$LIST_MODELS_URL?key=$apiKey")
+            connection = url.openConnection() as HttpsURLConnection
+            connection.requestMethod = "GET"
+        } else {
+            val token = oauthTokenProvider() ?: return@withContext "Fehler: Kein Token."
+            url = URL(LIST_MODELS_URL)
+            connection = url.openConnection() as HttpsURLConnection
+            connection.requestMethod = "GET"
+            connection.setRequestProperty("Authorization", "Bearer $token")
+        }
         
         if (connection.responseCode == 200) {
             connection.inputStream.bufferedReader().use { it.readText() }
@@ -295,10 +311,17 @@ class GeminiUseCase @Inject constructor(
     }
 
     private fun callGeminiRest(token: String, requestJson: JSONObject): String {
-        val url = URL(BASE_URL_TEMPLATE.format(activeModelName))
+        val apiKey = settingsRepository.geminiApiKey
+        val url = if (!apiKey.isNullOrBlank()) {
+            URL("${BASE_URL_TEMPLATE.format(activeModelName)}?key=$apiKey")
+        } else {
+            URL(BASE_URL_TEMPLATE.format(activeModelName))
+        }
         val connection = url.openConnection() as HttpsURLConnection
         connection.requestMethod = "POST"
-        connection.setRequestProperty("Authorization", "Bearer $token")
+        if (apiKey.isNullOrBlank()) {
+            connection.setRequestProperty("Authorization", "Bearer $token")
+        }
         connection.setRequestProperty("Content-Type", "application/json")
         connection.doOutput = true
 

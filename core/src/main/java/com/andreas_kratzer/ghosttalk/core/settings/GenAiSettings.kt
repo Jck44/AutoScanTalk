@@ -20,4 +20,7 @@ interface GenAiSettings {
     
     var geminiRedoPrediction: Boolean
     val geminiRedoPredictionFlow: StateFlow<Boolean>
+
+    var geminiApiKey: String?
+    val geminiApiKeyFlow: StateFlow<String?>
 }

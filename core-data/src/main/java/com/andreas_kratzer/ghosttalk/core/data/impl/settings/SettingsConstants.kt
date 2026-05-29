@@ -76,6 +76,7 @@ object SettingsConstants {
     const val KEY_ELEVENLABS_STABILITY = "elevenlabs_stability"
     const val KEY_ELEVENLABS_SIMILARITY_BOOST = "elevenlabs_similarity_boost"
     const val KEY_RECORDING_AUDIO_SOURCE = "recording_audio_source"
+    const val KEY_GEMINI_API_KEY = "gemini_api_key"
     
     // Call Settings
     const val KEY_MAX_CALL_DURATION_SECONDS = "pref_max_call_duration_seconds"

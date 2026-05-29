@@ -11,6 +11,7 @@ class GeminiUseCaseTest {
 
     private lateinit var googleAuthManager: GoogleAuthManager
     private lateinit var logger: com.andreas_kratzer.ghosttalk.core.util.Logger
+    private lateinit var settingsRepository: com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
     private lateinit var geminiUseCase: GeminiUseCase
     private lateinit var wikiTool: AiTool
     private lateinit var driveTool: AiTool
@@ -19,6 +20,7 @@ class GeminiUseCaseTest {
     fun setup() {
         googleAuthManager = mockk(relaxed = true)
         logger = mockk(relaxed = true)
+        settingsRepository = mockk(relaxed = true)
         wikiTool = mockk(relaxed = true) {
             every { name } returns "wikipedia_search"
             every { requiresAuth } returns false
@@ -28,7 +30,7 @@ class GeminiUseCaseTest {
             every { requiresAuth } returns true
         }
 
-        geminiUseCase = GeminiUseCase(googleAuthManager, logger, setOf(wikiTool, driveTool))
+        geminiUseCase = GeminiUseCase(googleAuthManager, logger, setOf(wikiTool, driveTool), settingsRepository)
         GeminiUseCase.resetHealthStateForTesting()
     }
 

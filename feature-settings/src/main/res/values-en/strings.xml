@@ -124,6 +124,10 @@
     <string name="settings_cloud_logs_view">View History</string>
 
     <!-- Gemini Settings -->
+    <string name="settings_gemini_api_key">Gemini API Key</string>
+    <string name="settings_gemini_api_key_description">Custom API key for Gemini Cloud API to bypass shared quota limits.</string>
+    <string name="settings_gemini_api_key_link_button">Get API Key in Google AI Studio</string>
+    <string name="settings_gemini_api_key_smart_paste">Paste API Key from Clipboard</string>
     <string name="settings_gemini_activate_button">Initialize / Test Gemini</string>
     <string name="settings_gemini_activation_desc">Tap the button to initialize Gemini and request necessary permissions.</string>
     <string name="settings_gemini_activation_success">Gemini successfully activated!</string>
