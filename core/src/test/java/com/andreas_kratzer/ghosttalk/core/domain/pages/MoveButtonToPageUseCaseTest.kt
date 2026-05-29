@@ -88,6 +88,40 @@ class MoveButtonToPageUseCaseTest {
     }
 
     @Test
+    fun `execute prioritizes visible free slots over invisible free slots`() = runTest {
+        val button = ButtonConfig(id = "b1", label = "MoveMe", auditoryCue = null, buttonAction = SpeakTextButtonAction())
+        val fromPage = Page(
+            id = "p1", bookId = "book1", name = "From",
+            rows = 1, columns = 1,
+            buttonConfigs = listOf(button) + List(48) { null }
+        )
+        // target page is 2x2.
+        // Index 0 and 1 are occupied.
+        // Index 2 is null (invisible because col=2 >= columns=2).
+        // Index 7 is null (visible: row=1 < 2, col=0 < 2).
+        val targetConfigs = MutableList<ButtonConfig?>(49) { null }
+        targetConfigs[0] = ButtonConfig(label = "O0", auditoryCue = null, buttonAction = SpeakTextButtonAction())
+        targetConfigs[1] = ButtonConfig(label = "O1", auditoryCue = null, buttonAction = SpeakTextButtonAction())
+        
+        val toPage = Page(
+            id = "p2", bookId = "book1", name = "To",
+            rows = 2, columns = 2,
+            buttonConfigs = targetConfigs
+        )
+
+        coEvery { pageRepository.getPageById("p1") } returns fromPage
+        coEvery { pageRepository.getPageById("p2") } returns toPage
+
+        val result = useCase.execute("p1", 0, "p2", false)
+
+        // It should succeed and put the moved button at index 7 (visible) rather than index 2 (invisible, which would need confirmation)
+        assertTrue(result is MoveButtonToPageUseCase.MoveResult.Success)
+        val success = result as MoveButtonToPageUseCase.MoveResult.Success
+        assertEquals("MoveMe", success.toPage.buttonConfigs[7]?.label)
+        assertNull(success.toPage.buttonConfigs[2])
+    }
+
+    @Test
     fun `execute returns TargetFull if no nulls available`() = runTest {
         val button = ButtonConfig(id = "b1", label = "MoveMe", auditoryCue = null, buttonAction = SpeakTextButtonAction())
         val fromPage = Page(

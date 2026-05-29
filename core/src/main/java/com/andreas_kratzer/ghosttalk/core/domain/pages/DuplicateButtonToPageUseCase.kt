@@ -24,23 +24,21 @@ class DuplicateButtonToPageUseCase @Inject constructor(
         // Create a new button with a unique ID
         val duplicatedButton = buttonToCopy.copy(id = UUID.randomUUID().toString())
 
-        // 1. Find first free slot in toPage
-        val targetIndex = toPage.buttonConfigs.indexOfFirst { it == null }
-        if (targetIndex == -1) return MoveButtonToPageUseCase.MoveResult.TargetFull
-
-        val reqRow = (targetIndex / GridUtils.MAX_GRID_SIZE) + 1
-        val reqCol = (targetIndex % GridUtils.MAX_GRID_SIZE) + 1
-
-        val needsRow = reqRow > toPage.rows
-        val needsCol = reqCol > toPage.columns
-
-        if ((needsRow || needsCol) && !forceMove) {
-            return MoveButtonToPageUseCase.MoveResult.NeedsConfirmation(
-                targetPage = toPage,
-                freeSlotIndex = targetIndex,
-                requiredRows = reqRow.coerceAtLeast(toPage.rows),
-                requiredCols = reqCol.coerceAtLeast(toPage.columns)
-            )
+        // 1. Determine target slot
+        val placement = GridUtils.determineTargetSlot(toPage, forceMove)
+        
+        val (targetIndex, requiredRows, requiredCols) = when (placement) {
+            is GridUtils.SlotPlacementResult.TargetFull -> 
+                return MoveButtonToPageUseCase.MoveResult.TargetFull
+            is GridUtils.SlotPlacementResult.NeedsConfirmation -> 
+                return MoveButtonToPageUseCase.MoveResult.NeedsConfirmation(
+                    targetPage = toPage,
+                    freeSlotIndex = placement.targetIndex,
+                    requiredRows = placement.requiredRows,
+                    requiredCols = placement.requiredCols
+                )
+            is GridUtils.SlotPlacementResult.Success -> 
+                Triple(placement.targetIndex, placement.requiredRows, placement.requiredCols)
         }
 
         // 2. Perform the copy
@@ -49,8 +47,8 @@ class DuplicateButtonToPageUseCase @Inject constructor(
         
         val finalToPage = toPage.copy(
             buttonConfigs = updatedToConfigs,
-            rows = if (forceMove) reqRow.coerceAtLeast(toPage.rows) else toPage.rows,
-            columns = if (forceMove) reqCol.coerceAtLeast(toPage.columns) else toPage.columns
+            rows = if (forceMove) requiredRows else toPage.rows,
+            columns = if (forceMove) requiredCols else toPage.columns
         )
 
         // 3. Persist (Only update the target page)

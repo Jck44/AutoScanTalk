@@ -1,8 +1,61 @@
 package com.andreas_kratzer.ghosttalk.core.util
 
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.Page
 
 object GridUtils {
+    sealed interface SlotPlacementResult {
+        object TargetFull : SlotPlacementResult
+        data class NeedsConfirmation(
+            val targetIndex: Int,
+            val requiredRows: Int,
+            val requiredCols: Int
+        ) : SlotPlacementResult
+        data class Success(
+            val targetIndex: Int,
+            val requiredRows: Int,
+            val requiredCols: Int
+        ) : SlotPlacementResult
+    }
+
+    /**
+     * Determines the best free target slot for duplicating or moving a button to the target page.
+     * Prioritizes slots within the visible area before falling back to the hidden area.
+     */
+    fun determineTargetSlot(toPage: Page, forceMove: Boolean): SlotPlacementResult {
+        var targetIndex = toPage.buttonConfigs.indices.firstOrNull { i ->
+            toPage.buttonConfigs[i] == null && isVisibleInGrid(i, toPage.rows, toPage.columns)
+        } ?: -1
+
+        // Fallback to first free slot in the entire page if no visible slot is free
+        if (targetIndex == -1) {
+            targetIndex = toPage.buttonConfigs.indexOfFirst { it == null }
+        }
+
+        if (targetIndex == -1) {
+            return SlotPlacementResult.TargetFull
+        }
+
+        val reqRow = (targetIndex / MAX_GRID_SIZE) + 1
+        val reqCol = (targetIndex % MAX_GRID_SIZE) + 1
+
+        val needsRow = reqRow > toPage.rows
+        val needsCol = reqCol > toPage.columns
+
+        return if ((needsRow || needsCol) && !forceMove) {
+            SlotPlacementResult.NeedsConfirmation(
+                targetIndex = targetIndex,
+                requiredRows = reqRow.coerceAtLeast(toPage.rows),
+                requiredCols = reqCol.coerceAtLeast(toPage.columns)
+            )
+        } else {
+            SlotPlacementResult.Success(
+                targetIndex = targetIndex,
+                requiredRows = reqRow.coerceAtLeast(toPage.rows),
+                requiredCols = reqCol.coerceAtLeast(toPage.columns)
+            )
+        }
+    }
     const val MAX_GRID_SIZE = 7
     const val TOTAL_SLOTS = MAX_GRID_SIZE * MAX_GRID_SIZE
 

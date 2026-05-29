@@ -122,7 +122,7 @@ class ControlDeviceActionHandlerTest {
 
         val onFinish = mockk<(Int) -> Unit>(relaxed = true)
         val onCompleteSlot = slot<() -> Unit>()
-        every { ttsProxy.speakRouted("Von Test Sender: Hello World", any(), capture(onCompleteSlot)) } returns Unit
+        every { ttsProxy.speakRouted("Test Sender: Hello World", any(), capture(onCompleteSlot)) } returns Unit
 
         handler.handle(config, action, 1, onFinish)
         

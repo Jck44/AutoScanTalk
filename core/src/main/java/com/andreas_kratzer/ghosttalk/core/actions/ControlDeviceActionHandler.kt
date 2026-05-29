@@ -301,7 +301,7 @@ class ControlDeviceActionHandler @Inject constructor(
             val extras = sbn.notification.extras
             val title = extras.getString(android.app.Notification.EXTRA_TITLE) ?: "Unbekannt"
             val text = extras.getCharSequence(android.app.Notification.EXTRA_TEXT)?.toString()
-            if (text.isNullOrBlank()) null else "Von $title: $text"
+            if (text.isNullOrBlank()) null else "$title: $text"
         }
 
         if (messagesToRead.isEmpty()) {
