@@ -12,7 +12,8 @@ enum class ActionCategory {
     PREVIOUS_ACTION,
     CONTROL_DEVICE,
     WEATHER,
-    SMART_HOME
+    SMART_HOME,
+    PLAY_MEDIA
 }
 
 object ActionCategoryRegistry {
@@ -40,7 +41,8 @@ object ActionCategoryRegistry {
 
             is ControlDeviceButtonAction,
             is WeatherButtonAction,
-            is SmartHomeButtonAction -> GROUP_GERAETE_SMART_HOME
+            is SmartHomeButtonAction,
+            is PlayMediaButtonAction -> GROUP_GERAETE_SMART_HOME
 
             is FrequentActionButtonAction,
             is SmartPredictionButtonAction,
@@ -62,6 +64,7 @@ object ActionCategoryRegistry {
             is ControlDeviceButtonAction -> ActionCategory.CONTROL_DEVICE
             is WeatherButtonAction -> ActionCategory.WEATHER
             is SmartHomeButtonAction -> ActionCategory.SMART_HOME
+            is PlayMediaButtonAction -> ActionCategory.PLAY_MEDIA
         }
     }
 }

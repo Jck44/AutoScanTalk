@@ -89,6 +89,8 @@ import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SpokenTextMode
 import com.andreas_kratzer.ghosttalk.core.model.WeatherButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.PlayMediaButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.MediaProvider
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsDropdownItem
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsGroupedDropdownItem
 import com.andreas_kratzer.ghosttalk.core.ui.components.DropdownGroup
@@ -137,6 +139,12 @@ fun ButtonConfigDialog(
     onPlayTts: ((String, () -> Unit) -> Unit)? = null,
     onStopTts: (() -> Unit)? = null,
     isTtsElevenLabs: () -> Boolean = { false },
+    spotifyPlaylists: List<com.andreas_kratzer.ghosttalk.core.cloud.SpotifyPlaylist> = emptyList(),
+    isLoadingSpotifyPlaylists: Boolean = false,
+    spotifyUserDisplayName: String? = null,
+    onConnectSpotify: () -> Unit = {},
+    onDisconnectSpotify: () -> Unit = {},
+    onLoadSpotifyPlaylists: () -> Unit = {},
     onSaveAsTemplate: ((ButtonConfig) -> Unit)? = null
 ) {
     val context = LocalContext.current
@@ -231,6 +239,7 @@ fun ButtonConfigDialog(
     val actionTypeSmartHome = stringResource(R.string.button_action_smart_home)
     val actionTypeGeminiVision = "Gemini Vision (KI Auge)"
     val actionTypePrevious = stringResource(R.string.action_previous_action)
+    val actionTypePlayMedia = stringResource(R.string.button_action_play_media)
 
     var selectedActionType by remember {
         mutableStateOf(
@@ -246,6 +255,7 @@ fun ButtonConfigDialog(
                 is ControlDeviceButtonAction -> actionTypeDevice
                 is WeatherButtonAction -> actionTypeWeather
                 is SmartHomeButtonAction -> actionTypeSmartHome
+                is PlayMediaButtonAction -> actionTypePlayMedia
                 else -> actionTypeSpeak
             }
         )
@@ -334,6 +344,20 @@ fun ButtonConfigDialog(
     var smartHomeValue by remember {
         mutableStateOf((buttonConfig.buttonAction as? SmartHomeButtonAction)?.value ?: "")
     }
+
+    // Play Media specific state
+    var mediaProvider by remember {
+        mutableStateOf((buttonConfig.buttonAction as? PlayMediaButtonAction)?.provider ?: MediaProvider.SPOTIFY)
+    }
+    var mediaContentUri by remember {
+        mutableStateOf((buttonConfig.buttonAction as? PlayMediaButtonAction)?.contentUri ?: "")
+    }
+    var mediaContentName by remember {
+        mutableStateOf((buttonConfig.buttonAction as? PlayMediaButtonAction)?.contentName ?: "")
+    }
+    var mediaReturnToAppDelaySec by remember {
+        mutableStateOf(((buttonConfig.buttonAction as? PlayMediaButtonAction)?.returnToAppDelayMs ?: 2000L).div(1000L).toString())
+    }
     
     val parsedCachedDevices = remember(hueCachedDevices) {
         val list = mutableListOf<HomeDevice>()
@@ -403,6 +427,12 @@ fun ButtonConfigDialog(
                 deviceName = smartHomeDeviceName,
                 intent = smartHomeIntent,
                 value = if (smartHomeValue.isNotBlank()) smartHomeValue else null
+            )
+            actionTypePlayMedia -> PlayMediaButtonAction(
+                provider = mediaProvider,
+                contentUri = mediaContentUri,
+                contentName = mediaContentName,
+                returnToAppDelayMs = (mediaReturnToAppDelaySec.toLongOrNull() ?: 2L) * 1000L
             )
             else -> SpeakTextButtonAction()
         }
@@ -593,7 +623,78 @@ fun ButtonConfigDialog(
                     verticalArrangement = Arrangement.spacedBy(LocalDimensions.current.paddingSmall)
                 ) {
                     when (currentTab) {
-                        0 -> {                            SettingsEditTextItem(
+                        0 -> {
+                            val rawGroups = listOf(
+                                com.andreas_kratzer.ghosttalk.core.model.ActionCategoryRegistry.GROUP_BASIS to listOf(
+                                    actionTypeSpeak to SpeakTextButtonAction(),
+                                    actionTypeNavigate to NavigateToPageButtonAction()
+                                ),
+                                com.andreas_kratzer.ghosttalk.core.model.ActionCategoryRegistry.GROUP_KI_ASSISTENZ to listOf(
+                                    actionTypeGemini to GeminiButtonAction(),
+                                    actionTypeGeminiSearch to GeminiSearchButtonAction(),
+                                    actionTypeGeminiNano to GeminiNanoButtonAction(),
+                                    actionTypeGeminiVision to com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction()
+                                ),
+                                com.andreas_kratzer.ghosttalk.core.model.ActionCategoryRegistry.GROUP_GERAETE_SMART_HOME to listOf(
+                                    actionTypeWeather to WeatherButtonAction(),
+                                    actionTypeSmartHome to SmartHomeButtonAction(),
+                                    actionTypeDevice to ControlDeviceButtonAction(),
+                                    actionTypePlayMedia to PlayMediaButtonAction()
+                                ),
+                                com.andreas_kratzer.ghosttalk.core.model.ActionCategoryRegistry.GROUP_DYNAMISCHE_AKTIONEN to listOf(
+                                    actionTypeFrequent to FrequentActionButtonAction(),
+                                    actionTypePrevious to PreviousActionButtonAction(),
+                                    actionTypeSmart to SmartPredictionButtonAction()
+                                )
+                            )
+
+                            val dropdownGroups = rawGroups.map { (groupName, actionList) ->
+                                val enabledItems = actionList.filter { (_, action) ->
+                                    featureGuard?.isActionEnabled(action) ?: true
+                                }.map { (label, action) ->
+                                    label to {
+                                        selectedActionType = label
+                                        // Permission check for Weather
+                                        if (action is WeatherButtonAction) {
+                                            val hasFine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                                            val hasCoarse = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                                            if (!hasFine && !hasCoarse) {
+                                                permissionLauncher.launch(
+                                                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                                DropdownGroup(name = groupName, items = enabledItems)
+                            }.filter { it.items.isNotEmpty() }
+
+                            SettingsGroupedDropdownItem(
+                                label = stringResource(R.string.button_action_label),
+                                selectedOption = selectedActionType,
+                                groups = dropdownGroups,
+                                iconProvider = { actionType ->
+                                    val icon = when (actionType) {
+                                        actionTypeSpeak -> Icons.Default.PlayArrow
+                                        actionTypePlayMedia -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.MusicNote
+                                        actionTypeNavigate -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.ArrowForward
+                                        actionTypeGemini, actionTypeGeminiSearch, actionTypeGeminiNano, actionTypeGeminiVision -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.AutoAwesome
+                                        actionTypeWeather -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.Cloud
+                                        actionTypeSmartHome -> Icons.Default.Home
+                                        actionTypeDevice -> Icons.Default.Settings
+                                        actionTypeFrequent, actionTypePrevious, actionTypeSmart -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.History
+                                        else -> null
+                                    }
+                                    if (icon != null) {
+                                        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                    }
+                                },
+                                onValueChangeFinished = handleAutoSave
+                            )
+
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                            SettingsEditTextItem(
                                 label = stringResource(R.string.button_label_field),
                                 value = label,
                                 onValueChange = { label = it },
@@ -996,73 +1097,6 @@ fun ButtonConfigDialog(
                                 }
                             }
 
-                            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-                            val rawGroups = listOf(
-                                com.andreas_kratzer.ghosttalk.core.model.ActionCategoryRegistry.GROUP_BASIS to listOf(
-                                    actionTypeSpeak to SpeakTextButtonAction(),
-                                    actionTypeNavigate to NavigateToPageButtonAction()
-                                ),
-                                com.andreas_kratzer.ghosttalk.core.model.ActionCategoryRegistry.GROUP_KI_ASSISTENZ to listOf(
-                                    actionTypeGemini to GeminiButtonAction(),
-                                    actionTypeGeminiSearch to GeminiSearchButtonAction(),
-                                    actionTypeGeminiNano to GeminiNanoButtonAction(),
-                                    actionTypeGeminiVision to com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction()
-                                ),
-                                com.andreas_kratzer.ghosttalk.core.model.ActionCategoryRegistry.GROUP_GERAETE_SMART_HOME to listOf(
-                                    actionTypeWeather to WeatherButtonAction(),
-                                    actionTypeSmartHome to SmartHomeButtonAction(),
-                                    actionTypeDevice to ControlDeviceButtonAction()
-                                ),
-                                com.andreas_kratzer.ghosttalk.core.model.ActionCategoryRegistry.GROUP_DYNAMISCHE_AKTIONEN to listOf(
-                                    actionTypeFrequent to FrequentActionButtonAction(),
-                                    actionTypePrevious to PreviousActionButtonAction(),
-                                    actionTypeSmart to SmartPredictionButtonAction()
-                                )
-                            )
-
-                            val dropdownGroups = rawGroups.map { (groupName, actionList) ->
-                                val enabledItems = actionList.filter { (_, action) ->
-                                    featureGuard?.isActionEnabled(action) ?: true
-                                }.map { (label, action) ->
-                                    label to {
-                                        selectedActionType = label
-                                        // Permission check for Weather
-                                        if (action is WeatherButtonAction) {
-                                            val hasFine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-                                            val hasCoarse = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
-                                            if (!hasFine && !hasCoarse) {
-                                                permissionLauncher.launch(
-                                                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                                DropdownGroup(name = groupName, items = enabledItems)
-                            }.filter { it.items.isNotEmpty() }
-
-                            SettingsGroupedDropdownItem(
-                                label = stringResource(R.string.button_action_label),
-                                selectedOption = selectedActionType,
-                                groups = dropdownGroups,
-                                iconProvider = { actionType ->
-                                    val icon = when (actionType) {
-                                        actionTypeSpeak -> Icons.Default.PlayArrow
-                                        actionTypeNavigate -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.ArrowForward
-                                        actionTypeGemini, actionTypeGeminiSearch, actionTypeGeminiNano, actionTypeGeminiVision -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.AutoAwesome
-                                        actionTypeWeather -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.Cloud
-                                        actionTypeSmartHome -> Icons.Default.Home
-                                        actionTypeDevice -> Icons.Default.Settings
-                                        actionTypeFrequent, actionTypePrevious, actionTypeSmart -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.History
-                                        else -> null
-                                    }
-                                    if (icon != null) {
-                                        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                                    }
-                                },
-                                onValueChangeFinished = handleAutoSave
-                            )
 
                             ActionConfigFields(
                                 selectedActionType = selectedActionType,
@@ -1154,6 +1188,32 @@ fun ButtonConfigDialog(
                                     geminiVisionPlayShutterSound = it
                                     handleAutoSave()
                                 },
+                                mediaProvider = mediaProvider,
+                                onMediaProviderChange = {
+                                    mediaProvider = it
+                                    handleAutoSave()
+                                },
+                                mediaContentUri = mediaContentUri,
+                                onMediaContentUriChange = {
+                                    mediaContentUri = it
+                                    handleAutoSave()
+                                },
+                                mediaContentName = mediaContentName,
+                                onMediaContentNameChange = {
+                                    mediaContentName = it
+                                    handleAutoSave()
+                                },
+                                mediaReturnToAppDelaySec = mediaReturnToAppDelaySec,
+                                onMediaReturnToAppDelaySecChange = {
+                                    mediaReturnToAppDelaySec = it
+                                    handleAutoSave()
+                                },
+                                spotifyPlaylists = spotifyPlaylists,
+                                isLoadingSpotifyPlaylists = isLoadingSpotifyPlaylists,
+                                spotifyUserDisplayName = spotifyUserDisplayName,
+                                onConnectSpotify = onConnectSpotify,
+                                onDisconnectSpotify = onDisconnectSpotify,
+                                onLoadSpotifyPlaylists = onLoadSpotifyPlaylists,
                                 onAutoSave = handleAutoSave
                             )
                         }
@@ -1174,7 +1234,10 @@ fun ButtonConfigDialog(
                                 messageText = messageText,
                                 smartHomeDeviceName = smartHomeDeviceName,
                                 playActionAsAuditoryCue = playActionAsAuditoryCue,
-                                auditoryCueText = auditoryCueText
+                                auditoryCueText = auditoryCueText,
+                                mediaProvider = mediaProvider,
+                                mediaContentName = mediaContentName,
+                                mediaReturnToAppDelaySec = mediaReturnToAppDelaySec
                             )
                         }
                     }
@@ -1274,6 +1337,9 @@ private fun PreviewTabContent(
     smartHomeDeviceName: String,
     playActionAsAuditoryCue: Boolean,
     auditoryCueText: String,
+    mediaProvider: MediaProvider = MediaProvider.SPOTIFY,
+    mediaContentName: String = "",
+    mediaReturnToAppDelaySec: String = "2",
     actionTypeSpeak: String = stringResource(R.string.button_action_speak_text),
     actionTypeNavigate: String = stringResource(R.string.button_action_navigate_page),
     actionTypeGemini: String = stringResource(R.string.button_action_gemini),
@@ -1282,7 +1348,8 @@ private fun PreviewTabContent(
     actionTypeGeminiVision: String = stringResource(R.string.button_action_gemini_vision),
     actionTypeWeather: String = stringResource(R.string.button_action_weather),
     actionTypeDevice: String = stringResource(R.string.button_action_control_device),
-    actionTypeSmartHome: String = stringResource(R.string.button_action_smart_home)
+    actionTypeSmartHome: String = stringResource(R.string.button_action_smart_home),
+    actionTypePlayMedia: String = stringResource(R.string.button_action_play_media)
 ) {
     val isSpeech = selectedActionType == actionTypeSpeak
     val speakTextToUse = if (isSpeech) {
@@ -1292,7 +1359,8 @@ private fun PreviewTabContent(
     val speakDescription = remember(
         selectedActionType, spokenText, label, geminiPrompt, targetPageId,
         deviceActionType, includeWeekday, offsetValue, prefixText, suffixText,
-        contactName, contactPhone, messageText, smartHomeDeviceName
+        contactName, contactPhone, messageText, smartHomeDeviceName,
+        mediaProvider, mediaContentName, mediaReturnToAppDelaySec
     ) {
         when {
             isSpeech -> {
@@ -1304,6 +1372,12 @@ private fun PreviewTabContent(
             }
             else -> {
                 when (selectedActionType) {
+                    actionTypePlayMedia -> {
+                        val nameStr = mediaContentName.ifBlank { mediaProvider.displayName }
+                        val delayVal = mediaReturnToAppDelaySec.toIntOrNull() ?: 2
+                        val delayDesc = if (delayVal > 0) "Kehrt nach $delayVal Sekunden automatisch zu GhostTalk zurück." else "Bleibt in der Medien-App."
+                        "🎵 Medien abspielen (${mediaProvider.displayName}):\nSpielt $nameStr ab. $delayDesc"
+                    }
                     actionTypeNavigate -> {
                         if (spokenText.isNotBlank()) {
                             "🗣️ Feedback vorlesen:\n\"$spokenText\"\n\n➡️ Navigation:\nÖffnet danach die Seite \"$targetPageId\""

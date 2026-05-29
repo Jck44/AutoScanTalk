@@ -167,5 +167,11 @@ data class ImportAction(
     val googleHomeDeviceId: String? = null,
     val googleHomeTrait: String? = null,
     val googleHomeCommand: String? = null,
-    val googleHomeValue: String? = null
+    val googleHomeValue: String? = null,
+
+    // Play Media Integration
+    val mediaProvider: String? = null,
+    val mediaContentUri: String? = null,
+    val mediaContentName: String? = null,
+    val mediaReturnDelayMs: Long? = null
 )

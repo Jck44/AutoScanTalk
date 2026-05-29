@@ -3,6 +3,7 @@ package com.andreas_kratzer.ghosttalk.core.di
 import com.andreas_kratzer.ghosttalk.core.actions.ActionHandler
 import com.andreas_kratzer.ghosttalk.core.actions.ControlDeviceActionHandler
 import com.andreas_kratzer.ghosttalk.core.actions.SpeechActionHandler
+import com.andreas_kratzer.ghosttalk.core.actions.PlayMediaActionHandler
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -20,4 +21,8 @@ interface CoreActionHandlerModule {
     @Binds
     @IntoSet
     fun bindControlDeviceActionHandler(handler: ControlDeviceActionHandler): ActionHandler
+
+    @Binds
+    @IntoSet
+    fun bindPlayMediaActionHandler(handler: PlayMediaActionHandler): ActionHandler
 }

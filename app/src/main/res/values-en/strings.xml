@@ -306,5 +306,18 @@
     <string name="calendar_and"> and </string>
     <string name="error_no_internet_weather">No internet connection available.</string>
     <string name="error_location_unavailable_weather">Location could not be determined.</string>
+
+    <!-- Play Media Button Action -->
+    <string name="button_action_play_media">Play Media</string>
+    <string name="button_media_provider_label">Media Provider</string>
+    <string name="button_media_uri_label">Content (URI / Video ID / ASIN)</string>
+    <string name="button_media_uri_placeholder">e.g. playlist ID, video ID, or ASIN</string>
+    <string name="button_media_delay_label">Return to GhostTalk after (seconds, 0 = off)</string>
+    <string name="button_media_delay_placeholder">e.g. 2</string>
+    <string name="button_media_spotify_playlist_label">Spotify Playlist</string>
+    <string name="button_media_spotify_not_connected">Spotify is not linked. Please link your account in the Cloud settings.</string>
+    <string name="button_media_spotify_link_settings">Go to Settings</string>
+    <string name="button_media_custom_uri">Enter custom URI</string>
+    <string name="button_media_custom_uri_label">Custom Playlist/Content URI</string>
 </resources>
 

@@ -59,6 +59,7 @@ class SettingsViewModelTest {
     private lateinit var experimentalDelegate: ExperimentalSettingsDelegate
     private lateinit var importExportManager: PageImportExportManager
     private lateinit var hueManager: PhilipsHueManager
+    private lateinit var spotifyManager: com.andreas_kratzer.ghosttalk.core.cloud.SpotifyManager
     private lateinit var updateActionLogLimitUseCase: UpdateActionLogLimitUseCase
     private lateinit var updateActiveBookNameUseCase: UpdateActiveBookNameUseCase
     private lateinit var deleteBookUseCase: DeleteBookUseCase
@@ -86,6 +87,7 @@ class SettingsViewModelTest {
         experimentalDelegate = mockk(relaxed = true)
         importExportManager = mockk(relaxed = true)
         hueManager = mockk(relaxed = true)
+        spotifyManager = mockk(relaxed = true)
         updateActionLogLimitUseCase = mockk(relaxed = true)
         updateActiveBookNameUseCase = mockk(relaxed = true)
         deleteBookUseCase = mockk(relaxed = true)
@@ -121,6 +123,7 @@ class SettingsViewModelTest {
             updateActionLogLimitUseCase = updateActionLogLimitUseCase,
             importExportManager = importExportManager,
             hueManager = hueManager,
+            spotifyManager = spotifyManager,
             ttsHelper = ttsHelper,
             audioCacheRepository = audioCacheRepository,
             pageRepository = mockk(relaxed = true),

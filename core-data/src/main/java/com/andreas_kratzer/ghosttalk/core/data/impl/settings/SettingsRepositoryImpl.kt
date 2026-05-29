@@ -161,6 +161,10 @@ class SettingsRepositoryImpl @Inject constructor(
     override val elevenLabsModelFlow: StateFlow<String> get() = cloudSettings.elevenLabsModelFlow
     override val elevenLabsStabilityFlow: StateFlow<Float> get() = cloudSettings.elevenLabsStabilityFlow
     override val elevenLabsSimilarityBoostFlow: StateFlow<Float> get() = cloudSettings.elevenLabsSimilarityBoostFlow
+    override val spotifyAccessTokenFlow: StateFlow<String?> get() = cloudSettings.spotifyAccessTokenFlow
+    override val spotifyRefreshTokenFlow: StateFlow<String?> get() = cloudSettings.spotifyRefreshTokenFlow
+    override val spotifyTokenExpiresAtFlow: StateFlow<Long> get() = cloudSettings.spotifyTokenExpiresAtFlow
+    override val spotifyUserDisplayNameFlow: StateFlow<String?> get() = cloudSettings.spotifyUserDisplayNameFlow
     override val ttsEngineFlow: StateFlow<String?> get() = voiceSettings.ttsEngineFlow
     override val googleTtsLanguageFlow: StateFlow<String?> get() = voiceSettings.googleTtsLanguageFlow
     override val googleTtsVoiceNameFlow: StateFlow<String?> get() = voiceSettings.googleTtsVoiceNameFlow
@@ -450,6 +454,22 @@ class SettingsRepositoryImpl @Inject constructor(
     override var elevenLabsSimilarityBoost: Float
         get() = cloudSettings.elevenLabsSimilarityBoost
         set(value) { cloudSettings.elevenLabsSimilarityBoost = value }
+
+    override var spotifyAccessToken: String?
+        get() = cloudSettings.spotifyAccessToken
+        set(value) { cloudSettings.spotifyAccessToken = value }
+
+    override var spotifyRefreshToken: String?
+        get() = cloudSettings.spotifyRefreshToken
+        set(value) { cloudSettings.spotifyRefreshToken = value }
+
+    override var spotifyTokenExpiresAt: Long
+        get() = cloudSettings.spotifyTokenExpiresAt
+        set(value) { cloudSettings.spotifyTokenExpiresAt = value }
+
+    override var spotifyUserDisplayName: String?
+        get() = cloudSettings.spotifyUserDisplayName
+        set(value) { cloudSettings.spotifyUserDisplayName = value }
 
 
     override var ttsEngine: String?

@@ -206,7 +206,26 @@ class ButtonTemplateRepositoryImpl @Inject constructor(
             )
         )
 
-        // 12. ControlDeviceButtonAction (For every DeviceActionType)
+        // 12. PlayMediaButtonAction
+        list.add(
+            ButtonTemplate(
+                id = "builtin_play_media",
+                name = "Musik/Medien abspielen",
+                isBuiltIn = true,
+                buttonConfig = ButtonConfig(
+                    id = UUID.randomUUID().toString(),
+                    label = "Musik",
+                    buttonAction = PlayMediaButtonAction(
+                        provider = MediaProvider.SPOTIFY,
+                        contentUri = "",
+                        contentName = "",
+                        returnToAppDelayMs = 2000L
+                    )
+                )
+            )
+        )
+
+        // 13. ControlDeviceButtonAction (For every DeviceActionType)
         DeviceActionType.entries.forEach { type ->
             val name = when (type) {
                 DeviceActionType.READ_NOTIFICATIONS -> "Benachrichtigungen vorlesen"

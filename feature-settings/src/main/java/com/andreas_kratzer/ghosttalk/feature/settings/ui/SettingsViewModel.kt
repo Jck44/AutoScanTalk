@@ -8,11 +8,14 @@ import androidx.core.content.edit
 import androidx.core.net.toUri
 import android.content.pm.PackageManager
 import android.os.Build
+import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.andreas_kratzer.ghosttalk.core.SecurityManager
 import com.andreas_kratzer.ghosttalk.core.cloud.PhilipsHueManager
+import com.andreas_kratzer.ghosttalk.core.cloud.SpotifyManager
+import com.andreas_kratzer.ghosttalk.core.cloud.SpotifyPlaylist
 import com.andreas_kratzer.ghosttalk.core.data.BookRepository
 import com.andreas_kratzer.ghosttalk.core.data.PageRepository
 import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository
@@ -72,6 +75,7 @@ class SettingsViewModel @Inject constructor(
     private val updateActionLogLimitUseCase: UpdateActionLogLimitUseCase,
     private val importExportManager: PageImportExportProvider,
     private val hueManager: PhilipsHueManager,
+    private val spotifyManager: SpotifyManager,
     private val ttsHelper: TextToSpeechHelper,
     private val audioCacheRepository: AudioCacheRepository,
     private val pageRepository: PageRepository,
@@ -143,6 +147,14 @@ class SettingsViewModel @Inject constructor(
     val geminiToolStatus = genAiDelegate.geminiToolStatus
     val geminiApiKey = settingsRepository.geminiApiKeyFlow
     val useGeminiApiKey = settingsRepository.useGeminiApiKeyFlow
+
+    val spotifyUserDisplayName = settingsRepository.spotifyUserDisplayNameFlow
+    
+    private val _spotifyPlaylists = MutableStateFlow<List<SpotifyPlaylist>>(emptyList())
+    val spotifyPlaylists: StateFlow<List<SpotifyPlaylist>> = _spotifyPlaylists.asStateFlow()
+    
+    private val _isLoadingPlaylists = MutableStateFlow(false)
+    val isLoadingPlaylists: StateFlow<Boolean> = _isLoadingPlaylists.asStateFlow()
     
     val isSmartPredictionEnabled = settingsRepository.isSmartPredictionEnabledFlow
     
@@ -299,9 +311,9 @@ class SettingsViewModel @Inject constructor(
     )
     
     val signInErrorMessage = cloudSyncDelegate.signInErrorMessage
-
-    /* init block moved up */
-
+    init {
+        loadSpotifyPlaylists()
+    }
     // --- Delegation Methods (UI Actions) ---
     fun refresh() {
         ttsDelegate.loadAvailableLanguages()
@@ -735,6 +747,37 @@ class SettingsViewModel @Inject constructor(
     }
     fun setUseGeminiApiKey(useKey: Boolean) {
         settingsRepository.useGeminiApiKey = useKey
+    }
+
+    fun connectSpotify(ctx: Context) {
+        val authUrl = spotifyManager.getAuthorizationUrl()
+        val intent = Intent(Intent.ACTION_VIEW, authUrl.toUri()).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        ctx.startActivity(intent)
+    }
+
+    fun disconnectSpotify() {
+        spotifyManager.disconnect()
+        _spotifyPlaylists.value = emptyList()
+    }
+
+    fun loadSpotifyPlaylists() {
+        viewModelScope.launch {
+            if (settingsRepository.spotifyAccessToken.isNullOrBlank()) {
+                _spotifyPlaylists.value = emptyList()
+                return@launch
+            }
+            _isLoadingPlaylists.value = true
+            try {
+                val playlists = spotifyManager.getPlaylists()
+                _spotifyPlaylists.value = playlists
+            } catch (e: Exception) {
+                Log.e("SettingsViewModel", "Failed to load Spotify playlists", e)
+            } finally {
+                _isLoadingPlaylists.value = false
+            }
+        }
     }
 
     fun setLimitScanCycles(e: Boolean) = scanningDelegate.setLimitScanCycles(e)

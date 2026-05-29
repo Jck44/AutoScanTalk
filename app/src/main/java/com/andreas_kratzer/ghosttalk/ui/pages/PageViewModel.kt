@@ -43,6 +43,8 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import com.andreas_kratzer.ghosttalk.core.cloud.PhilipsHueManager
+import com.andreas_kratzer.ghosttalk.core.cloud.SpotifyManager
+import com.andreas_kratzer.ghosttalk.core.cloud.SpotifyPlaylist
 import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -68,7 +70,8 @@ class PageViewModel @Inject constructor(
     geminiUseCase: GeminiUseCase,
     private val buttonTemplateRepository: ButtonTemplateRepository,
     val systemCallManager: com.andreas_kratzer.ghosttalk.core.call.SystemCallManager,
-    val philipsHueManager: PhilipsHueManager
+    val philipsHueManager: PhilipsHueManager,
+    private val spotifyManager: SpotifyManager
 ) : AndroidViewModel(application), com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions {
 
     val buttonTemplates: StateFlow<List<ButtonTemplate>> = buttonTemplateRepository.getTemplates()
@@ -126,6 +129,14 @@ class PageViewModel @Inject constructor(
 
     val defaultScanPattern = settingsRepository.defaultScanPatternFlow
     val showTestButtons = settingsRepository.showTestButtonsFlow
+
+    val spotifyUserDisplayName = settingsRepository.spotifyUserDisplayNameFlow
+    
+    private val _spotifyPlaylists = MutableStateFlow<List<SpotifyPlaylist>>(emptyList())
+    val spotifyPlaylists: StateFlow<List<SpotifyPlaylist>> = _spotifyPlaylists.asStateFlow()
+    
+    private val _isLoadingPlaylists = MutableStateFlow(false)
+    val isLoadingPlaylists: StateFlow<Boolean> = _isLoadingPlaylists.asStateFlow()
 
     val resolvedPage: StateFlow<Page?> = combine(
         currentPage,
@@ -214,6 +225,7 @@ class PageViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     init {
+        loadSpotifyPlaylists()
         viewModelScope.launch {
             buttonTemplateRepository.ensureBuiltInTemplates()
         }
@@ -560,6 +572,37 @@ class PageViewModel @Inject constructor(
                     android.widget.Toast.makeText(getApplication(), "Konnte Bridge nicht erreichen. Alter Cache wird beibehalten.", android.widget.Toast.LENGTH_LONG).show()
                 }
                 onResult?.invoke(false)
+            }
+        }
+    }
+
+    fun connectSpotify(ctx: android.content.Context) {
+        val authUrl = spotifyManager.getAuthorizationUrl()
+        val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(authUrl)).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        ctx.startActivity(intent)
+    }
+
+    fun disconnectSpotify() {
+        spotifyManager.disconnect()
+        _spotifyPlaylists.value = emptyList()
+    }
+
+    fun loadSpotifyPlaylists() {
+        viewModelScope.launch {
+            if (settingsRepository.spotifyAccessToken.isNullOrBlank()) {
+                _spotifyPlaylists.value = emptyList()
+                return@launch
+            }
+            _isLoadingPlaylists.value = true
+            try {
+                val playlists = spotifyManager.getPlaylists()
+                _spotifyPlaylists.value = playlists
+            } catch (e: Exception) {
+                Log.e("PageViewModel", "Failed to load Spotify playlists", e)
+            } finally {
+                _isLoadingPlaylists.value = false
             }
         }
     }

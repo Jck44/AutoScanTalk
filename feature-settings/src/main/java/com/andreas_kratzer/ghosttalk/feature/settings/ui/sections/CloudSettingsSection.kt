@@ -60,6 +60,7 @@ fun CloudSettingsSection(
     val showBackupSelectionDialog by viewModel.showBackupSelectionDialog.collectAsState()
     val syncLogs by viewModel.syncLogs.collectAsState()
     var showSyncLogDialog by remember { mutableStateOf(false) }
+    val spotifyUserDisplayName by viewModel.spotifyUserDisplayName.collectAsState(null)
     
     val dimensions = LocalDimensions.current
     val locale = LocalConfiguration.current.locales[0]
@@ -181,6 +182,36 @@ fun CloudSettingsSection(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 8.dp)
                 )
+            }
+
+            Spacer(modifier = Modifier.height(dimensions.paddingMedium))
+
+            PreferenceCategory(stringResource(R.string.settings_category_spotify)) {
+                if (spotifyUserDisplayName != null) {
+                    Text(
+                        text = stringResource(R.string.settings_spotify_status_connected, spotifyUserDisplayName!!),
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    Button(
+                        onClick = { viewModel.disconnectSpotify() },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(R.string.settings_spotify_disconnect))
+                    }
+                } else {
+                    Text(
+                        text = stringResource(R.string.settings_spotify_status_disconnected),
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    Button(
+                        onClick = { viewModel.connectSpotify(context) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(R.string.settings_spotify_connect))
+                    }
+                }
             }
         } else {
             // Book-Scoped Mode: Show Sync Settings and manual buttons

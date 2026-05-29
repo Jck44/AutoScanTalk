@@ -294,7 +294,8 @@ class PageViewModelTest {
             geminiUseCase = geminiUseCase,
             buttonTemplateRepository = mockk(relaxed = true),
             systemCallManager = systemCallManager,
-            philipsHueManager = philipsHueManager
+            philipsHueManager = philipsHueManager,
+            spotifyManager = mockk(relaxed = true)
         )
     }
 

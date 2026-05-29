@@ -19,6 +19,8 @@ import com.andreas_kratzer.ghosttalk.ui.pages.actions.NavigationActionFields
 import com.andreas_kratzer.ghosttalk.ui.pages.actions.RankActionFields
 import com.andreas_kratzer.ghosttalk.ui.pages.actions.SmartHomeActionFields
 import com.andreas_kratzer.ghosttalk.ui.pages.actions.WeatherActionFields
+import com.andreas_kratzer.ghosttalk.ui.pages.actions.PlayMediaActionFields
+import com.andreas_kratzer.ghosttalk.core.model.MediaProvider
 
 @Composable
 fun ActionConfigFields(
@@ -76,6 +78,21 @@ fun ActionConfigFields(
     playShutterSound: Boolean = true,
     onUseCloudChange: (Boolean) -> Unit = {},
     onPlayShutterSoundChange: (Boolean) -> Unit = {},
+    // Play Media specific
+    mediaProvider: MediaProvider = MediaProvider.SPOTIFY,
+    onMediaProviderChange: (MediaProvider) -> Unit = {},
+    mediaContentUri: String = "",
+    onMediaContentUriChange: (String) -> Unit = {},
+    mediaContentName: String = "",
+    onMediaContentNameChange: (String) -> Unit = {},
+    mediaReturnToAppDelaySec: String = "2",
+    onMediaReturnToAppDelaySecChange: (String) -> Unit = {},
+    spotifyPlaylists: List<com.andreas_kratzer.ghosttalk.core.cloud.SpotifyPlaylist> = emptyList(),
+    isLoadingSpotifyPlaylists: Boolean = false,
+    spotifyUserDisplayName: String? = null,
+    onConnectSpotify: () -> Unit = {},
+    onDisconnectSpotify: () -> Unit = {},
+    onLoadSpotifyPlaylists: () -> Unit = {},
     onAutoSave: () -> Unit = {}
 ) {
     val actionTypeNavigate = stringResource(R.string.button_action_navigate_page)
@@ -89,6 +106,7 @@ fun ActionConfigFields(
     val actionTypeSmartHome = stringResource(R.string.button_action_smart_home)
     val actionTypeWeather = stringResource(R.string.button_action_weather)
     val actionTypePrevious = stringResource(R.string.action_previous_action)
+    val actionTypePlayMedia = stringResource(R.string.button_action_play_media)
 
     val dimensions = LocalDimensions.current
 
@@ -194,6 +212,25 @@ fun ActionConfigFields(
             }
             actionTypeWeather -> {
                 WeatherActionFields()
+            }
+            actionTypePlayMedia -> {
+                PlayMediaActionFields(
+                    selectedProvider = mediaProvider,
+                    onProviderSelected = onMediaProviderChange,
+                    contentUri = mediaContentUri,
+                    onContentUriChanged = onMediaContentUriChange,
+                    contentName = mediaContentName,
+                    onContentNameChanged = onMediaContentNameChange,
+                    returnToAppDelaySec = mediaReturnToAppDelaySec,
+                    onReturnToAppDelaySecChanged = onMediaReturnToAppDelaySecChange,
+                    spotifyPlaylists = spotifyPlaylists,
+                    isLoadingSpotifyPlaylists = isLoadingSpotifyPlaylists,
+                    spotifyUserDisplayName = spotifyUserDisplayName,
+                    onConnectSpotify = onConnectSpotify,
+                    onDisconnectSpotify = onDisconnectSpotify,
+                    onLoadSpotifyPlaylists = onLoadSpotifyPlaylists,
+                    onAutoSave = onAutoSave
+                )
             }
         }
     }

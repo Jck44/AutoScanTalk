@@ -36,7 +36,19 @@ class SettingsBackupCoverageTest {
         "forceSoftKeyboard",       // UI specific
         "forceSoftKeyboardFlow",
         "elevenLabsApiKey",         // Security / Secret
-        "elevenLabsApiKeyFlow"
+        "elevenLabsApiKeyFlow",
+        "spotifyAccessToken",       // Security / Secret
+        "spotifyAccessTokenFlow",
+        "spotifyRefreshToken",      // Security / Secret
+        "spotifyRefreshTokenFlow",
+        "spotifyTokenExpiresAt",    // Local session state
+        "spotifyTokenExpiresAtFlow",
+        "spotifyUserDisplayName",   // Local session state
+        "spotifyUserDisplayNameFlow",
+        "geminiApiKey",             // Security / Secret
+        "geminiApiKeyFlow",
+        "useGeminiApiKey",          // Local auth setting
+        "useGeminiApiKeyFlow"
     )
 
     private val propertyMappings = mapOf(

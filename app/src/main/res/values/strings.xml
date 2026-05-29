@@ -310,5 +310,18 @@
     <string name="calendar_and"> und </string>
     <string name="error_no_internet_weather">Keine Internetverbindung verfügbar.</string>
     <string name="error_location_unavailable_weather">Standort konnte nicht ermittelt werden.</string>
+
+    <!-- Play Media Button Action -->
+    <string name="button_action_play_media">Medien abspielen</string>
+    <string name="button_media_provider_label">Medienanbieter</string>
+    <string name="button_media_uri_label">Inhalt (URI / Video-ID / ASIN)</string>
+    <string name="button_media_uri_placeholder">z.B. Playlist-ID, Video-ID oder ASIN</string>
+    <string name="button_media_delay_label">Zurück zu GhostTalk nach (Sekunden, 0 = aus)</string>
+    <string name="button_media_delay_placeholder">z.B. 2</string>
+    <string name="button_media_spotify_playlist_label">Spotify Playlist</string>
+    <string name="button_media_spotify_not_connected">Spotify ist nicht verknüpft. Bitte verknüpfe dein Konto in den Cloud-Einstellungen.</string>
+    <string name="button_media_spotify_link_settings">Zu den Einstellungen</string>
+    <string name="button_media_custom_uri">Benutzerdefinierte URI eintragen</string>
+    <string name="button_media_custom_uri_label">Eigene Playlist/Inhalt URI</string>
 </resources>
 

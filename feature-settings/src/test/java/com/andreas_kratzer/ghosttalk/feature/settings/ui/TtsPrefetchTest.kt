@@ -95,7 +95,7 @@ class TtsPrefetchTest {
             securityManager, getPagesUseCase, ttsDelegate, scanningDelegate, 
             cloudSyncDelegate, genAiDelegate, experimentalDelegate, 
             updateActiveBookNameUseCase, deleteBookUseCase, updateActionLogLimitUseCase, 
-            importExportManager, hueManager, ttsHelper, audioCacheRepository, mockk(relaxed = true), mockk(relaxed = true),
+            importExportManager, hueManager, mockk(relaxed = true), ttsHelper, audioCacheRepository, mockk(relaxed = true), mockk(relaxed = true),
             dagger.Lazy { mockk(relaxed = true) }
         )
     }

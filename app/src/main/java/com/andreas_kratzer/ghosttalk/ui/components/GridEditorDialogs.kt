@@ -10,6 +10,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -60,6 +61,10 @@ fun EditorDialogs(
     val context = LocalContext.current
     val moveSuccessText = stringResource(R.string.button_move_success)
     val duplicateSuccessText = stringResource(R.string.button_duplicate_success)
+
+    val spotifyPlaylists by (actions as? PageViewModel)?.spotifyPlaylists?.collectAsState(emptyList()) ?: remember { mutableStateOf(emptyList()) }
+    val isSpotifyLoadingPlaylists by (actions as? PageViewModel)?.isLoadingPlaylists?.collectAsState(false) ?: remember { mutableStateOf(false) }
+    val spotifyUserDisplayName by (actions as? PageViewModel)?.spotifyUserDisplayName?.collectAsState(null) ?: remember { mutableStateOf(null) }
 
     var showSaveTemplateDialogConfig by remember { mutableStateOf<ButtonConfig?>(null) }
     var newTemplateName by remember { mutableStateOf("") }
@@ -137,6 +142,12 @@ fun EditorDialogs(
             onPlayTts = { text, onDone -> actions.speakTtsPreview(text, onDone) },
             onStopTts = { actions.stopTtsPreview() },
             isTtsElevenLabs = { actions.isTtsElevenLabs() },
+            spotifyPlaylists = spotifyPlaylists,
+            isLoadingSpotifyPlaylists = isSpotifyLoadingPlaylists,
+            spotifyUserDisplayName = spotifyUserDisplayName,
+            onConnectSpotify = { (actions as? PageViewModel)?.connectSpotify(context) },
+            onDisconnectSpotify = { (actions as? PageViewModel)?.disconnectSpotify() },
+            onLoadSpotifyPlaylists = { (actions as? PageViewModel)?.loadSpotifyPlaylists() },
             onSaveAsTemplate = { config ->
                 showSaveTemplateDialogConfig = config
                 newTemplateName = config.label

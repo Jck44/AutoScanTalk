@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.KeyEvent
 import android.view.WindowManager
+import com.andreas_kratzer.ghosttalk.core.cloud.SpotifyManager
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
@@ -68,6 +69,7 @@ class MainActivity : FragmentActivity() {
     @Inject lateinit var keyEventCoordinator: KeyEventCoordinator
     @Inject lateinit var securityManager: SecurityManager
     @Inject lateinit var userModeSessionTracker: UserModeSessionTracker
+    @Inject lateinit var spotifyManager: SpotifyManager
 
     private val bookViewModel: BookViewModel by viewModels()
     private val pageViewModel: PageViewModel by viewModels()
@@ -313,6 +315,8 @@ class MainActivity : FragmentActivity() {
                 }
             }
         }
+        
+        handleDeepLink(intent)
     }
     }
 
@@ -356,5 +360,27 @@ class MainActivity : FragmentActivity() {
     override fun onUserInteraction() {
         super.onUserInteraction()
         securityManager.updateActivity()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleDeepLink(intent)
+    }
+
+    private fun handleDeepLink(intent: Intent) {
+        val data = intent.data ?: return
+        Log.d("MainActivity", "handleDeepLink: data = $data")
+        if (data.host == "spotify-callback") {
+            lifecycleScope.launch {
+                val success = spotifyManager.handleAuthRedirect(data)
+                if (success) {
+                    Log.i("MainActivity", "Spotify OAuth success callback processed.")
+                    settingsViewModel.loadSpotifyPlaylists()
+                } else {
+                    Log.e("MainActivity", "Spotify OAuth callback processing failed.")
+                }
+            }
+        }
     }
 }

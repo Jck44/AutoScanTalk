@@ -118,7 +118,8 @@ class PageViewModelStateTest {
             geminiUseCase = mockk(relaxed = true),
             buttonTemplateRepository = mockk(relaxed = true),
             systemCallManager = systemCallManager,
-            philipsHueManager = mockk(relaxed = true)
+            philipsHueManager = mockk(relaxed = true),
+            spotifyManager = mockk(relaxed = true)
         )
         
         // Advance to allow launch in init to execute

@@ -156,6 +156,9 @@ fun GridEditorContent(
         var newTemplateName by remember { mutableStateOf("") }
         var editingTemplateId by rememberSaveable { mutableStateOf<String?>(null) }
         val buttonTemplates by pageViewModel?.buttonTemplates?.collectAsState(initial = emptyList()) ?: remember { mutableStateOf(emptyList()) }
+        val spotifyPlaylists by pageViewModel?.spotifyPlaylists?.collectAsState(emptyList()) ?: remember { mutableStateOf(emptyList()) }
+        val isSpotifyLoadingPlaylists by pageViewModel?.isLoadingPlaylists?.collectAsState(false) ?: remember { mutableStateOf(false) }
+        val spotifyUserDisplayName by pageViewModel?.spotifyUserDisplayName?.collectAsState(null) ?: remember { mutableStateOf(null) }
         val editingTemplate = remember(editingTemplateId, buttonTemplates) {
             buttonTemplates.find { it.id == editingTemplateId }
         }
@@ -581,6 +584,12 @@ fun GridEditorContent(
                     onPlayTts = { text, onDone -> actions.speakTtsPreview(text, onDone) },
                     onStopTts = { actions.stopTtsPreview() },
                     isTtsElevenLabs = { actions.isTtsElevenLabs() },
+                    spotifyPlaylists = spotifyPlaylists,
+                    isLoadingSpotifyPlaylists = isSpotifyLoadingPlaylists,
+                    spotifyUserDisplayName = spotifyUserDisplayName,
+                    onConnectSpotify = { pageViewModel?.connectSpotify(context) },
+                    onDisconnectSpotify = { pageViewModel?.disconnectSpotify() },
+                    onLoadSpotifyPlaylists = { pageViewModel?.loadSpotifyPlaylists() },
                     onSaveAsTemplate = {
                         // Already a template
                     }

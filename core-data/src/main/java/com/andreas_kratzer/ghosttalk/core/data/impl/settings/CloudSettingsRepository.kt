@@ -27,6 +27,10 @@ class CloudSettingsRepository(
     private val _elevenLabsStability = FloatSetting(SettingsConstants.KEY_ELEVENLABS_STABILITY, 0.5f)
     private val _elevenLabsSimilarityBoost = FloatSetting(SettingsConstants.KEY_ELEVENLABS_SIMILARITY_BOOST, 0.75f)
     private val _elevenLabsTtsLanguage = StringSetting(SettingsConstants.KEY_ELEVENLABS_TTS_LANGUAGE)
+    private val _spotifyAccessToken = StringSetting(SettingsConstants.KEY_SPOTIFY_ACCESS_TOKEN)
+    private val _spotifyRefreshToken = StringSetting(SettingsConstants.KEY_SPOTIFY_REFRESH_TOKEN)
+    private val _spotifyTokenExpiresAt = LongSetting(SettingsConstants.KEY_SPOTIFY_TOKEN_EXPIRES_AT, 0L)
+    private val _spotifyUserDisplayName = StringSetting(SettingsConstants.KEY_SPOTIFY_USER_DISPLAY_NAME)
 
     override val isCloudSyncEnabledFlow = _isCloudSyncEnabled.flow
     override val syncIntervalMinutesFlow = _syncIntervalMinutes.flow
@@ -37,6 +41,10 @@ class CloudSettingsRepository(
     override val elevenLabsStabilityFlow = _elevenLabsStability.flow
     override val elevenLabsSimilarityBoostFlow = _elevenLabsSimilarityBoost.flow
     override val elevenLabsTtsLanguageFlow = _elevenLabsTtsLanguage.flow
+    override val spotifyAccessTokenFlow = _spotifyAccessToken.flow
+    override val spotifyRefreshTokenFlow = _spotifyRefreshToken.flow
+    override val spotifyTokenExpiresAtFlow = _spotifyTokenExpiresAt.flow
+    override val spotifyUserDisplayNameFlow = _spotifyUserDisplayName.flow
 
     override var isCloudSyncEnabled: Boolean by _isCloudSyncEnabled
     override var syncIntervalMinutes: Long by _syncIntervalMinutes
@@ -47,6 +55,10 @@ class CloudSettingsRepository(
     override var elevenLabsStability: Float by _elevenLabsStability
     override var elevenLabsSimilarityBoost: Float by _elevenLabsSimilarityBoost
     override var elevenLabsTtsLanguage: String? by _elevenLabsTtsLanguage
+    override var spotifyAccessToken: String? by _spotifyAccessToken
+    override var spotifyRefreshToken: String? by _spotifyRefreshToken
+    override var spotifyTokenExpiresAt: Long by _spotifyTokenExpiresAt
+    override var spotifyUserDisplayName: String? by _spotifyUserDisplayName
 
 
     override fun refresh() {
@@ -59,5 +71,9 @@ class CloudSettingsRepository(
         _elevenLabsStability.refresh()
         _elevenLabsSimilarityBoost.refresh()
         _elevenLabsTtsLanguage.refresh()
+        _spotifyAccessToken.refresh()
+        _spotifyRefreshToken.refresh()
+        _spotifyTokenExpiresAt.refresh()
+        _spotifyUserDisplayName.refresh()
     }
 }

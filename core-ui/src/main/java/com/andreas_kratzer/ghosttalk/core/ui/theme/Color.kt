@@ -70,6 +70,8 @@ val WeatherBadgeBgLight = Color(0xFFFFF3E0)
 val WeatherBadgeTextLight = Color(0xFFE65100)
 val FrequentActionBadgeBgLight = Color(0xFFECEFF1)
 val FrequentActionBadgeTextLight = Color(0xFF37474F)
+val PlayMediaBadgeBgLight = Color(0xFFFCE4EC)
+val PlayMediaBadgeTextLight = Color(0xFFC2185B)
 
 // Semantic Badge Colors - Dark Theme
 val SpeakTextBadgeBgDark = Color(0xFF1B5E20)
@@ -86,6 +88,8 @@ val WeatherBadgeBgDark = Color(0xFF5D4037)
 val WeatherBadgeTextDark = Color(0xFFFFE0B2)
 val FrequentActionBadgeBgDark = Color(0xFF263238)
 val FrequentActionBadgeTextDark = Color(0xFFCFD8DC)
+val PlayMediaBadgeBgDark = Color(0xFF880E4F)
+val PlayMediaBadgeTextDark = Color(0xFFF8BBD0)
 
 // Semantic Status Colors (Permissions, etc.)
 val StatusActiveBgLight = Color(0xFFE8F5E9)

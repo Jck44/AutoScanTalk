@@ -347,4 +347,11 @@
     <string name="settings_dialer_register_title">Als Standard-Telefon-App festlegen</string>
     <string name="settings_dialer_register_desc">Registriert GhostTalk im System als Standard-Telefon-App (Dialer), um Anrufe direkt annehmen und steuern zu können.</string>
     <string name="settings_dialer_registered">Bereits als Standard-Telefon-App registriert</string>
+
+    <!-- Spotify Settings -->
+    <string name="settings_category_spotify">Spotify Integration</string>
+    <string name="settings_spotify_status_connected">Verknüpft als %s</string>
+    <string name="settings_spotify_status_disconnected">Nicht verknüpft</string>
+    <string name="settings_spotify_connect">Konto verknüpfen</string>
+    <string name="settings_spotify_disconnect">Verknüpfung aufheben</string>
 </resources>

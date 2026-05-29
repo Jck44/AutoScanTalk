@@ -26,4 +26,17 @@ interface CloudSettings {
 
     var elevenLabsTtsLanguage: String?
     val elevenLabsTtsLanguageFlow: StateFlow<String?>
+
+    var spotifyAccessToken: String?
+    val spotifyAccessTokenFlow: StateFlow<String?>
+
+    var spotifyRefreshToken: String?
+    val spotifyRefreshTokenFlow: StateFlow<String?>
+
+    var spotifyTokenExpiresAt: Long
+    val spotifyTokenExpiresAtFlow: StateFlow<Long>
+
+    var spotifyUserDisplayName: String?
+    val spotifyUserDisplayNameFlow: StateFlow<String?>
 }
+

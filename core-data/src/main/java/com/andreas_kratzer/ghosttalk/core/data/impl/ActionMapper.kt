@@ -15,6 +15,8 @@ import com.andreas_kratzer.ghosttalk.core.model.SmartHomeProvider
 import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.WeatherButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.PlayMediaButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.MediaProvider
 import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportAction
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -61,6 +63,13 @@ class ActionMapper @Inject constructor() {
                 smartHomeValue = action.value
             )
             is PreviousActionButtonAction -> ImportAction(type = "PREVIOUS_ACTION", rank = action.rank)
+            is PlayMediaButtonAction -> ImportAction(
+                type = "PLAY_MEDIA",
+                mediaProvider = action.provider.name,
+                mediaContentUri = action.contentUri,
+                mediaContentName = action.contentName,
+                mediaReturnDelayMs = action.returnToAppDelayMs
+            )
         }
     }
 
@@ -111,6 +120,12 @@ class ActionMapper @Inject constructor() {
                 value = importAction.smartHomeValue
             )
             "PREVIOUS_ACTION" -> PreviousActionButtonAction(importAction.rank ?: 1)
+            "PLAY_MEDIA" -> PlayMediaButtonAction(
+                provider = try { MediaProvider.valueOf(importAction.mediaProvider ?: "SPOTIFY") } catch(_: Exception) { MediaProvider.SPOTIFY },
+                contentUri = importAction.mediaContentUri ?: "",
+                contentName = importAction.mediaContentName ?: "",
+                returnToAppDelayMs = importAction.mediaReturnDelayMs ?: 2000L
+            )
             else -> null
         }
     }

@@ -346,4 +346,11 @@
     <string name="settings_dialer_register_title">Set as default phone app</string>
     <string name="settings_dialer_register_desc">Registers GhostTalk as the system\'s default phone app (dialer) to receive and control calls.</string>
     <string name="settings_dialer_registered">Already set as default phone app</string>
+
+    <!-- Spotify Settings -->
+    <string name="settings_category_spotify">Spotify Integration</string>
+    <string name="settings_spotify_status_connected">Linked as %s</string>
+    <string name="settings_spotify_status_disconnected">Not linked</string>
+    <string name="settings_spotify_connect">Link Account</string>
+    <string name="settings_spotify_disconnect">Unlink Account</string>
 </resources>

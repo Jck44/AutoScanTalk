@@ -161,3 +161,21 @@ enum class DeviceActionType {
     TOGGLE_SCANNING,
     START_CALL
 }
+
+@Serializable
+enum class MediaProvider(val displayName: String) {
+    SPOTIFY("Spotify"),
+    YOUTUBE("YouTube"),
+    YOUTUBE_MUSIC("YouTube Music"),
+    AUDIBLE("Audible")
+}
+
+@Serializable
+@SerialName("PlayMediaButtonAction")
+data class PlayMediaButtonAction(
+    val provider: MediaProvider = MediaProvider.SPOTIFY,
+    val contentUri: String = "",
+    val contentName: String = "",
+    val returnToAppDelayMs: Long = 2000L
+) : ButtonAction()
+
