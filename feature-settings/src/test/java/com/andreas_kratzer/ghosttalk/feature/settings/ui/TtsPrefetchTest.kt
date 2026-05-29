@@ -89,14 +89,39 @@ class TtsPrefetchTest {
 
         every { settingsRepository.activeBookIdFlow } returns MutableStateFlow("book1")
         
+        val hueDelegate = mockk<com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.HueSettingsDelegate>(relaxed = true)
+        val spotifyDelegate = mockk<com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.SpotifySettingsDelegate>(relaxed = true)
+        val prefetchDelegate = com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.TtsPrefetchSettingsDelegate(ttsHelper)
+        val backupDelegate = mockk<com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.BackupSettingsDelegate>(relaxed = true)
+
         viewModel = SettingsViewModel(
-            application, settingsRepository, bookRepository, buttonUsageRepository, 
-            mockk(relaxed = true),
-            securityManager, getPagesUseCase, ttsDelegate, scanningDelegate, 
-            cloudSyncDelegate, genAiDelegate, experimentalDelegate, 
-            updateActiveBookNameUseCase, deleteBookUseCase, updateActionLogLimitUseCase, 
-            importExportManager, hueManager, mockk(relaxed = true), ttsHelper, audioCacheRepository, mockk(relaxed = true), mockk(relaxed = true),
-            dagger.Lazy { mockk(relaxed = true) }
+            application = application,
+            settingsRepository = settingsRepository,
+            bookRepository = bookRepository,
+            buttonUsageRepository = buttonUsageRepository,
+            userModeSessionRepository = mockk(relaxed = true),
+            securityManager = securityManager,
+            getPagesUseCase = getPagesUseCase,
+            ttsDelegate = ttsDelegate,
+            scanningDelegate = scanningDelegate,
+            cloudSyncDelegate = cloudSyncDelegate,
+            genAiDelegate = genAiDelegate,
+            experimentalDelegate = experimentalDelegate,
+            hueDelegate = hueDelegate,
+            spotifyDelegate = spotifyDelegate,
+            prefetchDelegate = prefetchDelegate,
+            backupDelegate = backupDelegate,
+            updateActiveBookNameUseCase = updateActiveBookNameUseCase,
+            deleteBookUseCase = deleteBookUseCase,
+            updateActionLogLimitUseCase = updateActionLogLimitUseCase,
+            importExportManager = importExportManager,
+            hueManager = hueManager,
+            spotifyManager = mockk(relaxed = true),
+            ttsHelper = ttsHelper,
+            audioCacheRepository = audioCacheRepository,
+            pageRepository = mockk(relaxed = true),
+            syncLogProvider = mockk(relaxed = true),
+            callActionProxy = dagger.Lazy { mockk(relaxed = true) }
         )
     }
 

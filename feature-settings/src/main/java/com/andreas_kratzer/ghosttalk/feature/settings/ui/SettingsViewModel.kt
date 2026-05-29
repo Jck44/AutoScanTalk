@@ -39,6 +39,10 @@ import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.ExperimentalS
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.GenAiSettingsDelegate
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.ScanningSettingsDelegate
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.TtsSettingsDelegate
+import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.HueSettingsDelegate
+import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.SpotifySettingsDelegate
+import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.TtsPrefetchSettingsDelegate
+import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.BackupSettingsDelegate
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -70,6 +74,10 @@ class SettingsViewModel @Inject constructor(
     val cloudSyncDelegate: CloudSyncSettingsDelegate,
     val genAiDelegate: GenAiSettingsDelegate,
     val experimentalDelegate: ExperimentalSettingsDelegate,
+    val hueDelegate: HueSettingsDelegate,
+    val spotifyDelegate: SpotifySettingsDelegate,
+    val prefetchDelegate: TtsPrefetchSettingsDelegate,
+    val backupDelegate: BackupSettingsDelegate,
     private val updateActiveBookNameUseCase: UpdateActiveBookNameUseCase,
     private val deleteBookUseCase: DeleteBookUseCase,
     private val updateActionLogLimitUseCase: UpdateActionLogLimitUseCase,
@@ -126,15 +134,10 @@ class SettingsViewModel @Inject constructor(
     val syncIntervalMinutes = settingsRepository.syncIntervalMinutesFlow
     val hueBridgeIp = settingsRepository.hueBridgeIpFlow
     val hueUsername = settingsRepository.hueUsernameFlow
-    private val _huePairingStatus = MutableStateFlow<String?>(null)
-    val huePairingStatus: StateFlow<String?> = _huePairingStatus.asStateFlow()
-    
-    private val _pendingCertificateInfo = MutableStateFlow<com.andreas_kratzer.ghosttalk.core.cloud.BridgeCertificateInfo?>(null)
-    val pendingCertificateInfo: StateFlow<com.andreas_kratzer.ghosttalk.core.cloud.BridgeCertificateInfo?> = _pendingCertificateInfo.asStateFlow()
-    
+    val huePairingStatus: StateFlow<String?> = hueDelegate.huePairingStatus
+    val pendingCertificateInfo: StateFlow<com.andreas_kratzer.ghosttalk.core.cloud.BridgeCertificateInfo?> = hueDelegate.pendingCertificateInfo
     val hueCachedDevices = settingsRepository.hueCachedDevicesFlow
-    private val _isUpdatingHueCache = MutableStateFlow(false)
-    val isUpdatingHueCache: StateFlow<Boolean> = _isUpdatingHueCache.asStateFlow()
+    val isUpdatingHueCache: StateFlow<Boolean> = hueDelegate.isUpdatingHueCache
     val isSyncing = cloudSyncDelegate.isSyncing
     val userEmail = cloudSyncDelegate.userEmail
     
@@ -149,12 +152,8 @@ class SettingsViewModel @Inject constructor(
     val useGeminiApiKey = settingsRepository.useGeminiApiKeyFlow
 
     val spotifyUserDisplayName = settingsRepository.spotifyUserDisplayNameFlow
-    
-    private val _spotifyPlaylists = MutableStateFlow<List<SpotifyPlaylist>>(emptyList())
-    val spotifyPlaylists: StateFlow<List<SpotifyPlaylist>> = _spotifyPlaylists.asStateFlow()
-    
-    private val _isLoadingPlaylists = MutableStateFlow(false)
-    val isLoadingPlaylists: StateFlow<Boolean> = _isLoadingPlaylists.asStateFlow()
+    val spotifyPlaylists: StateFlow<List<SpotifyPlaylist>> = spotifyDelegate.spotifyPlaylists
+    val isLoadingPlaylists: StateFlow<Boolean> = spotifyDelegate.isLoadingPlaylists
     
     val isSmartPredictionEnabled = settingsRepository.isSmartPredictionEnabledFlow
     
@@ -231,36 +230,18 @@ class SettingsViewModel @Inject constructor(
     val topButtonUsage = _topButtonUsage.asStateFlow()
 
     // --- TTS Prefetch State ---
-    private val _selectedPagesForPrefetch = MutableStateFlow<Set<String>>(emptySet())
-    val selectedPagesForPrefetch = _selectedPagesForPrefetch.asStateFlow()
-
-    private val _isPrefetching = MutableStateFlow(false)
-    val isPrefetching = _isPrefetching.asStateFlow()
-
-    private val _prefetchProgress = MutableStateFlow(0f)
-    val prefetchProgress = _prefetchProgress.asStateFlow()
-
-    private val _prefetchCurrentCount = MutableStateFlow(0)
-    val prefetchCurrentCount = _prefetchCurrentCount.asStateFlow()
-
-    private val _prefetchTotalCount = MutableStateFlow(0)
-    val prefetchTotalCount = _prefetchTotalCount.asStateFlow()
-
-    private val _currentPrefetchText = MutableStateFlow<String?>(null)
-    val currentPrefetchText = _currentPrefetchText.asStateFlow()
-
-    private val _prefetchStats = MutableStateFlow<com.andreas_kratzer.ghosttalk.core.model.PrefetchStats?>(null)
-    val prefetchStats = _prefetchStats.asStateFlow()
+    val selectedPagesForPrefetch = prefetchDelegate.selectedPagesForPrefetch
+    val isPrefetching = prefetchDelegate.isPrefetching
+    val prefetchProgress = prefetchDelegate.prefetchProgress
+    val prefetchCurrentCount = prefetchDelegate.prefetchCurrentCount
+    val prefetchTotalCount = prefetchDelegate.prefetchTotalCount
+    val currentPrefetchText = prefetchDelegate.currentPrefetchText
+    val prefetchStats = prefetchDelegate.prefetchStats
 
     // --- Backup & Restore State ---
-    private val _isBackupRestoreRunning = MutableStateFlow(false)
-    val isBackupRestoreRunning = _isBackupRestoreRunning.asStateFlow()
-
-    private val _backupRestoreProgress = MutableStateFlow(0f)
-    val backupRestoreProgress = _backupRestoreProgress.asStateFlow()
-
-    private val _backupRestoreStatus = MutableStateFlow<String?>(null)
-    val backupRestoreStatus = _backupRestoreStatus.asStateFlow()
+    val isBackupRestoreRunning = backupDelegate.isBackupRestoreRunning
+    val backupRestoreProgress = backupDelegate.backupRestoreProgress
+    val backupRestoreStatus = backupDelegate.backupRestoreStatus
 
     private val _manualUpdateCheckTrigger = kotlinx.coroutines.flow.MutableSharedFlow<Unit>()
     val manualUpdateCheckTrigger = _manualUpdateCheckTrigger.asSharedFlow()
@@ -284,6 +265,10 @@ class SettingsViewModel @Inject constructor(
             genAiDelegate.performGeminiNanoIntegrityCheck()
         }
         initializeDefaultMessagingAppsIfNeeded()
+        hueDelegate.initialize(viewModelScope)
+        spotifyDelegate.initialize(viewModelScope)
+        prefetchDelegate.initialize(viewModelScope)
+        backupDelegate.initialize(viewModelScope)
     }
     
     fun triggerStartSetupWizard() {
@@ -318,9 +303,7 @@ class SettingsViewModel @Inject constructor(
     )
     
     val signInErrorMessage = cloudSyncDelegate.signInErrorMessage
-    init {
-        loadSpotifyPlaylists()
-    }
+
     // --- Delegation Methods (UI Actions) ---
     fun refresh() {
         ttsDelegate.loadAvailableLanguages()
@@ -359,10 +342,9 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun setCloudSyncEnabled(ctx: Context, e: Boolean) = cloudSyncDelegate.setCloudSyncEnabled(ctx, e, viewModelScope)
-    
-    fun syncNow() {
-        _isBackupRestoreRunning.value = true
-        _backupRestoreProgress.value = 0f
+       fun syncNow() {
+        backupDelegate.setBackupRestoreRunning(true)
+        backupDelegate.setBackupRestoreProgress(0f)
         val modeStr = settingsRepository.syncMode
         val mode = try {
             com.andreas_kratzer.ghosttalk.core.cloud.domain.SyncMode.valueOf(modeStr)
@@ -372,47 +354,44 @@ class SettingsViewModel @Inject constructor(
         cloudSyncDelegate.performManualSync(
             mode = mode,
             scope = viewModelScope,
-            onProgress = { p, s -> handleCloudProgress(p, s) },
-            onComplete = { finishBackupRestoreProgress() }
+            onProgress = { p, s -> backupDelegate.handleCloudProgress(p, s) },
+            onComplete = { backupDelegate.finishBackupRestoreProgress() }
         )
     }
     
     fun backupNow() {
-        _isBackupRestoreRunning.value = true
-        _backupRestoreProgress.value = 0f
+        backupDelegate.setBackupRestoreRunning(true)
+        backupDelegate.setBackupRestoreProgress(0f)
         cloudSyncDelegate.performManualSync(
             mode = com.andreas_kratzer.ghosttalk.core.cloud.domain.SyncMode.BACKUP_ONLY,
             scope = viewModelScope,
-            onProgress = { p, s -> handleCloudProgress(p, s) },
-            onComplete = { finishBackupRestoreProgress() }
+            onProgress = { p, s -> backupDelegate.handleCloudProgress(p, s) },
+            onComplete = { backupDelegate.finishBackupRestoreProgress() }
         )
     }
     
     fun restoreNow() {
-        _isBackupRestoreRunning.value = true
-        _backupRestoreProgress.value = 0f
+        backupDelegate.setBackupRestoreRunning(true)
+        backupDelegate.setBackupRestoreProgress(0f)
         cloudSyncDelegate.performManualSync(
             mode = com.andreas_kratzer.ghosttalk.core.cloud.domain.SyncMode.RESTORE_ONLY,
             scope = viewModelScope,
-            onProgress = { p, s -> handleCloudProgress(p, s) },
-            onComplete = { finishBackupRestoreProgress() }
+            onProgress = { p, s -> backupDelegate.handleCloudProgress(p, s) },
+            onComplete = { backupDelegate.finishBackupRestoreProgress() }
         )
     }
     
     fun fetchAvailableBackupsForImport() = cloudSyncDelegate.fetchAvailableBackupsForImport(viewModelScope)
     
     fun importCloudBackup(backupInfo: com.andreas_kratzer.ghosttalk.core.cloud.domain.RemoteBackupInfo) {
-        _isBackupRestoreRunning.value = true
-        _backupRestoreProgress.value = 0f
+        backupDelegate.setBackupRestoreRunning(true)
+        backupDelegate.setBackupRestoreProgress(0f)
         cloudSyncDelegate.importCloudBackup(backupInfo, viewModelScope, { p, s -> 
-            handleCloudProgress(p, s)
+            backupDelegate.handleCloudProgress(p, s)
         }) { _ ->
-            // On completion, dialog is hidden by the CloudSyncSettingsDelegate's isSyncing flow logic if we wanted, 
-            // but we'll use a finally block in the delegate. 
-            // Actually, we'll manually unset isBackupRestoreRunning here after a delay.
             viewModelScope.launch {
                 delay(1000)
-                _isBackupRestoreRunning.value = false
+                backupDelegate.setBackupRestoreRunning(false)
             }
         }
     }
@@ -521,119 +500,23 @@ class SettingsViewModel @Inject constructor(
 
 
     fun discoverHueBridges() {
-        viewModelScope.launch {
-            Toast.makeText(application, "Suche nach Hue Bridges...", Toast.LENGTH_SHORT).show()
-            val bridges = hueManager.discoverBridges()
-            if (bridges.isNotEmpty()) {
-                settingsRepository.hueBridgeIp = bridges.first()
-                Toast.makeText(application, "Bridge gefunden: ${bridges.first()}", Toast.LENGTH_LONG).show()
-            } else {
-                Toast.makeText(application, "Keine Hue Bridge im Netzwerk gefunden.", Toast.LENGTH_LONG).show()
-            }
-        }
+        hueDelegate.discoverHueBridges()
     }
 
     fun registerLocalHueBridge() {
-        val ip = settingsRepository.hueBridgeIp
-        if (ip.isBlank()) {
-            Toast.makeText(application, "Bitte zuerst die Bridge-IP angeben oder suchen.", Toast.LENGTH_LONG).show()
-            return
-        }
-        viewModelScope.launch {
-            _huePairingStatus.value = "Zertifikat wird abgefragt (HTTPS)..."
-            val certInfo = hueManager.fetchBridgeCertificateInfo(ip)
-            if (certInfo == null) {
-                _huePairingStatus.value = "Zertifikatsabfrage fehlgeschlagen."
-                Toast.makeText(application, "Zertifikat konnte nicht abgerufen werden.", Toast.LENGTH_LONG).show()
-                return@launch
-            }
-
-            val storedFingerprint = settingsRepository.hueBridgeFingerprint
-            if (storedFingerprint.isBlank() || !storedFingerprint.equals(certInfo.fingerprint, ignoreCase = true)) {
-                _pendingCertificateInfo.value = certInfo
-                _huePairingStatus.value = "Zertifikatsfreigabe erforderlich."
-            } else {
-                proceedWithPairing(ip)
-            }
-        }
+        hueDelegate.registerLocalHueBridge()
     }
 
     fun confirmHueBridgeCertificate() {
-        val certInfo = _pendingCertificateInfo.value ?: return
-        val ip = settingsRepository.hueBridgeIp
-        settingsRepository.hueBridgeFingerprint = certInfo.fingerprint
-        _pendingCertificateInfo.value = null
-        viewModelScope.launch {
-            proceedWithPairing(ip)
-        }
+        hueDelegate.confirmHueBridgeCertificate()
     }
 
     fun cancelHueBridgeCertificate() {
-        _pendingCertificateInfo.value = null
-        _huePairingStatus.value = "Kopplung abgebrochen."
+        hueDelegate.cancelHueBridgeCertificate()
     }
 
     fun refreshHueDevicesCache(silentOnFailure: Boolean = false, onResult: ((Boolean) -> Unit)? = null) {
-        val ip = settingsRepository.hueBridgeIp
-        val username = settingsRepository.hueUsername
-        if (ip.isBlank() || username.isBlank()) {
-            if (!silentOnFailure) {
-                Toast.makeText(application, "Bitte zuerst koppeln (IP und Benutzername erforderlich).", Toast.LENGTH_LONG).show()
-            }
-            onResult?.invoke(false)
-            return
-        }
-
-        viewModelScope.launch {
-            _isUpdatingHueCache.value = true
-            val fetchedDevices = hueManager.getLocalLights(ip, username)
-            if (fetchedDevices.isNotEmpty()) {
-                val array = org.json.JSONArray()
-                fetchedDevices.forEach { device ->
-                    val obj = org.json.JSONObject().apply {
-                        put("id", device.id)
-                        put("name", device.name)
-                        put("type", device.type)
-                    }
-                    array.put(obj)
-                }
-                settingsRepository.hueCachedDevices = array.toString()
-                Toast.makeText(application, "${fetchedDevices.size} Lampen geladen und im Cache gespeichert.", Toast.LENGTH_LONG).show()
-                onResult?.invoke(true)
-            } else {
-                if (!silentOnFailure) {
-                    Toast.makeText(application, "Konnte Bridge nicht erreichen. Alter Cache wird beibehalten.", Toast.LENGTH_LONG).show()
-                }
-                onResult?.invoke(false)
-            }
-            _isUpdatingHueCache.value = false
-        }
-    }
-
-    private suspend fun proceedWithPairing(ip: String) {
-        _huePairingStatus.value = "Bitte drücken Sie jetzt den Link-Button auf Ihrer Hue Bridge..."
-        Toast.makeText(application, "Zertifikat akzeptiert. Bitte den Knopf auf der Bridge drücken!", Toast.LENGTH_LONG).show()
-        var success = false
-        val maxRetries = 15 // 30 seconds
-        for (i in 1..maxRetries) {
-            val username = hueManager.registerLocalUser(ip)
-            if (username != null) {
-                settingsRepository.hueUsername = username
-                _huePairingStatus.value = "Erfolgreich gekoppelt!"
-                Toast.makeText(application, "Erfolgreich gekoppelt!", Toast.LENGTH_LONG).show()
-                success = true
-                break
-            }
-            _huePairingStatus.value = "Warte auf Knopfdruck... (Versuch $i von $maxRetries)"
-            delay(2000)
-        }
-        if (!success) {
-            _huePairingStatus.value = "Kopplung fehlgeschlagen. Zeitüberschreitung."
-            Toast.makeText(application, "Kopplung fehlgeschlagen. Haben Sie den Knopf gedrückt?", Toast.LENGTH_LONG).show()
-        } else {
-            delay(3000)
-            _huePairingStatus.value = null
-        }
+        hueDelegate.refreshHueDevicesCache(silentOnFailure, onResult)
     }
 
     fun setGeminiEnabled(ctx: Context, e: Boolean) {
@@ -757,34 +640,15 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun connectSpotify(ctx: Context) {
-        val authUrl = spotifyManager.getAuthorizationUrl()
-        val intent = Intent(Intent.ACTION_VIEW, authUrl.toUri()).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
-        ctx.startActivity(intent)
+        spotifyDelegate.connectSpotify(ctx)
     }
 
     fun disconnectSpotify() {
-        spotifyManager.disconnect()
-        _spotifyPlaylists.value = emptyList()
+        spotifyDelegate.disconnectSpotify()
     }
 
     fun loadSpotifyPlaylists() {
-        viewModelScope.launch {
-            if (settingsRepository.spotifyAccessToken.isNullOrBlank()) {
-                _spotifyPlaylists.value = emptyList()
-                return@launch
-            }
-            _isLoadingPlaylists.value = true
-            try {
-                val playlists = spotifyManager.getPlaylists()
-                _spotifyPlaylists.value = playlists
-            } catch (e: Exception) {
-                Log.e("SettingsViewModel", "Failed to load Spotify playlists", e)
-            } finally {
-                _isLoadingPlaylists.value = false
-            }
-        }
+        spotifyDelegate.loadSpotifyPlaylists()
     }
 
     fun setLimitScanCycles(e: Boolean) = scanningDelegate.setLimitScanCycles(e)
@@ -906,33 +770,11 @@ class SettingsViewModel @Inject constructor(
     }
 
     suspend fun exportLocalBackup(): String {
-        return importExportManager.exportBookToJson(activeBookId)
+        return backupDelegate.exportLocalBackup()
     }
 
     suspend fun exportLocalBackupZip(outputStream: java.io.OutputStream) {
-        _isBackupRestoreRunning.value = true
-        _backupRestoreProgress.value = 0f
-        _backupRestoreStatus.value = application.getString(R.string.backup_progress_exporting)
-        
-        try {
-            importExportManager.exportBookToZip(activeBookId, outputStream) { progress, status ->
-                _backupRestoreProgress.value = progress
-                _backupRestoreStatus.value = when {
-                    status == "Exporting database..." -> application.getString(R.string.backup_progress_exporting)
-                    status.startsWith("Compressing audio:") -> application.getString(R.string.backup_progress_compressing, status.substringAfter(": "))
-                    status == "Backup complete." -> application.getString(R.string.backup_progress_complete)
-                    else -> status
-                }
-            }
-            syncLogProvider.addLogEntry("Lokale Sicherung erstellt", activeBookId, activeBook.value?.name)
-        } catch (e: Exception) {
-            syncLogProvider.addLogEntry("Lokale Sicherung fehlgeschlagen: ${e.message}", activeBookId, activeBook.value?.name, isError = true)
-            throw e
-        } finally {
-            delay(1000) // Show complete message briefly
-            _isBackupRestoreRunning.value = false
-            _backupRestoreStatus.value = null
-        }
+        backupDelegate.exportLocalBackupZip(outputStream)
     }
 
     suspend fun importLocalBackupZip(
@@ -940,77 +782,15 @@ class SettingsViewModel @Inject constructor(
         onSuccess: () -> Unit,
         onError: (String) -> Unit
     ) {
-        _isBackupRestoreRunning.value = true
-        _backupRestoreProgress.value = 0f
-        _backupRestoreStatus.value = application.getString(R.string.restore_progress_importing)
-
-        try {
-            val result = importExportManager.importFromZip(
-                inputStream = inputStream,
-                bookId = activeBookId,
-                regenerateIds = false,
-                restoreSyncSettings = false
-            ) { progress, status ->
-                _backupRestoreProgress.value = progress
-                _backupRestoreStatus.value = when {
-                    status == "Importing data..." -> application.getString(R.string.restore_progress_importing)
-                    status.startsWith("Extracting:") -> application.getString(R.string.restore_progress_extracting, status.substringAfter(": "))
-                    status == "Import complete." -> application.getString(R.string.restore_progress_complete)
-                    else -> status
-                }
-            }
-            result.onSuccess { 
-                syncLogProvider.addLogEntry("Lokale Wiederherstellung (ZIP) erfolgreich", activeBookId, activeBook.value?.name)
-                onSuccess() 
-            }
-                .onFailure { e -> 
-                    syncLogProvider.addLogEntry("Lokale Wiederherstellung (ZIP) fehlgeschlagen: ${e.message}", activeBookId, activeBook.value?.name, isError = true)
-                    onError("Fehler beim ZIP-Import: ${e.message}") 
-                }
-        } catch (e: Exception) {
-            syncLogProvider.addLogEntry("Fehler bei lokaler Wiederherstellung (ZIP): ${e.message}", activeBookId, activeBook.value?.name, isError = true)
-            throw e
-        } finally {
-            delay(1000)
-            _isBackupRestoreRunning.value = false
-            _backupRestoreStatus.value = null
-        }
+        backupDelegate.importLocalBackupZip(inputStream, onSuccess, onError)
     }
 
     suspend fun importLocalBackup(json: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
-        val importBookId = importExportManager.extractBookIdFromJson(json)
-        
-        if (importBookId != activeBookId) {
-            onError("Fehler: Buch-IDs stimmen nicht überein. Dieses Backup gehört zu einem anderen Buch.")
-            return
-        }
-
-        val result = importExportManager.importFromJson(
-            jsonString = json,
-            bookId = activeBookId,
-            regenerateIds = false, // Preserve IDs for matching book
-            restoreSyncSettings = false
-        )
-        result.onSuccess { 
-            syncLogProvider.addLogEntry("Lokale Wiederherstellung (JSON) erfolgreich", activeBookId, activeBook.value?.name)
-            onSuccess() 
-        }
-            .onFailure { e -> 
-                syncLogProvider.addLogEntry("Lokale Wiederherstellung (JSON) fehlgeschlagen: ${e.message}", activeBookId, activeBook.value?.name, isError = true)
-                onError("Fehler beim Import: ${e.message}") 
-            }
+        backupDelegate.importLocalBackup(json, onSuccess, onError)
     }
 
     suspend fun importGlobalManualBackup(json: String, onSuccess: (String) -> Unit, onError: (String) -> Unit) {
-        val result = importExportManager.importCloudBackup(json, null)
-        result.onSuccess { bookId -> 
-            syncLogProvider.addLogEntry("Globaler Import (JSON) erfolgreich", bookId, null)
-            onSuccess(bookId) 
-        }
-            .onFailure { e -> 
-                syncLogProvider.addLogEntry("Globaler Import (JSON) fehlgeschlagen: ${e.message}", null, null, isError = true)
-                onError("Fehler beim globalen Import: ${e.message}") 
-            }
+        backupDelegate.importGlobalManualBackup(json, onSuccess, onError)
     }
 
     suspend fun importGlobalManualBackupZip(
@@ -1018,39 +798,7 @@ class SettingsViewModel @Inject constructor(
         onSuccess: (String) -> Unit,
         onError: (String) -> Unit
     ) {
-        _isBackupRestoreRunning.value = true
-        _backupRestoreProgress.value = 0f
-        _backupRestoreStatus.value = application.getString(R.string.restore_progress_importing)
-
-        try {
-            val result = importExportManager.importCloudBackupFromZip(
-                inputStream = inputStream,
-                cloudFileId = null
-            ) { progress, status ->
-                _backupRestoreProgress.value = progress
-                _backupRestoreStatus.value = when {
-                    status == "Importing data..." || status == "Importing book..." -> application.getString(R.string.restore_progress_importing)
-                    status.startsWith("Extracting:") -> application.getString(R.string.restore_progress_extracting, status.substringAfter(": "))
-                    status == "Import complete." -> application.getString(R.string.restore_progress_complete)
-                    else -> status
-                }
-            }
-            result.onSuccess { bookId -> 
-                syncLogProvider.addLogEntry("Globaler Import (ZIP) erfolgreich", bookId, null)
-                onSuccess(bookId) 
-            }
-                .onFailure { e -> 
-                    syncLogProvider.addLogEntry("Globaler Import (ZIP) fehlgeschlagen: ${e.message}", null, null, isError = true)
-                    onError("Fehler beim globalen ZIP-Import: ${e.message}") 
-                }
-        } catch (e: Exception) {
-            syncLogProvider.addLogEntry("Fehler beim globalen ZIP-Import: ${e.message}", null, null, isError = true)
-            throw e
-        } finally {
-            delay(1000)
-            _isBackupRestoreRunning.value = false
-            _backupRestoreStatus.value = null
-        }
+        backupDelegate.importGlobalManualBackupZip(inputStream, onSuccess, onError)
     }
 
     fun onEditButtonFromHistory(pageId: String, buttonId: String) {
@@ -1140,132 +888,30 @@ class SettingsViewModel @Inject constructor(
 
     // --- TTS Prefetch Actions ---
     fun togglePageSelectionForPrefetch(pageId: String) {
-        val current = _selectedPagesForPrefetch.value.toMutableSet()
-        if (current.contains(pageId)) {
-            current.remove(pageId)
-        } else {
-            current.add(pageId)
-        }
-        _selectedPagesForPrefetch.value = current
-        _prefetchStats.value = null // Reset stats when selection changes
+        prefetchDelegate.togglePageSelectionForPrefetch(pageId)
     }
 
     fun selectAllPagesForPrefetch(pages: List<Page>) {
-        _selectedPagesForPrefetch.value = pages.map { it.id }.toSet()
-        _prefetchStats.value = null
+        prefetchDelegate.selectAllPagesForPrefetch(pages)
     }
 
     fun deselectAllPagesForPrefetch() {
-        _selectedPagesForPrefetch.value = emptySet()
-        _prefetchStats.value = null
+        prefetchDelegate.deselectAllPagesForPrefetch()
     }
 
     fun calculatePrefetchStats(allPages: List<Page>): com.andreas_kratzer.ghosttalk.core.model.PrefetchStats {
-        val selectedIds = _selectedPagesForPrefetch.value
-        val selectedPages = allPages.filter { it.id in selectedIds }
-        
-        val allButtons = selectedPages.flatMap { it.buttonConfigs.filterNotNull() }
-        val textsToSpeak = allButtons.mapNotNull { config ->
-            val text = config.spokenText?.takeIf { it.isNotBlank() }
-                ?: if (config.buttonAction is com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction) config.label else null
-            
-            text?.takeIf { it.isNotBlank() }
-        }
-
-        val totalButtons = textsToSpeak.size
-        val uniqueTexts = textsToSpeak.distinct()
-        val uniqueStringsCount = uniqueTexts.size
-        val duplicateCount = totalButtons - uniqueStringsCount
-        
-        val totalWords = uniqueTexts.sumOf { it.split(Regex("\\s+")).filter { s -> s.isNotBlank() }.size }
-        val totalCharacters = uniqueTexts.sumOf { it.length }
-        
-        val alreadyCached = uniqueTexts.count { ttsHelper.isCached(it) }
-
-        val stats = com.andreas_kratzer.ghosttalk.core.model.PrefetchStats(
-            totalButtons = totalButtons,
-            uniqueStrings = uniqueStringsCount,
-            duplicateStrings = duplicateCount,
-            totalWords = totalWords,
-            totalCharacters = totalCharacters,
-            alreadyCached = alreadyCached
-        )
-        
-        _prefetchStats.value = stats
-        return stats
+        return prefetchDelegate.calculatePrefetchStats(allPages)
     }
 
     fun startPrefetch(allPages: List<Page>) {
-        val stats = _prefetchStats.value ?: calculatePrefetchStats(allPages)
-        val selectedIds = _selectedPagesForPrefetch.value
-        val selectedPages = allPages.filter { it.id in selectedIds }
-        
-        val uniqueTexts = selectedPages.flatMap { it.buttonConfigs.filterNotNull() }
-            .mapNotNull { config ->
-                config.spokenText?.takeIf { it.isNotBlank() }
-                    ?: if (config.buttonAction is com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction) config.label else null
-            }
-            .filter { it.isNotBlank() }
-            .distinct()
-            .filter { !ttsHelper.isCached(it) }
-
-        if (uniqueTexts.isEmpty()) {
-            _prefetchProgress.value = 1f
-            _prefetchCurrentCount.value = 0
-            _prefetchTotalCount.value = 0
-            return
-        }
-
-        prefetchJob?.cancel()
-        prefetchJob = viewModelScope.launch {
-            _isPrefetching.value = true
-            _prefetchProgress.value = 0f
-            _prefetchCurrentCount.value = 0
-            _prefetchTotalCount.value = uniqueTexts.size
-            
-            uniqueTexts.forEachIndexed { index, text ->
-                _currentPrefetchText.value = text
-                ttsHelper.prefetch(text) // This now suspends until finished
-                _prefetchCurrentCount.value = index + 1
-                _prefetchProgress.value = (index + 1).toFloat() / uniqueTexts.size
-                delay(100) // Small delay to allow UI to breathe
-            }
-            
-            _isPrefetching.value = false
-            _currentPrefetchText.value = null
-            // Refresh stats to show everything is cached now
-            calculatePrefetchStats(allPages)
-        }
+        prefetchDelegate.startPrefetch(allPages)
     }
 
     fun cancelPrefetch() {
-        prefetchJob?.cancel()
-        _isPrefetching.value = false
-        _currentPrefetchText.value = null
+        prefetchDelegate.cancelPrefetch()
     }
 
-    private fun handleCloudProgress(progress: Float, status: String) {
-        _backupRestoreProgress.value = progress
-        _backupRestoreStatus.value = when {
-            status == "Uploading to Drive..." -> application.getString(R.string.cloud_progress_uploading)
-            status == "Downloading from Drive..." -> application.getString(R.string.cloud_progress_downloading)
-            status == "Exporting database..." -> application.getString(R.string.backup_progress_exporting)
-            status.startsWith("Compressing audio:") -> application.getString(R.string.backup_progress_compressing, status.substringAfter(": "))
-            status.startsWith("Extracting:") -> application.getString(R.string.restore_progress_extracting, status.substringAfter(": "))
-            status == "Importing data..." -> application.getString(R.string.restore_progress_importing)
-            status == "Import complete." -> application.getString(R.string.restore_progress_complete)
-            status == "Backup complete." -> application.getString(R.string.backup_progress_complete)
-            else -> status
-        }
-    }
 
-    private fun finishBackupRestoreProgress() {
-        viewModelScope.launch {
-            delay(1000)
-            _isBackupRestoreRunning.value = false
-            _backupRestoreStatus.value = null
-        }
-    }
 
     fun deleteEmptyButtons(onResult: (Int) -> Unit) {
         viewModelScope.launch {

@@ -15,6 +15,7 @@ class SettingsBackupCoverageTest {
         "lastSuccessfulSyncTime",  // Local state
         "lastSuccessfulSyncTimeFlow",
         "initialTemplatesCreated", // Internal state
+        "isSetupCompleted",        // Onboarding state
         "showTestButtons",         // Dev setting
         "persistActionLogs",       // File path (local)
         "actionLogsStorage",       // File path (local)

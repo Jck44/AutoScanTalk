@@ -53,8 +53,8 @@ fun ActionConfigFields(
     onSuffixTextChange: (String) -> Unit = {},
     offsetValue: String = "0",
     onOffsetValueChange: (String) -> Unit = {},
-    // Smart Home specific
-    smartHomeProvider: SmartHomeProvider = SmartHomeProvider.GOOGLE_HOME,
+    // Smart Home specific state
+    smartHomeProvider: SmartHomeProvider = SmartHomeProvider.PHILIPS_HUE,
     onSmartHomeProviderChange: (SmartHomeProvider) -> Unit = {},
     smartHomeDeviceId: String = "",
     onSmartHomeDeviceIdChange: (String) -> Unit = {},

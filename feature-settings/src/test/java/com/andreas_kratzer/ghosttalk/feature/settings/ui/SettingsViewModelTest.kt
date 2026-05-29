@@ -17,6 +17,10 @@ import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.ExperimentalS
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.GenAiSettingsDelegate
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.ScanningSettingsDelegate
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.TtsSettingsDelegate
+import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.HueSettingsDelegate
+import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.SpotifySettingsDelegate
+import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.TtsPrefetchSettingsDelegate
+import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.BackupSettingsDelegate
 import android.widget.Toast
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -57,6 +61,10 @@ class SettingsViewModelTest {
     private lateinit var cloudSyncDelegate: CloudSyncSettingsDelegate
     private lateinit var genAiDelegate: GenAiSettingsDelegate
     private lateinit var experimentalDelegate: ExperimentalSettingsDelegate
+    private lateinit var hueDelegate: HueSettingsDelegate
+    private lateinit var spotifyDelegate: SpotifySettingsDelegate
+    private lateinit var prefetchDelegate: TtsPrefetchSettingsDelegate
+    private lateinit var backupDelegate: BackupSettingsDelegate
     private lateinit var importExportManager: PageImportExportManager
     private lateinit var hueManager: PhilipsHueManager
     private lateinit var spotifyManager: com.andreas_kratzer.ghosttalk.core.cloud.SpotifyManager
@@ -80,11 +88,6 @@ class SettingsViewModelTest {
         securityManager = mockk(relaxed = true)
         getPagesUseCase = mockk(relaxed = true)
         
-        ttsDelegate = mockk(relaxed = true)
-        scanningDelegate = mockk(relaxed = true)
-        cloudSyncDelegate = mockk(relaxed = true)
-        genAiDelegate = mockk(relaxed = true)
-        experimentalDelegate = mockk(relaxed = true)
         importExportManager = mockk(relaxed = true)
         hueManager = mockk(relaxed = true)
         spotifyManager = mockk(relaxed = true)
@@ -93,6 +96,31 @@ class SettingsViewModelTest {
         deleteBookUseCase = mockk(relaxed = true)
         ttsHelper = mockk(relaxed = true)
         audioCacheRepository = mockk(relaxed = true)
+
+        ttsDelegate = mockk(relaxed = true)
+        scanningDelegate = mockk(relaxed = true)
+        cloudSyncDelegate = mockk(relaxed = true)
+        genAiDelegate = mockk(relaxed = true)
+        experimentalDelegate = mockk(relaxed = true)
+        hueDelegate = HueSettingsDelegate(
+            context = application,
+            settingsRepository = settingsRepository,
+            hueManager = hueManager
+        )
+        spotifyDelegate = SpotifySettingsDelegate(
+            settingsRepository = settingsRepository,
+            spotifyManager = spotifyManager
+        )
+        prefetchDelegate = TtsPrefetchSettingsDelegate(
+            ttsHelper = ttsHelper
+        )
+        backupDelegate = BackupSettingsDelegate(
+            context = application,
+            settingsRepository = settingsRepository,
+            bookRepository = bookRepository,
+            importExportManager = importExportManager,
+            syncLogProvider = mockk(relaxed = true)
+        )
 
         // Mock common flows
         every { settingsRepository.activeBookId } returns "test-book"
@@ -118,6 +146,10 @@ class SettingsViewModelTest {
             cloudSyncDelegate = cloudSyncDelegate,
             genAiDelegate = genAiDelegate,
             experimentalDelegate = experimentalDelegate,
+            hueDelegate = hueDelegate,
+            spotifyDelegate = spotifyDelegate,
+            prefetchDelegate = prefetchDelegate,
+            backupDelegate = backupDelegate,
             updateActiveBookNameUseCase = updateActiveBookNameUseCase,
             deleteBookUseCase = deleteBookUseCase,
             updateActionLogLimitUseCase = updateActionLogLimitUseCase,
