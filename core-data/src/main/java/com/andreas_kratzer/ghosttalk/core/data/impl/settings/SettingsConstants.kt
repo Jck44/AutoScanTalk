@@ -77,6 +77,12 @@ object SettingsConstants {
     const val KEY_ELEVENLABS_SIMILARITY_BOOST = "elevenlabs_similarity_boost"
     const val KEY_RECORDING_AUDIO_SOURCE = "recording_audio_source"
     const val KEY_GEMINI_API_KEY = "gemini_api_key"
+    const val KEY_USE_GEMINI_API_KEY = "use_gemini_api_key"
+    
+    const val KEY_SPOTIFY_ACCESS_TOKEN = "spotify_access_token"
+    const val KEY_SPOTIFY_REFRESH_TOKEN = "spotify_refresh_token"
+    const val KEY_SPOTIFY_TOKEN_EXPIRES_AT = "spotify_token_expires_at"
+    const val KEY_SPOTIFY_USER_DISPLAY_NAME = "spotify_user_display_name"
     
     // Call Settings
     const val KEY_MAX_CALL_DURATION_SECONDS = "pref_max_call_duration_seconds"

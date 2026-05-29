@@ -79,8 +79,9 @@ class GeminiUseCase @Inject constructor(
         useGoogleSearch: Boolean = false,
         image: Bitmap? = null
     ): String = withContext(Dispatchers.IO) {
-        val apiKey = settingsRepository.geminiApiKey
-        val token = if (!apiKey.isNullOrBlank()) {
+        val useApiKey = settingsRepository.useGeminiApiKey
+        val apiKey = if (useApiKey) settingsRepository.geminiApiKey else null
+        val token = if (useApiKey && !apiKey.isNullOrBlank()) {
             ""
         } else {
             oauthTokenProvider() ?: return@withContext "Fehler: Nicht angemeldet (OAuth Token fehlt)."
@@ -287,10 +288,11 @@ class GeminiUseCase @Inject constructor(
     }
 
     suspend fun listModels(): String = withContext(Dispatchers.IO) {
-        val apiKey = settingsRepository.geminiApiKey
+        val useApiKey = settingsRepository.useGeminiApiKey
+        val apiKey = if (useApiKey) settingsRepository.geminiApiKey else null
         val url: URL
         val connection: HttpsURLConnection
-        if (!apiKey.isNullOrBlank()) {
+        if (useApiKey && !apiKey.isNullOrBlank()) {
             url = URL("$LIST_MODELS_URL?key=$apiKey")
             connection = url.openConnection() as HttpsURLConnection
             connection.requestMethod = "GET"
@@ -311,15 +313,16 @@ class GeminiUseCase @Inject constructor(
     }
 
     private fun callGeminiRest(token: String, requestJson: JSONObject): String {
-        val apiKey = settingsRepository.geminiApiKey
-        val url = if (!apiKey.isNullOrBlank()) {
+        val useApiKey = settingsRepository.useGeminiApiKey
+        val apiKey = if (useApiKey) settingsRepository.geminiApiKey else null
+        val url = if (useApiKey && !apiKey.isNullOrBlank()) {
             URL("${BASE_URL_TEMPLATE.format(activeModelName)}?key=$apiKey")
         } else {
             URL(BASE_URL_TEMPLATE.format(activeModelName))
         }
         val connection = url.openConnection() as HttpsURLConnection
         connection.requestMethod = "POST"
-        if (apiKey.isNullOrBlank()) {
+        if (!useApiKey || apiKey.isNullOrBlank()) {
             connection.setRequestProperty("Authorization", "Bearer $token")
         }
         connection.setRequestProperty("Content-Type", "application/json")

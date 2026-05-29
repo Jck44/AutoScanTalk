@@ -23,4 +23,8 @@ interface GenAiSettings {
 
     var geminiApiKey: String?
     val geminiApiKeyFlow: StateFlow<String?>
+
+    var useGeminiApiKey: Boolean
+    val useGeminiApiKeyFlow: StateFlow<Boolean>
 }
+

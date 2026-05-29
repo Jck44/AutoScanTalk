@@ -103,18 +103,28 @@ class GenAiSettingsDelegate @Inject constructor(
     }
 
     fun setGeminiCloudEnabled(context: Context, enabled: Boolean, scope: CoroutineScope) {
-        val hasApiKey = !settingsRepository.geminiApiKey.isNullOrBlank()
-        if (enabled && authManager.userEmail.value == null && !hasApiKey) {
-            val activity = findActivity(context) ?: return
-            scope.launch {
-                val result = signInUseCase.execute(activity)
-                if (result) {
+        val useApiKey = settingsRepository.useGeminiApiKey
+        if (enabled) {
+            if (useApiKey) {
+                settingsRepository.isGeminiEnabled = true
+                updateGeminiToolStatus()
+            } else {
+                if (authManager.userEmail.value == null) {
+                    val activity = findActivity(context) ?: return
+                    scope.launch {
+                        val result = signInUseCase.execute(activity)
+                        if (result) {
+                            settingsRepository.isGeminiEnabled = true
+                            updateGeminiToolStatus()
+                        }
+                    }
+                } else {
                     settingsRepository.isGeminiEnabled = true
                     updateGeminiToolStatus()
                 }
             }
         } else {
-            settingsRepository.isGeminiEnabled = enabled
+            settingsRepository.isGeminiEnabled = false
             updateGeminiToolStatus()
         }
     }

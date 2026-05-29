@@ -8,6 +8,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.Alignment
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -41,6 +45,8 @@ fun GenAiSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
     val useLocal by viewModel.useLocalGenerativeAi.collectAsState(false)
     val toolStatus by viewModel.geminiToolStatus.collectAsState(emptyMap())
     val geminiApiKey by viewModel.geminiApiKey.collectAsState("")
+    val useGeminiApiKey by viewModel.useGeminiApiKey.collectAsState(false)
+    val userEmail by viewModel.userEmail.collectAsState()
     
     val isDownloadDialogVisible by viewModel.isDownloadDialogVisible.collectAsState()
     val downloadProgress by viewModel.downloadProgress.collectAsState()
@@ -148,46 +154,119 @@ fun GenAiSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                 viewModel.setGeminiEnabled(context, it) 
             }
             
-            SettingsEditTextItem(
-                label = stringResource(R.string.settings_gemini_api_key),
-                value = geminiApiKey ?: "",
-                onValueChange = { viewModel.setGeminiApiKey(it) }
-            )
-            Text(
-                text = stringResource(R.string.settings_gemini_api_key_description),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = dimensions.paddingMedium)
-            )
-
-            Spacer(modifier = Modifier.height(dimensions.paddingSmall))
-
-            Column(modifier = Modifier.fillMaxWidth().padding(horizontal = dimensions.paddingMedium)) {
-                OutlinedButton(
-                    onClick = {
-                        val intent = android.content.Intent(
-                            android.content.Intent.ACTION_VIEW,
-                            android.net.Uri.parse("https://aistudio.google.com/app/apikey")
-                        )
-                        context.startActivity(intent)
-                    },
-                    shape = MaterialTheme.shapes.medium,
-                    modifier = Modifier.fillMaxWidth()
+            if (isEnabled) {
+                Spacer(modifier = Modifier.height(dimensions.paddingSmall))
+                
+                Text(
+                    text = stringResource(R.string.settings_gemini_auth_method),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(horizontal = dimensions.paddingMedium, vertical = dimensions.paddingSmall)
+                )
+                
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = dimensions.paddingMedium),
+                    horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium)
                 ) {
-                    Text(stringResource(R.string.settings_gemini_api_key_link_button))
-                }
-
-                if (clipboardKey != null) {
-                    Spacer(modifier = Modifier.height(dimensions.paddingSmall))
-                    Button(
-                        onClick = {
-                            viewModel.setGeminiApiKey(clipboardKey)
-                            clipboardKey = null
-                        },
-                        shape = MaterialTheme.shapes.medium,
-                        modifier = Modifier.fillMaxWidth()
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.clickable { viewModel.setUseGeminiApiKey(false) }
                     ) {
-                        Text(stringResource(R.string.settings_gemini_api_key_smart_paste))
+                        androidx.compose.material3.RadioButton(
+                            selected = !useGeminiApiKey,
+                            onClick = { viewModel.setUseGeminiApiKey(false) }
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(text = stringResource(R.string.settings_gemini_auth_oauth), style = MaterialTheme.typography.bodyMedium)
+                    }
+                    
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.clickable { viewModel.setUseGeminiApiKey(true) }
+                    ) {
+                        androidx.compose.material3.RadioButton(
+                            selected = useGeminiApiKey,
+                            onClick = { viewModel.setUseGeminiApiKey(true) }
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(text = stringResource(R.string.settings_gemini_auth_apikey), style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(dimensions.paddingMedium))
+                
+                if (!useGeminiApiKey) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = dimensions.paddingMedium)
+                    ) {
+                        if (userEmail != null) {
+                            Text(
+                                text = stringResource(R.string.settings_cloud_signed_in_as, userEmail!!),
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.padding(bottom = dimensions.paddingSmall)
+                            )
+                            Button(
+                                onClick = { viewModel.signOut() },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(stringResource(R.string.settings_cloud_sign_out))
+                            }
+                        } else {
+                            Button(
+                                onClick = { viewModel.signIn(context) },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(stringResource(R.string.settings_cloud_sign_in))
+                            }
+                        }
+                    }
+                } else {
+                    SettingsEditTextItem(
+                        label = stringResource(R.string.settings_gemini_api_key),
+                        value = geminiApiKey ?: "",
+                        onValueChange = { viewModel.setGeminiApiKey(it) }
+                    )
+                    Text(
+                        text = stringResource(R.string.settings_gemini_api_key_description),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = dimensions.paddingMedium)
+                    )
+
+                    Spacer(modifier = Modifier.height(dimensions.paddingSmall))
+
+                    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = dimensions.paddingMedium)) {
+                        OutlinedButton(
+                            onClick = {
+                                val intent = android.content.Intent(
+                                    android.content.Intent.ACTION_VIEW,
+                                    android.net.Uri.parse("https://aistudio.google.com/app/apikey")
+                                )
+                                context.startActivity(intent)
+                            },
+                            shape = MaterialTheme.shapes.medium,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(stringResource(R.string.settings_gemini_api_key_link_button))
+                        }
+
+                        if (clipboardKey != null) {
+                            Spacer(modifier = Modifier.height(dimensions.paddingSmall))
+                            Button(
+                                onClick = {
+                                    viewModel.setGeminiApiKey(clipboardKey)
+                                    clipboardKey = null
+                                },
+                                shape = MaterialTheme.shapes.medium,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(stringResource(R.string.settings_gemini_api_key_smart_paste))
+                            }
+                        }
                     }
                 }
             }

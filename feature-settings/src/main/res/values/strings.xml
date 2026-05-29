@@ -140,6 +140,9 @@
     <string name="settings_cloud_logs_view">Verlauf anzeigen</string>
 
     <!-- Gemini Settings -->
+    <string name="settings_gemini_auth_method">Authentifizierungsmethode</string>
+    <string name="settings_gemini_auth_oauth">Google-Konto (OAuth)</string>
+    <string name="settings_gemini_auth_apikey">Eigener API-Schlüssel</string>
     <string name="settings_gemini_api_key">Gemini API-Schlüssel</string>
     <string name="settings_gemini_api_key_description">Eigener API-Schlüssel für die Gemini Cloud API zur Vermeidung von Quotenbegrenzungen.</string>
     <string name="settings_gemini_api_key_link_button">API-Schlüssel in Google AI Studio erstellen</string>
