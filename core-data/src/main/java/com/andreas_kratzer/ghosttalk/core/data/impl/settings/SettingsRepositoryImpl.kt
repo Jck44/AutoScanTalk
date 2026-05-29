@@ -114,6 +114,7 @@ class SettingsRepositoryImpl @Inject constructor(
     override val favoriteBookIdFlow: StateFlow<String?> get() = generalSettings.favoriteBookIdFlow
     override val forceSoftKeyboardFlow: StateFlow<Boolean> get() = generalSettings.forceSoftKeyboardFlow
     override val syncLogsStorageFlow: StateFlow<String?> get() = generalSettings.syncLogsStorageFlow
+    override val isSetupCompletedFlow: StateFlow<Boolean> get() = generalSettings.isSetupCompletedFlow
 
     // --- UserSettings ---
     override val keepScreenOnUserModeFlow: StateFlow<Boolean> get() = userSettings.keepScreenOnUserModeFlow
@@ -438,6 +439,10 @@ class SettingsRepositoryImpl @Inject constructor(
     override var syncLogsStorage: String?
         get() = generalSettings.syncLogsStorage
         set(value) { generalSettings.syncLogsStorage = value }
+
+    override var isSetupCompleted: Boolean
+        get() = generalSettings.isSetupCompleted
+        set(value) { generalSettings.isSetupCompleted = value }
 
     override var elevenLabsApiKey: String?
         get() = cloudSettings.elevenLabsApiKey

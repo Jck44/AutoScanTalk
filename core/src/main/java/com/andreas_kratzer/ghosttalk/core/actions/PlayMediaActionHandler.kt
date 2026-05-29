@@ -1,7 +1,11 @@
 package com.andreas_kratzer.ghosttalk.core.actions
 
+import android.app.ActivityOptions
+import android.app.PendingIntent
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.media.session.MediaSessionManager
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
@@ -10,6 +14,7 @@ import com.andreas_kratzer.ghosttalk.core.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.MediaProvider
 import com.andreas_kratzer.ghosttalk.core.model.PlayMediaButtonAction
+import com.andreas_kratzer.ghosttalk.core.services.NotificationReaderService
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -17,7 +22,9 @@ import javax.inject.Singleton
 @Singleton
 class PlayMediaActionHandler @Inject constructor(
     @param:ApplicationContext private val context: Context,
-    private val actionLogger: ActionLogger
+    private val actionLogger: ActionLogger,
+    private val settings: SpeechSettings,
+    private val ttsProxyLazy: dagger.Lazy<ActionTtsProxy>
 ) : ActionHandler {
 
     override fun canHandle(action: ButtonAction): Boolean = action is PlayMediaButtonAction
@@ -31,6 +38,25 @@ class PlayMediaActionHandler @Inject constructor(
         val mediaAction = action as PlayMediaButtonAction
         val provider = mediaAction.provider
         val contentUri = mediaAction.contentUri
+        
+        if (!android.provider.Settings.canDrawOverlays(context)) {
+            val tts = ttsProxyLazy.get()
+            val msg = "GhostTalk kann Medien nicht starten, da die Berechtigung zum Einblenden über anderen Apps fehlt."
+            actionLogger.log("Overlay-Berechtigung fehlt. Abbruch vor dem Starten der App.", action, buttonConfig.label)
+            if (tts.isReady) {
+                val targetDeviceAddress = if (buttonConfig.playActionAsAuditoryCue) {
+                    settings.cuesAudioDeviceAddress
+                } else {
+                    settings.ttsAudioDeviceAddress
+                }
+                tts.speakRouted(msg, targetDeviceAddress) {
+                    onFinish(executionId)
+                }
+            } else {
+                onFinish(executionId)
+            }
+            return
+        }
         
         Log.d("PlayMediaActionHandler", "Handling media play for $provider, URI: $contentUri")
         
@@ -93,10 +119,10 @@ class PlayMediaActionHandler @Inject constructor(
         
         try {
             context.startActivity(intent)
-            actionLogger.log("Medien gestartet (${mediaAction.contentName.ifBlank { provider.name }})", action, buttonConfig.label)
+            actionLogger.log("Medien gestartet (${mediaAction.contentName.ifBlank { provider.displayName }})", action, buttonConfig.label)
         } catch (e: Exception) {
             Log.e("PlayMediaActionHandler", "Failed to launch media app for $provider", e)
-            actionLogger.log("Fehler beim Starten von ${provider.name}", action, buttonConfig.label)
+            actionLogger.log("Fehler beim Starten von ${provider.displayName}", action, buttonConfig.label)
             
             // Fallback: Just launch the app package directly
             try {
@@ -113,23 +139,152 @@ class PlayMediaActionHandler @Inject constructor(
                 }
             } catch (_: Exception) {}
         }
-        
-        // Return to GoSTalk after delay if configured
-        if (mediaAction.returnToAppDelayMs > 0) {
+
+        if (mediaAction.forcePlayViaMediaSession) {
             Handler(Looper.getMainLooper()).postDelayed({
                 try {
-                    val returnIntent = Intent().apply {
-                        setClassName(context.packageName, "com.andreas_kratzer.ghosttalk.MainActivity")
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+                    val mediaSessionManager = context.getSystemService(Context.MEDIA_SESSION_SERVICE) as MediaSessionManager
+                    val componentName = ComponentName(context, NotificationReaderService::class.java)
+                    
+                    val controllers = mediaSessionManager.getActiveSessions(componentName)
+                    val targetPackage = when (provider) {
+                        MediaProvider.SPOTIFY -> "com.spotify.music"
+                        MediaProvider.YOUTUBE -> "com.google.android.youtube"
+                        MediaProvider.YOUTUBE_MUSIC -> "com.google.android.apps.youtube.music"
+                        MediaProvider.AUDIBLE -> "com.audible.application"
                     }
-                    context.startActivity(returnIntent)
-                    Log.d("PlayMediaActionHandler", "Successfully returned to GoSTalk")
+                    
+                    val controller = controllers.find { it.packageName == targetPackage }
+                    if (controller != null) {
+                        controller.transportControls.play()
+                        actionLogger.log("Wiedergabesteuerung über MediaSession gesendet an $targetPackage", action, buttonConfig.label)
+                        
+                        // Return to GoSTalk after successful play
+                        if (mediaAction.returnToAppDelayMs > 0) {
+                            val remainingDelay = (mediaAction.returnToAppDelayMs - 2000L).coerceAtLeast(0L)
+                            returnToGoSTalk(remainingDelay, buttonConfig, mediaAction, executionId)
+                        }
+                        
+                        onFinish(executionId)
+                    } else {
+                        Log.w("PlayMediaActionHandler", "No active media session found for package $targetPackage")
+                        speakError(
+                            text = "Medien-App ${provider.displayName} reagiert nicht. Bitte manuell starten.",
+                            buttonConfig = buttonConfig,
+                            action = action,
+                            executionId = executionId,
+                            onFinish = { execId ->
+                                if (mediaAction.returnToAppDelayMs > 0) {
+                                    returnToGoSTalk(0L, buttonConfig, mediaAction, execId)
+                                }
+                                onFinish(execId)
+                            }
+                        )
+                    }
+                } catch (e: SecurityException) {
+                    Log.e("PlayMediaActionHandler", "SecurityException: Notification listener permission missing", e)
+                    speakError(
+                        text = "Benachrichtigungszugriff fehlt. Medien können nicht automatisch gestartet werden.",
+                        buttonConfig = buttonConfig,
+                        action = action,
+                        executionId = executionId,
+                        onFinish = { execId ->
+                            if (mediaAction.returnToAppDelayMs > 0) {
+                                returnToGoSTalk(0L, buttonConfig, mediaAction, execId)
+                            }
+                            onFinish(execId)
+                        }
+                    )
                 } catch (e: Exception) {
-                    Log.e("PlayMediaActionHandler", "Failed to return to GoSTalk", e)
+                    Log.e("PlayMediaActionHandler", "Error querying active sessions", e)
+                    if (mediaAction.returnToAppDelayMs > 0) {
+                        returnToGoSTalk(0L, buttonConfig, mediaAction, executionId)
+                    }
+                    onFinish(executionId)
                 }
-            }, mediaAction.returnToAppDelayMs)
+            }, 2000L)
+        } else {
+            // Return to GoSTalk after delay if configured (no MediaSession control)
+            if (mediaAction.returnToAppDelayMs > 0) {
+                returnToGoSTalk(mediaAction.returnToAppDelayMs, buttonConfig, mediaAction, executionId)
+            }
+            onFinish(executionId)
+        }
+    }
+
+    private fun returnToGoSTalk(
+        delayMs: Long,
+        buttonConfig: ButtonConfig,
+        action: PlayMediaButtonAction,
+        executionId: Int
+    ) {
+        if (!android.provider.Settings.canDrawOverlays(context)) {
+            Log.w("PlayMediaActionHandler", "Overlay permission not granted. Cannot return to GoSTalk.")
+            speakError(
+                text = "GhostTalk kann nicht zurückkehren, da die Berechtigung zum Einblenden über anderen Apps fehlt.",
+                buttonConfig = buttonConfig,
+                action = action,
+                executionId = executionId,
+                onFinish = {}
+            )
+            return
+        }
+
+        if (delayMs <= 0) {
+            performReturn()
+        } else {
+            Handler(Looper.getMainLooper()).postDelayed({
+                performReturn()
+            }, delayMs)
+        }
+    }
+
+    private fun performReturn() {
+        try {
+            val returnIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)
+            if (returnIntent != null) {
+                returnIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+                context.startActivity(returnIntent)
+                Log.d("PlayMediaActionHandler", "Successfully returned to GoSTalk using direct startActivity")
+            } else {
+                val fallbackIntent = Intent().apply {
+                    setClassName(context.packageName, "com.andreas_kratzer.ghosttalk.MainActivity")
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+                }
+                context.startActivity(fallbackIntent)
+                Log.d("PlayMediaActionHandler", "Successfully returned to GoSTalk using fallback startActivity")
+            }
+        } catch (e: Exception) {
+            Log.e("PlayMediaActionHandler", "Failed to return to GoSTalk", e)
+        }
+    }
+
+    private fun speakError(
+        text: String,
+        buttonConfig: ButtonConfig,
+        action: ButtonAction,
+        executionId: Int,
+        onFinish: (Int) -> Unit
+    ) {
+        val targetDeviceAddress = if (buttonConfig.playActionAsAuditoryCue) {
+            settings.cuesAudioDeviceAddress
+        } else {
+            settings.ttsAudioDeviceAddress
         }
         
-        onFinish(executionId)
+        val tts = ttsProxyLazy.get()
+        if (tts.isReady) {
+            tts.speakRouted(
+                text = text,
+                deviceAddress = targetDeviceAddress,
+                queueMode = 0,
+                isForCues = buttonConfig.playActionAsAuditoryCue,
+                onDone = { onFinish(executionId) }
+            )
+            actionLogger.log("TTS Fehlermeldung: \"$text\"", action, buttonConfig.label)
+        } else {
+            actionLogger.log("TTS Fehlermeldung (TTS nicht bereit): \"$text\"", action, buttonConfig.label)
+            onFinish(executionId)
+        }
     }
 }

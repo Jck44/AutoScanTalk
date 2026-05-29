@@ -162,6 +162,12 @@
     <string name="settings_permission_active">Granted</string>
     <string name="settings_permission_inactive">Not granted</string>
     <string name="settings_permission_request">Request</string>
+    <string name="settings_permission_overlay">Display over other apps</string>
+    <string name="settings_permission_overlay_desc">Allows GhostTalk to return to the foreground after launching media apps (like YouTube).</string>
+    <string name="settings_permission_overlay_dialog_title">Display over other apps</string>
+    <string name="settings_permission_overlay_dialog_desc">GhostTalk requires this permission to automatically return to the foreground after the configured time has elapsed when launching media apps (such as YouTube or Spotify).\n\nIn the system settings:\n1. Find „GhostTalk“ in the list\n2. Turn on „Allow display over other apps“\n3. Use the back button or gesture to return to GhostTalk.</string>
+    <string name="settings_permission_overlay_dialog_confirm">Go to Settings</string>
+    <string name="settings_permission_overlay_dialog_dismiss">Cancel</string>
     
     <string name="settings_category_limits">Limits</string>
     <string name="settings_limit_scan_cycles">Limit scan cycles</string>
@@ -353,4 +359,9 @@
     <string name="settings_spotify_status_disconnected">Not linked</string>
     <string name="settings_spotify_connect">Link Account</string>
     <string name="settings_spotify_disconnect">Unlink Account</string>
+
+    <!-- Relaunch Setup -->
+    <string name="settings_permissions_relaunch_setup_title">Rerun Startup Setup</string>
+    <string name="settings_permissions_relaunch_setup_desc">Run the step-by-step permission explanation and initial configuration again.</string>
+    <string name="settings_permissions_relaunch_setup_button">Start Setup</string>
 </resources>

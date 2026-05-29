@@ -142,12 +142,16 @@ class GeminiActionHandler @Inject constructor(
                 val response = try {
                     geminiUseCaseLazy.get().generateResponse(
                         prompt = prompt,
-                        useGoogleSearch = action is GeminiSearchButtonAction
+                        useGoogleSearch = false // Google Search is no longer supported in free tier
                     )
                 } catch (e: Exception) {
                     val msg = e.message ?: ""
                     if (msg.contains("429")) {
-                        val seconds = msg.substringAfter("429").filter { it.isDigit() }.toIntOrNull() ?: 60
+                        // Extract wait time only if "retry in X.Xs" pattern is present, otherwise default to 60
+                        val regex = Regex("retry in (\\d+\\.?\\d*)s", RegexOption.IGNORE_CASE)
+                        val match = regex.find(msg)
+                        val seconds = match?.groupValues?.get(1)?.toDoubleOrNull()?.toInt() ?: 60
+
                         val localizedError = getString(com.andreas_kratzer.ghosttalk.R.string.error_gemini_quota_reached, arrayOf(seconds))
                         actionLogger.log(localizedError, action, buttonConfig.label)
                         speakError(localizedError, targetDeviceAddress, executionId, buttonConfig.label, action, onFinish)

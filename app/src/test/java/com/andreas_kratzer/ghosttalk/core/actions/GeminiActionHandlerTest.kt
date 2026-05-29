@@ -163,7 +163,7 @@ class GeminiActionHandlerTest {
         val config = ButtonConfig(id = "1", label = "Gemini", auditoryCue = null, buttonAction = action)
         
         every { settingsRepository.isGeminiEnabled } returns true
-        coEvery { geminiUseCase.generateResponse(any(), any()) } throws Exception("HTTP 429: wait 45 seconds")
+        coEvery { geminiUseCase.generateResponse(any(), any()) } throws Exception("HTTP 429: Rate limit exceeded. Please retry in 45s")
         
         val onFinish = mockk<(Int) -> Unit>(relaxed = true)
         val ttsCallback = slot<() -> Unit>()
@@ -195,7 +195,7 @@ class GeminiActionHandlerTest {
         every { context.getString(com.andreas_kratzer.ghosttalk.R.string.error_gemini_quota_reached, 45) } returns "Wait 45s"
 
         // Mock 429 with both code and wait time
-        coEvery { geminiUseCase.generateResponse(any(), any()) } throws Exception("HTTP 429: Rate limit exceeded. Wait 45 seconds.")
+        coEvery { geminiUseCase.generateResponse(any(), any()) } throws Exception("HTTP 429: Rate limit exceeded. Please retry in 45s.")
 
         val button = ButtonConfig(id = "1", label = "G", buttonAction = GeminiButtonAction("Hi"), auditoryCue = null)
         
@@ -206,6 +206,49 @@ class GeminiActionHandlerTest {
         // THEN
         // Verify it extracts 45, not 429 or 42945
         verify { ttsProxy.speakRouted("Wait 45s", any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `GeminiActionHandler - should default to 60s if 429 error message has no time`() = scope.runTest {
+        // GIVEN
+        every { settingsRepository.isGeminiEnabled } returns true
+        every { ttsProxy.isReady } returns true
+        
+        // Mock localized string for 60s default
+        every { context.getString(com.andreas_kratzer.ghosttalk.R.string.error_gemini_quota_reached, 60) } returns "Wait 60s"
+
+        // Mock 429 without wait time
+        coEvery { geminiUseCase.generateResponse(any(), any()) } throws Exception("HTTP 429: Rate limit exceeded.")
+
+        val button = ButtonConfig(id = "1", label = "G", buttonAction = GeminiButtonAction("Hi"), auditoryCue = null)
+        
+        // WHEN
+        handler.handle(button, button.buttonAction, 1) {}
+        runCurrent()
+
+        // THEN
+        verify { ttsProxy.speakRouted("Wait 60s", any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `GeminiSearchButtonAction should not use Google Search anymore`() = scope.runTest {
+        // GIVEN
+        val action = com.andreas_kratzer.ghosttalk.core.model.GeminiSearchButtonAction("Search for something")
+        val config = ButtonConfig(id = "1", label = "Search", auditoryCue = null, buttonAction = action)
+        
+        every { settingsRepository.isGeminiEnabled } returns true
+        coEvery { geminiUseCase.generateResponse(any(), any()) } returns "Regular Cloud Response"
+        
+        val onFinish = mockk<(Int) -> Unit>(relaxed = true)
+        
+        // WHEN
+        handler.handle(config, action, 1, onFinish)
+        runCurrent()
+        
+        // THEN
+        // Must explicitly pass useGoogleSearch = false
+        coVerify { geminiUseCase.generateResponse("Search for something", false) }
+        verify { ttsProxy.speakRouted(text = "Regular Cloud Response", deviceAddress = any(), onDone = any()) }
     }
 
     @Test

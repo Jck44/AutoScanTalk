@@ -27,6 +27,7 @@ import com.andreas_kratzer.ghosttalk.core.cloud.SpotifyPlaylist
 import com.andreas_kratzer.ghosttalk.core.model.MediaProvider
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsDropdownItem
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsEditTextItem
+import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsToggleItem
 import com.andreas_kratzer.ghosttalk.R
 
 @Composable
@@ -39,6 +40,8 @@ fun PlayMediaActionFields(
     onContentNameChanged: (String) -> Unit,
     returnToAppDelaySec: String,
     onReturnToAppDelaySecChanged: (String) -> Unit,
+    forcePlayViaMediaSession: Boolean,
+    onForcePlayViaMediaSessionChanged: (Boolean) -> Unit,
     spotifyPlaylists: List<SpotifyPlaylist> = emptyList(),
     isLoadingSpotifyPlaylists: Boolean = false,
     spotifyUserDisplayName: String? = null,
@@ -110,7 +113,7 @@ fun PlayMediaActionFields(
                     expanded = expanded,
                     onDismissRequest = { expanded = false }
                 ) {
-                    MediaProvider.entries.filter { it != MediaProvider.AUDIBLE }.forEach { provider ->
+                    MediaProvider.entries.forEach { provider ->
                         androidx.compose.material3.DropdownMenuItem(
                             leadingIcon = {
                                 androidx.compose.material3.Icon(
@@ -169,7 +172,7 @@ fun PlayMediaActionFields(
                         }
 
                         val selectedPlaylistName = spotifyPlaylists.find { it.id == contentUri }?.name 
-                            ?: stringResource(R.string.button_no_page_selected) // fallback
+                            ?: stringResource(R.string.button_no_playlist_selected) // fallback
 
                         if (isLoadingSpotifyPlaylists) {
                             Text("Lade Spotify Playlists...", style = MaterialTheme.typography.bodyMedium)
@@ -237,13 +240,11 @@ fun PlayMediaActionFields(
                 )
             }
             MediaProvider.AUDIBLE -> {
-                // Audible is currently hidden from the picker but
-                // we keep this branch for existing button configs.
                 SettingsEditTextItem(
-                    label = "Audible (nicht mehr unterstützt)",
+                    label = "Audible Hörbuch ASIN oder Link (optional)",
                     value = contentUri,
                     onValueChange = { onContentUriChanged(it) },
-                    placeholder = "",
+                    placeholder = "z.B. ASIN des Hörbuchs",
                     onFocusLost = onAutoSave
                 )
             }
@@ -257,6 +258,16 @@ fun PlayMediaActionFields(
             placeholder = stringResource(R.string.button_media_delay_placeholder),
             numericOnly = true,
             onFocusLost = onAutoSave
+        )
+
+        // Force Play via Media Session toggle
+        SettingsToggleItem(
+            label = "Wiedergabe automatisch starten",
+            checked = forcePlayViaMediaSession,
+            onCheckedChange = {
+                onForcePlayViaMediaSessionChanged(it)
+                onAutoSave()
+            }
         )
     }
 }

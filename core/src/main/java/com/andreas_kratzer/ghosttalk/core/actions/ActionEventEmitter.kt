@@ -9,5 +9,5 @@ interface ActionEventEmitter {
 sealed class ActionEvent {
     data class NavigateToPage(val pageId: String, val action: ButtonAction? = null, val label: String? = null) : ActionEvent()
     data class RecoverableAuthError(val intent: android.content.Intent) : ActionEvent()
-    // Other event types can be added here
+    data class RequestPermissions(val permissions: Array<String>) : ActionEvent()
 }

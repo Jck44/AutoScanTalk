@@ -286,6 +286,12 @@ class SettingsViewModel @Inject constructor(
         initializeDefaultMessagingAppsIfNeeded()
     }
     
+    fun triggerStartSetupWizard() {
+        viewModelScope.launch {
+            _navigationEvent.emit(SettingsNavigationEvent.StartSetup)
+        }
+    }
+
     private val _navigationEvent = kotlinx.coroutines.flow.MutableSharedFlow<SettingsNavigationEvent>()
     val navigationEvents = _navigationEvent.asSharedFlow()
 
@@ -295,6 +301,7 @@ class SettingsViewModel @Inject constructor(
     sealed class SettingsNavigationEvent {
         data class EditButton(val pageId: String, val buttonId: String) : SettingsNavigationEvent()
         data class JumpToPage(val pageId: String) : SettingsNavigationEvent()
+        object StartSetup : SettingsNavigationEvent()
     }
 
     sealed class UpdateCheckStatus {

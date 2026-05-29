@@ -6,30 +6,37 @@ import android.content.pm.PackageManager
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -41,12 +48,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.OutlinedCard
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -57,7 +62,6 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -68,8 +72,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import com.andreas_kratzer.ghosttalk.R
-import com.andreas_kratzer.ghosttalk.core.cloud.PhilipsHueManager
 import com.andreas_kratzer.ghosttalk.core.cloud.HomeDevice
+import com.andreas_kratzer.ghosttalk.core.cloud.PhilipsHueManager
 import com.andreas_kratzer.ghosttalk.core.model.AuditoryCue
 import com.andreas_kratzer.ghosttalk.core.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
@@ -79,37 +83,27 @@ import com.andreas_kratzer.ghosttalk.core.model.FrequentActionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiNanoButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiSearchButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.MediaProvider
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
+import com.andreas_kratzer.ghosttalk.core.model.PlayMediaButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.PreviousActionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SmartHomeButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SmartHomeProvider
-import com.andreas_kratzer.ghosttalk.core.model.PreviousActionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SpokenTextMode
 import com.andreas_kratzer.ghosttalk.core.model.WeatherButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.PlayMediaButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.MediaProvider
-import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsDropdownItem
-import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsGroupedDropdownItem
 import com.andreas_kratzer.ghosttalk.core.ui.components.DropdownGroup
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsEditTextItem
-import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsToggleItem
+import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsGroupedDropdownItem
+import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.feature.settings.domain.FeatureGuard
 import kotlinx.coroutines.launch
-import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
-import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.foundation.background
-import androidx.compose.foundation.shape.CircleShape
 import java.io.File
+import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 
 @Composable
 fun ButtonConfigDialog(
@@ -230,7 +224,6 @@ fun ButtonConfigDialog(
     val actionTypeSpeak = stringResource(R.string.button_action_speak_text)
     val actionTypeNavigate = stringResource(R.string.button_action_navigate_page)
     val actionTypeGemini = stringResource(R.string.button_action_gemini)
-    val actionTypeGeminiSearch = stringResource(R.string.button_action_gemini_search)
     val actionTypeGeminiNano = stringResource(R.string.button_action_gemini_nano)
     val actionTypeFrequent = stringResource(R.string.button_action_frequent_action)
     val actionTypeSmart = stringResource(R.string.button_action_smart_prediction)
@@ -245,8 +238,7 @@ fun ButtonConfigDialog(
         mutableStateOf(
             when (val action = buttonConfig.buttonAction) {
                 is NavigateToPageButtonAction -> actionTypeNavigate
-                is GeminiButtonAction -> actionTypeGemini
-                is GeminiSearchButtonAction -> actionTypeGeminiSearch
+                is GeminiButtonAction, is GeminiSearchButtonAction -> actionTypeGemini
                 is GeminiNanoButtonAction -> actionTypeGeminiNano
                 is com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction -> actionTypeGeminiVision
                 is FrequentActionButtonAction -> actionTypeFrequent
@@ -358,6 +350,9 @@ fun ButtonConfigDialog(
     var mediaReturnToAppDelaySec by remember {
         mutableStateOf(((buttonConfig.buttonAction as? PlayMediaButtonAction)?.returnToAppDelayMs ?: 2000L).div(1000L).toString())
     }
+    var mediaForcePlayViaMediaSession by remember {
+        mutableStateOf((buttonConfig.buttonAction as? PlayMediaButtonAction)?.forcePlayViaMediaSession ?: true)
+    }
     
     val parsedCachedDevices = remember(hueCachedDevices) {
         val list = mutableListOf<HomeDevice>()
@@ -403,7 +398,6 @@ fun ButtonConfigDialog(
         when (selectedActionType) {
             actionTypeNavigate -> NavigateToPageButtonAction(targetPageId)
             actionTypeGemini -> GeminiButtonAction(geminiPrompt)
-            actionTypeGeminiSearch -> GeminiSearchButtonAction(geminiPrompt)
             actionTypeGeminiNano -> GeminiNanoButtonAction(geminiPrompt)
             actionTypeGeminiVision -> com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction(geminiPrompt, geminiVisionUseCloud, geminiVisionPlayShutterSound)
             actionTypeFrequent -> FrequentActionButtonAction(rank)
@@ -432,7 +426,8 @@ fun ButtonConfigDialog(
                 provider = mediaProvider,
                 contentUri = mediaContentUri,
                 contentName = mediaContentName,
-                returnToAppDelayMs = (mediaReturnToAppDelaySec.toLongOrNull() ?: 2L) * 1000L
+                returnToAppDelayMs = (mediaReturnToAppDelaySec.toLongOrNull() ?: 2L) * 1000L,
+                forcePlayViaMediaSession = mediaForcePlayViaMediaSession
             )
             else -> SpeakTextButtonAction()
         }
@@ -586,7 +581,7 @@ fun ButtonConfigDialog(
         title = {
             val actionBadgeText = when (selectedActionType) {
                 actionTypeNavigate -> "Nav"
-                actionTypeGemini, actionTypeGeminiSearch, actionTypeGeminiNano, actionTypeGeminiVision -> "KI"
+                actionTypeGemini, actionTypeGeminiNano, actionTypeGeminiVision -> "KI"
                 actionTypeFrequent, actionTypePrevious, actionTypeSmart -> "Verlauf"
                 actionTypeWeather -> "Wetter"
                 actionTypeDevice -> "Gerät"
@@ -631,7 +626,6 @@ fun ButtonConfigDialog(
                                 ),
                                 com.andreas_kratzer.ghosttalk.core.model.ActionCategoryRegistry.GROUP_KI_ASSISTENZ to listOf(
                                     actionTypeGemini to GeminiButtonAction(),
-                                    actionTypeGeminiSearch to GeminiSearchButtonAction(),
                                     actionTypeGeminiNano to GeminiNanoButtonAction(),
                                     actionTypeGeminiVision to com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction()
                                 ),
@@ -678,7 +672,7 @@ fun ButtonConfigDialog(
                                         actionTypeSpeak -> Icons.Default.PlayArrow
                                         actionTypePlayMedia -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.MusicNote
                                         actionTypeNavigate -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.ArrowForward
-                                        actionTypeGemini, actionTypeGeminiSearch, actionTypeGeminiNano, actionTypeGeminiVision -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.AutoAwesome
+                                        actionTypeGemini, actionTypeGeminiNano, actionTypeGeminiVision -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.AutoAwesome
                                         actionTypeWeather -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.Cloud
                                         actionTypeSmartHome -> Icons.Default.Home
                                         actionTypeDevice -> Icons.Default.Settings
@@ -1208,6 +1202,11 @@ fun ButtonConfigDialog(
                                     mediaReturnToAppDelaySec = it
                                     handleAutoSave()
                                 },
+                                mediaForcePlayViaMediaSession = mediaForcePlayViaMediaSession,
+                                onMediaForcePlayViaMediaSessionChange = {
+                                    mediaForcePlayViaMediaSession = it
+                                    handleAutoSave()
+                                },
                                 spotifyPlaylists = spotifyPlaylists,
                                 isLoadingSpotifyPlaylists = isLoadingSpotifyPlaylists,
                                 spotifyUserDisplayName = spotifyUserDisplayName,
@@ -1343,7 +1342,6 @@ private fun PreviewTabContent(
     actionTypeSpeak: String = stringResource(R.string.button_action_speak_text),
     actionTypeNavigate: String = stringResource(R.string.button_action_navigate_page),
     actionTypeGemini: String = stringResource(R.string.button_action_gemini),
-    actionTypeGeminiSearch: String = stringResource(R.string.button_action_gemini_search),
     actionTypeGeminiNano: String = stringResource(R.string.button_action_gemini_nano),
     actionTypeGeminiVision: String = stringResource(R.string.button_action_gemini_vision),
     actionTypeWeather: String = stringResource(R.string.button_action_weather),
@@ -1386,7 +1384,6 @@ private fun PreviewTabContent(
                         }
                     }
                     actionTypeGemini -> "✨ KI (Gemini Cloud):\nSendet Prompt \"$geminiPrompt\" an Gemini und liest die Antwort vor."
-                    actionTypeGeminiSearch -> "🔍 KI Search:\nSucht Google nach \"$geminiPrompt\" ab und liest Zusammenfassung vor."
                     actionTypeGeminiNano -> "📱 KI Nano (Offline):\nVerarbeitet Intent \"$geminiPrompt\" lokal auf dem Gerät."
                     actionTypeGeminiVision -> "📷 KI Vision (Auge):\nAnalysiert Kamerabild und liest die Beschreibung vor."
                     actionTypeDevice -> {

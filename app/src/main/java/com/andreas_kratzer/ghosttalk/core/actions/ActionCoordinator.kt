@@ -33,6 +33,7 @@ class ActionCoordinator @Inject constructor(
         val executionEvent = when (event) {
             is ActionEvent.NavigateToPage -> ActionExecutionEvent.NavigateToPage(event.pageId, event.action, event.label)
             is ActionEvent.RecoverableAuthError -> ActionExecutionEvent.RecoverableAuthError(event.intent)
+            is ActionEvent.RequestPermissions -> ActionExecutionEvent.RequestPermissions(event.permissions)
         }
         _events.emit(executionEvent)
     }

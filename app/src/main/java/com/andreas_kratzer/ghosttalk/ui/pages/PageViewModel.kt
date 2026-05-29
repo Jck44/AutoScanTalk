@@ -119,6 +119,7 @@ class PageViewModel @Inject constructor(
 
     val lastActions = interactionDelegate.lastActions
     val authRecoverIntent = interactionDelegate.authRecoverIntent
+    val permissionRequestFlow = interactionDelegate.permissionRequestFlow
     val isUserModeActive = interactionDelegate.isUserModeActive
     val screenState get() = screenManagementDelegate.screenState
 

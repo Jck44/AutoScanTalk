@@ -129,6 +129,7 @@
     <string name="button_device_control_offset_minutes_label">Minuten-Offset (±)</string>
     <string name="button_device_control_calendar_count_label">Anzahl vorzulesender Einträge</string>
     <string name="button_no_page_selected">Keine Seite ausgewählt</string>
+    <string name="button_no_playlist_selected">Keine Playlist ausgewählt</string>
     <string name="button_target_page_label">Ziel-Seite</string>
     <string name="button_smart_prediction_rank_label">Vorhersage-Rang (1 = Wahrscheinlichste)</string>
     <string name="button_gemini_prompt_field">Gemini Prompt (Befehl)</string>
@@ -238,6 +239,9 @@
     <string name="permission_camera_denied">Kameraberechtigung ist erforderlich für die KI-Bilderkennung.</string>
     <string name="error_camera_permission_missing">Kamera-Berechtigung fehlt.</string>
     <string name="error_calendar_permission_missing">Kalender-Berechtigung fehlt.</string>
+    <string name="error_location_permission_missing">Standort-Berechtigung fehlt.</string>
+    <string name="error_sms_permission_missing">SMS-Berechtigung fehlt.</string>
+    <string name="error_phone_permission_missing">Telefon-Berechtigung fehlt.</string>
     <string name="button_gemini_vision_shutter_sound_label">Kamerasound beim Auslösen abspielen</string>
     <string name="sort_active_first">Aktive zuerst</string>
     <string name="sort_inactive_first">Inaktive zuerst</string>
@@ -323,5 +327,37 @@
     <string name="button_media_spotify_link_settings">Zu den Einstellungen</string>
     <string name="button_media_custom_uri">Benutzerdefinierte URI eintragen</string>
     <string name="button_media_custom_uri_label">Eigene Playlist/Inhalt URI</string>
+
+    <!-- Setup / Onboarding Screen -->
+    <string name="setup_skip_all">Setup überspringen</string>
+    <string name="setup_btn_back">Zurück</string>
+    <string name="setup_btn_next">Weiter</string>
+    <string name="setup_btn_start">Jetzt starten</string>
+    <string name="setup_welcome_title">Willkommen bei GhostTalk</string>
+    <string name="setup_welcome_desc">GhostTalk ist eine barrierefreie Kommunikations-App (AAC). Damit du alle Funktionen wie Sprachausgabe, Telefonie, Wetterberichte und Smart Home nutzen kannst, richten wir nun die benötigten Berechtigungen ein.</string>
+    <string name="setup_basic_perms_title">Grundlegende Berechtigungen</string>
+    <string name="setup_basic_perms_desc">Für Kernfunktionen der App benötigen wir einige Standard-Berechtigungen deines Geräts. Bereits erteilte Berechtigungen werden grün angezeigt. Klicke auf eine Berechtigung, um mehr Details zu sehen.</string>
+    <string name="setup_permission_camera_desc">Wird für die KI-Augen-Funktion (Gemini Vision) benötigt, um Bilder mit der Kamera aufzunehmen und beschreiben zu lassen.</string>
+    <string name="setup_permission_mic">Mikrofon (Eigene Aufnahmen)</string>
+    <string name="setup_permission_mic_desc">Wird benötigt, um eigene Sprachaufnahmen als Tonspur für die Tasten aufzunehmen.</string>
+    <string name="setup_permission_contacts_phone">Kontakte &amp; Telefon (Anrufe &amp; Kontakte)</string>
+    <string name="setup_permission_contacts_phone_desc">Wird benötigt, um Telefonanrufe direkt über Tasten zu starten, Kontakte für Schnellwahl-Buttons auszuwählen und eingehende Anrufe anzuzeigen.</string>
+    <string name="setup_permission_sms">SMS senden (Nachrichten-Buttons)</string>
+    <string name="setup_permission_sms_desc">Ermöglicht es, vorkonfigurierte SMS-Nachrichten per Knopfdruck an ausgewählte Kontakte zu senden.</string>
+    <string name="setup_permission_calendar_desc">Erlaubt es der App, anstehende Termine aus deinem Kalender vorzulesen.</string>
+    <string name="setup_permission_location_desc">Wird benötigt, um deinen aktuellen Standort für den Wetterbericht zu ermitteln.</string>
+    <string name="setup_permission_push_notifications">Benachrichtigungen senden</string>
+    <string name="setup_btn_request_permissions">Berechtigungen anfordern</string>
+    <string name="setup_permission_overlay_explanation">Diese Berechtigung erlaubt es der App, sich über andere Apps zu legen. Das ist zwingend nötig, damit du das Telefon-Overlay nutzen kannst oder der Bildschirm abgedunkelt werden kann.</string>
+    <string name="setup_btn_enable_overlay">Überlagerung aktivieren</string>
+    <string name="setup_permission_granted">Erteilt</string>
+    <string name="setup_permission_notifications_explanation">Durch den Zugriff auf Benachrichtigungen kann GhostTalk dir eingehende Nachrichten von Apps wie WhatsApp oder Signal vorlesen. Du kannst in den Einstellungen festlegen, welche Apps vorgelesen werden.</string>
+    <string name="setup_btn_enable_notifications">Zugriff erlauben</string>
+    <string name="setup_permission_dialer_explanation">Um Anrufe direkt über GhostTalk annehmen und auflegen zu können (z.B. mit Tastern), muss GhostTalk als deine Standard-Telefon-App registriert sein.</string>
+    <string name="setup_btn_register_dialer">Als Standard-App festlegen</string>
+    <string name="setup_completed_title">Einrichtung abgeschlossen!</string>
+    <string name="setup_completed_desc">Alle wichtigen Einstellungen wurden vorgenommen. Du bist jetzt bereit, GhostTalk zu verwenden.</string>
+    <string name="setup_status_permission_granted">Berechtigung erteilt</string>
+    <string name="setup_status_permission_missing">Berechtigung fehlt (optional)</string>
 </resources>
 

@@ -176,6 +176,7 @@ data class PlayMediaButtonAction(
     val provider: MediaProvider = MediaProvider.SPOTIFY,
     val contentUri: String = "",
     val contentName: String = "",
-    val returnToAppDelayMs: Long = 2000L
+    val returnToAppDelayMs: Long = 2000L,
+    val forcePlayViaMediaSession: Boolean = true
 ) : ButtonAction()
 

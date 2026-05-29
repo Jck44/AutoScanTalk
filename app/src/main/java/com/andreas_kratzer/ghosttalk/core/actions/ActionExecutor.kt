@@ -1,10 +1,12 @@
 package com.andreas_kratzer.ghosttalk.core.actions
 
+import android.content.Context
 import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.di.ApplicationScope
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -21,7 +23,8 @@ class ActionExecutor @Inject constructor(
     private val buttonUsageRepository: ButtonUsageRepository,
     private val handlers: Set<@JvmSuppressWildcards ActionHandler>,
     private val actionCoordinator: ActionCoordinator,
-    private val ttsHelper: TextToSpeechHelper
+    private val ttsHelper: TextToSpeechHelper,
+    @param:ApplicationContext private val context: Context? = null
 ) : ScannerActionProvider {
     private var timeProvider: () -> Long = { System.currentTimeMillis() }
     
@@ -95,6 +98,46 @@ class ActionExecutor @Inject constructor(
         }
 
         val action = buttonConfig.buttonAction
+        
+        // Check for required runtime permissions
+        val ctx = context
+        if (ctx != null) {
+            val required = getRequiredPermissions(action)
+            if (required.isNotEmpty()) {
+                val missing = required.filter {
+                    androidx.core.content.ContextCompat.checkSelfPermission(ctx, it) != android.content.pm.PackageManager.PERMISSION_GRANTED
+                }
+                if (missing.isNotEmpty()) {
+                    log("Fehlende Berechtigungen: $missing. Spreche Warnung per TTS...", action, buttonConfig.label)
+                    
+                    val resId = when {
+                        missing.contains(android.Manifest.permission.CAMERA) -> com.andreas_kratzer.ghosttalk.R.string.error_camera_permission_missing
+                        missing.contains(android.Manifest.permission.READ_CALENDAR) -> com.andreas_kratzer.ghosttalk.R.string.error_calendar_permission_missing
+                        missing.contains(android.Manifest.permission.SEND_SMS) -> com.andreas_kratzer.ghosttalk.R.string.error_sms_permission_missing
+                        missing.contains(android.Manifest.permission.CALL_PHONE) -> com.andreas_kratzer.ghosttalk.R.string.error_phone_permission_missing
+                        missing.contains(android.Manifest.permission.ACCESS_FINE_LOCATION) || 
+                                missing.contains(android.Manifest.permission.ACCESS_COARSE_LOCATION) -> com.andreas_kratzer.ghosttalk.R.string.error_location_permission_missing
+                        else -> -1
+                    }
+
+                    if (resId != -1) {
+                        val message = ctx.getString(resId)
+                        val targetDeviceAddress = if (buttonConfig.playActionAsAuditoryCue) {
+                            settingsRepository.cuesAudioDeviceAddress
+                        } else {
+                            settingsRepository.ttsAudioDeviceAddress
+                        }
+                        ttsHelper.speakRouted(message, targetDeviceAddress) {
+                            finishExecution(currentExecutionId)
+                        }
+                    } else {
+                        finishExecution(currentExecutionId)
+                    }
+                    return
+                }
+            }
+        }
+
         val handler = handlers.find { it.canHandle(action) }
         
         if (handler != null) {
@@ -112,6 +155,29 @@ class ActionExecutor @Inject constructor(
         } else {
             log("Kein Handler für Aktion gefunden: ${action::class.simpleName}")
             finishExecution(currentExecutionId)
+        }
+    }
+
+    private fun getRequiredPermissions(action: com.andreas_kratzer.ghosttalk.core.model.ButtonAction): List<String> {
+        return when (action) {
+            is com.andreas_kratzer.ghosttalk.core.model.ControlDeviceButtonAction -> {
+                when (action.actionType) {
+                    com.andreas_kratzer.ghosttalk.core.model.DeviceActionType.READ_CALENDAR_ENTRIES -> listOf(android.Manifest.permission.READ_CALENDAR)
+                    com.andreas_kratzer.ghosttalk.core.model.DeviceActionType.SEND_MESSAGE -> listOf(android.Manifest.permission.SEND_SMS)
+                    com.andreas_kratzer.ghosttalk.core.model.DeviceActionType.START_CALL -> {
+                        if (settingsRepository.simulateCallsEnabled) emptyList()
+                        else listOf(android.Manifest.permission.CALL_PHONE)
+                    }
+                    else -> emptyList()
+                }
+            }
+            is com.andreas_kratzer.ghosttalk.core.model.WeatherButtonAction -> {
+                listOf(android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION)
+            }
+            is com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction -> {
+                listOf(android.Manifest.permission.CAMERA)
+            }
+            else -> emptyList()
         }
     }
 

@@ -10,6 +10,7 @@ import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.K
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SYNC_LOGS_STORAGE
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_TEMPLATE_SORT_ORDER
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_THEME_MODE
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_IS_SETUP_COMPLETED
 import kotlinx.coroutines.flow.StateFlow
 
 class GeneralSettingsRepository(
@@ -26,6 +27,7 @@ class GeneralSettingsRepository(
     private val _startupBehavior = NonNullStringSetting(KEY_STARTUP_BEHAVIOR, "BOOK_SELECTION", isScoped = false)
     private val _forceSoftKeyboard = BooleanSetting(KEY_FORCE_SOFT_KEYBOARD, default = true, isScoped = false)
     private val _syncLogsStorage = StringSetting(KEY_SYNC_LOGS_STORAGE, isScoped = false)
+    private val _isSetupCompleted = BooleanSetting(KEY_IS_SETUP_COMPLETED, default = false, isScoped = false)
 
     val themeModeFlow = _themeMode.flow
     val pageSortOrderFlow = _pageSortOrder.flow
@@ -36,6 +38,7 @@ class GeneralSettingsRepository(
     val favoriteBookIdFlow = _favoriteBookId.flow
     val startupBehaviorFlow = _startupBehavior.flow
     val forceSoftKeyboardFlow = _forceSoftKeyboard.flow
+    val isSetupCompletedFlow = _isSetupCompleted.flow
 
     var themeMode: String by _themeMode
     var pageSortOrder: String by _pageSortOrder
@@ -46,6 +49,7 @@ class GeneralSettingsRepository(
     var startupBehavior: String by _startupBehavior
     var forceSoftKeyboard: Boolean by _forceSoftKeyboard
     var syncLogsStorage: String? by _syncLogsStorage
+    var isSetupCompleted: Boolean by _isSetupCompleted
 
 
     override fun refresh() {
@@ -58,5 +62,6 @@ class GeneralSettingsRepository(
         _startupBehavior.refresh()
         _forceSoftKeyboard.refresh()
         _syncLogsStorage.refresh()
+        _isSetupCompleted.refresh()
     }
 }

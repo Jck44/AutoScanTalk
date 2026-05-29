@@ -183,6 +183,12 @@
     <string name="settings_permission_active">Erteilt</string>
     <string name="settings_permission_inactive">Nicht erteilt</string>
     <string name="settings_permission_request">Anfordern</string>
+    <string name="settings_permission_overlay">Über anderen Apps einblenden</string>
+    <string name="settings_permission_overlay_desc">Ermöglicht es GhostTalk, nach dem Starten von Medien-Apps (wie YouTube) wieder in den Vordergrund zu wechseln.</string>
+    <string name="settings_permission_overlay_dialog_title">Einblenden über anderen Apps</string>
+    <string name="settings_permission_overlay_dialog_desc">GhostTalk benötigt diese Berechtigung, um nach dem Starten einer Medien-App (z. B. YouTube oder Spotify) nach der konfigurierten Zeit automatisch wieder in den Vordergrund wechseln zu können.\n\nIn den Systemeinstellungen:\n1. Suche nach „GhostTalk“ in der Liste\n2. Aktiviere die Option „Einblenden über anderen Apps zulassen“\n3. Kehre danach über die Zurück-Geste zu GhostTalk zurück.</string>
+    <string name="settings_permission_overlay_dialog_confirm">Zu den Einstellungen</string>
+    <string name="settings_permission_overlay_dialog_dismiss">Abbrechen</string>
     
     <string name="settings_category_limits">Begrenzungen</string>
     <string name="settings_limit_scan_cycles">Anzahl von Scandurchläufen begrenzen</string>
@@ -354,4 +360,9 @@
     <string name="settings_spotify_status_disconnected">Nicht verknüpft</string>
     <string name="settings_spotify_connect">Konto verknüpfen</string>
     <string name="settings_spotify_disconnect">Verknüpfung aufheben</string>
+
+    <!-- Relaunch Setup -->
+    <string name="settings_permissions_relaunch_setup_title">Start-Einrichtung erneut ausführen</string>
+    <string name="settings_permissions_relaunch_setup_desc">Führe den Schritt-für-Schritt-Prozess zur Berechtigungserklärung und Einrichtung der App erneut aus.</string>
+    <string name="settings_permissions_relaunch_setup_button">Einrichtung starten</string>
 </resources>

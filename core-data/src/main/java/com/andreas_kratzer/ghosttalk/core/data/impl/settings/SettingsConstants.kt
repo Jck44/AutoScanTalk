@@ -96,4 +96,5 @@ object SettingsConstants {
     const val KEY_CALL_ANNOUNCEMENT_AS_CUE = "pref_call_announcement_as_cue"
     const val KEY_CALL_AUTO_ENABLE_SPEAKERPHONE = "pref_call_auto_enable_speakerphone"
     const val KEY_SIMULATE_CALLS_ENABLED = "pref_simulate_calls_enabled"
+    const val KEY_IS_SETUP_COMPLETED = "is_setup_completed"
 }

@@ -9,4 +9,5 @@ sealed class ActionExecutionEvent {
     data class Log(val message: String, val action: ButtonAction? = null, val label: String? = null) : ActionExecutionEvent()
     data class Error(val message: String, val throwable: Throwable? = null, val action: ButtonAction? = null, val label: String? = null) : ActionExecutionEvent()
     data class RecoverableAuthError(val intent: Intent) : ActionExecutionEvent()
+    data class RequestPermissions(val permissions: Array<String>) : ActionExecutionEvent()
 }

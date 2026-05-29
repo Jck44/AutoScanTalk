@@ -28,6 +28,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -57,10 +59,14 @@ import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
 import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : FragmentActivity() {
+
+    private var isDbInitialized by mutableStateOf(false)
 
     @Inject lateinit var settingsRepository: SettingsRepository
     @Inject lateinit var pageRepository: PageRepository
@@ -103,7 +109,11 @@ class MainActivity : FragmentActivity() {
             Log.d("MainActivity", "Auth consent granted, Gemini should work now.")
         }
     }
-
+    private val permissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        Log.d("MainActivity", "Permission request results: $permissions")
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
@@ -125,6 +135,14 @@ class MainActivity : FragmentActivity() {
         val defaultBookId = "book-default"
 
         lifecycleScope.launch {
+            // Check if there is already user data (books) before running the initializer
+            val hasExistingData = withContext(Dispatchers.IO) {
+                bookRepository.getAllBooksList().isNotEmpty()
+            }
+            if (hasExistingData && !settingsRepository.isSetupCompleted) {
+                settingsRepository.isSetupCompleted = true
+            }
+
             // 1. Ensure at least one book exists. returns either default or first existing.
             val initializedBookId = sampleDataInitializer.initializeIfNeeded(defaultBookId)
             
@@ -142,12 +160,20 @@ class MainActivity : FragmentActivity() {
             // 4. Set the final active book
             settingsRepository.activeBookId = finalActiveBookId
             pageViewModel.setActiveBookId(finalActiveBookId)
+            isDbInitialized = true
         }
 
         // Observe Auth Consent Intent
         lifecycleScope.launch {
             pageViewModel.authRecoverIntent.collect { intent ->
                 authLauncher.launch(intent)
+            }
+        }
+
+        // Observe Permission Requests
+        lifecycleScope.launch {
+            pageViewModel.permissionRequestFlow.collect { permissions ->
+                permissionLauncher.launch(permissions)
             }
         }
 
@@ -210,6 +236,13 @@ class MainActivity : FragmentActivity() {
 
 
         setContent {
+            if (!isDbInitialized) {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = Color.Black
+                ) {}
+                return@setContent
+            }
             val themeMode by settingsViewModel.themeMode.collectAsState()
             val screenState by pageViewModel.screenState.collectAsState()
             val isUserModeActive by pageViewModel.isUserModeActive.collectAsState()

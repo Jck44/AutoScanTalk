@@ -148,19 +148,46 @@ fun GhostTalkNavHost(
                     is SettingsViewModel.SettingsNavigationEvent.JumpToPage -> {
                         navController.navigate("page_editor/${event.pageId}")
                     }
+                    is SettingsViewModel.SettingsNavigationEvent.StartSetup -> {
+                        settingsRepository.isSetupCompleted = false
+                        navController.navigate("onboarding_setup") {
+                            popUpTo("start") { inclusive = true }
+                        }
+                    }
                 }
             }
         }
     }
 
+    val isSetupCompleted = settingsRepository.isSetupCompleted
+    val startDestination = remember(isSetupCompleted) {
+        if (isSetupCompleted) "book_list" else "onboarding_setup"
+    }
+
     NavHost(
         navController = navController, 
-        startDestination = "book_list",
+        startDestination = startDestination,
         enterTransition = { androidx.compose.animation.EnterTransition.None },
         exitTransition = { androidx.compose.animation.ExitTransition.None },
         popEnterTransition = { androidx.compose.animation.EnterTransition.None },
         popExitTransition = { androidx.compose.animation.ExitTransition.None }
     ) {
+        composable("onboarding_setup") {
+            com.andreas_kratzer.ghosttalk.ui.setup.SetupScreen(
+                onSetupFinished = {
+                    settingsRepository.isSetupCompleted = true
+                    runOnMainThread {
+                        navController.navigate("book_list") {
+                            popUpTo("onboarding_setup") { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    }
+                },
+                onRequestDefaultDialer = { activity ->
+                    settingsViewModel.requestDefaultDialer(activity)
+                }
+            )
+        }
         composable("book_list") {
             BookListScreen(
                 bookViewModel = bookViewModel,

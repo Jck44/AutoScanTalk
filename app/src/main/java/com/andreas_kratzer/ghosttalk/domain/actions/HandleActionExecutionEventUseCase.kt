@@ -16,6 +16,7 @@ class HandleActionExecutionEventUseCase @Inject constructor(
         data class LogAction(val message: String, val action: com.andreas_kratzer.ghosttalk.core.model.ButtonAction? = null, val label: String? = null) : Effect()
         data class SpeakError(val messageResId: Int, val logMessage: String, val action: com.andreas_kratzer.ghosttalk.core.model.ButtonAction? = null, val label: String? = null) : Effect()
         data class EmitAuthIntent(val intent: android.content.Intent) : Effect()
+        data class RequestPermissions(val permissions: Array<String>) : Effect()
     }
 
     suspend fun execute(event: ActionExecutionEvent): Effect? {
@@ -33,6 +34,7 @@ class HandleActionExecutionEventUseCase @Inject constructor(
             is ActionExecutionEvent.Log -> Effect.LogAction(event.message, event.action, event.label)
             is ActionExecutionEvent.Error -> Effect.LogAction("Fehler: ${event.message}", event.action, event.label)
             is ActionExecutionEvent.RecoverableAuthError -> Effect.EmitAuthIntent(event.intent)
+            is ActionExecutionEvent.RequestPermissions -> Effect.RequestPermissions(event.permissions)
         }
     }
 }

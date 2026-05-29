@@ -10,6 +10,7 @@ interface GeneralSettings {
     val defaultStartPageIdFlow: StateFlow<String?>
     val favoriteBookIdFlow: StateFlow<String?>
     val startupBehaviorFlow: StateFlow<String>
+    val isSetupCompletedFlow: StateFlow<Boolean>
 
     var themeMode: String
     var pageSortOrder: String
@@ -18,6 +19,7 @@ interface GeneralSettings {
     var defaultStartPageId: String?
     var favoriteBookId: String?
     var startupBehavior: String
+    var isSetupCompleted: Boolean
     val forceSoftKeyboardFlow: StateFlow<Boolean>
     var forceSoftKeyboard: Boolean
 }

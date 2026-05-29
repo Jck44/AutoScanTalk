@@ -1,6 +1,8 @@
 package com.andreas_kratzer.ghosttalk.core.ai.domain
 
 import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
+import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.util.Logger
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.Assert.assertEquals
@@ -10,8 +12,8 @@ import org.junit.Test
 class GeminiUseCaseTest {
 
     private lateinit var googleAuthManager: GoogleAuthManager
-    private lateinit var logger: com.andreas_kratzer.ghosttalk.core.util.Logger
-    private lateinit var settingsRepository: com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+    private lateinit var logger: Logger
+    private lateinit var settingsRepository: SettingsRepository
     private lateinit var geminiUseCase: GeminiUseCase
     private lateinit var wikiTool: AiTool
     private lateinit var driveTool: AiTool
@@ -45,6 +47,13 @@ class GeminiUseCaseTest {
         val errorBody = "Quota exceeded. Please retry in 45.5s"
         val result = geminiUseCase.parseWaitTime(null, errorBody)
         assertEquals(45L, result)
+    }
+
+    @Test
+    fun `parseWaitTime does not misinterpret 429 as seconds`() {
+        val errorBody = "HTTP 429: Quota exceeded"
+        val result = geminiUseCase.parseWaitTime(null, errorBody)
+        assertEquals(60L, result)
     }
 
     @Test

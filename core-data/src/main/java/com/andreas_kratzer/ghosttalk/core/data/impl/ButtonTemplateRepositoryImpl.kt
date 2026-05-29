@@ -98,12 +98,12 @@ class ButtonTemplateRepositoryImpl @Inject constructor(
         list.add(
             ButtonTemplate(
                 id = "builtin_gemini_search",
-                name = "Gemini Websuche",
+                name = "Gemini Suche",
                 isBuiltIn = true,
                 buttonConfig = ButtonConfig(
                     id = UUID.randomUUID().toString(),
                     label = "Suche",
-                    buttonAction = GeminiSearchButtonAction("Aktuelle Nachrichten")
+                    buttonAction = GeminiSearchButtonAction("Wie wird das Wetter morgen?")
                 )
             )
         )

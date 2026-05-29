@@ -7,6 +7,7 @@ import androidx.core.graphics.createBitmap
 import android.content.pm.PackageManager
 import android.provider.Settings
 import android.content.Context
+import android.net.Uri
 import androidx.compose.runtime.DisposableEffect
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -98,14 +99,39 @@ fun PermissionsSettingsSection(viewModel: SettingsViewModel) {
     var calendarGranted by remember {
         mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CALENDAR) == PackageManager.PERMISSION_GRANTED)
     }
+    var overlayGranted by remember {
+        mutableStateOf(Settings.canDrawOverlays(context))
+    }
+    var showOverlayExplanationDialog by remember { mutableStateOf(false) }
 
-    // Refresh states when returning to screen (approximation)
+
+    
+    // Check when screen is focused or resumed
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                cameraGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+                locationGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+                                  ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                notificationListenerGranted = NotificationManagerCompat.getEnabledListenerPackages(context).contains(packageName)
+                calendarGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CALENDAR) == PackageManager.PERMISSION_GRANTED
+                overlayGranted = Settings.canDrawOverlays(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
     LaunchedEffect(Unit) {
         cameraGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
         locationGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
                           ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
         notificationListenerGranted = NotificationManagerCompat.getEnabledListenerPackages(context).contains(packageName)
         calendarGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CALENDAR) == PackageManager.PERMISSION_GRANTED
+        overlayGranted = Settings.canDrawOverlays(context)
     }
 
     val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -185,6 +211,18 @@ fun PermissionsSettingsSection(viewModel: SettingsViewModel) {
                 description = stringResource(R.string.settings_permission_calendar_desc),
                 isGranted = calendarGranted,
                 onRequest = { calendarLauncher.launch(Manifest.permission.READ_CALENDAR) }
+            )
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = dimensions.paddingMedium))
+
+            // Overlay Permission (Draw over other apps)
+            PermissionRow(
+                title = stringResource(R.string.settings_permission_overlay),
+                description = stringResource(R.string.settings_permission_overlay_desc),
+                isGranted = overlayGranted,
+                onRequest = {
+                    showOverlayExplanationDialog = true
+                }
             )
 
             HorizontalDivider(modifier = Modifier.padding(vertical = dimensions.paddingMedium))
@@ -289,7 +327,73 @@ fun PermissionsSettingsSection(viewModel: SettingsViewModel) {
                     }
                 }
             }
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = dimensions.paddingMedium))
+
+            // Rerun setup wizard
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = dimensions.paddingSmall)
+            ) {
+                Text(
+                    text = stringResource(R.string.settings_permissions_relaunch_setup_title),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Text(
+                    text = stringResource(R.string.settings_permissions_relaunch_setup_desc),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(dimensions.paddingSmall))
+                Button(
+                    onClick = { viewModel.triggerStartSetupWizard() },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Text(stringResource(R.string.settings_permissions_relaunch_setup_button))
+                }
+            }
         }
+    }
+
+    if (showOverlayExplanationDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showOverlayExplanationDialog = false },
+            title = {
+                Text(
+                    text = stringResource(R.string.settings_permission_overlay_dialog_title),
+                    style = MaterialTheme.typography.titleMedium
+                )
+            },
+            text = {
+                Text(
+                    text = stringResource(R.string.settings_permission_overlay_dialog_desc),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showOverlayExplanationDialog = false
+                        val intent = Intent(
+                            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                            Uri.parse("package:$packageName")
+                        )
+                        context.startActivity(intent)
+                    }
+                ) {
+                    Text(text = stringResource(R.string.settings_permission_overlay_dialog_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showOverlayExplanationDialog = false }
+                ) {
+                    Text(text = stringResource(R.string.settings_permission_overlay_dialog_dismiss))
+                }
+            }
+        )
     }
 }
 

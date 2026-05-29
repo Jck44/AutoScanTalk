@@ -42,6 +42,9 @@ class InteractionDelegate @Inject constructor(
     private val _authRecoverIntent = MutableSharedFlow<Intent>()
     val authRecoverIntent = _authRecoverIntent.asSharedFlow()
 
+    private val _permissionRequestFlow = MutableSharedFlow<Array<String>>()
+    val permissionRequestFlow = _permissionRequestFlow.asSharedFlow()
+
     // Now pointing to the global repository
     val isUserModeActive: StateFlow<Boolean> = appStateRepository.isUserModeActive
 
@@ -99,6 +102,9 @@ class InteractionDelegate @Inject constructor(
                     }
                     is HandleActionExecutionEventUseCase.Effect.EmitAuthIntent -> {
                         _authRecoverIntent.emit(effect.intent)
+                    }
+                    is HandleActionExecutionEventUseCase.Effect.RequestPermissions -> {
+                        _permissionRequestFlow.emit(effect.permissions)
                     }
                 }
             }

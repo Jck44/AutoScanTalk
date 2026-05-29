@@ -87,6 +87,8 @@ fun ActionConfigFields(
     onMediaContentNameChange: (String) -> Unit = {},
     mediaReturnToAppDelaySec: String = "2",
     onMediaReturnToAppDelaySecChange: (String) -> Unit = {},
+    mediaForcePlayViaMediaSession: Boolean = true,
+    onMediaForcePlayViaMediaSessionChange: (Boolean) -> Unit = {},
     spotifyPlaylists: List<com.andreas_kratzer.ghosttalk.core.cloud.SpotifyPlaylist> = emptyList(),
     isLoadingSpotifyPlaylists: Boolean = false,
     spotifyUserDisplayName: String? = null,
@@ -97,7 +99,6 @@ fun ActionConfigFields(
 ) {
     val actionTypeNavigate = stringResource(R.string.button_action_navigate_page)
     val actionTypeGemini = stringResource(R.string.button_action_gemini)
-    val actionTypeGeminiSearch = stringResource(R.string.button_action_gemini_search)
     val actionTypeGeminiNano = stringResource(R.string.button_action_gemini_nano)
     val actionTypeGeminiVision = stringResource(R.string.button_action_gemini_vision)
     val actionTypeFrequent = stringResource(R.string.button_action_frequent_action)
@@ -124,7 +125,7 @@ fun ActionConfigFields(
                     onAutoSave = onAutoSave
                 )
             }
-            actionTypeGemini, actionTypeGeminiSearch -> {
+            actionTypeGemini -> {
                 GeminiActionFields(
                     prompt = geminiPrompt,
                     onPromptChanged = onGeminiPromptChange,
@@ -223,6 +224,8 @@ fun ActionConfigFields(
                     onContentNameChanged = onMediaContentNameChange,
                     returnToAppDelaySec = mediaReturnToAppDelaySec,
                     onReturnToAppDelaySecChanged = onMediaReturnToAppDelaySecChange,
+                    forcePlayViaMediaSession = mediaForcePlayViaMediaSession,
+                    onForcePlayViaMediaSessionChanged = onMediaForcePlayViaMediaSessionChange,
                     spotifyPlaylists = spotifyPlaylists,
                     isLoadingSpotifyPlaylists = isLoadingSpotifyPlaylists,
                     spotifyUserDisplayName = spotifyUserDisplayName,

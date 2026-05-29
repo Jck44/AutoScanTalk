@@ -129,6 +129,7 @@
     <string name="button_device_control_offset_minutes_label">Minute Offset (±)</string>
     <string name="button_device_control_calendar_count_label">Number of entries to read</string>
     <string name="button_no_page_selected">No page selected</string>
+    <string name="button_no_playlist_selected">No playlist selected</string>
     <string name="button_target_page_label">Target Page</string>
     <string name="button_smart_prediction_rank_label">Prediction Rank (1 = Most Likely)</string>
     <string name="button_gemini_prompt_field">Gemini Prompt (Command)</string>
@@ -234,6 +235,9 @@
     <string name="permission_camera_denied">Camera permission is required for AI image recognition.</string>
     <string name="error_camera_permission_missing">Camera permission missing.</string>
     <string name="error_calendar_permission_missing">Calendar permission missing.</string>
+    <string name="error_location_permission_missing">Location permission missing.</string>
+    <string name="error_sms_permission_missing">SMS permission missing.</string>
+    <string name="error_phone_permission_missing">Phone permission missing.</string>
     <string name="button_gemini_vision_shutter_sound_label">Play shutter sound when triggered</string>
     <string name="sort_active_first">Active first</string>
     <string name="sort_inactive_first">Inactive first</string>
@@ -319,5 +323,37 @@
     <string name="button_media_spotify_link_settings">Go to Settings</string>
     <string name="button_media_custom_uri">Enter custom URI</string>
     <string name="button_media_custom_uri_label">Custom Playlist/Content URI</string>
+
+    <!-- Setup / Onboarding Screen -->
+    <string name="setup_skip_all">Skip Setup</string>
+    <string name="setup_btn_back">Back</string>
+    <string name="setup_btn_next">Next</string>
+    <string name="setup_btn_start">Start Now</string>
+    <string name="setup_welcome_title">Welcome to GhostTalk</string>
+    <string name="setup_welcome_desc">GhostTalk is an accessible communication app (AAC). To let you use all features like speech output, calls, weather reports, and smart home, we will now set up the required permissions.</string>
+    <string name="setup_basic_perms_title">Basic Permissions</string>
+    <string name="setup_basic_perms_desc">For core functions of the app, we need some standard permissions from your device. Already granted permissions are shown in green. Click on a permission to see more details.</string>
+    <string name="setup_permission_camera_desc">Required for the AI Eye feature (Gemini Vision) to capture and describe images with the camera.</string>
+    <string name="setup_permission_mic">Microphone (Custom recordings)</string>
+    <string name="setup_permission_mic_desc">Required to record custom voice recordings to use as button sounds.</string>
+    <string name="setup_permission_contacts_phone">Contacts &amp; Phone (Calls &amp; Contacts)</string>
+    <string name="setup_permission_contacts_phone_desc">Required to launch phone calls directly via buttons, select contacts for speed dial buttons, and detect incoming calls.</string>
+    <string name="setup_permission_sms">Send SMS (Message buttons)</string>
+    <string name="setup_permission_sms_desc">Allows sending pre-configured SMS messages to selected contacts at the press of a button.</string>
+    <string name="setup_permission_calendar_desc">Allows the app to read upcoming events from your calendar out loud.</string>
+    <string name="setup_permission_location_desc">Required to determine your current location for the weather report.</string>
+    <string name="setup_permission_push_notifications">Send Notifications</string>
+    <string name="setup_btn_request_permissions">Request Permissions</string>
+    <string name="setup_permission_overlay_explanation">This permission allows the app to display on top of other apps. This is strictly required to show the call overlay or to dim the screen.</string>
+    <string name="setup_btn_enable_overlay">Enable Overlay</string>
+    <string name="setup_permission_granted">Granted</string>
+    <string name="setup_permission_notifications_explanation">By accessing notifications, GhostTalk can read incoming messages from apps like WhatsApp or Signal out loud. You can choose which apps to read in the settings.</string>
+    <string name="setup_btn_enable_notifications">Allow Access</string>
+    <string name="setup_permission_dialer_explanation">To answer and hang up calls directly through GhostTalk (e.g. using switches), GhostTalk must be registered as your default phone app.</string>
+    <string name="setup_btn_register_dialer">Set as Default App</string>
+    <string name="setup_completed_title">Setup Completed!</string>
+    <string name="setup_completed_desc">All important settings have been configured. You are now ready to use GhostTalk.</string>
+    <string name="setup_status_permission_granted">Permission granted</string>
+    <string name="setup_status_permission_missing">Permission missing (optional)</string>
 </resources>
 

@@ -3,16 +3,19 @@ package com.andreas_kratzer.ghosttalk.core.ai.domain
 import android.graphics.Bitmap
 import android.util.Base64
 import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
+import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.gson.GsonFactory
 import com.google.api.services.drive.Drive
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.net.URL
-import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import javax.inject.Inject
 import javax.inject.Singleton
 import javax.net.ssl.HttpsURLConnection
@@ -22,12 +25,15 @@ import javax.net.ssl.HttpsURLConnection
  * Reuses the app's OAuth token for authentication.
  */
 @Singleton
-class GeminiUseCase @Inject constructor(
+open class GeminiUseCase @Inject constructor(
     private val googleAuthManager: GoogleAuthManager,
     private val logger: com.andreas_kratzer.ghosttalk.core.util.Logger,
     private val aiTools: Set<@JvmSuppressWildcards AiTool>,
     private val settingsRepository: SettingsRepository
 ) {
+    private val requestMutex = Mutex()
+    private var lastRequestEndTime = 0L
+
     private val oauthTokenProvider: suspend () -> String? = {
         googleAuthManager.getGoogleCredential()?.getToken()
     }
@@ -54,18 +60,23 @@ class GeminiUseCase @Inject constructor(
     
     companion object {
         private const val TAG = "GeminiUseCase"
-        private var activeModelName = "gemini-2.0-flash" 
+        private var activeModelName = "gemini-flash-lite-latest" 
         private const val BASE_URL_TEMPLATE = "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent"
         private const val LIST_MODELS_URL = "https://generativelanguage.googleapis.com/v1beta/models"
+        private const val MIN_REQUEST_INTERVAL_MS = 1000L
+        private const val CACHE_TTL_MS = 24 * 60 * 60 * 1000L // 24 Hours
 
-        internal var modelInitialized = false
         internal var lastSuccess: Boolean? = null // null: unknown, true: success, false: failed
         internal var lockoutUntilTime: Long = 0
+        private var cachedModelsJson: String? = null
+        private var lastModelsFetchTime: Long = 0L
 
         internal fun resetHealthStateForTesting() {
-            modelInitialized = false
             lastSuccess = null
             lockoutUntilTime = 0
+            activeModelName = "gemini-flash-lite-latest"
+            cachedModelsJson = null
+            lastModelsFetchTime = 0L
         }
     }
     private var appCommandHandler: ((String, Map<String, String>) -> Unit)? = null
@@ -79,66 +90,89 @@ class GeminiUseCase @Inject constructor(
         useGoogleSearch: Boolean = false,
         image: Bitmap? = null
     ): String = withContext(Dispatchers.IO) {
-        val useApiKey = settingsRepository.useGeminiApiKey
-        val apiKey = if (useApiKey) settingsRepository.geminiApiKey else null
-        val token = if (useApiKey && !apiKey.isNullOrBlank()) {
-            ""
-        } else {
-            oauthTokenProvider() ?: return@withContext "Fehler: Nicht angemeldet (OAuth Token fehlt)."
-        }
-        
-        val now = System.currentTimeMillis()
-        if (now < lockoutUntilTime) {
-            val remainingSeconds = ((lockoutUntilTime - now) / 1000).coerceAtLeast(1)
-            throw Exception("HTTP 429: Lockout active. Please wait $remainingSeconds seconds.")
-        }
-        
-        logger.d(TAG, "Generating response for prompt: $prompt, useGoogleSearch: $useGoogleSearch, image: ${image != null}")
-        
-        if (!modelInitialized) {
-            tryToSelectBestModel()
-            modelInitialized = true
-        }
-        
-        try {
-            val result = performGeneration(token, prompt, useGoogleSearch, image)
-            lastSuccess = true
-            return@withContext result
-        } catch (e: Exception) {
-            lastSuccess = false
-            val errorMsg = e.message ?: ""
-            if (errorMsg.contains("404") || errorMsg.contains("429")) {
-                logger.w(TAG, "Model $activeModelName failed (Error: $errorMsg), attempting to find alternative...")
-                val failedModel = activeModelName
-                if (tryToSelectBestModel(excludeName = failedModel)) {
-                    try {
-                        val result = performGeneration(token, prompt, useGoogleSearch, image)
-                        lastSuccess = true
-                        return@withContext result
-                    } catch (retryEx: Exception) {
-                        lastSuccess = false
-                        logger.e(TAG, "Retry with fallback model $activeModelName failed: ${retryEx.message}")
+        requestMutex.withLock {
+            val useApiKey = settingsRepository.useGeminiApiKey
+            val apiKey = if (useApiKey) settingsRepository.geminiApiKey else null
+            val token = if (useApiKey && !apiKey.isNullOrBlank()) {
+                ""
+            } else {
+                oauthTokenProvider() ?: return@withLock "Fehler: Nicht angemeldet (OAuth Token fehlt)."
+            }
+
+            val now = System.currentTimeMillis()
+            
+            // 1. Check for 429 lockout
+            if (now < lockoutUntilTime) {
+                val remainingSeconds = ((lockoutUntilTime - now) / 1000).coerceAtLeast(1)
+                throw Exception("HTTP 429: Lockout active. Please wait $remainingSeconds seconds.")
+            }
+
+            // 2. Enforce minimum inter-request interval to prevent burst limits
+            val timeSinceLast = now - lastRequestEndTime
+            if (timeSinceLast < MIN_REQUEST_INTERVAL_MS) {
+                val waitTime = MIN_REQUEST_INTERVAL_MS - timeSinceLast
+                logger.d(TAG, "Throttling active: Waiting ${waitTime}ms before next request.")
+                delay(waitTime)
+            }
+
+            logger.d(TAG, "Generating response for prompt: $prompt, useGoogleSearch: $useGoogleSearch, image: ${image != null}")
+
+            try {
+                val result = performGeneration(token, prompt, useGoogleSearch, image)
+                lastSuccess = true
+                lastRequestEndTime = System.currentTimeMillis()
+                return@withLock result
+            } catch (e: Exception) {
+                lastSuccess = false
+                val errorMsg = e.message ?: ""
+                if (errorMsg.contains("404")) {
+                    logger.w(TAG, "Model $activeModelName failed (Error: $errorMsg), attempting to find alternative...")
+                    
+                    // Clear cache on 404 to ensure we have the latest list
+                    cachedModelsJson = null
+
+                    val failedModel = activeModelName
+                    if (tryToSelectBestModel(excludeName = failedModel)) {
+                        try {
+                            val result = performGeneration(token, prompt, useGoogleSearch, image)
+                            lastSuccess = true
+                            lastRequestEndTime = System.currentTimeMillis()
+                            return@withLock result
+                        } catch (retryEx: Exception) {
+                            lastSuccess = false
+                            logger.e(TAG, "Retry with fallback model $activeModelName failed: ${retryEx.message}")
+                        }
                     }
                 }
+                logger.e(TAG, "Gemini call failed: ${e.message}", e)
+                lastRequestEndTime = System.currentTimeMillis()
+                throw e
             }
-            logger.e(TAG, "Gemini call failed: ${e.message}", e)
-            throw e
         }
     }
 
-    private suspend fun tryToSelectBestModel(excludeName: String? = null): Boolean {
+    internal suspend fun tryToSelectBestModel(excludeName: String? = null): Boolean {
         try {
             val modelsJson = listModels()
             val modelsRoot = JSONObject(modelsJson)
             val modelsArray = modelsRoot.getJSONArray("models")
+            
             val candidates = mutableListOf<String>()
+            val debugInfo = StringBuilder("Available models metadata:\n")
             
             for (i in 0 until modelsArray.length()) {
                 val model = modelsArray.getJSONObject(i)
                 val name = model.getString("name").removePrefix("models/")
+                
+                // Collect metadata for logging
+                val inputLimit = model.optInt("inputTokenLimit", -1)
+                val outputLimit = model.optInt("outputTokenLimit", -1)
+                val methods = model.optJSONArray("supportedGenerationMethods") ?: JSONArray()
+                
+                debugInfo.append("- $name: inputLimit=$inputLimit, outputLimit=$outputLimit, methods=$methods\n")
+
                 if (name == excludeName) continue
                 
-                val methods = model.getJSONArray("supportedGenerationMethods")
                 var canGenerate = false
                 for (j in 0 until methods.length()) {
                     if (methods.getString(j) == "generateContent") canGenerate = true
@@ -148,15 +182,21 @@ class GeminiUseCase @Inject constructor(
                     candidates.add(name)
                 }
             }
-            
+            logger.d(TAG, debugInfo.toString())
+
             val bestModel = candidates
                 .filter { it.contains("flash") }
-                .sortedDescending()
+                .sortedWith(compareByDescending<String> { !it.contains("exp") }
+                    .thenByDescending { it.contains("3.1") }
+                    .thenByDescending { it.contains("lite") }
+                    .thenByDescending { it.contains("1.5") }
+                    .thenByDescending { it })
                 .firstOrNull() 
-                ?: candidates.sortedDescending().firstOrNull()
+                ?: candidates.sortedWith(compareByDescending<String> { !it.contains("exp") }
+                    .thenByDescending { it })
+                .firstOrNull()
 
             if (bestModel != null && bestModel != activeModelName) {
-                logger.d(TAG, "Selected model: $bestModel (failed/prev was $activeModelName)")
                 activeModelName = bestModel
                 return true
             }
@@ -253,7 +293,7 @@ class GeminiUseCase @Inject constructor(
                 return "Keine Antwort erhalten."
             }
         }
-        return "Fehler: Zu viele Interaktionsschritte."
+        return "Fehler: Zu many interaction steps."
     }
 
     fun getAvailableTools(): List<AiTool> {
@@ -287,7 +327,15 @@ class GeminiUseCase @Inject constructor(
         return toolsArray
     }
 
-    suspend fun listModels(): String = withContext(Dispatchers.IO) {
+    internal open suspend fun listModels(): String = withContext(Dispatchers.IO) {
+        val now = System.currentTimeMillis()
+        cachedModelsJson?.let {
+            if (now - lastModelsFetchTime < CACHE_TTL_MS) {
+                logger.d(TAG, "Using cached models list.")
+                return@withContext it
+            }
+        }
+
         val useApiKey = settingsRepository.useGeminiApiKey
         val apiKey = if (useApiKey) settingsRepository.geminiApiKey else null
         val url: URL
@@ -305,7 +353,10 @@ class GeminiUseCase @Inject constructor(
         }
         
         if (connection.responseCode == 200) {
-            connection.inputStream.bufferedReader().use { it.readText() }
+            val response = connection.inputStream.bufferedReader().use { it.readText() }
+            cachedModelsJson = response
+            lastModelsFetchTime = System.currentTimeMillis()
+            response
         } else {
             val error = connection.errorStream?.bufferedReader()?.use { it.readText() }
             "Fehler beim Auflisten der Modelle (${connection.responseCode}): $error"
@@ -328,9 +379,12 @@ class GeminiUseCase @Inject constructor(
         connection.setRequestProperty("Content-Type", "application/json")
         connection.doOutput = true
 
-        connection.outputStream.use { it.write(requestJson.toString().toByteArray()) }
+        val requestString = requestJson.toString()
+        logRequestPayload(requestString)
 
-        return if (connection.responseCode == 200) {
+        connection.outputStream.use { it.write(requestString.toByteArray()) }
+
+        val response = if (connection.responseCode == 200) {
             connection.inputStream.bufferedReader().use { it.readText() }
         } else {
             val error = connection.errorStream?.bufferedReader()?.use { it.readText() } ?: ""
@@ -342,6 +396,34 @@ class GeminiUseCase @Inject constructor(
             }
             throw Exception("HTTP ${connection.responseCode}: $error")
         }
+
+        logger.d(TAG, "Incoming Gemini Response: $response")
+        return response
+    }
+
+    private fun logRequestPayload(payload: String) {
+        try {
+            val json = JSONObject(payload)
+            val contents = json.optJSONArray("contents")
+            if (contents != null) {
+                for (i in 0 until contents.length()) {
+                    val content = contents.getJSONObject(i)
+                    val parts = content.optJSONArray("parts")
+                    if (parts != null) {
+                        for (j in 0 until parts.length()) {
+                            val part = parts.getJSONObject(j)
+                            if (part.has("inline_data")) {
+                                val inlineData = part.getJSONObject("inline_data")
+                                inlineData.put("data", "[TRUNCATED IMAGE DATA]")
+                            }
+                        }
+                    }
+                }
+            }
+            logger.d(TAG, "Outgoing Gemini Request: $json")
+        } catch (e: Exception) {
+            logger.d(TAG, "Outgoing Gemini Request (raw): $payload")
+        }
     }
 
     internal fun parseWaitTime(retryAfterHeader: String?, errorBody: String?): Long {
@@ -350,6 +432,7 @@ class GeminiUseCase @Inject constructor(
 
         // 2. Try parsing from error message body: "Please retry in 30.34s"
         if (errorBody != null) {
+            // Avoid misinterpreting "429" in the error body as seconds
             val regex = Regex("retry in (\\d+\\.?\\d*)s", RegexOption.IGNORE_CASE)
             val match = regex.find(errorBody)
             match?.groupValues?.get(1)?.toDoubleOrNull()?.let { return it.toLong() }
