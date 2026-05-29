@@ -285,10 +285,10 @@ class ControlDeviceActionHandlerTest {
         every { cursor.moveToNext() } returnsMany listOf(true, true, false)
         
         // Mock column indices
-        every { cursor.getColumnIndex(android.provider.CalendarContract.Events.TITLE) } returns 0
-        every { cursor.getColumnIndex(android.provider.CalendarContract.Events.DTSTART) } returns 1
-        every { cursor.getColumnIndex(android.provider.CalendarContract.Events.DTEND) } returns 2
-        every { cursor.getColumnIndex(android.provider.CalendarContract.Events.ALL_DAY) } returns 3
+        every { cursor.getColumnIndex(android.provider.CalendarContract.Instances.TITLE) } returns 0
+        every { cursor.getColumnIndex(android.provider.CalendarContract.Instances.BEGIN) } returns 1
+        every { cursor.getColumnIndex(android.provider.CalendarContract.Instances.END) } returns 2
+        every { cursor.getColumnIndex(android.provider.CalendarContract.Instances.ALL_DAY) } returns 3
         
         // Use a list to return different values for different calls if needed, 
         // but here we just need to return title and times correctly for each row.

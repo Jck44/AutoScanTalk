@@ -427,26 +427,34 @@ class ControlDeviceActionHandler @Inject constructor(
     private fun handleReadCalendarEntries(config: ButtonConfig, action: ControlDeviceButtonAction, executionId: Int, onFinish: (Int) -> Unit) {
         val count = action.offsetValue.coerceAtLeast(1)
         val resolver = context.contentResolver
-        val uri = android.provider.CalendarContract.Events.CONTENT_URI
         
-        // Calculate the beginning of today in local time
+        // Calculate start of today and end time (next 7 days)
         val calendar = java.util.Calendar.getInstance()
         calendar.set(java.util.Calendar.HOUR_OF_DAY, 0)
         calendar.set(java.util.Calendar.MINUTE, 0)
         calendar.set(java.util.Calendar.SECOND, 0)
         calendar.set(java.util.Calendar.MILLISECOND, 0)
         val startOfToday = calendar.timeInMillis
+        val endOfRange = startOfToday + 7 * 24 * 60 * 60 * 1000L // 7 days range
+        
+        val contentUri = android.provider.CalendarContract.Instances.CONTENT_URI
+        val uri = if (contentUri != null) {
+            val builder = contentUri.buildUpon()
+            android.content.ContentUris.appendId(builder, startOfToday)
+            android.content.ContentUris.appendId(builder, endOfRange)
+            builder.build()
+        } else {
+            android.net.Uri.EMPTY
+        }
         
         val projection = arrayOf(
-            android.provider.CalendarContract.Events.TITLE,
-            android.provider.CalendarContract.Events.DTSTART,
-            android.provider.CalendarContract.Events.DTEND,
-            android.provider.CalendarContract.Events.ALL_DAY
+            android.provider.CalendarContract.Instances.TITLE,
+            android.provider.CalendarContract.Instances.BEGIN,
+            android.provider.CalendarContract.Instances.END,
+            android.provider.CalendarContract.Instances.ALL_DAY
         )
         
-        val selection = "${android.provider.CalendarContract.Events.DTSTART} >= ?"
-        val selectionArgs = arrayOf(startOfToday.toString())
-        val sortOrder = "${android.provider.CalendarContract.Events.DTSTART} ASC"
+        val sortOrder = "${android.provider.CalendarContract.Instances.BEGIN} ASC"
         
         val messages = mutableListOf<String>()
         var errorMsg: String? = null
@@ -457,13 +465,13 @@ class ControlDeviceActionHandler @Inject constructor(
             errorMsg = "Berechtigung für den Kalender ist nicht erteilt."
         } else {
             try {
-                resolver.query(uri, projection, selection, selectionArgs, sortOrder)?.use { cursor ->
+                resolver.query(uri, projection, null, null, sortOrder)?.use { cursor ->
                     var found = 0
                     while (cursor.moveToNext() && found < count) {
-                        val titleIdx = cursor.getColumnIndex(android.provider.CalendarContract.Events.TITLE)
-                        val startIdx = cursor.getColumnIndex(android.provider.CalendarContract.Events.DTSTART)
-                        val endIdx = cursor.getColumnIndex(android.provider.CalendarContract.Events.DTEND)
-                        val allDayIdx = cursor.getColumnIndex(android.provider.CalendarContract.Events.ALL_DAY)
+                        val titleIdx = cursor.getColumnIndex(android.provider.CalendarContract.Instances.TITLE)
+                        val startIdx = cursor.getColumnIndex(android.provider.CalendarContract.Instances.BEGIN)
+                        val endIdx = cursor.getColumnIndex(android.provider.CalendarContract.Instances.END)
+                        val allDayIdx = cursor.getColumnIndex(android.provider.CalendarContract.Instances.ALL_DAY)
                         
                         val title = if (titleIdx >= 0) cursor.getString(titleIdx) else "Unbekannt"
                         val start = if (startIdx >= 0) cursor.getLong(startIdx) else 0L
