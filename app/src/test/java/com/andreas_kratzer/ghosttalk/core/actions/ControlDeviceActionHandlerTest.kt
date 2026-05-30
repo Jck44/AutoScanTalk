@@ -106,6 +106,12 @@ class ControlDeviceActionHandlerTest {
         every { NotificationReaderService.instance } returns service
         every { ttsProxy.isReady } returns true
         
+        val packageManager = mockk<android.content.pm.PackageManager>(relaxed = true)
+        every { context.packageManager } returns packageManager
+        val appInfo = mockk<android.content.pm.ApplicationInfo>(relaxed = true)
+        every { packageManager.getApplicationInfo("com.whatsapp", 0) } returns appInfo
+        every { packageManager.getApplicationLabel(appInfo) } returns "WhatsApp"
+
         val sbn = mockk<android.service.notification.StatusBarNotification>(relaxed = true)
         val notification = mockk<android.app.Notification>(relaxed = true)
         val extras = mockk<android.os.Bundle>(relaxed = true)
@@ -121,7 +127,7 @@ class ControlDeviceActionHandlerTest {
 
         val onFinish = mockk<(Int) -> Unit>(relaxed = true)
         val onCompleteSlot = slot<() -> Unit>()
-        every { ttsProxy.speakRouted("Test Sender: Hello World", any(), capture(onCompleteSlot)) } returns Unit
+        every { ttsProxy.speakRouted("WhatsApp: Test Sender: Hello World", any(), capture(onCompleteSlot)) } returns Unit
 
         handler.handle(config, action, 1, onFinish)
         
@@ -143,6 +149,12 @@ class ControlDeviceActionHandlerTest {
         every { NotificationReaderService.instance } returns service
         every { ttsProxy.isReady } returns true
         
+        val packageManager = mockk<android.content.pm.PackageManager>(relaxed = true)
+        every { context.packageManager } returns packageManager
+        val appInfo = mockk<android.content.pm.ApplicationInfo>(relaxed = true)
+        every { packageManager.getApplicationInfo("com.whatsapp", 0) } returns appInfo
+        every { packageManager.getApplicationLabel(appInfo) } returns "WhatsApp"
+
         val sbn = mockk<android.service.notification.StatusBarNotification>(relaxed = true)
         val notification = mockk<android.app.Notification>(relaxed = true)
         val extras = mockk<android.os.Bundle>(relaxed = true)
@@ -159,11 +171,79 @@ class ControlDeviceActionHandlerTest {
         val onFinish = mockk<(Int) -> Unit>(relaxed = true)
         val onCompleteSlot = slot<() -> Unit>()
         // Emojis should be removed
-        every { ttsProxy.speakRouted("Test Sender: Hello World ! This is a test.", any(), capture(onCompleteSlot)) } returns Unit
+        every { ttsProxy.speakRouted("WhatsApp: Test Sender: Hello World ! This is a test.", any(), capture(onCompleteSlot)) } returns Unit
 
         handler.handle(config, action, 1, onFinish)
         
         // Simuliere TTS Ende
+        if (onCompleteSlot.isCaptured) {
+            onCompleteSlot.captured.invoke()
+        }
+
+        verify { ttsProxy.isReadingNotification = false }
+        verify { onFinish(1) }
+    }
+
+    @Test
+    fun `handle READ_NOTIFICATIONS groups multiple notifications from same app and different apps`() {
+        val action = ControlDeviceButtonAction(DeviceActionType.READ_NOTIFICATIONS)
+        val config = ButtonConfig(id = "b1", label = "Read", buttonAction = action, auditoryCue = null)
+        
+        val service = mockk<NotificationReaderService>(relaxed = true)
+        every { NotificationReaderService.instance } returns service
+        every { ttsProxy.isReady } returns true
+        
+        val packageManager = mockk<android.content.pm.PackageManager>(relaxed = true)
+        every { context.packageManager } returns packageManager
+        
+        val waAppInfo = mockk<android.content.pm.ApplicationInfo>(relaxed = true)
+        every { packageManager.getApplicationInfo("com.whatsapp", 0) } returns waAppInfo
+        every { packageManager.getApplicationLabel(waAppInfo) } returns "WhatsApp"
+
+        val gmAppInfo = mockk<android.content.pm.ApplicationInfo>(relaxed = true)
+        every { packageManager.getApplicationInfo("com.google.android.gm", 0) } returns gmAppInfo
+        every { packageManager.getApplicationLabel(gmAppInfo) } returns "Gmail"
+
+        // 3 notifications: 2 WhatsApp, 1 Gmail
+        val sbn1 = mockk<android.service.notification.StatusBarNotification>(relaxed = true) {
+            every { packageName } returns "com.whatsapp"
+            val notif = mockk<android.app.Notification>(relaxed = true)
+            val extras = mockk<android.os.Bundle>(relaxed = true)
+            every { extras.getString(android.app.Notification.EXTRA_TITLE) } returns "Alice"
+            every { extras.getCharSequence(android.app.Notification.EXTRA_TEXT) } returns "Hi"
+            notif.extras = extras
+            every { notification } returns notif
+        }
+        val sbn2 = mockk<android.service.notification.StatusBarNotification>(relaxed = true) {
+            every { packageName } returns "com.whatsapp"
+            val notif = mockk<android.app.Notification>(relaxed = true)
+            val extras = mockk<android.os.Bundle>(relaxed = true)
+            every { extras.getString(android.app.Notification.EXTRA_TITLE) } returns "Bob"
+            every { extras.getCharSequence(android.app.Notification.EXTRA_TEXT) } returns "How are you?"
+            notif.extras = extras
+            every { notification } returns notif
+        }
+        val sbn3 = mockk<android.service.notification.StatusBarNotification>(relaxed = true) {
+            every { packageName } returns "com.google.android.gm"
+            val notif = mockk<android.app.Notification>(relaxed = true)
+            val extras = mockk<android.os.Bundle>(relaxed = true)
+            every { extras.getString(android.app.Notification.EXTRA_TITLE) } returns "Google"
+            every { extras.getCharSequence(android.app.Notification.EXTRA_TEXT) } returns "Security alert"
+            notif.extras = extras
+            every { notification } returns notif
+        }
+        
+        every { service.activeNotifications } returns arrayOf(sbn1, sbn2, sbn3)
+        every { settings.monitoredNotificationApps } returns setOf("com.whatsapp", "com.google.android.gm")
+
+        val onFinish = mockk<(Int) -> Unit>(relaxed = true)
+        val onCompleteSlot = slot<() -> Unit>()
+        
+        val expectedText = "WhatsApp: Alice: Hi. Bob: How are you?. Gmail: Google: Security alert"
+        every { ttsProxy.speakRouted(expectedText, any(), capture(onCompleteSlot)) } returns Unit
+
+        handler.handle(config, action, 1, onFinish)
+        
         if (onCompleteSlot.isCaptured) {
             onCompleteSlot.captured.invoke()
         }

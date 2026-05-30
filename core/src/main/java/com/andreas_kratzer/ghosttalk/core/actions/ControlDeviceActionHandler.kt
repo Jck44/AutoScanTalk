@@ -295,14 +295,32 @@ class ControlDeviceActionHandler @Inject constructor(
             return
         }
 
-        val messagesToRead = filtered.mapNotNull { sbn ->
-            val extras = sbn.notification.extras
-            val title = extras.getString(android.app.Notification.EXTRA_TITLE) ?: "Unbekannt"
-            val text = extras.getCharSequence(android.app.Notification.EXTRA_TEXT)?.toString()
-            if (text.isNullOrBlank()) null else "$title: $text"
+        val packageManager = context.packageManager
+        val groupedByApp = filtered.groupBy { sbn ->
+            try {
+                val appInfo = packageManager.getApplicationInfo(sbn.packageName, 0)
+                packageManager.getApplicationLabel(appInfo).toString()
+            } catch (e: Exception) {
+                sbn.packageName
+            }
         }
 
-        if (messagesToRead.isEmpty()) {
+        val appMessages = mutableListOf<String>()
+        for ((appName, sbns) in groupedByApp) {
+            val messagesForApp = sbns.mapNotNull { sbn ->
+                val extras = sbn.notification.extras
+                val title = extras.getString(android.app.Notification.EXTRA_TITLE) ?: "Unbekannt"
+                val text = extras.getCharSequence(android.app.Notification.EXTRA_TEXT)?.toString()
+                if (text.isNullOrBlank()) null else "$title: $text"
+            }
+            if (messagesForApp.isNotEmpty()) {
+                val appPrefix = if (appName.isNotBlank()) "$appName: " else ""
+                val appBody = messagesForApp.joinToString(". ")
+                appMessages.add("$appPrefix$appBody")
+            }
+        }
+
+        if (appMessages.isEmpty()) {
             val msg = "Benachrichtigungen enthalten keinen Text."
             actionLogger.log(msg, action, buttonConfig.label)
             tts.speakRouted(msg, targetDeviceAddress) {
@@ -311,7 +329,7 @@ class ControlDeviceActionHandler @Inject constructor(
             return
         }
 
-        var combinedMessage = messagesToRead.joinToString(". ")
+        var combinedMessage = appMessages.joinToString(". ")
         if (action.ignoreEmojis) {
             combinedMessage = removeEmojis(combinedMessage)
         }
