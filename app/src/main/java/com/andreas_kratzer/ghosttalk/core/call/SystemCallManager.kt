@@ -569,7 +569,9 @@ class SystemCallManager @Inject constructor(
             return null
         }
         val cleanNumber = android.telephony.PhoneNumberUtils.stripSeparators(phoneNumber) ?: phoneNumber
-        val uri = Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI, Uri.encode(cleanNumber))
+        
+        // 1. Primary Lookup: Use PhoneLookup.ENTERPRISE_CONTENT_FILTER_URI to search personal and work contacts
+        val uri = Uri.withAppendedPath(ContactsContract.PhoneLookup.ENTERPRISE_CONTENT_FILTER_URI, Uri.encode(cleanNumber))
         val projection = arrayOf(ContactsContract.PhoneLookup.DISPLAY_NAME)
         try {
             context.contentResolver.query(uri, projection, null, null, null)?.use { cursor ->
@@ -583,6 +585,23 @@ class SystemCallManager @Inject constructor(
         } catch (e: Exception) {
             // Ignore
         }
+
+        // 2. Fallback: If PhoneLookup returned nothing, try CommonDataKinds.Phone.ENTERPRISE_CONTENT_FILTER_URI
+        val fallbackUri = Uri.withAppendedPath(ContactsContract.CommonDataKinds.Phone.ENTERPRISE_CONTENT_FILTER_URI, Uri.encode(cleanNumber))
+        val fallbackProjection = arrayOf(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
+        try {
+            context.contentResolver.query(fallbackUri, fallbackProjection, null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val nameIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
+                    if (nameIndex >= 0) {
+                        return cursor.getString(nameIndex)
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            // Ignore
+        }
+        
         return null
     }
 }
