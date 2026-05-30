@@ -93,6 +93,7 @@ class TtsPrefetchTest {
         val spotifyDelegate = mockk<com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.SpotifySettingsDelegate>(relaxed = true)
         val prefetchDelegate = com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.TtsPrefetchSettingsDelegate(ttsHelper)
         val backupDelegate = mockk<com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.BackupSettingsDelegate>(relaxed = true)
+        val backgroundScheduler = mockk<com.andreas_kratzer.ghosttalk.core.domain.BackgroundScheduler>(relaxed = true)
 
         viewModel = SettingsViewModel(
             application = application,
@@ -111,6 +112,7 @@ class TtsPrefetchTest {
             spotifyDelegate = spotifyDelegate,
             prefetchDelegate = prefetchDelegate,
             backupDelegate = backupDelegate,
+            backgroundScheduler = backgroundScheduler,
             updateActiveBookNameUseCase = updateActiveBookNameUseCase,
             deleteBookUseCase = deleteBookUseCase,
             updateActionLogLimitUseCase = updateActionLogLimitUseCase,

@@ -74,6 +74,8 @@ class SettingsViewModelTest {
     private lateinit var ttsHelper: com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
     private lateinit var audioCacheRepository: com.andreas_kratzer.ghosttalk.core.tts.AudioCacheRepository
     
+    private lateinit var backgroundScheduler: com.andreas_kratzer.ghosttalk.core.domain.BackgroundScheduler
+    
     private lateinit var viewModel: SettingsViewModel
 
     @Before
@@ -87,6 +89,7 @@ class SettingsViewModelTest {
         userModeSessionRepository = mockk(relaxed = true)
         securityManager = mockk(relaxed = true)
         getPagesUseCase = mockk(relaxed = true)
+        backgroundScheduler = mockk(relaxed = true)
         
         importExportManager = mockk(relaxed = true)
         hueManager = mockk(relaxed = true)
@@ -150,6 +153,7 @@ class SettingsViewModelTest {
             spotifyDelegate = spotifyDelegate,
             prefetchDelegate = prefetchDelegate,
             backupDelegate = backupDelegate,
+            backgroundScheduler = backgroundScheduler,
             updateActiveBookNameUseCase = updateActiveBookNameUseCase,
             deleteBookUseCase = deleteBookUseCase,
             updateActionLogLimitUseCase = updateActionLogLimitUseCase,

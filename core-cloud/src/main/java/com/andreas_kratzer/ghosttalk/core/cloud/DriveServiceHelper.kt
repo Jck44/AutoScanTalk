@@ -48,20 +48,27 @@ class DriveServiceHelper(private val driveService: Drive) {
         val query = "name = '$folderName' and mimeType = 'application/vnd.google-apps.folder' and trashed = false"
         try {
             Log.d(TAG, "Searching for folder: $folderName with query: $query")
-            val result: FileList = driveService.files().list().setQ(query).setFields("files(id, name)").execute()
+            val result: FileList = driveService.files().list()
+                .setQ(query)
+                .setOrderBy("modifiedTime desc")
+                .setFields("files(id, name, modifiedTime)")
+                .execute()
             val files = result.files ?: emptyList()
             Log.d(TAG, "Search returned ${files.size} entries for $folderName")
+            if (files.size > 1) {
+                Log.w(TAG, "Multiple folders with name '$folderName' found. Using the most recently modified one.")
+            }
             val id = files.firstOrNull()?.id
             Log.d(TAG, "Search result for $folderName: ${id ?: "Not found"}")
             id
         } catch (e: com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException) {
             throw e
         } catch (e: GoogleJsonResponseException) {
-            Log.e(TAG, "Failed to find folder. Status: ${e.statusCode}, Message: ${e.details.message}", e)
-            null
+            Log.e(TAG, "Failed to find folder. Status: ${e.statusCode}, Message: ${e.details?.message ?: e.message}", e)
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Failed to find folder due to unexpected exception: ${e.message}", e)
-            null
+            throw e
         }
     }
 
