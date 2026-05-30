@@ -33,10 +33,21 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = file(project.findProperty("RELEASE_STORE_FILE") ?: "release.keystore")
-            storePassword = project.findProperty("RELEASE_STORE_PASSWORD")?.toString()
-            keyAlias = project.findProperty("RELEASE_KEY_ALIAS")?.toString()
-            keyPassword = project.findProperty("RELEASE_KEY_PASSWORD")?.toString()
+            val keystorePath = project.findProperty("RELEASE_STORE_FILE")?.toString() ?: "release.keystore"
+            val keystoreFile = file(keystorePath)
+            if (keystoreFile.exists()) {
+                storeFile = keystoreFile
+                storePassword = project.findProperty("RELEASE_STORE_PASSWORD")?.toString()
+                keyAlias = project.findProperty("RELEASE_KEY_ALIAS")?.toString()
+                keyPassword = project.findProperty("RELEASE_KEY_PASSWORD")?.toString()
+            } else {
+                // Fallback to debug configuration in CI / CodeQL if release keystore is missing
+                val debugConfig = signingConfigs.getByName("debug")
+                storeFile = debugConfig.storeFile
+                storePassword = debugConfig.storePassword
+                keyAlias = debugConfig.keyAlias
+                keyPassword = debugConfig.keyPassword
+            }
         }
     }
 
