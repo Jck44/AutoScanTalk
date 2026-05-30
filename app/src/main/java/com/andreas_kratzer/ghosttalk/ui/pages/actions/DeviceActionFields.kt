@@ -291,6 +291,7 @@ fun DeviceActionFields(
             if (selectedType == DeviceActionType.SEND_MESSAGE) {
                 MessagingFields(
                     contactName = contactName ?: stringResource(R.string.contact_picker_title),
+                    contactPhone = contactPhone ?: "",
                     onContactSelected = onContactSelected,
                     messageText = messageText ?: "",
                     onMessageTextChange = onMessageTextChange,
@@ -302,6 +303,7 @@ fun DeviceActionFields(
             if (selectedType == DeviceActionType.START_CALL) {
                 CallFields(
                     contactName = contactName ?: stringResource(R.string.contact_picker_title),
+                    contactPhone = contactPhone ?: "",
                     onContactSelected = onContactSelected,
                     onAutoSave = onAutoSave
                 )

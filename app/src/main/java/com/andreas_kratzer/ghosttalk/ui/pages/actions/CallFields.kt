@@ -2,7 +2,6 @@ package com.andreas_kratzer.ghosttalk.ui.pages.actions
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.provider.ContactsContract
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -26,44 +25,14 @@ import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 @Composable
 fun CallFields(
     contactName: String,
+    contactPhone: String = "",
     onContactSelected: (String, String) -> Unit,
     onAutoSave: () -> Unit = {}
 ) {
     val dimensions = LocalDimensions.current
     val context = LocalContext.current
 
-    val contactLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickContact()
-    ) { uri ->
-        uri?.let {
-            val projection = arrayOf(
-                ContactsContract.Contacts._ID,
-                ContactsContract.Contacts.DISPLAY_NAME_PRIMARY
-            )
-            context.contentResolver.query(it, projection, null, null, null)?.use { cursor ->
-                if (cursor.moveToFirst()) {
-                    val id = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts._ID))
-                    val name = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME_PRIMARY))
-                    
-                    // Now get the first phone number for this contact
-                    context.contentResolver.query(
-                        ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-                        arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER),
-                        "${ContactsContract.CommonDataKinds.Phone.CONTACT_ID} = ?",
-                        arrayOf(id),
-                        null
-                    )?.use { phoneCursor ->
-                        if (phoneCursor.moveToFirst()) {
-                            val phone = phoneCursor.getString(phoneCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER))
-                            onContactSelected(name, phone)
-                        } else {
-                            onContactSelected(name, "")
-                        }
-                    }
-                }
-            }
-        }
-    }
+    val contactLauncher = rememberContactPickerLauncher(onContactSelected = onContactSelected)
 
     val callPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -89,8 +58,14 @@ fun CallFields(
 
     Column(verticalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)) {
         // Contact Selection
+        val displayValue = if (contactPhone.isNotBlank()) {
+            "$contactName ($contactPhone)"
+        } else {
+            contactName
+        }
+
         OutlinedTextField(
-            value = contactName,
+            value = displayValue,
             onValueChange = {},
             readOnly = true,
             label = { Text(stringResource(R.string.contact_picker_title)) },

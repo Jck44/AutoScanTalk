@@ -199,6 +199,8 @@
     <string name="date_format_pattern">dd.MM</string>
     <string name="time_format_pattern">HH:mm</string>
     <string name="contact_picker_title">Kontakt wählen</string>
+    <string name="contact_picker_select_number_title">Nummer auswählen</string>
+    <string name="contact_picker_no_numbers_found">Keine Telefonnummern gefunden</string>
     <string name="action_send_message">Nachricht senden</string>
     <string name="action_start_call">Telefonanruf starten</string>
     <string name="volume_media">Lautstärke Medien</string>
