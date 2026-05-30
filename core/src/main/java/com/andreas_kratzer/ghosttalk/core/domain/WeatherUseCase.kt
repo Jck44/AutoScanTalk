@@ -27,10 +27,10 @@ class WeatherUseCase @Inject constructor(
         data class Error(val message: String) : WeatherResult()
     }
 
-    suspend fun getWeatherInfo(lat: Double, lon: Double): WeatherResult = withContext(Dispatchers.IO) {
+    suspend fun getWeatherInfo(lat: Double, lon: Double, forceRefresh: Boolean = false): WeatherResult = withContext(Dispatchers.IO) {
         val cacheTimeoutMinutes = settingsRepository.weatherCacheTimeout
         val lastTimestamp = repository.getLastTimestamp()
-        val isCacheExpired = System.currentTimeMillis() - lastTimestamp > (cacheTimeoutMinutes * 60 * 1000)
+        val isCacheExpired = forceRefresh || (System.currentTimeMillis() - lastTimestamp > (cacheTimeoutMinutes * 60 * 1000))
         
         logger.d(TAG, "getWeatherInfo: lat=$lat, lon=$lon, isCacheExpired=$isCacheExpired")
         

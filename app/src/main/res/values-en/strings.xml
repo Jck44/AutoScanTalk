@@ -185,6 +185,7 @@
     <string name="action_date_plain">Today is %1$s</string>
     <string name="action_weather_fetching">Fetching weather data…</string>
     <string name="action_weather_format">Current weather: %1$s at %2$s degrees</string>
+    <string name="action_weather_format_with_location">Current weather in %1$s: %2$s at %3$s degrees</string>
     <string name="action_weather_error">Error fetching weather: %1$s</string>
     <string name="date_format_pattern">MM/dd</string>
     <string name="time_format_pattern">h:mm a</string>
@@ -245,6 +246,10 @@
     <string name="action_previous_action">Previous Action</string>
     <string name="action_previous_action_rank">Action Rank (1=last, 2=second to last…)</string>
     <string name="action_previous_action_empty">No previous action found</string>
+    <string name="audio_cue_last_action_prefix">Last action: %s</string>
+    <string name="audio_cue_previous_action_prefix_format">%1$d. Last action: %2$s</string>
+    <string name="audio_cue_frequent_action_prefix">Most frequent action: %s</string>
+    <string name="audio_cue_frequent_action_prefix_format">%1$d. Most frequent action: %2$s</string>
 
     <!-- UI Redundancy Cleanup Strings -->
     <string name="editor_template_move_not_supported">Moving is not supported for templates</string>

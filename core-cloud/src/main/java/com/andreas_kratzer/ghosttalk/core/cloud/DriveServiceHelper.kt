@@ -158,30 +158,59 @@ class DriveServiceHelper(private val driveService: Drive) {
         targetFile: java.io.File,
         onProgress: (Float) -> Unit = {}
     ): Boolean = withContext(Dispatchers.IO) {
-        try {
-            Log.d(TAG, "Downloading file: $fileId to ${targetFile.absolutePath}")
-            val request = driveService.files().get(fileId)
-            request.mediaHttpDownloader.setProgressListener { downloader ->
-                if (downloader.downloadState == com.google.api.client.googleapis.media.MediaHttpDownloader.DownloadState.MEDIA_IN_PROGRESS) {
-                    onProgress(downloader.progress.toFloat())
-                } else if (downloader.downloadState == com.google.api.client.googleapis.media.MediaHttpDownloader.DownloadState.MEDIA_COMPLETE) {
-                    onProgress(1.0f)
+        val maxRetries = 3
+        var attempt = 0
+        var success = false
+        var delayMs = 1000L
+
+        while (attempt < maxRetries && !success) {
+            attempt++
+            try {
+                Log.d(TAG, "Downloading file: $fileId to ${targetFile.absolutePath} (Attempt $attempt of $maxRetries)")
+                val request = driveService.files().get(fileId)
+                request.mediaHttpDownloader.setProgressListener { downloader ->
+                    if (downloader.downloadState == com.google.api.client.googleapis.media.MediaHttpDownloader.DownloadState.MEDIA_IN_PROGRESS) {
+                        onProgress(downloader.progress.toFloat())
+                    } else if (downloader.downloadState == com.google.api.client.googleapis.media.MediaHttpDownloader.DownloadState.MEDIA_COMPLETE) {
+                        onProgress(1.0f)
+                    }
+                }
+                FileOutputStream(targetFile).use { outputStream ->
+                    request.executeMediaAndDownloadTo(outputStream)
+                }
+                Log.d(TAG, "File downloaded successfully: $fileId on attempt $attempt")
+                success = true
+            } catch (e: com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException) {
+                // Do not retry authorization errors, rethrow them
+                throw e
+            } catch (e: GoogleJsonResponseException) {
+                Log.e(TAG, "Failed to download file on attempt $attempt. Status: ${e.statusCode}, Message: ${e.details?.message ?: e.message}", e)
+                // Do not retry client errors (4xx), except for timeout (408) and rate limits (429)
+                if (e.statusCode in 400..499 && e.statusCode != 408 && e.statusCode != 429) {
+                    break
+                }
+                if (attempt < maxRetries) {
+                    Log.w(TAG, "Retrying download in ${delayMs}ms...")
+                    kotlinx.coroutines.delay(delayMs)
+                    delayMs *= 2
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to download file on attempt $attempt due to unexpected exception: ${e.message}", e)
+                if (attempt < maxRetries) {
+                    Log.w(TAG, "Retrying download in ${delayMs}ms...")
+                    kotlinx.coroutines.delay(delayMs)
+                    delayMs *= 2
                 }
             }
-            FileOutputStream(targetFile).use { outputStream ->
-                request.executeMediaAndDownloadTo(outputStream)
-            }
-            Log.d(TAG, "File downloaded successfully: $fileId")
-            true
-        } catch (e: com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException) {
-            throw e
-        } catch (e: GoogleJsonResponseException) {
-            Log.e(TAG, "Failed to download file. Status: ${e.statusCode}, Message: ${e.details.message}", e)
-            false
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to download file due to unexpected exception: ${e.message}", e)
-            false
         }
+
+        if (!success) {
+            if (targetFile.exists()) {
+                val deleted = targetFile.delete()
+                Log.d(TAG, "Cleanup: Deleted partially downloaded or stale file: ${targetFile.absolutePath} ($deleted)")
+            }
+        }
+        success
     }
 
     /**

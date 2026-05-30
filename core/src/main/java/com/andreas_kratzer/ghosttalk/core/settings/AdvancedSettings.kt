@@ -13,6 +13,10 @@ interface AdvancedSettings {
     val actionLogLimitFlow: StateFlow<Int>
     val logIgnoredActionsFlow: StateFlow<Boolean>
     val logStopActionsFlow: StateFlow<Boolean>
+    val backgroundLocationEnabledFlow: StateFlow<Boolean>
+    val backgroundLocationIntervalFlow: StateFlow<Long>
+    val backgroundWeatherEnabledFlow: StateFlow<Boolean>
+    val backgroundWeatherIntervalFlow: StateFlow<Long>
 
     var persistActionLogs: Boolean
     var actionLogsStorage: String?
@@ -24,4 +28,8 @@ interface AdvancedSettings {
     var actionLogLimit: Int
     var logIgnoredActions: Boolean
     var logStopActions: Boolean
+    var backgroundLocationEnabled: Boolean
+    var backgroundLocationInterval: Long
+    var backgroundWeatherEnabled: Boolean
+    var backgroundWeatherInterval: Long
 }

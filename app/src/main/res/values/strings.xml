@@ -189,6 +189,7 @@
     <string name="action_date_plain">Heute ist der %1$s</string>
     <string name="action_weather_fetching">Wetterdaten werden abgerufen…</string>
     <string name="action_weather_format">Das aktuelle Wetter: %1$s bei %2$s Grad</string>
+    <string name="action_weather_format_with_location">Das aktuelle Wetter in %1$s: %2$s bei %3$s Grad</string>
     <string name="action_weather_error">Fehler beim Abrufen des Wetters: %1$s</string>
     <string name="date_format_pattern">dd.MM</string>
     <string name="time_format_pattern">HH:mm</string>
@@ -249,6 +250,10 @@
     <string name="action_previous_action">Vorherige Aktion</string>
     <string name="action_previous_action_rank">Aktions-Nummer (1=letzte, 2=vorletzte…)</string>
     <string name="action_previous_action_empty">Keine vorherige Aktion gefunden</string>
+    <string name="audio_cue_last_action_prefix">Letzte Aktion: %s</string>
+    <string name="audio_cue_previous_action_prefix_format">%1$d. Letzte Aktion: %2$s</string>
+    <string name="audio_cue_frequent_action_prefix">Häufigste Aktion: %s</string>
+    <string name="audio_cue_frequent_action_prefix_format">%1$d. Häufigste Aktion: %2$s</string>
 
     <!-- UI Redundancy Cleanup Strings -->
     <string name="editor_template_move_not_supported">Verschieben für Vorlagen nicht unterstützt</string>

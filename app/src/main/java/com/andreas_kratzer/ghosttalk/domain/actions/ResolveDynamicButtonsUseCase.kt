@@ -1,5 +1,6 @@
 package com.andreas_kratzer.ghosttalk.domain.actions
 
+import android.app.Application
 import com.andreas_kratzer.ghosttalk.core.actions.FrequentActionResolver
 import com.andreas_kratzer.ghosttalk.core.model.AuditoryCue
 import com.andreas_kratzer.ghosttalk.core.model.ButtonAction
@@ -19,7 +20,8 @@ import javax.inject.Inject
  */
 class ResolveDynamicButtonsUseCase @Inject constructor(
     private val frequentActionResolver: FrequentActionResolver,
-    private val actionLogProvider: ActionLogProvider
+    private val actionLogProvider: ActionLogProvider,
+    private val application: Application
 ) {
 
     private var lastAllPagesRef: List<Page>? = null
@@ -68,11 +70,17 @@ class ResolveDynamicButtonsUseCase @Inject constructor(
 
         // Step 4: Resolve Smart Predictions and Previous Actions
         var changed = frequentlyResolvedPage !== page
-        val finalConfigs = frequentlyResolvedPage.buttonConfigs.map { config ->
-            val action = config?.buttonAction
+        val finalConfigs = frequentlyResolvedPage.buttonConfigs.mapIndexed { index, config ->
+            if (config == null) return@mapIndexed null
+            
+            // Check if the original config at this index was active and was a FrequentActionButtonAction
+            val originalConfig = page.buttonConfigs.getOrNull(index)
+            val originalAction = originalConfig?.buttonAction
+            
+            val action = config.buttonAction
             if (action is SmartPredictionButtonAction && config.isActive) {
                 if (smartPredictions == null) {
-                    return@map config // Keep placeholder while waiting
+                    return@mapIndexed config // Keep placeholder while waiting
                 }
                 val predictionId = smartPredictions.getOrNull(action.rank - 1)
                 val resolved = if (predictionId != null) {
@@ -87,7 +95,17 @@ class ResolveDynamicButtonsUseCase @Inject constructor(
                 val historicalAction = entry?.action
                 val resolved = if (historicalAction != null) {
                     val label = entry.label ?: entry.message
-                    config.copy(label = label, buttonAction = historicalAction)
+                    val resolvedCue = label
+                    val prefixedCue = if (action.rank == 1) {
+                        application.getString(com.andreas_kratzer.ghosttalk.R.string.audio_cue_last_action_prefix, resolvedCue)
+                    } else {
+                        application.getString(com.andreas_kratzer.ghosttalk.R.string.audio_cue_previous_action_prefix_format, action.rank, resolvedCue)
+                    }
+                    config.copy(
+                        label = label, 
+                        buttonAction = historicalAction,
+                        auditoryCue = AuditoryCue.TextToSpeechCue(prefixedCue)
+                    )
                 } else {
                     // No history available, provide feedback in ear (auditory cue)
                     config.copy(
@@ -97,6 +115,18 @@ class ResolveDynamicButtonsUseCase @Inject constructor(
                         playActionAsAuditoryCue = true
                     )
                 }
+                if (resolved !== config) changed = true
+                resolved
+            } else if (originalAction is FrequentActionButtonAction && originalConfig.isActive) {
+                val resolvedCueText = (config.auditoryCue as? AuditoryCue.TextToSpeechCue)?.text?.takeIf { it.isNotBlank() } ?: config.label
+                val prefixedCue = if (originalAction.rank == 1) {
+                    application.getString(com.andreas_kratzer.ghosttalk.R.string.audio_cue_frequent_action_prefix, resolvedCueText)
+                } else {
+                    application.getString(com.andreas_kratzer.ghosttalk.R.string.audio_cue_frequent_action_prefix_format, originalAction.rank, resolvedCueText)
+                }
+                val resolved = config.copy(
+                    auditoryCue = AuditoryCue.TextToSpeechCue(prefixedCue)
+                )
                 if (resolved !== config) changed = true
                 resolved
             } else {

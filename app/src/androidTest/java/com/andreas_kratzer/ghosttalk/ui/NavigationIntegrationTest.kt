@@ -136,4 +136,54 @@ class NavigationIntegrationTest {
         // Since I'm not sure about the tag for back button in ContentManagement, 
         // I might need to add it or use content description.
     }
+
+    @Test
+    fun startupBehavior_UserMode_canNavigateBack() {
+        val waitForRouteAndResumedState = { expectedRoute: String ->
+            composeTestRule.waitUntil(10000) {
+                var isResumed = false
+                composeTestRule.runOnUiThread {
+                    val navController = composeTestRule.activity.navControllerForTesting
+                    val currentEntry = navController?.currentBackStackEntry
+                    isResumed = currentEntry?.destination?.route == expectedRoute &&
+                            currentEntry.lifecycle.currentState == androidx.lifecycle.Lifecycle.State.RESUMED
+                }
+                isResumed
+            }
+            composeTestRule.waitForIdle()
+        }
+
+        // Set startupBehavior to USER_MODE
+        composeTestRule.runOnUiThread {
+            settingsRepository.startupBehavior = "USER_MODE"
+        }
+
+        // Recreate the activity to trigger the auto-open behavior with the new settings
+        composeTestRule.activityRule.scenario.recreate()
+
+        // Wait until we reach "main" directly, and it is resumed
+        waitForRouteAndResumedState("main")
+
+        // Verify PageScreen back button exists
+        composeTestRule.onNodeWithTag("page_screen_back_button").assertExists()
+
+        // Navigate back to StartScreen
+        composeTestRule.onNodeWithTag("page_screen_back_button").performClick()
+
+        // Wait until we return to "start" and it is resumed
+        waitForRouteAndResumedState("start")
+
+        // Verify StartScreen elements exist
+        composeTestRule.onNodeWithTag("start_card_user_mode").assertExists()
+
+        // Navigate back to BookListScreen
+        val backDesc = composeTestRule.activity.getString(R.string.start_back_to_books)
+        composeTestRule.onNodeWithContentDescription(backDesc).performClick()
+
+        // Wait until we return to "book_list" and it is resumed
+        waitForRouteAndResumedState("book_list")
+
+        // Verify BookListScreen elements exist
+        composeTestRule.onNodeWithTag("book_add_fab").assertExists()
+    }
 }

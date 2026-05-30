@@ -66,13 +66,20 @@ fun CallFields(
     }
 
     val callPermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
+        ActivityResultContracts.RequestMultiplePermissions()
     ) { _ -> }
 
     // Proactive check
     fun checkCallPermission() {
+        val permissions = mutableListOf<String>()
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
-            callPermissionLauncher.launch(Manifest.permission.CALL_PHONE)
+            permissions.add(Manifest.permission.CALL_PHONE)
+        }
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CALL_LOG) != PackageManager.PERMISSION_GRANTED) {
+            permissions.add(Manifest.permission.READ_CALL_LOG)
+        }
+        if (permissions.isNotEmpty()) {
+            callPermissionLauncher.launch(permissions.toTypedArray())
         }
     }
 

@@ -42,11 +42,20 @@ class WeatherActionHandler @Inject constructor(
             try {
                 when (val result = weatherExecutor.getWeatherInfo()) {
                     is WeatherExecutor.WeatherResult.Success -> {
-                        val report = context.getString(
-                            com.andreas_kratzer.ghosttalk.R.string.action_weather_format,
-                            result.condition,
-                            result.temperature.toString()
-                        )
+                        val report = if (!result.locationName.isNullOrBlank()) {
+                            context.getString(
+                                com.andreas_kratzer.ghosttalk.R.string.action_weather_format_with_location,
+                                result.locationName,
+                                result.condition,
+                                result.temperature.toString()
+                            )
+                        } else {
+                            context.getString(
+                                com.andreas_kratzer.ghosttalk.R.string.action_weather_format,
+                                result.condition,
+                                result.temperature.toString()
+                            )
+                        }
                         actionLogger.log(report, action, buttonConfig.label)
                         val tts = ttsProxyLazy.get()
                         if (tts.isReady) {

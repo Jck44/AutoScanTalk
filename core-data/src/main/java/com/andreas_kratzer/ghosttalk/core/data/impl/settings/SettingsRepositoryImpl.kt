@@ -129,6 +129,10 @@ class SettingsRepositoryImpl @Inject constructor(
     override val actionLogLimitFlow: StateFlow<Int> get() = advancedSettings.actionLogLimitFlow
     override val logIgnoredActionsFlow: StateFlow<Boolean> get() = advancedSettings.logIgnoredActionsFlow
     override val logStopActionsFlow: StateFlow<Boolean> get() = advancedSettings.logStopActionsFlow
+    override val backgroundLocationEnabledFlow: StateFlow<Boolean> get() = advancedSettings.backgroundLocationEnabledFlow
+    override val backgroundLocationIntervalFlow: StateFlow<Long> get() = advancedSettings.backgroundLocationIntervalFlow
+    override val backgroundWeatherEnabledFlow: StateFlow<Boolean> get() = advancedSettings.backgroundWeatherEnabledFlow
+    override val backgroundWeatherIntervalFlow: StateFlow<Long> get() = advancedSettings.backgroundWeatherIntervalFlow
     
     // --- NotificationSettings ---
     override val isNotificationReadingEnabledFlow: StateFlow<Boolean> get() = notificationSettings.isNotificationReadingEnabledFlow
@@ -384,6 +388,22 @@ class SettingsRepositoryImpl @Inject constructor(
     override var weatherCacheTimeout: Long
         get() = advancedSettings.weatherCacheTimeout
         set(value) { advancedSettings.weatherCacheTimeout = value }
+
+    override var backgroundLocationEnabled: Boolean
+        get() = advancedSettings.backgroundLocationEnabled
+        set(value) { advancedSettings.backgroundLocationEnabled = value }
+
+    override var backgroundLocationInterval: Long
+        get() = advancedSettings.backgroundLocationInterval
+        set(value) { advancedSettings.backgroundLocationInterval = value }
+
+    override var backgroundWeatherEnabled: Boolean
+        get() = advancedSettings.backgroundWeatherEnabled
+        set(value) { advancedSettings.backgroundWeatherEnabled = value }
+
+    override var backgroundWeatherInterval: Long
+        get() = advancedSettings.backgroundWeatherInterval
+        set(value) { advancedSettings.backgroundWeatherInterval = value }
 
     override var actionLogLimit: Int
         get() = advancedSettings.actionLogLimit

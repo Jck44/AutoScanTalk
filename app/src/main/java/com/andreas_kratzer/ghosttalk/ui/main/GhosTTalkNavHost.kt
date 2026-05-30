@@ -37,6 +37,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.first
 
 @Composable
 fun GhostTalkNavHost(
@@ -92,45 +93,50 @@ fun GhostTalkNavHost(
     // Handle auto-navigation
     LaunchedEffect(Unit) {
         bookViewModel.autoOpenBookEvent.collect { selectedBookId ->
-            if (navController.currentDestination?.route == "book_list") {
-                pageViewModel.setActiveBookId(selectedBookId)
-                settingsRepository.activeBookId = selectedBookId
-                settingsViewModel.refresh()
-                
-                val behavior = settingsRepository.startupBehavior
-                if (behavior == "USER_MODE") {
-                    // Navigate directly to user mode
-                    val startId = settingsRepository.defaultStartPageId
-                    val startPage = if (startId != null) {
-                        withContext(Dispatchers.IO) { pageRepository.getPageById(startId) }
-                    } else null
+            if (navController.currentDestination?.route != "book_list") {
+                navController.currentBackStackEntryFlow.first {
+                    it.destination.route == "book_list"
+                }
+            }
+            pageViewModel.setActiveBookId(selectedBookId)
+            settingsRepository.activeBookId = selectedBookId
+            settingsViewModel.refresh()
+            
+            val behavior = settingsRepository.startupBehavior
+            if (behavior == "USER_MODE") {
+                // Navigate directly to user mode
+                val startId = settingsRepository.defaultStartPageId
+                val startPage = if (startId != null) {
+                    withContext(Dispatchers.IO) { pageRepository.getPageById(startId) }
+                } else null
 
-                    val finalPage = startPage ?: withContext(Dispatchers.IO) {
-                        pageRepository.getPagesForBook(selectedBookId).firstOrNull()
-                    }
-                    
-                    if (finalPage != null) {
-                        pageViewModel.loadPage(finalPage)
-                        runOnMainThread {
-                            navController.navigate("main") {
-                                popUpTo("book_list") { inclusive = true }
-                                launchSingleTop = true
-                            }
+                val finalPage = startPage ?: withContext(Dispatchers.IO) {
+                    pageRepository.getPagesForBook(selectedBookId).firstOrNull()
+                }
+                
+                if (finalPage != null) {
+                    pageViewModel.loadPage(finalPage)
+                    runOnMainThread {
+                        navController.navigate("start") {
+                            popUpTo("book_list") { inclusive = false }
                         }
-                    } else {
-                        // Fallback to start screen if no pages
-                        runOnMainThread {
-                            navController.navigate("start") {
-                                popUpTo("book_list") { inclusive = true }
-                                launchSingleTop = true
-                            }
+                        navController.navigate("main") {
+                            launchSingleTop = true
                         }
                     }
                 } else {
+                    // Fallback to start screen if no pages
                     runOnMainThread {
                         navController.navigate("start") {
-                            popUpTo("book_list") { inclusive = true }
+                            popUpTo("book_list") { inclusive = false }
+                            launchSingleTop = true
                         }
+                    }
+                }
+            } else {
+                runOnMainThread {
+                    navController.navigate("start") {
+                        popUpTo("book_list") { inclusive = false }
                     }
                 }
             }

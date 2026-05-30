@@ -10,6 +10,10 @@ import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.K
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SMART_PREDICTION_DELAY
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SMART_PREDICTION_ENABLED
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_WEATHER_CACHE_TIMEOUT
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_BACKGROUND_LOCATION_ENABLED
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_BACKGROUND_LOCATION_INTERVAL
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_BACKGROUND_WEATHER_ENABLED
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_BACKGROUND_WEATHER_INTERVAL
 import com.andreas_kratzer.ghosttalk.core.settings.AdvancedSettings
 import kotlinx.coroutines.flow.StateFlow
 
@@ -28,6 +32,10 @@ class AdvancedSettingsRepository(
     private val _actionLogLimit = IntSetting(SettingsConstants.KEY_ACTION_LOG_LIMIT, 100)
     private val _logIgnoredActions = BooleanSetting(KEY_LOG_IGNORED_ACTIONS, false)
     private val _logStopActions = BooleanSetting(KEY_LOG_STOP_ACTIONS, false)
+    private val _backgroundLocationEnabled = BooleanSetting(KEY_BACKGROUND_LOCATION_ENABLED, false, isScoped = false)
+    private val _backgroundLocationInterval = LongSetting(KEY_BACKGROUND_LOCATION_INTERVAL, 1L, isScoped = false)
+    private val _backgroundWeatherEnabled = BooleanSetting(KEY_BACKGROUND_WEATHER_ENABLED, false, isScoped = false)
+    private val _backgroundWeatherInterval = LongSetting(KEY_BACKGROUND_WEATHER_INTERVAL, 6L, isScoped = false)
 
     override val persistActionLogsFlow = _persistActionLogs.flow
     override val actionLogsStorageFlow = _actionLogsStorage.flow
@@ -39,6 +47,10 @@ class AdvancedSettingsRepository(
     override val actionLogLimitFlow = _actionLogLimit.flow
     override val logIgnoredActionsFlow = _logIgnoredActions.flow
     override val logStopActionsFlow = _logStopActions.flow
+    override val backgroundLocationEnabledFlow = _backgroundLocationEnabled.flow
+    override val backgroundLocationIntervalFlow = _backgroundLocationInterval.flow
+    override val backgroundWeatherEnabledFlow = _backgroundWeatherEnabled.flow
+    override val backgroundWeatherIntervalFlow = _backgroundWeatherInterval.flow
 
     override var persistActionLogs: Boolean by _persistActionLogs
     override var actionLogsStorage: String? by _actionLogsStorage
@@ -50,6 +62,10 @@ class AdvancedSettingsRepository(
     override var actionLogLimit: Int by _actionLogLimit
     override var logIgnoredActions: Boolean by _logIgnoredActions
     override var logStopActions: Boolean by _logStopActions
+    override var backgroundLocationEnabled: Boolean by _backgroundLocationEnabled
+    override var backgroundLocationInterval: Long by _backgroundLocationInterval
+    override var backgroundWeatherEnabled: Boolean by _backgroundWeatherEnabled
+    override var backgroundWeatherInterval: Long by _backgroundWeatherInterval
 
 
     override fun refresh() {
@@ -63,5 +79,9 @@ class AdvancedSettingsRepository(
         _actionLogLimit.refresh()
         _logIgnoredActions.refresh()
         _logStopActions.refresh()
+        _backgroundLocationEnabled.refresh()
+        _backgroundLocationInterval.refresh()
+        _backgroundWeatherEnabled.refresh()
+        _backgroundWeatherInterval.refresh()
     }
 }

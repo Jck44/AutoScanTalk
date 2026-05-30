@@ -140,15 +140,20 @@ class ScanCoordinator @Inject constructor(
                 }
 
                 val rawPage = data.rawPage
-                if (rawPage != null && checkForPredictorUseCase(rawPage)) {
-                    val isWaitingData = isWaitingForPredictions(
-                        isLoading = data.isLoading,
-                        predictions = data.predictions,
-                        pageId = rawPage.id
-                    )
+                if (rawPage != null && hasUnresolvedDynamicButtons(rawPage)) {
+                    val hasPredictions = rawPage.buttonConfigs.any { it != null && it.isActive && it.buttonAction is com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction }
+                    val isWaitingData = if (hasPredictions) {
+                        isWaitingForPredictions(
+                            isLoading = data.isLoading,
+                            predictions = data.predictions,
+                            pageId = rawPage.id
+                        )
+                    } else {
+                        false
+                    }
                     
                     // Even if data arrived, wait if the resolved page still has placeholders
-                    val isWaitingResolution = data.resolvedPage != null && checkForPredictorUseCase(data.resolvedPage)
+                    val isWaitingResolution = hasUnresolvedDynamicButtons(data.resolvedPage)
                     
                     if (lastCuePageId != rawPage.id) {
                         lastCuePageId = rawPage.id
@@ -201,15 +206,20 @@ class ScanCoordinator @Inject constructor(
         
         val page = resolvedPage?.value ?: return
         
-        // Don't start if we are waiting for predictions
+        // Don't start if we are waiting for predictions or resolution
         val currentP = currentPage?.value
-        if (currentP != null && checkForPredictorUseCase(currentP)) {
-            val isWaitingData = isWaitingForPredictions(
-                isLoading = isSmartPredictionLoading?.value ?: false,
-                predictions = smartPredictions?.value,
-                pageId = currentP.id
-            )
-            val isWaitingResolution = checkForPredictorUseCase(page)
+        if (currentP != null && hasUnresolvedDynamicButtons(currentP)) {
+            val hasPredictions = currentP.buttonConfigs.any { it != null && it.isActive && it.buttonAction is com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction }
+            val isWaitingData = if (hasPredictions) {
+                isWaitingForPredictions(
+                    isLoading = isSmartPredictionLoading?.value ?: false,
+                    predictions = smartPredictions?.value,
+                    pageId = currentP.id
+                )
+            } else {
+                false
+            }
+            val isWaitingResolution = hasUnresolvedDynamicButtons(page)
             
             if (isWaitingData || isWaitingResolution) return
         }
@@ -301,6 +311,17 @@ class ScanCoordinator @Inject constructor(
             stopScanningTemporarily()
         } else {
             resumeScanningIfEnabled()
+        }
+    }
+
+    private fun hasUnresolvedDynamicButtons(page: Page?): Boolean {
+        if (page == null) return false
+        return page.buttonConfigs.any { config ->
+            if (config == null || !config.isActive) return@any false
+            val action = config.buttonAction
+            action is com.andreas_kratzer.ghosttalk.core.model.FrequentActionButtonAction ||
+            action is com.andreas_kratzer.ghosttalk.core.model.PreviousActionButtonAction ||
+            action is com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
         }
     }
 }

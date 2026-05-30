@@ -203,6 +203,12 @@
 
     <!-- Advanced / Maintenance -->
     <string name="settings_weather_cache_timeout_label">Wetter Cache Dauer (Minuten)</string>
+    <string name="settings_background_location_enabled_label">Standort im Hintergrund aktualisieren</string>
+    <string name="settings_background_location_interval_label">Standort-Update-Intervall</string>
+    <string name="settings_background_weather_enabled_label">Wetter im Hintergrund aktualisieren</string>
+    <string name="settings_background_weather_interval_label">Wetter-Update-Intervall</string>
+    <string name="settings_interval_hour_single">1 Stunde</string>
+    <string name="settings_interval_hours_plural">%1$d Stunden</string>
     <string name="settings_usage_stats_title">Nutzungsstatistiken</string>
     <string name="settings_usage_stats_empty">Noch keine Nutzungsdaten vorhanden.</string>
     <string name="settings_usage_stats_label">Klicks: %d</string>

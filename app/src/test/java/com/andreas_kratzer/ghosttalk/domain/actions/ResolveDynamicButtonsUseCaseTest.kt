@@ -25,13 +25,28 @@ class ResolveDynamicButtonsUseCaseTest {
 
     private lateinit var frequentActionResolver: FrequentActionResolver
     private lateinit var actionLogProvider: ActionLogProvider
+    private lateinit var application: android.app.Application
     private lateinit var resolveDynamicButtonsUseCase: ResolveDynamicButtonsUseCase
 
     @Before
     fun setup() {
         frequentActionResolver = mockk()
         actionLogProvider = mockk()
-        resolveDynamicButtonsUseCase = ResolveDynamicButtonsUseCase(frequentActionResolver, actionLogProvider)
+        application = mockk(relaxed = true)
+        
+        io.mockk.every { application.getString(any<Int>(), *anyVararg()) } answers {
+            val resId = firstArg<Int>()
+            val args = secondArg<Array<*>>()
+            when (resId) {
+                com.andreas_kratzer.ghosttalk.R.string.audio_cue_last_action_prefix -> "Letzte Aktion: ${args.getOrNull(0)}"
+                com.andreas_kratzer.ghosttalk.R.string.audio_cue_previous_action_prefix_format -> "${args.getOrNull(0)}. Letzte Aktion: ${args.getOrNull(1)}"
+                com.andreas_kratzer.ghosttalk.R.string.audio_cue_frequent_action_prefix -> "Häufigste Aktion: ${args.getOrNull(0)}"
+                com.andreas_kratzer.ghosttalk.R.string.audio_cue_frequent_action_prefix_format -> "${args.getOrNull(0)}. Häufigste Aktion: ${args.getOrNull(1)}"
+                else -> "mock_string"
+            }
+        }
+        
+        resolveDynamicButtonsUseCase = ResolveDynamicButtonsUseCase(frequentActionResolver, actionLogProvider, application)
     }
 
     @Test
@@ -76,6 +91,7 @@ class ResolveDynamicButtonsUseCaseTest {
 
         // Then
         assertEquals("Resolved Frequent", result.buttonConfigs[0]?.label)
+        assertEquals("Häufigste Aktion: Resolved Frequent", (result.buttonConfigs[0]?.auditoryCue as? com.andreas_kratzer.ghosttalk.core.model.AuditoryCue.TextToSpeechCue)?.text)
         // button2 found in Page 3
         assertEquals("Button 2", result.buttonConfigs[1]?.label) 
         assertEquals("button2", result.buttonConfigs[1]?.id)
@@ -158,6 +174,7 @@ class ResolveDynamicButtonsUseCaseTest {
         val resolvedAction = result.buttonConfigs[0]?.buttonAction
         assertTrue(resolvedAction is SpeakTextButtonAction)
         assertEquals("Last", result.buttonConfigs[0]?.label)
+        assertEquals("Letzte Aktion: Last", (result.buttonConfigs[0]?.auditoryCue as? com.andreas_kratzer.ghosttalk.core.model.AuditoryCue.TextToSpeechCue)?.text)
     }
 
     @Test
@@ -187,5 +204,56 @@ class ResolveDynamicButtonsUseCaseTest {
         val resolvedAction = result.buttonConfigs[0]?.buttonAction
         assertTrue(resolvedAction is NavigateToPageButtonAction)
         assertEquals("Go Home", result.buttonConfigs[0]?.label)
+    }
+
+    @Test
+    fun `execute resolves frequent action rank 2 and formats prefix`() = runTest {
+        // Given
+        val bookId = "book1"
+        val frequentConfig = ButtonConfig(id = "frequent2", label = "Frequent 2", auditoryCue = null, buttonAction = FrequentActionButtonAction(rank = 2))
+        val initialPage = Page(id = "page1", bookId = bookId, name = "Page 1", buttonConfigs = listOf(frequentConfig))
+        
+        val resolvedConfig = ButtonConfig(id = "frequent2", label = "Resolved Frequent 2", auditoryCue = com.andreas_kratzer.ghosttalk.core.model.AuditoryCue.TextToSpeechCue("Custom Cue"), buttonAction = SpeakTextButtonAction())
+        val frequentlyResolvedPage = initialPage.copy(buttonConfigs = listOf(resolvedConfig))
+        
+        coEvery { frequentActionResolver.resolve(initialPage, bookId) } returns frequentlyResolvedPage
+        
+        // When
+        val result = resolveDynamicButtonsUseCase.execute(initialPage, bookId, emptyList(), listOf(initialPage))
+        
+        // Then
+        assertEquals("Resolved Frequent 2", result.buttonConfigs[0]?.label)
+        assertEquals("2. Häufigste Aktion: Custom Cue", (result.buttonConfigs[0]?.auditoryCue as? com.andreas_kratzer.ghosttalk.core.model.AuditoryCue.TextToSpeechCue)?.text)
+    }
+
+    @Test
+    fun `execute resolves previous action rank 2 and formats prefix`() = runTest {
+        // Given
+        val bookId = "book1"
+        val previousAction = SpeakTextButtonAction()
+        val history = listOf(
+            ActionLogEntry("Last", System.currentTimeMillis(), previousAction),
+            ActionLogEntry("Older", System.currentTimeMillis() - 1000, previousAction)
+        )
+        
+        val buttonConfig = ButtonConfig(
+            id = "prev2",
+            label = "Wiederholen 2",
+            auditoryCue = null,
+            buttonAction = PreviousActionButtonAction(rank = 2)
+        )
+        val page = Page(id = "page1", bookId = bookId, name = "Page 1", buttonConfigs = listOf(buttonConfig))
+        
+        coEvery { frequentActionResolver.resolve(any(), any()) } returns page
+        coEvery { actionLogProvider.loadSavedLogEntries() } returns history
+        
+        // When
+        val result = resolveDynamicButtonsUseCase.execute(page, bookId, emptyList(), listOf(page))
+        
+        // Then
+        val resolvedAction = result.buttonConfigs[0]?.buttonAction
+        assertTrue(resolvedAction is SpeakTextButtonAction)
+        assertEquals("Older", result.buttonConfigs[0]?.label)
+        assertEquals("2. Letzte Aktion: Older", (result.buttonConfigs[0]?.auditoryCue as? com.andreas_kratzer.ghosttalk.core.model.AuditoryCue.TextToSpeechCue)?.text)
     }
 }

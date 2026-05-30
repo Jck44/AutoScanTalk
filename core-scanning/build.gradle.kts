@@ -47,9 +47,9 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile>().configureEa
 }
 
 dependencies {
-    implementation(project(":core"))
+    api(project(":core"))
     implementation(project(":core-ai"))
-    implementation(project(":core-tts"))
+    api(project(":core-tts"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.hilt.android)

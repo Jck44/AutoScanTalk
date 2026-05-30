@@ -78,6 +78,7 @@ class SettingsViewModel @Inject constructor(
     val spotifyDelegate: SpotifySettingsDelegate,
     val prefetchDelegate: TtsPrefetchSettingsDelegate,
     val backupDelegate: BackupSettingsDelegate,
+    private val backgroundScheduler: com.andreas_kratzer.ghosttalk.core.domain.BackgroundScheduler,
     private val updateActiveBookNameUseCase: UpdateActiveBookNameUseCase,
     private val deleteBookUseCase: DeleteBookUseCase,
     private val updateActionLogLimitUseCase: UpdateActionLogLimitUseCase,
@@ -700,6 +701,31 @@ class SettingsViewModel @Inject constructor(
     val weatherCacheTimeout = settingsRepository.weatherCacheTimeoutFlow
     fun setWeatherCacheTimeoutInput(input: String) {
         input.toLongOrNull()?.let { settingsRepository.weatherCacheTimeout = it }
+    }
+
+    val backgroundLocationEnabled = settingsRepository.backgroundLocationEnabledFlow
+    val backgroundLocationInterval = settingsRepository.backgroundLocationIntervalFlow
+    val backgroundWeatherEnabled = settingsRepository.backgroundWeatherEnabledFlow
+    val backgroundWeatherInterval = settingsRepository.backgroundWeatherIntervalFlow
+
+    fun setBackgroundLocationEnabled(enabled: Boolean) {
+        settingsRepository.backgroundLocationEnabled = enabled
+        backgroundScheduler.scheduleLocationUpdate()
+    }
+
+    fun setBackgroundLocationInterval(hours: Long) {
+        settingsRepository.backgroundLocationInterval = hours
+        backgroundScheduler.scheduleLocationUpdate()
+    }
+
+    fun setBackgroundWeatherEnabled(enabled: Boolean) {
+        settingsRepository.backgroundWeatherEnabled = enabled
+        backgroundScheduler.scheduleWeatherUpdate()
+    }
+
+    fun setBackgroundWeatherInterval(hours: Long) {
+        settingsRepository.backgroundWeatherInterval = hours
+        backgroundScheduler.scheduleWeatherUpdate()
     }
 
     // --- CallSettings Setters ---

@@ -90,6 +90,30 @@ class WeatherActionHandlerTest {
     }
 
     @Test
+    fun `handle fetches weather and calls tts with formatted output including location when available`() = runTest(testDispatcher) {
+        val action = WeatherButtonAction()
+        val config = ButtonConfig(id = "b1", label = "Weather", buttonAction = action, auditoryCue = null)
+        
+        coEvery { weatherExecutor.getWeatherInfo() } returns WeatherExecutor.WeatherResult.Success("Sonnig", 22.0, "München")
+        
+        every { application.getString(R.string.action_weather_format_with_location, "München", "Sonnig", "22.0") } returns "Das aktuelle Wetter in München: Sonnig bei 22.0 Grad"
+        
+        val onDoneSlot = slot<() -> Unit>()
+        every { ttsProxy.speakRouted(any(), any(), any(), any(), capture(onDoneSlot)) } answers {
+            onDoneSlot.captured.invoke()
+        }
+        every { ttsProxy.isReady } returns true
+        
+        val onFinish = mockk<(Int) -> Unit>(relaxed = true)
+        
+        handler.handle(config, action, 1, onFinish)
+        
+        verify { actionLogger.log("Wetterdaten werden abgerufen...", action, config.label) }
+        verify { ttsProxy.speakRouted("Das aktuelle Wetter in München: Sonnig bei 22.0 Grad", any(), any(), any(), any()) }
+        verify { onFinish(1) }
+    }
+
+    @Test
     fun `handle logs error when weather fetch fails`() = runTest(testDispatcher) {
         val action = WeatherButtonAction()
         val config = ButtonConfig(id = "b1", label = "Weather", buttonAction = action, auditoryCue = null)

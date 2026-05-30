@@ -223,7 +223,11 @@ fun DeviceActionFields(
                                 // Permission check for Call
                                 if (type == DeviceActionType.START_CALL) {
                                     permissionLauncher.launch(
-                                        arrayOf(Manifest.permission.CALL_PHONE, Manifest.permission.READ_CONTACTS)
+                                        arrayOf(
+                                            Manifest.permission.CALL_PHONE,
+                                            Manifest.permission.READ_CONTACTS,
+                                            Manifest.permission.READ_CALL_LOG
+                                        )
                                     )
                                 }
 

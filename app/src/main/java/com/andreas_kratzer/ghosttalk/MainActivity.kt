@@ -76,6 +76,7 @@ class MainActivity : FragmentActivity() {
     @Inject lateinit var securityManager: SecurityManager
     @Inject lateinit var userModeSessionTracker: UserModeSessionTracker
     @Inject lateinit var spotifyManager: SpotifyManager
+    @Inject lateinit var backgroundScheduler: com.andreas_kratzer.ghosttalk.core.domain.BackgroundScheduler
 
     private val bookViewModel: BookViewModel by viewModels()
     private val pageViewModel: PageViewModel by viewModels()
@@ -160,6 +161,8 @@ class MainActivity : FragmentActivity() {
             // 4. Set the final active book
             settingsRepository.activeBookId = finalActiveBookId
             pageViewModel.setActiveBookId(finalActiveBookId)
+            backgroundScheduler.scheduleLocationUpdate()
+            backgroundScheduler.scheduleWeatherUpdate()
             isDbInitialized = true
         }
 

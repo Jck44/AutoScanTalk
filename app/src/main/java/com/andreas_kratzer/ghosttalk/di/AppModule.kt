@@ -28,4 +28,12 @@ object AppModule {
     fun provideIoDispatcher(): kotlinx.coroutines.CoroutineDispatcher {
         return kotlinx.coroutines.Dispatchers.IO
     }
+
+    @Provides
+    @Singleton
+    fun provideBackgroundScheduler(
+        impl: com.andreas_kratzer.ghosttalk.domain.workers.BackgroundSchedulerImpl
+    ): com.andreas_kratzer.ghosttalk.core.domain.BackgroundScheduler {
+        return impl
+    }
 }

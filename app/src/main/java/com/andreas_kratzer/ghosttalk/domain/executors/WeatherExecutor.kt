@@ -21,12 +21,17 @@ class WeatherExecutor @Inject constructor(
     private val TAG = "WeatherExecutor"
 
     sealed class WeatherResult {
-        data class Success(val condition: String, val temperature: Double) : WeatherResult()
+        data class Success(
+            val condition: String,
+            val temperature: Double,
+            val locationName: String? = null
+        ) : WeatherResult()
         data class Error(val message: String) : WeatherResult()
     }
 
     suspend fun getWeatherInfo(): WeatherResult = withContext(Dispatchers.IO) {
         val online = isOnline()
+        val locationName = locationExecutor.getPersistedLocationName()
         
         if (online) {
             val location = locationExecutor.getCurrentLocation()
@@ -34,13 +39,13 @@ class WeatherExecutor @Inject constructor(
                 val result = weatherUseCase.getWeatherInfo(location.latitude, location.longitude)
                 when (result) {
                     is WeatherUseCase.WeatherResult.Success -> {
-                        return@withContext WeatherResult.Success(result.condition, result.temperature)
+                        return@withContext WeatherResult.Success(result.condition, result.temperature, locationName)
                     }
                     is WeatherUseCase.WeatherResult.Error -> {
                         // Fallback to cache if request fails
                         val cached = weatherUseCase.getCachedWeather()
                         if (cached is WeatherUseCase.WeatherResult.Success) {
-                            return@withContext WeatherResult.Success(cached.condition, cached.temperature)
+                            return@withContext WeatherResult.Success(cached.condition, cached.temperature, locationName)
                         } else {
                             return@withContext WeatherResult.Error(result.message)
                         }
@@ -50,7 +55,7 @@ class WeatherExecutor @Inject constructor(
                 // Location is null but online. Try cache fallback
                 val cached = weatherUseCase.getCachedWeather()
                 if (cached is WeatherUseCase.WeatherResult.Success) {
-                    return@withContext WeatherResult.Success(cached.condition, cached.temperature)
+                    return@withContext WeatherResult.Success(cached.condition, cached.temperature, locationName)
                 } else {
                     val locError = context.getString(R.string.error_location_unavailable_weather)
                     return@withContext WeatherResult.Error(locError)
@@ -60,7 +65,7 @@ class WeatherExecutor @Inject constructor(
             // Offline. Try cache fallback
             val cached = weatherUseCase.getCachedWeather()
             if (cached is WeatherUseCase.WeatherResult.Success) {
-                return@withContext WeatherResult.Success(cached.condition, cached.temperature)
+                return@withContext WeatherResult.Success(cached.condition, cached.temperature, locationName)
             } else {
                 val netError = context.getString(R.string.error_no_internet_weather)
                 return@withContext WeatherResult.Error(netError)
