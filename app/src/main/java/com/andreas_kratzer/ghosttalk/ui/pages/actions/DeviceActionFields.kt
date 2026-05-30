@@ -118,6 +118,8 @@ fun DeviceActionFields(
     onSuffixTextChange: (String) -> Unit = {},
     offsetValue: String = "0",
     onOffsetValueChange: (String) -> Unit = {},
+    ignoreEmojis: Boolean = false,
+    onIgnoreEmojisChange: (Boolean) -> Unit = {},
     onAutoSave: () -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -262,6 +264,15 @@ fun DeviceActionFields(
                     onContactSelected(label, pkg)
                     onAutoSave()
                 }
+            )
+        }
+
+        if (selectedType == DeviceActionType.READ_NOTIFICATIONS) {
+            com.andreas_kratzer.ghosttalk.core.ui.components.SettingsToggleItem(
+                label = stringResource(R.string.button_device_control_ignore_emojis_label),
+                checked = ignoreEmojis,
+                onCheckedChange = onIgnoreEmojisChange,
+                onValueChangeFinished = onAutoSave
             )
         }
 

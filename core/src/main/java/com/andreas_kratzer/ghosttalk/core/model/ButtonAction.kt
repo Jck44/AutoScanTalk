@@ -108,7 +108,8 @@ data class ControlDeviceButtonAction(
     val includeWeekday: Boolean = false,
     val prefixText: String? = null,
     val suffixText: String? = null,
-    val offsetValue: Int = 0              // days for date, minutes for time
+    val offsetValue: Int = 0,             // days for date, minutes for time
+    val ignoreEmojis: Boolean = false
 ) : ButtonAction()
 
 /**

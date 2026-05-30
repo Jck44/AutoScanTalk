@@ -12,7 +12,7 @@ class ButtonTemplateCoverageTest {
 
     @Test
     fun testBuiltInTemplatesCoverage() {
-        val repository = ButtonTemplateRepositoryImpl(mockk(), mockk())
+        val repository = ButtonTemplateRepositoryImpl(mockk())
         val templates = repository.generateBuiltInTemplatesList()
 
         // 1. Assert coverages of all ButtonAction subclasses

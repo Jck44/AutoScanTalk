@@ -26,7 +26,7 @@ class ControlDeviceActionHandlerTest {
     private lateinit var settings: ControlDeviceSettings
     private lateinit var ttsProxy: ControlDeviceTtsProxy
     private lateinit var actionLogger: ActionLogger
-    private lateinit var actionEventEmitter: ActionEventEmitter
+
     private lateinit var scannerController: ScannerController
     private lateinit var callActionProxy: CallActionProxy
     private lateinit var handler: ControlDeviceActionHandler
@@ -38,7 +38,7 @@ class ControlDeviceActionHandlerTest {
         settings = mockk(relaxed = true)
         ttsProxy = mockk(relaxed = true)
         actionLogger = mockk(relaxed = true)
-        actionEventEmitter = mockk(relaxed = true)
+
         scannerController = mockk(relaxed = true)
         callActionProxy = mockk(relaxed = true)
 
@@ -56,8 +56,7 @@ class ControlDeviceActionHandlerTest {
             callActionProxy = object : dagger.Lazy<CallActionProxy> {
                 override fun get() = callActionProxy
             },
-            actionLogger = actionLogger,
-            actionEventEmitter = actionEventEmitter
+            actionLogger = actionLogger
         )
         
         every { ttsProxy.isReadingNotification = any() } just Runs
@@ -123,6 +122,44 @@ class ControlDeviceActionHandlerTest {
         val onFinish = mockk<(Int) -> Unit>(relaxed = true)
         val onCompleteSlot = slot<() -> Unit>()
         every { ttsProxy.speakRouted("Test Sender: Hello World", any(), capture(onCompleteSlot)) } returns Unit
+
+        handler.handle(config, action, 1, onFinish)
+        
+        // Simuliere TTS Ende
+        if (onCompleteSlot.isCaptured) {
+            onCompleteSlot.captured.invoke()
+        }
+
+        verify { ttsProxy.isReadingNotification = false }
+        verify { onFinish(1) }
+    }
+
+    @Test
+    fun `handle READ_NOTIFICATIONS with ignoreEmojis true filters emojis`() {
+        val action = ControlDeviceButtonAction(DeviceActionType.READ_NOTIFICATIONS, ignoreEmojis = true)
+        val config = ButtonConfig(id = "b1", label = "Read", buttonAction = action, auditoryCue = null)
+        
+        val service = mockk<NotificationReaderService>(relaxed = true)
+        every { NotificationReaderService.instance } returns service
+        every { ttsProxy.isReady } returns true
+        
+        val sbn = mockk<android.service.notification.StatusBarNotification>(relaxed = true)
+        val notification = mockk<android.app.Notification>(relaxed = true)
+        val extras = mockk<android.os.Bundle>(relaxed = true)
+        every { extras.getString(android.app.Notification.EXTRA_TITLE) } returns "Test Sender"
+        every { extras.getCharSequence(android.app.Notification.EXTRA_TEXT) } returns "Hello World 😊! 🚀 This is a test. ❤"
+        
+        every { sbn.packageName } returns "com.whatsapp"
+        every { sbn.notification } returns notification
+        notification.extras = extras
+        
+        every { service.activeNotifications } returns arrayOf(sbn)
+        every { settings.monitoredNotificationApps } returns setOf("com.whatsapp")
+
+        val onFinish = mockk<(Int) -> Unit>(relaxed = true)
+        val onCompleteSlot = slot<() -> Unit>()
+        // Emojis should be removed
+        every { ttsProxy.speakRouted("Test Sender: Hello World ! This is a test.", any(), capture(onCompleteSlot)) } returns Unit
 
         handler.handle(config, action, 1, onFinish)
         

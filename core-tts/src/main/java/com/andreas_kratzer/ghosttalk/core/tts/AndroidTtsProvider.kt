@@ -15,6 +15,8 @@ import java.io.File
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 import android.media.AudioManager
+import android.media.AudioDeviceInfo
+import com.andreas_kratzer.ghosttalk.core.audio.AudioDeviceManager
 import javax.inject.Inject
 import javax.inject.Singleton
 import com.andreas_kratzer.ghosttalk.core.util.NetworkUtils
@@ -24,7 +26,8 @@ open class AndroidTtsProvider @Inject constructor(
     private val context: Context,
     private val settingsRepository: TtsSettings,
     private val routedAudioPlayer: RoutedAudioPlayer,
-    private val voiceManager: TtsVoiceManager
+    private val voiceManager: TtsVoiceManager,
+    private val audioDeviceManager: AudioDeviceManager
 ) : TtsProvider, TextToSpeech.OnInitListener {
 
     private var tts: TextToSpeech? = null
@@ -32,11 +35,21 @@ open class AndroidTtsProvider @Inject constructor(
     private val _availableVoicesFlow = MutableStateFlow<List<TtsVoice>>(emptyList())
     override val availableVoicesFlow: StateFlow<List<TtsVoice>> = _availableVoicesFlow.asStateFlow()
 
-    override val isReady: Boolean get() = initialized
+    override val isReady: Boolean get() = true
     private val handler = Handler(Looper.getMainLooper())
     private var pendingLanguageTag: String? = null
     private var pendingVoiceName: String? = null
-    private var lastDeviceAddress: String? = "uninitialized"
+    private var lastDeviceAddress: String? = null
+
+    private data class PendingSpeechRequest(
+        val text: String,
+        val deviceAddress: String?,
+        val queueMode: Int,
+        val isForCues: Boolean,
+        val onDone: (() -> Unit)?,
+        val onError: ((String) -> Unit)?
+    )
+    private val pendingRequests = mutableListOf<PendingSpeechRequest>()
 
     var fallbackListener: TextToSpeechHelper.OnVoiceFallbackListener? = null
 
@@ -108,11 +121,22 @@ open class AndroidTtsProvider @Inject constructor(
             })
             handler.postDelayed({
                 applyPendingLanguageAndVoice()
+                val requests = ArrayList(pendingRequests)
+                pendingRequests.clear()
+                requests.forEach { req ->
+                    speakRouted(req.text, req.deviceAddress, req.queueMode, req.isForCues, req.onDone, req.onError)
+                }
             }, 300)
         } else {
             Log.e("AndroidTtsProvider", "TTS init failed! Status code: $status")
             initialized = false
             tts = null
+            val requests = ArrayList(pendingRequests)
+            pendingRequests.clear()
+            requests.forEach { req ->
+                req.onError?.invoke("TTS initialization failed")
+                req.onDone?.invoke()
+            }
         }
     }
 
@@ -136,14 +160,24 @@ open class AndroidTtsProvider @Inject constructor(
         onError: ((String) -> Unit)?
     ) {
         ensureReady()
+        var resolvedDeviceAddress = deviceAddress
+        if (deviceAddress != null) {
+            val device = audioDeviceManager.getAudioDeviceInfo(deviceAddress)
+            if (device != null && device.type == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER) {
+                resolvedDeviceAddress = null
+            }
+        }
+
         if (!initialized || tts == null) {
-            Log.e("AndroidTtsProvider", "TTS not initialized, cannot speak.")
-            onDone?.invoke()
+            Log.i("AndroidTtsProvider", "TTS not initialized, queueing request: '${text.take(20)}...'")
+            pendingRequests.add(PendingSpeechRequest(text, resolvedDeviceAddress, queueMode, isForCues, onDone, onError))
             return
         }
 
-        val isRoutingSwitched = lastDeviceAddress != "uninitialized" && lastDeviceAddress != deviceAddress
-        lastDeviceAddress = deviceAddress
+        val isRoutingSwitched = lastDeviceAddress != resolvedDeviceAddress
+        lastDeviceAddress = resolvedDeviceAddress
+
+        val delayedStart = isRoutingSwitched && queueMode == TextToSpeech.QUEUE_FLUSH && resolvedDeviceAddress != null
 
         if (queueMode == TextToSpeech.QUEUE_FLUSH) {
             routedAudioPlayer.stopAll()
@@ -154,13 +188,10 @@ open class AndroidTtsProvider @Inject constructor(
             // Flush the native TTS as well
             tts?.speak("", TextToSpeech.QUEUE_FLUSH, null, "flush_${System.currentTimeMillis()}")
         }
-        
-        val delayedStart = isRoutingSwitched && queueMode == TextToSpeech.QUEUE_FLUSH
-
         val startAudio = {
             val actualQueueMode = if (delayedStart) TextToSpeech.QUEUE_ADD else queueMode
             
-            if (deviceAddress == null) {
+            if (resolvedDeviceAddress == null) {
                 val utteranceId = "direct_${System.currentTimeMillis()}_${text.hashCode()}"
                 if (onDone != null) {
                     directCallbacks[utteranceId] = onDone
@@ -176,7 +207,7 @@ open class AndroidTtsProvider @Inject constructor(
             } else {
                 val utteranceId = "routed_${System.currentTimeMillis()}_${text.hashCode()}"
                 val cacheFile = File(context.cacheDir, "$utteranceId.wav")
-                playRequests[utteranceId] = PlaybackRequest(cacheFile, deviceAddress, onDone)
+                playRequests[utteranceId] = PlaybackRequest(cacheFile, resolvedDeviceAddress, onDone)
 
                 val params = android.os.Bundle().apply {
                     putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, utteranceId)

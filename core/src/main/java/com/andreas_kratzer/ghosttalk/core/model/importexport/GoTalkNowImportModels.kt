@@ -155,6 +155,7 @@ data class ImportAction(
     val prefixText: String? = null,
     val suffixText: String? = null,
     val offsetValue: Int? = null,
+    val ignoreEmojis: Boolean? = null,
     
     // Unified Smart Home
     val smartHomeProvider: String? = null,

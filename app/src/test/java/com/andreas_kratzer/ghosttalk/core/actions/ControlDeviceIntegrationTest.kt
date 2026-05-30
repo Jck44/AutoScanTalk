@@ -45,8 +45,7 @@ class ControlDeviceIntegrationTest {
                 callActionProxy = object : dagger.Lazy<CallActionProxy> {
                     override fun get() = mockk<CallActionProxy>(relaxed = true)
                 },
-                actionLogger = actionCoordinator,
-                actionEventEmitter = actionCoordinator
+                actionLogger = actionCoordinator
             )
         )
 

@@ -127,6 +127,7 @@
     <string name="button_device_control_weekday_label">Include Weekday</string>
     <string name="button_device_control_offset_days_label">Day Offset (±)</string>
     <string name="button_device_control_offset_minutes_label">Minute Offset (±)</string>
+    <string name="button_device_control_ignore_emojis_label">Ignore emojis</string>
     <string name="button_device_control_calendar_count_label">Number of entries to read</string>
     <string name="button_no_page_selected">No page selected</string>
     <string name="button_no_playlist_selected">No playlist selected</string>

@@ -248,11 +248,9 @@ class ControlDeviceActionHandler @Inject constructor(
         if (service == null) {
             val msg = "Berechtigung für Benachrichtigungs-Zugriff fehlt."
             actionLogger.log(msg, action, buttonConfig.label)
-            if (tts.isReady) {
-                tts.speakRouted(msg, targetDeviceAddress) {
-                    onFinish(executionId)
-                }
-            } else onFinish(executionId)
+            tts.speakRouted(msg, targetDeviceAddress) {
+                onFinish(executionId)
+            }
             return
         }
 
@@ -266,17 +264,19 @@ class ControlDeviceActionHandler @Inject constructor(
         if (activeNotifs == null || activeNotifs.isEmpty()) {
             val msg = "Keine Benachrichtigungen vorhanden."
             actionLogger.log(msg, action, buttonConfig.label)
-            if (tts.isReady) {
-                tts.speakRouted(msg, targetDeviceAddress) {
-                    onFinish(executionId)
-                }
-            } else onFinish(executionId)
+            tts.speakRouted(msg, targetDeviceAddress) {
+                onFinish(executionId)
+            }
             return
         }
 
         val allowedApps = settings.monitoredNotificationApps
         val targetAppPackage = action.contactPhone
         val filtered = activeNotifs.filter { sbn ->
+            // Skip group summary notifications
+            val isGroupSummary = (sbn.notification.flags and android.app.Notification.FLAG_GROUP_SUMMARY) != 0
+            if (isGroupSummary) return@filter false
+
             val pkg = sbn.packageName
             if (!targetAppPackage.isNullOrBlank()) {
                 val targetApps = targetAppPackage.split(",").filter { it.isNotBlank() }
@@ -289,11 +289,9 @@ class ControlDeviceActionHandler @Inject constructor(
         if (filtered.isEmpty()) {
             val msg = "Keine passenden Benachrichtigungen gefunden."
             actionLogger.log(msg, action, buttonConfig.label)
-            if (tts.isReady) {
-                tts.speakRouted(msg, targetDeviceAddress) {
-                    onFinish(executionId)
-                }
-            } else onFinish(executionId)
+            tts.speakRouted(msg, targetDeviceAddress) {
+                onFinish(executionId)
+            }
             return
         }
 
@@ -307,24 +305,20 @@ class ControlDeviceActionHandler @Inject constructor(
         if (messagesToRead.isEmpty()) {
             val msg = "Benachrichtigungen enthalten keinen Text."
             actionLogger.log(msg, action, buttonConfig.label)
-            if (tts.isReady) {
-                tts.speakRouted(msg, targetDeviceAddress) {
-                    onFinish(executionId)
-                }
-            } else onFinish(executionId)
+            tts.speakRouted(msg, targetDeviceAddress) {
+                onFinish(executionId)
+            }
             return
         }
 
-        val combinedMessage = messagesToRead.joinToString(". ")
+        var combinedMessage = messagesToRead.joinToString(". ")
+        if (action.ignoreEmojis) {
+            combinedMessage = removeEmojis(combinedMessage)
+        }
         actionLogger.log("Lese Benachrichtigungen: $combinedMessage", action, buttonConfig.label)
         
         tts.isReadingNotification = true
-        if (tts.isReady) {
-            tts.speakRouted(combinedMessage, targetDeviceAddress) {
-                tts.isReadingNotification = false
-                onFinish(executionId)
-            }
-        } else {
+        tts.speakRouted(combinedMessage, targetDeviceAddress) {
             tts.isReadingNotification = false
             onFinish(executionId)
         }
@@ -400,11 +394,7 @@ class ControlDeviceActionHandler @Inject constructor(
         }
         
         val tts = ttsProxyLazy.get()
-        if (tts.isReady) {
-            tts.speakRouted(ssml, targetDeviceAddress) {
-                onFinish(executionId)
-            }
-        } else {
+        tts.speakRouted(ssml, targetDeviceAddress) {
             onFinish(executionId)
         }
     }
@@ -611,5 +601,37 @@ class ControlDeviceActionHandler @Inject constructor(
         }
 
         onFinish(executionId)
+    }
+
+    private fun removeEmojis(text: String): String {
+        val sb = StringBuilder()
+        var i = 0
+        while (i < text.length) {
+            val codePoint = text.codePointAt(i)
+            val type = Character.getType(codePoint)
+            if (!isEmojiCodePoint(codePoint, type)) {
+                sb.appendCodePoint(codePoint)
+            }
+            i += Character.charCount(codePoint)
+        }
+        return sb.toString().replace(Regex("\\s+"), " ").trim()
+    }
+
+    private fun isEmojiCodePoint(codePoint: Int, type: Int): Boolean {
+        if (codePoint in 0x1F600..0x1F64F) return true // Emoticons
+        if (codePoint in 0x1F300..0x1F5FF) return true // Misc Symbols and Pictographs
+        if (codePoint in 0x1F680..0x1F6FF) return true // Transport and Map
+        if (codePoint in 0x2600..0x27BF) return true   // Misc Symbols & Dingbats
+        if (codePoint in 0x1F900..0x1F9FF) return true // Supplemental Symbols and Pictographs
+        if (codePoint in 0x1FA70..0x1FAFF) return true // Symbols and Pictographs Extended-A
+        if (codePoint in 0x1F1E6..0x1F1FF) return true // Regional Indicator Symbols (Flags)
+        if (codePoint in 0xE0020..0xE007F) return true // Tag Characters (Flags)
+        if (codePoint in 0xFE00..0xFE0F) return true   // Variation Selectors
+        if (codePoint in 0x1F000..0x1F0FF) return true // Mahjong / Domino / Playing Cards
+        if (codePoint in 0x1F200..0x1F2FF) return true // Enclosed Ideographic Supplement
+        
+        if (codePoint > 0xFFFF && type == Character.OTHER_SYMBOL.toInt()) return true
+        
+        return false
     }
 }

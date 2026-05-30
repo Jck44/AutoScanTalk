@@ -51,7 +51,8 @@ class ActionMapper @Inject constructor() {
                 includeWeekday = action.includeWeekday,
                 prefixText = action.prefixText,
                 suffixText = action.suffixText,
-                offsetValue = action.offsetValue
+                offsetValue = action.offsetValue,
+                ignoreEmojis = action.ignoreEmojis
             )
             is WeatherButtonAction -> ImportAction(type = "WEATHER")
             is SmartHomeButtonAction -> ImportAction(
@@ -102,7 +103,8 @@ class ActionMapper @Inject constructor() {
                     includeWeekday = importAction.includeWeekday ?: false,
                     prefixText = importAction.prefixText,
                     suffixText = importAction.suffixText,
-                    offsetValue = importAction.offsetValue ?: 0
+                    offsetValue = importAction.offsetValue ?: 0,
+                    ignoreEmojis = importAction.ignoreEmojis ?: false
                 )
             }
             "WEATHER" -> WeatherButtonAction()

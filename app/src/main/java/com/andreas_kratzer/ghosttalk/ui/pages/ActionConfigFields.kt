@@ -95,6 +95,8 @@ fun ActionConfigFields(
     onConnectSpotify: () -> Unit = {},
     onDisconnectSpotify: () -> Unit = {},
     onLoadSpotifyPlaylists: () -> Unit = {},
+    ignoreEmojis: Boolean = false,
+    onIgnoreEmojisChange: (Boolean) -> Unit = {},
     onAutoSave: () -> Unit = {}
 ) {
     val actionTypeNavigate = stringResource(R.string.button_action_navigate_page)
@@ -188,6 +190,8 @@ fun ActionConfigFields(
                     onSuffixTextChange = onSuffixTextChange,
                     offsetValue = offsetValue,
                     onOffsetValueChange = onOffsetValueChange,
+                    ignoreEmojis = ignoreEmojis,
+                    onIgnoreEmojisChange = onIgnoreEmojisChange,
                     onAutoSave = onAutoSave
                 )
             }

@@ -319,6 +319,9 @@ fun ButtonConfigDialog(
     var offsetValue by remember {
         mutableStateOf((buttonConfig.buttonAction as? ControlDeviceButtonAction)?.offsetValue?.toString() ?: "0")
     }
+    var ignoreEmojis by remember {
+        mutableStateOf((buttonConfig.buttonAction as? ControlDeviceButtonAction)?.ignoreEmojis ?: false)
+    }
 
     // Smart Home specific state
     var smartHomeProvider by remember {
@@ -385,8 +388,8 @@ fun ButtonConfigDialog(
         }
     }
 
-    LaunchedEffect(smartHomeProvider) {
-        if (smartHomeProvider == SmartHomeProvider.PHILIPS_HUE && onRefreshHueCache != null) {
+    LaunchedEffect(smartHomeProvider, selectedActionType) {
+        if (selectedActionType == actionTypeSmartHome && smartHomeProvider == SmartHomeProvider.PHILIPS_HUE && onRefreshHueCache != null) {
             onRefreshHueCache(true) { success ->
                 // Silently refreshed cache if bridge is reachable
             }
@@ -413,7 +416,8 @@ fun ButtonConfigDialog(
                 includeWeekday = includeWeekday,
                 prefixText = prefixText.takeIf { it.isNotBlank() },
                 suffixText = suffixText.takeIf { it.isNotBlank() },
-                offsetValue = offsetValue.toIntOrNull() ?: 0
+                offsetValue = offsetValue.toIntOrNull() ?: 0,
+                ignoreEmojis = ignoreEmojis
             )
             actionTypeSmartHome -> SmartHomeButtonAction(
                 provider = smartHomeProvider,
@@ -1105,7 +1109,7 @@ fun ButtonConfigDialog(
                                 availableGeminiTools = availableGeminiTools,
                                 deviceActionType = deviceActionType,
                                 onDeviceActionTypeChange = { deviceActionType = it },
-                                volumeValue = volumeValue,
+                                                            volumeValue = volumeValue,
                                 onVolumeValueChange = { volumeValue = it },
                                 contactName = contactName,
                                 onContactNameChange = { contactName = it },
@@ -1123,7 +1127,8 @@ fun ButtonConfigDialog(
                                         includeWeekday = includeWeekday,
                                         prefixText = prefixText.takeIf { it.isNotBlank() },
                                         suffixText = suffixText.takeIf { it.isNotBlank() },
-                                        offsetValue = offsetValue.toIntOrNull() ?: 0
+                                        offsetValue = offsetValue.toIntOrNull() ?: 0,
+                                        ignoreEmojis = ignoreEmojis
                                     )
                                     saveWithAction(updatedAction)
                                 },
@@ -1137,6 +1142,11 @@ fun ButtonConfigDialog(
                                 onSuffixTextChange = { suffixText = it },
                                 offsetValue = offsetValue,
                                 onOffsetValueChange = { offsetValue = it },
+                                ignoreEmojis = ignoreEmojis,
+                                onIgnoreEmojisChange = {
+                                    ignoreEmojis = it
+                                    handleAutoSave()
+                                },
                                 smartHomeProvider = smartHomeProvider,
                                 onSmartHomeProviderChange = { smartHomeProvider = it },
                                 smartHomeDeviceId = smartHomeDeviceId,
