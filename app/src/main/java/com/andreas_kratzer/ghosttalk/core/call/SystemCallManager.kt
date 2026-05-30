@@ -568,7 +568,8 @@ class SystemCallManager @Inject constructor(
         if (context.checkSelfPermission(android.Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
             return null
         }
-        val uri = Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI, Uri.encode(phoneNumber))
+        val cleanNumber = android.telephony.PhoneNumberUtils.stripSeparators(phoneNumber) ?: phoneNumber
+        val uri = Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI, Uri.encode(cleanNumber))
         val projection = arrayOf(ContactsContract.PhoneLookup.DISPLAY_NAME)
         try {
             context.contentResolver.query(uri, projection, null, null, null)?.use { cursor ->
