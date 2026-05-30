@@ -94,6 +94,7 @@ private fun getDeviceActionIcon(type: DeviceActionType): ImageVector {
         DeviceActionType.READ_CALENDAR_ENTRIES -> GhostTalkIcons.DateRange
         DeviceActionType.TOGGLE_SCANNING -> Icons.Default.Refresh
         DeviceActionType.START_CALL -> Icons.Default.Phone
+        DeviceActionType.INSTALL_UPDATE -> GhostTalkIcons.CloudDownload
     }
 }
 
@@ -152,7 +153,8 @@ fun DeviceActionFields(
         DeviceActionType.READ_TIME to stringResource(R.string.button_device_control_time),
         DeviceActionType.READ_CALENDAR_ENTRIES to stringResource(R.string.button_device_control_calendar),
         DeviceActionType.TOGGLE_SCANNING to stringResource(R.string.button_device_control_toggle_scanning),
-        DeviceActionType.START_CALL to stringResource(R.string.action_start_call)
+        DeviceActionType.START_CALL to stringResource(R.string.action_start_call),
+        DeviceActionType.INSTALL_UPDATE to stringResource(R.string.button_device_control_install_update)
     )
 
     val currentLabel = types.find { it.first == selectedType }?.second ?: types.first().second

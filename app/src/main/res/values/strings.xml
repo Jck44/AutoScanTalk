@@ -117,6 +117,11 @@
     <string name="button_device_control_media_previous">Vorheriges Lied / Zurück</string>
     <string name="button_device_control_media_play_pause">Start / Stop</string>
     <string name="button_device_control_battery">Akkustand vorlesen</string>
+    <string name="button_device_control_install_update">App aktualisieren</string>
+    <string name="update_installing">Update wird installiert. Die App startet gleich neu.</string>
+    <string name="update_downloading">Update wird heruntergeladen, bitte warten.</string>
+    <string name="update_not_available">Die App ist auf dem neuesten Stand.</string>
+    <string name="update_check_error">Updateprüfung fehlgeschlagen.</string>
 
     <string name="button_device_control_date">Datum vorlesen</string>
     <string name="button_device_control_time">Uhrzeit vorlesen</string>

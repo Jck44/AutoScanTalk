@@ -34,7 +34,8 @@ class ControlDeviceActionHandler @Inject constructor(
     private val ttsProxyLazy: dagger.Lazy<ControlDeviceTtsProxy>,
     private val scanControllerLazy: dagger.Lazy<ScannerController>,
     private val callActionProxy: dagger.Lazy<CallActionProxy>,
-    private val actionLogger: ActionLogger
+    private val actionLogger: ActionLogger,
+    private val updateManagerLazy: dagger.Lazy<com.andreas_kratzer.ghosttalk.core.UpdateManager>
 ) : ActionHandler {
     
     private val getString: (Int, Array<out Any?>) -> String = { id, args -> 
@@ -96,6 +97,70 @@ class ControlDeviceActionHandler @Inject constructor(
                     actionLogger.log("Anruf starten an $name ($phone)", action, buttonConfig.label)
                 }
                 onFinish(executionId)
+            }
+
+            DeviceActionType.INSTALL_UPDATE -> {
+                handleInstallUpdate(buttonConfig, deviceAction, executionId, onFinish)
+            }
+        }
+    }
+
+    private fun handleInstallUpdate(
+        config: ButtonConfig,
+        action: ControlDeviceButtonAction,
+        executionId: Int,
+        onFinish: (Int) -> Unit
+    ) {
+        val updateManager = updateManagerLazy.get()
+        val targetDeviceAddress = if (config.playActionAsAuditoryCue) {
+            settings.cuesAudioDeviceAddress
+        } else {
+            settings.ttsAudioDeviceAddress
+        }
+        val tts = ttsProxyLazy.get()
+
+        fun speak(msgName: String, fallback: String, andThen: () -> Unit) {
+            val text = getAppString(msgName)
+            val msg = if (text.isNotEmpty()) text else fallback
+            actionLogger.log(msg, action, config.label)
+            tts.speakRouted(msg, targetDeviceAddress) {
+                andThen()
+            }
+        }
+
+        when (val state = updateManager.updateState.value) {
+            is com.andreas_kratzer.ghosttalk.core.UpdateState.ReadyToInstall -> {
+                speak("update_installing", "Update wird installiert. Die App startet gleich neu.") {
+                    updateManager.installDownloadedUpdate()
+                    onFinish(executionId)
+                }
+            }
+            is com.andreas_kratzer.ghosttalk.core.UpdateState.Downloading -> {
+                speak("update_downloading", "Update wird heruntergeladen, bitte warten.") {
+                    onFinish(executionId)
+                }
+            }
+            is com.andreas_kratzer.ghosttalk.core.UpdateState.Checking -> {
+                speak("update_downloading", "Update wird heruntergeladen, bitte warten.") {
+                    onFinish(executionId)
+                }
+            }
+            is com.andreas_kratzer.ghosttalk.core.UpdateState.Error -> {
+                speak("update_check_error", "Updateprüfung fehlgeschlagen.") {
+                    onFinish(executionId)
+                }
+            }
+            else -> {
+                updateManager.checkSilently()
+                if (state is com.andreas_kratzer.ghosttalk.core.UpdateState.NoUpdateAvailable) {
+                    speak("update_not_available", "Die App ist auf dem neuesten Stand.") {
+                        onFinish(executionId)
+                    }
+                } else {
+                    speak("update_not_available", "Die App ist auf dem neuesten Stand.") {
+                        onFinish(executionId)
+                    }
+                }
             }
         }
     }

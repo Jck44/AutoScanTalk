@@ -135,6 +135,7 @@ fun ActionConfigFields(
     val actionTypeStatusVibrate = stringResource(R.string.status_vibrate)
     val actionTypeStatusLoud = stringResource(R.string.status_loud)
     val actionTypeToggleScanning = stringResource(R.string.button_device_control_toggle_scanning)
+    val actionTypeInstallUpdate = stringResource(R.string.button_device_control_install_update)
 
     // Smart Home
     val actionTypePhilipsHue = "Philips Hue steuern"
@@ -223,7 +224,8 @@ fun ActionConfigFields(
             actionTypeStatusSilent,
             actionTypeStatusVibrate,
             actionTypeStatusLoud,
-            actionTypeToggleScanning -> {
+            actionTypeToggleScanning,
+            actionTypeInstallUpdate -> {
                 val mappedDeviceActionType = when (selectedActionType) {
                     actionTypeReadNotifications -> DeviceActionType.READ_NOTIFICATIONS
                     actionTypeClearNotifications -> DeviceActionType.CLEAR_NOTIFICATIONS
@@ -244,6 +246,7 @@ fun ActionConfigFields(
                     actionTypeStatusVibrate -> DeviceActionType.STATUS_VIBRATE
                     actionTypeStatusLoud -> DeviceActionType.STATUS_LOUD
                     actionTypeToggleScanning -> DeviceActionType.TOGGLE_SCANNING
+                    actionTypeInstallUpdate -> DeviceActionType.INSTALL_UPDATE
                     else -> DeviceActionType.READ_TIME
                 }
                 DeviceActionFields(

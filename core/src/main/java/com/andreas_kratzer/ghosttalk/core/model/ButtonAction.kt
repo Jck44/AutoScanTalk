@@ -160,7 +160,8 @@ enum class DeviceActionType {
     READ_DATE,
     READ_CALENDAR_ENTRIES,
     TOGGLE_SCANNING,
-    START_CALL
+    START_CALL,
+    INSTALL_UPDATE
 }
 
 @Serializable

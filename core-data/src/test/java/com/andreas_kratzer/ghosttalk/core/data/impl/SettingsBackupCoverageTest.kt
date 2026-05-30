@@ -49,7 +49,11 @@ class SettingsBackupCoverageTest {
         "geminiApiKey",             // Security / Secret
         "geminiApiKeyFlow",
         "useGeminiApiKey",          // Local auth setting
-        "useGeminiApiKeyFlow"
+        "useGeminiApiKeyFlow",
+        "backgroundLocationEnabled",
+        "backgroundLocationInterval",
+        "backgroundWeatherEnabled",
+        "backgroundWeatherInterval"
     )
 
     private val propertyMappings = mapOf(

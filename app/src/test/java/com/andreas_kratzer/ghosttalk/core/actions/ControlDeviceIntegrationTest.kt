@@ -45,7 +45,10 @@ class ControlDeviceIntegrationTest {
                 callActionProxy = object : dagger.Lazy<CallActionProxy> {
                     override fun get() = mockk<CallActionProxy>(relaxed = true)
                 },
-                actionLogger = actionCoordinator
+                actionLogger = actionCoordinator,
+                updateManagerLazy = object : dagger.Lazy<com.andreas_kratzer.ghosttalk.core.UpdateManager> {
+                    override fun get() = mockk<com.andreas_kratzer.ghosttalk.core.UpdateManager>(relaxed = true)
+                }
             )
         )
 

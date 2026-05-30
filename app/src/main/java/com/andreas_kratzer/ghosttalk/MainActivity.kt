@@ -85,7 +85,7 @@ class MainActivity : FragmentActivity() {
     var navControllerForTesting: androidx.navigation.NavHostController? = null
 
     private lateinit var globalPageViewModel: PageViewModel
-    private lateinit var updateManager: UpdateManager
+    @Inject lateinit var updateManager: UpdateManager
 
     private val screenOffReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -121,12 +121,20 @@ class MainActivity : FragmentActivity() {
         com.andreas_kratzer.ghosttalk.core.tts.VoiceDebugger(applicationContext).start()
         userModeSessionTracker.start()
         
-        updateManager = UpdateManager(applicationContext)
         // Skip automatic update check if the app starts directly in User Mode,
-        // because the IMMEDIATE update dialog takes over the full screen and
-        // cannot be dismissed by the user, making the app unusable.
+        // because the update dialog takes over the screen and
+        // cannot be dismissed by the user easily, making the app unusable.
         if (settingsRepository.startupBehavior != "USER_MODE") {
             updateManager.checkForUpdates(updateLauncher)
+        }
+
+        // Auto-install update if user mode is exited and update is ready
+        lifecycleScope.launch {
+            pageViewModel.isUserModeActive.collect { isUserModeActive ->
+                if (!isUserModeActive && updateManager.updateState.value is com.andreas_kratzer.ghosttalk.core.UpdateState.ReadyToInstall) {
+                    updateManager.installDownloadedUpdate()
+                }
+            }
         }
 
         // Android 14+ requires export flags for receivers
@@ -363,16 +371,6 @@ class MainActivity : FragmentActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Don't resume update flow while user mode is active – the full-screen
-        // IMMEDIATE update dialog would block all user interaction.
-        val isInUserMode = if (::globalPageViewModel.isInitialized) {
-            globalPageViewModel.isUserModeActive.value
-        } else {
-            false
-        }
-        if (::updateManager.isInitialized && !isInUserMode) {
-            updateManager.resumeUpdateIfInProgress(this)
-        }
     }
 
     override fun onDestroy() {

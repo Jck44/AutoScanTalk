@@ -3,6 +3,7 @@ package com.andreas_kratzer.ghosttalk.core.actions
 import android.content.Context
 import android.media.AudioManager
 import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.core.UpdateManager
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.ControlDeviceButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.DeviceActionType
@@ -29,6 +30,7 @@ class ControlDeviceActionHandlerTest {
 
     private lateinit var scannerController: ScannerController
     private lateinit var callActionProxy: CallActionProxy
+    private lateinit var updateManager: UpdateManager
     private lateinit var handler: ControlDeviceActionHandler
 
     @Before
@@ -41,6 +43,7 @@ class ControlDeviceActionHandlerTest {
 
         scannerController = mockk(relaxed = true)
         callActionProxy = mockk(relaxed = true)
+        updateManager = mockk(relaxed = true)
 
         every { context.getSystemService(Context.AUDIO_SERVICE) } returns audioManager
         
@@ -56,7 +59,10 @@ class ControlDeviceActionHandlerTest {
             callActionProxy = object : dagger.Lazy<CallActionProxy> {
                 override fun get() = callActionProxy
             },
-            actionLogger = actionLogger
+            actionLogger = actionLogger,
+            updateManagerLazy = object : dagger.Lazy<UpdateManager> {
+                override fun get() = updateManager
+            }
         )
         
         every { ttsProxy.isReadingNotification = any() } just Runs
