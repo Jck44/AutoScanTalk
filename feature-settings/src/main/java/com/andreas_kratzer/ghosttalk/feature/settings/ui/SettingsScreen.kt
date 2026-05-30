@@ -78,7 +78,7 @@ import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 enum class SettingsSection(private val titleRes: Int, val icon: ImageVector, val isGlobal: Boolean, val isScoped: Boolean) {
     GENERAL(R.string.settings_category_general, Icons.Default.Settings, isGlobal = true, isScoped = true),
     VOICE(R.string.settings_category_voice, GhostTalkIcons.RecordVoiceOver, isGlobal = false, isScoped = true),
-    SCANNING(R.string.settings_category_scanning, GhostTalkIcons.SettingsAccessibility, isGlobal = false, isScoped = true),
+    SCANNING(R.string.settings_category_scanning, GhostTalkIcons.SwitchAccessShortcut, isGlobal = false, isScoped = true),
     SECURITY(R.string.settings_category_security, GhostTalkIcons.Security, isGlobal = true, isScoped = false),
     TELEPHONY(R.string.settings_category_call, Icons.Default.Phone, isGlobal = true, isScoped = false),
     CLOUD(R.string.settings_category_cloud, GhostTalkIcons.Cloud, isGlobal = true, isScoped = true),
