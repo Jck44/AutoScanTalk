@@ -122,7 +122,12 @@ class MainActivity : FragmentActivity() {
         userModeSessionTracker.start()
         
         updateManager = UpdateManager(applicationContext)
-        updateManager.checkForUpdates(updateLauncher)
+        // Skip automatic update check if the app starts directly in User Mode,
+        // because the IMMEDIATE update dialog takes over the full screen and
+        // cannot be dismissed by the user, making the app unusable.
+        if (settingsRepository.startupBehavior != "USER_MODE") {
+            updateManager.checkForUpdates(updateLauncher)
+        }
 
         // Android 14+ requires export flags for receivers
         registerReceiver(
@@ -358,7 +363,14 @@ class MainActivity : FragmentActivity() {
 
     override fun onResume() {
         super.onResume()
-        if (::updateManager.isInitialized) {
+        // Don't resume update flow while user mode is active – the full-screen
+        // IMMEDIATE update dialog would block all user interaction.
+        val isInUserMode = if (::globalPageViewModel.isInitialized) {
+            globalPageViewModel.isUserModeActive.value
+        } else {
+            false
+        }
+        if (::updateManager.isInitialized && !isInUserMode) {
             updateManager.resumeUpdateIfInProgress(this)
         }
     }
