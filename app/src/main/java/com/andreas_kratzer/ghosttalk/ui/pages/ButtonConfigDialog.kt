@@ -104,6 +104,10 @@ import com.andreas_kratzer.ghosttalk.feature.settings.domain.FeatureGuard
 import kotlinx.coroutines.launch
 import java.io.File
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
+import com.andreas_kratzer.ghosttalk.ui.pages.actions.NavigationActionFields
+import com.andreas_kratzer.ghosttalk.ui.pages.actions.DeviceActionFields
+import com.andreas_kratzer.ghosttalk.ui.pages.actions.SmartHomeActionFields
+import com.andreas_kratzer.ghosttalk.ui.pages.actions.PlayMediaActionFields
 
 @Composable
 fun ButtonConfigDialog(
@@ -224,30 +228,98 @@ fun ButtonConfigDialog(
     val actionTypeSpeak = stringResource(R.string.button_action_speak_text)
     val actionTypeNavigate = stringResource(R.string.button_action_navigate_page)
     val actionTypeGemini = stringResource(R.string.button_action_gemini)
+    val actionTypeGeminiSearch = stringResource(R.string.button_action_gemini_search)
     val actionTypeGeminiNano = stringResource(R.string.button_action_gemini_nano)
-    val actionTypeFrequent = stringResource(R.string.button_action_frequent_action)
-    val actionTypeSmart = stringResource(R.string.button_action_smart_prediction)
-    val actionTypeDevice = stringResource(R.string.button_action_control_device)
+    val actionTypeGeminiVision = stringResource(R.string.button_action_gemini_vision)
     val actionTypeWeather = stringResource(R.string.button_action_weather)
-    val actionTypeSmartHome = stringResource(R.string.button_action_smart_home)
-    val actionTypeGeminiVision = "Gemini Vision (KI Auge)"
+
+    // Kommunikation
+    val actionTypeReadNotifications = stringResource(R.string.button_action_notification)
+    val actionTypeClearNotifications = stringResource(R.string.button_action_clear_notifications)
+    val actionTypeSendMessage = stringResource(R.string.action_send_message)
+    val actionTypeStartCall = stringResource(R.string.action_start_call)
+
+    // Medien & Musik
+    val actionTypeSpotify = "Spotify abspielen"
+    val actionTypeYoutube = "YouTube abspielen"
+    val actionTypeYoutubeMusic = "YouTube Music abspielen"
+    val actionTypeAudible = "Audible abspielen"
+    val actionTypeMediaPlayPause = stringResource(R.string.button_device_control_media_play_pause)
+    val actionTypeMediaNext = stringResource(R.string.button_device_control_media_next)
+    val actionTypeMediaPrevious = stringResource(R.string.button_device_control_media_previous)
+
+    // Geräte & Einstellungen
+    val actionTypeReadTime = stringResource(R.string.button_device_control_time)
+    val actionTypeReadDate = stringResource(R.string.button_device_control_date)
+    val actionTypeReadCalendarEntries = stringResource(R.string.button_device_control_calendar)
+    val actionTypeReadBattery = stringResource(R.string.button_device_control_battery)
+    val actionTypeVolumeMedia = stringResource(R.string.volume_media)
+    val actionTypeVolumeNotification = stringResource(R.string.volume_notification)
+    val actionTypeVolumeAlarm = stringResource(R.string.volume_alarm)
+    val actionTypeVolumeCall = stringResource(R.string.volume_call)
+    val actionTypeStatusSilent = stringResource(R.string.status_silent)
+    val actionTypeStatusVibrate = stringResource(R.string.status_vibrate)
+    val actionTypeStatusLoud = stringResource(R.string.status_loud)
+    val actionTypeToggleScanning = stringResource(R.string.button_device_control_toggle_scanning)
+
+    // Smart Home
+    val actionTypePhilipsHue = "Philips Hue steuern"
+    val actionTypeGoogleHome = "Google Home steuern"
+
+    // Verlauf & Vorhersage
+    val actionTypeFrequent = stringResource(R.string.button_action_frequent_action)
     val actionTypePrevious = stringResource(R.string.action_previous_action)
-    val actionTypePlayMedia = stringResource(R.string.button_action_play_media)
+    val actionTypeSmart = stringResource(R.string.button_action_smart_prediction)
 
     var selectedActionType by remember {
         mutableStateOf(
             when (val action = buttonConfig.buttonAction) {
                 is NavigateToPageButtonAction -> actionTypeNavigate
-                is GeminiButtonAction, is GeminiSearchButtonAction -> actionTypeGemini
+                is GeminiButtonAction -> actionTypeGemini
+                is GeminiSearchButtonAction -> actionTypeGeminiSearch
                 is GeminiNanoButtonAction -> actionTypeGeminiNano
                 is com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction -> actionTypeGeminiVision
+                is WeatherButtonAction -> actionTypeWeather
+                is ControlDeviceButtonAction -> {
+                    when (action.actionType) {
+                        DeviceActionType.READ_NOTIFICATIONS -> actionTypeReadNotifications
+                        DeviceActionType.CLEAR_NOTIFICATIONS -> actionTypeClearNotifications
+                        DeviceActionType.SEND_MESSAGE -> actionTypeSendMessage
+                        DeviceActionType.START_CALL -> actionTypeStartCall
+                        DeviceActionType.MEDIA_PLAY_PAUSE -> actionTypeMediaPlayPause
+                        DeviceActionType.MEDIA_NEXT -> actionTypeMediaNext
+                        DeviceActionType.MEDIA_PREVIOUS -> actionTypeMediaPrevious
+                        DeviceActionType.READ_TIME -> actionTypeReadTime
+                        DeviceActionType.READ_DATE -> actionTypeReadDate
+                        DeviceActionType.READ_CALENDAR_ENTRIES -> actionTypeReadCalendarEntries
+                        DeviceActionType.READ_BATTERY -> actionTypeReadBattery
+                        DeviceActionType.VOLUME_MEDIA -> actionTypeVolumeMedia
+                        DeviceActionType.VOLUME_NOTIFICATION -> actionTypeVolumeNotification
+                        DeviceActionType.VOLUME_ALARM -> actionTypeVolumeAlarm
+                        DeviceActionType.VOLUME_CALL -> actionTypeVolumeCall
+                        DeviceActionType.STATUS_SILENT -> actionTypeStatusSilent
+                        DeviceActionType.STATUS_VIBRATE -> actionTypeStatusVibrate
+                        DeviceActionType.STATUS_LOUD -> actionTypeStatusLoud
+                        DeviceActionType.TOGGLE_SCANNING -> actionTypeToggleScanning
+                    }
+                }
+                is PlayMediaButtonAction -> {
+                    when (action.provider) {
+                        MediaProvider.SPOTIFY -> actionTypeSpotify
+                        MediaProvider.YOUTUBE -> actionTypeYoutube
+                        MediaProvider.YOUTUBE_MUSIC -> actionTypeYoutubeMusic
+                        MediaProvider.AUDIBLE -> actionTypeAudible
+                    }
+                }
+                is SmartHomeButtonAction -> {
+                    when (action.provider) {
+                        SmartHomeProvider.PHILIPS_HUE -> actionTypePhilipsHue
+                        SmartHomeProvider.GOOGLE_HOME -> actionTypeGoogleHome
+                    }
+                }
                 is FrequentActionButtonAction -> actionTypeFrequent
                 is SmartPredictionButtonAction -> actionTypeSmart
                 is PreviousActionButtonAction -> actionTypePrevious
-                is ControlDeviceButtonAction -> actionTypeDevice
-                is WeatherButtonAction -> actionTypeWeather
-                is SmartHomeButtonAction -> actionTypeSmartHome
-                is PlayMediaButtonAction -> actionTypePlayMedia
                 else -> actionTypeSpeak
             }
         )
@@ -389,7 +461,7 @@ fun ButtonConfigDialog(
     }
 
     LaunchedEffect(smartHomeProvider, selectedActionType) {
-        if (selectedActionType == actionTypeSmartHome && smartHomeProvider == SmartHomeProvider.PHILIPS_HUE && onRefreshHueCache != null) {
+        if (selectedActionType == actionTypePhilipsHue && onRefreshHueCache != null) {
             onRefreshHueCache(true) { success ->
                 // Silently refreshed cache if bridge is reachable
             }
@@ -401,38 +473,117 @@ fun ButtonConfigDialog(
         when (selectedActionType) {
             actionTypeNavigate -> NavigateToPageButtonAction(targetPageId)
             actionTypeGemini -> GeminiButtonAction(geminiPrompt)
+            actionTypeGeminiSearch -> GeminiSearchButtonAction(geminiPrompt)
             actionTypeGeminiNano -> GeminiNanoButtonAction(geminiPrompt)
             actionTypeGeminiVision -> com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction(geminiPrompt, geminiVisionUseCloud, geminiVisionPlayShutterSound)
             actionTypeFrequent -> FrequentActionButtonAction(rank)
             actionTypePrevious -> PreviousActionButtonAction(rank)
             actionTypeSmart -> SmartPredictionButtonAction(rank)
             actionTypeWeather -> WeatherButtonAction()
-            actionTypeDevice -> ControlDeviceButtonAction(
-                actionType = deviceActionType,
-                volumeValue = volumeValue,
+            
+            // Kommunikation
+            actionTypeReadNotifications -> ControlDeviceButtonAction(
+                actionType = DeviceActionType.READ_NOTIFICATIONS,
                 contactName = contactName,
                 contactPhone = contactPhone,
-                messageText = messageText,
-                includeWeekday = includeWeekday,
-                prefixText = prefixText.takeIf { it.isNotBlank() },
-                suffixText = suffixText.takeIf { it.isNotBlank() },
-                offsetValue = offsetValue.toIntOrNull() ?: 0,
                 ignoreEmojis = ignoreEmojis
             )
-            actionTypeSmartHome -> SmartHomeButtonAction(
-                provider = smartHomeProvider,
-                deviceId = smartHomeDeviceId,
-                deviceName = smartHomeDeviceName,
-                intent = smartHomeIntent,
-                value = if (smartHomeValue.isNotBlank()) smartHomeValue else null
+            actionTypeClearNotifications -> ControlDeviceButtonAction(
+                actionType = DeviceActionType.CLEAR_NOTIFICATIONS,
+                contactName = contactName,
+                contactPhone = contactPhone
             )
-            actionTypePlayMedia -> PlayMediaButtonAction(
-                provider = mediaProvider,
+            actionTypeSendMessage -> ControlDeviceButtonAction(
+                actionType = DeviceActionType.SEND_MESSAGE,
+                contactName = contactName,
+                contactPhone = contactPhone,
+                messageText = messageText
+            )
+            actionTypeStartCall -> ControlDeviceButtonAction(
+                actionType = DeviceActionType.START_CALL,
+                contactName = contactName,
+                contactPhone = contactPhone
+            )
+
+            // Medien & Musik
+            actionTypeSpotify -> PlayMediaButtonAction(
+                provider = MediaProvider.SPOTIFY,
                 contentUri = mediaContentUri,
                 contentName = mediaContentName,
                 returnToAppDelayMs = (mediaReturnToAppDelaySec.toLongOrNull() ?: 2L) * 1000L,
                 forcePlayViaMediaSession = mediaForcePlayViaMediaSession
             )
+            actionTypeYoutube -> PlayMediaButtonAction(
+                provider = MediaProvider.YOUTUBE,
+                contentUri = mediaContentUri,
+                contentName = mediaContentName,
+                returnToAppDelayMs = (mediaReturnToAppDelaySec.toLongOrNull() ?: 2L) * 1000L,
+                forcePlayViaMediaSession = mediaForcePlayViaMediaSession
+            )
+            actionTypeYoutubeMusic -> PlayMediaButtonAction(
+                provider = MediaProvider.YOUTUBE_MUSIC,
+                contentUri = mediaContentUri,
+                contentName = mediaContentName,
+                returnToAppDelayMs = (mediaReturnToAppDelaySec.toLongOrNull() ?: 2L) * 1000L,
+                forcePlayViaMediaSession = mediaForcePlayViaMediaSession
+            )
+            actionTypeAudible -> PlayMediaButtonAction(
+                provider = MediaProvider.AUDIBLE,
+                contentUri = mediaContentUri,
+                contentName = mediaContentName,
+                returnToAppDelayMs = (mediaReturnToAppDelaySec.toLongOrNull() ?: 2L) * 1000L,
+                forcePlayViaMediaSession = mediaForcePlayViaMediaSession
+            )
+            actionTypeMediaPlayPause -> ControlDeviceButtonAction(actionType = DeviceActionType.MEDIA_PLAY_PAUSE)
+            actionTypeMediaNext -> ControlDeviceButtonAction(actionType = DeviceActionType.MEDIA_NEXT)
+            actionTypeMediaPrevious -> ControlDeviceButtonAction(actionType = DeviceActionType.MEDIA_PREVIOUS)
+
+            // Geräte & Einstellungen
+            actionTypeReadTime -> ControlDeviceButtonAction(
+                actionType = DeviceActionType.READ_TIME,
+                prefixText = prefixText.takeIf { it.isNotBlank() },
+                suffixText = suffixText.takeIf { it.isNotBlank() },
+                offsetValue = offsetValue.toIntOrNull() ?: 0
+            )
+            actionTypeReadDate -> ControlDeviceButtonAction(
+                actionType = DeviceActionType.READ_DATE,
+                includeWeekday = includeWeekday,
+                prefixText = prefixText.takeIf { it.isNotBlank() },
+                suffixText = suffixText.takeIf { it.isNotBlank() },
+                offsetValue = offsetValue.toIntOrNull() ?: 0
+            )
+            actionTypeReadCalendarEntries -> ControlDeviceButtonAction(
+                actionType = DeviceActionType.READ_CALENDAR_ENTRIES,
+                prefixText = prefixText.takeIf { it.isNotBlank() },
+                suffixText = suffixText.takeIf { it.isNotBlank() },
+                offsetValue = offsetValue.toIntOrNull() ?: 0
+            )
+            actionTypeReadBattery -> ControlDeviceButtonAction(actionType = DeviceActionType.READ_BATTERY)
+            actionTypeVolumeMedia -> ControlDeviceButtonAction(actionType = DeviceActionType.VOLUME_MEDIA, volumeValue = volumeValue)
+            actionTypeVolumeNotification -> ControlDeviceButtonAction(actionType = DeviceActionType.VOLUME_NOTIFICATION, volumeValue = volumeValue)
+            actionTypeVolumeAlarm -> ControlDeviceButtonAction(actionType = DeviceActionType.VOLUME_ALARM, volumeValue = volumeValue)
+            actionTypeVolumeCall -> ControlDeviceButtonAction(actionType = DeviceActionType.VOLUME_CALL, volumeValue = volumeValue)
+            actionTypeStatusSilent -> ControlDeviceButtonAction(actionType = DeviceActionType.STATUS_SILENT)
+            actionTypeStatusVibrate -> ControlDeviceButtonAction(actionType = DeviceActionType.STATUS_VIBRATE)
+            actionTypeStatusLoud -> ControlDeviceButtonAction(actionType = DeviceActionType.STATUS_LOUD)
+            actionTypeToggleScanning -> ControlDeviceButtonAction(actionType = DeviceActionType.TOGGLE_SCANNING)
+
+            // Smart Home
+            actionTypePhilipsHue -> SmartHomeButtonAction(
+                provider = SmartHomeProvider.PHILIPS_HUE,
+                deviceId = smartHomeDeviceId,
+                deviceName = smartHomeDeviceName,
+                intent = smartHomeIntent,
+                value = if (smartHomeValue.isNotBlank()) smartHomeValue else null
+            )
+            actionTypeGoogleHome -> SmartHomeButtonAction(
+                provider = SmartHomeProvider.GOOGLE_HOME,
+                deviceId = smartHomeDeviceId,
+                deviceName = smartHomeDeviceName,
+                intent = smartHomeIntent,
+                value = if (smartHomeValue.isNotBlank()) smartHomeValue else null
+            )
+            
             else -> SpeakTextButtonAction()
         }
     }
@@ -585,12 +736,14 @@ fun ButtonConfigDialog(
         title = {
             val actionBadgeText = when (selectedActionType) {
                 actionTypeNavigate -> "Nav"
-                actionTypeGemini, actionTypeGeminiNano, actionTypeGeminiVision -> "KI"
+                actionTypeGemini, actionTypeGeminiSearch, actionTypeGeminiNano, actionTypeGeminiVision -> "KI"
                 actionTypeFrequent, actionTypePrevious, actionTypeSmart -> "Verlauf"
                 actionTypeWeather -> "Wetter"
-                actionTypeDevice -> "Gerät"
-                actionTypeSmartHome -> "Home"
-                else -> "Sprechen"
+                actionTypeReadNotifications, actionTypeClearNotifications, actionTypeSendMessage, actionTypeStartCall -> "Komm."
+                actionTypeSpotify, actionTypeYoutube, actionTypeYoutubeMusic, actionTypeAudible, actionTypeMediaPlayPause, actionTypeMediaNext, actionTypeMediaPrevious -> "Medien"
+                actionTypePhilipsHue, actionTypeGoogleHome -> "Home"
+                actionTypeSpeak -> "Sprechen"
+                else -> "Gerät"
             }
             Text("[$actionBadgeText] Bearbeiten")
         },
@@ -630,16 +783,45 @@ fun ButtonConfigDialog(
                                 ),
                                 com.andreas_kratzer.ghosttalk.core.model.ActionCategoryRegistry.GROUP_KI_ASSISTENZ to listOf(
                                     actionTypeGemini to GeminiButtonAction(),
+                                    actionTypeGeminiSearch to GeminiSearchButtonAction(),
                                     actionTypeGeminiNano to GeminiNanoButtonAction(),
-                                    actionTypeGeminiVision to com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction()
+                                    actionTypeGeminiVision to com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction(),
+                                    actionTypeWeather to WeatherButtonAction()
                                 ),
-                                com.andreas_kratzer.ghosttalk.core.model.ActionCategoryRegistry.GROUP_GERAETE_SMART_HOME to listOf(
-                                    actionTypeWeather to WeatherButtonAction(),
-                                    actionTypeSmartHome to SmartHomeButtonAction(),
-                                    actionTypeDevice to ControlDeviceButtonAction(),
-                                    actionTypePlayMedia to PlayMediaButtonAction()
+                                com.andreas_kratzer.ghosttalk.core.model.ActionCategoryRegistry.GROUP_KOMMUNIKATION to listOf(
+                                    actionTypeReadNotifications to ControlDeviceButtonAction(DeviceActionType.READ_NOTIFICATIONS),
+                                    actionTypeClearNotifications to ControlDeviceButtonAction(DeviceActionType.CLEAR_NOTIFICATIONS),
+                                    actionTypeSendMessage to ControlDeviceButtonAction(DeviceActionType.SEND_MESSAGE),
+                                    actionTypeStartCall to ControlDeviceButtonAction(DeviceActionType.START_CALL)
                                 ),
-                                com.andreas_kratzer.ghosttalk.core.model.ActionCategoryRegistry.GROUP_DYNAMISCHE_AKTIONEN to listOf(
+                                com.andreas_kratzer.ghosttalk.core.model.ActionCategoryRegistry.GROUP_MEDIEN_MUSIK to listOf(
+                                    actionTypeSpotify to PlayMediaButtonAction(MediaProvider.SPOTIFY),
+                                    actionTypeYoutube to PlayMediaButtonAction(MediaProvider.YOUTUBE),
+                                    actionTypeYoutubeMusic to PlayMediaButtonAction(MediaProvider.YOUTUBE_MUSIC),
+                                    actionTypeAudible to PlayMediaButtonAction(MediaProvider.AUDIBLE),
+                                    actionTypeMediaPlayPause to ControlDeviceButtonAction(DeviceActionType.MEDIA_PLAY_PAUSE),
+                                    actionTypeMediaNext to ControlDeviceButtonAction(DeviceActionType.MEDIA_NEXT),
+                                    actionTypeMediaPrevious to ControlDeviceButtonAction(DeviceActionType.MEDIA_PREVIOUS)
+                                ),
+                                com.andreas_kratzer.ghosttalk.core.model.ActionCategoryRegistry.GROUP_GERAETE_EINSTELLUNGEN to listOf(
+                                    actionTypeReadTime to ControlDeviceButtonAction(DeviceActionType.READ_TIME),
+                                    actionTypeReadDate to ControlDeviceButtonAction(DeviceActionType.READ_DATE),
+                                    actionTypeReadCalendarEntries to ControlDeviceButtonAction(DeviceActionType.READ_CALENDAR_ENTRIES),
+                                    actionTypeReadBattery to ControlDeviceButtonAction(DeviceActionType.READ_BATTERY),
+                                    actionTypeVolumeMedia to ControlDeviceButtonAction(DeviceActionType.VOLUME_MEDIA),
+                                    actionTypeVolumeNotification to ControlDeviceButtonAction(DeviceActionType.VOLUME_NOTIFICATION),
+                                    actionTypeVolumeAlarm to ControlDeviceButtonAction(DeviceActionType.VOLUME_ALARM),
+                                    actionTypeVolumeCall to ControlDeviceButtonAction(DeviceActionType.VOLUME_CALL),
+                                    actionTypeStatusSilent to ControlDeviceButtonAction(DeviceActionType.STATUS_SILENT),
+                                    actionTypeStatusVibrate to ControlDeviceButtonAction(DeviceActionType.STATUS_VIBRATE),
+                                    actionTypeStatusLoud to ControlDeviceButtonAction(DeviceActionType.STATUS_LOUD),
+                                    actionTypeToggleScanning to ControlDeviceButtonAction(DeviceActionType.TOGGLE_SCANNING)
+                                ),
+                                com.andreas_kratzer.ghosttalk.core.model.ActionCategoryRegistry.GROUP_SMART_HOME to listOf(
+                                    actionTypePhilipsHue to SmartHomeButtonAction(SmartHomeProvider.PHILIPS_HUE),
+                                    actionTypeGoogleHome to SmartHomeButtonAction(SmartHomeProvider.GOOGLE_HOME)
+                                ),
+                                com.andreas_kratzer.ghosttalk.core.model.ActionCategoryRegistry.GROUP_VERLAUF_VORHERSAGE to listOf(
                                     actionTypeFrequent to FrequentActionButtonAction(),
                                     actionTypePrevious to PreviousActionButtonAction(),
                                     actionTypeSmart to SmartPredictionButtonAction()
@@ -672,23 +854,69 @@ fun ButtonConfigDialog(
                                 selectedOption = selectedActionType,
                                 groups = dropdownGroups,
                                 iconProvider = { actionType ->
-                                    val icon = when (actionType) {
-                                        actionTypeSpeak -> Icons.Default.PlayArrow
-                                        actionTypePlayMedia -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.MusicNote
-                                        actionTypeNavigate -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.ArrowForward
-                                        actionTypeGemini, actionTypeGeminiNano, actionTypeGeminiVision -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.AutoAwesome
-                                        actionTypeWeather -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.Cloud
-                                        actionTypeSmartHome -> Icons.Default.Home
-                                        actionTypeDevice -> Icons.Default.Settings
-                                        actionTypeFrequent, actionTypePrevious, actionTypeSmart -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.History
-                                        else -> null
-                                    }
-                                    if (icon != null) {
-                                        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                    if (actionType == actionTypeSpotify || actionType == actionTypeYoutube || actionType == actionTypeYoutubeMusic || actionType == actionTypeAudible) {
+                                        val drawableRes = when (actionType) {
+                                            actionTypeSpotify -> com.andreas_kratzer.ghosttalk.core.ui.R.drawable.ic_spotify
+                                            actionTypeYoutube -> com.andreas_kratzer.ghosttalk.core.ui.R.drawable.ic_youtube
+                                            actionTypeYoutubeMusic -> com.andreas_kratzer.ghosttalk.core.ui.R.drawable.ic_youtube_music
+                                            actionTypeAudible -> com.andreas_kratzer.ghosttalk.core.ui.R.drawable.ic_audible
+                                            else -> com.andreas_kratzer.ghosttalk.core.ui.R.drawable.ic_spotify
+                                        }
+                                        Icon(
+                                            painter = androidx.compose.ui.res.painterResource(id = drawableRes),
+                                            contentDescription = null,
+                                            tint = androidx.compose.ui.graphics.Color.Unspecified,
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                    } else {
+                                        val icon = when (actionType) {
+                                            actionTypeSpeak -> Icons.Default.PlayArrow
+                                            actionTypeNavigate -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.ArrowForward
+                                            actionTypeGemini, actionTypeGeminiSearch, actionTypeGeminiNano, actionTypeGeminiVision -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.AutoAwesome
+                                            actionTypeWeather -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.PartlyCloudy
+                                            actionTypeReadNotifications, actionTypeClearNotifications -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.Notifications
+                                            actionTypeSendMessage -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.Message
+                                            actionTypeStartCall -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.Phone
+                                            actionTypeMediaPlayPause -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.PlayPause
+                                            actionTypeMediaNext -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.SkipNext
+                                            actionTypeMediaPrevious -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.SkipPrevious
+                                            actionTypeReadTime -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.AccessTime
+                                            actionTypeReadDate, actionTypeReadCalendarEntries -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.DateRange
+                                            actionTypeReadBattery -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.BatteryFull
+                                            actionTypeVolumeMedia, actionTypeVolumeNotification, actionTypeVolumeAlarm, actionTypeVolumeCall, actionTypeStatusLoud -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.VolumeUp
+                                            actionTypeStatusSilent -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.VolumeOff
+                                            actionTypeStatusVibrate -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.Vibration
+                                            actionTypePhilipsHue, actionTypeGoogleHome -> Icons.Default.Home
+                                            actionTypeFrequent, actionTypePrevious, actionTypeSmart -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.History
+                                            else -> Icons.Default.Settings
+                                        }
+                                        Icon(
+                                            imageVector = icon,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(24.dp)
+                                        )
                                     }
                                 },
                                 onValueChangeFinished = handleAutoSave
                             )
+
+                            if (selectedActionType == actionTypeNavigate) {
+                                androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(8.dp))
+                                NavigationActionFields(
+                                    navigateToPageId = targetPageId,
+                                    onPageSelected = { 
+                                        targetPageId = it
+                                        handleAutoSave()
+                                    },
+                                    availablePages = pages,
+                                    templates = templates,
+                                    onNavigateToPage = onNavigateToPage,
+                                    onCreatePage = onCreatePage,
+                                    onDismissDialog = onDismiss,
+                                    onAutoSave = handleAutoSave
+                                )
+                            }
 
                             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 

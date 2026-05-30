@@ -99,35 +99,60 @@ fun ActionConfigFields(
     onIgnoreEmojisChange: (Boolean) -> Unit = {},
     onAutoSave: () -> Unit = {}
 ) {
+    val actionTypeSpeak = stringResource(R.string.button_action_speak_text)
     val actionTypeNavigate = stringResource(R.string.button_action_navigate_page)
     val actionTypeGemini = stringResource(R.string.button_action_gemini)
+    val actionTypeGeminiSearch = stringResource(R.string.button_action_gemini_search)
     val actionTypeGeminiNano = stringResource(R.string.button_action_gemini_nano)
     val actionTypeGeminiVision = stringResource(R.string.button_action_gemini_vision)
-    val actionTypeFrequent = stringResource(R.string.button_action_frequent_action)
-    val actionTypeSmart = stringResource(R.string.button_action_smart_prediction)
-    val actionTypeDevice = stringResource(R.string.button_action_control_device)
-    val actionTypeSmartHome = stringResource(R.string.button_action_smart_home)
     val actionTypeWeather = stringResource(R.string.button_action_weather)
+
+    // Kommunikation
+    val actionTypeReadNotifications = stringResource(R.string.button_action_notification)
+    val actionTypeClearNotifications = stringResource(R.string.button_action_clear_notifications)
+    val actionTypeSendMessage = stringResource(R.string.action_send_message)
+    val actionTypeStartCall = stringResource(R.string.action_start_call)
+
+    // Medien & Musik
+    val actionTypeSpotify = "Spotify abspielen"
+    val actionTypeYoutube = "YouTube abspielen"
+    val actionTypeYoutubeMusic = "YouTube Music abspielen"
+    val actionTypeAudible = "Audible abspielen"
+    val actionTypeMediaPlayPause = stringResource(R.string.button_device_control_media_play_pause)
+    val actionTypeMediaNext = stringResource(R.string.button_device_control_media_next)
+    val actionTypeMediaPrevious = stringResource(R.string.button_device_control_media_previous)
+
+    // Geräte & Einstellungen
+    val actionTypeReadTime = stringResource(R.string.button_device_control_time)
+    val actionTypeReadDate = stringResource(R.string.button_device_control_date)
+    val actionTypeReadCalendarEntries = stringResource(R.string.button_device_control_calendar)
+    val actionTypeReadBattery = stringResource(R.string.button_device_control_battery)
+    val actionTypeVolumeMedia = stringResource(R.string.volume_media)
+    val actionTypeVolumeNotification = stringResource(R.string.volume_notification)
+    val actionTypeVolumeAlarm = stringResource(R.string.volume_alarm)
+    val actionTypeVolumeCall = stringResource(R.string.volume_call)
+    val actionTypeStatusSilent = stringResource(R.string.status_silent)
+    val actionTypeStatusVibrate = stringResource(R.string.status_vibrate)
+    val actionTypeStatusLoud = stringResource(R.string.status_loud)
+    val actionTypeToggleScanning = stringResource(R.string.button_device_control_toggle_scanning)
+
+    // Smart Home
+    val actionTypePhilipsHue = "Philips Hue steuern"
+    val actionTypeGoogleHome = "Google Home steuern"
+
+    // Verlauf & Vorhersage
+    val actionTypeFrequent = stringResource(R.string.button_action_frequent_action)
     val actionTypePrevious = stringResource(R.string.action_previous_action)
-    val actionTypePlayMedia = stringResource(R.string.button_action_play_media)
+    val actionTypeSmart = stringResource(R.string.button_action_smart_prediction)
 
     val dimensions = LocalDimensions.current
 
     Column(verticalArrangement = Arrangement.spacedBy(dimensions.paddingMedium)) {
         when (selectedActionType) {
-            actionTypeNavigate -> {
-                NavigationActionFields(
-                    navigateToPageId = targetPageId,
-                    onPageSelected = onTargetPageIdChange,
-                    availablePages = pages,
-                    templates = templates,
-                    onNavigateToPage = onNavigateToPage,
-                    onCreatePage = onCreatePage,
-                    onDismissDialog = onDismissDialog,
-                    onAutoSave = onAutoSave
-                )
+            actionTypeNavigate, actionTypeSpeak -> {
+                // Speak and Navigate don't render config fields at the bottom
             }
-            actionTypeGemini -> {
+            actionTypeGemini, actionTypeGeminiSearch -> {
                 GeminiActionFields(
                     prompt = geminiPrompt,
                     onPromptChanged = onGeminiPromptChange,
@@ -136,7 +161,11 @@ fun ActionConfigFields(
                 )
             }
             actionTypeGeminiNano -> {
-                GeminiNanoActionFields()
+                GeminiNanoActionFields(
+                    prompt = geminiPrompt,
+                    onPromptChanged = onGeminiPromptChange,
+                    onAutoSave = onAutoSave
+                )
             }
             actionTypeGeminiVision -> {
                 GeminiVisionActionFields(
@@ -171,10 +200,55 @@ fun ActionConfigFields(
                     onAutoSave = onAutoSave
                 )
             }
-            actionTypeDevice -> {
+            actionTypeWeather -> {
+                WeatherActionFields()
+            }
+            
+            // Device Actions (mapped to flat strings)
+            actionTypeReadNotifications,
+            actionTypeClearNotifications,
+            actionTypeSendMessage,
+            actionTypeStartCall,
+            actionTypeMediaPlayPause,
+            actionTypeMediaNext,
+            actionTypeMediaPrevious,
+            actionTypeReadTime,
+            actionTypeReadDate,
+            actionTypeReadCalendarEntries,
+            actionTypeReadBattery,
+            actionTypeVolumeMedia,
+            actionTypeVolumeNotification,
+            actionTypeVolumeAlarm,
+            actionTypeVolumeCall,
+            actionTypeStatusSilent,
+            actionTypeStatusVibrate,
+            actionTypeStatusLoud,
+            actionTypeToggleScanning -> {
+                val mappedDeviceActionType = when (selectedActionType) {
+                    actionTypeReadNotifications -> DeviceActionType.READ_NOTIFICATIONS
+                    actionTypeClearNotifications -> DeviceActionType.CLEAR_NOTIFICATIONS
+                    actionTypeSendMessage -> DeviceActionType.SEND_MESSAGE
+                    actionTypeStartCall -> DeviceActionType.START_CALL
+                    actionTypeMediaPlayPause -> DeviceActionType.MEDIA_PLAY_PAUSE
+                    actionTypeMediaNext -> DeviceActionType.MEDIA_NEXT
+                    actionTypeMediaPrevious -> DeviceActionType.MEDIA_PREVIOUS
+                    actionTypeReadTime -> DeviceActionType.READ_TIME
+                    actionTypeReadDate -> DeviceActionType.READ_DATE
+                    actionTypeReadCalendarEntries -> DeviceActionType.READ_CALENDAR_ENTRIES
+                    actionTypeReadBattery -> DeviceActionType.READ_BATTERY
+                    actionTypeVolumeMedia -> DeviceActionType.VOLUME_MEDIA
+                    actionTypeVolumeNotification -> DeviceActionType.VOLUME_NOTIFICATION
+                    actionTypeVolumeAlarm -> DeviceActionType.VOLUME_ALARM
+                    actionTypeVolumeCall -> DeviceActionType.VOLUME_CALL
+                    actionTypeStatusSilent -> DeviceActionType.STATUS_SILENT
+                    actionTypeStatusVibrate -> DeviceActionType.STATUS_VIBRATE
+                    actionTypeStatusLoud -> DeviceActionType.STATUS_LOUD
+                    actionTypeToggleScanning -> DeviceActionType.TOGGLE_SCANNING
+                    else -> DeviceActionType.READ_TIME
+                }
                 DeviceActionFields(
-                    selectedType = deviceActionType,
-                    onTypeSelected = onDeviceActionTypeChange,
+                    selectedType = mappedDeviceActionType,
+                    onTypeSelected = {},
                     volumeValue = volumeValue,
                     onVolumeValueChange = onVolumeValueChange,
                     contactName = contactName,
@@ -192,13 +266,22 @@ fun ActionConfigFields(
                     onOffsetValueChange = onOffsetValueChange,
                     ignoreEmojis = ignoreEmojis,
                     onIgnoreEmojisChange = onIgnoreEmojisChange,
-                    onAutoSave = onAutoSave
+                    onAutoSave = onAutoSave,
+                    onlyShowConfig = true
                 )
             }
-            actionTypeSmartHome -> {
+
+            // Smart Home Actions (mapped to flat strings)
+            actionTypePhilipsHue,
+            actionTypeGoogleHome -> {
+                val mappedSmartHomeProvider = when (selectedActionType) {
+                    actionTypePhilipsHue -> SmartHomeProvider.PHILIPS_HUE
+                    actionTypeGoogleHome -> SmartHomeProvider.GOOGLE_HOME
+                    else -> SmartHomeProvider.PHILIPS_HUE
+                }
                 SmartHomeActionFields(
-                    selectedProvider = smartHomeProvider,
-                    onProviderSelected = onSmartHomeProviderChange,
+                    selectedProvider = mappedSmartHomeProvider,
+                    onProviderSelected = {},
                     deviceId = smartHomeDeviceId,
                     onDeviceSelected = { device ->
                         onSmartHomeDeviceIdChange(device.id)
@@ -212,16 +295,26 @@ fun ActionConfigFields(
                     devices = availableHomeDevices,
                     isFetching = isFetchingDevices,
                     onRefresh = onFetchDevices,
-                    onAutoSave = onAutoSave
+                    onAutoSave = onAutoSave,
+                    onlyShowConfig = true
                 )
             }
-            actionTypeWeather -> {
-                WeatherActionFields()
-            }
-            actionTypePlayMedia -> {
+
+            // Media Playback Actions (mapped to flat strings)
+            actionTypeSpotify,
+            actionTypeYoutube,
+            actionTypeYoutubeMusic,
+            actionTypeAudible -> {
+                val mappedMediaProvider = when (selectedActionType) {
+                    actionTypeSpotify -> MediaProvider.SPOTIFY
+                    actionTypeYoutube -> MediaProvider.YOUTUBE
+                    actionTypeYoutubeMusic -> MediaProvider.YOUTUBE_MUSIC
+                    actionTypeAudible -> MediaProvider.AUDIBLE
+                    else -> MediaProvider.SPOTIFY
+                }
                 PlayMediaActionFields(
-                    selectedProvider = mediaProvider,
-                    onProviderSelected = onMediaProviderChange,
+                    selectedProvider = mappedMediaProvider,
+                    onProviderSelected = {},
                     contentUri = mediaContentUri,
                     onContentUriChanged = onMediaContentUriChange,
                     contentName = mediaContentName,
@@ -236,7 +329,8 @@ fun ActionConfigFields(
                     onConnectSpotify = onConnectSpotify,
                     onDisconnectSpotify = onDisconnectSpotify,
                     onLoadSpotifyPlaylists = onLoadSpotifyPlaylists,
-                    onAutoSave = onAutoSave
+                    onAutoSave = onAutoSave,
+                    onlyShowConfig = true
                 )
             }
         }

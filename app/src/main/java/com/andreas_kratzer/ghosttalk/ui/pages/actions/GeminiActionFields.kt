@@ -100,12 +100,31 @@ private fun ToolItem(tool: com.andreas_kratzer.ghosttalk.core.ai.domain.AiTool) 
 }
 
 @Composable
-fun GeminiNanoActionFields() {
-    Text(
-        text = "Gemini Nano arbeitet aktuell ohne externe Tools.",
-        style = MaterialTheme.typography.bodyMedium,
-        modifier = Modifier.fillMaxWidth()
-    )
+fun GeminiNanoActionFields(
+    prompt: String,
+    onPromptChanged: (String) -> Unit,
+    onAutoSave: () -> Unit = {}
+) {
+    val dimensions = LocalDimensions.current
+    Column(verticalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)) {
+        OutlinedTextField(
+            value = prompt,
+            onValueChange = onPromptChanged,
+            label = { Text(stringResource(R.string.button_gemini_prompt_field)) },
+            placeholder = { Text(stringResource(R.string.button_gemini_prompt_hint)) },
+            shape = MaterialTheme.shapes.large,
+            modifier = Modifier.fillMaxWidth().onFocusChanged { 
+                if (!it.isFocused) onAutoSave()
+            }
+        )
+
+        Text(
+            text = "Gemini Nano arbeitet offline direkt auf dem Gerät und aktuell ohne externe Tools.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.outline,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
+        )
+    }
 }
 
 @Composable

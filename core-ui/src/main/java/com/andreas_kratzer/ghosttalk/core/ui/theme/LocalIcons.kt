@@ -47,7 +47,7 @@ object GhostTalkIcons {
             ActionCategory.GEMINI_SEARCH,
             ActionCategory.GEMINI_NANO,
             ActionCategory.GEMINI_VISION -> AutoAwesome
-            ActionCategory.WEATHER -> Cloud
+            ActionCategory.WEATHER -> PartlyCloudy
             ActionCategory.SMART_HOME -> Icons.Default.Home
             ActionCategory.CONTROL_DEVICE -> Icons.Default.Settings
             ActionCategory.FREQUENT_ACTION,
@@ -995,6 +995,279 @@ object GhostTalkIcons {
                 horizontalLineToRelative(12.0f)
                 verticalLineToRelative(12.0f)
                 horizontalLineTo(6.0f)
+                close()
+            }
+        }
+
+    val Pause: ImageVector
+        get() = materialIcon(name = "Filled.Pause") {
+            materialPath {
+                moveTo(6.0f, 19.0f)
+                horizontalLineToRelative(4.0f)
+                verticalLineTo(5.0f)
+                horizontalLineTo(6.0f)
+                verticalLineToRelative(14.0f)
+                close()
+                moveTo(14.0f, 5.0f)
+                verticalLineToRelative(14.0f)
+                horizontalLineToRelative(4.0f)
+                verticalLineTo(5.0f)
+                horizontalLineToRelative(-4.0f)
+                close()
+            }
+        }
+
+    val SkipNext: ImageVector
+        get() = materialIcon(name = "Filled.SkipNext") {
+            materialPath {
+                moveTo(6.0f, 18.0f)
+                lineToRelative(8.5f, -6.0f)
+                lineTo(6.0f, 6.0f)
+                verticalLineToRelative(12.0f)
+                close()
+                moveTo(16.0f, 6.0f)
+                verticalLineToRelative(12.0f)
+                horizontalLineToRelative(2.0f)
+                verticalLineTo(6.0f)
+                horizontalLineToRelative(-2.0f)
+                close()
+            }
+        }
+
+    val SkipPrevious: ImageVector
+        get() = materialIcon(name = "Filled.SkipPrevious") {
+            materialPath {
+                moveTo(6.0f, 6.0f)
+                horizontalLineToRelative(2.0f)
+                verticalLineToRelative(12.0f)
+                horizontalLineTo(6.0f)
+                close()
+                moveTo(9.5f, 12.0f)
+                lineToRelative(8.5f, 6.0f)
+                verticalLineTo(6.0f)
+                close()
+            }
+        }
+
+    val PlayPause: ImageVector
+        get() = materialIcon(name = "Filled.PlayPause") {
+            materialPath {
+                moveTo(4.0f, 6.0f)
+                lineTo(10.0f, 12.0f)
+                lineTo(4.0f, 18.0f)
+                close()
+                moveTo(14.0f, 6.0f)
+                horizontalLineToRelative(2.0f)
+                verticalLineToRelative(12.0f)
+                horizontalLineToRelative(-2.0f)
+                close()
+                moveTo(18.0f, 6.0f)
+                horizontalLineToRelative(2.0f)
+                verticalLineToRelative(12.0f)
+                horizontalLineToRelative(-2.0f)
+                close()
+            }
+        }
+
+    val Phone: ImageVector
+        get() = materialIcon(name = "Filled.Phone") {
+            materialPath {
+                moveTo(20.01f, 15.38f)
+                curveToRelative(-1.23f, 0.0f, -2.42f, -0.2f, -3.53f, -0.57f)
+                curveToRelative(-0.35f, -0.11f, -0.74f, -0.03f, -1.01f, 0.24f)
+                lineToRelative(-2.2f, 2.2f)
+                curveToRelative(-2.83f, -1.44f, -5.15f, -3.75f, -6.59f, -6.59f)
+                lineToRelative(2.2f, -2.21f)
+                curveToRelative(0.28f, -0.26f, 0.36f, -0.65f, 0.25f, -1.0f)
+                curveToRelative(-0.37f, -1.11f, -0.57f, -2.3f, -0.57f, -3.53f)
+                curveToRelative(0.0f, -0.55f, -0.45f, -1.0f, -1.0f, -1.0f)
+                horizontalLineTo(4.0f)
+                curveToRelative(-0.55f, 0.0f, -1.0f, 0.45f, -1.0f, 1.0f)
+                curveToRelative(0.0f, 9.39f, 7.61f, 17.0f, 17.0f, 17.0f)
+                curveToRelative(0.55f, 0.0f, 1.0f, -0.45f, 1.0f, -1.0f)
+                verticalLineToRelative(-3.58f)
+                curveToRelative(0.0f, -0.55f, -0.45f, -1.0f, -1.0f, -1.0f)
+                close()
+            }
+        }
+
+    val Message: ImageVector
+        get() = materialIcon(name = "Filled.Message") {
+            materialPath {
+                moveTo(20.0f, 2.0f)
+                horizontalLineTo(4.0f)
+                curveTo(2.9f, 2.0f, 2.01f, 2.9f, 2.01f, 4.0f)
+                lineTo(2.0f, 22.0f)
+                lineToRelative(4.0f, -4.0f)
+                horizontalLineToRelative(14.0f)
+                curveToRelative(1.1f, 0.0f, 2.0f, -0.9f, 2.0f, -2.0f)
+                verticalLineTo(4.0f)
+                curveTo(22.0f, 2.9f, 21.1f, 2.0f, 20.0f, 2.0f)
+                close()
+                moveTo(6.0f, 9.0f)
+                horizontalLineToRelative(12.0f)
+                verticalLineToRelative(2.0f)
+                horizontalLineTo(6.0f)
+                verticalLineTo(9.0f)
+                close()
+                moveTo(6.0f, 13.0f)
+                horizontalLineToRelative(8.0f)
+                verticalLineToRelative(2.0f)
+                horizontalLineTo(6.0f)
+                verticalLineTo(13.0f)
+                close()
+            }
+        }
+
+    val Sunny: ImageVector
+        get() = materialIcon(name = "Filled.WbSunny") {
+            materialPath {
+                // Top-left ray
+                moveTo(6.76f, 4.84f)
+                lineToRelative(-1.8f, -1.79f)
+                lineToRelative(-1.41f, 1.41f)
+                lineToRelative(1.79f, 1.79f)
+                lineToRelative(1.42f, -1.41f)
+                close()
+                // Left ray
+                moveTo(4.0f, 10.5f)
+                horizontalLineTo(1.0f)
+                verticalLineToRelative(2.0f)
+                horizontalLineToRelative(3.0f)
+                verticalLineToRelative(-2.0f)
+                close()
+                // Top ray
+                moveTo(13.0f, 0.55f)
+                horizontalLineToRelative(-2.0f)
+                verticalLineTo(3.5f)
+                horizontalLineToRelative(2.0f)
+                verticalLineTo(0.55f)
+                close()
+                // Top-right ray
+                moveTo(20.45f, 4.46f)
+                lineToRelative(-1.41f, -1.41f)
+                lineToRelative(-1.79f, 1.79f)
+                lineToRelative(1.41f, 1.41f)
+                lineToRelative(1.79f, -1.79f)
+                close()
+                // Bottom-right ray
+                moveTo(17.24f, 18.16f)
+                lineToRelative(1.79f, 1.8f)
+                lineToRelative(1.41f, -1.41f)
+                lineToRelative(-1.8f, -1.79f)
+                lineToRelative(-1.4f, 1.4f)
+                close()
+                // Right ray
+                moveTo(20.0f, 10.5f)
+                verticalLineToRelative(2.0f)
+                horizontalLineToRelative(3.0f)
+                verticalLineToRelative(-2.0f)
+                horizontalLineToRelative(-3.0f)
+                close()
+                // Outer circle of the sun
+                moveTo(12.0f, 5.5f)
+                curveToRelative(-3.31f, 0.0f, -6.0f, 2.69f, -6.0f, 6.0f)
+                reflectiveCurveToRelative(2.69f, 6.0f, 6.0f, 6.0f)
+                reflectiveCurveToRelative(6.0f, -2.69f, 6.0f, -6.0f)
+                reflectiveCurveToRelative(-2.69f, -6.0f, -6.0f, -6.0f)
+                close()
+                // Bottom ray
+                moveTo(12.0f, 23.45f)
+                horizontalLineToRelative(2.0f)
+                verticalLineTo(20.5f)
+                horizontalLineToRelative(-2.0f)
+                verticalLineToRelative(2.95f)
+                close()
+                // Bottom-left ray
+                moveTo(7.16f, 19.56f)
+                lineToRelative(-1.41f, 1.41f)
+                lineToRelative(1.79f, 1.8f)
+                lineToRelative(1.41f, -1.41f)
+                lineToRelative(-1.79f, -1.8f)
+                close()
+            }
+        }
+
+    val PartlyCloudy: ImageVector
+        get() = materialIcon(name = "Filled.PartlyCloudyDay") {
+            materialPath {
+                moveTo(11f, 5f)
+                verticalLineTo(1f)
+                horizontalLineToRelative(2f)
+                verticalLineTo(5f)
+                horizontalLineTo(11f)
+                close()
+                moveToRelative(6.65f, 2.75f)
+                lineToRelative(-1.4f, -1.4f)
+                lineTo(19.08f, 3.5f)
+                lineToRelative(1.4f, 1.43f)
+                lineTo(17.65f, 7.75f)
+                close()
+                moveTo(19f, 13f)
+                verticalLineTo(11f)
+                horizontalLineToRelative(4f)
+                verticalLineToRelative(2f)
+                horizontalLineTo(19f)
+                close()
+                moveToRelative(0.07f, 7.48f)
+                lineTo(16.25f, 17.65f)
+                lineToRelative(1.4f, -1.4f)
+                lineToRelative(2.85f, 2.8f)
+                lineToRelative(-1.43f, 1.43f)
+                close()
+                moveTo(6.35f, 7.75f)
+                lineTo(3.53f, 4.93f)
+                lineTo(4.95f, 3.5f)
+                lineToRelative(2.8f, 2.85f)
+                lineToRelative(-1.4f, 1.4f)
+                close()
+                moveTo(6f, 19f)
+                horizontalLineToRelative(4.5f)
+                quadToRelative(0.63f, 0f, 1.06f, -0.44f)
+                reflectiveQuadTo(12f, 17.5f)
+                reflectiveQuadTo(11.58f, 16.44f)
+                reflectiveQuadTo(10.53f, 16f)
+                horizontalLineTo(9.25f)
+                lineTo(8.75f, 14.8f)
+                quadTo(8.4f, 13.98f, 7.65f, 13.49f)
+                reflectiveQuadTo(6f, 13f)
+                quadTo(4.75f, 13f, 3.88f, 13.88f)
+                reflectiveQuadTo(3f, 16f)
+                reflectiveQuadToRelative(0.88f, 2.13f)
+                reflectiveQuadTo(6f, 19f)
+                close()
+                moveToRelative(0f, 2f)
+                quadTo(3.93f, 21f, 2.46f, 19.54f)
+                reflectiveQuadTo(1f, 16f)
+                reflectiveQuadTo(2.46f, 12.46f)
+                reflectiveQuadTo(6f, 11f)
+                quadToRelative(1.5f, 0f, 2.74f, 0.81f)
+                reflectiveQuadTo(10.58f, 14f)
+                quadToRelative(1.45f, 0f, 2.44f, 1.07f)
+                reflectiveQuadTo(14f, 17.65f)
+                quadToRelative(-0.05f, 1.43f, -1.06f, 2.39f)
+                reflectiveQuadTo(10.5f, 21f)
+                horizontalLineTo(6f)
+                close()
+                moveToRelative(8f, -3.35f)
+                quadToRelative(-0.13f, -0.5f, -0.25f, -0.97f)
+                reflectiveQuadTo(13.5f, 15.7f)
+                quadToRelative(1.13f, -0.47f, 1.81f, -1.47f)
+                reflectiveQuadTo(16f, 12f)
+                quadTo(16f, 10.35f, 14.83f, 9.17f)
+                reflectiveQuadTo(12f, 8f)
+                quadTo(10.5f, 8f, 9.38f, 8.98f)
+                reflectiveQuadTo(8.05f, 11.45f)
+                quadTo(7.55f, 11.33f, 7.03f, 11.23f)
+                reflectiveQuadTo(6f, 11f)
+                quadTo(6.35f, 8.8f, 8.06f, 7.4f)
+                quadTo(9.78f, 6f, 12f, 6f)
+                quadToRelative(2.5f, 0f, 4.25f, 1.75f)
+                reflectiveQuadTo(18f, 12f)
+                quadToRelative(0f, 1.92f, -1.1f, 3.46f)
+                reflectiveQuadTo(14f, 17.65f)
+                close()
+                moveTo(12.03f, 12f)
                 close()
             }
         }

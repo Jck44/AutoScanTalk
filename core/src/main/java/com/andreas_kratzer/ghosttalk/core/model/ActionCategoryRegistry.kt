@@ -17,16 +17,22 @@ enum class ActionCategory {
 }
 
 object ActionCategoryRegistry {
-    const val GROUP_BASIS = "Basis"
-    const val GROUP_KI_ASSISTENZ = "KI & Assistenz"
-    const val GROUP_GERAETE_SMART_HOME = "Geräte & Smart Home"
-    const val GROUP_DYNAMISCHE_AKTIONEN = "Dynamische Aktionen"
+    const val GROUP_BASIS = "Basis & Seite"
+    const val GROUP_KI_ASSISTENZ = "KI & Wetter"
+    const val GROUP_KOMMUNIKATION = "Kommunikation"
+    const val GROUP_MEDIEN_MUSIK = "Medien & Musik"
+    const val GROUP_GERAETE_EINSTELLUNGEN = "Geräte & Einstellungen"
+    const val GROUP_SMART_HOME = "Smart Home"
+    const val GROUP_VERLAUF_VORHERSAGE = "Verlauf & Vorhersage"
 
     val ALL_GROUPS = listOf(
         GROUP_BASIS,
         GROUP_KI_ASSISTENZ,
-        GROUP_GERAETE_SMART_HOME,
-        GROUP_DYNAMISCHE_AKTIONEN
+        GROUP_KOMMUNIKATION,
+        GROUP_MEDIEN_MUSIK,
+        GROUP_GERAETE_EINSTELLUNGEN,
+        GROUP_SMART_HOME,
+        GROUP_VERLAUF_VORHERSAGE
     )
 
     fun getGroupForAction(action: ButtonAction): String {
@@ -37,16 +43,31 @@ object ActionCategoryRegistry {
             is GeminiButtonAction,
             is GeminiSearchButtonAction,
             is GeminiNanoButtonAction,
-            is GeminiVisionButtonAction -> GROUP_KI_ASSISTENZ
+            is GeminiVisionButtonAction,
+            is WeatherButtonAction -> GROUP_KI_ASSISTENZ
 
-            is ControlDeviceButtonAction,
-            is WeatherButtonAction,
-            is SmartHomeButtonAction,
-            is PlayMediaButtonAction -> GROUP_GERAETE_SMART_HOME
+            is ControlDeviceButtonAction -> {
+                when (action.actionType) {
+                    DeviceActionType.READ_NOTIFICATIONS,
+                    DeviceActionType.CLEAR_NOTIFICATIONS,
+                    DeviceActionType.SEND_MESSAGE,
+                    DeviceActionType.START_CALL -> GROUP_KOMMUNIKATION
+
+                    DeviceActionType.MEDIA_PLAY_PAUSE,
+                    DeviceActionType.MEDIA_NEXT,
+                    DeviceActionType.MEDIA_PREVIOUS -> GROUP_MEDIEN_MUSIK
+
+                    else -> GROUP_GERAETE_EINSTELLUNGEN
+                }
+            }
+
+            is PlayMediaButtonAction -> GROUP_MEDIEN_MUSIK
+
+            is SmartHomeButtonAction -> GROUP_SMART_HOME
 
             is FrequentActionButtonAction,
             is SmartPredictionButtonAction,
-            is PreviousActionButtonAction -> GROUP_DYNAMISCHE_AKTIONEN
+            is PreviousActionButtonAction -> GROUP_VERLAUF_VORHERSAGE
         }
     }
 

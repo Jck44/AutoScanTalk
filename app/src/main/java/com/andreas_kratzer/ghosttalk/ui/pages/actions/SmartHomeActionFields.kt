@@ -32,17 +32,19 @@ import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.getDisplayName
 fun SmartHomeActionFields(
     selectedProvider: SmartHomeProvider,
     onProviderSelected: (SmartHomeProvider) -> Unit,
-    deviceId: String,
-    onDeviceSelected: (HomeDevice) -> Unit,
-    deviceName: String,
-    selectedIntent: String,
-    onIntentSelected: (String) -> Unit,
-    value: String,
-    onValueChange: (String) -> Unit,
-    devices: List<HomeDevice>,
-    isFetching: Boolean,
-    onRefresh: () -> Unit,
-    onAutoSave: () -> Unit = {}
+    deviceId: String = "",
+    onDeviceSelected: (HomeDevice) -> Unit = {},
+    deviceName: String = "",
+    selectedIntent: String = "",
+    onIntentSelected: (String) -> Unit = {},
+    value: String = "",
+    onValueChange: (String) -> Unit = {},
+    devices: List<HomeDevice> = emptyList(),
+    isFetching: Boolean = false,
+    onRefresh: () -> Unit = {},
+    onAutoSave: () -> Unit = {},
+    onlyShowSelector: Boolean = false,
+    onlyShowConfig: Boolean = false
 ) {
     val dimensions = LocalDimensions.current
     var expandedProvider by remember { mutableStateOf(false) }
@@ -61,62 +63,30 @@ fun SmartHomeActionFields(
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)) {
-        // Step 1: Provider
-        Text(stringResource(R.string.button_smart_home_provider_label), style = MaterialTheme.typography.labelMedium)
-        ExposedDropdownMenuBox(
-            expanded = expandedProvider,
-            onExpandedChange = { expandedProvider = !expandedProvider }
-        ) {
-            OutlinedTextField(
-                readOnly = true,
-                value = selectedProvider.getDisplayName(),
-                onValueChange = { },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedProvider) },
-                shape = MaterialTheme.shapes.large,
-                modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
-            )
-            ExposedDropdownMenu(
+        if (!onlyShowConfig) {
+            // Step 1: Provider
+            Text(stringResource(R.string.button_smart_home_provider_label), style = MaterialTheme.typography.labelMedium)
+            ExposedDropdownMenuBox(
                 expanded = expandedProvider,
-                onDismissRequest = { expandedProvider = false }
+                onExpandedChange = { expandedProvider = !expandedProvider }
             ) {
-                DropdownMenuItem(
-                    text = { Text(SmartHomeProvider.PHILIPS_HUE.getDisplayName()) },
-                    onClick = {
-                        onProviderSelected(SmartHomeProvider.PHILIPS_HUE)
-                        expandedProvider = false
-                        onAutoSave()
-                    }
+                OutlinedTextField(
+                    readOnly = true,
+                    value = selectedProvider.getDisplayName(),
+                    onValueChange = { },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedProvider) },
+                    shape = MaterialTheme.shapes.large,
+                    modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
                 )
-            }
-        }
-
-        // Step 2: Device
-        Text("Gerät (Lampe)", style = MaterialTheme.typography.labelMedium)
-        ExposedDropdownMenuBox(
-            expanded = expandedDevice,
-            onExpandedChange = { expandedDevice = !expandedDevice }
-        ) {
-            OutlinedTextField(
-                readOnly = true,
-                value = if (isFetching) "Lade Lampen..." else deviceName.ifEmpty { "Keine Lampen gefunden" },
-                onValueChange = { },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedDevice) },
-                shape = MaterialTheme.shapes.large,
-                modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
-            )
-            ExposedDropdownMenu(
-                expanded = expandedDevice,
-                onDismissRequest = { expandedDevice = false }
-            ) {
-                if (devices.isEmpty() && !isFetching) {
-                    DropdownMenuItem(text = { Text("Suche Lampen...") }, onClick = { onRefresh(); expandedDevice = false })
-                }
-                devices.forEach { device ->
+                ExposedDropdownMenu(
+                    expanded = expandedProvider,
+                    onDismissRequest = { expandedProvider = false }
+                ) {
                     DropdownMenuItem(
-                        text = { Text(device.name) },
+                        text = { Text(SmartHomeProvider.PHILIPS_HUE.getDisplayName()) },
                         onClick = {
-                            onDeviceSelected(device)
-                            expandedDevice = false
+                            onProviderSelected(SmartHomeProvider.PHILIPS_HUE)
+                            expandedProvider = false
                             onAutoSave()
                         }
                     )
@@ -124,50 +94,34 @@ fun SmartHomeActionFields(
             }
         }
 
-        if (selectedProvider == SmartHomeProvider.PHILIPS_HUE) {
-            Button(
-                onClick = { onRefresh() },
-                enabled = !isFetching,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(if (isFetching) "Lade..." else "Geräteliste laden")
-            }
-        }
-
-        // Step 3: Intent/Command
-        if (deviceId.isNotEmpty()) {
-            Text("Befehl", style = MaterialTheme.typography.labelMedium)
+        if (!onlyShowSelector) {
+            // Step 2: Device
+            Text("Gerät (Lampe)", style = MaterialTheme.typography.labelMedium)
             ExposedDropdownMenuBox(
-                expanded = expandedIntent,
-                onExpandedChange = { expandedIntent = !expandedIntent }
+                expanded = expandedDevice,
+                onExpandedChange = { expandedDevice = !expandedDevice }
             ) {
-                val currentIntentLabel = availableIntents.find { it.first == selectedIntent }?.second ?: ""
                 OutlinedTextField(
                     readOnly = true,
-                    value = currentIntentLabel,
+                    value = if (isFetching) "Lade Lampen..." else deviceName.ifEmpty { "Keine Lampen gefunden" },
                     onValueChange = { },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedIntent) },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedDevice) },
                     shape = MaterialTheme.shapes.large,
                     modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
                 )
                 ExposedDropdownMenu(
-                    expanded = expandedIntent,
-                    onDismissRequest = { expandedIntent = false }
+                    expanded = expandedDevice,
+                    onDismissRequest = { expandedDevice = false }
                 ) {
-                    availableIntents.forEach { (intent, label) ->
+                    if (devices.isEmpty() && !isFetching) {
+                        DropdownMenuItem(text = { Text("Suche Lampen...") }, onClick = { onRefresh(); expandedDevice = false })
+                    }
+                    devices.forEach { device ->
                         DropdownMenuItem(
-                            text = { Text(label) },
+                            text = { Text(device.name) },
                             onClick = {
-                                onIntentSelected(intent)
-                                expandedIntent = false
-                                // Set a valid default when switching modes
-                                if (intent == "action.brightness") {
-                                    onValueChange("100")
-                                } else if (intent == "action.color") {
-                                    onValueChange("Warmweiß")
-                                } else {
-                                    onValueChange("")
-                                }
+                                onDeviceSelected(device)
+                                expandedDevice = false
                                 onAutoSave()
                             }
                         )
@@ -175,51 +129,103 @@ fun SmartHomeActionFields(
                 }
             }
 
-            // Step 4: Value (Optional)
-            if (selectedIntent == "action.brightness") {
-                OutlinedTextField(
-                    value = value,
-                    onValueChange = { newValue ->
-                        if (newValue.isEmpty() || (newValue.all { it.isDigit() } && newValue.toInt() <= 100)) {
-                            onValueChange(newValue)
-                        }
-                    },
-                    label = { Text("Helligkeit (0 - 100%)") },
-                    shape = MaterialTheme.shapes.large,
-                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth().onFocusChanged { 
-                        if (!it.isFocused) onAutoSave()
-                    }
-                )
-            } else if (selectedIntent == "action.color") {
-                var expandedColor by remember { mutableStateOf(false) }
-                val colors = listOf("Rot", "Grün", "Blau", "Gelb", "Orange", "Pink", "Lila", "Warmweiß", "Kaltweiß")
-                Text("Farbe", style = MaterialTheme.typography.labelMedium)
-                ExposedDropdownMenuBox(
-                    expanded = expandedColor,
-                    onExpandedChange = { expandedColor = !expandedColor }
+            if (selectedProvider == SmartHomeProvider.PHILIPS_HUE) {
+                Button(
+                    onClick = { onRefresh() },
+                    enabled = !isFetching,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
+                    Text(if (isFetching) "Lade..." else "Geräteliste laden")
+                }
+            }
+
+            // Step 3: Intent/Command
+            if (deviceId.isNotEmpty()) {
+                Text("Befehl", style = MaterialTheme.typography.labelMedium)
+                ExposedDropdownMenuBox(
+                    expanded = expandedIntent,
+                    onExpandedChange = { expandedIntent = !expandedIntent }
+                ) {
+                    val currentIntentLabel = availableIntents.find { it.first == selectedIntent }?.second ?: ""
                     OutlinedTextField(
                         readOnly = true,
-                        value = value.ifEmpty { "Warmweiß" },
+                        value = currentIntentLabel,
                         onValueChange = { },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedColor) },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedIntent) },
                         shape = MaterialTheme.shapes.large,
                         modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
                     )
                     ExposedDropdownMenu(
-                        expanded = expandedColor,
-                        onDismissRequest = { expandedColor = false }
+                        expanded = expandedIntent,
+                        onDismissRequest = { expandedIntent = false }
                     ) {
-                        colors.forEach { color ->
+                        availableIntents.forEach { (intent, label) ->
                             DropdownMenuItem(
-                                text = { Text(color) },
+                                text = { Text(label) },
                                 onClick = {
-                                    onValueChange(color)
-                                    expandedColor = false
+                                    onIntentSelected(intent)
+                                    expandedIntent = false
+                                    // Set a valid default when switching modes
+                                    if (intent == "action.brightness") {
+                                        onValueChange("100")
+                                    } else if (intent == "action.color") {
+                                        onValueChange("Warmweiß")
+                                    } else {
+                                        onValueChange("")
+                                    }
                                     onAutoSave()
                                 }
                             )
+                        }
+                    }
+                }
+
+                // Step 4: Value (Optional)
+                if (selectedIntent == "action.brightness") {
+                    OutlinedTextField(
+                        value = value,
+                        onValueChange = { newValue ->
+                            if (newValue.isEmpty() || (newValue.all { it.isDigit() } && newValue.toInt() <= 100)) {
+                                onValueChange(newValue)
+                            }
+                        },
+                        label = { Text("Helligkeit (0 - 100%)") },
+                        shape = MaterialTheme.shapes.large,
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth().onFocusChanged { 
+                            if (!it.isFocused) onAutoSave()
+                        }
+                    )
+                } else if (selectedIntent == "action.color") {
+                    var expandedColor by remember { mutableStateOf(false) }
+                    val colors = listOf("Rot", "Grün", "Blau", "Gelb", "Orange", "Pink", "Lila", "Warmweiß", "Kaltweiß")
+                    Text("Farbe", style = MaterialTheme.typography.labelMedium)
+                    ExposedDropdownMenuBox(
+                        expanded = expandedColor,
+                        onExpandedChange = { expandedColor = !expandedColor }
+                    ) {
+                        OutlinedTextField(
+                            readOnly = true,
+                            value = value.ifEmpty { "Warmweiß" },
+                            onValueChange = { },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedColor) },
+                            shape = MaterialTheme.shapes.large,
+                            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
+                        )
+                        ExposedDropdownMenu(
+                            expanded = expandedColor,
+                            onDismissRequest = { expandedColor = false }
+                        ) {
+                            colors.forEach { color ->
+                                DropdownMenuItem(
+                                    text = { Text(color) },
+                                    onClick = {
+                                        onValueChange(color)
+                                        expandedColor = false
+                                        onAutoSave()
+                                    }
+                                )
+                            }
                         }
                     }
                 }
