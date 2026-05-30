@@ -210,8 +210,9 @@ class CloudSyncUseCase @Inject constructor(
                     }
                 }
                 SyncMode.RESTORE_ONLY -> {
-                    if (remoteLastModified <= localLastModified + 2000) {
-                        logger.d(TAG, "RESTORE_ONLY: Local version is already up-to-date. Skipping restore download.")
+                    val inSync = Math.abs(localLastModified - remoteLastModified) <= 2000
+                    if (inSync) {
+                        logger.d(TAG, "RESTORE_ONLY: Local and remote versions are synchronized. Skipping restore download.")
                         syncLogProvider.addLogEntry("RESTORE_ONLY: Lokal bereits aktuell", bookId, book.name)
                         success = true
                     } else {

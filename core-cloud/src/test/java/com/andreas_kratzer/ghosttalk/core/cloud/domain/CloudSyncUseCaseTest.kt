@@ -137,8 +137,30 @@ class CloudSyncUseCaseTest {
     }
 
     @Test
-    fun `syncBook with RESTORE_ONLY mode skips download if remote is not newer`() = runTest {
-        // Prepare mocks for a scenario where remote is older, so RESTORE_ONLY should skip download
+    fun `syncBook with RESTORE_ONLY mode skips download if remote is in sync`() = runTest {
+        // Prepare mocks for a scenario where remote is in sync, so RESTORE_ONLY should skip download
+        val bookId = "test-book"
+        
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder(any()) } returns "folder_1"
+        
+        val remoteFile = com.google.api.services.drive.model.File().apply {
+            id = "file_1"
+            name = "book_$bookId.json"
+            modifiedTime = com.google.api.client.util.DateTime(System.currentTimeMillis()) // Remote is exactly in sync
+        }
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("folder_1") } returns listOf(remoteFile)
+
+        useCase.syncBook(mockDrive, bookId, SyncMode.RESTORE_ONLY)
+        advanceUntilIdle()
+
+        // Verify that downloadFile and updateFile were NOT called
+        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile(any(), any(), any()) }
+        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().updateFile(any(), any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `syncBook with RESTORE_ONLY mode downloads and overwrites local if remote is older but not in sync`() = runTest {
+        // Prepare mocks for a scenario where remote is older, so RESTORE_ONLY should still download to revert local modifications
         val bookId = "test-book"
         
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder(any()) } returns "folder_1"
@@ -149,13 +171,20 @@ class CloudSyncUseCaseTest {
             modifiedTime = com.google.api.client.util.DateTime(System.currentTimeMillis() - 100000L) // Remote is older
         }
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("folder_1") } returns listOf(remoteFile)
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile(any(), any(), any()) } answers {
+            val file = args[1] as File
+            file.writeText("{\"restored\": true}")
+            true
+        }
 
         useCase.syncBook(mockDrive, bookId, SyncMode.RESTORE_ONLY)
         advanceUntilIdle()
 
-        // Verify that downloadFile and updateFile were NOT called
-        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile(any(), any(), any()) }
+        // Verify that downloadFile was called to revert local changes, and updateFile was NOT called
+        coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile("file_1", any(), any()) }
         coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().updateFile(any(), any(), any(), any(), any()) }
+        // Verify import was called with restoreSyncSettings = false
+        coVerify(exactly = 1) { mockImportExportManager.importFromJson(any(), bookId, restoreSyncSettings = false) }
     }
 
     @Test

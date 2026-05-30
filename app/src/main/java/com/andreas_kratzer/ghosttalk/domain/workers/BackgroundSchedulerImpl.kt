@@ -1,9 +1,13 @@
 package com.andreas_kratzer.ghosttalk.domain.workers
 
 import android.content.Context
-import androidx.work.*
-import com.andreas_kratzer.ghosttalk.core.domain.BackgroundScheduler
+import androidx.work.Constraints
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.domain.BackgroundScheduler
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -11,7 +15,7 @@ import javax.inject.Singleton
 
 @Singleton
 class BackgroundSchedulerImpl @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val settingsRepository: SettingsRepository,
     private val workManager: WorkManager
 ) : BackgroundScheduler {
