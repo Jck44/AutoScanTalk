@@ -38,5 +38,11 @@ interface CloudSettings {
 
     var spotifyUserDisplayName: String?
     val spotifyUserDisplayNameFlow: StateFlow<String?>
+
+    var googleDriveFolderId: String?
+    val googleDriveFolderIdFlow: StateFlow<String?>
+
+    var googleDriveFolderName: String?
+    val googleDriveFolderNameFlow: StateFlow<String?>
 }
 

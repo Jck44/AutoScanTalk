@@ -36,6 +36,7 @@ class CloudSyncUseCaseTest {
     private val mockDrive: Drive = mockk(relaxed = true)
     private val mockLogger: Logger = mockk(relaxed = true)
     private val mockSyncLogProvider: SyncLogProvider = mockk(relaxed = true)
+    private val mockSettingsRepository: com.andreas_kratzer.ghosttalk.core.data.SettingsRepository = mockk(relaxed = true)
 
     @Before
     fun setup() {
@@ -49,7 +50,10 @@ class CloudSyncUseCaseTest {
 
         val mockBook = Book(id = "test-book", name = "Test", updatedAt = System.currentTimeMillis())
         coEvery { mockBookRepository.getBookById(any()) } returns mockBook
-        useCase = CloudSyncUseCase(mockContext, mockBookRepository, mockImportExportManager, mockSyncLogProvider, mockLogger)
+        
+        every { mockSettingsRepository.googleDriveFolderId } returns null
+        
+        useCase = CloudSyncUseCase(mockContext, mockBookRepository, mockImportExportManager, mockSettingsRepository, mockSyncLogProvider, mockLogger)
     }
 
     @After
@@ -292,5 +296,25 @@ class CloudSyncUseCaseTest {
         assertEquals(1, backups.size)
         assertEquals("Test Book", backups[0].bookName)
         assertEquals(1000L, backups[0].lastModified)
+    }
+
+    @Test
+    fun `syncBook uses custom folder ID if provided`() = runTest {
+        val bookId = "test-book"
+        val customFolderId = "custom_folder_123"
+        every { mockSettingsRepository.googleDriveFolderId } returns customFolderId
+        
+        val remoteFile = com.google.api.services.drive.model.File().apply {
+            id = "file_1"
+            name = "book_$bookId.zip"
+            modifiedTime = com.google.api.client.util.DateTime(System.currentTimeMillis())
+        }
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles(customFolderId) } returns listOf(remoteFile)
+
+        useCase.syncBook(mockDrive, bookId, SyncMode.TWO_WAY)
+        advanceUntilIdle()
+
+        // Verify that listFiles was called with the custom folder ID
+        coVerify(atLeast = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles(customFolderId) }
     }
 }

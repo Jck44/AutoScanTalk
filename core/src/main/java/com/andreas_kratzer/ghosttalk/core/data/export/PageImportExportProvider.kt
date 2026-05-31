@@ -14,6 +14,7 @@ interface PageImportExportProvider {
     suspend fun exportBookToZip(
         bookId: String, 
         outputStream: java.io.OutputStream,
+        includeTtsCache: Boolean = true,
         onProgress: (Float, String) -> Unit = { _, _ -> }
     )
     suspend fun importFromZip(
@@ -30,4 +31,13 @@ interface PageImportExportProvider {
         cloudFileId: String?,
         onProgress: (Float, String) -> Unit = { _, _ -> }
     ): Result<String>
+    suspend fun exportTtsCacheToZip(
+        outputStream: java.io.OutputStream,
+        onProgress: (Float, String) -> Unit = { _, _ -> }
+    )
+    suspend fun importTtsCacheFromZip(
+        inputStream: java.io.InputStream,
+        onProgress: (Float, String) -> Unit = { _, _ -> }
+    )
+    fun getTtsCacheLastModified(): Long
 }

@@ -8,6 +8,7 @@ import android.content.Intent
 import android.widget.Toast
 import com.andreas_kratzer.ghosttalk.core.cloud.AuthManager
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.CloudSyncUseCase
+import com.andreas_kratzer.ghosttalk.core.cloud.domain.GetDriveFoldersUseCase
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.PerformManualSyncUseCase
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.RemoteBackupInfo
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.SetCloudSyncEnabledUseCase
@@ -18,12 +19,14 @@ import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.data.SyncLogProvider
 import com.andreas_kratzer.ghosttalk.feature.settings.R
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
+import com.google.api.services.drive.model.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -36,6 +39,7 @@ class CloudSyncSettingsDelegate @Inject constructor(
     private val setCloudSyncEnabledUseCase: SetCloudSyncEnabledUseCase,
     private val performManualSyncUseCase: PerformManualSyncUseCase,
     private val cloudSyncUseCase: CloudSyncUseCase,
+    private val getDriveFoldersUseCase: GetDriveFoldersUseCase,
     private val signInUseCase: SignInUseCase,
     private val signOutUseCase: SignOutUseCase,
     private val syncLogProvider: SyncLogProvider
@@ -57,6 +61,12 @@ class CloudSyncSettingsDelegate @Inject constructor(
 
     private val _syncLogs = MutableStateFlow<List<String>>(emptyList())
     val syncLogs: StateFlow<List<String>> = _syncLogs.asStateFlow()
+
+    private val _driveFolders = MutableStateFlow<List<File>>(emptyList())
+    val driveFolders: StateFlow<List<File>> = _driveFolders.asStateFlow()
+
+    private val _isBrowsingFolders = MutableStateFlow(false)
+    val isBrowsingFolders: StateFlow<Boolean> = _isBrowsingFolders.asStateFlow()
 
     fun loadSyncLogs(scope: CoroutineScope) {
         scope.launch {
@@ -87,6 +97,18 @@ class CloudSyncSettingsDelegate @Inject constructor(
     fun signOut(scope: CoroutineScope) {
         scope.launch {
             signOutUseCase.execute()
+        }
+    }
+
+    fun switchAccount(context: Context, scope: CoroutineScope) {
+        val activity = findActivity(context) ?: return
+        scope.launch {
+            signOutUseCase.execute()
+            _signInErrorMessage.value = null
+            val result = signInUseCase.execute(activity)
+            if (!result) {
+                _signInErrorMessage.value = "Konto wechseln fehlgeschlagen."
+            }
         }
     }
 
@@ -137,7 +159,38 @@ class CloudSyncSettingsDelegate @Inject constructor(
         _availableBackups.value = emptyList()
     }
 
-    fun fetchAvailableBackupsForImport(scope: CoroutineScope) {
+    fun fetchDriveFolders(parentFolderId: String = "root", scope: CoroutineScope) {
+        scope.launch {
+            val credential = authManager.getGoogleCredential()
+            if (credential == null) {
+                Toast.makeText(application, "Kein Cloud-Konto verbunden.", Toast.LENGTH_LONG).show()
+                return@launch
+            }
+            _isBrowsingFolders.value = true
+            try {
+                val drive = com.google.api.services.drive.Drive.Builder(
+                    com.google.api.client.http.javanet.NetHttpTransport(),
+                    com.google.api.client.json.gson.GsonFactory.getDefaultInstance(),
+                    credential
+                ).setApplicationName("GhostTalk").build()
+
+                _driveFolders.value = getDriveFoldersUseCase.execute(drive, parentFolderId)
+            } catch (e: UserRecoverableAuthIOException) {
+                _authIntentFlow.emit(e.intent)
+            } catch (e: Exception) {
+                Toast.makeText(application, "Fehler beim Laden der Ordner: ${e.message}", Toast.LENGTH_LONG).show()
+            } finally {
+                _isBrowsingFolders.value = false
+            }
+        }
+    }
+
+    fun selectDriveFolder(folderId: String?, folderName: String?) {
+        settingsRepository.googleDriveFolderId = folderId
+        settingsRepository.googleDriveFolderName = folderName
+    }
+
+    fun fetchAvailableBackupsForImport(folderId: String? = null, scope: CoroutineScope) {
         scope.launch {
             val credential = authManager.getGoogleCredential()
             if (credential == null) {
@@ -152,10 +205,10 @@ class CloudSyncSettingsDelegate @Inject constructor(
                     credential
                 ).setApplicationName("GhostTalk").build()
 
-                val backups = cloudSyncUseCase.getAvailableBackups(drive)
+                val backups = cloudSyncUseCase.getAvailableBackups(drive, folderId)
                 _availableBackups.value = backups
                 if (backups.isEmpty()) {
-                    Toast.makeText(application, "Keine Backups in der Cloud gefunden.", Toast.LENGTH_LONG).show()
+                    Toast.makeText(application, "Keine Backups in diesem Ordner gefunden.", Toast.LENGTH_LONG).show()
                 } else {
                     _showBackupSelectionDialog.value = true
                 }

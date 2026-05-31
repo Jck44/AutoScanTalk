@@ -2,6 +2,7 @@ package com.andreas_kratzer.ghosttalk.core.cloud.domain
 
 import android.content.Context
 import com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper
+import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.data.SyncLogProvider
 import com.andreas_kratzer.ghosttalk.core.data.impl.PageImportExportManager
 import com.andreas_kratzer.ghosttalk.core.util.Logger
@@ -30,11 +31,13 @@ class CloudSyncUseCase @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val bookRepository: com.andreas_kratzer.ghosttalk.core.data.BookRepository,
     private val importExportManager: PageImportExportManager,
+    private val settingsRepository: SettingsRepository,
     private val syncLogProvider: SyncLogProvider,
     private val logger: Logger
 ) {
     private val TAG = "CloudSyncUseCase"
     private val FOLDER_NAME = "GhosTTalk_Sync"
+    private val TTS_CACHE_FILE_NAME = "tts_cache.zip"
 
     suspend fun syncBook(
         drive: Drive,
@@ -59,24 +62,31 @@ class CloudSyncUseCase @Inject constructor(
 
         val helper = DriveServiceHelper(drive)
         
-        logger.d(TAG, "Step 1: Finding or creating folder '$FOLDER_NAME'...")
+        val customFolderId = settingsRepository.googleDriveFolderId
         var folderId: String? = null
-        var searchSuccess = false
-        try {
-            folderId = helper.findFolder(FOLDER_NAME)
-            searchSuccess = true
-        } catch (e: Exception) {
-            logger.e(TAG, "Exception during findFolder. Sync aborted.", e)
-            return@withContext false
-        }
         
-        if (searchSuccess && folderId == null) {
-            logger.d(TAG, "Folder not found, creating folder: $FOLDER_NAME")
-            folderId = try {
-                helper.createFolder(FOLDER_NAME)
+        if (customFolderId != null) {
+            logger.d(TAG, "Step 1: Using custom folder ID: $customFolderId")
+            folderId = customFolderId
+        } else {
+            logger.d(TAG, "Step 1: Finding or creating default folder '$FOLDER_NAME'...")
+            var searchSuccess = false
+            try {
+                folderId = helper.findFolder(FOLDER_NAME)
+                searchSuccess = true
             } catch (e: Exception) {
-                logger.e(TAG, "Exception during createFolder", e)
-                null
+                logger.e(TAG, "Exception during findFolder. Sync aborted.", e)
+                return@withContext false
+            }
+            
+            if (searchSuccess && folderId == null) {
+                logger.d(TAG, "Folder not found, creating folder: $FOLDER_NAME")
+                folderId = try {
+                    helper.createFolder(FOLDER_NAME)
+                } catch (e: Exception) {
+                    logger.e(TAG, "Exception during createFolder", e)
+                    null
+                }
             }
         }
 
@@ -130,7 +140,7 @@ class CloudSyncUseCase @Inject constructor(
             logger.d(TAG, "Step 3: Exporting local book data...")
             if (mimeType == "application/zip") {
                 tempFile.outputStream().use { os ->
-                    importExportManager.exportBookToZip(bookId, os) { p, s -> 
+                    importExportManager.exportBookToZip(bookId, os, includeTtsCache = false) { p, s -> 
                         onProgress(p * 0.3f, s) // ZIP export is 0-30%
                     }
                 }
@@ -262,19 +272,29 @@ class CloudSyncUseCase @Inject constructor(
         if (tempFile.exists()) {
             tempFile.delete()
         }
+        
+        // Sync TTS cache separately after book sync
+        if (success) {
+            try {
+                syncTtsCache(drive, folderId, syncMode, onProgress)
+            } catch (e: Exception) {
+                logger.e(TAG, "TTS cache sync failed (non-fatal)", e)
+            }
+        }
+        
         logger.d(TAG, "Sync process finished with status: $success")
         success
     }
 
-suspend fun getAvailableBackups(drive: Drive): List<RemoteBackupInfo> = withContext(Dispatchers.IO) {
-logger.d(TAG, "Fetching available backups...")
-val helper = DriveServiceHelper(drive)
-val folderId = helper.findFolder(FOLDER_NAME) ?: return@withContext emptyList()
+    suspend fun getAvailableBackups(drive: Drive, folderId: String? = null): List<RemoteBackupInfo> = withContext(Dispatchers.IO) {
+        logger.d(TAG, "Fetching available backups (folderId: $folderId)...")
+        val helper = DriveServiceHelper(drive)
+        val targetFolderId = folderId ?: settingsRepository.googleDriveFolderId ?: helper.findFolder(FOLDER_NAME) ?: return@withContext emptyList()
 
-val files = helper.listFiles(folderId)
+        val files = helper.listFiles(targetFolderId)
 logger.d(TAG, "Found ${files.size} total files in sync folder.")
 
-files.mapNotNull { file ->
+files.filter { it.name != TTS_CACHE_FILE_NAME }.mapNotNull { file ->
     try {
         val bookName = file.description ?: if (file.name.endsWith(".json")) {
             logger.d(TAG, "Processing metadata for legacy JSON file: ${file.name}")
@@ -389,6 +409,12 @@ try {
         
         if (result.isSuccess) {
             syncLogProvider.addLogEntry("Cloud-Import erfolgreich: $fileName", null, null)
+            // Also restore TTS cache from separate file if available
+            try {
+                restoreTtsCacheIfAvailable(drive, onProgress)
+            } catch (e: Exception) {
+                logger.e(TAG, "TTS cache restore after cloud import failed (non-fatal)", e)
+            }
         } else {
             syncLogProvider.addLogEntry("Cloud-Import fehlgeschlagen: ${result.exceptionOrNull()?.message}", null, null, isError = true)
         }
@@ -406,4 +432,141 @@ try {
     Result.failure<String>(e)
 }
 }
+
+    private suspend fun syncTtsCache(
+        drive: Drive,
+        folderId: String,
+        syncMode: SyncMode,
+        onProgress: (Float, String) -> Unit
+    ) = withContext(Dispatchers.IO) {
+        val helper = DriveServiceHelper(drive)
+        
+        val remoteFile: DriveFile? = try {
+            helper.listFiles(folderId).find { it.name == TTS_CACHE_FILE_NAME }
+        } catch (e: Exception) {
+            logger.e(TAG, "Failed to find TTS cache on Drive", e)
+            null
+        }
+        
+        val localLastModified = importExportManager.getTtsCacheLastModified()
+        val remoteLastModified = remoteFile?.modifiedTime?.value ?: 0L
+        
+        val prefs = context.getSharedPreferences("ghosttalk_settings", Context.MODE_PRIVATE)
+        val lastSyncedLocalTime = prefs.getLong("tts_cache_last_synced_local_time", 0L)
+        val lastSyncedRemoteTime = prefs.getLong("tts_cache_last_synced_remote_time", 0L)
+        
+        logger.d(TAG, "TTS cache sync: local=$localLastModified, remote=$remoteLastModified, lastSyncedLocal=$lastSyncedLocalTime, lastSyncedRemote=$lastSyncedRemoteTime")
+        
+        // No local cache and no remote cache -> nothing to do
+        if (localLastModified == 0L && remoteFile == null) {
+            logger.d(TAG, "No TTS cache to sync.")
+            return@withContext
+        }
+        
+        val hasLocalChanged = localLastModified > lastSyncedLocalTime + 2000 && localLastModified > 0L
+        val hasRemoteChanged = remoteFile != null && remoteLastModified > lastSyncedRemoteTime + 2000
+        
+        val shouldUpload = when (syncMode) {
+            SyncMode.RESTORE_ONLY -> false
+            SyncMode.BACKUP_ONLY -> hasLocalChanged || remoteFile == null
+            SyncMode.TWO_WAY -> hasLocalChanged && !hasRemoteChanged
+        }
+        
+        val shouldDownload = when (syncMode) {
+            SyncMode.BACKUP_ONLY -> false
+            SyncMode.RESTORE_ONLY -> hasRemoteChanged
+            SyncMode.TWO_WAY -> hasRemoteChanged
+        }
+        
+        if (shouldUpload) {
+            logger.d(TAG, "Uploading TTS cache...")
+            val tempFile = File(context.cacheDir, TTS_CACHE_FILE_NAME)
+            try {
+                tempFile.outputStream().use { os ->
+                    importExportManager.exportTtsCacheToZip(os) { _, _ -> }
+                }
+                if (tempFile.length() > 0) {
+                    val fileId = if (remoteFile != null) {
+                        val updateSuccess = helper.updateFile(remoteFile.id, tempFile, "application/zip") { _ -> }
+                        if (updateSuccess) remoteFile.id else null
+                    } else {
+                        helper.uploadFile(folderId, tempFile, "application/zip") { _ -> }
+                    }
+                    
+                    if (fileId != null) {
+                        val newMetadata = helper.getFileMetadata(fileId)
+                        val newRemoteTime = newMetadata?.modifiedTime?.value ?: 0L
+                        prefs.edit()
+                            .putLong("tts_cache_last_synced_local_time", localLastModified)
+                            .putLong("tts_cache_last_synced_remote_time", newRemoteTime)
+                            .apply()
+                        syncLogProvider.addLogEntry("TTS-Cache in die Cloud hochgeladen", null, null)
+                    }
+                }
+            } finally {
+                tempFile.delete()
+            }
+        } else if (shouldDownload) {
+            logger.d(TAG, "Downloading TTS cache...")
+            val tempFile = File(context.cacheDir, "download_$TTS_CACHE_FILE_NAME")
+            try {
+                if (helper.downloadFile(remoteFile!!.id, tempFile) { _ -> }) {
+                    tempFile.inputStream().use { inputStream ->
+                        importExportManager.importTtsCacheFromZip(inputStream) { _, _ -> }
+                    }
+                    val newLocalLastModified = importExportManager.getTtsCacheLastModified()
+                    prefs.edit()
+                        .putLong("tts_cache_last_synced_local_time", newLocalLastModified)
+                        .putLong("tts_cache_last_synced_remote_time", remoteLastModified)
+                        .apply()
+                    syncLogProvider.addLogEntry("TTS-Cache aus der Cloud wiederhergestellt", null, null)
+                }
+            } finally {
+                tempFile.delete()
+            }
+        } else {
+            logger.d(TAG, "TTS cache is in sync.")
+            // Make sure the last synced values are aligned if they weren't yet
+            if (lastSyncedLocalTime == 0L || lastSyncedRemoteTime == 0L) {
+                prefs.edit()
+                    .putLong("tts_cache_last_synced_local_time", localLastModified)
+                    .putLong("tts_cache_last_synced_remote_time", remoteLastModified)
+                    .apply()
+            }
+        }
+    }
+
+    private suspend fun restoreTtsCacheIfAvailable(
+        drive: Drive,
+        onProgress: (Float, String) -> Unit
+    ) {
+        val helper = DriveServiceHelper(drive)
+        val folderId = settingsRepository.googleDriveFolderId ?: helper.findFolder(FOLDER_NAME) ?: return
+        val remoteFile = try {
+            helper.listFiles(folderId).find { it.name == TTS_CACHE_FILE_NAME }
+        } catch (e: Exception) {
+            logger.e(TAG, "Failed to find TTS cache for restore", e)
+            null
+        } ?: return
+        
+        logger.d(TAG, "Found separate TTS cache on Drive, restoring...")
+        val tempFile = File(context.cacheDir, "download_$TTS_CACHE_FILE_NAME")
+        try {
+            if (helper.downloadFile(remoteFile.id, tempFile) { _ -> }) {
+                tempFile.inputStream().use { inputStream ->
+                    importExportManager.importTtsCacheFromZip(inputStream) { _, _ -> }
+                }
+                val newLocalLastModified = importExportManager.getTtsCacheLastModified()
+                val remoteLastModified = remoteFile.modifiedTime?.value ?: 0L
+                val prefs = context.getSharedPreferences("ghosttalk_settings", Context.MODE_PRIVATE)
+                prefs.edit()
+                    .putLong("tts_cache_last_synced_local_time", newLocalLastModified)
+                    .putLong("tts_cache_last_synced_remote_time", remoteLastModified)
+                    .apply()
+                syncLogProvider.addLogEntry("TTS-Cache aus der Cloud wiederhergestellt", null, null)
+            }
+        } finally {
+            tempFile.delete()
+        }
+    }
 }

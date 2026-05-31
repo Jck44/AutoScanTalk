@@ -133,6 +133,8 @@ class SettingsViewModel @Inject constructor(
     val syncMode = settingsRepository.syncModeFlow
     val lastSuccessfulSyncTime = settingsRepository.lastSuccessfulSyncTimeFlow
     val syncIntervalMinutes = settingsRepository.syncIntervalMinutesFlow
+    val googleDriveFolderId = settingsRepository.googleDriveFolderIdFlow
+    val googleDriveFolderName = settingsRepository.googleDriveFolderNameFlow
     val hueBridgeIp = settingsRepository.hueBridgeIpFlow
     val hueUsername = settingsRepository.hueUsernameFlow
     val huePairingStatus: StateFlow<String?> = hueDelegate.huePairingStatus
@@ -145,6 +147,8 @@ class SettingsViewModel @Inject constructor(
     val availableBackups = cloudSyncDelegate.availableBackups
     val showBackupSelectionDialog = cloudSyncDelegate.showBackupSelectionDialog
     val syncLogs = cloudSyncDelegate.syncLogs
+    val driveFolders = cloudSyncDelegate.driveFolders
+    val isBrowsingFolders = cloudSyncDelegate.isBrowsingFolders
     
     val isGeminiEnabled = settingsRepository.isGeminiEnabledFlow
     val useLocalGenerativeAi = settingsRepository.useLocalGenerativeAiFlow
@@ -339,8 +343,12 @@ class SettingsViewModel @Inject constructor(
         // Disable cloud-dependent features on sign out
         settingsRepository.isCloudSyncEnabled = false
         settingsRepository.isGeminiEnabled = false
+        settingsRepository.googleDriveFolderId = null
+        settingsRepository.googleDriveFolderName = null
         genAiDelegate.updateGeminiToolStatus()
     }
+
+    fun switchAccount(ctx: Context) = cloudSyncDelegate.switchAccount(ctx, viewModelScope)
 
     fun setCloudSyncEnabled(ctx: Context, e: Boolean) = cloudSyncDelegate.setCloudSyncEnabled(ctx, e, viewModelScope)
        fun syncNow() {
@@ -382,7 +390,7 @@ class SettingsViewModel @Inject constructor(
         )
     }
     
-    fun fetchAvailableBackupsForImport() = cloudSyncDelegate.fetchAvailableBackupsForImport(viewModelScope)
+    fun fetchAvailableBackupsForImport(folderId: String? = null) = cloudSyncDelegate.fetchAvailableBackupsForImport(folderId, viewModelScope)
     
     fun importCloudBackup(backupInfo: com.andreas_kratzer.ghosttalk.core.cloud.domain.RemoteBackupInfo) {
         backupDelegate.setBackupRestoreRunning(true)
@@ -397,6 +405,9 @@ class SettingsViewModel @Inject constructor(
         }
     }
     fun dismissBackupSelectionDialog() = cloudSyncDelegate.dismissBackupSelectionDialog()
+
+    fun fetchDriveFolders(parentFolderId: String = "root") = cloudSyncDelegate.fetchDriveFolders(parentFolderId, viewModelScope)
+    fun selectDriveFolder(folderId: String?, folderName: String?) = cloudSyncDelegate.selectDriveFolder(folderId, folderName)
     
     fun loadSyncLogs() = cloudSyncDelegate.loadSyncLogs(viewModelScope)
     fun clearSyncLogs() = cloudSyncDelegate.clearSyncLogs(viewModelScope)

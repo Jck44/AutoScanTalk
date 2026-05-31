@@ -2,6 +2,8 @@ package com.andreas_kratzer.ghosttalk.core.data.impl.settings
 
 import android.content.SharedPreferences
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_CLOUD_SYNC_ENABLED
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_GOOGLE_DRIVE_FOLDER_ID
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_GOOGLE_DRIVE_FOLDER_NAME
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_LAST_SYNC_TIME
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SYNC_INTERVAL_MINUTES
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SYNC_MODE
@@ -31,6 +33,8 @@ class CloudSettingsRepository(
     private val _spotifyRefreshToken = StringSetting(SettingsConstants.KEY_SPOTIFY_REFRESH_TOKEN)
     private val _spotifyTokenExpiresAt = LongSetting(SettingsConstants.KEY_SPOTIFY_TOKEN_EXPIRES_AT, 0L)
     private val _spotifyUserDisplayName = StringSetting(SettingsConstants.KEY_SPOTIFY_USER_DISPLAY_NAME)
+    private val _googleDriveFolderId = StringSetting(KEY_GOOGLE_DRIVE_FOLDER_ID)
+    private val _googleDriveFolderName = StringSetting(KEY_GOOGLE_DRIVE_FOLDER_NAME)
 
     override val isCloudSyncEnabledFlow = _isCloudSyncEnabled.flow
     override val syncIntervalMinutesFlow = _syncIntervalMinutes.flow
@@ -45,6 +49,8 @@ class CloudSettingsRepository(
     override val spotifyRefreshTokenFlow = _spotifyRefreshToken.flow
     override val spotifyTokenExpiresAtFlow = _spotifyTokenExpiresAt.flow
     override val spotifyUserDisplayNameFlow = _spotifyUserDisplayName.flow
+    override val googleDriveFolderIdFlow = _googleDriveFolderId.flow
+    override val googleDriveFolderNameFlow = _googleDriveFolderName.flow
 
     override var isCloudSyncEnabled: Boolean by _isCloudSyncEnabled
     override var syncIntervalMinutes: Long by _syncIntervalMinutes
@@ -59,6 +65,8 @@ class CloudSettingsRepository(
     override var spotifyRefreshToken: String? by _spotifyRefreshToken
     override var spotifyTokenExpiresAt: Long by _spotifyTokenExpiresAt
     override var spotifyUserDisplayName: String? by _spotifyUserDisplayName
+    override var googleDriveFolderId: String? by _googleDriveFolderId
+    override var googleDriveFolderName: String? by _googleDriveFolderName
 
 
     override fun refresh() {
@@ -75,5 +83,7 @@ class CloudSettingsRepository(
         _spotifyRefreshToken.refresh()
         _spotifyTokenExpiresAt.refresh()
         _spotifyUserDisplayName.refresh()
+        _googleDriveFolderId.refresh()
+        _googleDriveFolderName.refresh()
     }
 }

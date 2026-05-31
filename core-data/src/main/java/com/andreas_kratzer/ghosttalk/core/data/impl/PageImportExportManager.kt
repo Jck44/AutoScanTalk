@@ -444,6 +444,7 @@ class PageImportExportManager @Inject constructor(
     override suspend fun exportBookToZip(
         bookId: String, 
         outputStream: OutputStream,
+        includeTtsCache: Boolean,
         onProgress: (Float, String) -> Unit
     ) = withContext(Dispatchers.IO) {
         ZipOutputStream(outputStream).use { zip ->
@@ -458,10 +459,12 @@ class PageImportExportManager @Inject constructor(
             // 2. Gather all files to compress (10-100%)
             val filesToCompress = mutableListOf<Pair<File, String>>()
             
-            val cacheDir = File(context.filesDir, "elevenlabs")
-            if (cacheDir.exists() && cacheDir.isDirectory) {
-                cacheDir.listFiles()?.filter { it.isFile && it.name.endsWith(".mp3") }?.forEach { file ->
-                    filesToCompress.add(file to "tts_cache/${file.name}")
+            if (includeTtsCache) {
+                val cacheDir = File(context.filesDir, "elevenlabs")
+                if (cacheDir.exists() && cacheDir.isDirectory) {
+                    cacheDir.listFiles()?.filter { it.isFile && it.name.endsWith(".mp3") }?.forEach { file ->
+                        filesToCompress.add(file to "tts_cache/${file.name}")
+                    }
                 }
             }
             
@@ -554,6 +557,73 @@ class PageImportExportManager @Inject constructor(
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    override fun getTtsCacheLastModified(): Long {
+        val cacheDir = File(context.filesDir, "elevenlabs")
+        if (!cacheDir.exists() || !cacheDir.isDirectory) return 0L
+        return cacheDir.listFiles()
+            ?.filter { it.isFile && it.name.endsWith(".mp3") }
+            ?.maxOfOrNull { it.lastModified() }
+            ?: 0L
+    }
+
+    override suspend fun exportTtsCacheToZip(
+        outputStream: OutputStream,
+        onProgress: (Float, String) -> Unit
+    ) = withContext(Dispatchers.IO) {
+        ZipOutputStream(outputStream).use { zip ->
+            val cacheDir = File(context.filesDir, "elevenlabs")
+            val files = if (cacheDir.exists() && cacheDir.isDirectory) {
+                cacheDir.listFiles()?.filter { it.isFile && it.name.endsWith(".mp3") } ?: emptyArray<File>().toList()
+            } else {
+                emptyList()
+            }
+
+            val totalFiles = files.size
+            logger.d(TAG, "Exporting TTS cache: $totalFiles files")
+            files.forEachIndexed { index, file ->
+                val progress = index.toFloat() / totalFiles.coerceAtLeast(1)
+                onProgress(progress, "Compressing: ${file.name}")
+                zip.putNextEntry(ZipEntry("tts_cache/${file.name}"))
+                file.inputStream().use { input -> input.copyTo(zip) }
+                zip.closeEntry()
+            }
+            onProgress(1f, "TTS cache export complete.")
+        }
+    }
+
+    override suspend fun importTtsCacheFromZip(
+        inputStream: InputStream,
+        onProgress: (Float, String) -> Unit
+    ) = withContext(Dispatchers.IO) {
+        val zipIn = ZipInputStream(inputStream)
+        val ttsCacheDir = File(context.filesDir, "elevenlabs")
+        if (!ttsCacheDir.exists()) ttsCacheDir.mkdirs()
+
+        var count = 0
+        var entry = zipIn.nextEntry
+        while (entry != null) {
+            if (entry.name.startsWith("tts_cache/")) {
+                val fileName = entry.name.substringAfter("tts_cache/")
+                if (fileName.isNotEmpty()) {
+                    val targetFile = File(ttsCacheDir, fileName)
+                    val shouldExtract = !targetFile.exists() || (entry.time > targetFile.lastModified())
+                    if (shouldExtract) {
+                        onProgress(0.5f, "Extracting: $fileName")
+                        FileOutputStream(targetFile).use { out -> zipIn.copyTo(out) }
+                        if (entry.time != -1L) {
+                            targetFile.setLastModified(entry.time)
+                        }
+                        count++
+                    }
+                }
+            }
+            zipIn.closeEntry()
+            entry = zipIn.nextEntry
+        }
+        logger.d(TAG, "Imported $count TTS cache files")
+        onProgress(1f, "TTS cache import complete.")
     }
 
     override suspend fun importCloudBackupFromZip(

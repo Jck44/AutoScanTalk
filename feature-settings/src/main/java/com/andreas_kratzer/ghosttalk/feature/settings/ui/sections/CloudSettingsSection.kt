@@ -16,6 +16,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -35,6 +36,7 @@ import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.feature.settings.R
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.BackupSelectionDialog
+import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.DriveFolderPickerDialog
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.SyncLogDialog
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -56,8 +58,15 @@ fun CloudSettingsSection(
     val isCloudSyncEnabled by viewModel.isCloudSyncEnabled.collectAsState()
     val lastSyncTime by viewModel.lastSuccessfulSyncTime.collectAsState()
 
+    val googleDriveFolderId by viewModel.googleDriveFolderId.collectAsState(null)
+    val googleDriveFolderName by viewModel.googleDriveFolderName.collectAsState(null)
+    val driveFolders by viewModel.driveFolders.collectAsState()
+    val isBrowsingFolders by viewModel.isBrowsingFolders.collectAsState()
+    var showFolderPicker by remember { mutableStateOf(false) }
+
     val availableBackups by viewModel.availableBackups.collectAsState()
     val showBackupSelectionDialog by viewModel.showBackupSelectionDialog.collectAsState()
+    var showImportFolderPicker by remember { mutableStateOf(false) }
     val syncLogs by viewModel.syncLogs.collectAsState()
     var showSyncLogDialog by remember { mutableStateOf(false) }
     val spotifyUserDisplayName by viewModel.spotifyUserDisplayName.collectAsState(null)
@@ -90,6 +99,13 @@ fun CloudSettingsSection(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(stringResource(R.string.settings_cloud_sign_out))
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = { viewModel.switchAccount(context) },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Konto wechseln")
                 }
             } else {
                 Button(
@@ -167,7 +183,7 @@ fun CloudSettingsSection(
             PreferenceCategory(stringResource(R.string.settings_category_cloud_import)) {
                 Button(
                     onClick = { 
-                        viewModel.fetchAvailableBackupsForImport() 
+                        showImportFolderPicker = true
                     },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = userEmail != null && !isSyncing
@@ -215,6 +231,38 @@ fun CloudSettingsSection(
             }
         } else {
             // Book-Scoped Mode: Show Sync Settings and manual buttons
+            PreferenceCategory("Backup-Ordner") {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Speicherort im Google Drive",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Text(
+                            text = googleDriveFolderName ?: "Standard (GhosTTalk_Sync)",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    TextButton(onClick = { showFolderPicker = true }, enabled = userEmail != null) {
+                        Text("Ändern")
+                    }
+                }
+                if (googleDriveFolderId != null) {
+                    TextButton(
+                        onClick = { viewModel.selectDriveFolder(null, null) },
+                        modifier = Modifier.padding(top = 4.dp)
+                    ) {
+                        Text("Auf Standard zurücksetzen", style = MaterialTheme.typography.labelSmall)
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(dimensions.paddingMedium))
+
             PreferenceCategory(stringResource(R.string.settings_category_cloud_sync)) {
                 SettingsToggleItem(
                     label = stringResource(R.string.settings_cloud_sync_enabled),
@@ -341,6 +389,32 @@ fun CloudSettingsSection(
                 Text(stringResource(if (isGlobal) R.string.settings_local_backup_import else R.string.settings_local_backup_restore))
             }
         }
+    }
+
+    if (showFolderPicker) {
+        DriveFolderPickerDialog(
+            folders = driveFolders,
+            isLoading = isBrowsingFolders,
+            onFetchFolders = { parentId -> viewModel.fetchDriveFolders(parentId) },
+            onFolderSelected = { id, name ->
+                viewModel.selectDriveFolder(id, name)
+                showFolderPicker = false
+            },
+            onDismiss = { showFolderPicker = false }
+        )
+    }
+
+    if (showImportFolderPicker) {
+        DriveFolderPickerDialog(
+            folders = driveFolders,
+            isLoading = isBrowsingFolders,
+            onFetchFolders = { parentId -> viewModel.fetchDriveFolders(parentId) },
+            onFolderSelected = { id, _ ->
+                viewModel.fetchAvailableBackupsForImport(id)
+                showImportFolderPicker = false
+            },
+            onDismiss = { showImportFolderPicker = false }
+        )
     }
 
     if (showSyncLogDialog) {

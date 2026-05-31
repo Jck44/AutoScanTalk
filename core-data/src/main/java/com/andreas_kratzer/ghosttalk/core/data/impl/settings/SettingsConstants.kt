@@ -101,4 +101,7 @@ object SettingsConstants {
     const val KEY_CALL_AUTO_ENABLE_SPEAKERPHONE = "pref_call_auto_enable_speakerphone"
     const val KEY_SIMULATE_CALLS_ENABLED = "pref_simulate_calls_enabled"
     const val KEY_IS_SETUP_COMPLETED = "is_setup_completed"
+    
+    const val KEY_GOOGLE_DRIVE_FOLDER_ID = "google_drive_folder_id"
+    const val KEY_GOOGLE_DRIVE_FOLDER_NAME = "google_drive_folder_name"
 }

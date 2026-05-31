@@ -170,6 +170,8 @@ class SettingsRepositoryImpl @Inject constructor(
     override val spotifyRefreshTokenFlow: StateFlow<String?> get() = cloudSettings.spotifyRefreshTokenFlow
     override val spotifyTokenExpiresAtFlow: StateFlow<Long> get() = cloudSettings.spotifyTokenExpiresAtFlow
     override val spotifyUserDisplayNameFlow: StateFlow<String?> get() = cloudSettings.spotifyUserDisplayNameFlow
+    override val googleDriveFolderIdFlow: StateFlow<String?> get() = cloudSettings.googleDriveFolderIdFlow
+    override val googleDriveFolderNameFlow: StateFlow<String?> get() = cloudSettings.googleDriveFolderNameFlow
     override val ttsEngineFlow: StateFlow<String?> get() = voiceSettings.ttsEngineFlow
     override val googleTtsLanguageFlow: StateFlow<String?> get() = voiceSettings.googleTtsLanguageFlow
     override val googleTtsVoiceNameFlow: StateFlow<String?> get() = voiceSettings.googleTtsVoiceNameFlow
@@ -495,6 +497,14 @@ class SettingsRepositoryImpl @Inject constructor(
     override var spotifyUserDisplayName: String?
         get() = cloudSettings.spotifyUserDisplayName
         set(value) { cloudSettings.spotifyUserDisplayName = value }
+
+    override var googleDriveFolderId: String?
+        get() = cloudSettings.googleDriveFolderId
+        set(value) { cloudSettings.googleDriveFolderId = value }
+
+    override var googleDriveFolderName: String?
+        get() = cloudSettings.googleDriveFolderName
+        set(value) { cloudSettings.googleDriveFolderName = value }
 
 
     override var ttsEngine: String?
