@@ -250,7 +250,16 @@ class PageViewModel @Inject constructor(
                     android.util.Log.d("PageViewModel", "pageMetrics: fetched ${stats.size} stats, clickCounts = $clickCounts")
                     val delay = settingsRepository.scanDelayMillis
                     val pattern = settingsRepository.defaultScanPattern
-                    val metrics = efficiencyAnalyzer.calculatePageMetrics(page, clickCounts, delay, pattern)
+                    val allPages = pageManagementDelegate.unfilteredPages.value
+                    val startPageId = settingsRepository.defaultStartPageId
+                    val metrics = efficiencyAnalyzer.calculatePageMetrics(
+                        page = page,
+                        allPages = allPages,
+                        startPageId = startPageId,
+                        clickCounts = clickCounts,
+                        scanDelayMs = delay,
+                        defaultScanPattern = pattern
+                    )
                     android.util.Log.d("PageViewModel", "pageMetrics: calculated metrics for ${metrics.size} buttons: $metrics")
                     emit(metrics)
                 } catch (e: Exception) {
@@ -262,6 +271,11 @@ class PageViewModel @Inject constructor(
     }
     .flowOn(Dispatchers.Default)
     .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+
+    suspend fun getMarkovSuccessors(buttonId: String): List<Pair<String, Int>> {
+        val bookId = activeBookId.value ?: return emptyList()
+        return buttonUsageRepository.getMarkovSuccessors(bookId, buttonId)
+    }
 
     val focusedButtonIndex = scanCoordinator.focusedButtonIndex
     val focusedRowIndex = scanCoordinator.focusedRowIndex

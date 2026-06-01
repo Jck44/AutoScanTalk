@@ -1,8 +1,6 @@
 package com.andreas_kratzer.ghosttalk.di
 
 import com.andreas_kratzer.ghosttalk.core.ai.ClockExecutor
-import com.andreas_kratzer.ghosttalk.core.ai.LocalIntentRouter
-import com.andreas_kratzer.ghosttalk.core.ai.domain.LocalIntentRouterImpl
 import com.andreas_kratzer.ghosttalk.core.domain.executors.AndroidClockExecutor
 import dagger.Binds
 import dagger.Module
@@ -19,10 +17,4 @@ abstract class AiModule {
     abstract fun bindClockExecutor(
         androidClockExecutor: AndroidClockExecutor
     ): ClockExecutor
-
-    @Binds
-    @Singleton
-    abstract fun bindLocalIntentRouter(
-        localIntentRouterImpl: LocalIntentRouterImpl
-    ): LocalIntentRouter
 }

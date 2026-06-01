@@ -735,7 +735,9 @@ class PageImportExportManager @Inject constructor(
                 buttonId = event.buttonId,
                 pageId = event.pageId,
                 imagePath = event.imagePath,
-                geminiResponse = event.geminiResponse
+                geminiResponse = event.geminiResponse,
+                latitude = event.latitude,
+                longitude = event.longitude
             )
         }
 
@@ -783,7 +785,9 @@ class PageImportExportManager @Inject constructor(
                     buttonId = event.buttonId,
                     pageId = event.pageId,
                     imagePath = event.imagePath,
-                    geminiResponse = event.geminiResponse
+                    geminiResponse = event.geminiResponse,
+                    latitude = event.latitude,
+                    longitude = event.longitude
                 )
                 buttonUsageDao.insertHistoryEvent(entity)
             }

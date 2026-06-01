@@ -66,4 +66,95 @@ interface ButtonUsageDao {
 
     @Query("DELETE FROM button_usage_stats WHERE lastUsedAt < :threshold")
     suspend fun pruneStatsByTimestamp(threshold: Long)
+
+    // Smarte lokale Statistik-Queries (Markov, Zeit, Ort)
+    @Query("""
+        SELECT successor.buttonId AS buttonId, COUNT(successor.buttonId) AS count
+        FROM button_usage_history AS anchor
+        JOIN button_usage_history AS successor ON successor.bookId = anchor.bookId 
+          AND successor.timestamp > anchor.timestamp
+        WHERE anchor.bookId = :bookId
+          AND anchor.buttonId = :lastButtonId
+          AND anchor.timestamp >= :sinceTimestamp
+          AND NOT EXISTS (
+              SELECT 1 FROM button_usage_history AS middle
+              WHERE middle.bookId = anchor.bookId
+                AND middle.timestamp > anchor.timestamp
+                AND middle.timestamp < successor.timestamp
+          )
+          AND successor.buttonId IS NOT NULL
+        GROUP BY successor.buttonId
+        ORDER BY count DESC
+        LIMIT :limit
+    """)
+    suspend fun getMostFrequentNextButtons(bookId: String, lastButtonId: String, sinceTimestamp: Long, limit: Int): List<SuccessorCount>
+
+    @Query("""
+        SELECT buttonId
+        FROM button_usage_history
+        WHERE bookId = :bookId
+          AND timestamp >= :sinceTimestamp
+          AND buttonId IS NOT NULL
+          AND CAST(strftime('%w', datetime(timestamp / 1000, 'unixepoch', 'localtime')) AS INTEGER) = :dayOfWeek
+          AND CAST(strftime('%H', datetime(timestamp / 1000, 'unixepoch', 'localtime')) AS INTEGER) >= :startHour
+          AND CAST(strftime('%H', datetime(timestamp / 1000, 'unixepoch', 'localtime')) AS INTEGER) < :endHour
+        GROUP BY buttonId
+        ORDER BY COUNT(buttonId) DESC
+        LIMIT :limit
+    """)
+    suspend fun getMostFrequentButtonsForContext(
+        bookId: String,
+        dayOfWeek: Int,
+        startHour: Int,
+        endHour: Int,
+        sinceTimestamp: Long,
+        limit: Int
+    ): List<String>
+
+    @Query("""
+        SELECT buttonId
+        FROM button_usage_history
+        WHERE bookId = :bookId
+          AND timestamp >= :sinceTimestamp
+          AND buttonId IS NOT NULL
+          AND latitude IS NOT NULL
+          AND longitude IS NOT NULL
+          AND ABS(latitude - :lat) <= :radiusDeg
+          AND ABS(longitude - :lng) <= :radiusDeg
+        GROUP BY buttonId
+        ORDER BY COUNT(buttonId) DESC
+        LIMIT :limit
+    """)
+    suspend fun getMostFrequentButtonsAtLocation(
+        bookId: String,
+        lat: Double,
+        lng: Double,
+        radiusDeg: Double,
+        sinceTimestamp: Long,
+        limit: Int
+    ): List<String>
+
+    @Query("""
+        SELECT buttonId
+        FROM button_usage_history
+        WHERE bookId = :bookId
+          AND timestamp >= :sinceTimestamp
+          AND buttonId IS NOT NULL
+          AND latitude IS NULL
+          AND longitude IS NULL
+        GROUP BY buttonId
+        ORDER BY COUNT(buttonId) DESC
+        LIMIT :limit
+    """)
+    suspend fun getMostFrequentButtonsAtNullLocation(
+        bookId: String,
+        sinceTimestamp: Long,
+        limit: Int
+    ): List<String>
 }
+
+data class SuccessorCount(
+    val buttonId: String,
+    val count: Int
+)
+

@@ -333,8 +333,16 @@ fun GhostTalkNavHost(
                     initialButtonId = buttonId,
                     pageViewModel = pageViewModel,
                     onNavigateBack = { navController.safePopBackStack() },
-                    onEditPage = { targetPageId ->
-                        navController.safeNavigate("page_editor/$targetPageId")
+                    onExitEditor = {
+                        navController.popBackStack("page_list", inclusive = false)
+                    },
+                    onEditPage = { targetPageId, currentButtonId ->
+                        if (currentButtonId != null) {
+                            navController.currentBackStackEntry?.arguments?.putString("buttonId", currentButtonId)
+                        }
+                        runOnMainThread {
+                            navController.navigate("page_editor/$targetPageId")
+                        }
                     }
                 )
             }

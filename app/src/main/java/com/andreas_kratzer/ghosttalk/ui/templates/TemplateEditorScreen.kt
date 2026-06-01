@@ -98,7 +98,7 @@ fun TemplateEditorScreen(
             featureGuard = pageViewModel.featureGuard,
             bookDefaultScanPattern = bookDefaultScanPattern,
             paddingValues = paddingValues,
-            onEditPage = { pageId: String ->
+            onEditPage = { pageId: String, _ ->
                 scope.launch {
                     val target = pageViewModel.pageManagementDelegate.getPageById(pageId)
                     if (target != null) {

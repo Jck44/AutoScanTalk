@@ -50,6 +50,7 @@ data class GeminiSearchButtonAction(
 /**
  * An action that triggers a Gemini AI request on-device using Gemini Nano for a specific intent.
  */
+@Deprecated("Gemini Nano is removed, kept only for backup import compatibility")
 @Serializable
 @SerialName("GeminiNanoButtonAction")
 data class GeminiNanoButtonAction(

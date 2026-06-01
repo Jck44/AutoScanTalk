@@ -65,6 +65,7 @@
     <string name="page_activate_deselect_all">Deselect All</string>
 
     <!-- Page Editor Screen -->
+    <string name="page_editor_analytics_toggle">Toggle Analytics Overlay</string>
 
     <string name="page_editor_row_name_label">Row Name</string>
     <string name="page_editor_loading">Page not found or loading…</string>

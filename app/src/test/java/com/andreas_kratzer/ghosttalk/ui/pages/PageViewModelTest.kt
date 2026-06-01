@@ -6,9 +6,7 @@ import com.andreas_kratzer.ghosttalk.core.actions.ActionCoordinator
 import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
 import com.andreas_kratzer.ghosttalk.core.actions.NavigationActionHandler
 import com.andreas_kratzer.ghosttalk.core.actions.ActionTtsProxy
-import com.andreas_kratzer.ghosttalk.core.ai.LocalIntentRouter
 import com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase
-import com.andreas_kratzer.ghosttalk.core.ai.domain.PredictNextActionUseCase
 import com.andreas_kratzer.ghosttalk.core.ai.domain.UpdateSmartPredictionsUseCase
 import com.andreas_kratzer.ghosttalk.core.cloud.PhilipsHueManager
 import com.andreas_kratzer.ghosttalk.core.data.BookRepository
@@ -79,7 +77,6 @@ class PageViewModelTest {
     private lateinit var scannerEngine: ScannerEngine
     private lateinit var geminiUseCase: GeminiUseCase
     private lateinit var ttsHelper: TextToSpeechHelper
-    private lateinit var localIntentRouter: LocalIntentRouter
     private lateinit var weatherExecutor: com.andreas_kratzer.ghosttalk.domain.executors.WeatherExecutor
     private lateinit var logger: Logger
     private lateinit var locationExecutor: com.andreas_kratzer.ghosttalk.domain.executors.LocationExecutor
@@ -100,7 +97,6 @@ class PageViewModelTest {
     private lateinit var duplicateButtonToPageUseCase: DuplicateButtonToPageUseCase
     private lateinit var importPageUseCase: ImportPageUseCase
     private lateinit var exportPageUseCase: ExportPageUseCase
-    private lateinit var predictNextActionUseCase: PredictNextActionUseCase
     private lateinit var checkForPredictorUseCase: com.andreas_kratzer.ghosttalk.core.ai.domain.CheckForPredictorUseCase
     private lateinit var resolveDynamicButtonsUseCase: ResolveDynamicButtonsUseCase
     private lateinit var updateSmartPredictionsUseCase: UpdateSmartPredictionsUseCase
@@ -130,7 +126,6 @@ class PageViewModelTest {
         scannerEngine = mockk<ScannerEngine>(relaxed = true)
         geminiUseCase = mockk<GeminiUseCase>(relaxed = true)
         ttsHelper = mockk<TextToSpeechHelper>(relaxed = true)
-        localIntentRouter = mockk<LocalIntentRouter>(relaxed = true)
         weatherExecutor = mockk<com.andreas_kratzer.ghosttalk.domain.executors.WeatherExecutor>(relaxed = true)
         locationExecutor = mockk<com.andreas_kratzer.ghosttalk.domain.executors.LocationExecutor>(relaxed = true)
         logger = mockk<Logger>(relaxed = true)
@@ -151,7 +146,6 @@ class PageViewModelTest {
         duplicateButtonToPageUseCase = mockk<DuplicateButtonToPageUseCase>(relaxed = true)
         importPageUseCase = mockk<ImportPageUseCase>(relaxed = true)
         exportPageUseCase = mockk<ExportPageUseCase>(relaxed = true)
-        predictNextActionUseCase = mockk<PredictNextActionUseCase>(relaxed = true)
         checkForPredictorUseCase = mockk<com.andreas_kratzer.ghosttalk.core.ai.domain.CheckForPredictorUseCase>(relaxed = true)
         resolveDynamicButtonsUseCase = mockk<ResolveDynamicButtonsUseCase>(relaxed = true)
         updateSmartPredictionsUseCase = mockk<UpdateSmartPredictionsUseCase>(relaxed = true)

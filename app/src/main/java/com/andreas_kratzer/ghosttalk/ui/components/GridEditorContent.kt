@@ -106,7 +106,7 @@ fun GridEditorContent(
     featureGuard: com.andreas_kratzer.ghosttalk.feature.settings.domain.FeatureGuard,
     bookDefaultScanPattern: String?,
     paddingValues: PaddingValues,
-    onEditPage: ((String) -> Unit)? = null,
+    onEditPage: ((String, String?) -> Unit)? = null,
     initialButtonId: String? = null,
     pageViewModel: PageViewModel? = null
 ) {
@@ -571,7 +571,9 @@ fun GridEditorContent(
                         pageViewModel?.deleteButtonTemplate(template)
                         editingTemplateId = null
                     },
-                    onNavigateToPage = onEditPage,
+                    onNavigateToPage = { targetPageId ->
+                        onEditPage?.invoke(targetPageId, null)
+                    },
                     availableGeminiTools = actions.availableGeminiTools,
                     onCreatePage = { name, r, c, t, callback ->
                         val bookId = (item as? Page)?.bookId

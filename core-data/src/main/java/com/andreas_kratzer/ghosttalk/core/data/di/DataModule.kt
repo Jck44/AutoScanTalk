@@ -137,16 +137,7 @@ abstract class DataModule {
             return ButtonTemplateRepositoryImpl(buttonTemplateDao)
         }
 
-        @Provides
-        @Singleton
-        fun provideButtonUsageRepositoryImpl(
-            buttonUsageDao: ButtonUsageDao,
-            settingsRepository: SettingsRepository,
-            @ApplicationScope scope: CoroutineScope,
-            appDatabase: AppDatabase
-        ): ButtonUsageRepositoryImpl {
-            return ButtonUsageRepositoryImpl(buttonUsageDao, settingsRepository, scope, appDatabase)
-        }
+
 
         @Provides
         @Singleton

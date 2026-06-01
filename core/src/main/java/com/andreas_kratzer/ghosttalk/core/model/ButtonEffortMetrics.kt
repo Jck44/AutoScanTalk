@@ -12,5 +12,7 @@ data class ButtonEffortMetrics(
     val accessTimeSec: Int,
     val usageCount: Int,
     val frustrationIndex: Float,
-    val heatmapIntensity: Float = 0f
+    val heatmapIntensity: Float = 0f,
+    val shortestPathTimeSec: Int = 0,
+    val shortestPathRoute: List<String> = emptyList()
 )

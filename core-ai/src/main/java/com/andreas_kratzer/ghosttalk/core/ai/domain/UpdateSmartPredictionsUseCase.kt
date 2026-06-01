@@ -12,8 +12,7 @@ import javax.inject.Inject
 
 class UpdateSmartPredictionsUseCase @Inject constructor(
     private val settingsRepository: GenAiSettings,
-    private val predictNextActionUseCase: PredictNextActionUseCase,
-    private val checkForPredictorUseCase: CheckForPredictorUseCase
+    private val localStatsPredictor: LocalStatsPredictor
 ) {
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -45,16 +44,14 @@ class UpdateSmartPredictionsUseCase @Inject constructor(
             val isUserMode = params.isUserModeActive
 
             if (page != null && enabled && bookId != null && isUserMode) {
-                if (checkForPredictorUseCase(page)) {
-                    Log.d("UpdateSmartPredictionsUseCase", "Triggering prediction for page ${page.id}")
-                    try {
-                        _isLoading.value = true
-                        return@combine predictNextActionUseCase.predict(page, pages, bookId)
-                    } catch (e: Exception) {
-                        Log.e("UpdateSmartPredictionsUseCase", "Smart Prediction failed", e)
-                    } finally {
-                        _isLoading.value = false
-                    }
+                Log.d("UpdateSmartPredictionsUseCase", "Triggering local prediction for page ${page.id}")
+                try {
+                    _isLoading.value = true
+                    return@combine localStatsPredictor.predict(page, pages, bookId)
+                } catch (e: Exception) {
+                    Log.e("UpdateSmartPredictionsUseCase", "Local smart prediction failed", e)
+                } finally {
+                    _isLoading.value = false
                 }
             }
             _isLoading.value = false

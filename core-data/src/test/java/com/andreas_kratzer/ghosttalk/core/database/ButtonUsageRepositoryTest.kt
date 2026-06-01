@@ -21,6 +21,7 @@ import org.junit.Test
 
 class ButtonUsageRepositoryTest {
 
+    private val mockContext = mockk<android.content.Context>(relaxed = true)
     private val mockButtonUsageDao = mockk<ButtonUsageDao>(relaxed = true)
     private val mockSettingsRepository = mockk<com.andreas_kratzer.ghosttalk.core.data.SettingsRepository>(relaxed = true)
     private val testScope = kotlinx.coroutines.test.TestScope()
@@ -30,17 +31,25 @@ class ButtonUsageRepositoryTest {
     @Before
     fun setup() {
         mockkStatic("androidx.room.RoomDatabaseKt")
+        io.mockk.mockkStatic(com.google.android.gms.location.LocationServices::class)
+        io.mockk.every { com.google.android.gms.location.LocationServices.getFusedLocationProviderClient(any<android.content.Context>()) } returns mockk(relaxed = true)
+
+        io.mockk.mockkStatic(androidx.core.content.ContextCompat::class)
+        io.mockk.every { androidx.core.content.ContextCompat.checkSelfPermission(any(), any()) } returns android.content.pm.PackageManager.PERMISSION_DENIED
+
         coEvery { any<RoomDatabase>().withTransaction<Any?>(any()) } coAnswers {
             val block = secondArg<suspend () -> Any?>()
             block()
         }
         coEvery { mockSettingsRepository.activeBookIdFlow } returns kotlinx.coroutines.flow.MutableStateFlow("book1")
-        buttonUsageRepository = ButtonUsageRepositoryImpl(mockButtonUsageDao, mockSettingsRepository, testScope, mockDatabase)
+        buttonUsageRepository = ButtonUsageRepositoryImpl(mockContext, mockButtonUsageDao, mockSettingsRepository, testScope, mockDatabase)
     }
 
     @After
     fun teardown() {
         unmockkStatic("androidx.room.RoomDatabaseKt")
+        io.mockk.unmockkStatic(com.google.android.gms.location.LocationServices::class)
+        io.mockk.unmockkStatic(androidx.core.content.ContextCompat::class)
     }
     
     private val testButton = ButtonConfig(

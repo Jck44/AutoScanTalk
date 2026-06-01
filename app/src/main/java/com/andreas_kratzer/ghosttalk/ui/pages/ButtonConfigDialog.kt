@@ -149,6 +149,7 @@ fun ButtonConfigDialog(
     metrics: ButtonEffortMetrics? = null,
     historyEvents: List<ButtonUsageEvent> = emptyList(),
     recommendations: List<com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PathAnalyzer.ShortcutRecommendation> = emptyList(),
+    loadMarkovSuccessors: suspend (String) -> List<Pair<String, Int>> = { emptyList() },
     onApplyRecommendation: ((com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PathAnalyzer.ShortcutRecommendation) -> Unit)? = null
 ) {
     val context = LocalContext.current
@@ -235,7 +236,6 @@ fun ButtonConfigDialog(
     val actionTypeNavigate = stringResource(R.string.button_action_navigate_page)
     val actionTypeGemini = stringResource(R.string.button_action_gemini)
     val actionTypeGeminiSearch = stringResource(R.string.button_action_gemini_search)
-    val actionTypeGeminiNano = stringResource(R.string.button_action_gemini_nano)
     val actionTypeGeminiVision = stringResource(R.string.button_action_gemini_vision)
     val actionTypeWeather = stringResource(R.string.button_action_weather)
 
@@ -284,7 +284,7 @@ fun ButtonConfigDialog(
                 is NavigateToPageButtonAction -> actionTypeNavigate
                 is GeminiButtonAction -> actionTypeGemini
                 is GeminiSearchButtonAction -> actionTypeGeminiSearch
-                is GeminiNanoButtonAction -> actionTypeGeminiNano
+                is GeminiNanoButtonAction -> actionTypeGemini
                 is com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction -> actionTypeGeminiVision
                 is WeatherButtonAction -> actionTypeWeather
                 is ControlDeviceButtonAction -> {
@@ -482,7 +482,6 @@ fun ButtonConfigDialog(
             actionTypeNavigate -> NavigateToPageButtonAction(targetPageId)
             actionTypeGemini -> GeminiButtonAction(geminiPrompt)
             actionTypeGeminiSearch -> GeminiSearchButtonAction(geminiPrompt)
-            actionTypeGeminiNano -> GeminiNanoButtonAction(geminiPrompt)
             actionTypeGeminiVision -> com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction(geminiPrompt, geminiVisionUseCloud, geminiVisionPlayShutterSound)
             actionTypeFrequent -> FrequentActionButtonAction(rank)
             actionTypePrevious -> PreviousActionButtonAction(rank)
@@ -745,7 +744,7 @@ fun ButtonConfigDialog(
         title = {
             val actionBadgeText = when (selectedActionType) {
                 actionTypeNavigate -> "Nav"
-                actionTypeGemini, actionTypeGeminiSearch, actionTypeGeminiNano, actionTypeGeminiVision -> "KI"
+                actionTypeGemini, actionTypeGeminiSearch, actionTypeGeminiVision -> "KI"
                 actionTypeFrequent, actionTypePrevious, actionTypeSmart -> "Verlauf"
                 actionTypeWeather -> "Wetter"
                 actionTypeReadNotifications, actionTypeClearNotifications, actionTypeSendMessage, actionTypeStartCall -> "Komm."
@@ -793,7 +792,6 @@ fun ButtonConfigDialog(
                                 com.andreas_kratzer.ghosttalk.core.model.ActionCategoryRegistry.GROUP_KI_ASSISTENZ to listOf(
                                     actionTypeGemini to GeminiButtonAction(),
                                     actionTypeGeminiSearch to GeminiSearchButtonAction(),
-                                    actionTypeGeminiNano to GeminiNanoButtonAction(),
                                     actionTypeGeminiVision to com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction(),
                                     actionTypeWeather to WeatherButtonAction()
                                 ),
@@ -882,7 +880,7 @@ fun ButtonConfigDialog(
                                         val icon = when (actionType) {
                                             actionTypeSpeak -> Icons.Default.PlayArrow
                                             actionTypeNavigate -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.ArrowForward
-                                            actionTypeGemini, actionTypeGeminiSearch, actionTypeGeminiNano, actionTypeGeminiVision -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.AutoAwesome
+                                            actionTypeGemini, actionTypeGeminiSearch, actionTypeGeminiVision -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.AutoAwesome
                                             actionTypeWeather -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.PartlyCloudy
                                             actionTypeReadNotifications, actionTypeClearNotifications -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.Notifications
                                             actionTypeSendMessage -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.Message
@@ -1492,7 +1490,12 @@ fun ButtonConfigDialog(
                                 metrics = metrics,
                                 historyEvents = historyEvents,
                                 recommendations = recommendations,
-                                onApplyRecommendation = onApplyRecommendation
+                                onApplyRecommendation = onApplyRecommendation,
+                                buttonId = buttonConfig.id,
+                                loadMarkovSuccessors = loadMarkovSuccessors,
+                                allPages = pages,
+                                onNavigateToPage = onNavigateToPage,
+                                onDismissDialog = onDismiss
                             )
                         }
                     }

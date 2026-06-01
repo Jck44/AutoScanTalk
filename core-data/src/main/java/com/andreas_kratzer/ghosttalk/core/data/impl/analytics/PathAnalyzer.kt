@@ -4,6 +4,7 @@ import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository.ButtonUsageEvent
+import com.andreas_kratzer.ghosttalk.core.util.GridUtils
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.max
@@ -18,6 +19,47 @@ class PathAnalyzer @Inject constructor() {
         val occurrenceCount: Int,
         val estimatedTimeSavedSec: Int
     )
+
+    /**
+     * Helper to compute exact scanning steps for a button in its page layout context.
+     */
+    private fun getScanSteps(page: Page, button: ButtonConfig): Int {
+        val buttons = page.buttonConfigs
+        val rows = page.rows
+        val columns = page.columns
+        val pattern = page.scanPattern?.takeIf { it.isNotBlank() && it != "default" } ?: "row_by_row"
+        
+        val activeButtons = buttons.mapIndexedNotNull { index, btn ->
+            if (btn != null && btn.isActive && GridUtils.isVisibleInGrid(index, rows, columns)) {
+                Pair(index, btn)
+            } else null
+        }
+        
+        val buttonIndex = activeButtons.indexOfFirst { it.second.id == button.id }
+        if (buttonIndex == -1) return 1
+        
+        return if (pattern == "row_by_row") {
+            val activeRows = (0 until rows).filter { r ->
+                (0 until columns).any { c ->
+                    val gIdx = GridUtils.getGlobalIndex(r, c)
+                    buttons.getOrNull(gIdx)?.let { it.isActive && GridUtils.isVisibleInGrid(gIdx, rows, columns) } == true
+                }
+            }
+            val (globalIdx, _) = activeButtons[buttonIndex]
+            val r = globalIdx / GridUtils.MAX_GRID_SIZE
+            val rowsBefore = activeRows.indexOf(r).coerceAtLeast(0)
+            
+            val activeButtonsInRow = (0 until columns).mapNotNull { col ->
+                val gIdx = GridUtils.getGlobalIndex(r, col)
+                val btn = buttons.getOrNull(gIdx)
+                if (btn != null && btn.isActive && GridUtils.isVisibleInGrid(gIdx, rows, columns)) btn else null
+            }
+            val buttonsBeforeInRow = activeButtonsInRow.indexOf(button).coerceAtLeast(0)
+            (rowsBefore + 1) + (buttonsBeforeInRow + 1)
+        } else {
+            buttonIndex + 1
+        }
+    }
 
     /**
      * Analyzes historical chronological click events and generates shortcut suggestions.
@@ -58,11 +100,6 @@ class PathAnalyzer @Inject constructor() {
         }
 
         // 3. Process sessions to identify page-to-button transition bottlenecks
-        // A bottleneck transition is: Page A -> ... -> Click on Button X on Page B
-        // Criteria for a valid shortcut recommendation:
-        // - Page A != Page B
-        // - Button X is NOT already present on Page A
-        // - Time taken is within the scan-based dynamic threshold
         val pageMap = pages.associateBy { it.id }
         
         // Map of SourcePageId -> Map of TargetButtonId -> List of transition timestamps
@@ -157,8 +194,25 @@ class PathAnalyzer @Inject constructor() {
 
                 // We only recommend if it occurs at least 2 times (reliable pattern)
                 if (count >= 2) {
-                    // Estimated time saved = minimum 6 scan steps + 3 seconds cognitive transition
-                    val timeSavedSec = max(5, (((6 * scanDelayMs) + 3000) / 1000).toInt())
+                    // Find which page this button belongs to
+                    val targetPage = pages.find { page -> page.buttonConfigs.any { it?.id == buttonId } }
+                    
+                    val timeSavedSec = if (targetPage != null) {
+                        val stepsToNavigate = sourcePage.buttonConfigs.find { 
+                            it != null && it.isActive && it.buttonAction is NavigateToPageButtonAction && 
+                            (it.buttonAction as NavigateToPageButtonAction).pageId == targetPage.id
+                        }?.let { getScanSteps(sourcePage, it) } ?: 4
+                        
+                        val stepsToTarget = getScanSteps(targetPage, buttonConfig)
+                        
+                        val activeButtonsOnSource = sourcePage.buttonConfigs.count { it != null && it.isActive }
+                        val stepsWithShortcut = activeButtonsOnSource + 1
+                        
+                        val stepsSaved = ((stepsToNavigate + stepsToTarget) - stepsWithShortcut).coerceAtLeast(6)
+                        max(5, (((stepsSaved * scanDelayMs) + 3000) / 1000).toInt())
+                    } else {
+                        max(5, (((6 * scanDelayMs) + 3000) / 1000).toInt())
+                    }
 
                     recommendations.add(
                         ShortcutRecommendation(

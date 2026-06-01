@@ -203,7 +203,9 @@ data class ExportedHistoryEvent(
     val buttonId: String?,
     val pageId: String?,
     val imagePath: String? = null,
-    val geminiResponse: String? = null
+    val geminiResponse: String? = null,
+    val latitude: Double? = null,
+    val longitude: Double? = null
 )
 
 @Serializable

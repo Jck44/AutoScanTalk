@@ -156,7 +156,6 @@ class SettingsViewModel @Inject constructor(
     val isBrowsingFolders = cloudSyncDelegate.isBrowsingFolders
     
     val isGeminiEnabled = settingsRepository.isGeminiEnabledFlow
-    val useLocalGenerativeAi = settingsRepository.useLocalGenerativeAiFlow
     val geminiToolStatus = genAiDelegate.geminiToolStatus
     val geminiApiKey = settingsRepository.geminiApiKeyFlow
     val useGeminiApiKey = settingsRepository.useGeminiApiKeyFlow
@@ -273,9 +272,6 @@ class SettingsViewModel @Inject constructor(
             Toast.makeText(application, message, Toast.LENGTH_LONG).show()
         }
         genAiDelegate.updateGeminiToolStatus()
-        viewModelScope.launch {
-            genAiDelegate.performGeminiNanoIntegrityCheck()
-        }
         initializeDefaultMessagingAppsIfNeeded()
         hueDelegate.initialize(viewModelScope)
         spotifyDelegate.initialize(viewModelScope)
@@ -321,9 +317,6 @@ class SettingsViewModel @Inject constructor(
         ttsDelegate.loadAvailableLanguages()
         ttsDelegate.loadAvailableAudioDevices()
         genAiDelegate.updateGeminiToolStatus()
-        viewModelScope.launch {
-            genAiDelegate.performGeminiNanoIntegrityCheck()
-        }
         refreshTopButtonUsage()
     }
 
@@ -557,33 +550,8 @@ class SettingsViewModel @Inject constructor(
     fun setGeminiEnabled(ctx: Context, e: Boolean) {
         genAiDelegate.setGeminiCloudEnabled(ctx, e, viewModelScope)
     }
-    
-    fun setGeminiNanoEnabled(ctx: Context, e: Boolean) {
-        genAiDelegate.setGeminiNanoEnabled(ctx, e, viewModelScope)
-    }
 
     fun activateGemini(ctx: Context) = genAiDelegate.activateGemini(ctx, viewModelScope)
-    fun testGeminiNano(ctx: Context) = genAiDelegate.testGeminiNano(ctx, viewModelScope)
-    
-    val isDownloadDialogVisible = genAiDelegate.isDownloadDialogVisible
-    val downloadProgress = genAiDelegate.downloadProgress
-    val downloadStatusMessage = genAiDelegate.downloadStatusMessage
-    val isDownloading = genAiDelegate.isDownloading
-    val nanoFeatureStatus = genAiDelegate.nanoFeatureStatus
-
-    fun startGeminiDownload() = genAiDelegate.startGeminiDownload(viewModelScope)
-    fun dismissDownloadDialog() = genAiDelegate.dismissDownloadDialog()
-
-    val isDeactivationDialogVisible = genAiDelegate.isDeactivationDialogVisible
-    fun dismissDeactivationDialog() = genAiDelegate.dismissDeactivationDialog()
-
-    fun setUseLocalGenerativeAi(e: Boolean, ctx: Context? = null) {
-        if (e && ctx != null) {
-            genAiDelegate.setGeminiNanoEnabled(ctx, e, viewModelScope)
-        } else {
-            settingsRepository.useLocalGenerativeAi = e
-        }
-    }
 
     fun setPersistActionLogs(e: Boolean) { settingsRepository.persistActionLogs = e }
     fun setSwitchActivationKey(k: String) { settingsRepository.switchActivationKey = k }

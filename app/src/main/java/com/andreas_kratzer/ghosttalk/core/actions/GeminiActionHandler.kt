@@ -2,7 +2,6 @@ package com.andreas_kratzer.ghosttalk.core.actions
 
 import android.content.Context
 import androidx.core.graphics.createBitmap
-import com.andreas_kratzer.ghosttalk.core.ai.LocalIntentRouter
 import com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase
 import com.andreas_kratzer.ghosttalk.core.ai.domain.VisionUseCase
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
@@ -24,7 +23,6 @@ class GeminiActionHandler @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val geminiUseCaseLazy: dagger.Lazy<GeminiUseCase>,
     private val visionUseCase: VisionUseCase,
-    private val localIntentRouter: LocalIntentRouter,
     private val ttsProxyLazy: dagger.Lazy<ActionTtsProxy>,
     private val actionLogger: ActionLogger,
     private val actionEventEmitter: ActionEventEmitter,
@@ -42,7 +40,7 @@ class GeminiActionHandler @Inject constructor(
 
     override fun canHandle(action: ButtonAction): Boolean = 
         action is GeminiButtonAction || action is GeminiSearchButtonAction || 
-                action is GeminiNanoButtonAction || action is GeminiVisionButtonAction
+                action is GeminiVisionButtonAction
 
     override fun handle(
         buttonConfig: ButtonConfig,
@@ -58,18 +56,6 @@ class GeminiActionHandler @Inject constructor(
 
         scope.launch {
             try {
-                if (action is GeminiNanoButtonAction) {
-                    if (!settingsRepository.useLocalGenerativeAi) {
-                        speakError("Lokale KI ist in den Einstellungen deaktiviert.", targetDeviceAddress, executionId, buttonConfig.label, action, onFinish)
-                        return@launch
-                    }
-                    actionLogger.log("Lokale Intent-Ausführung: ${action.intent}", action, buttonConfig.label)
-                    localIntentRouter.executeIntent(action.intent) { response ->
-                        speakResponse(response, targetDeviceAddress, executionId, buttonConfig.label, action, onFinish)
-                    }
-                    return@launch
-                }
-
                 if (action is GeminiVisionButtonAction) {
                     actionLogger.log("Gemini Vision (KI Auge) wird gestartet...", action, buttonConfig.label)
                     

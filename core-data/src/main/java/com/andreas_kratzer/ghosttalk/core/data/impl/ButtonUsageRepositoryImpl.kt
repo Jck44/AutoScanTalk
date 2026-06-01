@@ -16,17 +16,28 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 
+import android.content.Context
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
+import com.google.android.gms.location.LocationServices
+import kotlinx.coroutines.tasks.await
+import dagger.hilt.android.qualifiers.ApplicationContext
+
 /**
  * Repository for tracking button usage statistics per book.
  * Uses an aggregated counter approach (one row per button per book).
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class ButtonUsageRepositoryImpl @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val dao: ButtonUsageDao,
     private val settingsRepository: com.andreas_kratzer.ghosttalk.core.data.SettingsRepository,
     @param:com.andreas_kratzer.ghosttalk.core.di.ApplicationScope private val scope: kotlinx.coroutines.CoroutineScope,
     private val appDatabase: AppDatabase
 ) : ButtonUsageRepository {
+    private val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+
     private val json = Json {
         ignoreUnknownKeys = true
         encodeDefaults = true
@@ -58,6 +69,18 @@ class ButtonUsageRepositoryImpl @Inject constructor(
         indexInPage: Int,
         timestamp: Long
     ) {
+        val hasFine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        val hasCoarse = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        val lastLocation = if (hasFine || hasCoarse) {
+            try {
+                fusedLocationClient.lastLocation.await()
+            } catch (e: Exception) {
+                null
+            }
+        } else {
+            null
+        }
+
         appDatabase.withTransaction {
             val existing = dao.getStatForButton(bookId, buttonConfig.id)
             val stat = if (existing != null) {
@@ -88,7 +111,9 @@ class ButtonUsageRepositoryImpl @Inject constructor(
                 label = buttonConfig.label,
                 actionType = buttonConfig.buttonAction::class.simpleName ?: "Unknown",
                 buttonId = buttonConfig.id,
-                pageId = pageId
+                pageId = pageId,
+                latitude = lastLocation?.latitude,
+                longitude = lastLocation?.longitude
             )
             dao.insertHistoryEvent(event)
 
@@ -159,6 +184,99 @@ class ButtonUsageRepositoryImpl @Inject constructor(
             dao.pruneHistoryByTimestamp(threshold)
             dao.pruneStatsByTimestamp(threshold)
         }
+    }
+
+    override suspend fun getMarkovSuccessors(bookId: String, buttonId: String, limit: Int): List<Pair<String, Int>> {
+        val list = dao.getMostFrequentNextButtons(bookId, buttonId, 0L, limit)
+        return list.map { item ->
+            val label = dao.getStatForButton(bookId, item.buttonId)?.label ?: "Unbekannter Button"
+            label to item.count
+        }
+    }
+
+    override suspend fun getPredictiveButtons(bookId: String, limit: Int): List<String> {
+        val lastEvent = dao.getLastHistoryEvent(bookId)
+        val lastButtonId = lastEvent?.buttonId
+
+        val predictions = mutableListOf<String>()
+
+        // 1. Markov Chain
+        if (lastButtonId != null) {
+            val since90Days = System.currentTimeMillis() - (90L * 24 * 60 * 60 * 1000)
+            val markov = dao.getMostFrequentNextButtons(bookId, lastButtonId, since90Days, limit)
+            predictions.addAll(markov.map { it.buttonId })
+        }
+
+        // 2. Time Context
+        if (predictions.size < limit) {
+            val now = java.time.LocalDateTime.now()
+            val sqliteDayOfWeek = if (now.dayOfWeek.value == 7) 0 else now.dayOfWeek.value
+            val currentHour = now.hour
+            val startHour = (currentHour - 1).coerceAtLeast(0)
+            val endHour = (currentHour + 2).coerceAtMost(24)
+            val since90Days = System.currentTimeMillis() - (90L * 24 * 60 * 60 * 1000)
+
+            val timeStats = dao.getMostFrequentButtonsForContext(
+                bookId,
+                sqliteDayOfWeek,
+                startHour,
+                endHour,
+                since90Days,
+                limit
+            )
+            for (id in timeStats) {
+                if (!predictions.contains(id)) {
+                    predictions.add(id)
+                }
+            }
+        }
+
+        // 3. Location Context
+        if (predictions.size < limit) {
+            val hasFine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+            val hasCoarse = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+            val lastLocation = if (hasFine || hasCoarse) {
+                try {
+                    fusedLocationClient.lastLocation.await()
+                } catch (e: Exception) {
+                    null
+                }
+            } else {
+                null
+            }
+
+            val since90Days = System.currentTimeMillis() - (90L * 24 * 60 * 60 * 1000)
+            val locationStats = if (lastLocation != null) {
+                dao.getMostFrequentButtonsAtLocation(
+                    bookId,
+                    lastLocation.latitude,
+                    lastLocation.longitude,
+                    0.005,
+                    since90Days,
+                    limit
+                )
+            } else {
+                dao.getMostFrequentButtonsAtNullLocation(bookId, since90Days, limit)
+            }
+
+            for (id in locationStats) {
+                if (!predictions.contains(id)) {
+                    predictions.add(id)
+                }
+            }
+        }
+
+        // 4. Fallback Favorites
+        if (predictions.size < limit) {
+            val favorites = getTopActions(bookId, 5)
+            for (stat in favorites) {
+                if (!predictions.contains(stat.buttonConfigId)) {
+                    predictions.add(stat.buttonConfigId)
+                }
+            }
+        }
+
+        return predictions.take(limit)
     }
 
     private fun ButtonUsageHistoryEntity.toDomain() = ButtonUsageRepository.ButtonUsageEvent(

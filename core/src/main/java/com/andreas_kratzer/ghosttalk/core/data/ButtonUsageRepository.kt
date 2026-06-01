@@ -15,6 +15,8 @@ interface ButtonUsageRepository : ButtonUsageProvider {
     suspend fun updateLastEventImage(imagePath: String)
     suspend fun updateLastEventDetails(details: String)
     suspend fun deleteUsageEvent(timestamp: Long)
+    suspend fun getMarkovSuccessors(bookId: String, buttonId: String, limit: Int = 3): List<Pair<String, Int>>
+    suspend fun getPredictiveButtons(bookId: String, limit: Int = 3): List<String>
 
     data class ButtonUsageEvent(
         val timestamp: Long, 

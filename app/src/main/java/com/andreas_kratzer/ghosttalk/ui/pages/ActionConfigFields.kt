@@ -13,7 +13,6 @@ import com.andreas_kratzer.ghosttalk.core.model.SmartHomeProvider
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.ui.pages.actions.DeviceActionFields
 import com.andreas_kratzer.ghosttalk.ui.pages.actions.GeminiActionFields
-import com.andreas_kratzer.ghosttalk.ui.pages.actions.GeminiNanoActionFields
 import com.andreas_kratzer.ghosttalk.ui.pages.actions.GeminiVisionActionFields
 import com.andreas_kratzer.ghosttalk.ui.pages.actions.NavigationActionFields
 import com.andreas_kratzer.ghosttalk.ui.pages.actions.RankActionFields
@@ -103,7 +102,6 @@ fun ActionConfigFields(
     val actionTypeNavigate = stringResource(R.string.button_action_navigate_page)
     val actionTypeGemini = stringResource(R.string.button_action_gemini)
     val actionTypeGeminiSearch = stringResource(R.string.button_action_gemini_search)
-    val actionTypeGeminiNano = stringResource(R.string.button_action_gemini_nano)
     val actionTypeGeminiVision = stringResource(R.string.button_action_gemini_vision)
     val actionTypeWeather = stringResource(R.string.button_action_weather)
 
@@ -158,13 +156,6 @@ fun ActionConfigFields(
                     prompt = geminiPrompt,
                     onPromptChanged = onGeminiPromptChange,
                     availableTools = availableGeminiTools,
-                    onAutoSave = onAutoSave
-                )
-            }
-            actionTypeGeminiNano -> {
-                GeminiNanoActionFields(
-                    prompt = geminiPrompt,
-                    onPromptChanged = onGeminiPromptChange,
                     onAutoSave = onAutoSave
                 )
             }

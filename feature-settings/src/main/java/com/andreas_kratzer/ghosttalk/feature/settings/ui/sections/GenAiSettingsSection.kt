@@ -35,30 +35,17 @@ import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsToggleItem
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.feature.settings.R
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
-import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.GeminiDeactivatedDialog
-import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.GeminiDownloadDialog
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun GenAiSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
     val isEnabled by viewModel.isGeminiEnabled.collectAsState(false)
-    val useLocal by viewModel.useLocalGenerativeAi.collectAsState(false)
     val toolStatus by viewModel.geminiToolStatus.collectAsState(emptyMap())
     val geminiApiKey by viewModel.geminiApiKey.collectAsState("")
     val useGeminiApiKey by viewModel.useGeminiApiKey.collectAsState(false)
     val userEmail by viewModel.userEmail.collectAsState()
-    
-    val isDownloadDialogVisible by viewModel.isDownloadDialogVisible.collectAsState()
-    val downloadProgress by viewModel.downloadProgress.collectAsState()
-    val downloadStatusMessage by viewModel.downloadStatusMessage.collectAsState()
-    val isDownloading by viewModel.isDownloading.collectAsState()
-    
-    val isDeactivationDialogVisible by viewModel.isDeactivationDialogVisible.collectAsState()
-    val nanoFeatureStatus by viewModel.nanoFeatureStatus.collectAsState()
 
     val smartEnabled by viewModel.isSmartPredictionEnabled.collectAsState(false)
-    val redoPrediction by viewModel.geminiRedoPrediction.collectAsState(false)
-    val geminiTimeout by viewModel.geminiTimeout.collectAsState(6000L)
 
     val context = LocalContext.current
     val dimensions = LocalDimensions.current
@@ -83,72 +70,22 @@ fun GenAiSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
         verticalArrangement = Arrangement.spacedBy(dimensions.paddingMedium),
         maxItemsInEachRow = 2
     ) {
-        // --- Gemini Nano (Lokal) ---
-        PreferenceCategory(stringResource(R.string.settings_category_gemini_nano), modifier = Modifier.weight(1f)) {
-            val isSupported = nanoFeatureStatus != com.google.mlkit.genai.common.FeatureStatus.UNAVAILABLE
-            
+        // --- Smarte Vorhersagen ---
+        PreferenceCategory("Smarte Vorhersagen (Statistik)", modifier = Modifier.weight(1f)) {
             SettingsToggleItem(
-                label = stringResource(R.string.settings_gemini_local_enable), 
-                checked = useLocal,
-                enabled = isSupported
-            ) { 
-                viewModel.setGeminiNanoEnabled(context, it) 
-            }
-            
-            if (!isSupported) {
-                Text(
-                    text = "Gemini Nano wird auf diesem Gerät nicht unterstützt.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(horizontal = dimensions.paddingMedium)
-                )
-            }
+                label = stringResource(R.string.settings_smart_prediction_enable),
+                checked = smartEnabled,
+                onCheckedChange = { viewModel.setSmartPredictionEnabled(it) }
+            )
             
             Text(
-                text = stringResource(R.string.settings_gemini_local_desc),
+                text = "Ermöglicht der App, basierend auf Klick-Historie, Ort und Zeit des Nutzers, Kachel-Empfehlungen auf Smart-Prediction-Buttons anzuzeigen.",
                 style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(horizontal = dimensions.paddingMedium)
-            )
-
-            if (useLocal) {
-                SettingsEditTextItem(
-                    label = "Gemini Timeout (ms)",
-                    value = geminiTimeout.toString(),
-                    onValueChange = { newValue -> viewModel.setGeminiTimeoutInput(newValue) },
-                    numericOnly = true
-                )
-                
-                Spacer(modifier = Modifier.height(dimensions.paddingMedium))
-                
-                SettingsToggleItem(
-                    label = stringResource(R.string.settings_smart_prediction_enable),
-                    checked = smartEnabled,
-                    onCheckedChange = { viewModel.setSmartPredictionEnabled(it) }
-                )
-                
-                SettingsToggleItem(
-                    label = stringResource(R.string.settings_gemini_redo_prediction),
-                    checked = redoPrediction,
-                    onCheckedChange = { viewModel.setGeminiRedoPrediction(it) }
-                )
-            }
-
-            GeminiDownloadDialog(
-                isVisible = isDownloadDialogVisible,
-                progress = downloadProgress,
-                statusMessage = downloadStatusMessage,
-                isDownloading = isDownloading,
-                onConfirm = { viewModel.startGeminiDownload() },
-                onDismiss = { viewModel.dismissDownloadDialog() }
-            )
-
-            GeminiDeactivatedDialog(
-                isVisible = isDeactivationDialogVisible,
-                onDismiss = { viewModel.dismissDeactivationDialog() }
+                modifier = Modifier.padding(horizontal = dimensions.paddingMedium, vertical = dimensions.paddingSmall)
             )
         }
 
-        // --- Gemini (Cloud) ---
+        // --- Gemini (Cloud) -----
         PreferenceCategory(stringResource(R.string.settings_category_gemini), modifier = Modifier.weight(1f)) {
             SettingsToggleItem(stringResource(R.string.settings_gemini_enable), isEnabled) { 
                 viewModel.setGeminiEnabled(context, it) 

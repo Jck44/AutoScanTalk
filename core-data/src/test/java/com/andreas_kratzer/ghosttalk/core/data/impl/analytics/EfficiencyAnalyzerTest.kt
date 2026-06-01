@@ -35,6 +35,8 @@ class EfficiencyAnalyzerTest {
 
         val metrics = analyzer.calculatePageMetrics(
             page = page,
+            allPages = listOf(page),
+            startPageId = page.id,
             clickCounts = clickCounts,
             scanDelayMs = 1000L,
             defaultScanPattern = "linear"
@@ -74,6 +76,8 @@ class EfficiencyAnalyzerTest {
 
         val metrics = analyzer.calculatePageMetrics(
             page = page,
+            allPages = listOf(page),
+            startPageId = page.id,
             clickCounts = clickCounts,
             scanDelayMs = 1000L,
             defaultScanPattern = "row_by_row"
@@ -120,6 +124,8 @@ class EfficiencyAnalyzerTest {
 
         val metrics = analyzer.calculatePageMetrics(
             page = page,
+            allPages = listOf(page),
+            startPageId = page.id,
             clickCounts = clickCounts,
             scanDelayMs = 1000L,
             defaultScanPattern = "linear"
@@ -152,6 +158,8 @@ class EfficiencyAnalyzerTest {
 
         val metrics = analyzer.calculatePageMetrics(
             page = page,
+            allPages = listOf(page),
+            startPageId = page.id,
             clickCounts = emptyMap(),
             scanDelayMs = 1000L,
             defaultScanPattern = "linear"

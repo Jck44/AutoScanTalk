@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -43,7 +44,8 @@ fun PageEditorScreen(
     initialButtonId: String? = null,
     pageViewModel: PageViewModel,
     onNavigateBack: () -> Unit,
-    onEditPage: ((String) -> Unit)? = null
+    onEditPage: ((String, String?) -> Unit)? = null,
+    onExitEditor: (() -> Unit)? = null
 ) {
     val unfilteredPages by pageViewModel.unfilteredPages.collectAsState()
     val bookDefaultScanPattern by pageViewModel.defaultScanPattern.collectAsState()
@@ -131,6 +133,18 @@ fun PageEditorScreen(
                                 androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
                             }
                         )
+                    }
+                    if (onExitEditor != null) {
+                        IconButton(
+                            onClick = onExitEditor,
+                            modifier = Modifier.testTag("page_editor_exit_button")
+                        ) {
+                            Icon(
+                                imageVector = androidx.compose.material.icons.Icons.Default.Close,
+                                contentDescription = "Editor beenden",
+                                tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
             )

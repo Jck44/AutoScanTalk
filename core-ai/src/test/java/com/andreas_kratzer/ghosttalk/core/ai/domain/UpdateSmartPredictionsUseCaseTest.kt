@@ -25,12 +25,10 @@ import org.junit.Test
 class UpdateSmartPredictionsUseCaseTest {
 
     private val settingsRepository = mockk<GenAiSettings>(relaxed = true)
-    private val predictNextActionUseCase = mockk<PredictNextActionUseCase>()
-    private val checkForPredictorUseCase = mockk<CheckForPredictorUseCase>()
+    private val localStatsPredictor = mockk<LocalStatsPredictor>()
     private val useCase = UpdateSmartPredictionsUseCase(
         settingsRepository,
-        predictNextActionUseCase,
-        checkForPredictorUseCase
+        localStatsPredictor
     )
 
     @Before
@@ -47,8 +45,7 @@ class UpdateSmartPredictionsUseCaseTest {
         val bookId = "book1"
         
         every { settingsRepository.isSmartPredictionEnabledFlow } returns MutableStateFlow(true)
-        every { checkForPredictorUseCase(page) } returns true
-        coEvery { predictNextActionUseCase.predict(any<Page>(), any<List<Page>>(), any<String>()) } coAnswers {
+        coEvery { localStatsPredictor.predict(any<Page>(), any<List<Page>>(), any<String>()) } coAnswers {
             // Check that it's loading while we are predicting
             assertTrue(useCase.isLoading.value)
             listOf("id1")

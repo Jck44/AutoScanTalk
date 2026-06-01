@@ -6,7 +6,10 @@ import androidx.room.PrimaryKey
 
 @Entity(
     tableName = "button_usage_history",
-    indices = [Index(value = ["bookId", "timestamp"])]
+    indices = [
+        Index(value = ["bookId", "timestamp"]),
+        Index(value = ["bookId", "buttonId", "timestamp"])
+    ]
 )
 data class ButtonUsageHistoryEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
@@ -17,5 +20,7 @@ data class ButtonUsageHistoryEntity(
     val imagePath: String? = null,
     val buttonId: String? = null,
     val pageId: String? = null,
-    val geminiResponse: String? = null
+    val geminiResponse: String? = null,
+    val latitude: Double? = null,
+    val longitude: Double? = null
 )

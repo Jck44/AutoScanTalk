@@ -55,7 +55,7 @@ fun EditorDialogs(
     onShowHiddenPrompt: (com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.NeedsConfirmation?) -> Unit,
     onDismissRowDialog: () -> Unit,
     onDismissButtonDialog: () -> Unit,
-    onEditPage: ((String) -> Unit)?,
+    onEditPage: ((String, String?) -> Unit)?,
     philipsHueManager: PhilipsHueManager? = null
 ) {
     val context = LocalContext.current
@@ -133,7 +133,9 @@ fun EditorDialogs(
                     }
                 }
             },
-            onNavigateToPage = onEditPage,
+            onNavigateToPage = { targetPageId ->
+                onEditPage?.invoke(targetPageId, buttonConfig.id)
+            },
             availableGeminiTools = actions.availableGeminiTools,
             onCreatePage = { name, r, c, t, callback ->
                 val bookId = (item as? Page)?.bookId
@@ -167,6 +169,7 @@ fun EditorDialogs(
             metrics = buttonMetrics,
             historyEvents = buttonHistory,
             recommendations = buttonRecommendations,
+            loadMarkovSuccessors = { (actions as? PageViewModel)?.getMarkovSuccessors(it) ?: emptyList() },
             onApplyRecommendation = { recommendation ->
                 (actions as? PageViewModel)?.applyShortcutRecommendation(recommendation) { success, msg ->
                     if (success) {

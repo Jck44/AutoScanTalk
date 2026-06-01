@@ -32,7 +32,7 @@ class FeatureGuard @Inject constructor(
                 settingsRepository.isGeminiEnabled
             }
             is GeminiNanoButtonAction -> {
-                settingsRepository.useLocalGenerativeAi
+                false
             }
             is SmartHomeButtonAction -> {
                 when (action.provider) {
