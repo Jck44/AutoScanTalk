@@ -144,6 +144,15 @@ class ButtonUsageRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun cleanupOldStats(days: Int) {
+        if (days <= 0) return
+        val threshold = System.currentTimeMillis() - (days.toLong() * 24L * 60L * 60L * 1000L)
+        appDatabase.withTransaction {
+            dao.pruneHistoryByTimestamp(threshold)
+            dao.pruneStatsByTimestamp(threshold)
+        }
+    }
+
     private fun ButtonUsageHistoryEntity.toDomain() = ButtonUsageRepository.ButtonUsageEvent(
         timestamp = timestamp,
         label = label,

@@ -7,7 +7,8 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.CloudSyncUseCase
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.SyncMode
-import com.andreas_kratzer.ghosttalk.core.settings.CloudSettings
+import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository
+import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
 import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.gson.GsonFactory
@@ -22,13 +23,23 @@ class CloudSyncWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted workerParams: WorkerParameters,
     private val googleAuthManager: GoogleAuthManager,
-    private val settingsRepository: CloudSettings,
+    private val settingsRepository: SettingsRepository,
+    private val buttonUsageRepository: ButtonUsageRepository,
     private val cloudSyncUseCase: CloudSyncUseCase
 ) : CoroutineWorker(context, workerParams) {
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         if (!settingsRepository.isCloudSyncEnabled) {
             return@withContext Result.success() // Sync was disabled while scheduled
+        }
+
+        // Run rolling stats cleanup before uploading/syncing to Google Drive
+        try {
+            val retentionDays = settingsRepository.statsRetentionDays
+            Log.d("CloudSyncWorker", "Running stats retention cleanup ($retentionDays days) before sync starts")
+            buttonUsageRepository.cleanupOldStats(retentionDays)
+        } catch (e: Exception) {
+            Log.e("CloudSyncWorker", "Failed to run stats cleanup: ${e.message}", e)
         }
 
         val credential = googleAuthManager.getGoogleCredential()

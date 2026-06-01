@@ -53,7 +53,14 @@ class SettingsBackupCoverageTest {
         "backgroundLocationEnabled",
         "backgroundLocationInterval",
         "backgroundWeatherEnabled",
-        "backgroundWeatherInterval"
+        "backgroundWeatherInterval",
+        "syncModeBook",             // Device-specific sync setting
+        "syncModeTts",              // Device-specific sync setting
+        "syncModeStats",            // Device-specific sync setting
+        "googleDriveFolderId",      // Device-specific folder target
+        "googleDriveFolderName",    // Device-specific folder target name
+        "statsRetentionDays",       // Local device maintenance preference
+        "statsAggregationHours"     // Local device maintenance preference
     )
 
     private val propertyMappings = mapOf(

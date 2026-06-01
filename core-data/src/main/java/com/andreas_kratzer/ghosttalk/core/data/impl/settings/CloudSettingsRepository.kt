@@ -23,6 +23,9 @@ class CloudSettingsRepository(
     private val _isCloudSyncEnabled = BooleanSetting(KEY_CLOUD_SYNC_ENABLED, false)
     private val _syncIntervalMinutes = LongSetting(KEY_SYNC_INTERVAL_MINUTES, 15L)
     private val _syncMode = NonNullStringSetting(KEY_SYNC_MODE, "TWO_WAY")
+    private val _syncModeBook = NonNullStringSetting(SettingsConstants.KEY_SYNC_MODE_BOOK, "TWO_WAY")
+    private val _syncModeTts = NonNullStringSetting(SettingsConstants.KEY_SYNC_MODE_TTS, "TWO_WAY")
+    private val _syncModeStats = NonNullStringSetting(SettingsConstants.KEY_SYNC_MODE_STATS, "BACKUP_ONLY")
     private val _lastSuccessfulSyncTime = LongSetting(KEY_LAST_SYNC_TIME, 0L)
     private val _elevenLabsApiKey = StringSetting(SettingsConstants.KEY_ELEVENLABS_API_KEY)
     private val _elevenLabsModel = NonNullStringSetting(SettingsConstants.KEY_ELEVENLABS_MODEL, "eleven_multilingual_v2")
@@ -36,9 +39,16 @@ class CloudSettingsRepository(
     private val _googleDriveFolderId = StringSetting(KEY_GOOGLE_DRIVE_FOLDER_ID)
     private val _googleDriveFolderName = StringSetting(KEY_GOOGLE_DRIVE_FOLDER_NAME)
 
+    init {
+        migrateOldSyncMode()
+    }
+
     override val isCloudSyncEnabledFlow = _isCloudSyncEnabled.flow
     override val syncIntervalMinutesFlow = _syncIntervalMinutes.flow
     override val syncModeFlow = _syncMode.flow
+    override val syncModeBookFlow = _syncModeBook.flow
+    override val syncModeTtsFlow = _syncModeTts.flow
+    override val syncModeStatsFlow = _syncModeStats.flow
     override val lastSuccessfulSyncTimeFlow = _lastSuccessfulSyncTime.flow
     override val elevenLabsApiKeyFlow = _elevenLabsApiKey.flow
     override val elevenLabsModelFlow = _elevenLabsModel.flow
@@ -55,6 +65,9 @@ class CloudSettingsRepository(
     override var isCloudSyncEnabled: Boolean by _isCloudSyncEnabled
     override var syncIntervalMinutes: Long by _syncIntervalMinutes
     override var syncMode: String by _syncMode
+    override var syncModeBook: String by _syncModeBook
+    override var syncModeTts: String by _syncModeTts
+    override var syncModeStats: String by _syncModeStats
     override var lastSuccessfulSyncTime: Long by _lastSuccessfulSyncTime
     override var elevenLabsApiKey: String? by _elevenLabsApiKey
     override var elevenLabsModel: String by _elevenLabsModel
@@ -73,6 +86,9 @@ class CloudSettingsRepository(
         _isCloudSyncEnabled.refresh()
         _syncIntervalMinutes.refresh()
         _syncMode.refresh()
+        _syncModeBook.refresh()
+        _syncModeTts.refresh()
+        _syncModeStats.refresh()
         _lastSuccessfulSyncTime.refresh()
         _elevenLabsApiKey.refresh()
         _elevenLabsModel.refresh()
@@ -85,5 +101,43 @@ class CloudSettingsRepository(
         _spotifyUserDisplayName.refresh()
         _googleDriveFolderId.refresh()
         _googleDriveFolderName.refresh()
+    }
+
+    private fun migrateOldSyncMode() {
+        val scopedOldKey = getScopedKey(KEY_SYNC_MODE)
+        val scopedBookKey = getScopedKey(SettingsConstants.KEY_SYNC_MODE_BOOK)
+        val scopedTtsKey = getScopedKey(SettingsConstants.KEY_SYNC_MODE_TTS)
+        val scopedStatsKey = getScopedKey(SettingsConstants.KEY_SYNC_MODE_STATS)
+
+        if (prefs.contains(scopedOldKey)) {
+            val oldMode = prefs.getString(scopedOldKey, null)
+            if (oldMode != null) {
+                val editor = prefs.edit()
+                var modified = false
+
+                if (!prefs.contains(scopedBookKey)) {
+                    editor.putString(scopedBookKey, oldMode)
+                    modified = true
+                }
+                if (!prefs.contains(scopedTtsKey)) {
+                    editor.putString(scopedTtsKey, oldMode)
+                    modified = true
+                }
+                if (!prefs.contains(scopedStatsKey)) {
+                    // Statistics strictly does not support TWO_WAY or RESTORE_ONLY.
+                    // If old mode was TWO_WAY or RESTORE_ONLY, statistics sync mode defaults to BACKUP_ONLY.
+                    val statsMode = if (oldMode == "TWO_WAY" || oldMode == "RESTORE_ONLY") "BACKUP_ONLY" else oldMode
+                    editor.putString(scopedStatsKey, statsMode)
+                    modified = true
+                }
+
+                if (modified) {
+                    editor.apply()
+                    _syncModeBook.refresh()
+                    _syncModeTts.refresh()
+                    _syncModeStats.refresh()
+                }
+            }
+        }
     }
 }

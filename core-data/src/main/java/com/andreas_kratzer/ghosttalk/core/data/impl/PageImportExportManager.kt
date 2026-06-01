@@ -17,6 +17,9 @@ import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportExportData
 import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportButton
 import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportButtonTemplate
 import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportPage
+import com.andreas_kratzer.ghosttalk.core.model.importexport.ExportedStatistics
+import com.andreas_kratzer.ghosttalk.core.model.importexport.ExportedHistoryEvent
+import com.andreas_kratzer.ghosttalk.core.model.importexport.ExportedButtonStat
 import com.andreas_kratzer.ghosttalk.core.util.Logger
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -45,6 +48,7 @@ class PageImportExportManager @Inject constructor(
     private val settingsMapper: SettingsMapper,
     private val actionMapper: ActionMapper,
     private val buttonTemplateRepository: ButtonTemplateRepository,
+    private val buttonUsageDao: com.andreas_kratzer.ghosttalk.core.database.ButtonUsageDao,
     private val logger: Logger
 ) : PageImportExportProvider {
     private val TAG = "PageImportExportManager"
@@ -456,6 +460,16 @@ class PageImportExportManager @Inject constructor(
             zip.closeEntry()
             onProgress(0.1f, "Database exported.")
 
+            // 1.1 Write the statistics.json if stats sync is BACKUP_ONLY (0.1 - 0.15)
+            val statsMode = settingsRepository.syncModeStats
+            if (statsMode == "BACKUP_ONLY") {
+                onProgress(0.08f, "Exporting statistics...")
+                val statsJson = exportStatisticsToJson(bookId)
+                zip.putNextEntry(ZipEntry("statistics.json"))
+                zip.write(statsJson.toByteArray(Charsets.UTF_8))
+                zip.closeEntry()
+            }
+
             // 2. Gather all files to compress (10-100%)
             val filesToCompress = mutableListOf<Pair<File, String>>()
             
@@ -513,6 +527,13 @@ class PageImportExportManager @Inject constructor(
                 if (entry.name == "backup.json") {
                     val bytes = zipIn.readBytes()
                     jsonContent = String(bytes, Charsets.UTF_8)
+                } else if (entry.name == "statistics.json") {
+                    val bytes = zipIn.readBytes()
+                    val statsJson = String(bytes, Charsets.UTF_8)
+                    val statsMode = settingsRepository.syncModeStats
+                    if (statsMode == "RESTORE_ONLY") {
+                        importStatisticsFromJson(statsJson, bookId)
+                    }
                 } else if (entry.name.startsWith("tts_cache/")) {
                     val fileName = entry.name.substringAfter("tts_cache/")
                     if (fileName.isNotEmpty()) {
@@ -690,6 +711,83 @@ class PageImportExportManager @Inject constructor(
             result
         } catch (e: Exception) {
             Result.failure(e)
+        }
+    }
+
+    private suspend fun exportStatisticsToJson(bookId: String): String = withContext(Dispatchers.IO) {
+        val historyList = buttonUsageDao.getHistoryForBook(bookId).first()
+        val statsList = buttonUsageDao.getAllStatsForBook(bookId)
+        
+        val exportedStats = statsList.map { stat ->
+            ExportedButtonStat(
+                buttonConfigId = stat.buttonConfigId,
+                pageId = stat.pageId,
+                label = stat.label,
+                actionJson = stat.actionJson,
+                usageCount = stat.usageCount,
+                lastUsedAt = stat.lastUsedAt
+            )
+        }
+        
+        val exportedHistory = historyList.map { event ->
+            ExportedHistoryEvent(
+                timestamp = event.timestamp,
+                label = event.label,
+                actionType = event.actionType,
+                buttonId = event.buttonId,
+                pageId = event.pageId,
+                imagePath = event.imagePath,
+                geminiResponse = event.geminiResponse
+            )
+        }
+        
+        val statistics = ExportedStatistics(
+            bookId = bookId,
+            history = exportedHistory,
+            stats = exportedStats
+        )
+        json.encodeToString(statistics)
+    }
+
+    private suspend fun importStatisticsFromJson(jsonString: String, bookId: String) = withContext(Dispatchers.IO) {
+        try {
+            val statistics = json.decodeFromString<ExportedStatistics>(jsonString)
+            
+            // Clean slate first
+            buttonUsageDao.clearHistoryForBook(bookId)
+            buttonUsageDao.clearStatsForBook(bookId)
+            
+            // Re-insert history events
+            statistics.history.forEach { event ->
+                val entity = com.andreas_kratzer.ghosttalk.core.database.ButtonUsageHistoryEntity(
+                    bookId = bookId,
+                    timestamp = event.timestamp,
+                    label = event.label,
+                    actionType = event.actionType,
+                    buttonId = event.buttonId,
+                    pageId = event.pageId,
+                    imagePath = event.imagePath,
+                    geminiResponse = event.geminiResponse
+                )
+                buttonUsageDao.insertHistoryEvent(entity)
+            }
+            
+            // Re-insert stats counters
+            statistics.stats.forEach { stat ->
+                val entity = com.andreas_kratzer.ghosttalk.core.model.ButtonUsageStat(
+                    bookId = bookId,
+                    buttonConfigId = stat.buttonConfigId,
+                    pageId = stat.pageId,
+                    label = stat.label,
+                    actionJson = stat.actionJson,
+                    usageCount = stat.usageCount,
+                    lastUsedAt = stat.lastUsedAt
+                )
+                buttonUsageDao.upsert(entity)
+            }
+            logger.d(TAG, "Imported statistics for book $bookId: ${statistics.history.size} history events, ${statistics.stats.size} stats counter.")
+        } catch (e: Exception) {
+            logger.e(TAG, "Failed to import statistics for book $bookId", e)
         }
     }
 }

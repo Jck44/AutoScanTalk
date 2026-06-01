@@ -82,6 +82,10 @@
     <string name="settings_cloud_sync_enabled">Automatischer Sync</string>
     <string name="settings_cloud_sync_mode">Sync-Modus</string>
     <string name="settings_cloud_sync_interval">Sync-Intervall (Minuten)</string>
+    <string name="settings_cloud_sync_mode_off">Aus (Deaktiviert)</string>
+    <string name="settings_cloud_sync_mode_book">Buch-Synchronisierung</string>
+    <string name="settings_cloud_sync_mode_tts">TTS-Cache-Synchronisierung</string>
+    <string name="settings_cloud_sync_mode_stats">Statistik-Übertragung</string>
     <string name="settings_cloud_sync_mode_two_way">2-Wege (Sichern &amp; Wiederherstellen)</string>
     <string name="settings_cloud_sync_mode_backup">Einseitig (Nur Sicherung zu Google Drive)</string>
     <string name="settings_cloud_sync_mode_restore">Einseitig (Nur Wiederherstellung von Google Drive)</string>
@@ -371,4 +375,17 @@
     <string name="settings_permissions_relaunch_setup_title">Start-Einrichtung erneut ausführen</string>
     <string name="settings_permissions_relaunch_setup_desc">Führe den Schritt-für-Schritt-Prozess zur Berechtigungserklärung und Einrichtung der App erneut aus.</string>
     <string name="settings_permissions_relaunch_setup_button">Einrichtung starten</string>
+
+    <!-- Stats Retention & Aggregation Settings -->
+    <string name="settings_category_stats_privacy">Datenschutz &amp; Verlauf</string>
+    <string name="settings_stats_retention_label">Speicherdauer für Statistiken</string>
+    <string name="settings_stats_retention_days_format">%1$d Tage</string>
+    <string name="settings_stats_retention_desc">Ältere Nutzungsdaten werden automatisch gelöscht, um Speicherplatz zu sparen und die Privatsphäre zu schützen.</string>
+    <string name="settings_stats_aggregation_label">Statistik-Intervall (Zeit-Raster)</string>
+    <string name="settings_stats_aggregation_desc">Fasst Klicks zu Zeitblöcken zusammen. Kleinere Werte helfen später bei genauen Vorhersagen für Klickmuster.</string>
+    <string name="settings_stats_interval_1h">1 Stunde (Sehr präzise)</string>
+    <string name="settings_stats_interval_3h">3 Stunden (Empfohlen)</string>
+    <string name="settings_stats_interval_6h">6 Stunden (Grobe Tageszeit)</string>
+    <string name="settings_stats_interval_12h">12 Stunden (Tag/Nacht)</string>
+    <string name="settings_stats_interval_24h">24 Stunden (Kalendertag)</string>
 </resources>

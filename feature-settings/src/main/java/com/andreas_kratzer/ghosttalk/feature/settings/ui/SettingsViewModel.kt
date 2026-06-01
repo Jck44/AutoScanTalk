@@ -131,6 +131,9 @@ class SettingsViewModel @Inject constructor(
     
     val isCloudSyncEnabled = settingsRepository.isCloudSyncEnabledFlow
     val syncMode = settingsRepository.syncModeFlow
+    val syncModeBook = settingsRepository.syncModeBookFlow
+    val syncModeTts = settingsRepository.syncModeTtsFlow
+    val syncModeStats = settingsRepository.syncModeStatsFlow
     val lastSuccessfulSyncTime = settingsRepository.lastSuccessfulSyncTimeFlow
     val syncIntervalMinutes = settingsRepository.syncIntervalMinutesFlow
     val googleDriveFolderId = settingsRepository.googleDriveFolderIdFlow
@@ -183,6 +186,8 @@ class SettingsViewModel @Inject constructor(
 
     val keepScreenOnUserMode = settingsRepository.keepScreenOnUserModeFlow
     val userModeScreenBehavior = settingsRepository.userModeScreenBehaviorFlow
+    val statsRetentionDays = settingsRepository.statsRetentionDaysFlow
+    val statsAggregationHours = settingsRepository.statsAggregationHoursFlow
     val geminiTimeout = settingsRepository.geminiTimeoutFlow
     val geminiRedoPrediction = settingsRepository.geminiRedoPredictionFlow
 
@@ -416,6 +421,9 @@ class SettingsViewModel @Inject constructor(
     fun clearSyncLogs() = cloudSyncDelegate.clearSyncLogs(viewModelScope)
     
     fun setSyncMode(m: String) { settingsRepository.syncMode = m }
+    fun setSyncModeBook(m: String) { settingsRepository.syncModeBook = m }
+    fun setSyncModeTts(m: String) { settingsRepository.syncModeTts = m }
+    fun setSyncModeStats(m: String) { settingsRepository.syncModeStats = m }
     fun setSyncIntervalMinutes(minutes: Long) { settingsRepository.syncIntervalMinutes = minutes }
     fun setHueBridgeIp(ip: String) { settingsRepository.hueBridgeIp = ip }
     fun setHueUsername(username: String) { settingsRepository.hueUsername = username }
@@ -643,6 +651,13 @@ class SettingsViewModel @Inject constructor(
 
     fun setKeepScreenOnUserMode(e: Boolean) { settingsRepository.keepScreenOnUserMode = e }
     fun setUserModeScreenBehavior(m: String) { settingsRepository.userModeScreenBehavior = m }
+    fun setStatsRetentionDays(days: Int) { 
+        settingsRepository.statsRetentionDays = days 
+        viewModelScope.launch(Dispatchers.IO) {
+            buttonUsageRepository.cleanupOldStats(days)
+        }
+    }
+    fun setStatsAggregationHours(hours: Int) { settingsRepository.statsAggregationHours = hours }
     fun setGeminiTimeoutInput(input: String) {
         input.toLongOrNull()?.let { settingsRepository.geminiTimeout = it }
     }

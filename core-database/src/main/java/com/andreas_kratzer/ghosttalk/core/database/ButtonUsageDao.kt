@@ -60,4 +60,10 @@ interface ButtonUsageDao {
 
     @Query("DELETE FROM button_usage_history WHERE bookId = :bookId AND id NOT IN (SELECT id FROM button_usage_history WHERE bookId = :bookId ORDER BY timestamp DESC LIMIT :limit)")
     suspend fun pruneHistory(bookId: String, limit: Int)
+
+    @Query("DELETE FROM button_usage_history WHERE timestamp < :threshold")
+    suspend fun pruneHistoryByTimestamp(threshold: Long)
+
+    @Query("DELETE FROM button_usage_stats WHERE lastUsedAt < :threshold")
+    suspend fun pruneStatsByTimestamp(threshold: Long)
 }

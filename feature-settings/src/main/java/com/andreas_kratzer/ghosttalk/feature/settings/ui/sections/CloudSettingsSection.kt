@@ -27,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.core.ui.components.PreferenceCategory
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsDropdownItem
@@ -54,6 +55,9 @@ fun CloudSettingsSection(
     val isSyncing by viewModel.isSyncing.collectAsState()
     
     val syncMode by viewModel.syncMode.collectAsState()
+    val syncModeBook by viewModel.syncModeBook.collectAsState()
+    val syncModeTts by viewModel.syncModeTts.collectAsState()
+    val syncModeStats by viewModel.syncModeStats.collectAsState()
     val syncIntervalMinutes by viewModel.syncIntervalMinutes.collectAsState()
     val isCloudSyncEnabled by viewModel.isCloudSyncEnabled.collectAsState()
     val lastSyncTime by viewModel.lastSuccessfulSyncTime.collectAsState()
@@ -295,21 +299,65 @@ fun CloudSettingsSection(
                     modifier = Modifier.padding(vertical = 4.dp)
                 )
 
-                val syncModeLabel = when (syncMode) {
+                val syncModeBookLabel = when (syncModeBook) {
+                    "OFF" -> stringResource(R.string.settings_cloud_sync_mode_off)
                     "BACKUP_ONLY" -> stringResource(R.string.settings_cloud_sync_mode_backup)
                     "RESTORE_ONLY" -> stringResource(R.string.settings_cloud_sync_mode_restore)
                     else -> stringResource(R.string.settings_cloud_sync_mode_two_way)
                 }
 
                 SettingsDropdownItem(
-                    label = stringResource(R.string.settings_cloud_sync_mode),
-                    selectedOption = syncModeLabel,
+                    label = stringResource(R.string.settings_cloud_sync_mode_book),
+                    selectedOption = syncModeBookLabel,
                     options = listOf(
                         "TWO_WAY" to R.string.settings_cloud_sync_mode_two_way,
                         "BACKUP_ONLY" to R.string.settings_cloud_sync_mode_backup,
-                        "RESTORE_ONLY" to R.string.settings_cloud_sync_mode_restore
+                        "RESTORE_ONLY" to R.string.settings_cloud_sync_mode_restore,
+                        "OFF" to R.string.settings_cloud_sync_mode_off
                     ).map { (mode, resId) ->
-                        stringResource(resId) to { viewModel.setSyncMode(mode) }
+                        stringResource(resId) to { viewModel.setSyncModeBook(mode) }
+                    }
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                val syncModeTtsLabel = when (syncModeTts) {
+                    "OFF" -> stringResource(R.string.settings_cloud_sync_mode_off)
+                    "BACKUP_ONLY" -> stringResource(R.string.settings_cloud_sync_mode_backup)
+                    "RESTORE_ONLY" -> stringResource(R.string.settings_cloud_sync_mode_restore)
+                    else -> stringResource(R.string.settings_cloud_sync_mode_two_way)
+                }
+
+                SettingsDropdownItem(
+                    label = stringResource(R.string.settings_cloud_sync_mode_tts),
+                    selectedOption = syncModeTtsLabel,
+                    options = listOf(
+                        "TWO_WAY" to R.string.settings_cloud_sync_mode_two_way,
+                        "BACKUP_ONLY" to R.string.settings_cloud_sync_mode_backup,
+                        "RESTORE_ONLY" to R.string.settings_cloud_sync_mode_restore,
+                        "OFF" to R.string.settings_cloud_sync_mode_off
+                    ).map { (mode, resId) ->
+                        stringResource(resId) to { viewModel.setSyncModeTts(mode) }
+                    }
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                val syncModeStatsLabel = when (syncModeStats) {
+                    "BACKUP_ONLY" -> stringResource(R.string.settings_cloud_sync_mode_backup)
+                    "RESTORE_ONLY" -> stringResource(R.string.settings_cloud_sync_mode_restore)
+                    else -> stringResource(R.string.settings_cloud_sync_mode_off)
+                }
+
+                SettingsDropdownItem(
+                    label = stringResource(R.string.settings_cloud_sync_mode_stats),
+                    selectedOption = syncModeStatsLabel,
+                    options = listOf(
+                        "BACKUP_ONLY" to R.string.settings_cloud_sync_mode_backup,
+                        "RESTORE_ONLY" to R.string.settings_cloud_sync_mode_restore,
+                        "OFF" to R.string.settings_cloud_sync_mode_off
+                    ).map { (mode, resId) ->
+                        stringResource(resId) to { viewModel.setSyncModeStats(mode) }
                     }
                 )
 
@@ -405,6 +453,73 @@ fun CloudSettingsSection(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(stringResource(if (isGlobal) R.string.settings_local_backup_import else R.string.settings_local_backup_restore))
+            }
+        }
+
+        if (!isGlobal) {
+            Spacer(modifier = Modifier.height(dimensions.paddingMedium))
+            
+            val statsRetentionDays by viewModel.statsRetentionDays.collectAsState()
+            val statsAggregationHours by viewModel.statsAggregationHours.collectAsState()
+            
+            PreferenceCategory(stringResource(R.string.settings_category_stats_privacy)) {
+                Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+                    Text(
+                        text = stringResource(R.string.settings_stats_retention_label),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Text(
+                        text = stringResource(R.string.settings_stats_retention_days_format, statsRetentionDays),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    androidx.compose.material3.Slider(
+                        value = statsRetentionDays.toFloat(),
+                        onValueChange = { viewModel.setStatsRetentionDays(it.toInt()) },
+                        valueRange = 7f..365f,
+                        steps = 358 // 365 - 7
+                    )
+                    Text(
+                        text = stringResource(R.string.settings_stats_retention_desc),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                val aggregationOptions = listOf(1, 3, 6, 12, 24)
+                val selectedLabel = when (statsAggregationHours) {
+                    1 -> stringResource(R.string.settings_stats_interval_1h)
+                    3 -> stringResource(R.string.settings_stats_interval_3h)
+                    6 -> stringResource(R.string.settings_stats_interval_6h)
+                    12 -> stringResource(R.string.settings_stats_interval_12h)
+                    else -> stringResource(R.string.settings_stats_interval_24h)
+                }
+                
+                SettingsDropdownItem(
+                    label = stringResource(R.string.settings_stats_aggregation_label),
+                    selectedOption = selectedLabel,
+                    options = aggregationOptions.map { hours ->
+                        val label = when (hours) {
+                            1 -> stringResource(R.string.settings_stats_interval_1h)
+                            3 -> stringResource(R.string.settings_stats_interval_3h)
+                            6 -> stringResource(R.string.settings_stats_interval_6h)
+                            12 -> stringResource(R.string.settings_stats_interval_12h)
+                            else -> stringResource(R.string.settings_stats_interval_24h)
+                        }
+                        label to { viewModel.setStatsAggregationHours(hours) }
+                    }
+                )
+                
+                Text(
+                    text = stringResource(R.string.settings_stats_aggregation_desc),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
             }
         }
     }

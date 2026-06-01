@@ -119,6 +119,8 @@ class SettingsRepositoryImpl @Inject constructor(
     // --- UserSettings ---
     override val keepScreenOnUserModeFlow: StateFlow<Boolean> get() = userSettings.keepScreenOnUserModeFlow
     override val userModeScreenBehaviorFlow: StateFlow<String> get() = userSettings.userModeScreenBehaviorFlow
+    override val statsRetentionDaysFlow: StateFlow<Int> get() = userSettings.statsRetentionDaysFlow
+    override val statsAggregationHoursFlow: StateFlow<Int> get() = userSettings.statsAggregationHoursFlow
 
     // --- AdvancedSettings ---
     override val persistActionLogsFlow: StateFlow<Boolean> get() = advancedSettings.persistActionLogsFlow
@@ -148,6 +150,9 @@ class SettingsRepositoryImpl @Inject constructor(
     override val isCloudSyncEnabledFlow: StateFlow<Boolean> get() = cloudSettings.isCloudSyncEnabledFlow
     override val syncIntervalMinutesFlow: StateFlow<Long> get() = cloudSettings.syncIntervalMinutesFlow
     override val syncModeFlow: StateFlow<String> get() = cloudSettings.syncModeFlow
+    override val syncModeBookFlow: StateFlow<String> get() = cloudSettings.syncModeBookFlow
+    override val syncModeTtsFlow: StateFlow<String> get() = cloudSettings.syncModeTtsFlow
+    override val syncModeStatsFlow: StateFlow<String> get() = cloudSettings.syncModeStatsFlow
     override val lastSuccessfulSyncTimeFlow: StateFlow<Long> get() = cloudSettings.lastSuccessfulSyncTimeFlow
     override val hueBridgeIpFlow: StateFlow<String> get() = smartHomeSettings.hueBridgeIpFlow
     override val hueUsernameFlow: StateFlow<String> get() = smartHomeSettings.hueUsernameFlow
@@ -306,6 +311,15 @@ class SettingsRepositoryImpl @Inject constructor(
     override var syncMode: String
         get() = cloudSettings.syncMode
         set(value) { cloudSettings.syncMode = value }
+    override var syncModeBook: String
+        get() = cloudSettings.syncModeBook
+        set(value) { cloudSettings.syncModeBook = value }
+    override var syncModeTts: String
+        get() = cloudSettings.syncModeTts
+        set(value) { cloudSettings.syncModeTts = value }
+    override var syncModeStats: String
+        get() = cloudSettings.syncModeStats
+        set(value) { cloudSettings.syncModeStats = value }
     override var hueBridgeIp: String
         get() = smartHomeSettings.hueBridgeIp
         set(value) { smartHomeSettings.hueBridgeIp = value }
@@ -376,6 +390,14 @@ class SettingsRepositoryImpl @Inject constructor(
     override var userModeScreenBehavior: String
         get() = userSettings.userModeScreenBehavior
         set(value) { userSettings.userModeScreenBehavior = value }
+
+    override var statsRetentionDays: Int
+        get() = userSettings.statsRetentionDays
+        set(value) { userSettings.statsRetentionDays = value }
+
+    override var statsAggregationHours: Int
+        get() = userSettings.statsAggregationHours
+        set(value) { userSettings.statsAggregationHours = value }
 
     override var geminiTimeout: Long
         get() = genAiSettings.geminiTimeout

@@ -157,4 +157,18 @@ class ButtonUsageRepositoryTest {
 
         coVerify { mockButtonUsageDao.pruneHistory("book1", 50) }
     }
+
+    @Test
+    fun `cleanupOldStats delegates to dao with safe threshold calculation`() = runTest {
+        buttonUsageRepository.cleanupOldStats(90)
+
+        val thresholdSlot = slot<Long>()
+        coVerify { mockButtonUsageDao.pruneHistoryByTimestamp(capture(thresholdSlot)) }
+        coVerify { mockButtonUsageDao.pruneStatsByTimestamp(capture(thresholdSlot)) }
+
+        val diff = System.currentTimeMillis() - thresholdSlot.captured
+        val expectedDiff = 90L * 24L * 60L * 60L * 1000L
+        // Accept a small delta due to time passing during test execution
+        assertTrue(Math.abs(diff - expectedDiff) < 1000)
+    }
 }

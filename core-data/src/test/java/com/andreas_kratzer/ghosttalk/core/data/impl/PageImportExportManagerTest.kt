@@ -47,7 +47,17 @@ class PageImportExportManagerTest {
     private val settingsMapper = SettingsMapper(settingsRepository, authManager)
     private val actionMapper = ActionMapper()
     private val buttonTemplateRepository: com.andreas_kratzer.ghosttalk.core.data.ButtonTemplateRepository = mockk(relaxed = true)
-    private val manager = PageImportExportManager(context, pageRepository, bookRepository, settingsRepository, settingsMapper, actionMapper, buttonTemplateRepository, mockk(relaxed = true))
+    private val manager = PageImportExportManager(
+        context = context,
+        pageRepository = pageRepository,
+        bookRepository = bookRepository,
+        settingsRepository = settingsRepository,
+        settingsMapper = settingsMapper,
+        actionMapper = actionMapper,
+        buttonTemplateRepository = buttonTemplateRepository,
+        buttonUsageDao = mockk(relaxed = true),
+        logger = mockk(relaxed = true)
+    )
 
     init {
         every { authManager.userEmail } returns kotlinx.coroutines.flow.MutableStateFlow("test@example.com")

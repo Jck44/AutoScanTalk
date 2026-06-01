@@ -176,3 +176,31 @@ data class ImportAction(
     val mediaContentName: String? = null,
     val mediaReturnDelayMs: Long? = null
 )
+
+@Serializable
+data class ExportedStatistics(
+    val bookId: String,
+    val history: List<ExportedHistoryEvent>,
+    val stats: List<ExportedButtonStat>
+)
+
+@Serializable
+data class ExportedHistoryEvent(
+    val timestamp: Long,
+    val label: String,
+    val actionType: String,
+    val buttonId: String?,
+    val pageId: String?,
+    val imagePath: String? = null,
+    val geminiResponse: String? = null
+)
+
+@Serializable
+data class ExportedButtonStat(
+    val buttonConfigId: String,
+    val pageId: String,
+    val label: String,
+    val actionJson: String,
+    val usageCount: Long,
+    val lastUsedAt: Long
+)

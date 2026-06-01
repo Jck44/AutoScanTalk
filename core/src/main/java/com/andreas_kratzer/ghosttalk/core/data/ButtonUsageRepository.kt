@@ -11,6 +11,7 @@ interface ButtonUsageRepository : ButtonUsageProvider {
 
     suspend fun recordUsage(bookId: String, pageId: String, buttonConfig: ButtonConfig, rows: Int, columns: Int, indexInPage: Int)
     suspend fun clearStats(bookId: String)
+    suspend fun cleanupOldStats(days: Int)
     suspend fun updateLastEventImage(imagePath: String)
     suspend fun updateLastEventDetails(details: String)
     suspend fun deleteUsageEvent(timestamp: Long)

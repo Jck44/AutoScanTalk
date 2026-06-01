@@ -128,158 +128,179 @@ class CloudSyncUseCase @Inject constructor(
         val localLastModified = book.updatedAt // Use database timestamp, not file system
         logger.d(TAG, "Local updatedAt: $localLastModified")
 
-        val needsExport = remoteFile == null || when (syncMode) {
-            SyncMode.RESTORE_ONLY -> false
-            SyncMode.BACKUP_ONLY -> localLastModified > remoteLastModified + 2000
-            SyncMode.TWO_WAY -> localLastModified > remoteLastModified + 2000
+        val bookModeStr = settingsRepository.syncModeBook
+        val isBookSyncEnabled = bookModeStr != "OFF"
+        val bookMode = try {
+            SyncMode.valueOf(bookModeStr)
+        } catch (_: Exception) {
+            syncMode
         }
 
-        // Local Export (only needed for comparison or upload)
-        val tempFile = File(context.cacheDir, currentFileName)
-        if (needsExport) {
-            logger.d(TAG, "Step 3: Exporting local book data...")
-            if (mimeType == "application/zip") {
-                tempFile.outputStream().use { os ->
-                    importExportManager.exportBookToZip(bookId, os, includeTtsCache = false) { p, s -> 
-                        onProgress(p * 0.3f, s) // ZIP export is 0-30%
-                    }
-                }
-            } else {
-                val localJson = importExportManager.exportBookToJson(bookId)
-                tempFile.writeText(localJson)
+        var success = true
+
+        if (isBookSyncEnabled) {
+            val needsExport = remoteFile == null || when (bookMode) {
+                SyncMode.RESTORE_ONLY -> false
+                SyncMode.BACKUP_ONLY -> localLastModified > remoteLastModified + 2000
+                SyncMode.TWO_WAY -> localLastModified > remoteLastModified + 2000
             }
-        } else {
-            logger.d(TAG, "Step 3: Skipping local export (not needed).")
-        }
 
-        var success: Boolean
-
-        if (remoteFile == null) {
-            logger.d(TAG, "Step 4a: Remote file does not exist.")
-            if (syncMode == SyncMode.RESTORE_ONLY) {
-                logger.w(TAG, "RESTORE_ONLY mode but no remote file found. Cannot restore.")
-                success = false
-            } else {
-                logger.d(TAG, "Uploading for the first time...")
-                val newFileId = helper.uploadFile(folderId, tempFile, mimeType, book.name) { p ->
-                    onProgress(0.3f + p * 0.7f, "Uploading to Drive...") // Upload is 30-100%
-                }
-                if (newFileId != null) {
-                    syncLogProvider.addLogEntry("Erster Upload in die Cloud (ZIP)", bookId, book.name, isError = false)
-                    val metadata = helper.getFileMetadata(newFileId)
-                    val driveTime = metadata?.modifiedTime?.value
-                    if (driveTime != null) {
-                        bookRepository.updateLastModified(bookId, driveTime)
+            // Local Export (only needed for comparison or upload)
+            val tempFile = File(context.cacheDir, currentFileName)
+            if (needsExport) {
+                logger.d(TAG, "Step 3: Exporting local book data...")
+                if (mimeType == "application/zip") {
+                    tempFile.outputStream().use { os ->
+                        importExportManager.exportBookToZip(bookId, os, includeTtsCache = false) { p, s -> 
+                            onProgress(p * 0.3f, s) // ZIP export is 0-30%
+                        }
                     }
-                    success = true
                 } else {
-                    syncLogProvider.addLogEntry("Upload fehlgeschlagen", bookId, book.name, isError = true)
-                    success = false
+                    val localJson = importExportManager.exportBookToJson(bookId)
+                    tempFile.writeText(localJson)
                 }
+            } else {
+                logger.d(TAG, "Step 3: Skipping local export (not needed).")
             }
-        } else {
-            logger.d(TAG, "Step 4b: Remote file exists. Comparing timestamps...")
-            when (syncMode) {
-                SyncMode.BACKUP_ONLY -> {
-                    if (localLastModified <= remoteLastModified + 2000) {
-                        logger.d(TAG, "BACKUP_ONLY: Remote version is already up-to-date. Skipping backup.")
-                        syncLogProvider.addLogEntry("BACKUP_ONLY: Keine lokalen Änderungen vorhanden", bookId, book.name)
+
+            if (remoteFile == null) {
+                logger.d(TAG, "Step 4a: Remote file does not exist.")
+                if (bookMode == SyncMode.RESTORE_ONLY) {
+                    logger.w(TAG, "RESTORE_ONLY mode but no remote file found. Cannot restore.")
+                    success = false
+                } else {
+                    logger.d(TAG, "Uploading for the first time...")
+                    val newFileId = helper.uploadFile(folderId, tempFile, mimeType, book.name) { p ->
+                        onProgress(0.3f + p * 0.7f, "Uploading to Drive...") // Upload is 30-100%
+                    }
+                    if (newFileId != null) {
+                        syncLogProvider.addLogEntry("Erster Upload in die Cloud (ZIP)", bookId, book.name, isError = false)
+                        val metadata = helper.getFileMetadata(newFileId)
+                        val driveTime = metadata?.modifiedTime?.value
+                        if (driveTime != null) {
+                            bookRepository.updateLastModified(bookId, driveTime)
+                        }
                         success = true
                     } else {
-                        if (remoteZipFile != null) {
-                            syncLogProvider.addLogEntry("BACKUP_ONLY: Cloud-Sicherung aktualisiert", bookId, book.name)
+                        syncLogProvider.addLogEntry("Upload fehlgeschlagen", bookId, book.name, isError = true)
+                        success = false
+                    }
+                }
+            } else {
+                logger.d(TAG, "Step 4b: Remote file exists. Comparing timestamps...")
+                when (bookMode) {
+                    SyncMode.BACKUP_ONLY -> {
+                        if (localLastModified <= remoteLastModified + 2000) {
+                            logger.d(TAG, "BACKUP_ONLY: Remote version is already up-to-date. Skipping backup.")
+                            syncLogProvider.addLogEntry("BACKUP_ONLY: Keine lokalen Änderungen vorhanden", bookId, book.name)
+                            success = true
                         } else {
-                            syncLogProvider.addLogEntry("BACKUP_ONLY: Cloud-Sicherung neu erstellt", bookId, book.name)
-                        }
-                        var uploadedFileId: String? = null
-                        val updateSuccess = if (remoteZipFile != null) {
-                            uploadedFileId = remoteZipFile.id
-                            helper.updateFile(remoteZipFile.id, tempFile, "application/zip", book.name) { p ->
-                                onProgress(0.3f + p * 0.7f, "Uploading to Drive...")
+                            if (remoteZipFile != null) {
+                                syncLogProvider.addLogEntry("BACKUP_ONLY: Cloud-Sicherung aktualisiert", bookId, book.name)
+                            } else {
+                                syncLogProvider.addLogEntry("BACKUP_ONLY: Cloud-Sicherung neu erstellt", bookId, book.name)
                             }
+                            var uploadedFileId: String? = null
+                            val updateSuccess = if (remoteZipFile != null) {
+                                uploadedFileId = remoteZipFile.id
+                                helper.updateFile(remoteZipFile.id, tempFile, "application/zip", book.name) { p ->
+                                    onProgress(0.3f + p * 0.7f, "Uploading to Drive...")
+                                }
+                            } else {
+                                val newId = helper.uploadFile(folderId, tempFile, "application/zip", book.name) { p ->
+                                    onProgress(0.3f + p * 0.7f, "Uploading to Drive...")
+                                }
+                                uploadedFileId = newId
+                                newId != null
+                            }
+                            logger.d(TAG, "Update/Migration result: $updateSuccess")
+                            if (updateSuccess) {
+                                if (uploadedFileId != null) {
+                                    val metadata = helper.getFileMetadata(uploadedFileId)
+                                    val driveTime = metadata?.modifiedTime?.value ?: 0L
+                                    if (driveTime > 0L) {
+                                        bookRepository.updateLastModified(bookId, driveTime)
+                                    }
+                                }
+                            } else {
+                                syncLogProvider.addLogEntry("BACKUP_ONLY: Sicherung fehlgeschlagen", bookId, book.name, isError = true)
+                            }
+                            success = updateSuccess
+                        }
+                    }
+                    SyncMode.RESTORE_ONLY -> {
+                        val inSync = Math.abs(localLastModified - remoteLastModified) <= 2000
+                        if (inSync) {
+                            logger.d(TAG, "RESTORE_ONLY: Local and remote versions are synchronized. Skipping restore download.")
+                            syncLogProvider.addLogEntry("RESTORE_ONLY: Lokal bereits aktuell", bookId, book.name)
+                            success = true
                         } else {
-                            val newId = helper.uploadFile(folderId, tempFile, "application/zip", book.name) { p ->
-                                onProgress(0.3f + p * 0.7f, "Uploading to Drive...")
+                            logger.d(TAG, "RESTORE_ONLY mode. Downloading and importing...")
+                            success = downloadAndImport(helper, remoteFile.id, remoteFile.name, book, remoteLastModified, onProgress)
+                            if (!success) {
+                                syncLogProvider.addLogEntry("RESTORE_ONLY: Wiederherstellung fehlgeschlagen", bookId, book.name, isError = true)
                             }
-                            uploadedFileId = newId
-                            newId != null
                         }
-                        logger.d(TAG, "Update/Migration result: $updateSuccess")
-                        if (updateSuccess) {
-                            if (uploadedFileId != null) {
-                                val metadata = helper.getFileMetadata(uploadedFileId)
+                    }
+                    SyncMode.TWO_WAY -> {
+                        if (localLastModified > remoteLastModified + 2000) { // 2s Grace period
+                            logger.d(TAG, "Local version is newer. Updating remote file...")
+                            val updateSuccess = if (remoteZipFile != null) {
+                                helper.updateFile(remoteZipFile.id, tempFile, "application/zip", book.name) { p ->
+                                    onProgress(0.3f + p * 0.7f, "Uploading to Drive...")
+                                }
+                            } else {
+                                // Migrate JSON to ZIP
+                                helper.uploadFile(folderId, tempFile, "application/zip", book.name) { p ->
+                                    onProgress(0.3f + p * 0.7f, "Uploading to Drive...")
+                                } != null
+                            }
+                            if (updateSuccess) {
+                                syncLogProvider.addLogEntry("Lokale Version war neuer -> Cloud aktualisiert (ZIP)", bookId, book.name)
+                                val metadata = helper.getFileMetadata(remoteFile.id)
                                 val driveTime = metadata?.modifiedTime?.value ?: 0L
                                 if (driveTime > 0L) {
                                     bookRepository.updateLastModified(bookId, driveTime)
                                 }
+                            } else {
+                                syncLogProvider.addLogEntry("Update der Cloud-Datei fehlgeschlagen", bookId, book.name, isError = true)
                             }
+                            success = updateSuccess
+                        } else if (remoteLastModified > localLastModified + 2000) {
+                            logger.d(TAG, "Remote version is newer. Downloading and importing...")
+                            success = downloadAndImport(helper, remoteFile.id, remoteFile.name, book, remoteLastModified, onProgress)
                         } else {
-                            syncLogProvider.addLogEntry("BACKUP_ONLY: Sicherung fehlgeschlagen", bookId, book.name, isError = true)
+                            logger.d(TAG, "Local and remote versions are synchronized.")
+                            syncLogProvider.addLogEntry("Lokal und Cloud sind synchron", bookId, book.name)
+                            success = true
                         }
-                        success = updateSuccess
-                    }
-                }
-                SyncMode.RESTORE_ONLY -> {
-                    val inSync = Math.abs(localLastModified - remoteLastModified) <= 2000
-                    if (inSync) {
-                        logger.d(TAG, "RESTORE_ONLY: Local and remote versions are synchronized. Skipping restore download.")
-                        syncLogProvider.addLogEntry("RESTORE_ONLY: Lokal bereits aktuell", bookId, book.name)
-                        success = true
-                    } else {
-                        logger.d(TAG, "RESTORE_ONLY mode. Downloading and importing...")
-                        success = downloadAndImport(helper, remoteFile.id, remoteFile.name, book, remoteLastModified, onProgress)
-                        if (!success) {
-                            syncLogProvider.addLogEntry("RESTORE_ONLY: Wiederherstellung fehlgeschlagen", bookId, book.name, isError = true)
-                        }
-                    }
-                }
-                SyncMode.TWO_WAY -> {
-                    if (localLastModified > remoteLastModified + 2000) { // 2s Grace period
-                        logger.d(TAG, "Local version is newer. Updating remote file...")
-                        val updateSuccess = if (remoteZipFile != null) {
-                            helper.updateFile(remoteZipFile.id, tempFile, "application/zip", book.name) { p ->
-                                onProgress(0.3f + p * 0.7f, "Uploading to Drive...")
-                            }
-                        } else {
-                            // Migrate JSON to ZIP
-                            helper.uploadFile(folderId, tempFile, "application/zip", book.name) { p ->
-                                onProgress(0.3f + p * 0.7f, "Uploading to Drive...")
-                            } != null
-                        }
-                        if (updateSuccess) {
-                            syncLogProvider.addLogEntry("Lokale Version war neuer -> Cloud aktualisiert (ZIP)", bookId, book.name)
-                            val metadata = helper.getFileMetadata(remoteFile.id)
-                            val driveTime = metadata?.modifiedTime?.value ?: 0L
-                            if (driveTime > 0L) {
-                                bookRepository.updateLastModified(bookId, driveTime)
-                            }
-                        } else {
-                            syncLogProvider.addLogEntry("Update der Cloud-Datei fehlgeschlagen", bookId, book.name, isError = true)
-                        }
-                        success = updateSuccess
-                    } else if (remoteLastModified > localLastModified + 2000) {
-                        logger.d(TAG, "Remote version is newer. Downloading and importing...")
-                        success = downloadAndImport(helper, remoteFile.id, remoteFile.name, book, remoteLastModified, onProgress)
-                    } else {
-                        logger.d(TAG, "Local and remote versions are synchronized.")
-                        syncLogProvider.addLogEntry("Lokal und Cloud sind synchron", bookId, book.name)
-                        success = true
                     }
                 }
             }
+            
+            if (tempFile.exists()) {
+                tempFile.delete()
+            }
+        } else {
+            logger.d(TAG, "Book sync mode is OFF. Skipping book synchronization.")
+            syncLogProvider.addLogEntry("Buch-Synchronisierung deaktiviert (Aus)", bookId, book.name)
         }
         
-        if (tempFile.exists()) {
-            tempFile.delete()
-        }
-        
-        // Sync TTS cache separately after book sync
-        if (success) {
+        // Sync TTS cache separately after book sync if enabled
+        val ttsModeStr = settingsRepository.syncModeTts
+        if (success && ttsModeStr != "OFF") {
+            val ttsMode = try {
+                SyncMode.valueOf(ttsModeStr)
+            } catch (_: Exception) {
+                SyncMode.TWO_WAY
+            }
             try {
-                syncTtsCache(drive, folderId, syncMode, onProgress)
+                syncTtsCache(drive, folderId, ttsMode, onProgress)
             } catch (e: Exception) {
                 logger.e(TAG, "TTS cache sync failed (non-fatal)", e)
             }
+        } else if (ttsModeStr == "OFF") {
+            logger.d(TAG, "TTS cache sync mode is OFF. Skipping TTS cache sync.")
         }
         
         logger.d(TAG, "Sync process finished with status: $success")

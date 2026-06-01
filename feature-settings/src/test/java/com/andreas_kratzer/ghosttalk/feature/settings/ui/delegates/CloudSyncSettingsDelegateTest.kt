@@ -39,6 +39,7 @@ class CloudSyncSettingsDelegateTest {
     private lateinit var setCloudSyncEnabledUseCase: SetCloudSyncEnabledUseCase
     private lateinit var performManualSyncUseCase: PerformManualSyncUseCase
     private lateinit var cloudSyncUseCase: CloudSyncUseCase
+    private lateinit var getDriveFoldersUseCase: com.andreas_kratzer.ghosttalk.core.cloud.domain.GetDriveFoldersUseCase
     private lateinit var signInUseCase: SignInUseCase
     private lateinit var signOutUseCase: SignOutUseCase
     private lateinit var syncLogProvider: SyncLogProvider
@@ -58,6 +59,7 @@ class CloudSyncSettingsDelegateTest {
         setCloudSyncEnabledUseCase = mockk(relaxed = true)
         performManualSyncUseCase = mockk(relaxed = true)
         cloudSyncUseCase = mockk(relaxed = true)
+        getDriveFoldersUseCase = mockk(relaxed = true)
         signInUseCase = mockk(relaxed = true)
         signOutUseCase = mockk(relaxed = true)
         syncLogProvider = mockk(relaxed = true)
@@ -65,15 +67,16 @@ class CloudSyncSettingsDelegateTest {
         every { googleAuthManager.userEmail } returns userEmailFlow
 
         delegate = CloudSyncSettingsDelegate(
-            application,
-            googleAuthManager,
-            settingsRepository,
-            setCloudSyncEnabledUseCase,
-            performManualSyncUseCase,
-            cloudSyncUseCase,
-            signInUseCase,
-            signOutUseCase,
-            syncLogProvider
+            application = application,
+            authManager = googleAuthManager,
+            settingsRepository = settingsRepository,
+            setCloudSyncEnabledUseCase = setCloudSyncEnabledUseCase,
+            performManualSyncUseCase = performManualSyncUseCase,
+            cloudSyncUseCase = cloudSyncUseCase,
+            getDriveFoldersUseCase = getDriveFoldersUseCase,
+            signInUseCase = signInUseCase,
+            signOutUseCase = signOutUseCase,
+            syncLogProvider = syncLogProvider
         )
     }
 
@@ -133,7 +136,7 @@ class CloudSyncSettingsDelegateTest {
             com.andreas_kratzer.ghosttalk.core.cloud.domain.RemoteBackupInfo("id", "file", "book", 123L)
         )
         
-        delegate.fetchAvailableBackupsForImport(testScope)
+        delegate.fetchAvailableBackupsForImport(scope = testScope)
         testDispatcher.scheduler.advanceUntilIdle()
         
         assert(delegate.availableBackups.value.isNotEmpty())
