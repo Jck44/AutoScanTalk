@@ -87,16 +87,16 @@
     <string name="settings_cloud_sync_mode_tts">TTS-Cache-Synchronisierung</string>
     <string name="settings_cloud_sync_mode_stats">Statistik-Übertragung</string>
     <string name="settings_cloud_sync_mode_two_way">2-Wege (Sichern &amp; Wiederherstellen)</string>
-    <string name="settings_cloud_sync_mode_backup">Einseitig (Nur Sicherung zu Google Drive)</string>
-    <string name="settings_cloud_sync_mode_restore">Einseitig (Nur Wiederherstellung von Google Drive)</string>
+    <string name="settings_cloud_sync_mode_backup">Einseitig (Nur Sicherung)</string>
+    <string name="settings_cloud_sync_mode_restore">Einseitig (Nur Wiederherstellung)</string>
     <string name="settings_cloud_sync_now">Synchronisieren</string>
     <string name="settings_cloud_backup_now">Sicherung</string>
     <string name="settings_cloud_restore_now">Wiederherstellen</string>
-    <string name="settings_cloud_sync_started">Cloud-Abgleich gestartet…</string>
+    <string name="settings_cloud_sync_started">Synchronisierung gestartet…</string>
     <string name="settings_cloud_sync_success">Synchronisierung erfolgreich abgeschlossen.</string>
     <string name="settings_cloud_backup_success">Sicherung erfolgreich erstellt.</string>
     <string name="settings_cloud_restore_success">Wiederherstellung erfolgreich abgeschlossen.</string>
-    <string name="settings_cloud_sync_error">Fehler beim Cloud-Abgleich: %1$s</string>
+    <string name="settings_cloud_sync_error">Fehler bei der Synchronisierung: %1$s</string>
     <string name="settings_cloud_backup_selection_title">Sicherung auswählen</string>
     <string name="settings_cloud_backup_selection_description">Es wurde keine passende Sicherung für dieses Buch gefunden. Bitte wähle eine Sicherung aus der Liste aus:</string>
     <string name="settings_cloud_backup_date_format">Sicherungsdatum: %1$s</string>
@@ -134,11 +134,11 @@
     <string name="restore_progress_extracting">Dateien werden entpackt: %s</string>
     <string name="restore_progress_importing">Daten werden importiert…</string>
     <string name="restore_progress_complete">Wiederherstellung abgeschlossen.</string>
-    <string name="cloud_progress_uploading">Cloud-Backup: Datei wird hochgeladen…</string>
-    <string name="cloud_progress_downloading">Cloud-Restore: Datei wird heruntergeladen…</string>
-    <string name="book_import_cloud_success">Buch erfolgreich aus der Cloud geladen.</string>
-    <string name="book_import_cloud_error">Fehler beim Laden aus der Cloud: %s</string>
-    <string name="settings_cloud_logs_title">Cloud Sync Protokoll</string>
+    <string name="cloud_progress_uploading">Sicherung: Datei wird übertragen…</string>
+    <string name="cloud_progress_downloading">Wiederherstellung: Datei wird übertragen…</string>
+    <string name="book_import_cloud_success">Buch erfolgreich importiert.</string>
+    <string name="book_import_cloud_error">Fehler beim Importieren: %s</string>
+    <string name="settings_cloud_logs_title">Sync Protokoll</string>
     <string name="settings_cloud_logs_clear">Protokoll löschen</string>
     <string name="settings_cloud_logs_empty">Noch keine Sync-Einträge vorhanden.</string>
     <string name="settings_cloud_logs_view">Verlauf anzeigen</string>
@@ -263,9 +263,9 @@
     <string name="settings_category_cloud_account">Google Konto</string>
     <string name="settings_cloud_sign_in">Anmelden</string>
     <string name="settings_cloud_sign_out">Abmelden</string>
-    <string name="settings_category_cloud_import">Google Drive Import</string>
-    <string name="settings_cloud_import_as_new">Cloud-Import</string>
-    <string name="settings_cloud_import_explanation">Importiere ein Buch aus deinem Google Drive als neues Buch. Ein Überschreiben lokaler Bücher mit der gleichen ID wird verhindert.</string>
+    <string name="settings_category_cloud_import">Import (Sync-Ziel)</string>
+    <string name="settings_cloud_import_as_new">Importieren (Sync-Ziel)</string>
+    <string name="settings_cloud_import_explanation">Importiere ein Buch aus dem konfigurierten Sync-Ziel als neues Buch. Ein Überschreiben lokaler Bücher mit der gleichen ID wird verhindert.</string>
     <string name="page_list_show">Seiten verwalten</string>
 
     <!-- Smart Home -->
@@ -388,4 +388,19 @@
     <string name="settings_stats_interval_6h">6 Stunden (Grobe Tageszeit)</string>
     <string name="settings_stats_interval_12h">12 Stunden (Tag/Nacht)</string>
     <string name="settings_stats_interval_24h">24 Stunden (Kalendertag)</string>
+
+    <!-- Sync Target Settings -->
+    <string name="settings_sync_target_category">Backup-Speichertyp &amp; Ort</string>
+    <string name="settings_sync_target_type">Sync-Ziel (Speichertyp)</string>
+    <string name="settings_sync_target_drive_api">Google Drive API (Standard)</string>
+    <string name="settings_sync_target_saf">Android Ordner-Auswahl (SAF)</string>
+    <string name="settings_sync_drive_location">Speicherort im Google Drive</string>
+    <string name="settings_sync_drive_default_folder">Standard (GhosTTalk_Sync)</string>
+    <string name="settings_sync_change">Ändern</string>
+    <string name="settings_sync_enter_link">Link eingeben</string>
+    <string name="settings_sync_reset_default">Auf Standard zurücksetzen</string>
+    <string name="settings_sync_selected_saf_folder">Ausgewählter Android-Ordner</string>
+    <string name="settings_sync_no_folder_selected">Kein Ordner ausgewählt</string>
+    <string name="settings_sync_select_button">Auswählen</string>
+    <string name="settings_sync_saf_description">Ermöglicht den Zugriff auf geteilte Google Drive Ordner über die Google Drive App. Der Hintergrund-Sync erfordert, dass die Dateien lokal auf dem Gerät verfügbar gehalten werden.</string>
 </resources>

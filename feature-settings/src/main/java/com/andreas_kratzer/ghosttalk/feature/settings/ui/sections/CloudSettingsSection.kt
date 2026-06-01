@@ -49,7 +49,8 @@ fun CloudSettingsSection(
     isGlobal: Boolean,
     onLocalExport: () -> Unit,
     onLocalImport: () -> Unit,
-    onSelectSafFolder: () -> Unit = {}
+    onSelectSafFolder: () -> Unit = {},
+    onSelectSafFolderForImport: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val userEmail by viewModel.userEmail.collectAsState()
@@ -188,36 +189,49 @@ fun CloudSettingsSection(
         }
 
         if (isGlobal) {
-            // Global Mode: Only show "Import as New Book"
+            // Global Mode: Show Google Drive and SAF folder import options independently
             PreferenceCategory(stringResource(R.string.settings_category_cloud_import)) {
+                // Option 1: Google Drive API
                 Button(
-                    onClick = { 
-                        showImportFolderPicker = true
-                    },
+                    onClick = { showImportFolderPicker = true },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = userEmail != null && !isSyncing
                 ) {
                     Icon(GhostTalkIcons.Cloud, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(stringResource(R.string.settings_cloud_import_as_new))
+                    Text("Über Google Drive API importieren")
                 }
+
                 Spacer(modifier = Modifier.height(8.dp))
+
                 OutlinedButton(
-                    onClick = { 
-                        showManualImportUrlDialog = true
-                    },
+                    onClick = { showManualImportUrlDialog = true },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = userEmail != null && !isSyncing
                 ) {
                     Icon(GhostTalkIcons.Cloud, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Aus geteiltem Ordner importieren (Link)")
+                    Text("Aus geteiltem Drive-Ordner importieren (Link)")
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Option 2: SAF
+                Button(
+                    onClick = onSelectSafFolderForImport,
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isSyncing
+                ) {
+                    Icon(GhostTalkIcons.Cloud, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Aus Android-Ordner importieren (SAF)")
+                }
+
                 Text(
                     text = stringResource(R.string.settings_cloud_import_explanation),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 8.dp)
+                    modifier = Modifier.padding(top = 12.dp)
                 )
             }
 
@@ -252,14 +266,18 @@ fun CloudSettingsSection(
             }
         } else {
             // Book-Scoped Mode: Show Sync Settings and manual buttons
-            PreferenceCategory("Backup-Speichertyp & Ort") {
-                val targetLabel = if (syncTargetType == "LOCAL_FOLDER_SAF") "Android Ordner-Auswahl (SAF)" else "Google Drive API (Standard)"
+            PreferenceCategory(stringResource(R.string.settings_sync_target_category)) {
+                val targetLabel = if (syncTargetType == "LOCAL_FOLDER_SAF") {
+                    stringResource(R.string.settings_sync_target_saf)
+                } else {
+                    stringResource(R.string.settings_sync_target_drive_api)
+                }
                 SettingsDropdownItem(
-                    label = "Sync-Ziel (Speichertyp)",
+                    label = stringResource(R.string.settings_sync_target_type),
                     selectedOption = targetLabel,
                     options = listOf(
-                        "Google Drive API (Standard)" to { viewModel.setSyncTargetType("DRIVE_API") },
-                        "Android Ordner-Auswahl (SAF)" to { viewModel.setSyncTargetType("LOCAL_FOLDER_SAF") }
+                        stringResource(R.string.settings_sync_target_drive_api) to { viewModel.setSyncTargetType("DRIVE_API") },
+                        stringResource(R.string.settings_sync_target_saf) to { viewModel.setSyncTargetType("LOCAL_FOLDER_SAF") }
                     )
                 )
 
@@ -272,21 +290,21 @@ fun CloudSettingsSection(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Speicherort im Google Drive",
+                                text = stringResource(R.string.settings_sync_drive_location),
                                 style = MaterialTheme.typography.bodyMedium
                             )
                             Text(
-                                text = googleDriveFolderName ?: "Standard (GhosTTalk_Sync)",
+                                text = googleDriveFolderName ?: stringResource(R.string.settings_sync_drive_default_folder),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }
                         TextButton(onClick = { showFolderPicker = true }, enabled = userEmail != null) {
-                            Text("Ändern")
+                            Text(stringResource(R.string.settings_sync_change))
                         }
                         Spacer(modifier = Modifier.width(8.dp))
                         TextButton(onClick = { showManualUrlDialog = true }, enabled = userEmail != null) {
-                            Text("Link eingeben")
+                            Text(stringResource(R.string.settings_sync_enter_link))
                         }
                     }
                     if (googleDriveFolderId != null) {
@@ -294,7 +312,7 @@ fun CloudSettingsSection(
                             onClick = { viewModel.selectDriveFolder(null, null) },
                             modifier = Modifier.padding(top = 4.dp)
                         ) {
-                            Text("Auf Standard zurücksetzen", style = MaterialTheme.typography.labelSmall)
+                            Text(stringResource(R.string.settings_sync_reset_default), style = MaterialTheme.typography.labelSmall)
                         }
                     }
                 } else {
@@ -304,21 +322,21 @@ fun CloudSettingsSection(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Ausgewählter Android-Ordner",
+                                text = stringResource(R.string.settings_sync_selected_saf_folder),
                                 style = MaterialTheme.typography.bodyMedium
                             )
                             Text(
-                                text = localFolderSafName ?: "Kein Ordner ausgewählt",
+                                text = localFolderSafName ?: stringResource(R.string.settings_sync_no_folder_selected),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = if (localFolderSafUri != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
                             )
                         }
                         Button(onClick = onSelectSafFolder) {
-                            Text("Auswählen")
+                            Text(stringResource(R.string.settings_sync_select_button))
                         }
                     }
                     Text(
-                        text = "Ermöglicht den Zugriff auf geteilte Google Drive Ordner über die Google Drive App. Der Hintergrund-Sync erfordert, dass die Dateien lokal auf dem Gerät verfügbar gehalten werden.",
+                        text = stringResource(R.string.settings_sync_saf_description),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 8.dp)

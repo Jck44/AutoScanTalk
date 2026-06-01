@@ -411,4 +411,51 @@ class PageViewModelTest {
         mockCallStateFlow.value = com.andreas_kratzer.ghosttalk.core.call.CallState.NONE
         testScheduler.runCurrent()
     }
+
+    @Test
+    fun `suggestRowName returns category suggestion based on row buttons`() = runTest {
+        // Mock Gemini enabled
+        every { settingsRepository.isGeminiEnabled } returns true
+        
+        // Mock Gemini response
+        coEvery { geminiUseCase.generateResponse(any()) } returns "Obst"
+
+        val pageId = "p1"
+        val button1 = ButtonConfig(label = "Apfel")
+        val button2 = ButtonConfig(label = "Banane")
+        
+        val buttonConfigs = MutableList<ButtonConfig?>(49) { null }
+        buttonConfigs[0] = button1
+        buttonConfigs[1] = button2
+        
+        val page = Page(id = pageId, bookId = "b1", name = "P1", rows = 4, columns = 4, buttonConfigs = buttonConfigs)
+        every { getPagesUseCase.execute(any()) } returns MutableStateFlow<List<Page>>(listOf(page))
+
+        viewModel = createViewModel()
+        testScheduler.runCurrent()
+
+        var suggestionResult = ""
+        viewModel.suggestRowName(pageId, rowIndex = 0) { result ->
+            suggestionResult = result
+        }
+        testScheduler.advanceUntilIdle()
+
+        assertEquals("Obst", suggestionResult)
+    }
+
+    @Test
+    fun `suggestRowName returns empty when Gemini is disabled`() = runTest {
+        every { settingsRepository.isGeminiEnabled } returns false
+
+        viewModel = createViewModel()
+        testScheduler.runCurrent()
+
+        var suggestionResult = "initial"
+        viewModel.suggestRowName("p1", rowIndex = 0) { result ->
+            suggestionResult = result
+        }
+        testScheduler.advanceUntilIdle()
+
+        assertEquals("", suggestionResult)
+    }
 }

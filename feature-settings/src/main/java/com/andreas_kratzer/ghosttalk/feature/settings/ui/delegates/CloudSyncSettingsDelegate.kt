@@ -70,6 +70,9 @@ class CloudSyncSettingsDelegate @Inject constructor(
     private val _isBrowsingFolders = MutableStateFlow(false)
     val isBrowsingFolders: StateFlow<Boolean> = _isBrowsingFolders.asStateFlow()
 
+    private var lastImportSafUri: String? = null
+    private var lastImportSafName: String? = null
+
     fun loadSyncLogs(scope: CoroutineScope) {
         scope.launch {
             _syncLogs.value = syncLogProvider.loadSavedLogs()
@@ -201,32 +204,61 @@ class CloudSyncSettingsDelegate @Inject constructor(
         fetchAvailableBackupsForImport(folderId, scope)
     }
 
-    fun fetchAvailableBackupsForImport(folderId: String? = null, scope: CoroutineScope) {
+    fun fetchAvailableBackupsFromSaf(uri: String, name: String, scope: CoroutineScope) {
+        lastImportSafUri = uri
+        lastImportSafName = name
         scope.launch {
-            val credential = authManager.getGoogleCredential()
-            if (credential == null) {
-                Toast.makeText(application, "Kein Cloud-Konto verbunden.", Toast.LENGTH_LONG).show()
-                return@launch
-            }
             _isSyncing.value = true
             try {
-                val drive = com.google.api.services.drive.Drive.Builder(
-                    com.google.api.client.http.javanet.NetHttpTransport(),
-                    com.google.api.client.json.gson.GsonFactory.getDefaultInstance(),
-                    credential
-                ).setApplicationName("GhostTalk").build()
-
-                val backups = cloudSyncUseCase.getAvailableBackups(drive, folderId)
+                val backups = cloudSyncUseCase.getAvailableBackups(null, uri)
                 _availableBackups.value = backups
                 if (backups.isEmpty()) {
-                    Toast.makeText(application, "Keine Backups in diesem Ordner gefunden.", Toast.LENGTH_LONG).show()
+                    Toast.makeText(application, "Keine Backups in dem ausgewählten Ordner gefunden.", Toast.LENGTH_LONG).show()
                 } else {
                     _showBackupSelectionDialog.value = true
                 }
-            } catch (e: UserRecoverableAuthIOException) {
-                _authIntentFlow.emit(e.intent)
             } catch (e: Exception) {
                 Toast.makeText(application, "Fehler beim Laden der Backups: ${e.message}", Toast.LENGTH_LONG).show()
+            } finally {
+                _isSyncing.value = false
+            }
+        }
+    }
+
+    fun fetchAvailableBackupsForImport(folderId: String? = null, scope: CoroutineScope) {
+        scope.launch {
+            val targetType = settingsRepository.syncTargetType
+            val isSaf = targetType == "LOCAL_FOLDER_SAF"
+            _isSyncing.value = true
+            try {
+                val backups = if (isSaf) {
+                    cloudSyncUseCase.getAvailableBackups(null, null)
+                } else {
+                    val credential = authManager.getGoogleCredential()
+                    if (credential == null) {
+                        Toast.makeText(application, "Kein Cloud-Konto verbunden.", Toast.LENGTH_LONG).show()
+                        return@launch
+                    }
+                    val drive = com.google.api.services.drive.Drive.Builder(
+                        com.google.api.client.http.javanet.NetHttpTransport(),
+                        com.google.api.client.json.gson.GsonFactory.getDefaultInstance(),
+                        credential
+                    ).setApplicationName("GhostTalk").build()
+                    cloudSyncUseCase.getAvailableBackups(drive, folderId)
+                }
+
+                _availableBackups.value = backups
+                if (backups.isEmpty()) {
+                    Toast.makeText(application, "Keine Backups gefunden.", Toast.LENGTH_LONG).show()
+                } else {
+                    _showBackupSelectionDialog.value = true
+                }
+            } catch (e: Exception) {
+                if (e is UserRecoverableAuthIOException) {
+                    _authIntentFlow.emit(e.intent)
+                } else {
+                    Toast.makeText(application, "Fehler beim Laden der Backups: ${e.message}", Toast.LENGTH_LONG).show()
+                }
             } finally {
                 _isSyncing.value = false
             }
@@ -237,38 +269,58 @@ class CloudSyncSettingsDelegate @Inject constructor(
         backupInfo: RemoteBackupInfo, 
         scope: CoroutineScope, 
         onProgress: (Float, String) -> Unit = { _, _ -> },
-        onImported: (String) -> Unit = {}
+        onImported: (String) -> Unit = {},
+        onComplete: () -> Unit = {}
     ) {
         _showBackupSelectionDialog.value = false
         scope.launch {
-            val credential = authManager.getGoogleCredential() ?: return@launch
+            val isSaf = backupInfo.fileId.startsWith("content://")
             _isSyncing.value = true
             Toast.makeText(application, "Import wird gestartet...", Toast.LENGTH_SHORT).show()
             
             try {
-                val drive = com.google.api.services.drive.Drive.Builder(
-                    com.google.api.client.http.javanet.NetHttpTransport(),
-                    com.google.api.client.json.gson.GsonFactory.getDefaultInstance(),
-                    credential
-                ).setApplicationName("GhostTalk").build()
+                val drive = if (isSaf) {
+                    null
+                } else {
+                    val credential = authManager.getGoogleCredential()
+                    if (credential == null) {
+                        Toast.makeText(application, "Anmeldung fehlgeschlagen.", Toast.LENGTH_LONG).show()
+                        return@launch
+                    }
+                    com.google.api.services.drive.Drive.Builder(
+                        com.google.api.client.http.javanet.NetHttpTransport(),
+                        com.google.api.client.json.gson.GsonFactory.getDefaultInstance(),
+                        credential
+                    ).setApplicationName("GhostTalk").build()
+                }
 
                 val result = cloudSyncUseCase.importCloudBackup(drive, backupInfo.fileId, backupInfo.fileName, onProgress)
                 if (result.isSuccess) {
                     val bookId = result.getOrThrow()
                     settingsRepository.activeBookId = bookId
+                    
+                    // Adopt SAF folder as the sync target if we just imported via SAF
+                    if (isSaf && lastImportSafUri != null) {
+                        settingsRepository.syncTargetType = "LOCAL_FOLDER_SAF"
+                        settingsRepository.localFolderSafUri = lastImportSafUri
+                        settingsRepository.localFolderSafName = lastImportSafName
+                    }
+                    
                     Toast.makeText(application, R.string.book_import_cloud_success, Toast.LENGTH_LONG).show()
                     onImported(bookId)
                 } else {
                     val errorMsg = application.getString(R.string.book_import_cloud_error, result.exceptionOrNull()?.message ?: "Unbekannter Fehler")
                     Toast.makeText(application, errorMsg, Toast.LENGTH_LONG).show()
                 }
-            } catch (e: UserRecoverableAuthIOException) {
-                _authIntentFlow.emit(e.intent)
             } catch (e: Exception) {
-                val errorMsg = application.getString(R.string.book_import_cloud_error, e.message ?: "Unerwarteter Fehler")
-                Toast.makeText(application, errorMsg, Toast.LENGTH_LONG).show()
+                if (e is UserRecoverableAuthIOException) {
+                    _authIntentFlow.emit(e.intent)
+                } else {
+                    Toast.makeText(application, "Fehler beim Importieren: ${e.message}", Toast.LENGTH_LONG).show()
+                }
             } finally {
                 _isSyncing.value = false
+                onComplete()
             }
         }
     }

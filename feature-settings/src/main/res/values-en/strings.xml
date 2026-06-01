@@ -88,16 +88,16 @@
     <string name="settings_cloud_sync_mode_tts">TTS Cache Synchronization</string>
     <string name="settings_cloud_sync_mode_stats">Statistics Sync</string>
     <string name="settings_cloud_sync_mode_two_way">2-Way (Backup &amp; Restore)</string>
-    <string name="settings_cloud_sync_mode_backup">1-Way (Backup to Google Drive only)</string>
-    <string name="settings_cloud_sync_mode_restore">1-Way (Restore from Google Drive only)</string>
+    <string name="settings_cloud_sync_mode_backup">1-Way (Backup only)</string>
+    <string name="settings_cloud_sync_mode_restore">1-Way (Restore only)</string>
     <string name="settings_cloud_sync_now">Synchronize</string>
     <string name="settings_cloud_backup_now">Backup now</string>
     <string name="settings_cloud_restore_now">Restore now</string>
-    <string name="settings_cloud_sync_started">Cloud synchronization started…</string>
+    <string name="settings_cloud_sync_started">Synchronization started…</string>
     <string name="settings_cloud_sync_success">Synchronization completed successfully.</string>
     <string name="settings_cloud_backup_success">Backup created successfully.</string>
     <string name="settings_cloud_restore_success">Restore completed successfully.</string>
-    <string name="settings_cloud_sync_error">Cloud synchronization error: %1$s</string>
+    <string name="settings_cloud_sync_error">Synchronization error: %1$s</string>
     <string name="settings_cloud_backup_selection_title">Select Backup</string>
     <string name="settings_cloud_backup_selection_description">No matching backup found for this book. Please select a backup from the list below:</string>
     <string name="settings_cloud_backup_date_format">Backup date: %1$s</string>
@@ -120,9 +120,9 @@
     <string name="elevenlabs_stability_desc">Determines how expressive or neutral the voice sounds.</string>
     <string name="elevenlabs_similarity_boost">Similarity Boost</string>
     <string name="elevenlabs_similarity_boost_desc">Enhances the original character of the voice.</string>
-    <string name="book_import_cloud_success">Book successfully loaded from cloud.</string>
-    <string name="book_import_cloud_error">Error loading from cloud: %s</string>
-    <string name="settings_cloud_logs_title">Cloud Sync Log</string>
+    <string name="book_import_cloud_success">Book successfully imported.</string>
+    <string name="book_import_cloud_error">Error importing: %s</string>
+    <string name="settings_cloud_logs_title">Sync Log</string>
     <string name="settings_cloud_logs_clear">Clear Log</string>
     <string name="settings_cloud_logs_empty">No sync entries existing yet.</string>
     <string name="settings_cloud_logs_view">View History</string>
@@ -242,9 +242,9 @@
     <string name="settings_category_cloud_account">Google Account</string>
     <string name="settings_cloud_sign_in">Sign In</string>
     <string name="settings_cloud_sign_out">Sign Out</string>
-    <string name="settings_category_cloud_import">Google Drive Import</string>
-    <string name="settings_cloud_import_as_new">Cloud Import</string>
-    <string name="settings_cloud_import_explanation">Import a book from your Google Drive as a new book. Existing local books with the same ID will not be overwritten.</string>
+    <string name="settings_category_cloud_import">Import (Sync Target)</string>
+    <string name="settings_cloud_import_as_new">Import (Sync Target)</string>
+    <string name="settings_cloud_import_explanation">Import a book from the configured sync target as a new book. Existing local books with the same ID will not be overwritten.</string>
     <string name="page_list_show">Manage Pages</string>
 
     <!-- Smart Home -->
@@ -286,8 +286,8 @@
     <string name="restore_progress_extracting">Extracting files: %s</string>
     <string name="restore_progress_importing">Importing data…</string>
     <string name="restore_progress_complete">Restore completed successfully.</string>
-    <string name="cloud_progress_uploading">Cloud Backup: Uploading file…</string>
-    <string name="cloud_progress_downloading">Cloud Restore: Downloading file…</string>
+    <string name="cloud_progress_uploading">Backup: Transferring file…</string>
+    <string name="cloud_progress_downloading">Restore: Transferring file…</string>
     <string name="elevenlabs_api_key_saved_google">API Key saved to Google Password Manager.</string>
     <string name="elevenlabs_api_key_imported_google">API Key imported from Google Password Manager.</string>
     <string name="elevenlabs_api_key_not_found_google">No API Key found in Google Password Manager.</string>
@@ -387,4 +387,19 @@
     <string name="settings_stats_interval_6h">6 Hours (Rough time of day)</string>
     <string name="settings_stats_interval_12h">12 Hours (Day/Night)</string>
     <string name="settings_stats_interval_24h">24 Hours (Calendar day)</string>
+
+    <!-- Sync Target Settings -->
+    <string name="settings_sync_target_category">Backup Storage Type &amp; Location</string>
+    <string name="settings_sync_target_type">Sync Target (Storage Type)</string>
+    <string name="settings_sync_target_drive_api">Google Drive API (Default)</string>
+    <string name="settings_sync_target_saf">Android Folder Picker (SAF)</string>
+    <string name="settings_sync_drive_location">Storage Location in Google Drive</string>
+    <string name="settings_sync_drive_default_folder">Default (GhosTTalk_Sync)</string>
+    <string name="settings_sync_change">Change</string>
+    <string name="settings_sync_enter_link">Enter Link</string>
+    <string name="settings_sync_reset_default">Reset to Default</string>
+    <string name="settings_sync_selected_saf_folder">Selected Android Folder</string>
+    <string name="settings_sync_no_folder_selected">No folder selected</string>
+    <string name="settings_sync_select_button">Select</string>
+    <string name="settings_sync_saf_description">Enables access to shared Google Drive folders via the Google Drive app. Background sync requires files to be kept available locally on the device.</string>
 </resources>

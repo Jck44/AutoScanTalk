@@ -166,6 +166,24 @@ fun SettingsScreen(
         }
     }
 
+    val safImportFolderLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocumentTree()
+    ) { uri ->
+        uri?.let {
+            val takeFlags: Int = Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            try {
+                context.contentResolver.takePersistableUriPermission(it, takeFlags)
+                val doc = androidx.documentfile.provider.DocumentFile.fromTreeUri(context, it)
+                val displayName = doc?.name ?: it.lastPathSegment ?: "Ausgewählter SAF-Ordner"
+                viewModel.fetchAvailableBackupsFromSaf(it.toString(), displayName)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Toast.makeText(context, "Fehler beim Importieren: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
     BackHandler {
         if (selectedSection == null) {
             onNavigateBack()
@@ -205,7 +223,8 @@ fun SettingsScreen(
                 },
                 onLocalExport = { localExportLauncher.launch("GhostTalk_Backup.zip") },
                 onLocalImport = { localImportLauncher.launch("*/*") },
-                onSelectSafFolder = { safFolderLauncher.launch(null) }
+                onSelectSafFolder = { safFolderLauncher.launch(null) },
+                onSelectSafFolderForImport = { safImportFolderLauncher.launch(null) }
             )
         }
     }
@@ -360,7 +379,8 @@ private fun SettingsSubMenu(
     onLockClicked: () -> Unit,
     onLocalExport: () -> Unit,
     onLocalImport: () -> Unit,
-    onSelectSafFolder: () -> Unit
+    onSelectSafFolder: () -> Unit,
+    onSelectSafFolderForImport: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -378,7 +398,8 @@ private fun SettingsSubMenu(
             onLockClicked = onLockClicked,
             onLocalExport = onLocalExport,
             onLocalImport = onLocalImport,
-            onSelectSafFolder = onSelectSafFolder
+            onSelectSafFolder = onSelectSafFolder,
+            onSelectSafFolderForImport = onSelectSafFolderForImport
         )
         Spacer(modifier = Modifier.height(dimensions.paddingDoubleExtraLarge * 2))
     }
@@ -486,7 +507,8 @@ fun SubmenuContent(
     onLockClicked: () -> Unit = {},
     onLocalExport: () -> Unit = {},
     onLocalImport: () -> Unit = {},
-    onSelectSafFolder: () -> Unit = {}
+    onSelectSafFolder: () -> Unit = {},
+    onSelectSafFolderForImport: () -> Unit = {}
 ) {
     when (section) {
         SettingsSection.GENERAL -> {
@@ -533,7 +555,8 @@ fun SubmenuContent(
                 isGlobal = isGlobal,
                 onLocalExport = onLocalExport,
                 onLocalImport = onLocalImport,
-                onSelectSafFolder = onSelectSafFolder
+                onSelectSafFolder = onSelectSafFolder,
+                onSelectSafFolderForImport = onSelectSafFolderForImport
             )
         }
         SettingsSection.SMART_HOME -> {

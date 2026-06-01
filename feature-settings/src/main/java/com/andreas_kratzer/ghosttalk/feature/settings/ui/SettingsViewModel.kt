@@ -399,18 +399,23 @@ class SettingsViewModel @Inject constructor(
     
     fun fetchAvailableBackupsForImport(folderId: String? = null) = cloudSyncDelegate.fetchAvailableBackupsForImport(folderId, viewModelScope)
     fun fetchAvailableBackupsForImportByUrlOrId(urlOrId: String) = cloudSyncDelegate.fetchAvailableBackupsForImportByUrlOrId(urlOrId, viewModelScope)
+    fun fetchAvailableBackupsFromSaf(uri: String, name: String) = cloudSyncDelegate.fetchAvailableBackupsFromSaf(uri, name, viewModelScope)
     
     fun importCloudBackup(backupInfo: com.andreas_kratzer.ghosttalk.core.cloud.domain.RemoteBackupInfo) {
         backupDelegate.setBackupRestoreRunning(true)
         backupDelegate.setBackupRestoreProgress(0f)
-        cloudSyncDelegate.importCloudBackup(backupInfo, viewModelScope, { p, s -> 
-            backupDelegate.handleCloudProgress(p, s)
-        }) { _ ->
-            viewModelScope.launch {
-                delay(1000)
-                backupDelegate.setBackupRestoreRunning(false)
+        cloudSyncDelegate.importCloudBackup(
+            backupInfo = backupInfo,
+            scope = viewModelScope,
+            onProgress = { p, s -> backupDelegate.handleCloudProgress(p, s) },
+            onImported = { _ -> },
+            onComplete = {
+                viewModelScope.launch {
+                    delay(500)
+                    backupDelegate.setBackupRestoreRunning(false)
+                }
             }
-        }
+        )
     }
     fun dismissBackupSelectionDialog() = cloudSyncDelegate.dismissBackupSelectionDialog()
 

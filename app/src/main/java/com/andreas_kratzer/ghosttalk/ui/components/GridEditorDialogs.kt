@@ -76,6 +76,9 @@ fun EditorDialogs(
             onSave = { newName ->
                 actions.updateRowName(item.id, editingRowIndex, newName)
                 onDismissRowDialog()
+            },
+            onSuggestName = { callback ->
+                actions.suggestRowName(item.id, editingRowIndex, callback)
             }
         )
     }

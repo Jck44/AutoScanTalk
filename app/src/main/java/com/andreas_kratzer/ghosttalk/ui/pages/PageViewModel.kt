@@ -67,7 +67,7 @@ class PageViewModel @Inject constructor(
     updateSmartPredictionsUseCase: UpdateSmartPredictionsUseCase,
     val actionExecutor: ActionExecutor,
     private val scanCoordinator: ScanCoordinator,
-    geminiUseCase: GeminiUseCase,
+    private val geminiUseCase: GeminiUseCase,
     private val buttonTemplateRepository: ButtonTemplateRepository,
     val systemCallManager: com.andreas_kratzer.ghosttalk.core.call.SystemCallManager,
     val philipsHueManager: PhilipsHueManager,
@@ -487,6 +487,48 @@ class PageViewModel @Inject constructor(
 
     override fun updateRowName(itemId: String, rowIndex: Int, newName: String) {
         pageManagementDelegate.updateRowName(itemId, rowIndex, newName)
+    }
+
+    override fun suggestRowName(itemId: String, rowIndex: Int, onResult: (String) -> Unit) {
+        val page = pageManagementDelegate.unfilteredPages.value.find { it.id == itemId }
+        if (page == null) {
+            onResult("")
+            return
+        }
+
+        if (!settingsRepository.isGeminiEnabled) {
+            android.widget.Toast.makeText(getApplication(), "Gemini ist in den Einstellungen deaktiviert.", android.widget.Toast.LENGTH_SHORT).show()
+            onResult("")
+            return
+        }
+
+        val columns = page.columns
+        val labels = (0 until columns).mapNotNull { c ->
+            val globalIndex = rowIndex * com.andreas_kratzer.ghosttalk.core.util.GridUtils.MAX_GRID_SIZE + c
+            val config = page.buttonConfigs.getOrNull(globalIndex)
+            if (config != null && config.isActive && config.label.isNotBlank()) {
+                config.label
+            } else null
+        }
+
+        if (labels.isEmpty()) {
+            android.widget.Toast.makeText(getApplication(), "Keine aktiven Buttons in dieser Zeile vorhanden.", android.widget.Toast.LENGTH_SHORT).show()
+            onResult("")
+            return
+        }
+
+        viewModelScope.launch {
+            try {
+                val prompt = "Analysiere diese Liste von Begriffen, die sich in einer Zeile auf einer Kommunikations-Tafel für Unterstützte Kommunikation befinden: ${labels.joinToString(", ")}. Schlage einen einzigen, kurzen Begriff (maximal 2 Wörter) vor, der als Name für diese Zeile dienen kann. Antworte NUR mit diesem Begriff, ohne Satzzeichen, Anführungszeichen oder zusätzliche Erklärungen."
+                val response = geminiUseCase.generateResponse(prompt)
+                val cleaned = response.trim().removeSurrounding("\"").removeSurrounding("'").trim()
+                onResult(cleaned)
+            } catch (e: Exception) {
+                Log.e("PageViewModel", "Error generating row name suggestion", e)
+                android.widget.Toast.makeText(getApplication(), "Fehler bei der Generierung: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
+                onResult("")
+            }
+        }
     }
 
     override fun moveRow(itemId: String, fromRow: Int, toRow: Int) {

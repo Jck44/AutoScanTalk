@@ -124,4 +124,46 @@ class TemplateViewModelTest {
         assertEquals("Apple", viewModel.templates.value.first().name)
     }
 
+    @Test
+    fun `suggestRowName returns category suggestion based on template row buttons`() = runTest {
+        val templateId = "t1"
+        val button1 = com.andreas_kratzer.ghosttalk.core.model.ButtonConfig(label = "Hund")
+        val button2 = com.andreas_kratzer.ghosttalk.core.model.ButtonConfig(label = "Katze")
+        
+        val buttonConfigs = MutableList<com.andreas_kratzer.ghosttalk.core.model.ButtonConfig?>(49) { null }
+        buttonConfigs[0] = button1
+        buttonConfigs[1] = button2
+        
+        val template = PageTemplate(
+            id = templateId,
+            name = "Animals",
+            rows = 4,
+            columns = 4,
+            buttonConfigs = buttonConfigs
+        )
+        
+        every { templateRepository.getAllTemplates() } returns flowOf(listOf(template))
+        every { settingsRepository.isGeminiEnabled } returns true
+        io.mockk.coEvery { geminiUseCase.generateResponse(any()) } returns "Haustiere"
+
+        viewModel = TemplateViewModel(
+            templateRepository,
+            pageRepository,
+            settingsRepository,
+            createTemplateUseCase,
+            deleteTemplateUseCase,
+            updateButtonConfigInTemplateUseCase,
+            getTemplateUsagesUseCase,
+            geminiUseCase
+        )
+        advanceUntilIdle()
+
+        var suggestionResult = ""
+        viewModel.suggestRowName(templateId, rowIndex = 0) { result ->
+            suggestionResult = result
+        }
+        advanceUntilIdle()
+
+        assertEquals("Haustiere", suggestionResult)
+    }
 }

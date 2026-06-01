@@ -199,6 +199,44 @@ class TemplateViewModel @Inject constructor(
         updateTemplate(current.copy(rowNames = updatedNames))
     }
 
+    override fun suggestRowName(itemId: String, rowIndex: Int, onResult: (String) -> Unit) {
+        val template = templates.value.find { it.id == itemId }
+        if (template == null) {
+            onResult("")
+            return
+        }
+
+        if (!settingsRepository.isGeminiEnabled) {
+            onResult("")
+            return
+        }
+
+        val columns = template.columns
+        val labels = (0 until columns).mapNotNull { c ->
+            val globalIndex = rowIndex * com.andreas_kratzer.ghosttalk.core.util.GridUtils.MAX_GRID_SIZE + c
+            val config = template.buttonConfigs.getOrNull(globalIndex)
+            if (config != null && config.isActive && config.label.isNotBlank()) {
+                config.label
+            } else null
+        }
+
+        if (labels.isEmpty()) {
+            onResult("")
+            return
+        }
+
+        viewModelScope.launch {
+            try {
+                val prompt = "Analysiere diese Liste von Begriffen, die sich in einer Zeile auf einer Kommunikations-Tafel für Unterstützte Kommunikation befinden: ${labels.joinToString(", ")}. Schlage einen einzigen, kurzen Begriff (maximal 2 Wörter) vor, der als Name für diese Zeile dienen kann. Antworte NUR mit diesem Begriff, ohne Satzzeichen, Anführungszeichen oder zusätzliche Erklärungen."
+                val response = geminiUseCase.generateResponse(prompt)
+                val cleaned = response.trim().removeSurrounding("\"").removeSurrounding("'").trim()
+                onResult(cleaned)
+            } catch (e: Exception) {
+                onResult("")
+            }
+        }
+    }
+
     override fun moveRow(itemId: String, fromRow: Int, toRow: Int) {
         val current = templates.value.find { it.id == itemId } ?: return
         if (fromRow == toRow) return

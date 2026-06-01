@@ -1,6 +1,7 @@
 package com.andreas_kratzer.ghosttalk.core.cloud.domain
 
 import android.content.Context
+import android.net.Uri
 import com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.data.SyncLogProvider
@@ -40,9 +41,12 @@ class CloudSyncUseCase @Inject constructor(
     private val TTS_CACHE_FILE_NAME = "tts_cache.zip"
 
     private suspend fun getStorageProvider(drive: Drive?, folderId: String? = null): SyncStorageProvider {
+        if (drive == null && folderId?.startsWith("content://") == true) {
+            return DocumentFolderSyncStorageProvider(context, folderId)
+        }
         val targetType = settingsRepository.syncTargetType
-        if (targetType == "LOCAL_FOLDER_SAF") {
-            val uri = settingsRepository.localFolderSafUri
+        if (targetType == "LOCAL_FOLDER_SAF" || drive == null) {
+            val uri = settingsRepository.localFolderSafUri ?: folderId
             if (!uri.isNullOrEmpty()) {
                 return DocumentFolderSyncStorageProvider(context, uri)
             }
@@ -286,7 +290,7 @@ class CloudSyncUseCase @Inject constructor(
         success
     }
 
-    suspend fun getAvailableBackups(drive: Drive, folderId: String? = null): List<RemoteBackupInfo> = withContext(Dispatchers.IO) {
+    suspend fun getAvailableBackups(drive: Drive?, folderId: String? = null): List<RemoteBackupInfo> = withContext(Dispatchers.IO) {
         logger.d(TAG, "Fetching available backups (folderId: $folderId)...")
         val storageProvider = try {
             getStorageProvider(drive, folderId)
@@ -383,23 +387,34 @@ class CloudSyncUseCase @Inject constructor(
     }
 
     suspend fun importCloudBackup(
-        drive: Drive, 
+        drive: Drive?, 
         fileId: String, 
         fileName: String,
         onProgress: (Float, String) -> Unit = { _, _ -> }
     ): Result<String> = withContext(Dispatchers.IO) {
         logger.d(TAG, "importCloudBackup: Starting for $fileName (ID: $fileId)")
-        val storageProvider = try {
-            getStorageProvider(drive)
-        } catch (e: Exception) {
-            return@withContext Result.failure<String>(e)
-        }
-        val tempFile = File(context.cacheDir, "import_cloud_${fileId}${if (fileName.endsWith(".zip")) ".zip" else ".json"}")
+        val isSafUri = fileId.startsWith("content://")
+        
+        val tempFile = File(context.cacheDir, "import_${System.currentTimeMillis()}${if (fileName.endsWith(".zip")) ".zip" else ".json"}")
 
         try {
-            if (storageProvider.downloadFile(fileId, tempFile) { p -> 
-                onProgress(p * 0.7f, "Downloading from Drive...")
-            }) {
+            val downloadSuccess = if (isSafUri) {
+                // For SAF URIs, read directly via ContentResolver
+                downloadSafFile(fileId, tempFile) { p ->
+                    onProgress(p * 0.7f, "Datei wird heruntergeladen...")
+                }
+            } else {
+                val storageProvider = try {
+                    getStorageProvider(drive)
+                } catch (e: Exception) {
+                    return@withContext Result.failure<String>(e)
+                }
+                storageProvider.downloadFile(fileId, tempFile) { p ->
+                    onProgress(p * 0.7f, "Datei wird heruntergeladen...")
+                }
+            }
+            
+            if (downloadSuccess) {
                 val result: Result<String> = if (fileName.endsWith(".zip")) {
                     tempFile.inputStream().use { inputStream ->
                         importExportManager.importCloudBackupFromZip(
@@ -420,15 +435,32 @@ class CloudSyncUseCase @Inject constructor(
                     syncLogProvider.addLogEntry("Cloud-Import erfolgreich: $fileName", bookId, null)
                     // Also restore TTS cache from separate file if available
                     try {
-                        restoreTtsCacheIfAvailable(storageProvider)
+                        val storageProvider = if (isSafUri) {
+                            // Extract tree URI from document URI for folder-level access
+                            val treeUri = extractTreeUriFromDocumentUri(fileId)
+                            if (treeUri != null) DocumentFolderSyncStorageProvider(context, treeUri) else null
+                        } else {
+                            try { getStorageProvider(drive) } catch (_: Exception) { null }
+                        }
+                        if (storageProvider != null) {
+                            restoreTtsCacheIfAvailable(storageProvider)
+                        }
                     } catch (e: Exception) {
                         logger.e(TAG, "TTS cache restore after cloud import failed (non-fatal)", e)
                     }
                     // Also restore statistics from separate file if available
                     if (bookId.isNotEmpty()) {
                         try {
-                            val bookName = fileName.substringBefore(".zip").substringBefore(".json")
-                            restoreStatisticsIfAvailable(storageProvider, bookId, bookName)
+                            val storageProvider = if (isSafUri) {
+                                val treeUri = extractTreeUriFromDocumentUri(fileId)
+                                if (treeUri != null) DocumentFolderSyncStorageProvider(context, treeUri) else null
+                            } else {
+                                try { getStorageProvider(drive) } catch (_: Exception) { null }
+                            }
+                            if (storageProvider != null) {
+                                val bookName = fileName.substringBefore(".zip").substringBefore(".json")
+                                restoreStatisticsIfAvailable(storageProvider, bookId, bookName)
+                            }
                         } catch (e: Exception) {
                             logger.e(TAG, "Statistics restore after cloud import failed (non-fatal)", e)
                         }
@@ -441,7 +473,7 @@ class CloudSyncUseCase @Inject constructor(
             } else {
                 logger.e(TAG, "Failed to download remote file $fileId")
                 syncLogProvider.addLogEntry("Download für Cloud-Import fehlgeschlagen", null, null, isError = true)
-                Result.failure<String>(Exception("Download der Cloud-Datei fehlgeschlagen."))
+                Result.failure<String>(Exception("Download der Datei fehlgeschlagen."))
             }
         } catch (e: Exception) {
             logger.e(TAG, "Error in importCloudBackup", e)
@@ -449,6 +481,50 @@ class CloudSyncUseCase @Inject constructor(
             tempFile.delete()
             Result.failure<String>(e)
         }
+    }
+    
+    /**
+     * Downloads a file from a SAF content:// URI directly via ContentResolver.
+     */
+    private fun downloadSafFile(
+        documentUri: String, 
+        destFile: File, 
+        onProgress: (Float) -> Unit
+    ): Boolean {
+        val uri = Uri.parse(documentUri)
+        return try {
+            context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                destFile.outputStream().use { os ->
+                    val buffer = ByteArray(8 * 1024)
+                    var bytesRead: Int
+                    var totalBytesRead = 0L
+                    while (inputStream.read(buffer).also { bytesRead = it } != -1) {
+                        os.write(buffer, 0, bytesRead)
+                        totalBytesRead += bytesRead
+                        // We don't know total size from InputStream, report indeterminate
+                    }
+                }
+            }
+            onProgress(1.0f)
+            true
+        } catch (e: Exception) {
+            logger.e(TAG, "Failed to download SAF file: $documentUri", e)
+            false
+        }
+    }
+    
+    /**
+     * Extracts the tree URI from a document URI within a tree.
+     * e.g., content://.../tree/treeId/document/docId -> content://.../tree/treeId
+     */
+    private fun extractTreeUriFromDocumentUri(documentUri: String): String? {
+        val uri = Uri.parse(documentUri)
+        val path = uri.path ?: return null
+        val treeIndex = path.indexOf("/tree/")
+        if (treeIndex == -1) return null
+        val docIndex = path.indexOf("/document/", treeIndex)
+        val treePath = if (docIndex != -1) path.substring(0, docIndex) else path
+        return uri.buildUpon().path(treePath).build().toString()
     }
 
     private suspend fun syncTtsCache(
