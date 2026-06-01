@@ -41,8 +41,8 @@ import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.DriveFolderPick
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.SyncLogDialog
 import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.Locale
 
+@Suppress("UNUSED_VALUE", "AssignedValueDoubleCheck")
 @Composable
 fun CloudSettingsSection(
     viewModel: SettingsViewModel,
@@ -54,7 +54,6 @@ fun CloudSettingsSection(
     val userEmail by viewModel.userEmail.collectAsState()
     val isSyncing by viewModel.isSyncing.collectAsState()
     
-    val syncMode by viewModel.syncMode.collectAsState()
     val syncModeBook by viewModel.syncModeBook.collectAsState()
     val syncModeTts by viewModel.syncModeTts.collectAsState()
     val syncModeStats by viewModel.syncModeStats.collectAsState()

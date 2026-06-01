@@ -5,10 +5,8 @@ import android.app.Application
 import android.content.Context
 import android.content.Intent
 import androidx.core.content.edit
-import androidx.core.net.toUri
 import android.content.pm.PackageManager
 import android.os.Build
-import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -59,6 +57,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
+@Suppress("unused")
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
@@ -799,13 +798,11 @@ class SettingsViewModel @Inject constructor(
         }
 
     fun requestDefaultDialer(activity: android.app.Activity) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            val roleManager = activity.getSystemService(android.app.role.RoleManager::class.java)
-            if (roleManager != null && roleManager.isRoleAvailable(android.app.role.RoleManager.ROLE_DIALER) && !roleManager.isRoleHeld(android.app.role.RoleManager.ROLE_DIALER)) {
-                val intent = roleManager.createRequestRoleIntent(android.app.role.RoleManager.ROLE_DIALER)
-                activity.startActivityForResult(intent, 123)
-                return
-            }
+        val roleManager = activity.getSystemService(android.app.role.RoleManager::class.java)
+        if (roleManager != null && roleManager.isRoleAvailable(android.app.role.RoleManager.ROLE_DIALER) && !roleManager.isRoleHeld(android.app.role.RoleManager.ROLE_DIALER)) {
+            val intent = roleManager.createRequestRoleIntent(android.app.role.RoleManager.ROLE_DIALER)
+            activity.startActivityForResult(intent, 123)
+            return
         }
         val telecomManager = activity.getSystemService(android.telecom.TelecomManager::class.java)
         if (telecomManager != null && telecomManager.defaultDialerPackage != activity.packageName) {
@@ -982,7 +979,7 @@ class SettingsViewModel @Inject constructor(
     @SuppressLint("QueryPermissionsNeeded")
     private fun initializeDefaultMessagingAppsIfNeeded() {
         try {
-            val sharedPrefs = application.getSharedPreferences("ghosttalk_app_meta", android.content.Context.MODE_PRIVATE) ?: return
+            val sharedPrefs = application.getSharedPreferences("ghosttalk_app_meta", Context.MODE_PRIVATE) ?: return
             val hasInitialized = sharedPrefs.getBoolean("has_initialized_monitored_apps", false)
             if (!hasInitialized) {
                 viewModelScope.launch(Dispatchers.IO) {
@@ -999,10 +996,10 @@ class SettingsViewModel @Inject constructor(
                             if (packageName.isNotEmpty()) {
                                 try {
                                     val appInfo = pm.getApplicationInfo(packageName, 0)
-                                    if (isMessagingOrSocialApp(pm, appInfo)) {
+                                    if (isMessagingOrSocialApp(appInfo)) {
                                         detectedApps.add(packageName)
                                     }
-                                } catch (e: Exception) {
+                                } catch (_: Exception) {
                                     // ignore
                                 }
                             }
@@ -1016,12 +1013,12 @@ class SettingsViewModel @Inject constructor(
                             }
                             sharedPrefs.edit { putBoolean("has_initialized_monitored_apps", true) }
                         }
-                    } catch (e: Exception) {
+                    } catch (_: Exception) {
                         // ignore background thread exceptions under test/mock environment
                     }
                 }
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             // ignore exceptions under test/mock environment
         }
     }
@@ -1042,10 +1039,10 @@ class SettingsViewModel @Inject constructor(
                     if (packageName.isNotEmpty()) {
                         try {
                             val appInfo = pm.getApplicationInfo(packageName, 0)
-                            if (isMessagingOrSocialApp(pm, appInfo)) {
+                            if (isMessagingOrSocialApp(appInfo)) {
                                 detectedApps.add(packageName)
                             }
-                        } catch (e: Exception) {
+                        } catch (_: Exception) {
                             // ignore
                         }
                     }
@@ -1054,13 +1051,13 @@ class SettingsViewModel @Inject constructor(
                 withContext(Dispatchers.Main) {
                     settingsRepository.monitoredNotificationApps = detectedApps
                 }
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 // ignore
             }
         }
     }
 
-    private fun isMessagingOrSocialApp(pm: PackageManager, appInfo: android.content.pm.ApplicationInfo): Boolean {
+    private fun isMessagingOrSocialApp(appInfo: android.content.pm.ApplicationInfo): Boolean {
         val pkg = appInfo.packageName.lowercase()
         
         // Exclude system, utility, mail, browser, contacts, dialer, accessibility, and companion apps that might match CATEGORY_SOCIAL

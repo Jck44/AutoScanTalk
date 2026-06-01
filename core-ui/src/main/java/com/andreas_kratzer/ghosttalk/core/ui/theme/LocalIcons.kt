@@ -32,6 +32,7 @@ import com.andreas_kratzer.ghosttalk.core.model.ActionCategory
  * Local definitions for Icons that are normally only in material-icons-extended.
  * This allows us to remove the large dependency.
  */
+@Suppress("unused")
 object GhostTalkIcons {
 
     /**

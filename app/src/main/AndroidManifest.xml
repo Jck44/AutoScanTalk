@@ -73,21 +73,17 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data
-                    android:host="hue-oauth"
-                    android:scheme="com.andreas_kratzer.ghosttalk" />
+                <data android:host="hue-oauth" />
+                <data android:scheme="com.andreas_kratzer.ghosttalk" />
             </intent-filter>
 
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data
-                    android:host="spotify-callback"
-                    android:scheme="com.andreas_kratzer.ghosttalk" />
-                <data
-                    android:host="spotify-callback"
-                    android:scheme="com.andreas.kratzer.ghosttalk" />
+                <data android:host="spotify-callback" />
+                <data android:scheme="com.andreas_kratzer.ghosttalk" />
+                <data android:scheme="com.andreas.kratzer.ghosttalk" />
             </intent-filter>
 
             <intent-filter>

@@ -35,7 +35,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.google.api.services.drive.model.File
-import java.util.Stack
 
 @Composable
 fun DriveFolderPickerDialog(
@@ -45,8 +44,8 @@ fun DriveFolderPickerDialog(
     onFolderSelected: (String?, String?) -> Unit,
     onDismiss: () -> Unit
 ) {
-    var currentPathStack by remember { mutableStateOf(Stack<Pair<String, String>>().apply { push("root" to "Google Drive") }) }
-    val currentFolder = currentPathStack.peek()
+    var currentPathStack by remember { mutableStateOf(listOf("root" to "Google Drive")) }
+    val currentFolder = currentPathStack.last()
 
     LaunchedEffect(currentFolder.first) {
         onFetchFolders(currentFolder.first)
@@ -59,9 +58,7 @@ fun DriveFolderPickerDialog(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (currentPathStack.size > 1) {
                         IconButton(onClick = {
-                            currentPathStack.pop()
-                            // Force recomposition by creating a new stack or modifying state
-                            currentPathStack = Stack<Pair<String, String>>().apply { addAll(currentPathStack) }
+                            currentPathStack = currentPathStack.dropLast(1)
                         }) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                         }
@@ -101,10 +98,7 @@ fun DriveFolderPickerDialog(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable {
-                                        currentPathStack = Stack<Pair<String, String>>().apply {
-                                            addAll(currentPathStack)
-                                            push(folder.id to folder.name)
-                                        }
+                                        currentPathStack = currentPathStack + (folder.id to folder.name)
                                     }
                                     .padding(vertical = 12.dp, horizontal = 8.dp),
                                 verticalAlignment = Alignment.CenterVertically
@@ -153,7 +147,7 @@ fun DriveFolderPickerDialog(
 
 @Composable
 private fun CustomIcon(imageVector: androidx.compose.ui.graphics.vector.ImageVector, contentDescription: String?, size: androidx.compose.ui.unit.Dp, tint: androidx.compose.ui.graphics.Color) {
-    androidx.compose.material3.Icon(
+    Icon(
         imageVector = imageVector,
         contentDescription = contentDescription,
         modifier = Modifier.size(size),

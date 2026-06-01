@@ -88,9 +88,9 @@ class SettingsRoundTripTest {
             if (getter == null) continue
 
             val value: Any = when (getter.returnType) {
-                Boolean::class.java, java.lang.Boolean::class.java -> true
-                Long::class.java, java.lang.Long::class.java -> 12345L
-                Int::class.java, java.lang.Integer::class.java -> 42
+                Boolean::class.javaPrimitiveType, Boolean::class.javaObjectType -> true
+                Long::class.javaPrimitiveType, Long::class.javaObjectType -> 12345L
+                Int::class.javaPrimitiveType, Int::class.javaObjectType -> 42
                 String::class.java -> "test_$propertyName"
                 else -> continue
             }

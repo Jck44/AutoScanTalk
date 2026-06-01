@@ -1,6 +1,5 @@
 package com.andreas_kratzer.ghosttalk.core.cloud.domain
 
-import com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper
 import com.google.api.services.drive.Drive
 import com.google.api.services.drive.model.File
 import kotlinx.coroutines.Dispatchers
@@ -44,7 +43,7 @@ class GetDriveFoldersUseCase @Inject constructor() {
                     file
                 }
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             emptyList()
         }
     }

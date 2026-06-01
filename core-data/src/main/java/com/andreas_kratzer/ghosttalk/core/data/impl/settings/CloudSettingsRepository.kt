@@ -18,7 +18,7 @@ class CloudSettingsRepository(
     override val activeBookIdFlow: StateFlow<String?> = super.activeBookIdFlow
     override var activeBookId: String
         get() = super.activeBookId
-        set(value) { /* Handled by SettingsRepositoryImpl */ }
+        set(_) { /* Handled by SettingsRepositoryImpl */ }
 
     private val _isCloudSyncEnabled = BooleanSetting(KEY_CLOUD_SYNC_ENABLED, false)
     private val _syncIntervalMinutes = LongSetting(KEY_SYNC_INTERVAL_MINUTES, 15L)

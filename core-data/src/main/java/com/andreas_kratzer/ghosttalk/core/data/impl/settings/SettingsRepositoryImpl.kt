@@ -50,14 +50,6 @@ class SettingsRepositoryImpl @Inject constructor(
 
     init {
         cleanupLegacyBookPins()
-        migrateLegacyPinToHash()
-    }
-
-    private fun migrateLegacyPinToHash() {
-        val legacyPin = securityPin
-        if (!legacyPin.isNullOrEmpty()) {
-            // See legacy implementation
-        }
     }
 
     private fun cleanupLegacyBookPins() {

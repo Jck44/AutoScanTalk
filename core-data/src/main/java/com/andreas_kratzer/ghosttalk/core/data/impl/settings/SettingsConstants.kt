@@ -1,5 +1,6 @@
 package com.andreas_kratzer.ghosttalk.core.data.impl.settings
 
+@Suppress("unused")
 object SettingsConstants {
     const val PREFS_NAME = "ghosttalk_settings"
     const val KEY_TTS_LANGUAGE = "tts_language"

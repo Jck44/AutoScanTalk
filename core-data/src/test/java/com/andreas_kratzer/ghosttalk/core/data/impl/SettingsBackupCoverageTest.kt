@@ -94,15 +94,15 @@ class SettingsBackupCoverageTest {
             val hasField = try {
                 importExportClass.getDeclaredField(searchName)
                 true
-            } catch (e: NoSuchFieldException) {
+            } catch (_: NoSuchFieldException) {
                 // Also check with 'is' prefix if boolean
                 if (searchName.startsWith("is")) {
-                   try {
-                       importExportClass.getDeclaredField(searchName.replaceFirstChar { it.lowercase() })
-                       true
-                   } catch (e2: NoSuchFieldException) {
-                       false
-                   }
+                    try {
+                        importExportClass.getDeclaredField(searchName.replaceFirstChar { it.lowercase() })
+                        true
+                    } catch (_: NoSuchFieldException) {
+                        false
+                    }
                 } else {
                     false
                 }
@@ -147,7 +147,4 @@ class SettingsBackupCoverageTest {
             else -> name
         }
     }
-    
-    private fun String.capitalize(): String = this.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
-    private fun String.decapitalize(): String = this.replaceFirstChar { it.lowercase() }
 }
