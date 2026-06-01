@@ -52,6 +52,7 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.unmockkAll
+import io.mockk.mockkStatic
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -114,6 +115,11 @@ class PageViewModelTest {
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
+
+        mockkStatic(android.widget.Toast::class)
+        val mockToast = mockk<android.widget.Toast>(relaxed = true)
+        every { android.widget.Toast.makeText(any(), any<CharSequence>(), any()) } returns mockToast
+        every { android.widget.Toast.makeText(any(), any<Int>(), any()) } returns mockToast
 
         application = mockk<Application>(relaxed = true)
         pageRepository = mockk<PageRepository>(relaxed = true)
@@ -457,5 +463,53 @@ class PageViewModelTest {
         testScheduler.advanceUntilIdle()
 
         assertEquals("", suggestionResult)
+    }
+
+    @Test
+    fun `suggestRowName returns empty and does not crash when Gemini throws`() = runTest {
+        every { settingsRepository.isGeminiEnabled } returns true
+        coEvery { geminiUseCase.generateResponse(any()) } throws RuntimeException("API error")
+
+        val pageId = "p1"
+        val button = ButtonConfig(label = "Hallo")
+        val buttonConfigs = MutableList<ButtonConfig?>(49) { null }
+        buttonConfigs[0] = button
+        val page = Page(id = pageId, bookId = "b1", name = "P1", rows = 4, columns = 4, buttonConfigs = buttonConfigs)
+        every { getPagesUseCase.execute(any()) } returns MutableStateFlow<List<Page>>(listOf(page))
+
+        viewModel = createViewModel()
+        testScheduler.runCurrent()
+
+        var suggestionResult = "initial"
+        viewModel.suggestRowName(pageId, rowIndex = 0) { result ->
+            suggestionResult = result
+        }
+        testScheduler.advanceUntilIdle()
+
+        assertEquals("", suggestionResult)
+    }
+
+    @Test
+    fun `suggestRowName returns empty without Gemini call when row has no active buttons`() = runTest {
+        every { settingsRepository.isGeminiEnabled } returns true
+
+        val pageId = "p1"
+        // Alle Buttons in Zeile 0 sind inaktiv
+        val buttonConfigs = MutableList<ButtonConfig?>(49) { null }
+        buttonConfigs[0] = ButtonConfig(label = "Hidden", isActive = false)
+        val page = Page(id = pageId, bookId = "b1", name = "P1", rows = 4, columns = 4, buttonConfigs = buttonConfigs)
+        every { getPagesUseCase.execute(any()) } returns MutableStateFlow<List<Page>>(listOf(page))
+
+        viewModel = createViewModel()
+        testScheduler.runCurrent()
+
+        var suggestionResult = "initial"
+        viewModel.suggestRowName(pageId, rowIndex = 0) { result ->
+            suggestionResult = result
+        }
+        testScheduler.advanceUntilIdle()
+
+        assertEquals("", suggestionResult)
+        io.mockk.coVerify(exactly = 0) { geminiUseCase.generateResponse(any()) }
     }
 }

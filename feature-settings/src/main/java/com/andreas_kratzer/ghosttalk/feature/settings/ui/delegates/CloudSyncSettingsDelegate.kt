@@ -359,7 +359,7 @@ class CloudSyncSettingsDelegate @Inject constructor(
         }
     }
 
-    private fun extractFolderId(input: String): String {
+    internal fun extractFolderId(input: String): String {
         val trimmed = input.trim()
         if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
             val pattern1 = "folders/([a-zA-Z0-9_-]+)".toRegex()

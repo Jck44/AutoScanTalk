@@ -24,6 +24,7 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 
@@ -141,5 +142,86 @@ class CloudSyncSettingsDelegateTest {
         
         assert(delegate.availableBackups.value.isNotEmpty())
         assert(delegate.showBackupSelectionDialog.value)
+    }
+
+    // -------------------------------------------------------------------------
+    // extractFolderId — URL parsing
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun `extractFolderId extracts ID from folders-path URL`() {
+        val url = "https://drive.google.com/drive/folders/1AbCdEfGhIjKlMnOpQr"
+        val id = delegate.extractFolderId(url)
+        assertEquals("1AbCdEfGhIjKlMnOpQr", id)
+    }
+
+    @Test
+    fun `extractFolderId extracts ID from id-query-param URL`() {
+        val url = "https://drive.google.com/open?id=1AbCdEfGhIjKlMnOpQr"
+        val id = delegate.extractFolderId(url)
+        assertEquals("1AbCdEfGhIjKlMnOpQr", id)
+    }
+
+    @Test
+    fun `extractFolderId returns raw ID when input is a plain ID`() {
+        val rawId = "1AbCdEfGhIjKlMnOpQr_-xyz"
+        val id = delegate.extractFolderId(rawId)
+        assertEquals(rawId, id)
+    }
+
+    @Test
+    fun `extractFolderId returns empty string for invalid input`() {
+        assertEquals("", delegate.extractFolderId("not a url or id !!"))
+        assertEquals("", delegate.extractFolderId("https://drive.google.com/no/id/here"))
+    }
+
+    @Test
+    fun `extractFolderId trims whitespace before parsing`() {
+        val url = "  https://drive.google.com/drive/folders/TrimmedId123  "
+        assertEquals("TrimmedId123", delegate.extractFolderId(url))
+    }
+
+    @Test
+    fun `extractFolderId handles http URLs as well as https`() {
+        val url = "http://drive.google.com/drive/folders/HttpFolderId"
+        assertEquals("HttpFolderId", delegate.extractFolderId(url))
+    }
+
+    // -------------------------------------------------------------------------
+    // fetchAvailableBackupsFromSaf
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun `fetchAvailableBackupsFromSaf shows dialog when backups found`() = runTest {
+        coEvery { cloudSyncUseCase.getAvailableBackups(null, "content://test/uri") } returns listOf(
+            com.andreas_kratzer.ghosttalk.core.cloud.domain.RemoteBackupInfo("content://test/uri/book.zip", "book.zip", "My Book", 123L)
+        )
+
+        delegate.fetchAvailableBackupsFromSaf("content://test/uri", "Test Ordner", testScope)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assert(delegate.availableBackups.value.isNotEmpty())
+        assert(delegate.showBackupSelectionDialog.value)
+    }
+
+    @Test
+    fun `fetchAvailableBackupsFromSaf does not show dialog when no backups found`() = runTest {
+        coEvery { cloudSyncUseCase.getAvailableBackups(null, "content://test/empty") } returns emptyList()
+
+        delegate.fetchAvailableBackupsFromSaf("content://test/empty", "Leerer Ordner", testScope)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assert(delegate.availableBackups.value.isEmpty())
+        assert(!delegate.showBackupSelectionDialog.value)
+    }
+
+    @Test
+    fun `fetchAvailableBackupsFromSaf sets isSyncing false after completion`() = runTest {
+        coEvery { cloudSyncUseCase.getAvailableBackups(null, any()) } returns emptyList()
+
+        delegate.fetchAvailableBackupsFromSaf("content://test/uri", "Ordner", testScope)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assert(!delegate.isSyncing.value)
     }
 }

@@ -60,7 +60,10 @@ class SettingsBackupCoverageTest {
         "googleDriveFolderId",      // Device-specific folder target
         "googleDriveFolderName",    // Device-specific folder target name
         "statsRetentionDays",       // Local device maintenance preference
-        "statsAggregationHours"     // Local device maintenance preference
+        "statsAggregationHours",    // Local device maintenance preference
+        "syncTargetType",           // Device-specific sync setting (Drive vs SAF)
+        "localFolderSafUri",        // Device-specific SAF folder target URI
+        "localFolderSafName"        // Device-specific SAF folder target name
     )
 
     private val propertyMappings = mapOf(

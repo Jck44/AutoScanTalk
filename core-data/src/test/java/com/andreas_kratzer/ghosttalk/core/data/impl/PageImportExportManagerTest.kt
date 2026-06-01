@@ -1023,4 +1023,94 @@ class PageImportExportManagerTest {
         assertEquals(1, decoded.statsVersion) // Default value fallback
         assertNull(decoded.appVersion) // Default value fallback
     }
+
+    @Test
+    fun `exportStatisticsToZip then importStatisticsFromZip restores history and stats`() = runTest {
+        val packageManager: android.content.pm.PackageManager = mockk(relaxed = true)
+        val packageInfo: android.content.pm.PackageInfo = mockk(relaxed = true)
+        packageInfo.versionName = "1.0.0"
+        every { context.packageManager } returns packageManager
+        every { context.packageName } returns "com.andreas_kratzer.ghosttalk"
+        every { packageManager.getPackageInfo("com.andreas_kratzer.ghosttalk", 0) } returns packageInfo
+
+        val historyEntity = com.andreas_kratzer.ghosttalk.core.database.ButtonUsageHistoryEntity(
+            bookId = "book-rt",
+            timestamp = 9999L,
+            label = "Hallo",
+            actionType = "SpeakTextButtonAction",
+            buttonId = "btn-rt",
+            pageId = "page-rt"
+        )
+        val statEntity = com.andreas_kratzer.ghosttalk.core.model.ButtonUsageStat(
+            bookId = "book-rt",
+            buttonConfigId = "btn-rt",
+            pageId = "page-rt",
+            label = "Hallo",
+            actionJson = "{}",
+            usageCount = 7,
+            lastUsedAt = 9999L
+        )
+
+        val buttonUsageDao: com.andreas_kratzer.ghosttalk.core.database.ButtonUsageDao = mockk(relaxed = true)
+        coEvery { buttonUsageDao.getHistoryForBook("book-rt") } returns kotlinx.coroutines.flow.flowOf(listOf(historyEntity))
+        coEvery { buttonUsageDao.getAllStatsForBook("book-rt") } returns listOf(statEntity)
+
+        val roundtripManager = PageImportExportManager(
+            context = context,
+            pageRepository = pageRepository,
+            bookRepository = bookRepository,
+            settingsRepository = settingsRepository,
+            settingsMapper = settingsMapper,
+            actionMapper = actionMapper,
+            buttonTemplateRepository = buttonTemplateRepository,
+            buttonUsageDao = buttonUsageDao,
+            logger = mockk(relaxed = true)
+        )
+
+        // 1. Export to ZIP
+        val outputStream = java.io.ByteArrayOutputStream()
+        roundtripManager.exportStatisticsToZip("book-rt", outputStream)
+        val zipBytes = outputStream.toByteArray()
+        assertTrue("Export should produce non-empty ZIP", zipBytes.isNotEmpty())
+
+        // 2. Import from the same ZIP
+        roundtripManager.importStatisticsFromZip("book-rt", java.io.ByteArrayInputStream(zipBytes))
+
+        // 3. Verify DAO was called to restore both history and stats
+        io.mockk.coVerify { buttonUsageDao.clearHistoryForBook("book-rt") }
+        io.mockk.coVerify { buttonUsageDao.clearStatsForBook("book-rt") }
+        io.mockk.coVerify {
+            buttonUsageDao.insertHistoryEvent(match { it.label == "Hallo" && it.timestamp == 9999L })
+        }
+        io.mockk.coVerify {
+            buttonUsageDao.upsert(match { it.label == "Hallo" && it.usageCount == 7L })
+        }
+    }
+
+    @Test
+    fun `importStatisticsFromZip with empty ZIP does not crash`() = runTest {
+        val buttonUsageDao: com.andreas_kratzer.ghosttalk.core.database.ButtonUsageDao = mockk(relaxed = true)
+        val resilientManager = PageImportExportManager(
+            context = context,
+            pageRepository = pageRepository,
+            bookRepository = bookRepository,
+            settingsRepository = settingsRepository,
+            settingsMapper = settingsMapper,
+            actionMapper = actionMapper,
+            buttonTemplateRepository = buttonTemplateRepository,
+            buttonUsageDao = buttonUsageDao,
+            logger = mockk(relaxed = true)
+        )
+
+        // Create a valid but empty ZIP
+        val emptyZip = java.io.ByteArrayOutputStream()
+        java.util.zip.ZipOutputStream(emptyZip).close()
+
+        // Should not throw
+        resilientManager.importStatisticsFromZip("book-empty", java.io.ByteArrayInputStream(emptyZip.toByteArray()))
+
+        // Nothing should have been written
+        io.mockk.coVerify(exactly = 0) { buttonUsageDao.insertHistoryEvent(any()) }
+        io.mockk.coVerify(exactly = 0) { buttonUsageDao.upsert(any()) }
+    }
 }

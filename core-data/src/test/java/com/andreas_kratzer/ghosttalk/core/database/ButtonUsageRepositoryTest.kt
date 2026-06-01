@@ -171,4 +171,20 @@ class ButtonUsageRepositoryTest {
         // Accept a small delta due to time passing during test execution
         assertTrue(Math.abs(diff - expectedDiff) < 1000)
     }
+
+    @Test
+    fun `cleanupOldStats with days=0 does nothing`() = runTest {
+        buttonUsageRepository.cleanupOldStats(0)
+
+        coVerify(exactly = 0) { mockButtonUsageDao.pruneHistoryByTimestamp(any()) }
+        coVerify(exactly = 0) { mockButtonUsageDao.pruneStatsByTimestamp(any()) }
+    }
+
+    @Test
+    fun `cleanupOldStats with negative days does nothing`() = runTest {
+        buttonUsageRepository.cleanupOldStats(-1)
+
+        coVerify(exactly = 0) { mockButtonUsageDao.pruneHistoryByTimestamp(any()) }
+        coVerify(exactly = 0) { mockButtonUsageDao.pruneStatsByTimestamp(any()) }
+    }
 }
