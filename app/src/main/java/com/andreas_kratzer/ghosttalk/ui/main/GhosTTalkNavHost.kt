@@ -11,12 +11,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import androidx.lifecycle.Lifecycle
 import com.andreas_kratzer.ghosttalk.core.SecurityManager
 import com.andreas_kratzer.ghosttalk.core.data.PageRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
@@ -26,19 +26,18 @@ import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsScreen
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
 import com.andreas_kratzer.ghosttalk.ui.books.BookListScreen
 import com.andreas_kratzer.ghosttalk.ui.books.BookViewModel
+import com.andreas_kratzer.ghosttalk.ui.pages.AnalyticsDashboardScreen
 import com.andreas_kratzer.ghosttalk.ui.pages.PageEditorScreen
 import com.andreas_kratzer.ghosttalk.ui.pages.PageListScreen
 import com.andreas_kratzer.ghosttalk.ui.pages.PageScreen
 import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
-import com.andreas_kratzer.ghosttalk.ui.pages.AnalyticsDashboardScreen
 import com.andreas_kratzer.ghosttalk.ui.templates.TemplateEditorScreen
 import com.andreas_kratzer.ghosttalk.ui.templates.TemplateScreen
 import com.andreas_kratzer.ghosttalk.ui.templates.TemplateViewModel
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.flow.first
 
 @Composable
 fun GhostTalkNavHost(

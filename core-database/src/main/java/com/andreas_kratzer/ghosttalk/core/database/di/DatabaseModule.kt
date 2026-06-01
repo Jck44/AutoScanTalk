@@ -4,10 +4,10 @@ import android.content.Context
 import com.andreas_kratzer.ghosttalk.core.database.AppDatabase
 import com.andreas_kratzer.ghosttalk.core.database.BookDao
 import com.andreas_kratzer.ghosttalk.core.database.ButtonDao
+import com.andreas_kratzer.ghosttalk.core.database.ButtonTemplateDao
 import com.andreas_kratzer.ghosttalk.core.database.ButtonUsageDao
 import com.andreas_kratzer.ghosttalk.core.database.PageDao
 import com.andreas_kratzer.ghosttalk.core.database.TemplateDao
-import com.andreas_kratzer.ghosttalk.core.database.ButtonTemplateDao
 import com.andreas_kratzer.ghosttalk.core.database.UserModeSessionDao
 import dagger.Module
 import dagger.Provides

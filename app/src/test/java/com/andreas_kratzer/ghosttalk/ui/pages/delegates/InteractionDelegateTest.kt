@@ -4,10 +4,10 @@ import android.app.Application
 import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
 import com.andreas_kratzer.ghosttalk.core.data.AppStateRepository
 import com.andreas_kratzer.ghosttalk.core.data.BookRepository
+import com.andreas_kratzer.ghosttalk.core.domain.actions.ActionLogUseCase
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.scanning.ScanCoordinator
 import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
-import com.andreas_kratzer.ghosttalk.core.domain.actions.ActionLogUseCase
 import com.andreas_kratzer.ghosttalk.domain.actions.ActivateButtonUseCase
 import com.andreas_kratzer.ghosttalk.domain.actions.HandleActionExecutionEventUseCase
 import io.mockk.coVerify

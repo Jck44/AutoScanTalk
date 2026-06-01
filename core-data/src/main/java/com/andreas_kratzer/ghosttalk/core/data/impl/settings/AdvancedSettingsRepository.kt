@@ -2,6 +2,10 @@ package com.andreas_kratzer.ghosttalk.core.data.impl.settings
 
 import android.content.SharedPreferences
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_ACTION_LOGS_STORAGE
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_BACKGROUND_LOCATION_ENABLED
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_BACKGROUND_LOCATION_INTERVAL
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_BACKGROUND_WEATHER_ENABLED
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_BACKGROUND_WEATHER_INTERVAL
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_LOG_IGNORED_ACTIONS
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_LOG_STOP_ACTIONS
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_PERSIST_ACTION_LOGS
@@ -10,10 +14,6 @@ import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.K
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SMART_PREDICTION_DELAY
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SMART_PREDICTION_ENABLED
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_WEATHER_CACHE_TIMEOUT
-import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_BACKGROUND_LOCATION_ENABLED
-import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_BACKGROUND_LOCATION_INTERVAL
-import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_BACKGROUND_WEATHER_ENABLED
-import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_BACKGROUND_WEATHER_INTERVAL
 import com.andreas_kratzer.ghosttalk.core.settings.AdvancedSettings
 import kotlinx.coroutines.flow.StateFlow
 

@@ -1,25 +1,25 @@
 package com.andreas_kratzer.ghosttalk.core.tts
 
 import android.content.Context
+import android.media.AudioDeviceInfo
+import android.media.AudioManager
 import android.os.Handler
 import android.os.Looper
 import android.speech.tts.TextToSpeech
 import android.speech.tts.Voice
 import android.util.Log
+import com.andreas_kratzer.ghosttalk.core.audio.AudioDeviceManager
 import com.andreas_kratzer.ghosttalk.core.audio.RoutedAudioPlayer
 import com.andreas_kratzer.ghosttalk.core.settings.TtsSettings
+import com.andreas_kratzer.ghosttalk.core.util.NetworkUtils
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.io.File
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
-import android.media.AudioManager
-import android.media.AudioDeviceInfo
-import com.andreas_kratzer.ghosttalk.core.audio.AudioDeviceManager
 import javax.inject.Inject
 import javax.inject.Singleton
-import com.andreas_kratzer.ghosttalk.core.util.NetworkUtils
 
 @Singleton
 open class AndroidTtsProvider @Inject constructor(

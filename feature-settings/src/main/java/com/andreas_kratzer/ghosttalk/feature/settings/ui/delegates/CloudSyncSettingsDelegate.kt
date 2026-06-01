@@ -5,6 +5,7 @@ import android.app.Application
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
+import android.util.Log
 import android.widget.Toast
 import com.andreas_kratzer.ghosttalk.core.cloud.AuthManager
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.CloudSyncUseCase
@@ -29,7 +30,6 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import android.util.Log
 import javax.inject.Inject
 import javax.inject.Singleton
 

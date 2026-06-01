@@ -1,16 +1,16 @@
 package com.andreas_kratzer.ghosttalk.core.data.impl.settings
 
 import android.content.SharedPreferences
-import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_MAX_CALL_DURATION_SECONDS
-import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_CALL_DURATION_FEEDBACK_INTERVAL_SECONDS
-import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_OUTGOING_CALL_INTRO
-import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_INCOMING_CALL_INTRO
-import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_INCOMING_CALL_SCAN_LIMIT_ACTIVE
-import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_INCOMING_CALL_AUTO_ACTION_ACTIVE
-import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_INCOMING_CALL_DELAY_INACTIVE
-import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_INCOMING_CALL_AUTO_ACTION_INACTIVE
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_CALL_ANNOUNCEMENT_AS_CUE
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_CALL_AUTO_ENABLE_SPEAKERPHONE
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_CALL_DURATION_FEEDBACK_INTERVAL_SECONDS
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_INCOMING_CALL_AUTO_ACTION_ACTIVE
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_INCOMING_CALL_AUTO_ACTION_INACTIVE
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_INCOMING_CALL_DELAY_INACTIVE
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_INCOMING_CALL_INTRO
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_INCOMING_CALL_SCAN_LIMIT_ACTIVE
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_MAX_CALL_DURATION_SECONDS
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_OUTGOING_CALL_INTRO
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SIMULATE_CALLS_ENABLED
 import kotlinx.coroutines.flow.StateFlow
 

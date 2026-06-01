@@ -5,12 +5,12 @@ import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.K
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_DEFAULT_START_PAGE_ID
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_FAVORITE_BOOK_ID
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_FORCE_SOFT_KEYBOARD
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_IS_SETUP_COMPLETED
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_PAGE_SORT_ORDER
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_STARTUP_BEHAVIOR
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SYNC_LOGS_STORAGE
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_TEMPLATE_SORT_ORDER
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_THEME_MODE
-import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_IS_SETUP_COMPLETED
 import kotlinx.coroutines.flow.StateFlow
 
 class GeneralSettingsRepository(

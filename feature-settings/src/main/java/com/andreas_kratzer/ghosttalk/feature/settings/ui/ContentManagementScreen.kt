@@ -1,6 +1,5 @@
 package com.andreas_kratzer.ghosttalk.feature.settings.ui
 
-import com.andreas_kratzer.ghosttalk.feature.settings.R
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -24,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkCard
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
+import com.andreas_kratzer.ghosttalk.feature.settings.R
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 
 @OptIn(ExperimentalMaterial3Api::class)

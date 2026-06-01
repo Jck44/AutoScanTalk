@@ -27,9 +27,9 @@ import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.ui.pages.ButtonConfigDialog
 import com.andreas_kratzer.ghosttalk.ui.pages.MoveHiddenPromptDialog
+import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
 import com.andreas_kratzer.ghosttalk.ui.pages.TargetPageSelectionDialog
 import com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions
-import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 

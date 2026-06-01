@@ -2,8 +2,8 @@ package com.andreas_kratzer.ghosttalk.core.di
 
 import com.andreas_kratzer.ghosttalk.core.actions.ActionHandler
 import com.andreas_kratzer.ghosttalk.core.actions.ControlDeviceActionHandler
-import com.andreas_kratzer.ghosttalk.core.actions.SpeechActionHandler
 import com.andreas_kratzer.ghosttalk.core.actions.PlayMediaActionHandler
+import com.andreas_kratzer.ghosttalk.core.actions.SpeechActionHandler
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn

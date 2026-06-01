@@ -13,7 +13,6 @@ import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.utils.TestDataResetHelper
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import javax.inject.Inject

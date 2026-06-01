@@ -10,8 +10,8 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import io.mockk.mockkStatic
-import io.mockk.unmockkStatic
 import io.mockk.slot
+import io.mockk.unmockkStatic
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals

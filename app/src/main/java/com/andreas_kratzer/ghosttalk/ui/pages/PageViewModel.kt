@@ -10,19 +10,22 @@ import androidx.lifecycle.viewModelScope
 import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
 import com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase
 import com.andreas_kratzer.ghosttalk.core.ai.domain.UpdateSmartPredictionsUseCase
+import com.andreas_kratzer.ghosttalk.core.cloud.PhilipsHueManager
+import com.andreas_kratzer.ghosttalk.core.cloud.SpotifyManager
+import com.andreas_kratzer.ghosttalk.core.cloud.SpotifyPlaylist
+import com.andreas_kratzer.ghosttalk.core.data.ButtonTemplateRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.data.impl.PageImportExportManager
+import com.andreas_kratzer.ghosttalk.core.domain.pages.UsageLocation
 import com.andreas_kratzer.ghosttalk.core.model.Book
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.ButtonTemplate
 import com.andreas_kratzer.ghosttalk.core.model.GridSettingsUpdate
 import com.andreas_kratzer.ghosttalk.core.model.Page
-import com.andreas_kratzer.ghosttalk.core.model.ButtonTemplate
-import com.andreas_kratzer.ghosttalk.core.data.ButtonTemplateRepository
 import com.andreas_kratzer.ghosttalk.core.scanning.ScanCoordinator
 import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
 import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.andreas_kratzer.ghosttalk.domain.actions.ResolveDynamicButtonsUseCase
-import com.andreas_kratzer.ghosttalk.core.domain.pages.UsageLocation
 import com.andreas_kratzer.ghosttalk.feature.settings.domain.FeatureGuard
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.InteractionDelegate
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.PageManagementDelegate
@@ -42,9 +45,6 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import com.andreas_kratzer.ghosttalk.core.cloud.PhilipsHueManager
-import com.andreas_kratzer.ghosttalk.core.cloud.SpotifyManager
-import com.andreas_kratzer.ghosttalk.core.cloud.SpotifyPlaylist
 import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)

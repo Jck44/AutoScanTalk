@@ -33,8 +33,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
-import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
+import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 
 @Composable
 fun RowEditDialog(

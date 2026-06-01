@@ -8,15 +8,15 @@ import com.andreas_kratzer.ghosttalk.core.model.GeminiButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiNanoButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiSearchButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.MediaProvider
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.PlayMediaButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.PreviousActionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SmartHomeButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SmartHomeProvider
 import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.WeatherButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.PlayMediaButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.MediaProvider
 import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportAction
 import javax.inject.Inject
 import javax.inject.Singleton

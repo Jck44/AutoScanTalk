@@ -1,7 +1,7 @@
 package com.andreas_kratzer.ghosttalk.feature.settings.ui
 
-import android.widget.Toast
 import android.content.Intent
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts

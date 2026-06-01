@@ -10,7 +10,6 @@ import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
 import com.andreas_kratzer.ghosttalk.core.tts.TtsVoice
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

@@ -1,8 +1,8 @@
 package com.andreas_kratzer.ghosttalk.core.domain.templates
 
 import com.andreas_kratzer.ghosttalk.core.data.PageRepository
-import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.domain.pages.UsageLocation
+import com.andreas_kratzer.ghosttalk.core.model.Page
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest

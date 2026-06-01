@@ -7,6 +7,7 @@ import androidx.compose.ui.res.stringResource
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.cloud.HomeDevice
 import com.andreas_kratzer.ghosttalk.core.model.DeviceActionType
+import com.andreas_kratzer.ghosttalk.core.model.MediaProvider
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.core.model.SmartHomeProvider
@@ -14,12 +15,10 @@ import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.ui.pages.actions.DeviceActionFields
 import com.andreas_kratzer.ghosttalk.ui.pages.actions.GeminiActionFields
 import com.andreas_kratzer.ghosttalk.ui.pages.actions.GeminiVisionActionFields
-import com.andreas_kratzer.ghosttalk.ui.pages.actions.NavigationActionFields
+import com.andreas_kratzer.ghosttalk.ui.pages.actions.PlayMediaActionFields
 import com.andreas_kratzer.ghosttalk.ui.pages.actions.RankActionFields
 import com.andreas_kratzer.ghosttalk.ui.pages.actions.SmartHomeActionFields
 import com.andreas_kratzer.ghosttalk.ui.pages.actions.WeatherActionFields
-import com.andreas_kratzer.ghosttalk.ui.pages.actions.PlayMediaActionFields
-import com.andreas_kratzer.ghosttalk.core.model.MediaProvider
 
 @Composable
 fun ActionConfigFields(

@@ -3,9 +3,6 @@ package com.andreas_kratzer.ghosttalk.core.database
 import androidx.room.RoomDatabase
 import androidx.room.withTransaction
 import com.andreas_kratzer.ghosttalk.core.data.impl.PageRepositoryImpl
-import com.andreas_kratzer.ghosttalk.core.database.AppDatabase
-import com.andreas_kratzer.ghosttalk.core.database.PageDao
-import com.andreas_kratzer.ghosttalk.core.database.ButtonDao
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -16,9 +13,9 @@ import io.mockk.unmockkStatic
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
-import org.junit.After
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)

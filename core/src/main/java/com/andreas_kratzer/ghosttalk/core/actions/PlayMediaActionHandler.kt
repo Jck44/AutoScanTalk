@@ -4,7 +4,6 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.media.session.MediaSessionManager
-import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.util.Log

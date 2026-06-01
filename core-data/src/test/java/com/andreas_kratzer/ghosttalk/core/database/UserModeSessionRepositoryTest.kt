@@ -1,7 +1,6 @@
 package com.andreas_kratzer.ghosttalk.core.database
 
 import com.andreas_kratzer.ghosttalk.core.data.impl.UserModeSessionRepositoryImpl
-import com.andreas_kratzer.ghosttalk.core.model.UserModeSession
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every

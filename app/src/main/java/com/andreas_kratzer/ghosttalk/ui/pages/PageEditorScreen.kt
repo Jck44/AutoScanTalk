@@ -16,8 +16,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import com.andreas_kratzer.ghosttalk.core.model.GridSettingsUpdate
-import com.andreas_kratzer.ghosttalk.ui.components.ValidatedTextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -31,9 +29,11 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
-import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
+import com.andreas_kratzer.ghosttalk.core.model.GridSettingsUpdate
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
+import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.ui.components.GridEditorContent
+import com.andreas_kratzer.ghosttalk.ui.components.ValidatedTextField
 import kotlinx.coroutines.delay
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 

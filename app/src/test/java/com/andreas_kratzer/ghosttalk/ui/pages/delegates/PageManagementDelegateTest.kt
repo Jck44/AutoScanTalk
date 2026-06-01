@@ -6,9 +6,6 @@ import com.andreas_kratzer.ghosttalk.core.data.GetPagesUseCase
 import com.andreas_kratzer.ghosttalk.core.data.PageRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.data.TemplateRepository
-import com.andreas_kratzer.ghosttalk.core.model.Page
-import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.core.model.SortOrder
 import com.andreas_kratzer.ghosttalk.core.domain.pages.CreatePageUseCase
 import com.andreas_kratzer.ghosttalk.core.domain.pages.DeletePageUseCase
 import com.andreas_kratzer.ghosttalk.core.domain.pages.DuplicateButtonToPageUseCase
@@ -24,6 +21,9 @@ import com.andreas_kratzer.ghosttalk.core.domain.pages.UpdateButtonConfigUseCase
 import com.andreas_kratzer.ghosttalk.core.domain.pages.UpdateMultipleButtonsUseCase
 import com.andreas_kratzer.ghosttalk.core.domain.pages.UpdatePageSettingsUseCase
 import com.andreas_kratzer.ghosttalk.core.domain.pages.UpdateRowNameUseCase
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.Page
+import com.andreas_kratzer.ghosttalk.core.model.SortOrder
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every

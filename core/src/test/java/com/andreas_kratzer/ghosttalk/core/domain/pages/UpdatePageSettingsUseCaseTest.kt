@@ -2,6 +2,7 @@ package com.andreas_kratzer.ghosttalk.core.domain.pages
 
 import com.andreas_kratzer.ghosttalk.core.data.BookRepository
 import com.andreas_kratzer.ghosttalk.core.data.PageRepository
+import com.andreas_kratzer.ghosttalk.core.model.OptionalProperty
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -9,7 +10,6 @@ import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
-import com.andreas_kratzer.ghosttalk.core.model.OptionalProperty
 import org.junit.Before
 import org.junit.Test
 

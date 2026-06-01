@@ -8,6 +8,7 @@ import android.util.Log
 import com.andreas_kratzer.ghosttalk.core.audio.RoutedAudioPlayer
 import com.andreas_kratzer.ghosttalk.core.di.ApplicationScope
 import com.andreas_kratzer.ghosttalk.core.settings.CloudSettings
+import com.andreas_kratzer.ghosttalk.core.util.NetworkUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -27,7 +28,6 @@ import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
-import com.andreas_kratzer.ghosttalk.core.util.NetworkUtils
 
 @Singleton
 open class ElevenLabsTtsProvider @Inject constructor(

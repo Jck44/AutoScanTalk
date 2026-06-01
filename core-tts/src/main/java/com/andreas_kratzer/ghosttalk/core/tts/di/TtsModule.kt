@@ -1,8 +1,8 @@
 package com.andreas_kratzer.ghosttalk.core.tts.di
 
 import android.content.Context
-import com.andreas_kratzer.ghosttalk.core.audio.RoutedAudioPlayer
 import com.andreas_kratzer.ghosttalk.core.audio.AudioDeviceManager
+import com.andreas_kratzer.ghosttalk.core.audio.RoutedAudioPlayer
 import com.andreas_kratzer.ghosttalk.core.di.ApplicationScope
 import com.andreas_kratzer.ghosttalk.core.settings.CloudSettings
 import com.andreas_kratzer.ghosttalk.core.settings.TtsSettings

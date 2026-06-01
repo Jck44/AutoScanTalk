@@ -1,7 +1,6 @@
 package com.andreas_kratzer.ghosttalk.ui.pages
 
 import android.Manifest
-import android.content.Context
 import android.content.pm.PackageManager
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -16,7 +15,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -29,20 +27,15 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -51,7 +44,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -74,9 +66,11 @@ import androidx.core.content.ContextCompat
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.cloud.HomeDevice
 import com.andreas_kratzer.ghosttalk.core.cloud.PhilipsHueManager
+import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository.ButtonUsageEvent
 import com.andreas_kratzer.ghosttalk.core.model.AuditoryCue
 import com.andreas_kratzer.ghosttalk.core.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.ButtonEffortMetrics
 import com.andreas_kratzer.ghosttalk.core.model.ControlDeviceButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.DeviceActionType
 import com.andreas_kratzer.ghosttalk.core.model.FrequentActionButtonAction
@@ -101,15 +95,10 @@ import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsGroupedDropdownI
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.feature.settings.domain.FeatureGuard
+import com.andreas_kratzer.ghosttalk.ui.pages.actions.NavigationActionFields
 import kotlinx.coroutines.launch
 import java.io.File
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
-import com.andreas_kratzer.ghosttalk.ui.pages.actions.NavigationActionFields
-import com.andreas_kratzer.ghosttalk.ui.pages.actions.DeviceActionFields
-import com.andreas_kratzer.ghosttalk.ui.pages.actions.SmartHomeActionFields
-import com.andreas_kratzer.ghosttalk.ui.pages.actions.PlayMediaActionFields
-import com.andreas_kratzer.ghosttalk.core.model.ButtonEffortMetrics
-import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository.ButtonUsageEvent
 
 @Composable
 fun ButtonConfigDialog(

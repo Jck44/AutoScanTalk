@@ -2,15 +2,15 @@ package com.andreas_kratzer.ghosttalk.domain.actions
 
 import android.app.Application
 import com.andreas_kratzer.ghosttalk.core.actions.FrequentActionResolver
+import com.andreas_kratzer.ghosttalk.core.data.ActionLogProvider
 import com.andreas_kratzer.ghosttalk.core.model.AuditoryCue
 import com.andreas_kratzer.ghosttalk.core.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.FrequentActionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.Page
-import com.andreas_kratzer.ghosttalk.core.data.ActionLogProvider
-import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.PreviousActionButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import javax.inject.Inject
 

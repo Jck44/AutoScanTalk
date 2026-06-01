@@ -9,7 +9,6 @@ import android.os.Bundle
 import android.util.Log
 import android.view.KeyEvent
 import android.view.WindowManager
-import com.andreas_kratzer.ghosttalk.core.cloud.SpotifyManager
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
@@ -28,8 +27,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -44,10 +43,11 @@ import androidx.navigation.compose.rememberNavController
 import com.andreas_kratzer.ghosttalk.core.KeyEventCoordinator
 import com.andreas_kratzer.ghosttalk.core.SecurityManager
 import com.andreas_kratzer.ghosttalk.core.UpdateManager
+import com.andreas_kratzer.ghosttalk.core.cloud.SpotifyManager
 import com.andreas_kratzer.ghosttalk.core.data.PageRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.core.data.impl.SampleDataInitializer
 import com.andreas_kratzer.ghosttalk.core.data.export.PageImportExportProvider
+import com.andreas_kratzer.ghosttalk.core.data.impl.SampleDataInitializer
 import com.andreas_kratzer.ghosttalk.core.data.impl.UserModeSessionTracker
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkTheme
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalActiveBookId
@@ -58,10 +58,10 @@ import com.andreas_kratzer.ghosttalk.ui.books.BookViewModel
 import com.andreas_kratzer.ghosttalk.ui.main.GhostTalkNavHost
 import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.Dispatchers
 import javax.inject.Inject
 
 @AndroidEntryPoint

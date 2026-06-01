@@ -1,5 +1,10 @@
 package com.andreas_kratzer.ghosttalk.core.data.impl
 
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
+import androidx.room.withTransaction
 import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.core.database.AppDatabase
 import com.andreas_kratzer.ghosttalk.core.database.ButtonUsageDao
@@ -7,22 +12,16 @@ import com.andreas_kratzer.ghosttalk.core.database.ButtonUsageHistoryEntity
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.ButtonUsageStat
 import com.andreas_kratzer.ghosttalk.core.model.GroupedButtonUsageStat
-import androidx.room.withTransaction
+import com.google.android.gms.location.LocationServices
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.tasks.await
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
-
-import android.content.Context
-import android.Manifest
-import android.content.pm.PackageManager
-import androidx.core.content.ContextCompat
-import com.google.android.gms.location.LocationServices
-import kotlinx.coroutines.tasks.await
-import dagger.hilt.android.qualifiers.ApplicationContext
 
 /**
  * Repository for tracking button usage statistics per book.
@@ -60,6 +59,7 @@ class ButtonUsageRepositoryImpl @Inject constructor(
     /**
      * Records a button press. Increments the usage counter or creates a new entry.
      */
+    @Suppress("MissingPermission")
     override suspend fun recordUsage(
         bookId: String,
         pageId: String,
@@ -74,7 +74,7 @@ class ButtonUsageRepositoryImpl @Inject constructor(
         val lastLocation = if (hasFine || hasCoarse) {
             try {
                 fusedLocationClient.lastLocation.await()
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 null
             }
         } else {
@@ -194,6 +194,7 @@ class ButtonUsageRepositoryImpl @Inject constructor(
         }
     }
 
+    @Suppress("MissingPermission")
     override suspend fun getPredictiveButtons(bookId: String, limit: Int): List<String> {
         val lastEvent = dao.getLastHistoryEvent(bookId)
         val lastButtonId = lastEvent?.buttonId
@@ -238,7 +239,7 @@ class ButtonUsageRepositoryImpl @Inject constructor(
             val lastLocation = if (hasFine || hasCoarse) {
                 try {
                     fusedLocationClient.lastLocation.await()
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     null
                 }
             } else {

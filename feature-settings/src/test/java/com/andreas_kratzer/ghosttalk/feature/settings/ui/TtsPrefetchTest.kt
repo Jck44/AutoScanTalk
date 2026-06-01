@@ -7,9 +7,7 @@ import com.andreas_kratzer.ghosttalk.core.data.BookRepository
 import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.core.data.GetPagesUseCase
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.core.data.UserModeSessionRepository
 import com.andreas_kratzer.ghosttalk.core.data.export.PageImportExportProvider
-import com.andreas_kratzer.ghosttalk.core.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.tts.AudioCacheRepository

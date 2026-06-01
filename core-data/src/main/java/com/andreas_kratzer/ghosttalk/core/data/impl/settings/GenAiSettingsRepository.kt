@@ -1,12 +1,12 @@
 package com.andreas_kratzer.ghosttalk.core.data.impl.settings
 
 import android.content.SharedPreferences
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_GEMINI_API_KEY
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_GEMINI_ENABLED
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_GEMINI_REDO_PREDICTION
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_GEMINI_TIMEOUT
-import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_USE_LOCAL_GENERATIVE_AI
-import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_GEMINI_API_KEY
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_USE_GEMINI_API_KEY
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_USE_LOCAL_GENERATIVE_AI
 import kotlinx.coroutines.flow.StateFlow
 
 class GenAiSettingsRepository(

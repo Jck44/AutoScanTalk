@@ -1,9 +1,9 @@
 package com.andreas_kratzer.ghosttalk.core.data.impl.analytics
 
-import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.core.model.Page
-import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository.ButtonUsageEvent
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.util.GridUtils
 import javax.inject.Inject
 import javax.inject.Singleton

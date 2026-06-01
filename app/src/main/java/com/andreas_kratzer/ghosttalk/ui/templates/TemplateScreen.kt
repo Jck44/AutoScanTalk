@@ -46,12 +46,12 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.core.domain.pages.UsageLocation
 import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.core.model.SortOrder
 import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkCard
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
-import com.andreas_kratzer.ghosttalk.core.domain.pages.UsageLocation
 import kotlinx.coroutines.launch
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 

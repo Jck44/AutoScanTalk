@@ -9,9 +9,9 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.asDeferred
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.Dispatchers
 import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton

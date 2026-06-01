@@ -6,10 +6,9 @@ import com.andreas_kratzer.ghosttalk.core.model.ActionLogEntry
 import com.andreas_kratzer.ghosttalk.core.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.core.util.Logger
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.serialization.encodeToString
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import java.text.SimpleDateFormat
 import java.util.Date
