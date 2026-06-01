@@ -39,4 +39,10 @@ class UserModeSessionRepositoryImpl @Inject constructor(
     override suspend fun clearSessions(bookId: String) {
         dao.clearSessionsForBook(bookId)
     }
+
+    override suspend fun insertSessions(sessions: List<UserModeSession>) {
+        sessions.forEach { session ->
+            dao.insertSession(UserModeSessionEntity.fromDomain(session))
+        }
+    }
 }

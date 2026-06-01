@@ -3,6 +3,7 @@ package com.andreas_kratzer.ghosttalk.core.data.impl
 import com.andreas_kratzer.ghosttalk.core.data.BookRepository
 import com.andreas_kratzer.ghosttalk.core.data.PageRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.data.UserModeSessionRepository
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsMapper
 import com.andreas_kratzer.ghosttalk.core.model.Book
 import io.mockk.coEvery
@@ -42,6 +43,7 @@ class SettingsRoundTripTest {
         val buttonTemplateRepository = mockk<com.andreas_kratzer.ghosttalk.core.data.ButtonTemplateRepository>(relaxed = true)
         every { buttonTemplateRepository.getTemplates() } returns kotlinx.coroutines.flow.flowOf(emptyList())
         val buttonUsageDao = mockk<com.andreas_kratzer.ghosttalk.core.database.ButtonUsageDao>(relaxed = true)
+        val userModeSessionRepository = mockk<UserModeSessionRepository>(relaxed = true)
         val manager = PageImportExportManager(
             context = context,
             pageRepository = pageRepository,
@@ -51,6 +53,7 @@ class SettingsRoundTripTest {
             actionMapper = actionMapper,
             buttonTemplateRepository = buttonTemplateRepository,
             buttonUsageDao = buttonUsageDao,
+            userModeSessionRepository = userModeSessionRepository,
             logger = logger
         )
 

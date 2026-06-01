@@ -7,6 +7,8 @@ import com.andreas_kratzer.ghosttalk.core.data.PageRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.data.ButtonTemplateRepository
 import com.andreas_kratzer.ghosttalk.core.data.export.PageImportExportProvider
+import com.andreas_kratzer.ghosttalk.core.data.UserModeSessionRepository
+import com.andreas_kratzer.ghosttalk.core.model.importexport.ExportedUserModeSession
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsMapper
 import com.andreas_kratzer.ghosttalk.core.model.AuditoryCue
@@ -24,6 +26,7 @@ import com.andreas_kratzer.ghosttalk.core.util.Logger
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -49,6 +52,7 @@ class PageImportExportManager @Inject constructor(
     private val actionMapper: ActionMapper,
     private val buttonTemplateRepository: ButtonTemplateRepository,
     private val buttonUsageDao: com.andreas_kratzer.ghosttalk.core.database.ButtonUsageDao,
+    private val userModeSessionRepository: UserModeSessionRepository,
     private val logger: Logger
 ) : PageImportExportProvider {
     private val TAG = "PageImportExportManager"
@@ -65,6 +69,7 @@ class PageImportExportManager @Inject constructor(
             bookId = pages.firstOrNull()?.bookId ?: "unknown",
             bookName = "Exportierte Seiten",
             holdingTimeSeconds = settingsRepository.holdingTimeMillis / 1000f,
+            sourceDevice = "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}",
             pages = pages.map { page ->
                 ImportPage(
                     importId = page.id,
@@ -129,6 +134,7 @@ class PageImportExportManager @Inject constructor(
             bookName = book.name,
             bookCreatedAt = book.createdAt,
             bookUpdatedAt = book.updatedAt,
+            sourceDevice = "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}",
             buttonTemplates = mappedButtonTemplates,
             pages = pages.map { page ->
                 ImportPage(
@@ -707,6 +713,7 @@ class PageImportExportManager @Inject constructor(
     private suspend fun exportStatisticsToJson(bookId: String): String = withContext(Dispatchers.IO) {
         val historyList = buttonUsageDao.getHistoryForBook(bookId).first()
         val statsList = buttonUsageDao.getAllStatsForBook(bookId)
+        val sessionsList = userModeSessionRepository.getSessionsForBook(bookId).firstOrNull() ?: emptyList()
         
         val exportedStats = statsList.map { stat ->
             ExportedButtonStat(
@@ -730,6 +737,13 @@ class PageImportExportManager @Inject constructor(
                 geminiResponse = event.geminiResponse
             )
         }
+
+        val exportedSessions = sessionsList.map { session ->
+            ExportedUserModeSession(
+                startTime = session.startTime,
+                endTime = session.endTime
+            )
+        }
         
         val appVerName = try {
             context.packageManager.getPackageInfo(context.packageName, 0).versionName
@@ -742,7 +756,9 @@ class PageImportExportManager @Inject constructor(
             history = exportedHistory,
             stats = exportedStats,
             statsVersion = 1,
-            appVersion = appVerName
+            appVersion = appVerName,
+            userModeSessions = exportedSessions,
+            sourceDevice = "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}"
         )
         json.encodeToString(statistics)
     }
@@ -754,6 +770,7 @@ class PageImportExportManager @Inject constructor(
             // Clean slate first
             buttonUsageDao.clearHistoryForBook(bookId)
             buttonUsageDao.clearStatsForBook(bookId)
+            userModeSessionRepository.clearSessions(bookId)
             
             // Re-insert history events
             statistics.history.forEach { event ->
@@ -783,7 +800,21 @@ class PageImportExportManager @Inject constructor(
                 )
                 buttonUsageDao.upsert(entity)
             }
-            logger.d(TAG, "Imported statistics for book $bookId: ${statistics.history.size} history events, ${statistics.stats.size} stats counter.")
+
+            // Re-insert user mode sessions
+            statistics.userModeSessions?.let { sessions ->
+                val domainSessions = sessions.map {
+                    com.andreas_kratzer.ghosttalk.core.model.UserModeSession(
+                        id = 0L,
+                        bookId = bookId,
+                        startTime = it.startTime,
+                        endTime = it.endTime
+                    )
+                }
+                userModeSessionRepository.insertSessions(domainSessions)
+            }
+
+            logger.d(TAG, "Imported statistics for book $bookId: ${statistics.history.size} history events, ${statistics.stats.size} stats counter, ${statistics.userModeSessions?.size ?: 0} user mode sessions.")
         } catch (e: Exception) {
             logger.e(TAG, "Failed to import statistics for book $bookId", e)
         }

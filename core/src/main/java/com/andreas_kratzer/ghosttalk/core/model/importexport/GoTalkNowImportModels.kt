@@ -77,6 +77,7 @@ data class ImportExportData(
     val autoEnableSpeakerphone: Boolean? = null,
     val simulateCallsEnabled: Boolean? = null,
     val hueCachedDevices: String? = null,
+    val sourceDevice: String? = null,
     val templates: List<ImportTemplate>? = null,
     val buttonTemplates: List<ImportButtonTemplate>? = null,
     val pages: List<ImportPage> = emptyList()
@@ -178,12 +179,20 @@ data class ImportAction(
 )
 
 @Serializable
+data class ExportedUserModeSession(
+    val startTime: Long,
+    val endTime: Long
+)
+
+@Serializable
 data class ExportedStatistics(
     val bookId: String,
     val history: List<ExportedHistoryEvent>,
     val stats: List<ExportedButtonStat>,
     val statsVersion: Int = 1,
-    val appVersion: String? = null
+    val appVersion: String? = null,
+    val userModeSessions: List<ExportedUserModeSession>? = null,
+    val sourceDevice: String? = null
 )
 
 @Serializable

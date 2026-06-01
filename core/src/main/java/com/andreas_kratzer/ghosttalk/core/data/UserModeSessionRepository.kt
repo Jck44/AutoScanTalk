@@ -8,4 +8,5 @@ interface UserModeSessionRepository {
     suspend fun startSession(bookId: String): Long
     suspend fun updateActiveSession(id: Long, endTime: Long)
     suspend fun clearSessions(bookId: String)
+    suspend fun insertSessions(sessions: List<UserModeSession>)
 }

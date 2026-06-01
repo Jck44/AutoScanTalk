@@ -4,6 +4,9 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.andreas_kratzer.ghosttalk.core.data.BookRepository
 import com.andreas_kratzer.ghosttalk.core.data.PageRepository
+import com.andreas_kratzer.ghosttalk.core.data.UserModeSessionRepository
+import com.andreas_kratzer.ghosttalk.core.model.UserModeSession
+import com.andreas_kratzer.ghosttalk.core.model.importexport.ExportedUserModeSession
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsMapper
@@ -47,6 +50,7 @@ class PageImportExportManagerTest {
     private val settingsMapper = SettingsMapper(settingsRepository, authManager)
     private val actionMapper = ActionMapper()
     private val buttonTemplateRepository: com.andreas_kratzer.ghosttalk.core.data.ButtonTemplateRepository = mockk(relaxed = true)
+    private val userModeSessionRepository: UserModeSessionRepository = mockk(relaxed = true)
     private val manager = PageImportExportManager(
         context = context,
         pageRepository = pageRepository,
@@ -56,6 +60,7 @@ class PageImportExportManagerTest {
         actionMapper = actionMapper,
         buttonTemplateRepository = buttonTemplateRepository,
         buttonUsageDao = mockk(relaxed = true),
+        userModeSessionRepository = userModeSessionRepository,
         logger = mockk(relaxed = true)
     )
 
@@ -982,6 +987,7 @@ class PageImportExportManagerTest {
             actionMapper = actionMapper,
             buttonTemplateRepository = buttonTemplateRepository,
             buttonUsageDao = buttonUsageDao,
+            userModeSessionRepository = userModeSessionRepository,
             logger = mockk(relaxed = true)
         )
 
@@ -1064,6 +1070,7 @@ class PageImportExportManagerTest {
             actionMapper = actionMapper,
             buttonTemplateRepository = buttonTemplateRepository,
             buttonUsageDao = buttonUsageDao,
+            userModeSessionRepository = userModeSessionRepository,
             logger = mockk(relaxed = true)
         )
 
@@ -1099,6 +1106,7 @@ class PageImportExportManagerTest {
             actionMapper = actionMapper,
             buttonTemplateRepository = buttonTemplateRepository,
             buttonUsageDao = buttonUsageDao,
+            userModeSessionRepository = userModeSessionRepository,
             logger = mockk(relaxed = true)
         )
 
@@ -1112,5 +1120,61 @@ class PageImportExportManagerTest {
         // Nothing should have been written
         io.mockk.coVerify(exactly = 0) { buttonUsageDao.insertHistoryEvent(any()) }
         io.mockk.coVerify(exactly = 0) { buttonUsageDao.upsert(any()) }
+    }
+
+    @Test
+    fun `exportStatisticsToZip then importStatisticsFromZip roundtrip preserves user mode sessions`() = runTest {
+        val packageManager: android.content.pm.PackageManager = mockk(relaxed = true)
+        val packageInfo: android.content.pm.PackageInfo = mockk(relaxed = true)
+        packageInfo.versionName = "1.0.0"
+        every { context.packageManager } returns packageManager
+        every { context.packageName } returns "com.andreas_kratzer.ghosttalk"
+        every { packageManager.getPackageInfo("com.andreas_kratzer.ghosttalk", 0) } returns packageInfo
+
+        val session1 = UserModeSession(id = 1L, bookId = "book-rt", startTime = 1000L, endTime = 2000L)
+        val session2 = UserModeSession(id = 2L, bookId = "book-rt", startTime = 3000L, endTime = 4000L)
+
+        val buttonUsageDao: com.andreas_kratzer.ghosttalk.core.database.ButtonUsageDao = mockk(relaxed = true)
+        val mockUserModeSessionRepository: UserModeSessionRepository = mockk(relaxed = true)
+
+        coEvery { buttonUsageDao.getHistoryForBook("book-rt") } returns kotlinx.coroutines.flow.flowOf(emptyList())
+        coEvery { buttonUsageDao.getAllStatsForBook("book-rt") } returns emptyList()
+        coEvery { mockUserModeSessionRepository.getSessionsForBook("book-rt") } returns kotlinx.coroutines.flow.flowOf(listOf(session1, session2))
+
+        val managerWithStatsMock = PageImportExportManager(
+            context = context,
+            pageRepository = pageRepository,
+            bookRepository = bookRepository,
+            settingsRepository = settingsRepository,
+            settingsMapper = settingsMapper,
+            actionMapper = actionMapper,
+            buttonTemplateRepository = buttonTemplateRepository,
+            buttonUsageDao = buttonUsageDao,
+            userModeSessionRepository = mockUserModeSessionRepository,
+            logger = mockk(relaxed = true)
+        )
+
+        // 1. Export to ZIP
+        val outputStream = java.io.ByteArrayOutputStream()
+        managerWithStatsMock.exportStatisticsToZip("book-rt", outputStream)
+        val zipBytes = outputStream.toByteArray()
+        assertTrue("Export should produce non-empty ZIP", zipBytes.isNotEmpty())
+
+        // 2. Import from the same ZIP
+        val slot = slot<List<UserModeSession>>()
+        coEvery { mockUserModeSessionRepository.insertSessions(capture(slot)) } returns Unit
+
+        managerWithStatsMock.importStatisticsFromZip("book-rt", java.io.ByteArrayInputStream(zipBytes))
+
+        // 3. Verify
+        coVerify { mockUserModeSessionRepository.clearSessions("book-rt") }
+        coVerify { mockUserModeSessionRepository.insertSessions(any()) }
+        assertTrue(slot.isCaptured)
+        val captured = slot.captured
+        assertEquals(2, captured.size)
+        assertEquals(1000L, captured[0].startTime)
+        assertEquals(2000L, captured[0].endTime)
+        assertEquals(3000L, captured[1].startTime)
+        assertEquals(4000L, captured[1].endTime)
     }
 }
