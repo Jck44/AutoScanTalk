@@ -1,5 +1,6 @@
 package com.andreas_kratzer.ghosttalk.feature.settings.ui
 
+import com.andreas_kratzer.ghosttalk.feature.settings.R
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -88,7 +89,7 @@ fun ContentManagementScreen(
             )
 
             GhostTalkCard(
-                title = "Statistiken & Empfehlungen",
+                title = stringResource(R.string.settings_analytics_dashboard),
                 icon = GhostTalkIcons.BarChart,
                 onClick = onNavigateToAnalyticsDashboard,
                 height = dynamicCardHeight,

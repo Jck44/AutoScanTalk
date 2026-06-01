@@ -7,6 +7,7 @@
     <string name="settings_screen_black_overlay_text">Battery saving mode.\nReturn to app via Back button</string>
 
     <!-- Settings Screen Labels -->
+    <string name="settings_analytics_dashboard">Statistics &amp; Recommendations</string>
 
     <string name="start_user_mode">User Mode</string>
     <string name="start_back_to_books">Back to Books</string>

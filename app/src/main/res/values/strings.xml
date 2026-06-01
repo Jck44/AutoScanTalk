@@ -6,6 +6,7 @@
     <string name="settings_screen_black_overlay_text">Akku Sparmodus.\nÜber Zurück zur App zurückkehren</string>
     
     <!-- Settings Screen Labels -->
+    <string name="settings_analytics_dashboard">Statistiken &amp; Empfehlungen</string>
 
     <string name="start_user_mode">Nutzermodus</string>
     <string name="start_back_to_books">Zurück zu den Büchern</string>

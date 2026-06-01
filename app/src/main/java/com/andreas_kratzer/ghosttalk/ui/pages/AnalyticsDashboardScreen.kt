@@ -92,7 +92,7 @@ fun AnalyticsDashboardScreen(
         topBar = {
             TopAppBar(
                 windowInsets = WindowInsets.statusBars,
-                title = { Text("Statistiken & Empfehlungen") },
+                title = { Text(stringResource(R.string.settings_analytics_dashboard)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
