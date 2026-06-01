@@ -3,7 +3,6 @@ package com.andreas_kratzer.ghosttalk.ui.pages
 import android.app.Application
 import androidx.lifecycle.SavedStateHandle
 import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
-import com.andreas_kratzer.ghosttalk.core.cloud.PhilipsHueManager
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.scanning.ScanCoordinator
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.InteractionDelegate
@@ -97,7 +96,7 @@ class PageViewModelStateTest {
         }
 
         // WHEN
-        val viewModel = PageViewModel(
+        PageViewModel(
             application = application,
             savedStateHandle = savedStateHandle,
             settingsRepository = mockk(relaxed = true),

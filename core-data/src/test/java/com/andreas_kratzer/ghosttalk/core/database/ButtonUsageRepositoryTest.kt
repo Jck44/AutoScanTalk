@@ -31,10 +31,10 @@ class ButtonUsageRepositoryTest {
     @Before
     fun setup() {
         mockkStatic("androidx.room.RoomDatabaseKt")
-        io.mockk.mockkStatic(com.google.android.gms.location.LocationServices::class)
+        mockkStatic(com.google.android.gms.location.LocationServices::class)
         io.mockk.every { com.google.android.gms.location.LocationServices.getFusedLocationProviderClient(any<android.content.Context>()) } returns mockk(relaxed = true)
 
-        io.mockk.mockkStatic(androidx.core.content.ContextCompat::class)
+        mockkStatic(androidx.core.content.ContextCompat::class)
         io.mockk.every { androidx.core.content.ContextCompat.checkSelfPermission(any(), any()) } returns android.content.pm.PackageManager.PERMISSION_DENIED
 
         coEvery { any<RoomDatabase>().withTransaction<Any?>(any()) } coAnswers {
@@ -48,8 +48,8 @@ class ButtonUsageRepositoryTest {
     @After
     fun teardown() {
         unmockkStatic("androidx.room.RoomDatabaseKt")
-        io.mockk.unmockkStatic(com.google.android.gms.location.LocationServices::class)
-        io.mockk.unmockkStatic(androidx.core.content.ContextCompat::class)
+        unmockkStatic(com.google.android.gms.location.LocationServices::class)
+        unmockkStatic(androidx.core.content.ContextCompat::class)
     }
     
     private val testButton = ButtonConfig(

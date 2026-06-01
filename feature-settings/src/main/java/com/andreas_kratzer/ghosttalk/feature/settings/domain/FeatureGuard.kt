@@ -1,10 +1,10 @@
+@file:Suppress("DEPRECATION")
 package com.andreas_kratzer.ghosttalk.feature.settings.domain
 
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.ControlDeviceButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.DeviceActionType
 import com.andreas_kratzer.ghosttalk.core.model.GeminiButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiNanoButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiSearchButtonAction
@@ -18,6 +18,7 @@ import javax.inject.Singleton
 /**
  * Centrally manages feature-related visibility and availability logic for buttons.
  */
+@Suppress("DEPRECATION")
 @Singleton
 class FeatureGuard @Inject constructor(
     private val settingsRepository: SettingsRepository

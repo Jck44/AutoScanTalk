@@ -30,7 +30,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class ButtonUsageRepositoryImpl @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val dao: ButtonUsageDao,
     private val settingsRepository: com.andreas_kratzer.ghosttalk.core.data.SettingsRepository,
     @param:com.andreas_kratzer.ghosttalk.core.di.ApplicationScope private val scope: kotlinx.coroutines.CoroutineScope,

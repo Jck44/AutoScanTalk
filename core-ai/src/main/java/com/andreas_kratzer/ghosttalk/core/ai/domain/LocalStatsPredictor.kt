@@ -8,6 +8,7 @@ import javax.inject.Singleton
 class LocalStatsPredictor @Inject constructor(
     private val buttonUsageRepository: ButtonUsageRepository
 ) {
+    @Suppress("UNUSED_PARAMETER")
     suspend fun predict(
         currentPage: com.andreas_kratzer.ghosttalk.core.model.Page,
         allPages: List<com.andreas_kratzer.ghosttalk.core.model.Page>,

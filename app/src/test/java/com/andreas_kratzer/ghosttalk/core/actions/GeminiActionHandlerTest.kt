@@ -5,7 +5,6 @@ import com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.GeminiButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.GeminiNanoButtonAction
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -30,7 +29,6 @@ class GeminiActionHandlerTest {
     private val ttsProxy = mockk<ActionTtsProxy>(relaxed = true)
     private val visionUseCase = mockk<com.andreas_kratzer.ghosttalk.core.ai.domain.VisionUseCase>(relaxed = true)
     private val actionLogger = mockk<ActionLogger>(relaxed = true)
-    private val actionEventEmitter = mockk<ActionEventEmitter>(relaxed = true)
     private val buttonUsageRepository = mockk<com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository>(relaxed = true)
     private val cameraProvider = mockk<CameraProvider>(relaxed = true)
     
@@ -50,7 +48,6 @@ class GeminiActionHandlerTest {
                 override fun get() = ttsProxy
             },
             actionLogger = actionLogger,
-            actionEventEmitter = actionEventEmitter,
             buttonUsageRepository = buttonUsageRepository,
             cameraProvider = cameraProvider
         )

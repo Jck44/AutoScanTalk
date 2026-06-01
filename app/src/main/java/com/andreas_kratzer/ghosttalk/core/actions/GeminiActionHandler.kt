@@ -9,7 +9,6 @@ import com.andreas_kratzer.ghosttalk.core.di.ApplicationScope
 import com.andreas_kratzer.ghosttalk.core.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.GeminiButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.GeminiNanoButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiSearchButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -25,7 +24,6 @@ class GeminiActionHandler @Inject constructor(
     private val visionUseCase: VisionUseCase,
     private val ttsProxyLazy: dagger.Lazy<ActionTtsProxy>,
     private val actionLogger: ActionLogger,
-    private val actionEventEmitter: ActionEventEmitter,
     private val buttonUsageRepository: com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository,
     private val cameraProvider: CameraProvider
 ) : ActionHandler {

@@ -2,15 +2,16 @@ package com.andreas_kratzer.ghosttalk.core.cloud.domain
 
 import android.content.Context
 import android.net.Uri
+import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import java.io.File
 
 class DocumentFolderSyncStorageProvider(
     private val context: Context,
-    private val treeUriString: String
+    treeUriString: String
 ) : SyncStorageProvider {
 
-    private val treeUri = Uri.parse(treeUriString)
+    private val treeUri = treeUriString.toUri()
     private val rootDoc = DocumentFile.fromTreeUri(context, treeUri)
 
     override suspend fun listFiles(): List<RemoteSyncFile> {
@@ -57,7 +58,7 @@ class DocumentFolderSyncStorageProvider(
             }
             onProgress(1.0f)
             doc.uri.toString()
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             null
         }
     }
@@ -69,7 +70,7 @@ class DocumentFolderSyncStorageProvider(
         description: String?,
         onProgress: (Float) -> Unit
     ): Boolean {
-        val uri = Uri.parse(fileId)
+        val uri = fileId.toUri()
         val doc = DocumentFile.fromSingleUri(context, uri) ?: return false
         return try {
             context.contentResolver.openOutputStream(doc.uri, "rwt")?.use { os ->
@@ -89,7 +90,7 @@ class DocumentFolderSyncStorageProvider(
             }
             onProgress(1.0f)
             true
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             false
         }
     }
@@ -99,7 +100,7 @@ class DocumentFolderSyncStorageProvider(
         destFile: File,
         onProgress: (Float) -> Unit
     ): Boolean {
-        val uri = Uri.parse(fileId)
+        val uri = fileId.toUri()
         val doc = DocumentFile.fromSingleUri(context, uri) ?: return false
         return try {
             context.contentResolver.openInputStream(doc.uri)?.use { inputStream ->
@@ -119,13 +120,13 @@ class DocumentFolderSyncStorageProvider(
             }
             onProgress(1.0f)
             true
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             false
         }
     }
 
     override suspend fun getFileMetadata(fileId: String): RemoteSyncFile? {
-        val uri = Uri.parse(fileId)
+        val uri = fileId.toUri()
         val doc = DocumentFile.fromSingleUri(context, uri) ?: return null
         if (!doc.exists()) return null
         return RemoteSyncFile(

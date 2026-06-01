@@ -1,6 +1,5 @@
 package com.andreas_kratzer.ghosttalk.core.data.impl.analytics
 
-import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.ButtonEffortMetrics
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.util.GridUtils
@@ -68,7 +67,6 @@ class EfficiencyAnalyzer @Inject constructor() {
 
             for ((globalIdx, buttonConfig) in activeButtonsWithGlobalIndices) {
                 val r = globalIdx / GridUtils.MAX_GRID_SIZE
-                val c = globalIdx % GridUtils.MAX_GRID_SIZE
 
                 // Number of active rows before this button's row
                 val rowsBefore = activeRows.indexOf(r).coerceAtLeast(0)

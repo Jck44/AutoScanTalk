@@ -5,7 +5,7 @@ import com.google.api.services.drive.Drive
 import java.io.File
 
 class DriveApiSyncStorageProvider(
-    private val drive: Drive,
+    drive: Drive,
     private val folderId: String
 ) : SyncStorageProvider {
 

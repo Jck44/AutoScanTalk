@@ -17,6 +17,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
+@Suppress("DEPRECATION")
 class FeatureGuardTest {
 
     private lateinit var settingsRepository: SettingsRepository
