@@ -110,4 +110,7 @@ object SettingsConstants {
     
     const val KEY_GOOGLE_DRIVE_FOLDER_ID = "google_drive_folder_id"
     const val KEY_GOOGLE_DRIVE_FOLDER_NAME = "google_drive_folder_name"
+    const val KEY_SYNC_TARGET_TYPE = "sync_target_type"
+    const val KEY_LOCAL_FOLDER_SAF_URI = "local_folder_saf_uri"
+    const val KEY_LOCAL_FOLDER_SAF_NAME = "local_folder_saf_name"
 }

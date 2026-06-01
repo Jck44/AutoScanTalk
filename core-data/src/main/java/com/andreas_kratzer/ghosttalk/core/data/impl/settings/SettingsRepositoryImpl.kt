@@ -169,6 +169,9 @@ class SettingsRepositoryImpl @Inject constructor(
     override val spotifyUserDisplayNameFlow: StateFlow<String?> get() = cloudSettings.spotifyUserDisplayNameFlow
     override val googleDriveFolderIdFlow: StateFlow<String?> get() = cloudSettings.googleDriveFolderIdFlow
     override val googleDriveFolderNameFlow: StateFlow<String?> get() = cloudSettings.googleDriveFolderNameFlow
+    override val syncTargetTypeFlow: StateFlow<String> get() = cloudSettings.syncTargetTypeFlow
+    override val localFolderSafUriFlow: StateFlow<String?> get() = cloudSettings.localFolderSafUriFlow
+    override val localFolderSafNameFlow: StateFlow<String?> get() = cloudSettings.localFolderSafNameFlow
     override val ttsEngineFlow: StateFlow<String?> get() = voiceSettings.ttsEngineFlow
     override val googleTtsLanguageFlow: StateFlow<String?> get() = voiceSettings.googleTtsLanguageFlow
     override val googleTtsVoiceNameFlow: StateFlow<String?> get() = voiceSettings.googleTtsVoiceNameFlow
@@ -519,6 +522,18 @@ class SettingsRepositoryImpl @Inject constructor(
     override var googleDriveFolderName: String?
         get() = cloudSettings.googleDriveFolderName
         set(value) { cloudSettings.googleDriveFolderName = value }
+
+    override var syncTargetType: String
+        get() = cloudSettings.syncTargetType
+        set(value) { cloudSettings.syncTargetType = value }
+
+    override var localFolderSafUri: String?
+        get() = cloudSettings.localFolderSafUri
+        set(value) { cloudSettings.localFolderSafUri = value }
+
+    override var localFolderSafName: String?
+        get() = cloudSettings.localFolderSafName
+        set(value) { cloudSettings.localFolderSafName = value }
 
 
     override var ttsEngine: String?

@@ -961,4 +961,66 @@ class PageImportExportManagerTest {
         verify { settingsRepository.getScanDelayMillisForBook(targetBookId) }
         verify { settingsRepository.getPageSortOrderForBook(targetBookId) }
     }
+
+    @Test
+    fun `exportStatisticsToZip contains valid json with statsVersion and appVersion and can import legacy without versions`() = runTest {
+        val packageManager: android.content.pm.PackageManager = mockk(relaxed = true)
+        val packageInfo: android.content.pm.PackageInfo = mockk(relaxed = true)
+        packageInfo.versionName = "2.3.4"
+        
+        every { context.packageManager } returns packageManager
+        every { context.packageName } returns "com.andreas_kratzer.ghosttalk"
+        every { packageManager.getPackageInfo("com.andreas_kratzer.ghosttalk", 0) } returns packageInfo
+
+        val buttonUsageDao: com.andreas_kratzer.ghosttalk.core.database.ButtonUsageDao = mockk(relaxed = true)
+        val managerWithStatsMock = PageImportExportManager(
+            context = context,
+            pageRepository = pageRepository,
+            bookRepository = bookRepository,
+            settingsRepository = settingsRepository,
+            settingsMapper = settingsMapper,
+            actionMapper = actionMapper,
+            buttonTemplateRepository = buttonTemplateRepository,
+            buttonUsageDao = buttonUsageDao,
+            logger = mockk(relaxed = true)
+        )
+
+        coEvery { buttonUsageDao.getHistoryForBook("book-1") } returns kotlinx.coroutines.flow.flowOf(emptyList())
+        coEvery { buttonUsageDao.getAllStatsForBook("book-1") } returns emptyList()
+
+        val output = java.io.ByteArrayOutputStream()
+        managerWithStatsMock.exportStatisticsToZip("book-1", output)
+
+        val zipBytes = output.toByteArray()
+        assertTrue("Zip should not be empty", zipBytes.isNotEmpty())
+
+        val zipInput = java.util.zip.ZipInputStream(java.io.ByteArrayInputStream(zipBytes))
+        var entry = zipInput.nextEntry
+        var statsJsonString = ""
+        while (entry != null) {
+            if (entry.name == "statistics.json") {
+                statsJsonString = zipInput.reader().readText()
+            }
+            entry = zipInput.nextEntry
+        }
+
+        assertTrue("statistics.json should be present", statsJsonString.isNotEmpty())
+        assertTrue("JSON should contain statsVersion 1", statsJsonString.contains("\"statsVersion\": 1"))
+        assertTrue("JSON should contain appVersion 2.3.4", statsJsonString.contains("\"appVersion\": \"2.3.4\""))
+
+        // Legacy compatibility check: can import JSON without version keys
+        val legacyJson = """
+            {
+                "bookId": "book-1",
+                "history": [],
+                "stats": []
+            }
+        """.trimIndent()
+
+        // Should not throw or crash on decode
+        val decoded = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }.decodeFromString<com.andreas_kratzer.ghosttalk.core.model.importexport.ExportedStatistics>(legacyJson)
+        assertEquals("book-1", decoded.bookId)
+        assertEquals(1, decoded.statsVersion) // Default value fallback
+        assertNull(decoded.appVersion) // Default value fallback
+    }
 }

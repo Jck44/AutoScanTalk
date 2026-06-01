@@ -48,7 +48,8 @@ fun CloudSettingsSection(
     viewModel: SettingsViewModel,
     isGlobal: Boolean,
     onLocalExport: () -> Unit,
-    onLocalImport: () -> Unit
+    onLocalImport: () -> Unit,
+    onSelectSafFolder: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val userEmail by viewModel.userEmail.collectAsState()
@@ -63,6 +64,9 @@ fun CloudSettingsSection(
 
     val googleDriveFolderId by viewModel.googleDriveFolderId.collectAsState(null)
     val googleDriveFolderName by viewModel.googleDriveFolderName.collectAsState(null)
+    val syncTargetType by viewModel.syncTargetType.collectAsState()
+    val localFolderSafUri by viewModel.localFolderSafUri.collectAsState(null)
+    val localFolderSafName by viewModel.localFolderSafName.collectAsState(null)
     val driveFolders by viewModel.driveFolders.collectAsState()
     val isBrowsingFolders by viewModel.isBrowsingFolders.collectAsState()
     var showFolderPicker by remember { mutableStateOf(false) }
@@ -248,37 +252,77 @@ fun CloudSettingsSection(
             }
         } else {
             // Book-Scoped Mode: Show Sync Settings and manual buttons
-            PreferenceCategory("Backup-Ordner") {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Speicherort im Google Drive",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        Text(
-                            text = googleDriveFolderName ?: "Standard (GhosTTalk_Sync)",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                    TextButton(onClick = { showFolderPicker = true }, enabled = userEmail != null) {
-                        Text("Ändern")
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    TextButton(onClick = { showManualUrlDialog = true }, enabled = userEmail != null) {
-                        Text("Link eingeben")
-                    }
-                }
-                if (googleDriveFolderId != null) {
-                    TextButton(
-                        onClick = { viewModel.selectDriveFolder(null, null) },
-                        modifier = Modifier.padding(top = 4.dp)
+            PreferenceCategory("Backup-Speichertyp & Ort") {
+                val targetLabel = if (syncTargetType == "LOCAL_FOLDER_SAF") "Android Ordner-Auswahl (SAF)" else "Google Drive API (Standard)"
+                SettingsDropdownItem(
+                    label = "Sync-Ziel (Speichertyp)",
+                    selectedOption = targetLabel,
+                    options = listOf(
+                        "Google Drive API (Standard)" to { viewModel.setSyncTargetType("DRIVE_API") },
+                        "Android Ordner-Auswahl (SAF)" to { viewModel.setSyncTargetType("LOCAL_FOLDER_SAF") }
+                    )
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                if (syncTargetType == "DRIVE_API") {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
                     ) {
-                        Text("Auf Standard zurücksetzen", style = MaterialTheme.typography.labelSmall)
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Speicherort im Google Drive",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Text(
+                                text = googleDriveFolderName ?: "Standard (GhosTTalk_Sync)",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        TextButton(onClick = { showFolderPicker = true }, enabled = userEmail != null) {
+                            Text("Ändern")
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        TextButton(onClick = { showManualUrlDialog = true }, enabled = userEmail != null) {
+                            Text("Link eingeben")
+                        }
                     }
+                    if (googleDriveFolderId != null) {
+                        TextButton(
+                            onClick = { viewModel.selectDriveFolder(null, null) },
+                            modifier = Modifier.padding(top = 4.dp)
+                        ) {
+                            Text("Auf Standard zurücksetzen", style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Ausgewählter Android-Ordner",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Text(
+                                text = localFolderSafName ?: "Kein Ordner ausgewählt",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (localFolderSafUri != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                            )
+                        }
+                        Button(onClick = onSelectSafFolder) {
+                            Text("Auswählen")
+                        }
+                    }
+                    Text(
+                        text = "Ermöglicht den Zugriff auf geteilte Google Drive Ordner über die Google Drive App. Der Hintergrund-Sync erfordert, dass die Dateien lokal auf dem Gerät verfügbar gehalten werden.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
                 }
             }
 

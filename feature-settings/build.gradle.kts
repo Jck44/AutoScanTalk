@@ -88,6 +88,7 @@ dependencies {
     testImplementation(libs.mockk)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation("org.json:json:20240303")
+    implementation("androidx.documentfile:documentfile:1.0.1")
     
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

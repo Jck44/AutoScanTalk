@@ -38,6 +38,9 @@ class CloudSettingsRepository(
     private val _spotifyUserDisplayName = StringSetting(SettingsConstants.KEY_SPOTIFY_USER_DISPLAY_NAME)
     private val _googleDriveFolderId = StringSetting(KEY_GOOGLE_DRIVE_FOLDER_ID)
     private val _googleDriveFolderName = StringSetting(KEY_GOOGLE_DRIVE_FOLDER_NAME)
+    private val _syncTargetType = NonNullStringSetting(SettingsConstants.KEY_SYNC_TARGET_TYPE, "DRIVE_API")
+    private val _localFolderSafUri = StringSetting(SettingsConstants.KEY_LOCAL_FOLDER_SAF_URI)
+    private val _localFolderSafName = StringSetting(SettingsConstants.KEY_LOCAL_FOLDER_SAF_NAME)
 
     init {
         migrateOldSyncMode()
@@ -61,6 +64,9 @@ class CloudSettingsRepository(
     override val spotifyUserDisplayNameFlow = _spotifyUserDisplayName.flow
     override val googleDriveFolderIdFlow = _googleDriveFolderId.flow
     override val googleDriveFolderNameFlow = _googleDriveFolderName.flow
+    override val syncTargetTypeFlow = _syncTargetType.flow
+    override val localFolderSafUriFlow = _localFolderSafUri.flow
+    override val localFolderSafNameFlow = _localFolderSafName.flow
 
     override var isCloudSyncEnabled: Boolean by _isCloudSyncEnabled
     override var syncIntervalMinutes: Long by _syncIntervalMinutes
@@ -80,6 +86,9 @@ class CloudSettingsRepository(
     override var spotifyUserDisplayName: String? by _spotifyUserDisplayName
     override var googleDriveFolderId: String? by _googleDriveFolderId
     override var googleDriveFolderName: String? by _googleDriveFolderName
+    override var syncTargetType: String by _syncTargetType
+    override var localFolderSafUri: String? by _localFolderSafUri
+    override var localFolderSafName: String? by _localFolderSafName
 
 
     override fun refresh() {
@@ -101,6 +110,9 @@ class CloudSettingsRepository(
         _spotifyUserDisplayName.refresh()
         _googleDriveFolderId.refresh()
         _googleDriveFolderName.refresh()
+        _syncTargetType.refresh()
+        _localFolderSafUri.refresh()
+        _localFolderSafName.refresh()
     }
 
     private fun migrateOldSyncMode() {

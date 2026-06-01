@@ -181,7 +181,9 @@ data class ImportAction(
 data class ExportedStatistics(
     val bookId: String,
     val history: List<ExportedHistoryEvent>,
-    val stats: List<ExportedButtonStat>
+    val stats: List<ExportedButtonStat>,
+    val statsVersion: Int = 1,
+    val appVersion: String? = null
 )
 
 @Serializable

@@ -40,4 +40,14 @@ interface PageImportExportProvider {
         onProgress: (Float, String) -> Unit = { _, _ -> }
     )
     fun getTtsCacheLastModified(): Long
+
+    suspend fun exportStatisticsToZip(
+        bookId: String,
+        outputStream: java.io.OutputStream
+    )
+    suspend fun importStatisticsFromZip(
+        bookId: String,
+        inputStream: java.io.InputStream
+    )
+    suspend fun getStatisticsLastModified(bookId: String): Long
 }

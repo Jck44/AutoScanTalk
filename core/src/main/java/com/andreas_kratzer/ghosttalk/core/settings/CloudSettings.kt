@@ -50,5 +50,14 @@ interface CloudSettings {
 
     var googleDriveFolderName: String?
     val googleDriveFolderNameFlow: StateFlow<String?>
+
+    var syncTargetType: String
+    val syncTargetTypeFlow: StateFlow<String>
+
+    var localFolderSafUri: String?
+    val localFolderSafUriFlow: StateFlow<String?>
+
+    var localFolderSafName: String?
+    val localFolderSafNameFlow: StateFlow<String?>
 }
 

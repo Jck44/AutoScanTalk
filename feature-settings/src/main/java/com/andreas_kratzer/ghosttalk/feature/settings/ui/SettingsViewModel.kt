@@ -137,6 +137,9 @@ class SettingsViewModel @Inject constructor(
     val syncIntervalMinutes = settingsRepository.syncIntervalMinutesFlow
     val googleDriveFolderId = settingsRepository.googleDriveFolderIdFlow
     val googleDriveFolderName = settingsRepository.googleDriveFolderNameFlow
+    val syncTargetType = settingsRepository.syncTargetTypeFlow
+    val localFolderSafUri = settingsRepository.localFolderSafUriFlow
+    val localFolderSafName = settingsRepository.localFolderSafNameFlow
     val hueBridgeIp = settingsRepository.hueBridgeIpFlow
     val hueUsername = settingsRepository.hueUsernameFlow
     val huePairingStatus: StateFlow<String?> = hueDelegate.huePairingStatus
@@ -424,6 +427,11 @@ class SettingsViewModel @Inject constructor(
     fun setSyncModeTts(m: String) { settingsRepository.syncModeTts = m }
     fun setSyncModeStats(m: String) { settingsRepository.syncModeStats = m }
     fun setSyncIntervalMinutes(minutes: Long) { settingsRepository.syncIntervalMinutes = minutes }
+    fun setSyncTargetType(type: String) { settingsRepository.syncTargetType = type }
+    fun selectLocalFolderSaf(uri: String, name: String) {
+        settingsRepository.localFolderSafUri = uri
+        settingsRepository.localFolderSafName = name
+    }
     fun setHueBridgeIp(ip: String) { settingsRepository.hueBridgeIp = ip }
     fun setHueUsername(username: String) { settingsRepository.hueUsername = username }
 

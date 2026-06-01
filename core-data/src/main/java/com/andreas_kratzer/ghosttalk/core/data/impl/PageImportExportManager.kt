@@ -460,16 +460,6 @@ class PageImportExportManager @Inject constructor(
             zip.closeEntry()
             onProgress(0.1f, "Database exported.")
 
-            // 1.1 Write the statistics.json if stats sync is BACKUP_ONLY (0.1 - 0.15)
-            val statsMode = settingsRepository.syncModeStats
-            if (statsMode == "BACKUP_ONLY") {
-                onProgress(0.08f, "Exporting statistics...")
-                val statsJson = exportStatisticsToJson(bookId)
-                zip.putNextEntry(ZipEntry("statistics.json"))
-                zip.write(statsJson.toByteArray(Charsets.UTF_8))
-                zip.closeEntry()
-            }
-
             // 2. Gather all files to compress (10-100%)
             val filesToCompress = mutableListOf<Pair<File, String>>()
             
@@ -741,10 +731,18 @@ class PageImportExportManager @Inject constructor(
             )
         }
         
+        val appVerName = try {
+            context.packageManager.getPackageInfo(context.packageName, 0).versionName
+        } catch (e: Exception) {
+            null
+        }
+
         val statistics = ExportedStatistics(
             bookId = bookId,
             history = exportedHistory,
-            stats = exportedStats
+            stats = exportedStats,
+            statsVersion = 1,
+            appVersion = appVerName
         )
         json.encodeToString(statistics)
     }
@@ -789,5 +787,40 @@ class PageImportExportManager @Inject constructor(
         } catch (e: Exception) {
             logger.e(TAG, "Failed to import statistics for book $bookId", e)
         }
+    }
+
+    override suspend fun exportStatisticsToZip(
+        bookId: String,
+        outputStream: OutputStream
+    ) = withContext(Dispatchers.IO) {
+        ZipOutputStream(outputStream).use { zip ->
+            val statsJson = exportStatisticsToJson(bookId)
+            zip.putNextEntry(ZipEntry("statistics.json"))
+            zip.write(statsJson.toByteArray(Charsets.UTF_8))
+            zip.closeEntry()
+        }
+    }
+
+    override suspend fun importStatisticsFromZip(
+        bookId: String,
+        inputStream: InputStream
+    ) = withContext(Dispatchers.IO) {
+        val zipIn = ZipInputStream(inputStream)
+        var entry = zipIn.nextEntry
+        while (entry != null) {
+            if (entry.name == "statistics.json") {
+                val bytes = zipIn.readBytes()
+                val statsJson = String(bytes, Charsets.UTF_8)
+                importStatisticsFromJson(statsJson, bookId)
+                break
+            }
+            entry = zipIn.nextEntry
+        }
+    }
+
+    override suspend fun getStatisticsLastModified(bookId: String): Long = withContext(Dispatchers.IO) {
+        val lastHistoryTime = buttonUsageDao.getLastHistoryEvent(bookId)?.timestamp ?: 0L
+        val lastStatTime = buttonUsageDao.getAllStatsForBook(bookId).maxOfOrNull { it.lastUsedAt } ?: 0L
+        maxOf(lastHistoryTime, lastStatTime)
     }
 }

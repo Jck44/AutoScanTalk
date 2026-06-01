@@ -1,6 +1,7 @@
 package com.andreas_kratzer.ghosttalk.feature.settings.ui
 
 import android.widget.Toast
+import android.content.Intent
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -147,6 +148,24 @@ fun SettingsScreen(
         }
     }
 
+    val safFolderLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocumentTree()
+    ) { uri ->
+        uri?.let {
+            val takeFlags: Int = Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            try {
+                context.contentResolver.takePersistableUriPermission(it, takeFlags)
+                val doc = androidx.documentfile.provider.DocumentFile.fromTreeUri(context, it)
+                val displayName = doc?.name ?: it.lastPathSegment ?: "Ausgewählter SAF-Ordner"
+                viewModel.selectLocalFolderSaf(it.toString(), displayName)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Toast.makeText(context, "Fehler beim Zuweisen der Berechtigungen: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
     BackHandler {
         if (selectedSection == null) {
             onNavigateBack()
@@ -185,7 +204,8 @@ fun SettingsScreen(
                     onNavigateToStart()
                 },
                 onLocalExport = { localExportLauncher.launch("GhostTalk_Backup.zip") },
-                onLocalImport = { localImportLauncher.launch("*/*") }
+                onLocalImport = { localImportLauncher.launch("*/*") },
+                onSelectSafFolder = { safFolderLauncher.launch(null) }
             )
         }
     }
@@ -339,7 +359,8 @@ private fun SettingsSubMenu(
     onBookDeleted: () -> Unit,
     onLockClicked: () -> Unit,
     onLocalExport: () -> Unit,
-    onLocalImport: () -> Unit
+    onLocalImport: () -> Unit,
+    onSelectSafFolder: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -356,7 +377,8 @@ private fun SettingsSubMenu(
             onBookDeleted = onBookDeleted,
             onLockClicked = onLockClicked,
             onLocalExport = onLocalExport,
-            onLocalImport = onLocalImport
+            onLocalImport = onLocalImport,
+            onSelectSafFolder = onSelectSafFolder
         )
         Spacer(modifier = Modifier.height(dimensions.paddingDoubleExtraLarge * 2))
     }
@@ -463,7 +485,8 @@ fun SubmenuContent(
     onBookDeleted: () -> Unit = {},
     onLockClicked: () -> Unit = {},
     onLocalExport: () -> Unit = {},
-    onLocalImport: () -> Unit = {}
+    onLocalImport: () -> Unit = {},
+    onSelectSafFolder: () -> Unit = {}
 ) {
     when (section) {
         SettingsSection.GENERAL -> {
@@ -509,7 +532,8 @@ fun SubmenuContent(
                 viewModel = viewModel,
                 isGlobal = isGlobal,
                 onLocalExport = onLocalExport,
-                onLocalImport = onLocalImport
+                onLocalImport = onLocalImport,
+                onSelectSafFolder = onSelectSafFolder
             )
         }
         SettingsSection.SMART_HOME -> {
