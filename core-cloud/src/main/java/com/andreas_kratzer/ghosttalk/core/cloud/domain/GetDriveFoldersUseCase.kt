@@ -16,15 +16,34 @@ class GetDriveFoldersUseCase @Inject constructor() {
      * @return A list of Drive files representing folders.
      */
     suspend fun execute(drive: Drive, parentFolderId: String = "root"): List<File> = withContext(Dispatchers.IO) {
-        val query = "'$parentFolderId' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false"
+        val query = "'$parentFolderId' in parents and (mimeType = 'application/vnd.google-apps.folder' or mimeType = 'application/vnd.google-apps.shortcut') and trashed = false"
         
         return@withContext try {
             val result = drive.files().list()
                 .setQ(query)
-                .setFields("files(id, name, modifiedTime, appProperties)")
+                .setFields("files(id, name, mimeType, modifiedTime, appProperties, shortcutDetails)")
                 .setOrderBy("name")
                 .execute()
-            result.files ?: emptyList()
+            
+            val filesList = result.files ?: emptyList()
+            filesList.mapNotNull { file ->
+                if (file.mimeType == "application/vnd.google-apps.shortcut") {
+                    val details = file.shortcutDetails
+                    if (details != null && details.targetMimeType == "application/vnd.google-apps.folder") {
+                        File().apply {
+                            id = details.targetId
+                            name = file.name
+                            mimeType = "application/vnd.google-apps.folder"
+                            modifiedTime = file.modifiedTime
+                            appProperties = file.appProperties
+                        }
+                    } else {
+                        null
+                    }
+                } else {
+                    file
+                }
+            }
         } catch (e: Exception) {
             emptyList()
         }

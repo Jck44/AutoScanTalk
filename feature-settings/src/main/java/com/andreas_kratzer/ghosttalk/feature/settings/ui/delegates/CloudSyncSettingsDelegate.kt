@@ -21,6 +21,7 @@ import com.andreas_kratzer.ghosttalk.feature.settings.R
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
 import com.google.api.services.drive.model.File
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -28,6 +29,8 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import android.util.Log
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -190,6 +193,15 @@ class CloudSyncSettingsDelegate @Inject constructor(
         settingsRepository.googleDriveFolderName = folderName
     }
 
+    fun fetchAvailableBackupsForImportByUrlOrId(urlOrId: String, scope: CoroutineScope) {
+        val folderId = extractFolderId(urlOrId)
+        if (folderId.isEmpty()) {
+            Toast.makeText(application, "Ungültige ID oder URL", Toast.LENGTH_LONG).show()
+            return
+        }
+        fetchAvailableBackupsForImport(folderId, scope)
+    }
+
     fun fetchAvailableBackupsForImport(folderId: String? = null, scope: CoroutineScope) {
         scope.launch {
             val credential = authManager.getGoogleCredential()
@@ -260,6 +272,60 @@ class CloudSyncSettingsDelegate @Inject constructor(
                 _isSyncing.value = false
             }
         }
+    }
+
+    fun selectDriveFolderByUrlOrId(urlOrId: String, scope: CoroutineScope, onResult: (Boolean, String?) -> Unit) {
+        val folderId = extractFolderId(urlOrId)
+        if (folderId.isEmpty()) {
+            onResult(false, "Ungültige ID oder URL")
+            return
+        }
+        scope.launch {
+            val credential = authManager.getGoogleCredential()
+            if (credential == null) {
+                onResult(false, "Kein Cloud-Konto verbunden.")
+                return@launch
+            }
+            try {
+                val drive = com.google.api.services.drive.Drive.Builder(
+                    com.google.api.client.http.javanet.NetHttpTransport(),
+                    com.google.api.client.json.gson.GsonFactory.getDefaultInstance(),
+                    credential
+                ).setApplicationName("GhostTalk").build()
+
+                val folder = withContext(Dispatchers.IO) {
+                    drive.files().get(folderId)
+                        .setFields("id, name")
+                        .execute()
+                }
+                settingsRepository.googleDriveFolderId = folder.id
+                settingsRepository.googleDriveFolderName = folder.name
+                onResult(true, folder.name)
+            } catch (e: Exception) {
+                Log.e("CloudSyncDelegate", "Failed to access manually entered folder: ${e.message}", e)
+                onResult(false, "Zugriff verweigert oder Ordner existiert nicht. Hat die App diesen Ordner erstellt?")
+            }
+        }
+    }
+
+    private fun extractFolderId(input: String): String {
+        val trimmed = input.trim()
+        if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+            val pattern1 = "folders/([a-zA-Z0-9_-]+)".toRegex()
+            val match1 = pattern1.find(trimmed)
+            if (match1 != null) {
+                return match1.groupValues[1]
+            }
+            val pattern2 = "id=([a-zA-Z0-9_-]+)".toRegex()
+            val match2 = pattern2.find(trimmed)
+            if (match2 != null) {
+                return match2.groupValues[1]
+            }
+        }
+        if (trimmed.matches("[a-zA-Z0-9_-]+".toRegex())) {
+            return trimmed
+        }
+        return ""
     }
 
     private fun findActivity(context: Context): Activity? {

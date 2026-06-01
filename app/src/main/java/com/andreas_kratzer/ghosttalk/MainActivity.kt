@@ -13,7 +13,7 @@ import com.andreas_kratzer.ghosttalk.core.cloud.SpotifyManager
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.fragment.app.FragmentActivity
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -47,6 +47,7 @@ import com.andreas_kratzer.ghosttalk.core.UpdateManager
 import com.andreas_kratzer.ghosttalk.core.data.PageRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.data.impl.SampleDataInitializer
+import com.andreas_kratzer.ghosttalk.core.data.export.PageImportExportProvider
 import com.andreas_kratzer.ghosttalk.core.data.impl.UserModeSessionTracker
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkTheme
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalActiveBookId
@@ -64,7 +65,7 @@ import kotlinx.coroutines.Dispatchers
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class MainActivity : FragmentActivity() {
+class MainActivity : AppCompatActivity() {
 
     private var isDbInitialized by mutableStateOf(false)
 
@@ -77,6 +78,7 @@ class MainActivity : FragmentActivity() {
     @Inject lateinit var userModeSessionTracker: UserModeSessionTracker
     @Inject lateinit var spotifyManager: SpotifyManager
     @Inject lateinit var backgroundScheduler: com.andreas_kratzer.ghosttalk.core.domain.BackgroundScheduler
+    @Inject lateinit var importExportManager: PageImportExportProvider
 
     private val bookViewModel: BookViewModel by viewModels()
     private val pageViewModel: PageViewModel by viewModels()
@@ -177,6 +179,7 @@ class MainActivity : FragmentActivity() {
             backgroundScheduler.scheduleLocationUpdate()
             backgroundScheduler.scheduleWeatherUpdate()
             isDbInitialized = true
+            handleIntent(intent)
         }
 
         // Observe Auth Consent Intent
@@ -412,6 +415,7 @@ class MainActivity : FragmentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         handleDeepLink(intent)
+        handleIntent(intent)
     }
 
     private fun handleDeepLink(intent: Intent) {
@@ -425,6 +429,141 @@ class MainActivity : FragmentActivity() {
                     settingsViewModel.loadSpotifyPlaylists()
                 } else {
                     Log.e("MainActivity", "Spotify OAuth callback processing failed.")
+                }
+            }
+        }
+    }
+
+    private fun handleIntent(intent: Intent) {
+        val action = intent.action
+        val type = intent.type
+        Log.d("MainActivity", "handleIntent: action = $action, type = $type")
+        
+        if (Intent.ACTION_SEND == action && type != null) {
+            val uri = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                intent.getParcelableExtra(Intent.EXTRA_STREAM, android.net.Uri::class.java)
+            } else {
+                @Suppress("DEPRECATION")
+                intent.getParcelableExtra(Intent.EXTRA_STREAM)
+            }
+            if (uri != null) {
+                processSharedZip(uri)
+            }
+        }
+    }
+
+    private fun processSharedZip(uri: android.net.Uri) {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                var isBookZip = false
+                var isTtsCacheZip = false
+                
+                contentResolver.openInputStream(uri)?.use { inputStream ->
+                    java.util.zip.ZipInputStream(inputStream).use { zipIn ->
+                        var entry = zipIn.nextEntry
+                        while (entry != null) {
+                            if (entry.name == "backup.json") {
+                                isBookZip = true
+                                break
+                            } else if (entry.name.startsWith("tts_cache/")) {
+                                isTtsCacheZip = true
+                            }
+                            zipIn.closeEntry()
+                            entry = zipIn.nextEntry
+                        }
+                    }
+                }
+                
+                withContext(Dispatchers.Main) {
+                    if (isBookZip) {
+                        importBookZip(uri)
+                    } else if (isTtsCacheZip) {
+                        importTtsCacheZip(uri)
+                    } else {
+                        android.widget.Toast.makeText(
+                            this@MainActivity, 
+                            "Ungültiges ZIP-Archiv. Keine Buchdaten oder Sprach-Cache gefunden.", 
+                            android.widget.Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("MainActivity", "Error parsing shared ZIP", e)
+                withContext(Dispatchers.Main) {
+                    android.widget.Toast.makeText(
+                        this@MainActivity, 
+                        "Fehler beim Lesen der ZIP-Datei: ${e.message}", 
+                        android.widget.Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
+        }
+    }
+
+    private fun importBookZip(uri: android.net.Uri) {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                contentResolver.openInputStream(uri)?.use { inputStream ->
+                    val result = importExportManager.importCloudBackupFromZip(inputStream, null) { progress, status ->
+                        Log.d("MainActivity", "Import Book ZIP: progress = $progress, status = $status")
+                    }
+                    
+                    withContext(Dispatchers.Main) {
+                        result.onSuccess { bookId ->
+                            settingsRepository.activeBookId = bookId
+                            pageViewModel.setActiveBookId(bookId)
+                            
+                            android.widget.Toast.makeText(
+                                this@MainActivity, 
+                                "Buch erfolgreich importiert und aktiviert!", 
+                                android.widget.Toast.LENGTH_LONG
+                            ).show()
+                        }.onFailure { error ->
+                            android.widget.Toast.makeText(
+                                this@MainActivity, 
+                                "Fehler beim Buch-Import: ${error.message}", 
+                                android.widget.Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("MainActivity", "Error importing book ZIP", e)
+                withContext(Dispatchers.Main) {
+                    android.widget.Toast.makeText(
+                        this@MainActivity, 
+                        "Fehler beim Buch-Import: ${e.message}", 
+                        android.widget.Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
+        }
+    }
+
+    private fun importTtsCacheZip(uri: android.net.Uri) {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                contentResolver.openInputStream(uri)?.use { inputStream ->
+                    importExportManager.importTtsCacheFromZip(inputStream) { progress, status ->
+                        Log.d("MainActivity", "Import TTS Cache ZIP: progress = $progress, status = $status")
+                    }
+                    
+                    withContext(Dispatchers.Main) {
+                        android.widget.Toast.makeText(
+                            this@MainActivity, 
+                            "TTS Sprach-Cache erfolgreich importiert!", 
+                            android.widget.Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("MainActivity", "Error importing TTS Cache ZIP", e)
+                withContext(Dispatchers.Main) {
+                    android.widget.Toast.makeText(
+                        this@MainActivity, 
+                        "Fehler beim TTS Cache Import: ${e.message}", 
+                        android.widget.Toast.LENGTH_LONG
+                    ).show()
                 }
             }
         }

@@ -63,10 +63,12 @@ fun CloudSettingsSection(
     val driveFolders by viewModel.driveFolders.collectAsState()
     val isBrowsingFolders by viewModel.isBrowsingFolders.collectAsState()
     var showFolderPicker by remember { mutableStateOf(false) }
+    var showManualUrlDialog by remember { mutableStateOf(false) }
 
     val availableBackups by viewModel.availableBackups.collectAsState()
     val showBackupSelectionDialog by viewModel.showBackupSelectionDialog.collectAsState()
     var showImportFolderPicker by remember { mutableStateOf(false) }
+    var showManualImportUrlDialog by remember { mutableStateOf(false) }
     val syncLogs by viewModel.syncLogs.collectAsState()
     var showSyncLogDialog by remember { mutableStateOf(false) }
     val spotifyUserDisplayName by viewModel.spotifyUserDisplayName.collectAsState(null)
@@ -192,6 +194,18 @@ fun CloudSettingsSection(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(stringResource(R.string.settings_cloud_import_as_new))
                 }
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = { 
+                        showManualImportUrlDialog = true
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = userEmail != null && !isSyncing
+                ) {
+                    Icon(GhostTalkIcons.Cloud, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Aus geteiltem Ordner importieren (Link)")
+                }
                 Text(
                     text = stringResource(R.string.settings_cloud_import_explanation),
                     style = MaterialTheme.typography.bodySmall,
@@ -249,6 +263,10 @@ fun CloudSettingsSection(
                     }
                     TextButton(onClick = { showFolderPicker = true }, enabled = userEmail != null) {
                         Text("Ändern")
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    TextButton(onClick = { showManualUrlDialog = true }, enabled = userEmail != null) {
+                        Text("Link eingeben")
                     }
                 }
                 if (googleDriveFolderId != null) {
@@ -431,6 +449,116 @@ fun CloudSettingsSection(
             onDismiss = { viewModel.dismissBackupSelectionDialog() },
             onBackupSelected = { backupInfo ->
                 viewModel.importCloudBackup(backupInfo)
+            }
+        )
+    }
+
+    if (showManualUrlDialog) {
+        var urlOrIdInput by remember { mutableStateOf("") }
+        var isVerifying by remember { mutableStateOf(false) }
+        var verificationError by remember { mutableStateOf<String?>(null) }
+
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { if (!isVerifying) showManualUrlDialog = false },
+            title = { Text("Freigabe-Link oder Ordner-ID eingeben") },
+            text = {
+                Column {
+                    Text(
+                        text = "Füge den Google Drive Link zum geteilten Ordner oder die Ordner-ID hier ein. Der Ordner muss von der GhostTalk-App (z. B. auf dem Patientengerät) erstellt worden sein.",
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    androidx.compose.material3.OutlinedTextField(
+                        value = urlOrIdInput,
+                        onValueChange = { urlOrIdInput = it },
+                        label = { Text("Link oder ID") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        enabled = !isVerifying
+                    )
+                    if (verificationError != null) {
+                        Text(
+                            text = verificationError!!,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
+                    if (isVerifying) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        isVerifying = true
+                        verificationError = null
+                        viewModel.selectDriveFolderByUrlOrId(urlOrIdInput) { success, folderName ->
+                            isVerifying = false
+                            if (success) {
+                                showManualUrlDialog = false
+                            } else {
+                                verificationError = folderName ?: "Unbekannter Fehler beim Verifizieren"
+                            }
+                        }
+                    },
+                    enabled = urlOrIdInput.isNotBlank() && !isVerifying
+                ) {
+                    Text("Verknüpfen")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showManualUrlDialog = false },
+                    enabled = !isVerifying
+                ) {
+                    Text("Abbrechen")
+                }
+            }
+        )
+    }
+
+    if (showManualImportUrlDialog) {
+        var urlOrIdInput by remember { mutableStateOf("") }
+
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showManualImportUrlDialog = false },
+            title = { Text("Aus geteiltem Ordner importieren") },
+            text = {
+                Column {
+                    Text(
+                        text = "Füge den Google Drive Link zum geteilten Ordner oder die Ordner-ID hier ein, um nach verfügbaren Backups zu suchen.",
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    androidx.compose.material3.OutlinedTextField(
+                        value = urlOrIdInput,
+                        onValueChange = { urlOrIdInput = it },
+                        label = { Text("Link oder ID") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.fetchAvailableBackupsForImportByUrlOrId(urlOrIdInput)
+                        showManualImportUrlDialog = false
+                    },
+                    enabled = urlOrIdInput.isNotBlank()
+                ) {
+                    Text("Nach Backups suchen")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showManualImportUrlDialog = false }
+                ) {
+                    Text("Abbrechen")
+                }
             }
         )
     }

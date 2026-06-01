@@ -391,6 +391,7 @@ class SettingsViewModel @Inject constructor(
     }
     
     fun fetchAvailableBackupsForImport(folderId: String? = null) = cloudSyncDelegate.fetchAvailableBackupsForImport(folderId, viewModelScope)
+    fun fetchAvailableBackupsForImportByUrlOrId(urlOrId: String) = cloudSyncDelegate.fetchAvailableBackupsForImportByUrlOrId(urlOrId, viewModelScope)
     
     fun importCloudBackup(backupInfo: com.andreas_kratzer.ghosttalk.core.cloud.domain.RemoteBackupInfo) {
         backupDelegate.setBackupRestoreRunning(true)
@@ -408,6 +409,8 @@ class SettingsViewModel @Inject constructor(
 
     fun fetchDriveFolders(parentFolderId: String = "root") = cloudSyncDelegate.fetchDriveFolders(parentFolderId, viewModelScope)
     fun selectDriveFolder(folderId: String?, folderName: String?) = cloudSyncDelegate.selectDriveFolder(folderId, folderName)
+    fun selectDriveFolderByUrlOrId(urlOrId: String, onResult: (Boolean, String?) -> Unit) = 
+        cloudSyncDelegate.selectDriveFolderByUrlOrId(urlOrId, viewModelScope, onResult)
     
     fun loadSyncLogs() = cloudSyncDelegate.loadSyncLogs(viewModelScope)
     fun clearSyncLogs() = cloudSyncDelegate.clearSyncLogs(viewModelScope)
