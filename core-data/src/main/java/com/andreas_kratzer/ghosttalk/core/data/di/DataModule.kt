@@ -220,9 +220,10 @@ abstract class DataModule {
         @Singleton
         fun provideSampleDataInitializer(
             bookRepository: BookRepository,
-            pageRepository: PageRepository
+            pageRepository: PageRepository,
+            buttonUsageRepository: ButtonUsageRepository
         ): SampleDataInitializer {
-            return SampleDataInitializer(bookRepository, pageRepository)
+            return SampleDataInitializer(bookRepository, pageRepository, buttonUsageRepository)
         }
     }
 }

@@ -83,10 +83,18 @@ fun EditorDialogs(
         )
     }
 
+    val buttonHistoryList by (actions as? PageViewModel)?.buttonHistory?.collectAsState(emptyList()) ?: remember { mutableStateOf(emptyList()) }
+    val pageMetricsMap by (actions as? PageViewModel)?.pageMetrics?.collectAsState(emptyMap()) ?: remember { mutableStateOf(emptyMap()) }
+    val shortcutRecommendations by (actions as? PageViewModel)?.shortcutRecommendations?.collectAsState(emptyList()) ?: remember { mutableStateOf(emptyList()) }
+
     if (showDialog && selectedButtonIndex != null) {
-        val buttonConfig = item.buttonConfigs.getOrNull(selectedButtonIndex)
+        val buttonConfig = item.buttonConfigs.getOrNull(selectedButtonIndex) ?: ButtonConfig()
+        val buttonMetrics = pageMetricsMap[buttonConfig.id]
+        val buttonHistory = buttonHistoryList.filter { it.buttonId == buttonConfig.id }
+        val buttonRecommendations = shortcutRecommendations.filter { it.targetButtonConfig.id == buttonConfig.id }
+
         ButtonConfigDialog(
-            buttonConfig = buttonConfig ?: ButtonConfig(),
+            buttonConfig = buttonConfig,
             pages = availablePages,
             templates = templates,
             onDismiss = onDismissButtonDialog,
@@ -155,6 +163,17 @@ fun EditorDialogs(
                 showSaveTemplateDialogConfig = config
                 newTemplateName = config.label
                 onDismissButtonDialog()
+            },
+            metrics = buttonMetrics,
+            historyEvents = buttonHistory,
+            recommendations = buttonRecommendations,
+            onApplyRecommendation = { recommendation ->
+                (actions as? PageViewModel)?.applyShortcutRecommendation(recommendation) { success, msg ->
+                    if (success) {
+                        onDismissButtonDialog()
+                    }
+                    android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_LONG).show()
+                }
             }
         )
     }

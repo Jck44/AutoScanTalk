@@ -65,6 +65,7 @@
 
     <!-- Page Editor Screen -->
 
+    <string name="page_editor_analytics_toggle">Effekt-Overlay umschalten</string>
     <string name="page_editor_row_name_label">Zeilenname</string>
     <string name="page_editor_loading">Seite nicht gefunden oder wird geladen…</string>
 

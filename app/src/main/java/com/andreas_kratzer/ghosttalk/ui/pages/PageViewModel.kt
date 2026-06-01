@@ -71,11 +71,82 @@ class PageViewModel @Inject constructor(
     private val buttonTemplateRepository: ButtonTemplateRepository,
     val systemCallManager: com.andreas_kratzer.ghosttalk.core.call.SystemCallManager,
     val philipsHueManager: PhilipsHueManager,
-    private val spotifyManager: SpotifyManager
+    private val spotifyManager: SpotifyManager,
+    private val buttonUsageRepository: com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository,
+    private val efficiencyAnalyzer: com.andreas_kratzer.ghosttalk.core.data.impl.analytics.EfficiencyAnalyzer,
+    private val pathAnalyzer: com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PathAnalyzer
 ) : AndroidViewModel(application), com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions {
+
+
+    val activeBookId = pageManagementDelegate.activeBookId
+    val currentPageId = pageManagementDelegate.currentPageId
+    val searchQuery = pageManagementDelegate.searchQuery
+    val filteredPages = pageManagementDelegate.filteredPages
+    val unfilteredPages = pageManagementDelegate.unfilteredPages
+    val currentPage = pageManagementDelegate.currentPage
+    val templates = pageManagementDelegate.templates
+    val activeTargetPageIds = pageManagementDelegate.activeTargetPageIds
 
     val buttonTemplates: StateFlow<List<ButtonTemplate>> = buttonTemplateRepository.getTemplates()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val buttonHistory = buttonUsageRepository.buttonHistory
+
+    val shortcutRecommendations: StateFlow<List<com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PathAnalyzer.ShortcutRecommendation>> = combine(
+        buttonHistory,
+        unfilteredPages,
+        activeBookId
+    ) { history, allPages, bookId ->
+        if (bookId != null && history.isNotEmpty() && allPages.isNotEmpty()) {
+            val delay = settingsRepository.scanDelayMillis
+            pathAnalyzer.analyzePaths(history, allPages, delay)
+        } else {
+            emptyList()
+        }
+    }
+    .flowOn(Dispatchers.Default)
+    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun applyShortcutRecommendation(
+        recommendation: com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PathAnalyzer.ShortcutRecommendation,
+        onResult: (Boolean, String) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val page = pageManagementDelegate.getPageById(recommendation.sourcePageId)
+                if (page == null) {
+                    onResult(false, "Quellseite nicht gefunden.")
+                    return@launch
+                }
+                
+                val emptyIndex = page.buttonConfigs.indexOfFirst { it == null }
+                if (emptyIndex == -1 || emptyIndex >= com.andreas_kratzer.ghosttalk.core.util.GridUtils.TOTAL_SLOTS) {
+                    onResult(false, "Die Quellseite ist bereits voll (alle Kachel-Slots belegt).")
+                    return@launch
+                }
+                
+                val newConfig = recommendation.targetButtonConfig.copy(
+                    id = java.util.UUID.randomUUID().toString()
+                )
+                
+                pageManagementDelegate.insertButtonConfig(
+                    pageId = recommendation.sourcePageId,
+                    index = emptyIndex,
+                    newConfig = newConfig,
+                    forceShift = false
+                ) { success ->
+                    if (success) {
+                        onResult(true, "Abkürzung erfolgreich auf Seite '${recommendation.sourcePageName}' erstellt.")
+                    } else {
+                        onResult(false, "Fehler beim Erstellen der Kachel.")
+                    }
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("PageViewModel", "Error applying shortcut", e)
+                onResult(false, "Fehler: ${e.localizedMessage}")
+            }
+        }
+    }
 
     fun saveButtonAsTemplate(name: String, config: ButtonConfig) {
         viewModelScope.launch {
@@ -108,14 +179,7 @@ class PageViewModel @Inject constructor(
         }
     }
 
-    val activeBookId = pageManagementDelegate.activeBookId
-    val currentPageId = pageManagementDelegate.currentPageId
-    val searchQuery = pageManagementDelegate.searchQuery
-    val filteredPages = pageManagementDelegate.filteredPages
-    val unfilteredPages = pageManagementDelegate.unfilteredPages
-    val currentPage = pageManagementDelegate.currentPage
-    val templates = pageManagementDelegate.templates
-    val activeTargetPageIds = pageManagementDelegate.activeTargetPageIds
+
 
     val lastActions = interactionDelegate.lastActions
     val authRecoverIntent = interactionDelegate.authRecoverIntent
@@ -155,6 +219,49 @@ class PageViewModel @Inject constructor(
     .flowOn(Dispatchers.Default)
     .distinctUntilChanged()
     .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), currentPage.value)
+
+    // --- Caregiver Visual Analytics Overlay States ---
+    private val _isAnalyticsOverlayEnabled = MutableStateFlow(false)
+    val isAnalyticsOverlayEnabled = _isAnalyticsOverlayEnabled.asStateFlow()
+
+    fun toggleAnalyticsOverlay() {
+        _isAnalyticsOverlayEnabled.value = !_isAnalyticsOverlayEnabled.value
+        android.util.Log.d("PageViewModel", "toggleAnalyticsOverlay: enabled = ${_isAnalyticsOverlayEnabled.value}")
+    }
+
+    val pageMetrics: StateFlow<Map<String, com.andreas_kratzer.ghosttalk.core.model.ButtonEffortMetrics>> = combine(
+        resolvedPage,
+        activeBookId
+    ) { page, bookId ->
+        android.util.Log.d("PageViewModel", "pageMetrics combine: page = ${page?.name} (${page?.id}), bookId = $bookId")
+        Pair(page, bookId)
+    }
+    .flatMapLatest { (page, bookId) ->
+        if (page == null || bookId == null) {
+            android.util.Log.d("PageViewModel", "pageMetrics flatMapLatest: skipping analysis (page=${page?.id}, bookId=$bookId)")
+            flowOf(emptyMap())
+        } else {
+            kotlinx.coroutines.flow.flow {
+                try {
+                    android.util.Log.d("PageViewModel", "pageMetrics: starting analysis for page ${page.name} in book $bookId")
+                    val stats = buttonUsageRepository.getGroupedUsageStats(bookId)
+                    val clickCounts = stats.flatMap { it.children }
+                        .associate { it.buttonConfigId to it.usageCount }
+                    android.util.Log.d("PageViewModel", "pageMetrics: fetched ${stats.size} stats, clickCounts = $clickCounts")
+                    val delay = settingsRepository.scanDelayMillis
+                    val pattern = settingsRepository.defaultScanPattern
+                    val metrics = efficiencyAnalyzer.calculatePageMetrics(page, clickCounts, delay, pattern)
+                    android.util.Log.d("PageViewModel", "pageMetrics: calculated metrics for ${metrics.size} buttons: $metrics")
+                    emit(metrics)
+                } catch (e: Exception) {
+                    android.util.Log.e("PageViewModel", "Error analyzing page efficiency", e)
+                    emit(emptyMap())
+                }
+            }
+        }
+    }
+    .flowOn(Dispatchers.Default)
+    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
     val focusedButtonIndex = scanCoordinator.focusedButtonIndex
     val focusedRowIndex = scanCoordinator.focusedRowIndex

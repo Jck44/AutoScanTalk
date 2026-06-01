@@ -9,7 +9,7 @@ interface ButtonUsageRepository : ButtonUsageProvider {
 
     suspend fun getGroupedUsageStats(bookId: String): List<GroupedButtonUsageStat>
 
-    suspend fun recordUsage(bookId: String, pageId: String, buttonConfig: ButtonConfig, rows: Int, columns: Int, indexInPage: Int)
+    suspend fun recordUsage(bookId: String, pageId: String, buttonConfig: ButtonConfig, rows: Int, columns: Int, indexInPage: Int, timestamp: Long = System.currentTimeMillis())
     suspend fun clearStats(bookId: String)
     suspend fun cleanupOldStats(days: Int)
     suspend fun updateLastEventImage(imagePath: String)

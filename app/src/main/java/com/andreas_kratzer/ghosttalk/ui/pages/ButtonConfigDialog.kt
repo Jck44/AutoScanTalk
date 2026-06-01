@@ -108,6 +108,8 @@ import com.andreas_kratzer.ghosttalk.ui.pages.actions.NavigationActionFields
 import com.andreas_kratzer.ghosttalk.ui.pages.actions.DeviceActionFields
 import com.andreas_kratzer.ghosttalk.ui.pages.actions.SmartHomeActionFields
 import com.andreas_kratzer.ghosttalk.ui.pages.actions.PlayMediaActionFields
+import com.andreas_kratzer.ghosttalk.core.model.ButtonEffortMetrics
+import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository.ButtonUsageEvent
 
 @Composable
 fun ButtonConfigDialog(
@@ -143,7 +145,11 @@ fun ButtonConfigDialog(
     onConnectSpotify: () -> Unit = {},
     onDisconnectSpotify: () -> Unit = {},
     onLoadSpotifyPlaylists: () -> Unit = {},
-    onSaveAsTemplate: ((ButtonConfig) -> Unit)? = null
+    onSaveAsTemplate: ((ButtonConfig) -> Unit)? = null,
+    metrics: ButtonEffortMetrics? = null,
+    historyEvents: List<ButtonUsageEvent> = emptyList(),
+    recommendations: List<com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PathAnalyzer.ShortcutRecommendation> = emptyList(),
+    onApplyRecommendation: ((com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PathAnalyzer.ShortcutRecommendation) -> Unit)? = null
 ) {
     val context = LocalContext.current
     var label by remember { mutableStateOf(buttonConfig.label) }
@@ -223,7 +229,7 @@ fun ButtonConfigDialog(
 
     var showMenu by remember { mutableStateOf(false) }
     var currentTab by remember { mutableIntStateOf(0) }
-    val tabTitles = listOf("Einstellungen", "Vorschau")
+    val tabTitles = listOf("Einstellungen", "Vorschau", "Statistiken")
 
     val actionTypeSpeak = stringResource(R.string.button_action_speak_text)
     val actionTypeNavigate = stringResource(R.string.button_action_navigate_page)
@@ -1479,6 +1485,14 @@ fun ButtonConfigDialog(
                                 mediaProvider = mediaProvider,
                                 mediaContentName = mediaContentName,
                                 mediaReturnToAppDelaySec = mediaReturnToAppDelaySec
+                            )
+                        }
+                        2 -> {
+                            ButtonStatisticsTabContent(
+                                metrics = metrics,
+                                historyEvents = historyEvents,
+                                recommendations = recommendations,
+                                onApplyRecommendation = onApplyRecommendation
                             )
                         }
                     }

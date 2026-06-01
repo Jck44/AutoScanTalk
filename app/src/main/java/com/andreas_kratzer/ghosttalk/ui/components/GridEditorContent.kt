@@ -159,6 +159,10 @@ fun GridEditorContent(
         val spotifyPlaylists by pageViewModel?.spotifyPlaylists?.collectAsState(emptyList()) ?: remember { mutableStateOf(emptyList()) }
         val isSpotifyLoadingPlaylists by pageViewModel?.isLoadingPlaylists?.collectAsState(false) ?: remember { mutableStateOf(false) }
         val spotifyUserDisplayName by pageViewModel?.spotifyUserDisplayName?.collectAsState(null) ?: remember { mutableStateOf(null) }
+        val pageMetricsMap by pageViewModel?.pageMetrics?.collectAsState(emptyMap()) ?: remember { mutableStateOf(emptyMap()) }
+        val isAnalyticsOverlayEnabled by pageViewModel?.isAnalyticsOverlayEnabled?.collectAsState(false) ?: remember { mutableStateOf(false) }
+        val pageMetrics = if (isAnalyticsOverlayEnabled) pageMetricsMap else emptyMap()
+
         val editingTemplate = remember(editingTemplateId, buttonTemplates) {
             buttonTemplates.find { it.id == editingTemplateId }
         }
@@ -411,6 +415,7 @@ fun GridEditorContent(
                                     density = density,
                                     gridSpacingPx = gridSpacingPx,
                                     availablePages = availablePages,
+                                    pageMetrics = pageMetrics,
                                     onEditRow = { editingRowIndex = it; showRowEditDialog = true },
                                     onEditButton = { index ->
                                         selectedButtonIndex = index
@@ -428,6 +433,7 @@ fun GridEditorContent(
                                     density = density,
                                     gridSpacingPx = gridSpacingPx,
                                     availablePages = availablePages,
+                                    pageMetrics = pageMetrics,
                                     onEditButton = { index ->
                                         selectedButtonIndex = index
                                         showDialog = true
@@ -651,6 +657,8 @@ private fun EditorButtonCell(
     numCols: Int,
     gridSpacing: Dp,
     targetPageName: String? = null,
+    heatmapIntensity: Float? = null,
+    effortMetrics: com.andreas_kratzer.ghosttalk.core.model.ButtonEffortMetrics? = null,
     onDragEnd: (Int) -> Unit,
     onClick: () -> Unit
 ) {
@@ -670,7 +678,7 @@ private fun EditorButtonCell(
     )
     
     val isHighlighted = isTarget || isDraggedHovered
-
+ 
     Box(
         modifier = Modifier
             .width(width)
@@ -696,6 +704,8 @@ private fun EditorButtonCell(
             buttonConfig = buttonConfig,
             isFocused = false,
             targetPageName = targetPageName,
+            heatmapIntensity = heatmapIntensity,
+            effortMetrics = effortMetrics,
             onClick = onClick,
             modifier = Modifier
                 .fillMaxSize()
@@ -782,6 +792,7 @@ private fun LazyGridScope.renderRowByRowGrid(
     density: Float,
     gridSpacingPx: Float,
     availablePages: List<Page>,
+    pageMetrics: Map<String, com.andreas_kratzer.ghosttalk.core.model.ButtonEffortMetrics>,
     onEditRow: (Int) -> Unit,
     onEditButton: (Int) -> Unit
 ) {
@@ -854,6 +865,7 @@ private fun LazyGridScope.renderRowByRowGrid(
                             availablePages.find { it.id == action.pageId }?.name
                         }
                         
+                        val metrics = buttonConfig?.let { pageMetrics[it.id] }
                         EditorButtonCell(
                             localIndex = globalIndex, // In RowByRow, buttons are NOT grid items, so we use globalIndex for visual reorder
                             globalIndex = globalIndex,
@@ -865,6 +877,8 @@ private fun LazyGridScope.renderRowByRowGrid(
                             numCols = item.columns,
                             gridSpacing = dimensions.gridSpacing,
                             targetPageName = targetPageName,
+                            heatmapIntensity = metrics?.heatmapIntensity,
+                            effortMetrics = metrics,
                             onDragEnd = { fromIdx ->
                                 val to = buttonReorderState.findTargetButtonIndex(
                                     gridState = gridState,
@@ -896,6 +910,7 @@ private fun LazyGridScope.renderLinearGrid(
     density: Float,
     gridSpacingPx: Float,
     availablePages: List<Page>,
+    pageMetrics: Map<String, com.andreas_kratzer.ghosttalk.core.model.ButtonEffortMetrics>,
     onEditButton: (Int) -> Unit
 ) {
     val buttonTargetIndex = buttonReorderState.findTargetButtonIndex(
@@ -913,9 +928,10 @@ private fun LazyGridScope.renderLinearGrid(
             availablePages.find { it.id == action.pageId }?.name
         }
 
+        val metrics = buttonConfig?.let { pageMetrics[it.id] }
         EditorButtonCell(
-                            localIndex = localIndex, // In Linear Grid, buttons ARE grid items, so we use localIndex to match LazyGridState
-                            globalIndex = globalIndex,
+            localIndex = localIndex, // In Linear Grid, buttons ARE grid items, so we use localIndex to match LazyGridState
+            globalIndex = globalIndex,
             buttonConfig = buttonConfig,
             reorderState = buttonReorderState,
             isTarget = buttonTargetIndex == globalIndex,
@@ -924,6 +940,8 @@ private fun LazyGridScope.renderLinearGrid(
             numCols = item.columns,
             gridSpacing = dimensions.gridSpacing,
             targetPageName = targetPageName,
+            heatmapIntensity = metrics?.heatmapIntensity,
+            effortMetrics = metrics,
             onDragEnd = { fromLocalIdx ->
                 val toGlobal = buttonReorderState.findTargetButtonIndex(
                     gridState = gridState,

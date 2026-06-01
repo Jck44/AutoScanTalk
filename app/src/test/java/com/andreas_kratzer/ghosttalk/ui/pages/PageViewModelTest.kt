@@ -301,7 +301,10 @@ class PageViewModelTest {
             buttonTemplateRepository = mockk(relaxed = true),
             systemCallManager = systemCallManager,
             philipsHueManager = philipsHueManager,
-            spotifyManager = mockk(relaxed = true)
+            spotifyManager = mockk(relaxed = true),
+            buttonUsageRepository = buttonUsageRepository,
+            efficiencyAnalyzer = mockk(relaxed = true),
+            pathAnalyzer = mockk(relaxed = true)
         )
     }
 

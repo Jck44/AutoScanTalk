@@ -440,7 +440,8 @@ class PageImportExportManager @Inject constructor(
             val newBook = com.andreas_kratzer.ghosttalk.core.model.Book(
                 id = targetBookId,
                 name = importData.bookName ?: "Importiertes Buch",
-                createdAt = System.currentTimeMillis()
+                createdAt = importData.bookCreatedAt ?: System.currentTimeMillis(),
+                updatedAt = importData.bookUpdatedAt ?: importData.bookCreatedAt ?: System.currentTimeMillis()
             )
             bookRepository.insertBook(newBook)
 

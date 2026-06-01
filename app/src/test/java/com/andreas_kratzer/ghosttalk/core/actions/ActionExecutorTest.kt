@@ -128,7 +128,7 @@ class ActionExecutorTest {
         
         actionExecutor.executeButtonAction(button, bookId = "b1", index = 5)
         
-        coVerify { buttonUsageRepository.recordUsage("b1", "", button, 1, 1, 5) }
+        coVerify { buttonUsageRepository.recordUsage("b1", "", button, 1, 1, 5, any()) }
     }
 
     @Test

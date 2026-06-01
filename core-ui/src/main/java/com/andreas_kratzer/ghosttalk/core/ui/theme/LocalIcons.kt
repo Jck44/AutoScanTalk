@@ -811,6 +811,27 @@ object GhostTalkIcons {
             }
         }
 
+    val BarChart: ImageVector
+        get() = materialIcon(name = "Filled.BarChart") {
+            materialPath {
+                moveTo(5.0f, 9.2f)
+                horizontalLineToRelative(3.0f)
+                verticalLineToRelative(10.8f)
+                horizontalLineTo(5.0f)
+                close()
+                moveTo(10.5f, 5.0f)
+                horizontalLineToRelative(3.0f)
+                verticalLineToRelative(15.0f)
+                horizontalLineToRelative(-3.0f)
+                close()
+                moveTo(16.0f, 13.0f)
+                horizontalLineToRelative(3.0f)
+                verticalLineToRelative(7.0f)
+                horizontalLineToRelative(-3.0f)
+                close()
+            }
+        }
+
     val Copy: ImageVector
         get() = materialIcon(name = "Filled.ContentCopy") {
             materialPath {

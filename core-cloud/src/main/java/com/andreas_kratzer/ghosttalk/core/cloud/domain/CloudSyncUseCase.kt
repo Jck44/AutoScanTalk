@@ -433,6 +433,33 @@ class CloudSyncUseCase @Inject constructor(
                 if (result.isSuccess) {
                     val bookId = result.getOrNull() ?: ""
                     syncLogProvider.addLogEntry("Cloud-Import erfolgreich: $fileName", bookId, null)
+                    
+                    // Align book's updatedAt with the remote file's modification time
+                    // to prevent the sync logic from seeing the imported book as locally modified.
+                    if (bookId.isNotEmpty()) {
+                        try {
+                            if (isSafUri) {
+                                val docUri = Uri.parse(fileId)
+                                val doc = androidx.documentfile.provider.DocumentFile.fromSingleUri(context, docUri)
+                                val remoteTime = doc?.lastModified() ?: 0L
+                                if (remoteTime > 0L) {
+                                    bookRepository.updateLastModified(bookId, remoteTime)
+                                    logger.d(TAG, "Set book updatedAt to remote SAF time: $remoteTime")
+                                }
+                            } else {
+                                try {
+                                    val sp = getStorageProvider(drive)
+                                    val metadata = sp.getFileMetadata(fileId)
+                                    if (metadata != null && metadata.modifiedTime > 0L) {
+                                        bookRepository.updateLastModified(bookId, metadata.modifiedTime)
+                                        logger.d(TAG, "Set book updatedAt to remote Drive time: ${metadata.modifiedTime}")
+                                    }
+                                } catch (_: Exception) { /* non-fatal */ }
+                            }
+                        } catch (e: Exception) {
+                            logger.e(TAG, "Failed to align book timestamp after import (non-fatal)", e)
+                        }
+                    }
                     // Also restore TTS cache from separate file if available
                     try {
                         val storageProvider = if (isSafUri) {

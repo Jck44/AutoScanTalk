@@ -31,6 +31,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
+import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.ui.components.GridEditorContent
 import kotlinx.coroutines.delay
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
@@ -48,6 +49,12 @@ fun PageEditorScreen(
     val bookDefaultScanPattern by pageViewModel.defaultScanPattern.collectAsState()
     val page = unfilteredPages.find { it.id == pageId }
     val dimensions = LocalDimensions.current
+
+    LaunchedEffect(page) {
+        if (page != null) {
+            pageViewModel.loadPage(page)
+        }
+    }
 
     if (page == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -107,6 +114,23 @@ fun PageEditorScreen(
                 navigationIcon = {
                     IconButton(onClick = handleNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(CoreR.string.back_button_content_description))
+                    }
+                },
+                actions = {
+                    val isAnalyticsEnabled by pageViewModel.isAnalyticsOverlayEnabled.collectAsState()
+                    IconButton(
+                        onClick = { pageViewModel.toggleAnalyticsOverlay() },
+                        modifier = Modifier.testTag("page_editor_analytics_toggle")
+                    ) {
+                        Icon(
+                            imageVector = GhostTalkIcons.BarChart,
+                            contentDescription = stringResource(R.string.page_editor_analytics_toggle),
+                            tint = if (isAnalyticsEnabled) {
+                                androidx.compose.material3.MaterialTheme.colorScheme.primary
+                            } else {
+                                androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
+                            }
+                        )
                     }
                 }
             )

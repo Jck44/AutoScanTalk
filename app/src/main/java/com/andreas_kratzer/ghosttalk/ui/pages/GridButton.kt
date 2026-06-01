@@ -1,9 +1,10 @@
 package com.andreas_kratzer.ghosttalk.ui.pages
-
+ 
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -55,7 +56,7 @@ import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.WeatherButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.PlayMediaButtonAction
 import com.andreas_kratzer.ghosttalk.core.ui.theme.*
-
+ 
 object GridButtonColors {
     fun getBadgeColors(action: ButtonAction, isDark: Boolean): Pair<Color, Color> {
         return when (action) {
@@ -94,7 +95,7 @@ object GridButtonColors {
         }
     }
 }
-
+ 
 @Composable
 fun GridButton(
     buttonConfig: ButtonConfig?,
@@ -104,6 +105,8 @@ fun GridButton(
     isEditorMode: Boolean = !LocalIsUserModeActive.current,
     overrideLabel: String? = null,
     targetPageName: String? = null,
+    heatmapIntensity: Float? = null,
+    effortMetrics: com.andreas_kratzer.ghosttalk.core.model.ButtonEffortMetrics? = null,
     onClick: () -> Unit
 ) {
     val dimensions = LocalDimensions.current
@@ -152,69 +155,93 @@ fun GridButton(
                 }
             )
         ) {
-            if (buttonConfig != null) {
-                if (isEditorMode) {
-                    // Editor mode: Column layout with badge on top, label centered below
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(2.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        // Action badge at top
-                        // Centralized icon lookup via ActionCategoryRegistry
-                        val category = ActionCategoryRegistry.getCategoryForAction(buttonConfig.buttonAction)
-                        val actionIcon = GhostTalkIcons.getIconForCategory(category)
-
-                        val actionBadgeText = when (buttonConfig.buttonAction) {
-                            is NavigateToPageButtonAction -> targetPageName
-                            else -> null
-                        }
-                        
-                        val isDark = isSystemInDarkTheme()
-                        val (badgeBgColor, badgeTxtColor) = GridButtonColors.getBadgeColors(buttonConfig.buttonAction, isDark)
-                        
-                        Surface(
-                            color = badgeBgColor,
-                            contentColor = badgeTxtColor,
-                            shape = MaterialTheme.shapes.extraSmall,
+            Box(modifier = Modifier.fillMaxSize()) {
+                if (buttonConfig != null) {
+                    if (isEditorMode) {
+                        // Editor mode: Column layout with badge on top, label centered below
+                        Column(
                             modifier = Modifier
-                                .align(Alignment.Start)
-                                .padding(start = 8.dp, top = 8.dp)
-                                .padding(end = 8.dp)
+                                .fillMaxSize()
+                                .padding(2.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(horizontal = 3.dp, vertical = 1.dp)
+                            // Action badge at top
+                            // Centralized icon lookup via ActionCategoryRegistry
+                            val category = ActionCategoryRegistry.getCategoryForAction(buttonConfig.buttonAction)
+                            val actionIcon = GhostTalkIcons.getIconForCategory(category)
+
+                            val actionBadgeText = when (buttonConfig.buttonAction) {
+                                is NavigateToPageButtonAction -> targetPageName
+                                else -> null
+                            }
+                            
+                            val isDark = isSystemInDarkTheme()
+                            val (badgeBgColor, badgeTxtColor) = GridButtonColors.getBadgeColors(buttonConfig.buttonAction, isDark)
+                            
+                            Surface(
+                                color = badgeBgColor,
+                                contentColor = badgeTxtColor,
+                                shape = MaterialTheme.shapes.extraSmall,
+                                modifier = Modifier
+                                    .align(Alignment.Start)
+                                    .padding(start = 8.dp, top = 8.dp)
+                                    .padding(end = 8.dp)
                             ) {
-                                Icon(
-                                    imageVector = actionIcon,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(10.dp)
-                                )
-                                
-                                if (actionBadgeText != null) {
-                                    Spacer(modifier = Modifier.width(3.dp))
-                                    Text(
-                                        text = actionBadgeText,
-                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(horizontal = 3.dp, vertical = 1.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = actionIcon,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(10.dp)
                                     )
+                                    
+                                    if (actionBadgeText != null) {
+                                        Spacer(modifier = Modifier.width(3.dp))
+                                        Text(
+                                            text = actionBadgeText,
+                                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
                                 }
                             }
+                            
+                            // Label centered in remaining space
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .weight(1f),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = overrideLabel ?: buttonConfig.label,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    fontSize = dimensions.buttonFontSize,
+                                    textAlign = TextAlign.Center,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis,
+                                    style = MaterialTheme.typography.titleLarge.copy(
+                                        fontSize = dimensions.buttonFontSize,
+                                        lineHeight = dimensions.buttonFontSize * 1.1f,
+                                        platformStyle = PlatformTextStyle(includeFontPadding = false)
+                                    )
+                                )
+                            }
                         }
-                        
-                        // Label centered in remaining space
+                    } else {
+                        // User mode: just centered label, no badge
                         Box(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .weight(1f),
+                                .fillMaxSize()
+                                .padding(dimensions.paddingMedium),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = overrideLabel ?: buttonConfig.label,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = dimensions.buttonFontSize,
                                 textAlign = TextAlign.Center,
                                 maxLines = 2,
@@ -227,42 +254,56 @@ fun GridButton(
                             )
                         }
                     }
-                } else {
-                    // User mode: just centered label, no badge
+
+                    // --- Visual Analytics Overlays (Heatmap & F-Index) ---
+                    // Heatmap Overlay
+                    if (heatmapIntensity != null && heatmapIntensity > 0f) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = heatmapIntensity * 0.35f),
+                            modifier = Modifier.fillMaxSize()
+                        ) {}
+                    }
+
+                    // Access Effort Badge (F-Index based color code)
+                    if (effortMetrics != null) {
+                        val badgeColor = when {
+                            effortMetrics.frustrationIndex < 0.3f -> Color(0xFF78909C) // Grey / Neutral
+                            effortMetrics.frustrationIndex < 0.7f -> Color(0xFFFBC02D) // Yellow / Warning
+                            else -> Color(0xFFD32F2F) // Red / Critical Frustration
+                        }
+                        Surface(
+                            color = badgeColor,
+                            contentColor = Color.White,
+                            shape = MaterialTheme.shapes.extraSmall,
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(top = 8.dp, end = 8.dp)
+                        ) {
+                            Text(
+                                text = "~${effortMetrics.accessTimeSec}s",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 9.sp, 
+                                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                                    platformStyle = PlatformTextStyle(includeFontPadding = false)
+                                ),
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                } else if (isEditorMode) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(dimensions.paddingMedium),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = overrideLabel ?: buttonConfig.label,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = dimensions.buttonFontSize,
-                            textAlign = TextAlign.Center,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                            style = MaterialTheme.typography.titleLarge.copy(
-                                fontSize = dimensions.buttonFontSize,
-                                lineHeight = dimensions.buttonFontSize * 1.1f,
-                                platformStyle = PlatformTextStyle(includeFontPadding = false)
-                            )
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = null,
+                            modifier = Modifier.size(dimensions.iconSizeLarge),
+                            tint = MaterialTheme.colorScheme.outline
                         )
                     }
-                }
-            } else if (isEditorMode) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(dimensions.paddingMedium),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = null,
-                        modifier = Modifier.size(dimensions.iconSizeLarge),
-                        tint = MaterialTheme.colorScheme.outline
-                    )
                 }
             }
         }

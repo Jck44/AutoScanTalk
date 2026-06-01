@@ -49,7 +49,15 @@ class ButtonUsageRepositoryImpl @Inject constructor(
     /**
      * Records a button press. Increments the usage counter or creates a new entry.
      */
-    override suspend fun recordUsage(bookId: String, pageId: String, buttonConfig: ButtonConfig, rows: Int, columns: Int, indexInPage: Int) {
+    override suspend fun recordUsage(
+        bookId: String,
+        pageId: String,
+        buttonConfig: ButtonConfig,
+        rows: Int,
+        columns: Int,
+        indexInPage: Int,
+        timestamp: Long
+    ) {
         appDatabase.withTransaction {
             val existing = dao.getStatForButton(bookId, buttonConfig.id)
             val stat = if (existing != null) {
@@ -58,7 +66,7 @@ class ButtonUsageRepositoryImpl @Inject constructor(
                     actionJson = json.encodeToString(buttonConfig.buttonAction),
                     pageId = pageId, // Update pageId (last used location)
                     usageCount = existing.usageCount + 1,
-                    lastUsedAt = System.currentTimeMillis()
+                    lastUsedAt = timestamp
                 )
             } else {
                 ButtonUsageStat(
@@ -68,7 +76,7 @@ class ButtonUsageRepositoryImpl @Inject constructor(
                     label = buttonConfig.label,
                     actionJson = json.encodeToString(buttonConfig.buttonAction),
                     usageCount = 1,
-                    lastUsedAt = System.currentTimeMillis()
+                    lastUsedAt = timestamp
                 )
             }
             dao.upsert(stat)
@@ -76,7 +84,7 @@ class ButtonUsageRepositoryImpl @Inject constructor(
             // Persistent history event
             val event = ButtonUsageHistoryEntity(
                 bookId = bookId,
-                timestamp = System.currentTimeMillis(),
+                timestamp = timestamp,
                 label = buttonConfig.label,
                 actionType = buttonConfig.buttonAction::class.simpleName ?: "Unknown",
                 buttonId = buttonConfig.id,
