@@ -1,3 +1,4 @@
+@file:Suppress("DEPRECATION", "UNUSED_PARAMETER")
 package com.andreas_kratzer.ghosttalk.ui.pages
 
 import android.Manifest

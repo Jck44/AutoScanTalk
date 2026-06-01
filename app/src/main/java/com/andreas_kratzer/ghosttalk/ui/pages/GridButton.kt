@@ -1,3 +1,4 @@
+@file:Suppress("DEPRECATION")
 package com.andreas_kratzer.ghosttalk.ui.pages
  
 import androidx.compose.animation.core.Spring

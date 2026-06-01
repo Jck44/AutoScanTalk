@@ -14,10 +14,8 @@ import javax.inject.Inject
 class WeatherExecutor @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val weatherUseCase: WeatherUseCase,
-    private val locationExecutor: LocationExecutor,
-    private val logger: Logger
+    private val locationExecutor: LocationExecutor
 ) {
-    private val TAG = "WeatherExecutor"
 
     sealed class WeatherResult {
         data class Success(

@@ -1,3 +1,4 @@
+@file:Suppress("UseKtx", "REDUNDANT_ELVIS", "RedundantInitializer")
 package com.andreas_kratzer.ghosttalk.core.cloud.domain
 
 import android.content.Context

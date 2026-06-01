@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Geocoder
 import android.location.Location
+import androidx.core.content.edit
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
@@ -28,12 +29,12 @@ class LocationExecutor @Inject constructor(
     private val prefs = context.getSharedPreferences("location_cache", Context.MODE_PRIVATE)
 
     private fun persistLocation(location: Location) {
-        prefs.edit()
-            .putFloat("latitude", location.latitude.toFloat())
-            .putFloat("longitude", location.longitude.toFloat())
-            .putFloat("accuracy", location.accuracy)
-            .putLong("timestamp", location.time)
-            .apply()
+        prefs.edit {
+            putFloat("latitude", location.latitude.toFloat())
+            putFloat("longitude", location.longitude.toFloat())
+            putFloat("accuracy", location.accuracy)
+            putLong("timestamp", location.time)
+        }
     }
 
     private fun getPersistedLocation(): Location? {
@@ -56,7 +57,7 @@ class LocationExecutor @Inject constructor(
     }
 
     fun persistLocationName(name: String) {
-        prefs.edit().putString("location_name", name).apply()
+        prefs.edit { putString("location_name", name) }
     }
 
     @SuppressLint("MissingPermission")

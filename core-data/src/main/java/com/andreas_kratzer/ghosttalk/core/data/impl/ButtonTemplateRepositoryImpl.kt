@@ -1,3 +1,4 @@
+@file:Suppress("DEPRECATION")
 package com.andreas_kratzer.ghosttalk.core.data.impl
 
 import com.andreas_kratzer.ghosttalk.core.data.ButtonTemplateRepository

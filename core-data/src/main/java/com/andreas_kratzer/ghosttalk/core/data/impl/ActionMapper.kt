@@ -1,3 +1,4 @@
+@file:Suppress("DEPRECATION")
 package com.andreas_kratzer.ghosttalk.core.data.impl
 
 import com.andreas_kratzer.ghosttalk.core.model.ButtonAction
@@ -80,7 +81,6 @@ class ActionMapper @Inject constructor() {
      */
     fun importAction(importAction: ImportAction, idMap: Map<String, String>): ButtonAction? {
         val type = importAction.type.uppercase()
-        @Suppress("SpellCheckingInspection")
         return when (type) {
             "SPEAK", "SPEAKTEXT" -> SpeakTextButtonAction()
             "NAVIGATE", "NAVIGATETOPAGE" -> {
