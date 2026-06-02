@@ -198,6 +198,7 @@ fun UsageDurationBarChart(
 @Composable
 fun UserModeSessionsSection(
     sessions: List<UserModeSession>,
+    historyEvents: List<com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository.ButtonUsageEvent>,
     onClearSessions: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -267,6 +268,12 @@ fun UserModeSessionsSection(
                     } else {
                         sessions.take(5).forEach { session ->
                             val duration = session.endTime - session.startTime
+                            val sessionClicks = historyEvents.filter { event ->
+                                event.sessionId == session.id || (event.sessionId == null && event.timestamp in session.startTime..session.endTime)
+                            }.size
+                            val durationMins = duration / (1000.0 * 60.0)
+                            val rate = if (durationMins > 0) sessionClicks / durationMins else 0.0
+
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -296,6 +303,13 @@ fun UserModeSessionsSection(
                                             text = "${sdfTime.format(Date(session.startTime))} - ${sdfTime.format(Date(session.endTime))}",
                                             style = MaterialTheme.typography.bodyMedium,
                                             fontWeight = FontWeight.Medium
+                                        )
+                                        val displayRate = String.format(java.util.Locale.US, "%.1f", rate)
+                                        Text(
+                                            text = "$sessionClicks Klicks • $displayRate/Min",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            fontWeight = FontWeight.SemiBold
                                         )
                                     }
                                 }

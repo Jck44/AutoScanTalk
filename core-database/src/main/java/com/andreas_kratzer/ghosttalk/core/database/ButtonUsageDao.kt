@@ -18,6 +18,7 @@ interface ButtonUsageDao {
             MAX(label) as label, 
             actionJson, 
             SUM(usageCount) as usageCount, 
+            MIN(firstUsedAt) as firstUsedAt,
             MAX(lastUsedAt) as lastUsedAt 
         FROM button_usage_stats 
         WHERE bookId = :bookId 

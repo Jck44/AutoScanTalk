@@ -59,18 +59,61 @@ fun AnalyticsDashboardScreen(
     val recommendations by pageViewModel.shortcutRecommendations.collectAsState(emptyList())
     val userModeSessions by pageViewModel.userModeSessions.collectAsState(emptyList())
 
-    // Aggregations
+    // Aggregations & Trend calculations (Prio 2 & 4)
+    val now = System.currentTimeMillis()
+    val oneWeekMs = 7L * 24L * 60L * 60L * 1000L
+    val twoWeeksMs = 14L * 24L * 60L * 60L * 1000L
+
+    val currentPeriodEvents = remember(historyEvents) {
+        historyEvents.filter { it.timestamp >= now - oneWeekMs }
+    }
+    val previousPeriodEvents = remember(historyEvents) {
+        historyEvents.filter { it.timestamp in (now - twoWeeksMs)..<(now - oneWeekMs) }
+    }
+
+    val currentPeriodSessions = remember(userModeSessions) {
+        userModeSessions.filter { it.startTime >= now - oneWeekMs }
+    }
+    val previousPeriodSessions = remember(userModeSessions) {
+        userModeSessions.filter { it.startTime in (now - twoWeeksMs)..<(now - oneWeekMs) }
+    }
+
+    // Clicks KPI
     val totalClicks = historyEvents.size
+    val currentClicks = currentPeriodEvents.size.toDouble()
+    val previousClicks = previousPeriodEvents.size.toDouble()
+
+    // Vocab KPI
     val activeVocabCount = remember(historyEvents) {
         historyEvents.map { it.label.trim().lowercase() }.distinct().size
     }
+    val currentVocab = remember(currentPeriodEvents) {
+        currentPeriodEvents.map { it.label.trim().lowercase() }.distinct().size
+    }
+    val previousVocab = remember(previousPeriodEvents) {
+        previousPeriodEvents.map { it.label.trim().lowercase() }.distinct().size
+    }
 
+    // Usage Time KPI
     val totalUsageTimeMs = remember(userModeSessions) {
         userModeSessions.sumOf { it.endTime - it.startTime }
+    }
+    val currentUsageMs = remember(currentPeriodSessions) {
+        currentPeriodSessions.sumOf { it.endTime - it.startTime }.toDouble()
+    }
+    val previousUsageMs = remember(previousPeriodSessions) {
+        previousPeriodSessions.sumOf { it.endTime - it.startTime }.toDouble()
     }
     
     val totalHours = totalUsageTimeMs / (1000 * 60 * 60)
     val totalMinutes = (totalUsageTimeMs / (1000 * 60)) % 60
+
+    // Communication Rate KPI (Buttons per Minute)
+    val currentUsageMinutes = currentUsageMs / (1000.0 * 60.0)
+    val currentCommRate = if (currentUsageMinutes > 0.0) currentClicks / currentUsageMinutes else 0.0
+
+    val previousUsageMinutes = previousUsageMs / (1000.0 * 60.0)
+    val previousCommRate = if (previousUsageMinutes > 0.0) previousClicks / previousUsageMinutes else 0.0
     
     // Transition flows: Page A -> Page B
     data class TransitionFlow(val from: String, val to: String, val count: Int)
@@ -118,7 +161,7 @@ fun AnalyticsDashboardScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
-            // --- KPI OVERVIEW CARDS ---
+            // --- KPI OVERVIEW CARDS (2x2 Symmetrical Grid) ---
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -129,49 +172,102 @@ fun AnalyticsDashboardScreen(
                 ) {
                     // Click count card
                     Card(
-                        modifier = Modifier.weight(1f).height(90.dp),
+                        modifier = Modifier.weight(1f).height(95.dp),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f))
                     ) {
                         Column(
                             modifier = Modifier.fillMaxSize().padding(12.dp),
                             verticalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("Gesamtaufrufe", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("Gesamtaufrufe", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f))
+                                TrendBadge(current = currentClicks, previous = previousClicks)
+                            }
                             Text("$totalClicks", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
                         }
                     }
 
                     // Active Vocab card
                     Card(
-                        modifier = Modifier.weight(1f).height(90.dp),
+                        modifier = Modifier.weight(1f).height(95.dp),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f))
                     ) {
                         Column(
                             modifier = Modifier.fillMaxSize().padding(12.dp),
                             verticalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("Aktiver Wortschatz", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("Aktiver Wortschatz", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f))
+                                TrendBadge(current = currentVocab.toDouble(), previous = previousVocab.toDouble())
+                            }
                             Text("$activeVocabCount Wörter", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
                         }
                     }
                 }
 
-                // Total Usage Time Card
-                Card(
-                    modifier = Modifier.fillMaxWidth().height(90.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.35f))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Column(
-                        modifier = Modifier.fillMaxSize().padding(12.dp),
-                        verticalArrangement = Arrangement.SpaceBetween
+                    // Total Usage Time Card
+                    Card(
+                        modifier = Modifier.weight(1f).height(95.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.35f))
                     ) {
-                        Text(stringResource(R.string.analytics_kpi_usage_time), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f))
-                        Text(
-                            text = stringResource(R.string.analytics_kpi_usage_time_format, totalHours, totalMinutes),
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onTertiaryContainer
-                        )
+                        Column(
+                            modifier = Modifier.fillMaxSize().padding(12.dp),
+                            verticalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(stringResource(R.string.analytics_kpi_usage_time), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f))
+                                TrendBadge(current = currentUsageMs, previous = previousUsageMs)
+                            }
+                            Text(
+                                text = stringResource(R.string.analytics_kpi_usage_time_format, totalHours, totalMinutes),
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onTertiaryContainer
+                            )
+                        }
+                    }
+
+                    // Communication Rate Card (Prio 4)
+                    Card(
+                        modifier = Modifier.weight(1f).height(95.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                    ) {
+                        Column(
+                            modifier = Modifier.fillMaxSize().padding(12.dp),
+                            verticalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("Kommunikationsrate", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f))
+                                TrendBadge(current = currentCommRate, previous = previousCommRate)
+                            }
+                            val displayRate = String.format(java.util.Locale.US, "%.1f", currentCommRate)
+                            Text(
+                                text = "$displayRate Klicks/Min",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
             }
@@ -186,6 +282,7 @@ fun AnalyticsDashboardScreen(
 
             UserModeSessionsSection(
                 sessions = userModeSessions,
+                historyEvents = historyEvents,
                 onClearSessions = { pageViewModel.clearUserModeSessions() }
             )
 
@@ -387,3 +484,50 @@ fun AnalyticsDashboardScreen(
         }
     }
 }
+
+@Composable
+private fun TrendBadge(
+    current: Double,
+    previous: Double,
+    modifier: Modifier = Modifier
+) {
+    if (previous <= 0.0) return // No baseline comparison available
+
+    val percentChange = ((current - previous) / previous * 100.0)
+    val isPositive = percentChange > 0.0
+    val isNeutral = kotlin.math.abs(percentChange) < 0.1
+
+    val badgeColor = when {
+        isNeutral -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f)
+        isPositive -> MaterialTheme.colorScheme.primaryContainer
+        else -> MaterialTheme.colorScheme.errorContainer
+    }
+
+    val contentColor = when {
+        isNeutral -> MaterialTheme.colorScheme.onSurfaceVariant
+        isPositive -> MaterialTheme.colorScheme.onPrimaryContainer
+        else -> MaterialTheme.colorScheme.onErrorContainer
+    }
+
+    val arrow = when {
+        isNeutral -> "→"
+        isPositive -> "↑"
+        else -> "↓"
+    }
+
+    val formattedPercent = String.format(java.util.Locale.US, "%+.1f%%", percentChange)
+
+    Surface(
+        color = badgeColor,
+        contentColor = contentColor,
+        shape = MaterialTheme.shapes.extraSmall,
+        modifier = modifier
+    ) {
+        Text(
+            text = "$formattedPercent $arrow",
+            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+        )
+    }
+}
+

@@ -101,6 +101,7 @@ class ButtonUsageRepositoryImpl @Inject constructor(
                     label = buttonConfig.label,
                     actionJson = json.encodeToString(buttonConfig.buttonAction),
                     usageCount = 1,
+                    firstUsedAt = timestamp,
                     lastUsedAt = timestamp
                 )
             }

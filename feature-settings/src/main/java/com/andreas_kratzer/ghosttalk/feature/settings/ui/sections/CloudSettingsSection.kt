@@ -536,11 +536,18 @@ fun CloudSettingsSection(
                         fontWeight = FontWeight.Medium
                     )
                     Spacer(modifier = Modifier.height(4.dp))
+                    val retentionSteps = listOf(7, 14, 30, 90, 180, 365)
+                    val currentIndex = remember(statsRetentionDays) {
+                        retentionSteps.mapIndexed { index, value -> index to kotlin.math.abs(value - statsRetentionDays) }
+                            .minByOrNull { it.second }?.first ?: 2
+                    }
                     androidx.compose.material3.Slider(
-                        value = statsRetentionDays.toFloat(),
-                        onValueChange = { viewModel.setStatsRetentionDays(it.toInt()) },
-                        valueRange = 7f..365f,
-                        steps = 358 // 365 - 7
+                        value = currentIndex.toFloat(),
+                        onValueChange = { index -> 
+                            viewModel.setStatsRetentionDays(retentionSteps[index.toInt()]) 
+                        },
+                        valueRange = 0f..(retentionSteps.size - 1).toFloat(),
+                        steps = retentionSteps.size - 2
                     )
                     Text(
                         text = stringResource(R.string.settings_stats_retention_desc),

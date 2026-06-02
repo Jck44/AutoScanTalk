@@ -19,5 +19,6 @@ data class ButtonUsageStat(
     val label: String,
     val actionJson: String,
     val usageCount: Long = 0,
+    val firstUsedAt: Long = System.currentTimeMillis(),
     val lastUsedAt: Long = System.currentTimeMillis()
 )
