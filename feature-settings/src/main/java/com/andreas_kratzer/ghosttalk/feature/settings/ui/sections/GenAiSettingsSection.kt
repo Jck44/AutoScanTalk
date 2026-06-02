@@ -24,7 +24,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -51,11 +51,12 @@ fun GenAiSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
     val dimensions = LocalDimensions.current
 
     var clipboardKey by remember { mutableStateOf<String?>(null) }
-    val clipboardManager = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
 
     LaunchedEffect(Unit) {
         try {
-            val text = clipboardManager.getText()?.text
+            val clipEntry = clipboard.getClipEntry()
+            val text = clipEntry?.clipData?.getItemAt(0)?.text?.toString()
             if (text != null && text.trim().matches(Regex("^AIzaSy[A-Za-z0-9_-]{33}$"))) {
                 clipboardKey = text.trim()
             }

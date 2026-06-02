@@ -25,7 +25,7 @@ class CloudSettingsRepository(
     private val _syncMode = NonNullStringSetting(KEY_SYNC_MODE, "TWO_WAY")
     private val _syncModeBook = NonNullStringSetting(SettingsConstants.KEY_SYNC_MODE_BOOK, "TWO_WAY")
     private val _syncModeTts = NonNullStringSetting(SettingsConstants.KEY_SYNC_MODE_TTS, "TWO_WAY")
-    private val _syncModeStats = NonNullStringSetting(SettingsConstants.KEY_SYNC_MODE_STATS, "BACKUP_ONLY")
+    private val _syncModeStats = NonNullStringSetting(SettingsConstants.KEY_SYNC_MODE_STATS, "RESTORE_ONLY")
     private val _lastSuccessfulSyncTime = LongSetting(KEY_LAST_SYNC_TIME, 0L)
     private val _elevenLabsApiKey = StringSetting(SettingsConstants.KEY_ELEVENLABS_API_KEY)
     private val _elevenLabsModel = NonNullStringSetting(SettingsConstants.KEY_ELEVENLABS_MODEL, "eleven_multilingual_v2")
@@ -136,9 +136,8 @@ class CloudSettingsRepository(
                     modified = true
                 }
                 if (!prefs.contains(scopedStatsKey)) {
-                    // Statistics strictly does not support TWO_WAY or RESTORE_ONLY.
-                    // If old mode was TWO_WAY or RESTORE_ONLY, statistics sync mode defaults to BACKUP_ONLY.
-                    val statsMode = if (oldMode == "TWO_WAY" || oldMode == "RESTORE_ONLY") "BACKUP_ONLY" else oldMode
+                    // Statistics sync mode defaults to RESTORE_ONLY when migrating from an old version.
+                    val statsMode = "RESTORE_ONLY"
                     editor.putString(scopedStatsKey, statsMode)
                     modified = true
                 }

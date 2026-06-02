@@ -43,8 +43,11 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.ClipEntry
+import android.content.ClipData
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -129,7 +132,8 @@ fun PageSplitManualPromptDialog(
     onEvaluateResponse: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
-    val clipboardManager = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
+    val coroutineScope = rememberCoroutineScope()
     var pastedJson by remember { mutableStateOf("") }
     var parseError by remember { mutableStateOf<String?>(null) }
 
@@ -157,7 +161,11 @@ fun PageSplitManualPromptDialog(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(
-                    onClick = { clipboardManager.setText(AnnotatedString(promptText)) },
+                    onClick = {
+                        coroutineScope.launch {
+                            clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("Prompt", promptText)))
+                        }
+                    },
                     modifier = Modifier.align(Alignment.End)
                 ) {
                     Text("Prompt kopieren")

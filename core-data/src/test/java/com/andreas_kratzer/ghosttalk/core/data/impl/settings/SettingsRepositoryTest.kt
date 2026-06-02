@@ -354,4 +354,23 @@ class SettingsRepositoryTest {
         assertNull(repository.getDeviceName("mac2"))
         assertEquals("Device 3", repository.getDeviceName("mac3"))
     }
+
+    @Test
+    fun testCloudSyncModeMigrationDefaultsStatsToRestoreOnly() = runBlocking {
+        mockedPrefsStore.clear()
+        mockedPrefsStore["sync_mode"] = "TWO_WAY"
+        
+        val newRepo = SettingsRepositoryImpl(mockContext, mockBookRepository, testScope)
+        
+        assertEquals("TWO_WAY", newRepo.syncModeBook)
+        assertEquals("TWO_WAY", newRepo.syncModeTts)
+        assertEquals("RESTORE_ONLY", newRepo.syncModeStats)
+    }
+
+    @Test
+    fun testCloudSyncStatsDefaultsToRestoreOnlyOnNewSetup() = runBlocking {
+        mockedPrefsStore.clear()
+        val newRepo = SettingsRepositoryImpl(mockContext, mockBookRepository, testScope)
+        assertEquals("RESTORE_ONLY", newRepo.syncModeStats)
+    }
 }

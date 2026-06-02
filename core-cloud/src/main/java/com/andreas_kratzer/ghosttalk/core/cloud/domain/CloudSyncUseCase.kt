@@ -52,9 +52,10 @@ class CloudSyncUseCase @Inject constructor(
             }
             throw IllegalStateException("SAF mode enabled but no folder URI configured.")
         }
-        val actualDrive = drive ?: throw IllegalArgumentException("Drive API sync storage requires a valid Drive service.")
-        val actualFolderId = folderId ?: settingsRepository.googleDriveFolderId ?: DriveServiceHelper(actualDrive).findFolder(FOLDER_NAME) ?: throw IllegalStateException("No valid folder ID found for Drive API.")
-        return DriveApiSyncStorageProvider(actualDrive, actualFolderId)
+        val actualFolderId = folderId ?: settingsRepository.googleDriveFolderId ?: DriveServiceHelper(
+            drive
+        ).findFolder(FOLDER_NAME) ?: throw IllegalStateException("No valid folder ID found for Drive API.")
+        return DriveApiSyncStorageProvider(drive, actualFolderId)
     }
 
     suspend fun syncBook(

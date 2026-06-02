@@ -36,6 +36,7 @@ object ActionCategoryRegistry {
     )
 
     fun getGroupForAction(action: ButtonAction): String {
+        @Suppress("DEPRECATION")
         return when (action) {
             is SpeakTextButtonAction,
             is NavigateToPageButtonAction -> GROUP_BASIS
@@ -72,6 +73,7 @@ object ActionCategoryRegistry {
     }
 
     fun getCategoryForAction(action: ButtonAction): ActionCategory {
+        @Suppress("DEPRECATION")
         return when (action) {
             is SpeakTextButtonAction -> ActionCategory.SPEAK_TEXT
             is NavigateToPageButtonAction -> ActionCategory.NAVIGATE_PAGE
