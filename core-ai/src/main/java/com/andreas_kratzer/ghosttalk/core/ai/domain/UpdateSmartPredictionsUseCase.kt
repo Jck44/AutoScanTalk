@@ -21,7 +21,7 @@ class UpdateSmartPredictionsUseCase @Inject constructor(
         currentPage: Flow<Page?>,
         allPages: Flow<List<Page>>,
         activeBookId: Flow<String?>,
-        history: kotlinx.coroutines.flow.Flow<List<com.andreas_kratzer.ghosttalk.core.model.ActionLogEntry>>,
+        history: Flow<List<com.andreas_kratzer.ghosttalk.core.model.ActionLogEntry>>,
         isUserModeActive: Flow<Boolean>
     ): Flow<List<String>?> {
         val inputFlow = combine(

@@ -355,7 +355,7 @@ class PageImportExportManagerTest {
         assertEquals(buttonId, secondPage.buttonConfigs[0]?.id)
         
         // Verify insertPage was called twice (Room REPLACE handles the deduplication at DB level)
-        io.mockk.coVerify(exactly = 2) { pageRepository.insertPage(any()) }
+        coVerify(exactly = 2) { pageRepository.insertPage(any()) }
     }
 
     @Test
@@ -738,7 +738,7 @@ class PageImportExportManagerTest {
         assertTrue(result.exceptionOrNull()?.message?.contains("existiert bereits lokal") == true)
         
         // Verify no insert was called
-        io.mockk.coVerify(exactly = 0) { bookRepository.insertBook(any()) }
+        coVerify(exactly = 0) { bookRepository.insertBook(any()) }
     }
 
 
@@ -782,7 +782,7 @@ class PageImportExportManagerTest {
         
         assertTrue(result.isSuccess)
         assertEquals(bookId, result.getOrNull())
-        io.mockk.coVerify { bookRepository.insertBook(any()) }
+        coVerify { bookRepository.insertBook(any()) }
     }
 
     @Test
@@ -804,7 +804,7 @@ class PageImportExportManagerTest {
         assertTrue(result.exceptionOrNull()?.message?.contains("existiert bereits lokal") == true)
         
         // Verify no insert occurred
-        io.mockk.coVerify(exactly = 0) { bookRepository.insertBook(any()) }
+        coVerify(exactly = 0) { bookRepository.insertBook(any()) }
     }
 
     @Test
@@ -823,7 +823,7 @@ class PageImportExportManagerTest {
         assertEquals(internalBookId, result.getOrNull())
         
         val bookSlot = slot<com.andreas_kratzer.ghosttalk.core.model.Book>()
-        io.mockk.coVerify { bookRepository.insertBook(capture(bookSlot)) }
+        coVerify { bookRepository.insertBook(capture(bookSlot)) }
         assertEquals(internalBookId, bookSlot.captured.id)
     }
 
@@ -841,12 +841,12 @@ class PageImportExportManagerTest {
         )
         
         // Setup initial settings in the mock
-        io.mockk.every { settingsRepository.getDefaultStartPageIdForBook(bookId) } returns "old-start-page"
-        io.mockk.every { settingsRepository.getActionLogLimitForBook(bookId) } returns 500
-        io.mockk.every { settingsRepository.getLimitScanCyclesForBook(bookId) } returns true
-        io.mockk.every { settingsRepository.getScanCycleLimitForBook(bookId) } returns 5
-        io.mockk.every { settingsRepository.getLogIgnoredActionsForBook(bookId) } returns false
-        io.mockk.every { settingsRepository.getLogStopActionsForBook(bookId) } returns false
+        every { settingsRepository.getDefaultStartPageIdForBook(bookId) } returns "old-start-page"
+        every { settingsRepository.getActionLogLimitForBook(bookId) } returns 500
+        every { settingsRepository.getLimitScanCyclesForBook(bookId) } returns true
+        every { settingsRepository.getScanCycleLimitForBook(bookId) } returns 5
+        every { settingsRepository.getLogIgnoredActionsForBook(bookId) } returns false
+        every { settingsRepository.getLogStopActionsForBook(bookId) } returns false
         
         coEvery { bookRepository.getBookById(bookId) } returns originalBook
         coEvery { pageRepository.getPagesForBook(bookId) } returns emptyList()
@@ -901,7 +901,7 @@ class PageImportExportManagerTest {
         coEvery { pageRepository.insertPage(any()) } returns Unit
         
         var capturedId: String? = null
-        io.mockk.every { settingsRepository.defaultStartPageId = any() } answers { capturedId = firstArg() }
+        every { settingsRepository.defaultStartPageId = any() } answers { capturedId = firstArg() }
 
         // Act
         val result = manager.importFromJson(jsonString, bookId, regenerateIds = true)
@@ -1083,12 +1083,12 @@ class PageImportExportManagerTest {
         roundtripManager.importStatisticsFromZip("book-rt", java.io.ByteArrayInputStream(zipBytes))
 
         // 3. Verify DAO was called to restore both history and stats
-        io.mockk.coVerify { buttonUsageDao.clearHistoryForBook("book-rt") }
-        io.mockk.coVerify { buttonUsageDao.clearStatsForBook("book-rt") }
-        io.mockk.coVerify {
+        coVerify { buttonUsageDao.clearHistoryForBook("book-rt") }
+        coVerify { buttonUsageDao.clearStatsForBook("book-rt") }
+        coVerify {
             buttonUsageDao.insertHistoryEvent(match { it.label == "Hallo" && it.timestamp == 9999L })
         }
-        io.mockk.coVerify {
+        coVerify {
             buttonUsageDao.upsert(match { it.label == "Hallo" && it.usageCount == 7L })
         }
     }
@@ -1117,8 +1117,8 @@ class PageImportExportManagerTest {
         resilientManager.importStatisticsFromZip("book-empty", java.io.ByteArrayInputStream(emptyZip.toByteArray()))
 
         // Nothing should have been written
-        io.mockk.coVerify(exactly = 0) { buttonUsageDao.insertHistoryEvent(any()) }
-        io.mockk.coVerify(exactly = 0) { buttonUsageDao.upsert(any()) }
+        coVerify(exactly = 0) { buttonUsageDao.insertHistoryEvent(any()) }
+        coVerify(exactly = 0) { buttonUsageDao.upsert(any()) }
     }
 
     @Test

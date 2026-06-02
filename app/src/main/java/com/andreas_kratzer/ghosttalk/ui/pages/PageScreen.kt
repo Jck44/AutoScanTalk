@@ -55,12 +55,6 @@ fun PageScreen(
 
     // Call Screen States
     val callState by pageViewModel.callState.collectAsState()
-    val callerName by pageViewModel.callerName.collectAsState()
-    val callerPhone by pageViewModel.callerPhone.collectAsState()
-    val callDurationSeconds by pageViewModel.callDurationSeconds.collectAsState()
-    val isOutgoing by pageViewModel.isOutgoing.collectAsState()
-    val isHangUpButtonFocused by pageViewModel.isHangUpButtonFocused.collectAsState()
-    val focusedCallScreenButton by pageViewModel.focusedCallScreenButton.collectAsState()
 
     val page = currentPage
 

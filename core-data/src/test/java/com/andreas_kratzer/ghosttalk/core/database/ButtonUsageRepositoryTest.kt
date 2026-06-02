@@ -26,6 +26,7 @@ class ButtonUsageRepositoryTest {
     private val mockSettingsRepository = mockk<com.andreas_kratzer.ghosttalk.core.data.SettingsRepository>(relaxed = true)
     private val testScope = kotlinx.coroutines.test.TestScope()
     private val mockDatabase = mockk<AppDatabase>(relaxed = true)
+    private val mockSessionTracker = mockk<com.andreas_kratzer.ghosttalk.core.data.impl.UserModeSessionTracker>(relaxed = true)
     private lateinit var buttonUsageRepository: ButtonUsageRepositoryImpl
 
     @Before
@@ -42,7 +43,8 @@ class ButtonUsageRepositoryTest {
             block()
         }
         coEvery { mockSettingsRepository.activeBookIdFlow } returns kotlinx.coroutines.flow.MutableStateFlow("book1")
-        buttonUsageRepository = ButtonUsageRepositoryImpl(mockContext, mockButtonUsageDao, mockSettingsRepository, testScope, mockDatabase)
+        io.mockk.every { mockSessionTracker.currentSessionId } returns null
+        buttonUsageRepository = ButtonUsageRepositoryImpl(mockContext, mockButtonUsageDao, mockSettingsRepository, testScope, mockDatabase, mockSessionTracker)
     }
 
     @After

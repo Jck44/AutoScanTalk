@@ -182,7 +182,7 @@ open class RoutedAudioPlayer @Inject constructor(
                 .setBufferSizeInBytes(minBufferSize)
                 .build()
 
-            audioTrack.setPreferredDevice(device)
+            audioTrack.preferredDevice = device
             
             // 500ms of silence
             val silenceDuration = 0.5

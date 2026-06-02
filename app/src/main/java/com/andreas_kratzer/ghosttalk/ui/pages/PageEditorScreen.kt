@@ -140,7 +140,7 @@ fun PageEditorScreen(
                             modifier = Modifier.testTag("page_editor_exit_button")
                         ) {
                             Icon(
-                                imageVector = androidx.compose.material.icons.Icons.Default.Close,
+                                imageVector = Icons.Default.Close,
                                 contentDescription = "Editor beenden",
                                 tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
                             )

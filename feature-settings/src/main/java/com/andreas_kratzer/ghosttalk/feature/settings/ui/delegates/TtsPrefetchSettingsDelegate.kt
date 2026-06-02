@@ -107,7 +107,7 @@ class TtsPrefetchSettingsDelegate @Inject constructor(
     }
 
     fun startPrefetch(allPages: List<Page>) {
-        val stats = _prefetchStats.value ?: calculatePrefetchStats(allPages)
+        _prefetchStats.value ?: calculatePrefetchStats(allPages)
         val selectedIds = _selectedPagesForPrefetch.value
         val selectedPages = allPages.filter { it.id in selectedIds }
         

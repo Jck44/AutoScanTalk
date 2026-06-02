@@ -33,7 +33,8 @@ class ButtonUsageRepositoryImpl @Inject constructor(
     private val dao: ButtonUsageDao,
     private val settingsRepository: com.andreas_kratzer.ghosttalk.core.data.SettingsRepository,
     @param:com.andreas_kratzer.ghosttalk.core.di.ApplicationScope private val scope: kotlinx.coroutines.CoroutineScope,
-    private val appDatabase: AppDatabase
+    private val appDatabase: AppDatabase,
+    private val sessionTracker: UserModeSessionTracker
 ) : ButtonUsageRepository {
     private val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
 
@@ -113,7 +114,8 @@ class ButtonUsageRepositoryImpl @Inject constructor(
                 buttonId = buttonConfig.id,
                 pageId = pageId,
                 latitude = lastLocation?.latitude,
-                longitude = lastLocation?.longitude
+                longitude = lastLocation?.longitude,
+                sessionId = sessionTracker.currentSessionId
             )
             dao.insertHistoryEvent(event)
 
@@ -287,6 +289,7 @@ class ButtonUsageRepositoryImpl @Inject constructor(
         imagePath = imagePath,
         buttonId = buttonId,
         pageId = pageId,
-        geminiResponse = geminiResponse
+        geminiResponse = geminiResponse,
+        sessionId = sessionId
     )
 }

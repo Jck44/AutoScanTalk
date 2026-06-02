@@ -25,6 +25,7 @@ interface ButtonUsageRepository : ButtonUsageProvider {
         val imagePath: String? = null,
         val buttonId: String? = null,
         val pageId: String? = null,
-        val geminiResponse: String? = null
+        val geminiResponse: String? = null,
+        val sessionId: Long? = null
     )
 }

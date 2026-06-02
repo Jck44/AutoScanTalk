@@ -142,7 +142,7 @@
     <string name="settings_gemini_enable">Gemini (Cloud)</string>
     <string name="settings_gemini_local_enable">Gemini Nano (offline)</string>
     <string name="settings_gemini_local_desc">Faster, completely offline and free. Uses a small AI model on your device for Smart Home and time. No internet connection required.</string>
-    <string name="settings_smart_prediction_enable">Gemini Prediction (Experimental)</string>
+    <string name="settings_smart_prediction_enable">Smart Prediction</string>
     <string name="settings_smart_prediction_hint">Enables buttons that dynamically predict the next likely action.</string>
     <string name="settings_gemini_redo_prediction">Redo prediction when navigating to same page</string>
     <string name="settings_gemini_redo_prediction_hint">Forces a new AI prediction even if the same page is accessed again.</string>

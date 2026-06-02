@@ -53,7 +53,6 @@ fun GeneralSettingsSection(
     val defaultStartPageId by viewModel.defaultStartPageId.collectAsState(null)
     val allPages by viewModel.allPages.collectAsState()
 
-    val keepScreenOn by viewModel.keepScreenOnUserMode.collectAsState(true)
     val screenBehavior by viewModel.userModeScreenBehavior.collectAsState("NORMAL")
     val startupBehavior by viewModel.startupBehavior.collectAsState("BOOK_SELECTION")
     val activeBook by viewModel.activeBook.collectAsState()
@@ -65,11 +64,11 @@ fun GeneralSettingsSection(
     var startPageSearchQuery by remember { mutableStateOf("") }
 
     val dimensions = LocalDimensions.current
-    val context = LocalContext.current
+    LocalContext.current
     val focusManager = LocalFocusManager.current
 
     val bookName = activeBook?.name ?: ""
-    val deleteBookLabel = stringResource(R.string.book_delete_description)
+    stringResource(R.string.book_delete_description)
     val deleteConfirmTitle = stringResource(R.string.book_dialog_delete_title)
     val deleteConfirmMessage = stringResource(R.string.book_dialog_delete_confirm, bookName)
 
@@ -167,7 +166,7 @@ fun GeneralSettingsSection(
 
         if (!isGlobal) {
             val categoryGeneral = stringResource(R.string.settings_category_general)
-            val keepScreenOnLabel = stringResource(R.string.settings_keep_screen_on)
+            stringResource(R.string.settings_keep_screen_on)
             val screenBehaviorLabel = stringResource(R.string.settings_screen_behavior)
             val screenOn = stringResource(R.string.settings_screen_behavior_on)
             val screenDimmed = stringResource(R.string.settings_screen_behavior_dimmed)
@@ -177,8 +176,8 @@ fun GeneralSettingsSection(
 
             val bookNameLabel = stringResource(R.string.book_name_label)
             val deleteBookLabel = stringResource(R.string.book_delete_description)
-            val deleteConfirmTitle = stringResource(R.string.book_dialog_delete_title)
-            val deleteConfirmMessage = stringResource(R.string.book_dialog_delete_confirm, activeBook?.name ?: "")
+            stringResource(R.string.book_dialog_delete_title)
+            stringResource(R.string.book_dialog_delete_confirm, activeBook?.name ?: "")
 
             PreferenceCategory(categoryGeneral, modifier = Modifier.weight(1f)) {
                 // 1. Book Rename

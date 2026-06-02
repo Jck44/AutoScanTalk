@@ -22,6 +22,9 @@ class UserModeSessionTracker @Inject constructor(
     private var updateLoopJob: Job? = null
     private var activeSessionId: Long? = null
 
+    val currentSessionId: Long?
+        get() = activeSessionId
+
     fun start() {
         if (trackingJob != null) return // Already tracking
 

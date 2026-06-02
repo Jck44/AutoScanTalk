@@ -171,18 +171,6 @@ class SettingsViewModel @Inject constructor(
     val themeMode = settingsRepository.themeModeFlow
     val buttonHistory = buttonUsageRepository.buttonHistory
 
-    val userModeSessions: StateFlow<List<com.andreas_kratzer.ghosttalk.core.model.UserModeSession>> =
-        settingsRepository.activeBookIdFlow
-            .flatMapLatest { bookId ->
-                if (bookId == null) flowOf(emptyList())
-                else userModeSessionRepository.getSessionsForBook(bookId)
-            }
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5000),
-                initialValue = emptyList()
-            )
-
     val keepScreenOnUserMode = settingsRepository.keepScreenOnUserModeFlow
     val userModeScreenBehavior = settingsRepository.userModeScreenBehaviorFlow
     val statsRetentionDays = settingsRepository.statsRetentionDaysFlow
@@ -231,9 +219,6 @@ class SettingsViewModel @Inject constructor(
 
     private val _showPrefetchDialog = MutableStateFlow(false)
     val showPrefetchDialog = _showPrefetchDialog.asStateFlow()
-
-    private val _showUserModeSessionsDialog = MutableStateFlow(false)
-    val showUserModeSessionsDialog = _showUserModeSessionsDialog.asStateFlow()
 
     private val _topButtonUsage = MutableStateFlow<List<com.andreas_kratzer.ghosttalk.core.model.GroupedButtonUsageStat>>(emptyList())
     val topButtonUsage = _topButtonUsage.asStateFlow()
@@ -286,7 +271,7 @@ class SettingsViewModel @Inject constructor(
     private val _navigationEvent = kotlinx.coroutines.flow.MutableSharedFlow<SettingsNavigationEvent>()
     val navigationEvents = _navigationEvent.asSharedFlow()
 
-    private val _selectedHistoryItem = kotlinx.coroutines.flow.MutableStateFlow<ButtonUsageRepository.ButtonUsageEvent?>(null)
+    private val _selectedHistoryItem = MutableStateFlow<ButtonUsageRepository.ButtonUsageEvent?>(null)
     val selectedHistoryItem = _selectedHistoryItem.asStateFlow()
 
     sealed class SettingsNavigationEvent {
@@ -599,16 +584,6 @@ class SettingsViewModel @Inject constructor(
         _showPrefetchDialog.value = show
     }
 
-    fun setShowUserModeSessionsDialog(show: Boolean) {
-        _showUserModeSessionsDialog.value = show
-    }
-
-    fun clearUserModeSessions() {
-        viewModelScope.launch {
-            userModeSessionRepository.clearSessions(activeBookId)
-        }
-    }
-
     fun refreshTopButtonUsage() {
         viewModelScope.launch {
             val stats = buttonUsageRepository.getGroupedUsageStats(activeBookId)
@@ -794,11 +769,6 @@ class SettingsViewModel @Inject constructor(
 
     val activeBookId: String
         get() = settingsRepository.activeBookId
-
-    override fun onCleared() {
-        super.onCleared()
-        // Aggressive cache cleanup removed to allow offline device selection
-    }
 
     suspend fun exportLocalBackup(): String {
         return backupDelegate.exportLocalBackup()
@@ -1083,11 +1053,7 @@ class SettingsViewModel @Inject constructor(
             "whatsapp", "telegram", "signal", "messenger", "discord", "skype", 
             "viber", "threema", "wechat", "imessage", "sms"
         )
-        if (knownKeywords.any { pkg.contains(it) }) {
-            return true
-        }
-        
-        return false
+        return knownKeywords.any { pkg.contains(it) }
     }
 
     fun simulateIncomingCall(name: String, phone: String) {

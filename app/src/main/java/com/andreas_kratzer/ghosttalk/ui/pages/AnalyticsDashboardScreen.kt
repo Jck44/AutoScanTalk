@@ -57,12 +57,20 @@ fun AnalyticsDashboardScreen(
     val historyEvents by pageViewModel.buttonHistory.collectAsState(emptyList())
     val unfilteredPages by pageViewModel.unfilteredPages.collectAsState()
     val recommendations by pageViewModel.shortcutRecommendations.collectAsState(emptyList())
+    val userModeSessions by pageViewModel.userModeSessions.collectAsState(emptyList())
 
     // Aggregations
     val totalClicks = historyEvents.size
     val activeVocabCount = remember(historyEvents) {
         historyEvents.map { it.label.trim().lowercase() }.distinct().size
     }
+
+    val totalUsageTimeMs = remember(userModeSessions) {
+        userModeSessions.sumOf { it.endTime - it.startTime }
+    }
+    
+    val totalHours = totalUsageTimeMs / (1000 * 60 * 60)
+    val totalMinutes = (totalUsageTimeMs / (1000 * 60)) % 60
     
     // Transition flows: Page A -> Page B
     data class TransitionFlow(val from: String, val to: String, val count: Int)
@@ -111,38 +119,70 @@ fun AnalyticsDashboardScreen(
             verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
             // --- KPI OVERVIEW CARDS ---
-            Row(
+            Column(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                // Click count card
-                Card(
-                    modifier = Modifier.weight(1f).height(90.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Column(
-                        modifier = Modifier.fillMaxSize().padding(12.dp),
-                        verticalArrangement = Arrangement.SpaceBetween
+                    // Click count card
+                    Card(
+                        modifier = Modifier.weight(1f).height(90.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f))
                     ) {
-                        Text("Gesamtaufrufe", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f))
-                        Text("$totalClicks", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                        Column(
+                            modifier = Modifier.fillMaxSize().padding(12.dp),
+                            verticalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("Gesamtaufrufe", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f))
+                            Text("$totalClicks", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                        }
+                    }
+
+                    // Active Vocab card
+                    Card(
+                        modifier = Modifier.weight(1f).height(90.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f))
+                    ) {
+                        Column(
+                            modifier = Modifier.fillMaxSize().padding(12.dp),
+                            verticalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("Aktiver Wortschatz", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f))
+                            Text("$activeVocabCount Wörter", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                        }
                     }
                 }
 
-                // Active Vocab card
+                // Total Usage Time Card
                 Card(
-                    modifier = Modifier.weight(1f).height(90.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f))
+                    modifier = Modifier.fillMaxWidth().height(90.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.35f))
                 ) {
                     Column(
                         modifier = Modifier.fillMaxSize().padding(12.dp),
                         verticalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("Aktiver Wortschatz", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f))
-                        Text("$activeVocabCount Wörter", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                        Text(stringResource(R.string.analytics_kpi_usage_time), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f))
+                        Text(
+                            text = stringResource(R.string.analytics_kpi_usage_time_format, totalHours, totalMinutes),
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                        )
                     }
                 }
             }
+
+            // --- USAGE CHART & DETAILS ---
+            UsageDurationBarChart(sessions = userModeSessions)
+
+            UserModeSessionsSection(
+                sessions = userModeSessions,
+                onClearSessions = { pageViewModel.clearUserModeSessions() }
+            )
 
             // Info Card
             Surface(

@@ -94,8 +94,8 @@ fun PageListScreen(
     val dimensions = LocalDimensions.current
     
     val importSuccessMsg = stringResource(CoreR.string.page_import_success)
-    val exportSuccessMsg = stringResource(CoreR.string.page_export_success)
-    val exportErrorMsg = stringResource(R.string.page_export_error)
+    stringResource(CoreR.string.page_export_success)
+    stringResource(R.string.page_export_error)
 
     val importLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()

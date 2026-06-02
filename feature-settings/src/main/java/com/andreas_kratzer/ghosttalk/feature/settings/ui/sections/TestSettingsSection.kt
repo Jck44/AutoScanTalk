@@ -29,11 +29,7 @@ fun TestSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
     val showTestButtons by viewModel.showTestButtons.collectAsState(false)
     val showPageId by viewModel.showPageIdInLog.collectAsState(true)
     val volumeKeysActivate by viewModel.volumeKeysActivate.collectAsState(false)
-    val buttonHistory by viewModel.buttonHistory.collectAsState(emptyList())
-    val selectedHistoryItem by viewModel.selectedHistoryItem.collectAsState()
     val dimensions = LocalDimensions.current
-    
-    var previewImagePath by remember { mutableStateOf<String?>(null) }
 
     FlowRow(
         modifier = Modifier.fillMaxWidth(),

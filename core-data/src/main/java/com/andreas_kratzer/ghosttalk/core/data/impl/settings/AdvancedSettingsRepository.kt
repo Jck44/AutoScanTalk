@@ -27,7 +27,7 @@ class AdvancedSettingsRepository(
     private val _showTestButtons = BooleanSetting(KEY_SHOW_TEST_BUTTONS, false, isScoped = false)
     private val _showPageIdInLog = BooleanSetting(KEY_SHOW_PAGE_ID_IN_LOG, false, isScoped = false)
     private val _smartPredictionDelay = LongSetting(KEY_SMART_PREDICTION_DELAY, 2000L)
-    private val _isSmartPredictionEnabled = BooleanSetting(KEY_SMART_PREDICTION_ENABLED, false)
+    private val _isSmartPredictionEnabled = BooleanSetting(KEY_SMART_PREDICTION_ENABLED, true)
     private val _weatherCacheTimeout = LongSetting(KEY_WEATHER_CACHE_TIMEOUT, 60L, isScoped = false)
     private val _actionLogLimit = IntSetting(SettingsConstants.KEY_ACTION_LOG_LIMIT, 100)
     private val _logIgnoredActions = BooleanSetting(KEY_LOG_IGNORED_ACTIONS, false)

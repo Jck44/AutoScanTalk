@@ -218,7 +218,6 @@ fun ButtonConfigDialog(
         }
     }
 
-    var showMenu by remember { mutableStateOf(false) }
     var currentTab by remember { mutableIntStateOf(0) }
     val tabTitles = listOf("Einstellungen", "Vorschau", "Statistiken")
 
@@ -869,23 +868,23 @@ fun ButtonConfigDialog(
                                     } else {
                                         val icon = when (actionType) {
                                             actionTypeSpeak -> Icons.Default.PlayArrow
-                                            actionTypeNavigate -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.ArrowForward
-                                            actionTypeGemini, actionTypeGeminiSearch, actionTypeGeminiVision -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.AutoAwesome
-                                            actionTypeWeather -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.PartlyCloudy
-                                            actionTypeReadNotifications, actionTypeClearNotifications -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.Notifications
-                                            actionTypeSendMessage -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.Message
-                                            actionTypeStartCall -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.Phone
-                                            actionTypeMediaPlayPause -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.PlayPause
-                                            actionTypeMediaNext -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.SkipNext
-                                            actionTypeMediaPrevious -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.SkipPrevious
-                                            actionTypeReadTime -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.AccessTime
-                                            actionTypeReadDate, actionTypeReadCalendarEntries -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.DateRange
-                                            actionTypeReadBattery -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.BatteryFull
-                                            actionTypeVolumeMedia, actionTypeVolumeNotification, actionTypeVolumeAlarm, actionTypeVolumeCall, actionTypeStatusLoud -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.VolumeUp
-                                            actionTypeStatusSilent -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.VolumeOff
-                                            actionTypeStatusVibrate -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.Vibration
+                                            actionTypeNavigate -> GhostTalkIcons.ArrowForward
+                                            actionTypeGemini, actionTypeGeminiSearch, actionTypeGeminiVision -> GhostTalkIcons.AutoAwesome
+                                            actionTypeWeather -> GhostTalkIcons.PartlyCloudy
+                                            actionTypeReadNotifications, actionTypeClearNotifications -> GhostTalkIcons.Notifications
+                                            actionTypeSendMessage -> GhostTalkIcons.Message
+                                            actionTypeStartCall -> GhostTalkIcons.Phone
+                                            actionTypeMediaPlayPause -> GhostTalkIcons.PlayPause
+                                            actionTypeMediaNext -> GhostTalkIcons.SkipNext
+                                            actionTypeMediaPrevious -> GhostTalkIcons.SkipPrevious
+                                            actionTypeReadTime -> GhostTalkIcons.AccessTime
+                                            actionTypeReadDate, actionTypeReadCalendarEntries -> GhostTalkIcons.DateRange
+                                            actionTypeReadBattery -> GhostTalkIcons.BatteryFull
+                                            actionTypeVolumeMedia, actionTypeVolumeNotification, actionTypeVolumeAlarm, actionTypeVolumeCall, actionTypeStatusLoud -> GhostTalkIcons.VolumeUp
+                                            actionTypeStatusSilent -> GhostTalkIcons.VolumeOff
+                                            actionTypeStatusVibrate -> GhostTalkIcons.Vibration
                                             actionTypePhilipsHue, actionTypeGoogleHome -> Icons.Default.Home
-                                            actionTypeFrequent, actionTypePrevious, actionTypeSmart -> com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.History
+                                            actionTypeFrequent, actionTypePrevious, actionTypeSmart -> GhostTalkIcons.History
                                             else -> Icons.Default.Settings
                                         }
                                         Icon(
@@ -1306,7 +1305,7 @@ fun ButtonConfigDialog(
                                         is SmartPredictionButtonAction, is FrequentActionButtonAction -> "Smart Prediction"
                                         is WeatherButtonAction -> "Wetter"
                                         is ControlDeviceButtonAction -> {
-                                            if (currentAction.actionType == com.andreas_kratzer.ghosttalk.core.model.DeviceActionType.READ_NOTIFICATIONS) "Benachrichtigungen" else ""
+                                            if (currentAction.actionType == DeviceActionType.READ_NOTIFICATIONS) "Benachrichtigungen" else ""
                                         }
                                         else -> ""
                                     }

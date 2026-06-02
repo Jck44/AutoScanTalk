@@ -130,7 +130,7 @@ open class ElevenLabsTtsProvider @Inject constructor(
                 .build()
 
             httpClient.newCall(request).enqueue(object : Callback {
-                override fun onFailure(call: Call, e: java.io.IOException) {
+                override fun onFailure(call: Call, e: IOException) {
                     val isCanceled = e.message?.contains("Canceled") == true || e.message?.contains("Socket closed") == true
                     if (isCanceled) {
                         Log.d("ElevenLabsTtsProvider", "Speech call canceled")
@@ -165,7 +165,7 @@ open class ElevenLabsTtsProvider @Inject constructor(
                         }
 
                         try {
-                            val tempFile = java.io.File(cachedFile.absolutePath + ".tmp")
+                            val tempFile = File(cachedFile.absolutePath + ".tmp")
                             java.io.FileOutputStream(tempFile).use { output ->
                                 body.byteStream().copyTo(output)
                             }
@@ -268,7 +268,7 @@ open class ElevenLabsTtsProvider @Inject constructor(
                         return@withContext
                     }
                     val body = resp.body ?: return@withContext
-                    val tempFile = java.io.File(cachedFile.absolutePath + ".tmp")
+                    val tempFile = File(cachedFile.absolutePath + ".tmp")
                     java.io.FileOutputStream(tempFile).use { output ->
                         body.byteStream().copyTo(output)
                     }
@@ -288,8 +288,8 @@ open class ElevenLabsTtsProvider @Inject constructor(
         return cachedFile.exists() && cachedFile.length() > 0
     }
     
-    private fun getCacheFile(text: String, voiceId: String, modelId: String, languageCode: String?): java.io.File {
-        val tgtDir = java.io.File(context.filesDir, "elevenlabs")
+    private fun getCacheFile(text: String, voiceId: String, modelId: String, languageCode: String?): File {
+        val tgtDir = File(context.filesDir, "elevenlabs")
         if (!tgtDir.exists()) tgtDir.mkdirs()
         
         val trimmedText = text.trim()
@@ -307,7 +307,7 @@ open class ElevenLabsTtsProvider @Inject constructor(
         val safeLang = languageCode?.replace(Regex("[^a-z]"), "") ?: "auto"
         
         val fileName = "tts_eleven#${base64Text}#${safeVoiceId}#${safeModelId}#${safeLang}.mp3"
-        val file = java.io.File(tgtDir, fileName)
+        val file = File(tgtDir, fileName)
         
         if (file.exists() && file.length() > 0) {
             Log.i("ElevenLabsTtsProvider", "Cache hit: ${file.name}")
@@ -319,7 +319,7 @@ open class ElevenLabsTtsProvider @Inject constructor(
         // 1. Try legacy model ID (e.g. "v3" instead of "eleven_v3")
         if (safeModelId.startsWith("eleven_")) {
             val legacyModelId = safeModelId.removePrefix("eleven_")
-            val legacyFile = java.io.File(tgtDir, "tts_eleven#${base64Text}#${safeVoiceId}#${legacyModelId}#${safeLang}.mp3")
+            val legacyFile = File(tgtDir, "tts_eleven#${base64Text}#${safeVoiceId}#${legacyModelId}#${safeLang}.mp3")
             if (legacyFile.exists() && legacyFile.length() > 0) {
                 Log.i("ElevenLabsTtsProvider", "Cache hit (legacy model ID): ${legacyFile.name}")
                 return legacyFile
@@ -327,7 +327,7 @@ open class ElevenLabsTtsProvider @Inject constructor(
             
             // 2. Try legacy model ID + "auto" language fallback
             if (safeLang != "auto") {
-                val legacyAutoFile = java.io.File(tgtDir, "tts_eleven#${base64Text}#${safeVoiceId}#${legacyModelId}#auto.mp3")
+                val legacyAutoFile = File(tgtDir, "tts_eleven#${base64Text}#${safeVoiceId}#${legacyModelId}#auto.mp3")
                 if (legacyAutoFile.exists() && legacyAutoFile.length() > 0) {
                     Log.i("ElevenLabsTtsProvider", "Cache hit (legacy model + auto lang): ${legacyAutoFile.name}")
                     return legacyAutoFile
@@ -337,7 +337,7 @@ open class ElevenLabsTtsProvider @Inject constructor(
 
         // 3. Try current model ID + "auto" language fallback
         if (safeLang != "auto") {
-            val autoFile = java.io.File(tgtDir, "tts_eleven#${base64Text}#${safeVoiceId}#${safeModelId}#auto.mp3")
+            val autoFile = File(tgtDir, "tts_eleven#${base64Text}#${safeVoiceId}#${safeModelId}#auto.mp3")
             if (autoFile.exists() && autoFile.length() > 0) {
                 Log.i("ElevenLabsTtsProvider", "Cache hit (auto lang fallback): ${autoFile.name}")
                 return autoFile

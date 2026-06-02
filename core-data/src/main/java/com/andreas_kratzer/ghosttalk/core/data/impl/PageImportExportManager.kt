@@ -231,7 +231,7 @@ class PageImportExportManager @Inject constructor(
             logger.d(TAG, "ID mapping complete. Mapping size: ${idMap.size}. ForceRegeneration: $forceRegeneration")
 
             // 2.1 Update book-scoped settings with correct book ID prefix
-            val prefs = context.getSharedPreferences(SettingsConstants.PREFS_NAME, android.content.Context.MODE_PRIVATE)
+            val prefs = context.getSharedPreferences(SettingsConstants.PREFS_NAME, Context.MODE_PRIVATE)
             prefs.edit {
                 importData.defaultStartPageId?.let { oldId ->
                     val newId = idMap[oldId] ?: oldId

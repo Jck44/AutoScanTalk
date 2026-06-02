@@ -65,10 +65,7 @@ fun BookListScreen(
     val allBooks by bookViewModel.allBooks.collectAsState()
     
     var showAddDialog by remember { mutableStateOf(false) }
-    
-    var showSecurityDialogForEdit by remember { mutableStateOf(false) }
-    val isUnlocked by securityManager.isUnlocked.collectAsState()
-    
+
     val dimensions = LocalDimensions.current
 
     Scaffold(
@@ -123,8 +120,6 @@ fun BookListScreen(
                 val dateFormat = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
                 val favoriteId by bookViewModel.favoriteBookId.collectAsState()
                 val isFavorite = favoriteId == book.id
-                
-                var showMenu by remember { mutableStateOf(false) }
 
                 GhostTalkCard(
                     title = book.name,

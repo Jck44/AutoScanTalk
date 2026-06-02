@@ -82,14 +82,6 @@ fun MaintenanceSection(
                 }
                 Spacer(modifier = Modifier.height(LocalDimensions.current.paddingSmall))
                 Button(
-                    onClick = { viewModel.setShowUserModeSessionsDialog(true) },
-                    shape = MaterialTheme.shapes.medium,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(stringResource(R.string.settings_user_mode_sessions_title))
-                }
-                Spacer(modifier = Modifier.height(LocalDimensions.current.paddingSmall))
-                Button(
                     onClick = { viewModel.setShowPrefetchDialog(true) },
                     shape = MaterialTheme.shapes.medium,
                     modifier = Modifier.fillMaxWidth()

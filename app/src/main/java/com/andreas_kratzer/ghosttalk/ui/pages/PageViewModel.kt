@@ -74,11 +74,27 @@ class PageViewModel @Inject constructor(
     private val spotifyManager: SpotifyManager,
     private val buttonUsageRepository: com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository,
     private val efficiencyAnalyzer: com.andreas_kratzer.ghosttalk.core.data.impl.analytics.EfficiencyAnalyzer,
-    private val pathAnalyzer: com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PathAnalyzer
+    private val pathAnalyzer: com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PathAnalyzer,
+    private val userModeSessionRepository: com.andreas_kratzer.ghosttalk.core.data.UserModeSessionRepository
 ) : AndroidViewModel(application), com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions {
 
-
     val activeBookId = pageManagementDelegate.activeBookId
+
+    val userModeSessions: StateFlow<List<com.andreas_kratzer.ghosttalk.core.model.UserModeSession>> = activeBookId
+        .flatMapLatest { bookId ->
+            if (bookId == null) flowOf(emptyList())
+            else userModeSessionRepository.getSessionsForBook(bookId)
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun clearUserModeSessions() {
+        viewModelScope.launch {
+            val bookId = activeBookId.value
+            if (bookId != null) {
+                userModeSessionRepository.clearSessions(bookId)
+            }
+        }
+    }
     val currentPageId = pageManagementDelegate.currentPageId
     val searchQuery = pageManagementDelegate.searchQuery
     val filteredPages = pageManagementDelegate.filteredPages
@@ -142,7 +158,7 @@ class PageViewModel @Inject constructor(
                     }
                 }
             } catch (e: Exception) {
-                android.util.Log.e("PageViewModel", "Error applying shortcut", e)
+                Log.e("PageViewModel", "Error applying shortcut", e)
                 onResult(false, "Fehler: ${e.localizedMessage}")
             }
         }
@@ -226,28 +242,28 @@ class PageViewModel @Inject constructor(
 
     fun toggleAnalyticsOverlay() {
         _isAnalyticsOverlayEnabled.value = !_isAnalyticsOverlayEnabled.value
-        android.util.Log.d("PageViewModel", "toggleAnalyticsOverlay: enabled = ${_isAnalyticsOverlayEnabled.value}")
+        Log.d("PageViewModel", "toggleAnalyticsOverlay: enabled = ${_isAnalyticsOverlayEnabled.value}")
     }
 
     val pageMetrics: StateFlow<Map<String, com.andreas_kratzer.ghosttalk.core.model.ButtonEffortMetrics>> = combine(
         resolvedPage,
         activeBookId
     ) { page, bookId ->
-        android.util.Log.d("PageViewModel", "pageMetrics combine: page = ${page?.name} (${page?.id}), bookId = $bookId")
+        Log.d("PageViewModel", "pageMetrics combine: page = ${page?.name} (${page?.id}), bookId = $bookId")
         Pair(page, bookId)
     }
     .flatMapLatest { (page, bookId) ->
         if (page == null || bookId == null) {
-            android.util.Log.d("PageViewModel", "pageMetrics flatMapLatest: skipping analysis (page=${page?.id}, bookId=$bookId)")
+            Log.d("PageViewModel", "pageMetrics flatMapLatest: skipping analysis (page=${page?.id}, bookId=$bookId)")
             flowOf(emptyMap())
         } else {
             kotlinx.coroutines.flow.flow {
                 try {
-                    android.util.Log.d("PageViewModel", "pageMetrics: starting analysis for page ${page.name} in book $bookId")
+                    Log.d("PageViewModel", "pageMetrics: starting analysis for page ${page.name} in book $bookId")
                     val stats = buttonUsageRepository.getGroupedUsageStats(bookId)
                     val clickCounts = stats.flatMap { it.children }
                         .associate { it.buttonConfigId to it.usageCount }
-                    android.util.Log.d("PageViewModel", "pageMetrics: fetched ${stats.size} stats, clickCounts = $clickCounts")
+                    Log.d("PageViewModel", "pageMetrics: fetched ${stats.size} stats, clickCounts = $clickCounts")
                     val delay = settingsRepository.scanDelayMillis
                     val pattern = settingsRepository.defaultScanPattern
                     val allPages = pageManagementDelegate.unfilteredPages.value
@@ -260,10 +276,10 @@ class PageViewModel @Inject constructor(
                         scanDelayMs = delay,
                         defaultScanPattern = pattern
                     )
-                    android.util.Log.d("PageViewModel", "pageMetrics: calculated metrics for ${metrics.size} buttons: $metrics")
+                    Log.d("PageViewModel", "pageMetrics: calculated metrics for ${metrics.size} buttons: $metrics")
                     emit(metrics)
                 } catch (e: Exception) {
-                    android.util.Log.e("PageViewModel", "Error analyzing page efficiency", e)
+                    Log.e("PageViewModel", "Error analyzing page efficiency", e)
                     emit(emptyMap())
                 }
             }

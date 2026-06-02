@@ -22,5 +22,6 @@ data class ButtonUsageHistoryEntity(
     val pageId: String? = null,
     val geminiResponse: String? = null,
     val latitude: Double? = null,
-    val longitude: Double? = null
+    val longitude: Double? = null,
+    val sessionId: Long? = null
 )

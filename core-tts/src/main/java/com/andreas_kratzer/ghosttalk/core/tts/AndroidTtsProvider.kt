@@ -234,7 +234,7 @@ open class AndroidTtsProvider @Inject constructor(
             } else {
                 var isReadyFired = false
                 val listener = object : AudioManager.OnCommunicationDeviceChangedListener {
-                    override fun onCommunicationDeviceChanged(device: android.media.AudioDeviceInfo?) {
+                    override fun onCommunicationDeviceChanged(device: AudioDeviceInfo?) {
                         if (device == null && !isReadyFired) {
                             isReadyFired = true
                             audioManager.removeOnCommunicationDeviceChangedListener(this)
@@ -286,7 +286,7 @@ open class AndroidTtsProvider @Inject constructor(
             Locale.forLanguageTag(tag)
         }
 
-        tts?.setLanguage(locale)
+        tts?.language = locale
         
         if (!pendingVoiceName.isNullOrEmpty()) {
             val targetVoice = voiceManager.findVoice(tts, pendingVoiceName)
