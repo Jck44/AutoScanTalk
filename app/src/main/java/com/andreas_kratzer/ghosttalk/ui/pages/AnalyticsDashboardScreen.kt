@@ -37,6 +37,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -55,7 +56,7 @@ fun AnalyticsDashboardScreen(
 ) {
     val context = LocalContext.current
     val dimensions = LocalDimensions.current
-    val locale = context.resources.configuration.locales[0]
+    val locale = LocalConfiguration.current.locales[0]
 
     val historyEvents by pageViewModel.buttonHistory.collectAsState(emptyList())
     val unfilteredPages by pageViewModel.unfilteredPages.collectAsState()
