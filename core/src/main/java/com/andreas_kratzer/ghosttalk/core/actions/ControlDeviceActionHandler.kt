@@ -67,6 +67,8 @@ class ControlDeviceActionHandler @Inject constructor(
             DeviceActionType.VOLUME_ALARM -> handleVolume(AudioManager.STREAM_ALARM, deviceAction, buttonConfig.label, executionId, onFinish)
             DeviceActionType.VOLUME_MEDIA -> handleVolume(AudioManager.STREAM_MUSIC, deviceAction, buttonConfig.label, executionId, onFinish)
             DeviceActionType.VOLUME_CALL -> handleVolume(AudioManager.STREAM_VOICE_CALL, deviceAction, buttonConfig.label, executionId, onFinish)
+            DeviceActionType.VOLUME_IN_APP_TTS -> handleInAppVolume(true, deviceAction, buttonConfig.label, executionId, onFinish)
+            DeviceActionType.VOLUME_IN_APP_CUES -> handleInAppVolume(false, deviceAction, buttonConfig.label, executionId, onFinish)
             
             DeviceActionType.STATUS_SILENT -> handleStatus(AudioManager.RINGER_MODE_SILENT, action, buttonConfig.label, executionId, onFinish)
             DeviceActionType.STATUS_VIBRATE -> handleStatus(AudioManager.RINGER_MODE_VIBRATE, action, buttonConfig.label, executionId, onFinish)
@@ -199,6 +201,33 @@ class ControlDeviceActionHandler @Inject constructor(
         
         audioManager.setStreamVolume(streamType, targetVolume, AudioManager.FLAG_SHOW_UI)
         actionLogger.log("Lautstärke auf ${((targetVolume.toDouble() / maxVolume) * 100).toInt()}% gesetzt", action, label)
+        onFinish(executionId)
+    }
+
+    private fun handleInAppVolume(isTts: Boolean, action: ControlDeviceButtonAction, label: String?, executionId: Int, onFinish: (Int) -> Unit) {
+        val valueStr = action.volumeValue ?: "50"
+        
+        val maxVolume = 100
+        val currentVolume = if (isTts) settings.speakerVolume else settings.headphoneVolume
+        
+        val isRelative = valueStr.startsWith("+") || valueStr.startsWith("-")
+        val percentage = valueStr.removePrefix("+").toIntOrNull() ?: 50
+        
+        val targetVolume = if (isRelative) {
+            val change = percentage
+            (currentVolume + change).coerceIn(0, maxVolume)
+        } else {
+            percentage.coerceIn(0, maxVolume)
+        }
+        
+        if (isTts) {
+            settings.speakerVolume = targetVolume
+        } else {
+            settings.headphoneVolume = targetVolume
+        }
+        
+        val channelName = if (isTts) "Laut Sprechen" else "Audio-Hinweis"
+        actionLogger.log("In-App Lautstärke ($channelName) auf $targetVolume% gesetzt", action, label)
         onFinish(executionId)
     }
 

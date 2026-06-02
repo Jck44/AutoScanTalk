@@ -264,6 +264,8 @@ class ButtonTemplateRepositoryImpl @Inject constructor(
                 DeviceActionType.START_CALL -> "Telefonanruf starten"
                 DeviceActionType.INSTALL_UPDATE -> "App aktualisieren"
                 DeviceActionType.START_SYNC -> "Synchronisation starten"
+                DeviceActionType.VOLUME_IN_APP_TTS -> "In-App Lautstärke (Laut Sprechen)"
+                DeviceActionType.VOLUME_IN_APP_CUES -> "In-App Lautstärke (Audio-Hinweis)"
             }
             val label = when (type) {
                 DeviceActionType.READ_NOTIFICATIONS -> "Nachrichten"
@@ -287,6 +289,8 @@ class ButtonTemplateRepositoryImpl @Inject constructor(
                 DeviceActionType.START_CALL -> "Anrufen"
                 DeviceActionType.INSTALL_UPDATE -> "Update"
                 DeviceActionType.START_SYNC -> "Sync"
+                DeviceActionType.VOLUME_IN_APP_TTS -> "Vol Laut"
+                DeviceActionType.VOLUME_IN_APP_CUES -> "Vol Hinweis"
             }
             list.add(
                 ButtonTemplate(

@@ -214,6 +214,8 @@
     <string name="volume_notification">Lautstärke Benachrichtigung</string>
     <string name="volume_alarm">Lautstärke Alarm</string>
     <string name="volume_call">Lautstärke Anruf</string>
+    <string name="volume_in_app_tts">In-App-Lautstärke: Laut Sprechen</string>
+    <string name="volume_in_app_cues">In-App-Lautstärke: Audio-Hinweis</string>
     <string name="status_silent">Status: Lautlos</string>
     <string name="status_vibrate">Status: Vibration</string>
     <string name="status_loud">Status: Laut</string>

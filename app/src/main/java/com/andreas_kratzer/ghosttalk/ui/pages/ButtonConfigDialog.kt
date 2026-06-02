@@ -253,6 +253,8 @@ fun ButtonConfigDialog(
     val actionTypeVolumeNotification = stringResource(R.string.volume_notification)
     val actionTypeVolumeAlarm = stringResource(R.string.volume_alarm)
     val actionTypeVolumeCall = stringResource(R.string.volume_call)
+    val actionTypeVolumeInAppTts = stringResource(R.string.volume_in_app_tts)
+    val actionTypeVolumeInAppCues = stringResource(R.string.volume_in_app_cues)
     val actionTypeStatusSilent = stringResource(R.string.status_silent)
     val actionTypeStatusVibrate = stringResource(R.string.status_vibrate)
     val actionTypeStatusLoud = stringResource(R.string.status_loud)
@@ -295,6 +297,8 @@ fun ButtonConfigDialog(
                         DeviceActionType.VOLUME_NOTIFICATION -> actionTypeVolumeNotification
                         DeviceActionType.VOLUME_ALARM -> actionTypeVolumeAlarm
                         DeviceActionType.VOLUME_CALL -> actionTypeVolumeCall
+                        DeviceActionType.VOLUME_IN_APP_TTS -> actionTypeVolumeInAppTts
+                        DeviceActionType.VOLUME_IN_APP_CUES -> actionTypeVolumeInAppCues
                         DeviceActionType.STATUS_SILENT -> actionTypeStatusSilent
                         DeviceActionType.STATUS_VIBRATE -> actionTypeStatusVibrate
                         DeviceActionType.STATUS_LOUD -> actionTypeStatusLoud
@@ -568,6 +572,8 @@ fun ButtonConfigDialog(
             actionTypeVolumeNotification -> ControlDeviceButtonAction(actionType = DeviceActionType.VOLUME_NOTIFICATION, volumeValue = volumeValue)
             actionTypeVolumeAlarm -> ControlDeviceButtonAction(actionType = DeviceActionType.VOLUME_ALARM, volumeValue = volumeValue)
             actionTypeVolumeCall -> ControlDeviceButtonAction(actionType = DeviceActionType.VOLUME_CALL, volumeValue = volumeValue)
+            actionTypeVolumeInAppTts -> ControlDeviceButtonAction(actionType = DeviceActionType.VOLUME_IN_APP_TTS, volumeValue = volumeValue)
+            actionTypeVolumeInAppCues -> ControlDeviceButtonAction(actionType = DeviceActionType.VOLUME_IN_APP_CUES, volumeValue = volumeValue)
             actionTypeStatusSilent -> ControlDeviceButtonAction(actionType = DeviceActionType.STATUS_SILENT)
             actionTypeStatusVibrate -> ControlDeviceButtonAction(actionType = DeviceActionType.STATUS_VIBRATE)
             actionTypeStatusLoud -> ControlDeviceButtonAction(actionType = DeviceActionType.STATUS_LOUD)
@@ -818,6 +824,8 @@ fun ButtonConfigDialog(
                                     actionTypeVolumeNotification to ControlDeviceButtonAction(DeviceActionType.VOLUME_NOTIFICATION),
                                     actionTypeVolumeAlarm to ControlDeviceButtonAction(DeviceActionType.VOLUME_ALARM),
                                     actionTypeVolumeCall to ControlDeviceButtonAction(DeviceActionType.VOLUME_CALL),
+                                    actionTypeVolumeInAppTts to ControlDeviceButtonAction(DeviceActionType.VOLUME_IN_APP_TTS),
+                                    actionTypeVolumeInAppCues to ControlDeviceButtonAction(DeviceActionType.VOLUME_IN_APP_CUES),
                                     actionTypeStatusSilent to ControlDeviceButtonAction(DeviceActionType.STATUS_SILENT),
                                     actionTypeStatusVibrate to ControlDeviceButtonAction(DeviceActionType.STATUS_VIBRATE),
                                     actionTypeStatusLoud to ControlDeviceButtonAction(DeviceActionType.STATUS_LOUD),

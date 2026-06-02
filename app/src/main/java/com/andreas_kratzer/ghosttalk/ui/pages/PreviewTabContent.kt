@@ -93,6 +93,8 @@ fun PreviewTabContent(
                             DeviceActionType.SEND_MESSAGE -> "SMS senden"
                             DeviceActionType.START_CALL -> "Anruf starten"
                             DeviceActionType.VOLUME_MEDIA -> "Medien-Lautstärke ändern"
+                            DeviceActionType.VOLUME_IN_APP_TTS -> "In-App-Lautstärke: Laut Sprechen ändern"
+                            DeviceActionType.VOLUME_IN_APP_CUES -> "In-App-Lautstärke: Audio-Hinweis ändern"
                             DeviceActionType.VOLUME_NOTIFICATION -> "Benachrichtigungs-Lautstärke ändern"
                             DeviceActionType.VOLUME_ALARM -> "Wecker-Lautstärke ändern"
                             DeviceActionType.VOLUME_CALL -> "Anruf-Lautstärke ändern"

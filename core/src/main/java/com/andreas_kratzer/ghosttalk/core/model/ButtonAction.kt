@@ -171,7 +171,9 @@ enum class DeviceActionType {
     TOGGLE_SCANNING,
     START_CALL,
     INSTALL_UPDATE,
-    START_SYNC
+    START_SYNC,
+    VOLUME_IN_APP_TTS,
+    VOLUME_IN_APP_CUES
 }
 
 @Serializable

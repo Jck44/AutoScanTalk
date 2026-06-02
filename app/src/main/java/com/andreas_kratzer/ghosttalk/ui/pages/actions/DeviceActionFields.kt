@@ -79,6 +79,8 @@ private fun getDeviceActionIcon(type: DeviceActionType): ImageVector {
         DeviceActionType.START_CALL -> Icons.Default.Phone
         DeviceActionType.INSTALL_UPDATE -> GhostTalkIcons.CloudDownload
         DeviceActionType.START_SYNC -> Icons.Default.Refresh
+        DeviceActionType.VOLUME_IN_APP_TTS -> GhostTalkIcons.VolumeUp
+        DeviceActionType.VOLUME_IN_APP_CUES -> GhostTalkIcons.VolumeUp
     }
 }
 
@@ -139,7 +141,9 @@ fun DeviceActionFields(
         DeviceActionType.TOGGLE_SCANNING to stringResource(R.string.button_device_control_toggle_scanning),
         DeviceActionType.START_CALL to stringResource(R.string.action_start_call),
         DeviceActionType.INSTALL_UPDATE to stringResource(R.string.button_device_control_install_update),
-        DeviceActionType.START_SYNC to stringResource(R.string.button_device_control_start_sync)
+        DeviceActionType.START_SYNC to stringResource(R.string.button_device_control_start_sync),
+        DeviceActionType.VOLUME_IN_APP_TTS to stringResource(R.string.volume_in_app_tts),
+        DeviceActionType.VOLUME_IN_APP_CUES to stringResource(R.string.volume_in_app_cues)
     )
 
     val currentLabel = types.find { it.first == selectedType }?.second ?: types.first().second

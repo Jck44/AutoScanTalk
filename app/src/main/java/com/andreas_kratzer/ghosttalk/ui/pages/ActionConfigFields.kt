@@ -139,6 +139,8 @@ fun ActionConfigFields(
     val actionTypeVolumeNotification = stringResource(R.string.volume_notification)
     val actionTypeVolumeAlarm = stringResource(R.string.volume_alarm)
     val actionTypeVolumeCall = stringResource(R.string.volume_call)
+    val actionTypeVolumeInAppTts = stringResource(R.string.volume_in_app_tts)
+    val actionTypeVolumeInAppCues = stringResource(R.string.volume_in_app_cues)
     val actionTypeStatusSilent = stringResource(R.string.status_silent)
     val actionTypeStatusVibrate = stringResource(R.string.status_vibrate)
     val actionTypeStatusLoud = stringResource(R.string.status_loud)
@@ -265,6 +267,8 @@ fun ActionConfigFields(
             actionTypeVolumeNotification,
             actionTypeVolumeAlarm,
             actionTypeVolumeCall,
+            actionTypeVolumeInAppTts,
+            actionTypeVolumeInAppCues,
             actionTypeStatusSilent,
             actionTypeStatusVibrate,
             actionTypeStatusLoud,
@@ -287,6 +291,8 @@ fun ActionConfigFields(
                     actionTypeVolumeNotification -> DeviceActionType.VOLUME_NOTIFICATION
                     actionTypeVolumeAlarm -> DeviceActionType.VOLUME_ALARM
                     actionTypeVolumeCall -> DeviceActionType.VOLUME_CALL
+                    actionTypeVolumeInAppTts -> DeviceActionType.VOLUME_IN_APP_TTS
+                    actionTypeVolumeInAppCues -> DeviceActionType.VOLUME_IN_APP_CUES
                     actionTypeStatusSilent -> DeviceActionType.STATUS_SILENT
                     actionTypeStatusVibrate -> DeviceActionType.STATUS_VIBRATE
                     actionTypeStatusLoud -> DeviceActionType.STATUS_LOUD

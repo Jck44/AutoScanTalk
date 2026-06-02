@@ -210,6 +210,8 @@
     <string name="volume_notification">Notification Volume</string>
     <string name="volume_alarm">Alarm Volume</string>
     <string name="volume_call">Call Volume</string>
+    <string name="volume_in_app_tts">In-App Volume: Speak Out Loud</string>
+    <string name="volume_in_app_cues">In-App Volume: Auditory Cue</string>
     <string name="status_silent">Status: Silent</string>
     <string name="status_vibrate">Status: Vibrate</string>
     <string name="status_loud">Status: Loud</string>

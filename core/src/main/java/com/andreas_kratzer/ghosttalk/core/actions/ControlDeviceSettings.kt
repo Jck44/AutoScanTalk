@@ -13,6 +13,11 @@ interface ControlDeviceSettings {
     var simulateCallsEnabled: Boolean
     val simulateCallsEnabledFlow: kotlinx.coroutines.flow.StateFlow<Boolean>
 
+    var speakerVolume: Int
+    val speakerVolumeFlow: kotlinx.coroutines.flow.StateFlow<Int>
+    var headphoneVolume: Int
+    val headphoneVolumeFlow: kotlinx.coroutines.flow.StateFlow<Int>
+
     fun getDeviceName(persistentId: String): String?
     fun saveDeviceName(persistentId: String, name: String)
     fun cleanupDeviceCache(keepPersistentIds: Set<String>)
