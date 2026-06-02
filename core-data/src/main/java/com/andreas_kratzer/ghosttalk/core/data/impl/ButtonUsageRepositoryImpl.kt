@@ -22,6 +22,11 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.tasks.await
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.net.NetworkRequest
+import android.net.wifi.WifiInfo
 
 /**
  * Repository for tracking button usage statistics per book.
@@ -41,6 +46,42 @@ class ButtonUsageRepositoryImpl @Inject constructor(
     private val json = Json {
         ignoreUnknownKeys = true
         encodeDefaults = true
+    }
+
+    @Volatile
+    private var currentWifiSsid: String? = null
+
+    init {
+        try {
+            val connectivityManager = context.applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+            val request = NetworkRequest.Builder()
+                .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
+                .build()
+            
+            connectivityManager?.registerNetworkCallback(
+                request,
+                object : ConnectivityManager.NetworkCallback(FLAG_INCLUDE_LOCATION_INFO) {
+                    override fun onCapabilitiesChanged(
+                        network: Network,
+                        networkCapabilities: NetworkCapabilities
+                    ) {
+                        val wifiInfo = networkCapabilities.transportInfo as? WifiInfo
+                        val rawSsid = wifiInfo?.ssid
+                        currentWifiSsid = if (rawSsid != null && rawSsid != "<unknown ssid>") {
+                            rawSsid.trim('"')
+                        } else {
+                            null
+                        }
+                    }
+
+                    override fun onLost(network: Network) {
+                        currentWifiSsid = null
+                    }
+                }
+            )
+        } catch (_: Exception) {
+            // Safe fallback
+        }
     }
 
     override val buttonHistory: StateFlow<List<ButtonUsageRepository.ButtonUsageEvent>> = 
@@ -86,16 +127,7 @@ class ButtonUsageRepositoryImpl @Inject constructor(
         }
 
         val wifiSsid = if (hasFine || hasCoarse) {
-            try {
-                val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as? android.net.wifi.WifiManager
-                val connectionInfo = wifiManager?.connectionInfo
-                val rawSsid = connectionInfo?.ssid
-                if (rawSsid != null && rawSsid != "<unknown ssid>" && connectionInfo.networkId != -1) {
-                    rawSsid.trim('"')
-                } else null
-            } catch (_: Exception) {
-                null
-            }
+            currentWifiSsid
         } else {
             null
         }
@@ -246,15 +278,10 @@ class ButtonUsageRepositoryImpl @Inject constructor(
         val hasCoarse = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
 
         val currentWifi = if (hasFine || hasCoarse) {
-            try {
-                val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as? android.net.wifi.WifiManager
-                val connectionInfo = wifiManager?.connectionInfo
-                val raw = connectionInfo?.ssid
-                if (raw != null && raw != "<unknown ssid>" && connectionInfo.networkId != -1) {
-                    raw.trim('"')
-                } else null
-            } catch (_: Exception) { null }
-        } else null
+            currentWifiSsid
+        } else {
+            null
+        }
 
         val nowDateTime = java.time.LocalDateTime.now()
         val currentHour = nowDateTime.hour
