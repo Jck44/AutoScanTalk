@@ -121,9 +121,11 @@ class ButtonUsageRepositoryImpl @Inject constructor(
             )
             dao.insertHistoryEvent(event)
 
-            // Pruning based on active book settings
-            val limit = settingsRepository.actionLogLimit 
-            dao.pruneHistory(bookId, limit)
+            // Pruning based on active statistics retention days instead of strict event count limit.
+            // This ensures we keep the full timeline needed for weekly caregivers dashboard and 90-day predictions.
+            val retentionDays = settingsRepository.statsRetentionDays
+            val threshold = System.currentTimeMillis() - (retentionDays.toLong() * 24L * 60L * 60L * 1000L)
+            dao.pruneHistoryByTimestamp(threshold)
         }
     }
 
