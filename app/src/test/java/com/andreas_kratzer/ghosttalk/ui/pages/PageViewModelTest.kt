@@ -300,7 +300,9 @@ class PageViewModelTest {
             buttonUsageRepository = buttonUsageRepository,
             efficiencyAnalyzer = mockk(relaxed = true),
             pathAnalyzer = mockk(relaxed = true),
-            userModeSessionRepository = mockk(relaxed = true)
+            userModeSessionRepository = mockk(relaxed = true),
+            splitPageUseCase = mockk(relaxed = true),
+            createPageUseCase = createPageUseCase
         )
     }
 

@@ -29,6 +29,7 @@ import androidx.compose.ui.res.stringResource
 import com.andreas_kratzer.ghosttalk.core.tts.VoiceUtils
 import com.andreas_kratzer.ghosttalk.core.ui.components.PreferenceCategory
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsSliderItem
+import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsToggleItem
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.feature.settings.R
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
@@ -45,6 +46,9 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
     val cachedAudioDevices by viewModel.cachedAudioDevices.collectAsState()
     val selectedTtsAddress by viewModel.selectedTtsAudioDeviceAddress.collectAsState(null)
     val selectedCuesAddress by viewModel.selectedCuesAudioDeviceAddress.collectAsState(null)
+    val blockVolumeKeys by viewModel.blockVolumeKeys.collectAsState(false)
+    val speakerVolume by viewModel.speakerVolume.collectAsState(100)
+    val headphoneVolume by viewModel.headphoneVolume.collectAsState(100)
 
     var expandedLanguage by remember { mutableStateOf(false) }
     var expandedTtsDevice by remember { mutableStateOf(false) }
@@ -296,6 +300,26 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                     label = stringResource(R.string.settings_recording_source),
                     selectedOption = currentRecordingSourceLabel,
                     options = recordingSourceOptions
+                )
+
+                Spacer(modifier = Modifier.height(dimensions.paddingSmall))
+
+                SettingsToggleItem(
+                    label = stringResource(R.string.settings_block_volume_keys),
+                    checked = blockVolumeKeys,
+                    onCheckedChange = { viewModel.setBlockVolumeKeys(it) }
+                )
+
+                SettingsSliderItem(
+                    label = stringResource(R.string.settings_speaker_volume_label),
+                    value = speakerVolume / 100f,
+                    onValueChange = { viewModel.setSpeakerVolume((it * 100).toInt()) }
+                )
+
+                SettingsSliderItem(
+                    label = stringResource(R.string.settings_headphone_volume_label),
+                    value = headphoneVolume / 100f,
+                    onValueChange = { viewModel.setHeadphoneVolume((it * 100).toInt()) }
                 )
             }
         }

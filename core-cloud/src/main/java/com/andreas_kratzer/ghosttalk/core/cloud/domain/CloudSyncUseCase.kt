@@ -724,8 +724,8 @@ class CloudSyncUseCase @Inject constructor(
         
         val shouldDownload = when (syncMode) {
             SyncMode.BACKUP_ONLY -> false
-            SyncMode.RESTORE_ONLY -> hasRemoteChanged
-            SyncMode.TWO_WAY -> hasRemoteChanged
+            SyncMode.RESTORE_ONLY -> hasRemoteChanged || (localLastModified == 0L && remoteFile != null)
+            SyncMode.TWO_WAY -> hasRemoteChanged || (localLastModified == 0L && remoteFile != null)
         }
         
         if (shouldUpload) {

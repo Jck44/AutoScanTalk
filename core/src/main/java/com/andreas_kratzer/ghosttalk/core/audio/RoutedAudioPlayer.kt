@@ -38,6 +38,15 @@ open class RoutedAudioPlayer @Inject constructor(
         return isBT
     }
 
+    private fun isHeadphoneDevice(type: Int): Boolean {
+        return type == AudioDeviceInfo.TYPE_WIRED_HEADSET ||
+                type == AudioDeviceInfo.TYPE_WIRED_HEADPHONES ||
+                type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO ||
+                type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP ||
+                type == AudioDeviceInfo.TYPE_BLE_HEADSET ||
+                type == AudioDeviceInfo.TYPE_USB_HEADSET
+    }
+
     open fun playAudioFile(file: File, deviceAddress: String?, volumeMultiplier: Float = 1.0f, onCompletion: (() -> Unit)? = null) {
         if (!file.exists()) {
             Log.e("RoutedAudioPlayer", "Audio file does not exist: ${file.absolutePath}")
@@ -145,7 +154,14 @@ open class RoutedAudioPlayer @Inject constructor(
                     Log.d("RoutedAudioPlayer", "No Bluetooth delay needed, starting playback immediately.")
                 }
 
-                mediaPlayer.setVolume(volumeMultiplier, volumeMultiplier)
+                val isHeadphone = targetDevice?.let { isHeadphoneDevice(it.type) } ?: false
+                val scalingFactor = if (isHeadphone) {
+                    audioSettings.headphoneVolume / 100f
+                } else {
+                    audioSettings.speakerVolume / 100f
+                }
+                val finalVolume = volumeMultiplier * scalingFactor
+                mediaPlayer.setVolume(finalVolume, finalVolume)
                 mediaPlayer.start()
 
             } catch (e: Exception) {

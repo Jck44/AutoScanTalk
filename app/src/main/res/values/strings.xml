@@ -405,5 +405,6 @@
     <string name="analytics_recommendation_savings">~%1$ds Ersparnis</string>
     <string name="analytics_recommendation_btn_create">Auf „%1$s“ erstellen</string>
     <string name="button_stats_btn_create_shortcut">Abkürzung auf „%1$s“ erstellen</string>
+    <string name="bluetooth_settings">Bluetooth-Einstellungen</string>
 </resources>
 

@@ -140,6 +140,9 @@ class SettingsRepositoryImpl @Inject constructor(
     override val switchActivationKeyFlow: StateFlow<String> get() = scanningSettings.switchActivationKeyFlow
     override val volumeKeysActivateFlow: StateFlow<Boolean> get() = scanningSettings.volumeKeysActivateFlow
     override val bluetoothDelayFlow: StateFlow<Long> get() = scanningSettings.bluetoothDelayFlow
+    override val blockVolumeKeysFlow: StateFlow<Boolean> get() = scanningSettings.blockVolumeKeysFlow
+    override val speakerVolumeFlow: StateFlow<Int> get() = scanningSettings.speakerVolumeFlow
+    override val headphoneVolumeFlow: StateFlow<Int> get() = scanningSettings.headphoneVolumeFlow
     override val isCloudSyncEnabledFlow: StateFlow<Boolean> get() = cloudSettings.isCloudSyncEnabledFlow
     override val syncIntervalMinutesFlow: StateFlow<Long> get() = cloudSettings.syncIntervalMinutesFlow
     override val syncModeFlow: StateFlow<String> get() = cloudSettings.syncModeFlow
@@ -295,6 +298,18 @@ class SettingsRepositoryImpl @Inject constructor(
     override var bluetoothDelay: Long
         get() = scanningSettings.bluetoothDelay
         set(value) { scanningSettings.bluetoothDelay = value }
+
+    override var blockVolumeKeys: Boolean
+        get() = scanningSettings.blockVolumeKeys
+        set(value) { scanningSettings.blockVolumeKeys = value }
+
+    override var speakerVolume: Int
+        get() = scanningSettings.speakerVolume
+        set(value) { scanningSettings.speakerVolume = value }
+
+    override var headphoneVolume: Int
+        get() = scanningSettings.headphoneVolume
+        set(value) { scanningSettings.headphoneVolume = value }
 
     override var isCloudSyncEnabled: Boolean
         get() = cloudSettings.isCloudSyncEnabled

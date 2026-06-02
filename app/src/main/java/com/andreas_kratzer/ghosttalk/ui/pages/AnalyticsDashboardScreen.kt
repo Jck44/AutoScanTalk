@@ -44,6 +44,8 @@ import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
+import java.text.SimpleDateFormat
+import java.util.Date
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,11 +55,29 @@ fun AnalyticsDashboardScreen(
 ) {
     val context = LocalContext.current
     val dimensions = LocalDimensions.current
+    val locale = context.resources.configuration.locales[0]
 
     val historyEvents by pageViewModel.buttonHistory.collectAsState(emptyList())
     val unfilteredPages by pageViewModel.unfilteredPages.collectAsState()
     val recommendations by pageViewModel.shortcutRecommendations.collectAsState(emptyList())
     val userModeSessions by pageViewModel.userModeSessions.collectAsState(emptyList())
+
+    val statisticsTimeframeText = remember(historyEvents, userModeSessions, locale) {
+        val minEvent = historyEvents.minOfOrNull { it.timestamp } ?: Long.MAX_VALUE
+        val minSession = userModeSessions.minOfOrNull { it.startTime } ?: Long.MAX_VALUE
+        val minTime = minOf(minEvent, minSession)
+
+        val maxEvent = historyEvents.maxOfOrNull { it.timestamp } ?: 0L
+        val maxSession = userModeSessions.maxOfOrNull { it.endTime } ?: 0L
+        val maxTime = maxOf(maxEvent, maxSession)
+
+        if (minTime == Long.MAX_VALUE || maxTime == 0L) {
+            "Keine Statistiken erfasst"
+        } else {
+            val dateForm = SimpleDateFormat("dd.MM.yyyy HH:mm", locale)
+            "Statistiken erfasst von ${dateForm.format(Date(minTime))} bis ${dateForm.format(Date(maxTime))}"
+        }
+    }
 
     // Aggregations & Trend calculations (Prio 2 & 4)
     val now = System.currentTimeMillis()
@@ -184,6 +204,20 @@ fun AnalyticsDashboardScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text("📅", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    text = statisticsTimeframeText,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+
             // --- KPI OVERVIEW CARDS (2x2 Symmetrical Grid) ---
             Column(
                 modifier = Modifier.fillMaxWidth(),

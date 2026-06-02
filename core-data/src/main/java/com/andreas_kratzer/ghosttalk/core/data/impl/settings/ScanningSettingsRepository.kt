@@ -26,6 +26,9 @@ class ScanningSettingsRepository(
     private val _bluetoothDelay = LongSetting(KEY_BLUETOOTH_DELAY, 100L, isScoped = false)
     private val _limitScanCycles = BooleanSetting(SettingsConstants.KEY_LIMIT_SCAN_CYCLES, false)
     private val _scanCycleLimit = IntSetting(SettingsConstants.KEY_SCAN_CYCLE_LIMIT, 2)
+    private val _blockVolumeKeys = BooleanSetting(SettingsConstants.KEY_BLOCK_VOLUME_KEYS, false, isScoped = false)
+    private val _speakerVolume = IntSetting(SettingsConstants.KEY_SPEAKER_VOLUME, 100, isScoped = false)
+    private val _headphoneVolume = IntSetting(SettingsConstants.KEY_HEADPHONE_VOLUME, 100, isScoped = false)
 
     val autoStartScanningFlow = _autoStartScanning.flow
     val scanDelayFlow = _scanDelay.flow
@@ -37,6 +40,9 @@ class ScanningSettingsRepository(
     val bluetoothDelayFlow = _bluetoothDelay.flow
     val limitScanCyclesFlow = _limitScanCycles.flow
     val scanCycleLimitFlow = _scanCycleLimit.flow
+    val blockVolumeKeysFlow = _blockVolumeKeys.flow
+    val speakerVolumeFlow = _speakerVolume.flow
+    val headphoneVolumeFlow = _headphoneVolume.flow
 
     var autoStartScanning: Boolean by _autoStartScanning
     var scanDelayMillis: Long by _scanDelay
@@ -48,6 +54,9 @@ class ScanningSettingsRepository(
     var bluetoothDelay: Long by _bluetoothDelay
     var limitScanCycles: Boolean by _limitScanCycles
     var scanCycleLimit: Int by _scanCycleLimit
+    var blockVolumeKeys: Boolean by _blockVolumeKeys
+    var speakerVolume: Int by _speakerVolume
+    var headphoneVolume: Int by _headphoneVolume
 
 
     override fun refresh() {
@@ -61,5 +70,8 @@ class ScanningSettingsRepository(
         _bluetoothDelay.refresh()
         _limitScanCycles.refresh()
         _scanCycleLimit.refresh()
+        _blockVolumeKeys.refresh()
+        _speakerVolume.refresh()
+        _headphoneVolume.refresh()
     }
 }

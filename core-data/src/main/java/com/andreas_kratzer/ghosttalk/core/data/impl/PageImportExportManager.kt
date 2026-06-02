@@ -857,6 +857,7 @@ class PageImportExportManager @Inject constructor(
     override suspend fun getStatisticsLastModified(bookId: String): Long = withContext(Dispatchers.IO) {
         val lastHistoryTime = buttonUsageDao.getLastHistoryEvent(bookId)?.timestamp ?: 0L
         val lastStatTime = buttonUsageDao.getAllStatsForBook(bookId).maxOfOrNull { it.lastUsedAt } ?: 0L
-        maxOf(lastHistoryTime, lastStatTime)
+        val lastSessionTime = userModeSessionRepository.getSessionsForBook(bookId).firstOrNull()?.maxOfOrNull { it.endTime } ?: 0L
+        maxOf(lastHistoryTime, lastStatTime, lastSessionTime)
     }
 }

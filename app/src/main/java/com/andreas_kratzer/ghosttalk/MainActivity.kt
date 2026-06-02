@@ -409,6 +409,12 @@ class MainActivity : AppCompatActivity() {
             false
         }
 
+        if (settingsRepository.blockVolumeKeys && isUserMode) {
+            if (event.keyCode == KeyEvent.KEYCODE_VOLUME_UP || event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
+                return true
+            }
+        }
+
         if (keyEventCoordinator.shouldActivate(event, isUserMode)) {
             globalPageViewModel.activateFocusedButton()
             return true

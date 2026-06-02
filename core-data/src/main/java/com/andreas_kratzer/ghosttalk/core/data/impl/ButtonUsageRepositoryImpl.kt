@@ -33,6 +33,7 @@ import android.net.wifi.WifiInfo
  * Uses an aggregated counter approach (one row per button per book).
  */
 @OptIn(ExperimentalCoroutinesApi::class)
+@Suppress("MissingPermission")
 class ButtonUsageRepositoryImpl @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val dao: ButtonUsageDao,

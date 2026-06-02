@@ -1280,4 +1280,36 @@ object GhostTalkIcons {
                 close()
             }
         }
+
+    val Bluetooth: ImageVector
+        get() = materialIcon(name = "Filled.Bluetooth") {
+            materialPath {
+                moveTo(17.71f, 7.71f)
+                lineTo(12.00f, 2.00f)
+                horizontalLineToRelative(-1.00f)
+                verticalLineToRelative(7.59f)
+                lineTo(6.41f, 4.70f)
+                lineTo(5.00f, 6.11f)
+                lineTo(10.89f, 12.00f)
+                lineTo(5.00f, 17.89f)
+                lineTo(6.41f, 19.30f)
+                lineTo(11.00f, 14.41f)
+                verticalLineTo(22.00f)
+                horizontalLineToRelative(1.00f)
+                lineTo(17.71f, 16.29f)
+                lineTo(13.41f, 12.00f)
+                lineTo(17.71f, 7.71f)
+                close()
+                moveTo(13.00f, 5.83f)
+                lineToRelative(1.88f, 1.88f)
+                lineTo(13.00f, 9.59f)
+                verticalLineTo(5.83f)
+                close()
+                moveTo(13.00f, 18.17f)
+                verticalLineToRelative(-3.76f)
+                lineToRelative(1.88f, 1.88f)
+                lineTo(13.00f, 18.17f)
+                close()
+            }
+        }
 }

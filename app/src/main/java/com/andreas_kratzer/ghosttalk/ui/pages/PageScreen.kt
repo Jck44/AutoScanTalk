@@ -1,5 +1,10 @@
 package com.andreas_kratzer.ghosttalk.ui.pages
 
+import android.content.Intent
+import android.provider.Settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
@@ -45,6 +50,11 @@ fun PageScreen(
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val bluetoothLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { _ ->
+        pageViewModel.resumeScanningIfEnabled()
+    }
     val currentPage by pageViewModel.resolvedPage.collectAsState()
     val focusedButtonIndex by pageViewModel.focusedButtonIndex.collectAsState()
     val focusedRowIndex by pageViewModel.focusedRowIndex.collectAsState()
@@ -111,6 +121,32 @@ fun PageScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(CoreR.string.back_button_content_description)
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(
+                        onClick = {
+                            pageViewModel.stopScanning()
+                            try {
+                                val intent = Intent("android.settings.panel.action.BLUETOOTH")
+                                bluetoothLauncher.launch(intent)
+                            } catch (e: android.content.ActivityNotFoundException) {
+                                try {
+                                    val fallbackIntent = Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS)
+                                    bluetoothLauncher.launch(fallbackIntent)
+                                } catch (e2: android.content.ActivityNotFoundException) {
+                                    // If both fail (e.g. on emulators without Bluetooth capabilities),
+                                    // resume scanning so scanning is not left permanently stuck.
+                                    pageViewModel.resumeScanningIfEnabled()
+                                }
+                            }
+                        },
+                        modifier = Modifier.testTag("page_screen_bluetooth_button")
+                    ) {
+                        Icon(
+                            imageVector = GhostTalkIcons.Bluetooth,
+                            contentDescription = stringResource(R.string.bluetooth_settings)
                         )
                     }
                 }

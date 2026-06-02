@@ -115,4 +115,7 @@ object SettingsConstants {
     const val KEY_SYNC_TARGET_TYPE = "sync_target_type"
     const val KEY_LOCAL_FOLDER_SAF_URI = "local_folder_saf_uri"
     const val KEY_LOCAL_FOLDER_SAF_NAME = "local_folder_saf_name"
+    const val KEY_BLOCK_VOLUME_KEYS = "block_volume_keys"
+    const val KEY_SPEAKER_VOLUME = "speaker_volume"
+    const val KEY_HEADPHONE_VOLUME = "headphone_volume"
 }

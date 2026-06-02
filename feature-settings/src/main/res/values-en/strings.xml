@@ -405,4 +405,10 @@
     <string name="settings_sync_no_folder_selected">No folder selected</string>
     <string name="settings_sync_select_button">Select</string>
     <string name="settings_sync_saf_description">Enables access to shared Google Drive folders via the Google Drive app. Background sync requires files to be kept available locally on the device.</string>
+
+    <!-- Volume Keys and Scaling Settings -->
+    <string name="settings_block_volume_keys">Block Hardware Volume Keys</string>
+    <string name="settings_block_volume_keys_desc">Prevents accidental volume changes by physical keys in User Mode.</string>
+    <string name="settings_speaker_volume_label">Volume: Speak Out Loud</string>
+    <string name="settings_headphone_volume_label">Volume: Auditory Cue</string>
 </resources>

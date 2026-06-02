@@ -16,6 +16,7 @@ class SettingsBackupCoverageTest {
         "lastSuccessfulSyncTimeFlow",
         "initialTemplatesCreated", // Internal state
         "isSetupCompleted",        // Onboarding state
+        "hasAcceptedPageSplitOptIn", // Local opt-in state (no backup needed)
         "showTestButtons",         // Dev setting
         "persistActionLogs",       // File path (local)
         "actionLogsStorage",       // File path (local)
@@ -64,7 +65,13 @@ class SettingsBackupCoverageTest {
         "onlyRecordHardwareStats",  // Local device maintenance preference
         "syncTargetType",           // Device-specific sync setting (Drive vs SAF)
         "localFolderSafUri",        // Device-specific SAF folder target URI
-        "localFolderSafName"        // Device-specific SAF folder target name
+        "localFolderSafName",       // Device-specific SAF folder target name
+        "blockVolumeKeys",          // Hardware block setting (local)
+        "blockVolumeKeysFlow",
+        "speakerVolume",            // Audio volume scaling (local)
+        "speakerVolumeFlow",
+        "headphoneVolume",          // Audio volume scaling (local)
+        "headphoneVolumeFlow"
     )
 
     private val propertyMappings = mapOf(

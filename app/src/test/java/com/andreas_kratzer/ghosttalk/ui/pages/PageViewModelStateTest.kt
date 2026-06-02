@@ -122,7 +122,9 @@ class PageViewModelStateTest {
             buttonUsageRepository = mockk(relaxed = true),
             efficiencyAnalyzer = mockk(relaxed = true),
             pathAnalyzer = mockk(relaxed = true),
-            userModeSessionRepository = mockk(relaxed = true)
+            userModeSessionRepository = mockk(relaxed = true),
+            splitPageUseCase = mockk(relaxed = true),
+            createPageUseCase = mockk(relaxed = true)
         )
         
         // Advance to allow launch in init to execute

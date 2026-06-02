@@ -401,5 +401,6 @@
     <string name="analytics_recommendation_savings">~%1$ds savings</string>
     <string name="analytics_recommendation_btn_create">Create on \"%1$s\"</string>
     <string name="button_stats_btn_create_shortcut">Create shortcut on \"%1$s\"</string>
+    <string name="bluetooth_settings">Bluetooth Settings</string>
 </resources>
 

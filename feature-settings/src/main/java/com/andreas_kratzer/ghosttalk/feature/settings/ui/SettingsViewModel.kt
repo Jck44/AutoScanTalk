@@ -178,6 +178,9 @@ class SettingsViewModel @Inject constructor(
     val onlyRecordHardwareStats = settingsRepository.onlyRecordHardwareStatsFlow
     val geminiTimeout = settingsRepository.geminiTimeoutFlow
     val geminiRedoPrediction = settingsRepository.geminiRedoPredictionFlow
+    val blockVolumeKeys = settingsRepository.blockVolumeKeysFlow
+    val speakerVolume = settingsRepository.speakerVolumeFlow
+    val headphoneVolume = settingsRepository.headphoneVolumeFlow
 
     val securityPin = settingsRepository.securityPinFlow
     val securityPinTimeoutMinutes = settingsRepository.securityPinTimeoutMinutesFlow
@@ -540,6 +543,9 @@ class SettingsViewModel @Inject constructor(
     fun setPersistActionLogs(e: Boolean) { settingsRepository.persistActionLogs = e }
     fun setSwitchActivationKey(k: String) { settingsRepository.switchActivationKey = k }
     fun setVolumeKeysActivate(e: Boolean) { settingsRepository.volumeKeysActivate = e }
+    fun setBlockVolumeKeys(e: Boolean) { settingsRepository.blockVolumeKeys = e }
+    fun setSpeakerVolume(v: Int) { settingsRepository.speakerVolume = v }
+    fun setHeadphoneVolume(v: Int) { settingsRepository.headphoneVolume = v }
     fun setShowTestButtons(e: Boolean) { settingsRepository.showTestButtons = e }
     fun setShowPageIdInLog(e: Boolean) { settingsRepository.showPageIdInLog = e }
     fun setSmartPredictionEnabled(e: Boolean) = experimentalDelegate.setSmartPredictionEnabled(e)

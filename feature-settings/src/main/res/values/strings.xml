@@ -406,4 +406,10 @@
     <string name="settings_sync_no_folder_selected">Kein Ordner ausgewählt</string>
     <string name="settings_sync_select_button">Auswählen</string>
     <string name="settings_sync_saf_description">Ermöglicht den Zugriff auf geteilte Google Drive Ordner über die Google Drive App. Der Hintergrund-Sync erfordert, dass die Dateien lokal auf dem Gerät verfügbar gehalten werden.</string>
+
+    <!-- Volume Keys and Scaling Settings -->
+    <string name="settings_block_volume_keys">Hardware-Lautstärketasten sperren</string>
+    <string name="settings_block_volume_keys_desc">Verhindert versehentliche Lautstärkeänderungen durch Tasten im Nutzermodus.</string>
+    <string name="settings_speaker_volume_label">Lautstärke: Laut Sprechen</string>
+    <string name="settings_headphone_volume_label">Lautstärke: Audio-Hinweis</string>
 </resources>
