@@ -69,13 +69,30 @@ class ButtonUsageRepositoryImpl @Inject constructor(
         columns: Int,
         indexInPage: Int,
         timestamp: Long,
-        reactionTimeMs: Long?
+        reactionTimeMs: Long?,
+        isTouchIntervention: Boolean,
+        isHardwareTriggered: Boolean
     ) {
         val hasFine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
         val hasCoarse = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
         val lastLocation = if (hasFine || hasCoarse) {
             try {
                 fusedLocationClient.lastLocation.await()
+            } catch (_: Exception) {
+                null
+            }
+        } else {
+            null
+        }
+
+        val wifiSsid = if (hasFine || hasCoarse) {
+            try {
+                val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as? android.net.wifi.WifiManager
+                val connectionInfo = wifiManager?.connectionInfo
+                val rawSsid = connectionInfo?.ssid
+                if (rawSsid != null && rawSsid != "<unknown ssid>" && connectionInfo.networkId != -1) {
+                    rawSsid.trim('"')
+                } else null
             } catch (_: Exception) {
                 null
             }
@@ -118,7 +135,10 @@ class ButtonUsageRepositoryImpl @Inject constructor(
                 latitude = lastLocation?.latitude,
                 longitude = lastLocation?.longitude,
                 sessionId = sessionTracker.currentSessionId,
-                reactionTimeMs = reactionTimeMs
+                reactionTimeMs = reactionTimeMs,
+                isTouchIntervention = isTouchIntervention,
+                wifiSsid = wifiSsid,
+                isHardwareTriggered = isHardwareTriggered
             )
             dao.insertHistoryEvent(event)
 
@@ -201,82 +221,162 @@ class ButtonUsageRepositoryImpl @Inject constructor(
         }
     }
 
+    private fun calculateDecayWeight(eventTimestamp: Long, now: Long): Double {
+        val ageMs = (now - eventTimestamp).coerceAtLeast(0L)
+        val ageDays = ageMs.toDouble() / (24.0 * 60.0 * 60.0 * 1000.0)
+        // Halbwertszeit: 14 Tage
+        // lambda = ln(2) / 14 = 0.04951051289
+        val lambda = 0.04951051289
+        return Math.exp(-lambda * ageDays)
+    }
+
     @Suppress("MissingPermission")
     override suspend fun getPredictiveButtons(bookId: String, limit: Int): List<String> {
-        val lastEvent = dao.getLastHistoryEvent(bookId)
+        val nowMs = System.currentTimeMillis()
+        val recentEvents = dao.getRecentHistoryEvents(bookId, 1000)
+        if (recentEvents.isEmpty()) {
+            return getTopActions(bookId, limit).map { it.buttonConfigId }
+        }
+
+        val lastEvent = recentEvents.firstOrNull()
         val lastButtonId = lastEvent?.buttonId
 
-        val predictions = mutableListOf<String>()
+        // Active Contexts
+        val hasFine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        val hasCoarse = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
 
-        // 1. Markov Chain
-        if (lastButtonId != null) {
-            val since90Days = System.currentTimeMillis() - (90L * 24 * 60 * 60 * 1000)
-            val markov = dao.getMostFrequentNextButtons(bookId, lastButtonId, since90Days, limit)
-            predictions.addAll(markov.map { it.buttonId })
+        val currentWifi = if (hasFine || hasCoarse) {
+            try {
+                val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as? android.net.wifi.WifiManager
+                val connectionInfo = wifiManager?.connectionInfo
+                val raw = connectionInfo?.ssid
+                if (raw != null && raw != "<unknown ssid>" && connectionInfo.networkId != -1) {
+                    raw.trim('"')
+                } else null
+            } catch (_: Exception) { null }
+        } else null
+
+        val nowDateTime = java.time.LocalDateTime.now()
+        val currentHour = nowDateTime.hour
+        val sqliteDayOfWeek = if (nowDateTime.dayOfWeek.value == 7) 0 else nowDateTime.dayOfWeek.value
+        val activeTimeBin = currentHour / 6 // 4 bins of 6 hours
+
+        val lastLocation = if (hasFine || hasCoarse) {
+            try {
+                fusedLocationClient.lastLocation.await()
+            } catch (_: Exception) { null }
+        } else null
+
+        val activeLocKey = if (lastLocation != null) {
+            val roundedLat = Math.round(lastLocation.latitude * 1000.0) / 1000.0
+            val roundedLng = Math.round(lastLocation.longitude * 1000.0) / 1000.0
+            "$roundedLat,$roundedLng"
+        } else null
+
+        // Grouping events for Inverted Index calculations
+        // 1. WiFi grouping
+        val wifiGroups = recentEvents.filter { it.wifiSsid != null }.groupBy { it.wifiSsid!! }
+        // 2. Time grouping
+        val getTimeBinKey = { timestamp: Long ->
+            val dt = java.time.LocalDateTime.ofInstant(java.time.Instant.ofEpochMilli(timestamp), java.time.ZoneId.systemDefault())
+            val day = if (dt.dayOfWeek.value == 7) 0 else dt.dayOfWeek.value
+            val bin = dt.hour / 6
+            "$day:$bin"
         }
+        val timeGroups = recentEvents.groupBy { getTimeBinKey(it.timestamp) }
+        // 3. Location grouping
+        val getLocKey = { lat: Double?, lng: Double? ->
+            if (lat != null && lng != null) {
+                val roundedLat = Math.round(lat * 1000.0) / 1000.0
+                val roundedLng = Math.round(lng * 1000.0) / 1000.0
+                "$roundedLat,$roundedLng"
+            } else "null"
+        }
+        val locGroups = recentEvents.groupBy { getLocKey(it.latitude, it.longitude) }
+        // 4. Markov grouping (Transitions: Predecessor -> Successor)
+        val transitions = recentEvents.zipWithNext().mapNotNull { (successor, predecessor) ->
+            val predId = predecessor.buttonId
+            val succId = successor.buttonId
+            if (predId != null && succId != null) {
+                predId to successor
+            } else null
+        }
+        val markovGroups = transitions.groupBy({ it.first }, { it.second })
 
-        // 2. Time Context
-        if (predictions.size < limit) {
-            val now = java.time.LocalDateTime.now()
-            val sqliteDayOfWeek = if (now.dayOfWeek.value == 7) 0 else now.dayOfWeek.value
-            val currentHour = now.hour
-            val startHour = (currentHour - 1).coerceAtLeast(0)
-            val endHour = (currentHour + 2).coerceAtMost(24)
-            val since90Days = System.currentTimeMillis() - (90L * 24 * 60 * 60 * 1000)
+        // Get unique candidate button IDs from history
+        val candidateButtonIds = recentEvents.mapNotNull { it.buttonId }.distinct()
+        val scores = mutableMapOf<String, Double>()
 
-            val timeStats = dao.getMostFrequentButtonsForContext(
-                bookId,
-                sqliteDayOfWeek,
-                startHour,
-                endHour,
-                since90Days,
-                limit
-            )
-            for (id in timeStats) {
-                if (!predictions.contains(id)) {
-                    predictions.add(id)
+        for (btnId in candidateButtonIds) {
+            val btnEvents = recentEvents.filter { it.buttonId == btnId }
+            val mostRecentEvent = btnEvents.maxByOrNull { it.timestamp } ?: continue
+            val decay = calculateDecayWeight(mostRecentEvent.timestamp, nowMs)
+
+            // Markov Score
+            var markovScore = 0.0
+            if (lastButtonId != null) {
+                val activeMarkovEvents = markovGroups[lastButtonId] ?: emptyList()
+                val tf = activeMarkovEvents.count { it.buttonId == btnId }
+                if (tf > 0) {
+                    val df = markovGroups.values.count { grp -> grp.any { it.buttonId == btnId } }
+                    val idf = Math.log(1.0 + markovGroups.size.toDouble() / df.coerceAtLeast(1))
+                    markovScore = tf * idf
                 }
             }
-        }
 
-        // 3. Location Context
-        if (predictions.size < limit) {
-            val hasFine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-            val hasCoarse = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
-            val lastLocation = if (hasFine || hasCoarse) {
-                try {
-                    fusedLocationClient.lastLocation.await()
-                } catch (_: Exception) {
-                    null
-                }
-            } else {
-                null
-            }
-
-            val since90Days = System.currentTimeMillis() - (90L * 24 * 60 * 60 * 1000)
-            val locationStats = if (lastLocation != null) {
-                dao.getMostFrequentButtonsAtLocation(
-                    bookId,
-                    lastLocation.latitude,
-                    lastLocation.longitude,
-                    0.005,
-                    since90Days,
-                    limit
-                )
-            } else {
-                dao.getMostFrequentButtonsAtNullLocation(bookId, since90Days, limit)
-            }
-
-            for (id in locationStats) {
-                if (!predictions.contains(id)) {
-                    predictions.add(id)
+            // WiFi Score
+            var wifiScore = 0.0
+            if (currentWifi != null) {
+                val activeWifiEvents = wifiGroups[currentWifi] ?: emptyList()
+                val tf = activeWifiEvents.count { it.buttonId == btnId }
+                if (tf > 0) {
+                    val df = wifiGroups.values.count { grp -> grp.any { it.buttonId == btnId } }
+                    val idf = Math.log(1.0 + wifiGroups.size.toDouble() / df.coerceAtLeast(1))
+                    wifiScore = tf * idf
                 }
             }
+
+            // Time Score
+            var timeScore = 0.0
+            val activeTimeKey = "$sqliteDayOfWeek:$activeTimeBin"
+            val activeTimeEvents = timeGroups[activeTimeKey] ?: emptyList()
+            val tfTime = activeTimeEvents.count { it.buttonId == btnId }
+            if (tfTime > 0) {
+                val df = timeGroups.values.count { grp -> grp.any { it.buttonId == btnId } }
+                val idf = Math.log(1.0 + timeGroups.size.toDouble() / df.coerceAtLeast(1))
+                timeScore = tfTime * idf
+            }
+
+            // Location Score
+            var locScore = 0.0
+            val activeLoc = activeLocKey ?: "null"
+            val activeLocEvents = locGroups[activeLoc] ?: emptyList()
+            val tfLoc = activeLocEvents.count { it.buttonId == btnId }
+            if (tfLoc > 0) {
+                val df = locGroups.values.count { grp -> grp.any { it.buttonId == btnId } }
+                val idf = Math.log(1.0 + locGroups.size.toDouble() / df.coerceAtLeast(1))
+                locScore = tfLoc * idf
+            }
+
+            // Base frequency score to prevent over-filtering.
+            // Even if a button doesn't match current contexts, it gets a baseline score from its general usage frequency.
+            val baseTf = btnEvents.size.toDouble()
+            val baseScore = baseTf * 0.1 // Grundlegende Gewichtung für allgemeine Häufigkeit
+
+            // Combine scores with custom category importance weights
+            val combinedScore = (baseScore + markovScore * 1.5 + wifiScore * 1.3 + timeScore * 1.0 + locScore * 1.1) * decay
+            
+            scores[btnId] = combinedScore
         }
 
-        // 4. Fallback Favorites
+        // Sort candidates by score
+        val predictions = scores.entries.sortedByDescending { it.value }.map { it.key }.toMutableList()
+
+        // Fallback Favorites
         if (predictions.size < limit) {
-            val favorites = getTopActions(bookId, 5)
+            // Hole genug Favoriten, um das Limit definitiv aufzufüllen,
+            // auch wenn es Überschneidungen mit den Predictions gibt.
+            val favorites = getTopActions(bookId, limit + 10)
             for (stat in favorites) {
                 if (!predictions.contains(stat.buttonConfigId)) {
                     predictions.add(stat.buttonConfigId)
@@ -287,6 +387,7 @@ class ButtonUsageRepositoryImpl @Inject constructor(
         return predictions.take(limit)
     }
 
+
     private fun ButtonUsageHistoryEntity.toDomain() = ButtonUsageRepository.ButtonUsageEvent(
         timestamp = timestamp,
         label = label,
@@ -296,6 +397,9 @@ class ButtonUsageRepositoryImpl @Inject constructor(
         pageId = pageId,
         geminiResponse = geminiResponse,
         sessionId = sessionId,
-        reactionTimeMs = reactionTimeMs
+        reactionTimeMs = reactionTimeMs,
+        isTouchIntervention = isTouchIntervention,
+        wifiSsid = wifiSsid,
+        isHardwareTriggered = isHardwareTriggered
     )
 }

@@ -10,8 +10,17 @@ import com.andreas_kratzer.ghosttalk.core.model.DeviceActionType
 import com.andreas_kratzer.ghosttalk.core.model.MediaProvider
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
+import com.andreas_kratzer.ghosttalk.core.model.PlayMediaButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.PredictionType
 import com.andreas_kratzer.ghosttalk.core.model.SmartHomeProvider
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.Modifier
+import androidx.compose.material3.Text
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
 import com.andreas_kratzer.ghosttalk.ui.pages.actions.DeviceActionFields
 import com.andreas_kratzer.ghosttalk.ui.pages.actions.GeminiActionFields
 import com.andreas_kratzer.ghosttalk.ui.pages.actions.GeminiVisionActionFields
@@ -31,6 +40,8 @@ fun ActionConfigFields(
     onGeminiPromptChange: (String) -> Unit,
     rank: Int,
     onRankChange: (Int) -> Unit,
+    predictionType: PredictionType = PredictionType.ALL,
+    onPredictionTypeChange: (PredictionType) -> Unit = {},
     deviceActionType: DeviceActionType,
     onDeviceActionTypeChange: (DeviceActionType) -> Unit,
     volumeValue: String,
@@ -177,12 +188,54 @@ fun ActionConfigFields(
                     onAutoSave = onAutoSave
                 )
             }
-            actionTypeFrequent, actionTypeSmart -> {
+            actionTypeFrequent -> {
                 RankActionFields(
                     rank = rank.toString(),
                     onRankChanged = { onRankChange(it.toIntOrNull() ?: 1) },
                     onAutoSave = onAutoSave
                 )
+            }
+            actionTypeSmart -> {
+                Column(verticalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)) {
+                    RankActionFields(
+                        rank = rank.toString(),
+                        onRankChanged = { onRankChange(it.toIntOrNull() ?: 1) },
+                        onAutoSave = onAutoSave
+                    )
+                    
+                    Text(
+                        text = stringResource(R.string.button_smart_prediction_type_label),
+                        style = androidx.compose.material3.MaterialTheme.typography.labelMedium,
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(bottom = dimensions.paddingSmall)
+                    )
+                    
+                    SingleChoiceSegmentedButtonRow(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        val types = PredictionType.values()
+                        types.forEachIndexed { index, type ->
+                            SegmentedButton(
+                                selected = predictionType == type,
+                                onClick = { 
+                                    onPredictionTypeChange(type)
+                                    onAutoSave()
+                                },
+                                shape = SegmentedButtonDefaults.itemShape(index = index, count = types.size),
+                                label = { 
+                                    Text(
+                                        text = when (type) {
+                                            PredictionType.ALL -> stringResource(R.string.button_smart_prediction_type_all)
+                                            PredictionType.ACTION -> stringResource(R.string.button_smart_prediction_type_action)
+                                            PredictionType.NAVIGATION -> stringResource(R.string.button_smart_prediction_type_navigation)
+                                        },
+                                        maxLines = 1
+                                    )
+                                }
+                            )
+                        }
+                    }
+                }
             }
             actionTypePrevious -> {
                 RankActionFields(

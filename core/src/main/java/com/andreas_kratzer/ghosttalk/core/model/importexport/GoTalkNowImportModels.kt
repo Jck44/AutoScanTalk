@@ -175,7 +175,10 @@ data class ImportAction(
     val mediaProvider: String? = null,
     val mediaContentUri: String? = null,
     val mediaContentName: String? = null,
-    val mediaReturnDelayMs: Long? = null
+    val mediaReturnDelayMs: Long? = null,
+
+    // Smart Prediction filter
+    val predictionType: String? = null
 )
 
 @Serializable

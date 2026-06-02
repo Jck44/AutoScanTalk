@@ -46,11 +46,11 @@ class ActionLogUseCaseTest {
     @Test
     fun `formatAndAddEntry caps at global MAX_LOG_SIZE even if larger limit requested`() = runTest {
         every { settingsRepository.persistActionLogs } returns false
-        val existingLogs = (1..30).map { ActionLogEntry("Entry $it", System.currentTimeMillis()) }
+        val existingLogs = (1..600).map { ActionLogEntry("Entry $it", System.currentTimeMillis()) }
 
-        val result = useCase.formatAndAddEntry("New Entry", existingLogs, 100)
+        val result = useCase.formatAndAddEntry("New Entry", existingLogs, 1000)
 
-        assertEquals(20, result.size) // Capped at MAX_LOG_SIZE (20)
+        assertEquals(500, result.size) // Capped at MAX_LOG_SIZE (500)
     }
 
     @Test

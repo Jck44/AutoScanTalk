@@ -118,6 +118,8 @@ class MainActivity : AppCompatActivity() {
         Log.d("MainActivity", "Permission request results: $permissions")
     }
     override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
         // Restore app language preference
         val savedLang = settingsRepository.appLanguage
         val appLocale = if (savedLang == null) {
@@ -127,7 +129,6 @@ class MainActivity : AppCompatActivity() {
         }
         androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(appLocale)
 
-        super.onCreate(savedInstanceState)
         
         com.andreas_kratzer.ghosttalk.core.tts.VoiceDebugger(applicationContext).start()
         userModeSessionTracker.start()

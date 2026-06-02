@@ -86,6 +86,7 @@ import com.andreas_kratzer.ghosttalk.core.model.PlayMediaButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.PreviousActionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SmartHomeButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SmartHomeProvider
+import com.andreas_kratzer.ghosttalk.core.model.PredictionType
 import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SpokenTextMode
@@ -362,6 +363,12 @@ fun ButtonConfigDialog(
         )
     }
 
+    var predictionType by remember {
+        mutableStateOf(
+            (buttonConfig.buttonAction as? SmartPredictionButtonAction)?.predictionType ?: PredictionType.ALL
+        )
+    }
+
     // Device control specific state
     var deviceActionType by remember {
         mutableStateOf((buttonConfig.buttonAction as? ControlDeviceButtonAction)?.actionType ?: DeviceActionType.READ_TIME)
@@ -476,7 +483,7 @@ fun ButtonConfigDialog(
             actionTypeGeminiVision -> com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction(geminiPrompt, geminiVisionUseCloud, geminiVisionPlayShutterSound)
             actionTypeFrequent -> FrequentActionButtonAction(rank)
             actionTypePrevious -> PreviousActionButtonAction(rank)
-            actionTypeSmart -> SmartPredictionButtonAction(rank)
+            actionTypeSmart -> SmartPredictionButtonAction(rank, predictionType)
             actionTypeWeather -> WeatherButtonAction()
             
             // Kommunikation
@@ -1335,10 +1342,15 @@ fun ButtonConfigDialog(
                                 onGeminiPromptChange = { geminiPrompt = it },
                                 rank = rank,
                                 onRankChange = { rank = it },
+                                predictionType = predictionType,
+                                onPredictionTypeChange = { 
+                                    predictionType = it
+                                    handleAutoSave()
+                                },
                                 availableGeminiTools = availableGeminiTools,
                                 deviceActionType = deviceActionType,
                                 onDeviceActionTypeChange = { deviceActionType = it },
-                                                            volumeValue = volumeValue,
+                                volumeValue = volumeValue,
                                 onVolumeValueChange = { volumeValue = it },
                                 contactName = contactName,
                                 onContactNameChange = { contactName = it },

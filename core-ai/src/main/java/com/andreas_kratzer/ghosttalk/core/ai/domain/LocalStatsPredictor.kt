@@ -14,6 +14,6 @@ class LocalStatsPredictor @Inject constructor(
         allPages: List<com.andreas_kratzer.ghosttalk.core.model.Page>,
         bookId: String
     ): List<String> {
-        return buttonUsageRepository.getPredictiveButtons(bookId, 3)
+        return buttonUsageRepository.getPredictiveButtons(bookId, 15)
     }
 }

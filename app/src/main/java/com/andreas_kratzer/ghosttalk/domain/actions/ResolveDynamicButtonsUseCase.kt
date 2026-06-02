@@ -9,6 +9,7 @@ import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.FrequentActionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.Page
+import com.andreas_kratzer.ghosttalk.core.model.PredictionType
 import com.andreas_kratzer.ghosttalk.core.model.PreviousActionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
@@ -82,7 +83,10 @@ class ResolveDynamicButtonsUseCase @Inject constructor(
                 if (smartPredictions == null) {
                     return@mapIndexed config // Keep placeholder while waiting
                 }
-                val predictionId = smartPredictions.getOrNull(action.rank - 1)
+                val filteredPredictions = smartPredictions.filter { predId ->
+                    matchesType(predId, action.predictionType, frequentlyResolvedPage, buttonLookup, pageLookup)
+                }
+                val predictionId = filteredPredictions.getOrNull(action.rank - 1)
                 val resolved = if (predictionId != null) {
                     resolveSmartPrediction(predictionId, frequentlyResolvedPage, config, buttonLookup, pageLookup)
                 } else {
@@ -174,5 +178,23 @@ class ResolveDynamicButtonsUseCase @Inject constructor(
 
     private fun isDynamic(action: ButtonAction): Boolean {
         return action is SmartPredictionButtonAction || action is FrequentActionButtonAction || action is PreviousActionButtonAction
+    }
+
+    private fun matchesType(
+        predictionId: String,
+        predictionType: PredictionType,
+        currentPage: Page,
+        buttonLookup: Map<String, ButtonConfig>,
+        pageLookup: Map<String, Page>
+    ): Boolean {
+        if (predictionType == PredictionType.ALL) return true
+
+        val isNav = pageLookup.containsKey(predictionId) || run {
+            val button = currentPage.buttonConfigs.filterNotNull().find { it.id == predictionId }
+                ?: buttonLookup[predictionId]
+            button?.buttonAction is NavigateToPageButtonAction
+        }
+
+        return if (predictionType == PredictionType.NAVIGATION) isNav else !isNav
     }
 }

@@ -173,4 +173,64 @@ class EfficiencyAnalyzerTest {
         assertTrue(metrics.containsKey("b4"))
         assertTrue(!metrics.containsKey("b5"))
     }
+
+    @Test
+    fun `calculatePageMetrics factors in caregiver touch interventions into frustration index`() {
+        val buttons = MutableList<ButtonConfig?>(49) { null }
+        buttons[GridUtils.getGlobalIndex(0, 0)] = ButtonConfig(id = "b1", isActive = true)
+        buttons[GridUtils.getGlobalIndex(0, 1)] = ButtonConfig(id = "b2", isActive = true)
+
+        val page = Page(
+            id = "p1",
+            bookId = "book1",
+            name = "Test Page",
+            rows = 2,
+            columns = 2,
+            scanPattern = "linear",
+            buttonConfigs = buttons
+        )
+        val clickCounts = mapOf(
+            "b1" to 10L,
+            "b2" to 10L
+        )
+
+        // b1 and b2 have identical base frustration (accessTime is same for both or different: b1 is 1s, b2 is 2s)
+        // Let's check with linear:
+        // b1 is 1s, b2 is 2s. Max frustration = 2s * 10 = 20.
+        // Base frustration: b1 = 10/20 = 0.5, b2 = 20/20 = 1.0.
+        // To make it easy to compare, let's look at b1.
+        // We supply historyEvents where b1 has 1 touch intervention out of 2 events -> 50% rate.
+        val history = listOf(
+            com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository.ButtonUsageEvent(
+                timestamp = 1000L,
+                label = "b1",
+                actionType = "SpeakTextButtonAction",
+                buttonId = "b1",
+                isTouchIntervention = true
+            ),
+            com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository.ButtonUsageEvent(
+                timestamp = 2000L,
+                label = "b1",
+                actionType = "SpeakTextButtonAction",
+                buttonId = "b1",
+                isTouchIntervention = false
+            )
+        )
+
+        val metrics = analyzer.calculatePageMetrics(
+            page = page,
+            allPages = listOf(page),
+            startPageId = page.id,
+            clickCounts = clickCounts,
+            scanDelayMs = 1000L,
+            defaultScanPattern = "linear",
+            historyEvents = history
+        )
+
+        // b1 base frustration = 0.5f.
+        // Intervention rate = 0.5f.
+        // Penalty = 0.5f * 0.4f = 0.2f.
+        // Expected frustration = 0.5f + 0.2f = 0.7f.
+        assertEquals(0.7f, metrics["b1"]?.frustrationIndex ?: 0f, 0.001f)
+    }
 }

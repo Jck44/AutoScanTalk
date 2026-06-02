@@ -15,6 +15,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.Slider
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.core.ui.components.PreferenceCategory
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsEditTextItem
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsToggleItem
@@ -63,12 +69,32 @@ fun TestSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
             val activeBook by viewModel.activeBook.collectAsState()
             
             PreferenceCategory(stringResource(R.string.settings_category_advanced), modifier = Modifier.weight(1f)) {
-                SettingsEditTextItem(
-                    label = stringResource(R.string.settings_action_log_limit),
-                    value = logLimit.toString(),
-                    onValueChange = { newValue: String -> viewModel.setActionLogLimitInput(newValue) },
-                    numericOnly = true
-                )
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = stringResource(R.string.settings_action_log_limit),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Text(
+                        text = stringResource(R.string.settings_action_log_limit_format, logLimit),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    val limitSteps = listOf(10, 20, 50, 100, 200, 500)
+                    val currentIndex = remember(logLimit) {
+                        limitSteps.mapIndexed { index, value -> index to kotlin.math.abs(value - logLimit) }
+                            .minByOrNull { it.second }?.first ?: 3
+                    }
+                    Slider(
+                        value = currentIndex.toFloat(),
+                        onValueChange = { index -> 
+                            viewModel.setActionLogLimitInput(limitSteps[index.toInt()].toString()) 
+                        },
+                        valueRange = 0f..(limitSteps.size - 1).toFloat(),
+                        steps = limitSteps.size - 2
+                    )
+                }
                 
                 activeBook?.let { book ->
                     SettingsToggleItem(

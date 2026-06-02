@@ -26,7 +26,8 @@ class EfficiencyAnalyzer @Inject constructor() {
         startPageId: String?,
         clickCounts: Map<String, Long>,
         scanDelayMs: Long,
-        defaultScanPattern: String
+        defaultScanPattern: String,
+        historyEvents: List<com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository.ButtonUsageEvent> = emptyList()
     ): Map<String, ButtonEffortMetrics> {
         val buttons = page.buttonConfigs
         val rows = page.rows
@@ -103,11 +104,24 @@ class EfficiencyAnalyzer @Inject constructor() {
 
         return rawMetricsList.associate { raw ->
             val rawFrustration = (raw.accessTimeSec * raw.usageCount).toFloat()
-            val normalizedFrustration = if (maxRawFrustration > 0f) {
+            val baseFrustration = if (maxRawFrustration > 0f) {
                 rawFrustration / maxRawFrustration
             } else {
                 0f
             }
+            
+            // Calculate Touch Intervention penalty
+            val buttonHistory = historyEvents.filter { it.buttonId == raw.buttonId }
+            val totalEvents = buttonHistory.size
+            val interventionEvents = buttonHistory.count { it.isTouchIntervention }
+            val interventionRate = if (totalEvents > 0) {
+                interventionEvents.toFloat() / totalEvents
+            } else {
+                0f
+            }
+            
+            // Add intervention penalty to frustration index, capped at 1.0f
+            val normalizedFrustration = (baseFrustration + (interventionRate * 0.4f)).coerceIn(0f, 1f)
             val heatmapIntensity = if (maxClicks > 0f) {
                 raw.usageCount.toFloat() / maxClicks
             } else {

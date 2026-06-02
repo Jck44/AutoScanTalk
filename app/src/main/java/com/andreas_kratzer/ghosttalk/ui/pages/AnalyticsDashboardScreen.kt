@@ -137,6 +137,29 @@ fun AnalyticsDashboardScreen(
         }
     }
 
+    // Page-Level Analytics Calculations (Option B)
+    data class PageUsage(val pageId: String, val name: String, val count: Int, val percentage: Float)
+    val topUsedPages = remember(historyEvents, unfilteredPages) {
+        val totalPagesClicks = historyEvents.filter { it.pageId != null }.size
+        if (totalPagesClicks == 0) emptyList<PageUsage>()
+        else {
+            historyEvents.filter { it.pageId != null }
+                .groupBy { it.pageId!! }
+                .mapNotNull { (pageId, events) ->
+                    val pageName = unfilteredPages.find { it.id == pageId }?.name ?: return@mapNotNull null
+                    val pct = (events.size.toFloat() / totalPagesClicks)
+                    PageUsage(pageId, pageName, events.size, pct)
+                }
+                .sortedByDescending { it.count }
+                .take(5)
+        }
+    }
+
+    val unusedPages = remember(historyEvents, unfilteredPages) {
+        val usedPageIds = historyEvents.mapNotNull { it.pageId }.toSet()
+        unfilteredPages.filter { !usedPageIds.contains(it.id) }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -474,6 +497,129 @@ fun AnalyticsDashboardScreen(
                                         color = MaterialTheme.colorScheme.onSecondaryContainer,
                                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                                         fontWeight = FontWeight.Medium
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            HorizontalDivider()
+
+            // --- SECTION 3: PAGE-LEVEL ANALYTICS & CLEANUP ASSISTANT (Option B) ---
+            Text(
+                text = "📄 Seiten-Analyse & Aufräum-Assistent",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    // Top Used Pages
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = "📊 Meistgenutzte Seiten",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        if (topUsedPages.isEmpty()) {
+                            Text(
+                                text = "Keine Klickdaten für Seiten vorhanden.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                            )
+                        } else {
+                            topUsedPages.forEach { pageUsage ->
+                                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = pageUsage.name,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                        Text(
+                                            text = "${pageUsage.count} Klicks (${(pageUsage.percentage * 100).toInt()}%)",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    androidx.compose.material3.LinearProgressIndicator(
+                                        progress = { pageUsage.percentage },
+                                        modifier = Modifier.fillMaxWidth().height(8.dp),
+                                        color = MaterialTheme.colorScheme.primary,
+                                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                                        strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+                    // Cleanup helper
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = "⚠️ Aufräum-Empfehlungen",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        if (unusedPages.isEmpty()) {
+                            Surface(
+                                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f),
+                                shape = MaterialTheme.shapes.small,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = "✅ Hervorragend! Alle Seiten in diesem Buch werden aktiv verwendet. Es gibt keine ungenutzten Seiten.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.padding(10.dp)
+                                )
+                            }
+                        } else {
+                            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Text(
+                                    text = "Die folgenden Seiten wurden im Erfassungszeitraum nie aufgerufen. Überlege, sie zu löschen oder aufzuräumen, um Stefanies Navigation schlank zu halten:",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                unusedPages.take(4).forEach { page ->
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                        modifier = Modifier.padding(start = 4.dp)
+                                    ) {
+                                        Text("•", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
+                                        Text(
+                                            text = page.name,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                                if (unusedPages.size > 4) {
+                                    Text(
+                                        text = "...und ${unusedPages.size - 4} weitere ungenutzte Seiten.",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                        modifier = Modifier.padding(start = 12.dp)
                                     )
                                 }
                             }

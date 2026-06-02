@@ -141,6 +141,10 @@
     <string name="button_no_playlist_selected">No playlist selected</string>
     <string name="button_target_page_label">Target Page</string>
     <string name="button_smart_prediction_rank_label">Prediction Rank (1 = Most Likely)</string>
+    <string name="button_smart_prediction_type_label">Prediction Filter</string>
+    <string name="button_smart_prediction_type_all">All</string>
+    <string name="button_smart_prediction_type_action">Actions Only</string>
+    <string name="button_smart_prediction_type_navigation">Navigations Only</string>
     <string name="button_gemini_prompt_field">Gemini Prompt (Command)</string>
     <string name="button_gemini_prompt_hint">What should Gemini do?</string>
 

@@ -24,5 +24,8 @@ data class ButtonUsageHistoryEntity(
     val latitude: Double? = null,
     val longitude: Double? = null,
     val sessionId: Long? = null,
-    val reactionTimeMs: Long? = null
+    val reactionTimeMs: Long? = null,
+    val isTouchIntervention: Boolean = false,
+    val wifiSsid: String? = null,
+    val isHardwareTriggered: Boolean = false
 )

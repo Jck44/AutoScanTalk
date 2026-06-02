@@ -178,6 +178,7 @@
     <string name="settings_limit_scan_cycles">Limit scan cycles</string>
     <string name="settings_scan_cycle_limit">Number of scan cycles</string>
     <string name="settings_action_log_limit">Action log limit</string>
+    <string name="settings_action_log_limit_format">%1$d entries</string>
     <string name="settings_log_ignored_actions">Log ignored actions in history</string>
     <string name="settings_log_stop_actions">Log stop commands in history</string>
     <string name="book_name_label">Book Name</string>

@@ -8,6 +8,7 @@ import com.andreas_kratzer.ghosttalk.core.model.FrequentActionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.PreviousActionButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.PredictionType
 import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import io.mockk.coEvery
@@ -255,5 +256,46 @@ class ResolveDynamicButtonsUseCaseTest {
         assertTrue(resolvedAction is SpeakTextButtonAction)
         assertEquals("Older", result.buttonConfigs[0]?.label)
         assertEquals("2. Letzte Aktion: Older", (result.buttonConfigs[0]?.auditoryCue as? com.andreas_kratzer.ghosttalk.core.model.AuditoryCue.TextToSpeechCue)?.text)
+    }
+
+    @Test
+    fun `execute filters predictions by PredictionType`() = runTest {
+        // Given
+        val bookId = "book1"
+        // targetPage is a Navigation, button2 is an Action
+        val predictions = listOf("targetPage", "button2")
+        
+        val smartActionConfig = ButtonConfig(id = "smartAction", label = "Smart Action", auditoryCue = null, buttonAction = SmartPredictionButtonAction(rank = 1, predictionType = PredictionType.ACTION))
+        val smartNavConfig = ButtonConfig(id = "smartNav", label = "Smart Nav", auditoryCue = null, buttonAction = SmartPredictionButtonAction(rank = 1, predictionType = PredictionType.NAVIGATION))
+        
+        val initialPage = Page(
+            id = "page1",
+            bookId = bookId,
+            name = "Page 1",
+            buttonConfigs = listOf(smartActionConfig, smartNavConfig)
+        )
+        
+        val targetPage = Page(id = "targetPage", bookId = bookId, name = "Target Page", buttonConfigs = emptyList())
+        val otherPage = Page(id = "page3", bookId = bookId, name = "Page 3", buttonConfigs = listOf(
+            ButtonConfig(id = "button2", label = "Button 2", auditoryCue = null, buttonAction = SpeakTextButtonAction())
+        ))
+        
+        val allPages = listOf(initialPage, otherPage, targetPage)
+        
+        coEvery { frequentActionResolver.resolve(initialPage, bookId) } returns initialPage
+        
+        // When
+        val result = resolveDynamicButtonsUseCase.execute(initialPage, bookId, predictions, allPages)
+        
+        // Then
+        // The first prediction in list is "targetPage" (Navigation), but smartActionConfig requested ACTION rank 1.
+        // Therefore, it skips "targetPage" and resolves to "button2" (Action).
+        assertEquals("Button 2", result.buttonConfigs[0]?.label)
+        assertEquals("button2", result.buttonConfigs[0]?.id)
+        
+        // smartNavConfig requested NAVIGATION rank 1.
+        // Therefore, it resolves to "targetPage" (Navigation).
+        assertEquals("Target Page", result.buttonConfigs[1]?.label)
+        assertEquals("targetPage", result.buttonConfigs[1]?.id)
     }
 }

@@ -15,6 +15,7 @@ import com.andreas_kratzer.ghosttalk.core.model.PlayMediaButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.PreviousActionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SmartHomeButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SmartHomeProvider
+import com.andreas_kratzer.ghosttalk.core.model.PredictionType
 import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.WeatherButtonAction
@@ -40,7 +41,11 @@ class ActionMapper @Inject constructor() {
             is GeminiButtonAction -> ImportAction(type = "GEMINI", prompt = action.prompt)
             is GeminiSearchButtonAction -> ImportAction(type = "GEMINI_SEARCH", prompt = action.prompt)
             is GeminiNanoButtonAction -> ImportAction(type = "GEMINI_NANO", intent = action.intent)
-            is SmartPredictionButtonAction -> ImportAction(type = "SMART_PREDICTION", rank = action.rank)
+            is SmartPredictionButtonAction -> ImportAction(
+                type = "SMART_PREDICTION",
+                rank = action.rank,
+                predictionType = action.predictionType.name
+            )
             is GeminiVisionButtonAction -> ImportAction(type = "GEMINI_VISION", prompt = action.prompt, useCloud = action.useCloud)
             is ControlDeviceButtonAction -> ImportAction(
                 type = "DEVICE_CONTROL",
@@ -91,7 +96,15 @@ class ActionMapper @Inject constructor() {
             "GEMINI_SEARCH" -> GeminiSearchButtonAction(importAction.prompt ?: "")
             "GEMINI_NANO" -> GeminiNanoButtonAction(importAction.intent ?: "")
             "GEMINI_VISION" -> GeminiVisionButtonAction(importAction.prompt ?: "", importAction.useCloud ?: false)
-            "SMART_PREDICTION" -> SmartPredictionButtonAction(importAction.rank ?: 1)
+            "SMART_PREDICTION" -> {
+                val predType = importAction.predictionType?.let {
+                    try { PredictionType.valueOf(it) } catch(_: Exception) { PredictionType.ALL }
+                } ?: PredictionType.ALL
+                SmartPredictionButtonAction(
+                    rank = importAction.rank ?: 1,
+                    predictionType = predType
+                )
+            }
             "DEVICE_CONTROL" -> {
                 val typeName = importAction.deviceActionType ?: "READ_TIME"
                 ControlDeviceButtonAction(

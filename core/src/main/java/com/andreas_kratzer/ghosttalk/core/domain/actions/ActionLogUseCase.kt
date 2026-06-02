@@ -16,7 +16,7 @@ import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
-private const val MAX_LOG_SIZE = 20
+private const val MAX_LOG_SIZE = 500
 
 /**
  * Use case for managing action logs (timestamping, limiting size, and persistence).

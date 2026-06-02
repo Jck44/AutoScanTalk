@@ -93,7 +93,10 @@ class ActionExecutor @Inject constructor(
 
         if (bookId != null && index != -1) {
             val onlyHardware = settingsRepository.onlyRecordHardwareStats
-            if (!onlyHardware || isHardwareTriggered) {
+            val isScanningActiveForBook = settingsRepository.getAutoStartScanningForBook(bookId)
+            val isTouchIntervention = isScanningActiveForBook && !isHardwareTriggered
+
+            if (!onlyHardware || isHardwareTriggered || isTouchIntervention) {
                 val reactionTimeMs = try {
                     scanCoordinatorProvider.get().getLastFocusDuration(index)
                 } catch (_: Exception) {
@@ -101,7 +104,17 @@ class ActionExecutor @Inject constructor(
                 }
                 scope.launch {
                     try {
-                        buttonUsageRepository.recordUsage(bookId, pageId ?: "", buttonConfig, rows, columns, index, reactionTimeMs = reactionTimeMs)
+                        buttonUsageRepository.recordUsage(
+                            bookId = bookId,
+                            pageId = pageId ?: "",
+                            buttonConfig = buttonConfig,
+                            rows = rows,
+                            columns = columns,
+                            indexInPage = index,
+                            reactionTimeMs = reactionTimeMs,
+                            isTouchIntervention = isTouchIntervention,
+                            isHardwareTriggered = isHardwareTriggered
+                        )
                     } catch (_: Exception) { }
                 }
             }

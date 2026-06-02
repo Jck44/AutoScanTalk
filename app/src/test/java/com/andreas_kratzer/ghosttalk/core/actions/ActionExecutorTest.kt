@@ -129,7 +129,7 @@ class ActionExecutorTest {
         
         actionExecutor.executeButtonAction(button, bookId = "b1", index = 5)
         
-        coVerify { buttonUsageRepository.recordUsage("b1", "", button, 1, 1, 5, any()) }
+        coVerify { buttonUsageRepository.recordUsage("b1", "", button, 1, 1, 5, any(), any(), any(), any()) }
     }
 
     @Test
@@ -149,7 +149,7 @@ class ActionExecutorTest {
 
         actionExecutor.executeButtonAction(button, bookId = "b1", index = 5, isHardwareTriggered = true)
 
-        coVerify(exactly = 1) { buttonUsageRepository.recordUsage("b1", "", button, 1, 1, 5, any()) }
+        coVerify(exactly = 1) { buttonUsageRepository.recordUsage("b1", "", button, 1, 1, 5, any(), any(), any(), isHardwareTriggered = true) }
     }
 
     @Test

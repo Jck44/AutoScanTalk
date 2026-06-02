@@ -152,10 +152,98 @@ interface ButtonUsageDao {
         sinceTimestamp: Long,
         limit: Int
     ): List<String>
+
+    // Raw event queries for time-decayed scoring
+    @Query("""
+        SELECT successor.buttonId AS buttonId, successor.timestamp AS timestamp
+        FROM button_usage_history AS anchor
+        JOIN button_usage_history AS successor ON successor.bookId = anchor.bookId 
+          AND successor.timestamp > anchor.timestamp
+        WHERE anchor.bookId = :bookId
+          AND anchor.buttonId = :lastButtonId
+          AND anchor.timestamp >= :sinceTimestamp
+          AND NOT EXISTS (
+              SELECT 1 FROM button_usage_history AS middle
+              WHERE middle.bookId = anchor.bookId
+                AND middle.timestamp > anchor.timestamp
+                AND middle.timestamp < successor.timestamp
+          )
+          AND successor.buttonId IS NOT NULL
+    """)
+    suspend fun getNextButtonEvents(bookId: String, lastButtonId: String, sinceTimestamp: Long): List<SuccessorEvent>
+
+    @Query("""
+        SELECT buttonId, timestamp
+        FROM button_usage_history
+        WHERE bookId = :bookId
+          AND timestamp >= :sinceTimestamp
+          AND buttonId IS NOT NULL
+          AND CAST(strftime('%w', datetime(timestamp / 1000, 'unixepoch', 'localtime')) AS INTEGER) = :dayOfWeek
+          AND CAST(strftime('%H', datetime(timestamp / 1000, 'unixepoch', 'localtime')) AS INTEGER) >= :startHour
+          AND CAST(strftime('%H', datetime(timestamp / 1000, 'unixepoch', 'localtime')) AS INTEGER) < :endHour
+    """)
+    suspend fun getButtonEventsForContext(
+        bookId: String,
+        dayOfWeek: Int,
+        startHour: Int,
+        endHour: Int,
+        sinceTimestamp: Long
+    ): List<TimeContextEvent>
+
+    @Query("""
+        SELECT buttonId, timestamp
+        FROM button_usage_history
+        WHERE bookId = :bookId
+          AND timestamp >= :sinceTimestamp
+          AND buttonId IS NOT NULL
+          AND latitude IS NOT NULL
+          AND longitude IS NOT NULL
+          AND ABS(latitude - :lat) <= :radiusDeg
+          AND ABS(longitude - :lng) <= :radiusDeg
+    """)
+    suspend fun getButtonEventsAtLocation(
+        bookId: String,
+        lat: Double,
+        lng: Double,
+        radiusDeg: Double,
+        sinceTimestamp: Long
+    ): List<LocationContextEvent>
+
+    @Query("""
+        SELECT buttonId, timestamp
+        FROM button_usage_history
+        WHERE bookId = :bookId
+          AND timestamp >= :sinceTimestamp
+          AND buttonId IS NOT NULL
+          AND latitude IS NULL
+          AND longitude IS NULL
+     """)
+    suspend fun getButtonEventsAtNullLocation(
+        bookId: String,
+        sinceTimestamp: Long
+    ): List<LocationContextEvent>
+
+    @Query("SELECT * FROM button_usage_history WHERE bookId = :bookId ORDER BY timestamp DESC LIMIT :limit")
+    suspend fun getRecentHistoryEvents(bookId: String, limit: Int): List<ButtonUsageHistoryEntity>
 }
 
 data class SuccessorCount(
     val buttonId: String,
     val count: Int
+)
+
+data class SuccessorEvent(
+    val buttonId: String,
+    val timestamp: Long
+)
+
+data class TimeContextEvent(
+    val buttonId: String,
+    val timestamp: Long
+)
+
+data class LocationContextEvent(
+    val buttonId: String,
+    val timestamp: Long
 )
 

@@ -247,12 +247,13 @@ class PageViewModel @Inject constructor(
 
     val pageMetrics: StateFlow<Map<String, com.andreas_kratzer.ghosttalk.core.model.ButtonEffortMetrics>> = combine(
         resolvedPage,
-        activeBookId
-    ) { page, bookId ->
-        Log.d("PageViewModel", "pageMetrics combine: page = ${page?.name} (${page?.id}), bookId = $bookId")
-        Pair(page, bookId)
+        activeBookId,
+        buttonHistory
+    ) { page, bookId, history ->
+        Log.d("PageViewModel", "pageMetrics combine: page = ${page?.name} (${page?.id}), bookId = $bookId, history = ${history.size}")
+        Triple(page, bookId, history)
     }
-    .flatMapLatest { (page, bookId) ->
+    .flatMapLatest { (page, bookId, history) ->
         if (page == null || bookId == null) {
             Log.d("PageViewModel", "pageMetrics flatMapLatest: skipping analysis (page=${page?.id}, bookId=$bookId)")
             flowOf(emptyMap())
@@ -274,7 +275,8 @@ class PageViewModel @Inject constructor(
                         startPageId = startPageId,
                         clickCounts = clickCounts,
                         scanDelayMs = delay,
-                        defaultScanPattern = pattern
+                        defaultScanPattern = pattern,
+                        historyEvents = history
                     )
                     Log.d("PageViewModel", "pageMetrics: calculated metrics for ${metrics.size} buttons: $metrics")
                     emit(metrics)

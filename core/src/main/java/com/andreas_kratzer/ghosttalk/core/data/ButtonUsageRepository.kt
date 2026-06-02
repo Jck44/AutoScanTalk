@@ -17,7 +17,9 @@ interface ButtonUsageRepository : ButtonUsageProvider {
         columns: Int,
         indexInPage: Int,
         timestamp: Long = System.currentTimeMillis(),
-        reactionTimeMs: Long? = null
+        reactionTimeMs: Long? = null,
+        isTouchIntervention: Boolean = false,
+        isHardwareTriggered: Boolean = false
     )
     suspend fun clearStats(bookId: String)
     suspend fun cleanupOldStats(days: Int)
@@ -36,6 +38,9 @@ interface ButtonUsageRepository : ButtonUsageProvider {
         val pageId: String? = null,
         val geminiResponse: String? = null,
         val sessionId: Long? = null,
-        val reactionTimeMs: Long? = null
+        val reactionTimeMs: Long? = null,
+        val isTouchIntervention: Boolean = false,
+        val wifiSsid: String? = null,
+        val isHardwareTriggered: Boolean = false
     )
 }

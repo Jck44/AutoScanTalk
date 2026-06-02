@@ -77,13 +77,21 @@ data class FrequentActionButtonAction(
     val rank: Int = 1 // 1 = häufigste, 2 = zweithäufigste, ...
 ) : ButtonAction()
 
+@Serializable
+enum class PredictionType {
+    ALL,
+    ACTION,
+    NAVIGATION
+}
+
 /**
  * An action that resolves dynamically to the N-th smart prediction from Gemini.
  */
 @Serializable
 @SerialName("SmartPredictionButtonAction")
 data class SmartPredictionButtonAction(
-    val rank: Int = 1 // 1 = most likely, 2 = second, ...
+    val rank: Int = 1, // 1 = most likely, 2 = second, ...
+    val predictionType: PredictionType = PredictionType.ALL
 ) : ButtonAction()
 
 /**

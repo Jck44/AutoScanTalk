@@ -7,7 +7,7 @@
     <string name="settings_category_security">Sicherheit &amp; PIN</string>
     <string name="settings_category_cloud">Konten &amp; Import</string>
     <string name="settings_category_smart_home">Smart Home (Experimentell)</string>
-    <string name="settings_category_gemini">Gemini KI-Assistent</string>
+    <string name="settings_category_gemini">KI &amp; Vorhersagen</string>
     <string name="settings_category_elevenlabs">Eleven Labs</string>
     <string name="settings_category_notifications">Benachrichtigungen &amp; Berechtigungen</string>
     <string name="settings_category_cloud_book">Sicherung</string>
@@ -199,6 +199,7 @@
     <string name="settings_limit_scan_cycles">Anzahl von Scandurchläufen begrenzen</string>
     <string name="settings_scan_cycle_limit">Anzahl der Scandurchläufe</string>
     <string name="settings_action_log_limit">Limit für die Aktionsliste</string>
+    <string name="settings_action_log_limit_format">%1$d Einträge</string>
     <string name="settings_log_ignored_actions">Ignorierte Aktionen im Verlauf protokollieren</string>
     <string name="settings_log_stop_actions">Stopp-Befehle im Verlauf protokollieren</string>
     <string name="book_name_label">Name des Buches</string>
