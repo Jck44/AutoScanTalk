@@ -68,6 +68,17 @@ class ScanCoordinator @Inject constructor(
         println("ScanCoordinator: $message")
     }
 
+    private var lastFocusTimestamp = -1L
+    private var lastFocusedIndex: Int? = null
+
+    fun getLastFocusDuration(index: Int): Long? {
+        val focusTime = lastFocusTimestamp
+        if (focusTime != -1L && lastFocusedIndex == index) {
+            return System.currentTimeMillis() - focusTime
+        }
+        return null
+    }
+
     init {
         scope.launch {
             scannerEngine.onCycleCompleted.collect {
@@ -77,6 +88,17 @@ class ScanCoordinator @Inject constructor(
         scope.launch {
             scanningSettings.scanDelayFlow.collect { delay ->
                 scannerEngine.scanDelayMillis = delay
+            }
+        }
+        scope.launch {
+            focusedButtonIndex.collect { index ->
+                if (index != null) {
+                    lastFocusTimestamp = System.currentTimeMillis()
+                    lastFocusedIndex = index
+                } else {
+                    lastFocusTimestamp = -1L
+                    lastFocusedIndex = null
+                }
             }
         }
     }

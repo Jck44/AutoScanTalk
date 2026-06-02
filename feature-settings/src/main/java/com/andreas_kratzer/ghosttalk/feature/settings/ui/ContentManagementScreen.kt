@@ -31,7 +31,6 @@ import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 fun ContentManagementScreen(
     onNavigateToPageManager: () -> Unit,
     onNavigateToTemplateManager: () -> Unit,
-    onNavigateToAnalyticsDashboard: () -> Unit,
     onNavigateBack: () -> Unit
 ) {
     val dimensions = LocalDimensions.current
@@ -86,14 +85,6 @@ fun ContentManagementScreen(
                 onClick = onNavigateToTemplateManager,
                 height = dynamicCardHeight,
                 testTag = "content_manage_templates"
-            )
-
-            GhostTalkCard(
-                title = stringResource(R.string.settings_analytics_dashboard),
-                icon = GhostTalkIcons.BarChart,
-                onClick = onNavigateToAnalyticsDashboard,
-                height = dynamicCardHeight,
-                testTag = "content_manage_analytics"
             )
         }
     }

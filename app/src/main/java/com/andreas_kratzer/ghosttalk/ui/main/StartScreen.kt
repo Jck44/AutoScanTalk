@@ -42,6 +42,7 @@ fun StartScreen(
     onNavigateToUserMode: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onNavigateToContentManagement: () -> Unit,
+    onNavigateToAnalyticsDashboard: () -> Unit,
     onNavigateToBooks: () -> Unit,
     bookName: String
 ) {
@@ -91,7 +92,7 @@ fun StartScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(dimensions.paddingLarge, Alignment.CenterHorizontally),
                     verticalArrangement = Arrangement.spacedBy(vSpacing),
-                    maxItemsInEachRow = if (isLandscape) 3 else 1
+                    maxItemsInEachRow = if (isLandscape) 2 else 1
                 ) {
                     val cardModifier = if (isLandscape) Modifier.weight(1f) else Modifier.fillMaxWidth()
 
@@ -122,6 +123,16 @@ fun StartScreen(
                     modifier = cardModifier.testTag("start_card_settings"),
                     containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     iconColor = MaterialTheme.colorScheme.secondary,
+                    height = dynamicCardHeight
+                )
+
+                GhostTalkCard(
+                    title = stringResource(R.string.settings_analytics_dashboard),
+                    icon = GhostTalkIcons.BarChart,
+                    onClick = onNavigateToAnalyticsDashboard,
+                    modifier = cardModifier.testTag("start_card_analytics"),
+                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                    iconColor = MaterialTheme.colorScheme.error,
                     height = dynamicCardHeight
                 )
             }

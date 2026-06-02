@@ -179,6 +179,11 @@ fun AnalyticsDashboardScreen(
             // --- USAGE CHART & DETAILS ---
             UsageDurationBarChart(sessions = userModeSessions)
 
+            ReactionTimeFatigueChart(
+                sessions = userModeSessions,
+                historyEvents = historyEvents
+            )
+
             UserModeSessionsSection(
                 sessions = userModeSessions,
                 onClearSessions = { pageViewModel.clearUserModeSessions() }

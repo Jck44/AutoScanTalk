@@ -28,7 +28,7 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonPrimitive
 import java.util.UUID
 
-@Database(entities = [Page::class, Book::class, ButtonUsageStat::class, PageTemplate::class, ButtonEntity::class, ButtonUsageHistoryEntity::class, ButtonTemplateEntity::class, UserModeSessionEntity::class], version = 20, exportSchema = false)
+@Database(entities = [Page::class, Book::class, ButtonUsageStat::class, PageTemplate::class, ButtonEntity::class, ButtonUsageHistoryEntity::class, ButtonTemplateEntity::class, UserModeSessionEntity::class], version = 22, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
 
@@ -43,6 +43,18 @@ abstract class AppDatabase : RoomDatabase() {
     companion object {
         @Volatile
         private var INSTANCE: AppDatabase? = null
+
+        val MIGRATION_21_22: Migration = object : Migration(21, 22) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `button_usage_history` ADD COLUMN `reactionTimeMs` INTEGER DEFAULT NULL")
+            }
+        }
+
+        val MIGRATION_20_21: Migration = object : Migration(20, 21) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `button_usage_history` ADD COLUMN `sessionId` INTEGER DEFAULT NULL")
+            }
+        }
 
         val MIGRATION_19_20: Migration = object : Migration(19, 20) {
             override fun migrate(db: SupportSQLiteDatabase) {
@@ -440,7 +452,9 @@ abstract class AppDatabase : RoomDatabase() {
                     MIGRATION_16_17,
                     MIGRATION_17_18,
                     MIGRATION_18_19,
-                    MIGRATION_19_20
+                    MIGRATION_19_20,
+                    MIGRATION_20_21,
+                    MIGRATION_21_22
                 )
                 .build()
                 INSTANCE = instance

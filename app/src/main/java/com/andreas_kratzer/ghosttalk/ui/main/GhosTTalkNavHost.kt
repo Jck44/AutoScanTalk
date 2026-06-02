@@ -235,6 +235,7 @@ fun GhostTalkNavHost(
                 },
                 onNavigateToSettings = { navigateWithSecurity("settings?isGlobal=false") },
                 onNavigateToContentManagement = { navigateWithSecurity("content_management") },
+                onNavigateToAnalyticsDashboard = { navController.safeNavigate("analytics_dashboard") },
                 onNavigateToBooks = { navController.safePopBackStack() }
             )
         }
@@ -242,7 +243,6 @@ fun GhostTalkNavHost(
             ContentManagementScreen(
                 onNavigateToPageManager = { navController.safeNavigate("page_list") },
                 onNavigateToTemplateManager = { navController.safeNavigate("templates") },
-                onNavigateToAnalyticsDashboard = { navController.safeNavigate("analytics_dashboard") },
                 onNavigateBack = { navController.safePopBackStack() }
             )
         }

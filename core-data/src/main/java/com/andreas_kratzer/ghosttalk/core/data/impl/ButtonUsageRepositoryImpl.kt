@@ -68,7 +68,8 @@ class ButtonUsageRepositoryImpl @Inject constructor(
         rows: Int,
         columns: Int,
         indexInPage: Int,
-        timestamp: Long
+        timestamp: Long,
+        reactionTimeMs: Long?
     ) {
         val hasFine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
         val hasCoarse = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
@@ -115,7 +116,8 @@ class ButtonUsageRepositoryImpl @Inject constructor(
                 pageId = pageId,
                 latitude = lastLocation?.latitude,
                 longitude = lastLocation?.longitude,
-                sessionId = sessionTracker.currentSessionId
+                sessionId = sessionTracker.currentSessionId,
+                reactionTimeMs = reactionTimeMs
             )
             dao.insertHistoryEvent(event)
 
@@ -290,6 +292,7 @@ class ButtonUsageRepositoryImpl @Inject constructor(
         buttonId = buttonId,
         pageId = pageId,
         geminiResponse = geminiResponse,
-        sessionId = sessionId
+        sessionId = sessionId,
+        reactionTimeMs = reactionTimeMs
     )
 }

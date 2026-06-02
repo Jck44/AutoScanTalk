@@ -9,7 +9,16 @@ interface ButtonUsageRepository : ButtonUsageProvider {
 
     suspend fun getGroupedUsageStats(bookId: String): List<GroupedButtonUsageStat>
 
-    suspend fun recordUsage(bookId: String, pageId: String, buttonConfig: ButtonConfig, rows: Int, columns: Int, indexInPage: Int, timestamp: Long = System.currentTimeMillis())
+    suspend fun recordUsage(
+        bookId: String,
+        pageId: String,
+        buttonConfig: ButtonConfig,
+        rows: Int,
+        columns: Int,
+        indexInPage: Int,
+        timestamp: Long = System.currentTimeMillis(),
+        reactionTimeMs: Long? = null
+    )
     suspend fun clearStats(bookId: String)
     suspend fun cleanupOldStats(days: Int)
     suspend fun updateLastEventImage(imagePath: String)
@@ -26,6 +35,7 @@ interface ButtonUsageRepository : ButtonUsageProvider {
         val buttonId: String? = null,
         val pageId: String? = null,
         val geminiResponse: String? = null,
-        val sessionId: Long? = null
+        val sessionId: Long? = null,
+        val reactionTimeMs: Long? = null
     )
 }

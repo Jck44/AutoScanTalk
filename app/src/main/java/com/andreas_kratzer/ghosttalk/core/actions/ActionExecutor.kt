@@ -24,6 +24,7 @@ class ActionExecutor @Inject constructor(
     private val handlers: Set<@JvmSuppressWildcards ActionHandler>,
     private val actionCoordinator: ActionCoordinator,
     private val ttsHelper: TextToSpeechHelper,
+    private val scanCoordinatorProvider: javax.inject.Provider<com.andreas_kratzer.ghosttalk.core.scanning.ScanCoordinator>,
     @param:ApplicationContext private val context: Context? = null
 ) : ScannerActionProvider {
     private var timeProvider: () -> Long = { System.currentTimeMillis() }
@@ -90,9 +91,14 @@ class ActionExecutor @Inject constructor(
         val currentExecutionId = ++activeExecutionId
 
         if (bookId != null && index != -1) {
+            val reactionTimeMs = try {
+                scanCoordinatorProvider.get().getLastFocusDuration(index)
+            } catch (_: Exception) {
+                null
+            }
             scope.launch {
                 try {
-                    buttonUsageRepository.recordUsage(bookId, pageId ?: "", buttonConfig, rows, columns, index)
+                    buttonUsageRepository.recordUsage(bookId, pageId ?: "", buttonConfig, rows, columns, index, reactionTimeMs = reactionTimeMs)
                 } catch (_: Exception) { }
             }
         }
