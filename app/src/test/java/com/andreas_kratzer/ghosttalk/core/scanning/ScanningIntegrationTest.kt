@@ -86,7 +86,8 @@ class ScanningIntegrationTest {
             buttonUsageRepository = buttonUsageRepository,
             handlers = emptySet(),
             actionCoordinator = actionCoordinator,
-            ttsHelper = ttsHelper
+            ttsHelper = ttsHelper,
+            scanCoordinatorProvider = mockk(relaxed = true)
         )
 
         scanCoordinator = ScanCoordinator(

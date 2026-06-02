@@ -21,7 +21,8 @@ class ActivateButtonUseCase @Inject constructor(
         isUserModeActive: Boolean,
         smartPredictions: List<String>,
         actionExecutor: ActionExecutor,
-        scanCoordinator: ScanCoordinator
+        scanCoordinator: ScanCoordinator,
+        isHardwareTriggered: Boolean = false
     ) {
         val page = currentPage ?: return
         val buttonConfig = page.buttonConfigs.getOrNull(index) ?: return
@@ -65,7 +66,8 @@ class ActivateButtonUseCase @Inject constructor(
             rows = page.rows,
             columns = page.columns,
             index = index,
-            skipLog = skipLog
+            skipLog = skipLog,
+            isHardwareTriggered = isHardwareTriggered
         )
     }
 }

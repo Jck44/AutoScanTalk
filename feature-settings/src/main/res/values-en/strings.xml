@@ -378,6 +378,7 @@
 
     <!-- Stats Retention & Aggregation Settings -->
     <string name="settings_category_stats_privacy">Privacy &amp; History</string>
+    <string name="settings_stats_only_hardware_label">Only record hardware button triggers</string>
     <string name="settings_stats_retention_label">Statistics Retention Period</string>
     <string name="settings_stats_retention_days_format">%1$d Days</string>
     <string name="settings_stats_retention_desc">Older usage data is automatically deleted to save storage space and protect privacy.</string>

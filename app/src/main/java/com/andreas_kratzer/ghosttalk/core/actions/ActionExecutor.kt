@@ -56,7 +56,8 @@ class ActionExecutor @Inject constructor(
         rows: Int = 1,
         columns: Int = 1,
         index: Int = -1,
-        skipLog: Boolean = false
+        skipLog: Boolean = false,
+        isHardwareTriggered: Boolean = false
     ) {
         val currentTime = timeProvider()
         val holdingTime = settingsRepository.holdingTimeMillis
@@ -91,15 +92,18 @@ class ActionExecutor @Inject constructor(
         val currentExecutionId = ++activeExecutionId
 
         if (bookId != null && index != -1) {
-            val reactionTimeMs = try {
-                scanCoordinatorProvider.get().getLastFocusDuration(index)
-            } catch (_: Exception) {
-                null
-            }
-            scope.launch {
-                try {
-                    buttonUsageRepository.recordUsage(bookId, pageId ?: "", buttonConfig, rows, columns, index, reactionTimeMs = reactionTimeMs)
-                } catch (_: Exception) { }
+            val onlyHardware = settingsRepository.onlyRecordHardwareStats
+            if (!onlyHardware || isHardwareTriggered) {
+                val reactionTimeMs = try {
+                    scanCoordinatorProvider.get().getLastFocusDuration(index)
+                } catch (_: Exception) {
+                    null
+                }
+                scope.launch {
+                    try {
+                        buttonUsageRepository.recordUsage(bookId, pageId ?: "", buttonConfig, rows, columns, index, reactionTimeMs = reactionTimeMs)
+                    } catch (_: Exception) { }
+                }
             }
         }
 

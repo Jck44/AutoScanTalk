@@ -121,7 +121,8 @@ class PageViewModelStateTest {
             spotifyManager = mockk(relaxed = true),
             buttonUsageRepository = mockk(relaxed = true),
             efficiencyAnalyzer = mockk(relaxed = true),
-            pathAnalyzer = mockk(relaxed = true)
+            pathAnalyzer = mockk(relaxed = true),
+            userModeSessionRepository = mockk(relaxed = true)
         )
         
         // Advance to allow launch in init to execute

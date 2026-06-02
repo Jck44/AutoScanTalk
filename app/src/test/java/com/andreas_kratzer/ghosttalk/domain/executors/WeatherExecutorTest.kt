@@ -34,8 +34,7 @@ class WeatherExecutorTest {
         weatherExecutor = WeatherExecutor(
             context,
             weatherUseCase,
-            locationExecutor,
-            logger
+            locationExecutor
         )
     }
 

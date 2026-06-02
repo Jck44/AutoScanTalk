@@ -255,7 +255,8 @@ class PageViewModelTest {
             buttonUsageRepository = buttonUsageRepository,
             handlers = setOf(navHandler),
             actionCoordinator = actionCoordinator,
-            ttsHelper = ttsHelper
+            ttsHelper = ttsHelper,
+            scanCoordinatorProvider = mockk(relaxed = true)
         )
 
         val scanCoordinator = mockk<ScanCoordinator>(relaxed = true)
@@ -298,7 +299,8 @@ class PageViewModelTest {
             spotifyManager = mockk(relaxed = true),
             buttonUsageRepository = buttonUsageRepository,
             efficiencyAnalyzer = mockk(relaxed = true),
-            pathAnalyzer = mockk(relaxed = true)
+            pathAnalyzer = mockk(relaxed = true),
+            userModeSessionRepository = mockk(relaxed = true)
         )
     }
 

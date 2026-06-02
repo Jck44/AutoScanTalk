@@ -89,7 +89,10 @@ fun GeneralSettingsSection(
                 
                 val currentLanguageLabel = if (selectedAppLanguage == "default" || selectedAppLanguage == null) {
                     systemDefault
-                } else Locale.forLanguageTag(selectedAppLanguage!!).displayName
+                } else {
+                    val locale = Locale.forLanguageTag(selectedAppLanguage!!)
+                    locale.getDisplayName(locale)
+                }
 
                 SettingsDropdownItem(
                     label = appLanguageLabel,

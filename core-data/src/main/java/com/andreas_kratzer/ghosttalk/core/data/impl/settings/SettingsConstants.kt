@@ -46,6 +46,7 @@ object SettingsConstants {
     const val KEY_USER_MODE_SCREEN_BEHAVIOR = "user_mode_screen_behavior"
     const val KEY_STATS_RETENTION_DAYS = "stats_retention_days"
     const val KEY_STATS_AGGREGATION_HOURS = "stats_aggregation_hours"
+    const val KEY_ONLY_RECORD_HARDWARE_STATS = "only_record_hardware_stats"
     const val KEY_GEMINI_TIMEOUT = "gemini_timeout_ms"
     const val KEY_GEMINI_REDO_PREDICTION = "gemini_redo_prediction"
     const val KEY_WEATHER_CACHE_TIMEOUT = "weather_cache_timeout_minutes"

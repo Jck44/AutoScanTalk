@@ -175,6 +175,7 @@ class SettingsViewModel @Inject constructor(
     val userModeScreenBehavior = settingsRepository.userModeScreenBehaviorFlow
     val statsRetentionDays = settingsRepository.statsRetentionDaysFlow
     val statsAggregationHours = settingsRepository.statsAggregationHoursFlow
+    val onlyRecordHardwareStats = settingsRepository.onlyRecordHardwareStatsFlow
     val geminiTimeout = settingsRepository.geminiTimeoutFlow
     val geminiRedoPrediction = settingsRepository.geminiRedoPredictionFlow
 
@@ -611,6 +612,7 @@ class SettingsViewModel @Inject constructor(
         }
     }
     fun setStatsAggregationHours(hours: Int) { settingsRepository.statsAggregationHours = hours }
+    fun setOnlyRecordHardwareStats(e: Boolean) { settingsRepository.onlyRecordHardwareStats = e }
     fun setGeminiTimeoutInput(input: String) {
         input.toLongOrNull()?.let { settingsRepository.geminiTimeout = it }
     }

@@ -522,8 +522,17 @@ fun CloudSettingsSection(
             
             val statsRetentionDays by viewModel.statsRetentionDays.collectAsState()
             val statsAggregationHours by viewModel.statsAggregationHours.collectAsState()
+            val onlyRecordHardwareStats by viewModel.onlyRecordHardwareStats.collectAsState()
             
             PreferenceCategory(stringResource(R.string.settings_category_stats_privacy)) {
+                SettingsToggleItem(
+                    label = stringResource(R.string.settings_stats_only_hardware_label),
+                    checked = onlyRecordHardwareStats,
+                    onCheckedChange = { viewModel.setOnlyRecordHardwareStats(it) }
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
                 Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
                     Text(
                         text = stringResource(R.string.settings_stats_retention_label),

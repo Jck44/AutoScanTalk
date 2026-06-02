@@ -122,7 +122,7 @@ class InteractionDelegate @Inject constructor(
         }
     }
 
-    fun activateButtonAtIndex(index: Int, currentPage: Page?, activeBookId: String?) {
+    fun activateButtonAtIndex(index: Int, currentPage: Page?, activeBookId: String?, isHardwareTriggered: Boolean = false) {
         scope.launch {
             activateButtonUseCase.execute(
                 index = index,
@@ -131,7 +131,8 @@ class InteractionDelegate @Inject constructor(
                 isUserModeActive = isUserModeActive.value,
                 smartPredictions = _smartPredictions.value ?: emptyList(),
                 actionExecutor = actionExecutor,
-                scanCoordinator = scanCoordinator
+                scanCoordinator = scanCoordinator,
+                isHardwareTriggered = isHardwareTriggered
             )
         }
     }
@@ -144,7 +145,7 @@ class InteractionDelegate @Inject constructor(
         val focusedIdx = scanCoordinator.focusedButtonIndex.value
         val focusedRow = scanCoordinator.focusedRowIndex.value
         if (focusedIdx != null) {
-            activateButtonAtIndex(focusedIdx, currentPage, activeBookId)
+            activateButtonAtIndex(focusedIdx, currentPage, activeBookId, isHardwareTriggered = true)
         } else if (focusedRow != null) {
             scanCoordinator.selectCurrentRow()
         }

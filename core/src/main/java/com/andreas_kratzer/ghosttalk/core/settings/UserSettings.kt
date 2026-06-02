@@ -7,9 +7,11 @@ interface UserSettings {
     val userModeScreenBehaviorFlow: StateFlow<String>
     val statsRetentionDaysFlow: StateFlow<Int>
     val statsAggregationHoursFlow: StateFlow<Int>
+    val onlyRecordHardwareStatsFlow: StateFlow<Boolean>
 
     var keepScreenOnUserMode: Boolean
     var userModeScreenBehavior: String
     var statsRetentionDays: Int
     var statsAggregationHours: Int
+    var onlyRecordHardwareStats: Boolean
 }

@@ -41,7 +41,8 @@ class ActionExecutorReproductionTest {
             buttonUsageRepository = buttonUsageRepository,
             handlers = setOf(mockHandler),
             actionCoordinator = actionCoordinator,
-            ttsHelper = ttsHelper
+            ttsHelper = ttsHelper,
+            scanCoordinatorProvider = mockk(relaxed = true)
         )
     }
 

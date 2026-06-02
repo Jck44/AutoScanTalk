@@ -43,7 +43,8 @@ class ActionExecutorTest {
             buttonUsageRepository = buttonUsageRepository,
             handlers = setOf(mockHandler),
             actionCoordinator = actionCoordinator,
-            ttsHelper = ttsHelper
+            ttsHelper = ttsHelper,
+            scanCoordinatorProvider = mockk(relaxed = true)
         )
     }
 
@@ -129,6 +130,26 @@ class ActionExecutorTest {
         actionExecutor.executeButtonAction(button, bookId = "b1", index = 5)
         
         coVerify { buttonUsageRepository.recordUsage("b1", "", button, 1, 1, 5, any()) }
+    }
+
+    @Test
+    fun `usage is not recorded when onlyRecordHardwareStats is enabled and action is touch triggered`() = scope.runTest {
+        val button = ButtonConfig(id = "1", label = "Test", buttonAction = SpeakTextButtonAction(), auditoryCue = null)
+        every { settingsRepository.onlyRecordHardwareStats } returns true
+
+        actionExecutor.executeButtonAction(button, bookId = "b1", index = 5, isHardwareTriggered = false)
+
+        coVerify(exactly = 0) { buttonUsageRepository.recordUsage(any(), any(), any(), any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `usage is recorded when onlyRecordHardwareStats is enabled and action is hardware triggered`() = scope.runTest {
+        val button = ButtonConfig(id = "1", label = "Test", buttonAction = SpeakTextButtonAction(), auditoryCue = null)
+        every { settingsRepository.onlyRecordHardwareStats } returns true
+
+        actionExecutor.executeButtonAction(button, bookId = "b1", index = 5, isHardwareTriggered = true)
+
+        coVerify(exactly = 1) { buttonUsageRepository.recordUsage("b1", "", button, 1, 1, 5, any()) }
     }
 
     @Test

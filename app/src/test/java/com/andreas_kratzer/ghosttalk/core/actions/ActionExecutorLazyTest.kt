@@ -34,7 +34,8 @@ class ActionExecutorLazyTest {
             buttonUsageRepository = mockk(relaxed = true),
             handlers = emptySet(),
             actionCoordinator = actionCoordinator,
-            ttsHelper = ttsHelper
+            ttsHelper = ttsHelper,
+            scanCoordinatorProvider = mockk(relaxed = true)
         )
         val action = NavigateToPageButtonAction("p2")
         val config = ButtonConfig(id = "b1", label = "Go", buttonAction = action, auditoryCue = null)
@@ -55,7 +56,8 @@ class ActionExecutorLazyTest {
             buttonUsageRepository = mockk(relaxed = true),
             handlers = setOf(failingHandler),
             actionCoordinator = actionCoordinator,
-            ttsHelper = ttsHelper
+            ttsHelper = ttsHelper,
+            scanCoordinatorProvider = mockk(relaxed = true)
         )
 
         val action = GeminiButtonAction("Hello")

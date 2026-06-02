@@ -113,6 +113,7 @@ class SettingsRepositoryImpl @Inject constructor(
     override val userModeScreenBehaviorFlow: StateFlow<String> get() = userSettings.userModeScreenBehaviorFlow
     override val statsRetentionDaysFlow: StateFlow<Int> get() = userSettings.statsRetentionDaysFlow
     override val statsAggregationHoursFlow: StateFlow<Int> get() = userSettings.statsAggregationHoursFlow
+    override val onlyRecordHardwareStatsFlow: StateFlow<Boolean> get() = userSettings.onlyRecordHardwareStatsFlow
 
     // --- AdvancedSettings ---
     override val persistActionLogsFlow: StateFlow<Boolean> get() = advancedSettings.persistActionLogsFlow
@@ -393,6 +394,10 @@ class SettingsRepositoryImpl @Inject constructor(
     override var statsAggregationHours: Int
         get() = userSettings.statsAggregationHours
         set(value) { userSettings.statsAggregationHours = value }
+
+    override var onlyRecordHardwareStats: Boolean
+        get() = userSettings.onlyRecordHardwareStats
+        set(value) { userSettings.onlyRecordHardwareStats = value }
 
     override var geminiTimeout: Long
         get() = genAiSettings.geminiTimeout
