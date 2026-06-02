@@ -129,6 +129,7 @@
     <string name="button_device_control_time">Uhrzeit vorlesen</string>
     <string name="button_device_control_calendar">Kalendereinträge vorlesen</string>
     <string name="button_device_control_toggle_scanning">Scannen starten / pausieren</string>
+    <string name="button_device_control_start_sync">Synchronisieren starten</string>
     <string name="button_device_control_prefix_label">Vorgeschalteter Text</string>
     <string name="button_device_control_suffix_label">Nachfolgender Text</string>
     <string name="button_device_control_weekday_label">Wochentag einschließen</string>

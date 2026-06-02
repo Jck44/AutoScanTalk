@@ -129,6 +129,7 @@
     <string name="button_device_control_time">Read Time</string>
     <string name="button_device_control_calendar">Read Calendar Entries</string>
     <string name="button_device_control_toggle_scanning">Start / Pause Scanning</string>
+    <string name="button_device_control_start_sync">Start Synchronization</string>
     <string name="button_device_control_prefix_label">Prefix Text</string>
     <string name="button_device_control_suffix_label">Suffix Text</string>
     <string name="button_device_control_weekday_label">Include Weekday</string>

@@ -31,6 +31,7 @@ class ControlDeviceActionHandlerTest {
     private lateinit var scannerController: ScannerController
     private lateinit var callActionProxy: CallActionProxy
     private lateinit var updateManager: UpdateManager
+    private lateinit var syncActionProxy: SyncActionProxy
     private lateinit var handler: ControlDeviceActionHandler
 
     @Before
@@ -44,6 +45,7 @@ class ControlDeviceActionHandlerTest {
         scannerController = mockk(relaxed = true)
         callActionProxy = mockk(relaxed = true)
         updateManager = mockk(relaxed = true)
+        syncActionProxy = mockk(relaxed = true)
 
         every { context.getSystemService(Context.AUDIO_SERVICE) } returns audioManager
         
@@ -62,6 +64,9 @@ class ControlDeviceActionHandlerTest {
             actionLogger = actionLogger,
             updateManagerLazy = object : dagger.Lazy<UpdateManager> {
                 override fun get() = updateManager
+            },
+            syncActionProxy = object : dagger.Lazy<SyncActionProxy> {
+                override fun get() = syncActionProxy
             }
         )
         
@@ -475,5 +480,16 @@ class ControlDeviceActionHandlerTest {
 
         verify { callActionProxy.startCall("Test Name", "123456") }
         verify { actionLogger.log("Anruf starten an Test Name (123456)", action, "Call") }
+    }
+
+    @Test
+    fun `handle START_SYNC triggers sync`() {
+        val action = ControlDeviceButtonAction(DeviceActionType.START_SYNC)
+        val config = ButtonConfig(id = "b1", label = "Sync", buttonAction = action, auditoryCue = null)
+
+        handler.handle(config, action, 1) {}
+
+        verify { syncActionProxy.triggerSync() }
+        verify { actionLogger.log("Synchronisation starten", action, "Sync") }
     }
 }

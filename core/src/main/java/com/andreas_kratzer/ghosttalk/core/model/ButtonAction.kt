@@ -162,7 +162,8 @@ enum class DeviceActionType {
     READ_CALENDAR_ENTRIES,
     TOGGLE_SCANNING,
     START_CALL,
-    INSTALL_UPDATE
+    INSTALL_UPDATE,
+    START_SYNC
 }
 
 @Serializable

@@ -104,6 +104,7 @@ fun PreviewTabContent(
                             DeviceActionType.MEDIA_PREVIOUS -> "Vorheriges Lied abspielen"
                             DeviceActionType.TOGGLE_SCANNING -> "Scannen pausieren/fortsetzen"
                             DeviceActionType.INSTALL_UPDATE -> "App aktualisieren"
+                            DeviceActionType.START_SYNC -> "Synchronisation starten"
                             DeviceActionType.READ_NOTIFICATIONS -> "Benachrichtigungen vorlesen"
                             DeviceActionType.CLEAR_NOTIFICATIONS -> "Benachrichtigungen löschen"
                         }

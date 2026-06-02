@@ -257,6 +257,7 @@ fun ButtonConfigDialog(
     val actionTypeStatusLoud = stringResource(R.string.status_loud)
     val actionTypeToggleScanning = stringResource(R.string.button_device_control_toggle_scanning)
     val actionTypeInstallUpdate = stringResource(R.string.button_device_control_install_update)
+    val actionTypeStartSync = stringResource(R.string.button_device_control_start_sync)
 
     // Smart Home
     val actionTypePhilipsHue = "Philips Hue steuern"
@@ -298,6 +299,7 @@ fun ButtonConfigDialog(
                         DeviceActionType.STATUS_LOUD -> actionTypeStatusLoud
                         DeviceActionType.TOGGLE_SCANNING -> actionTypeToggleScanning
                         DeviceActionType.INSTALL_UPDATE -> actionTypeInstallUpdate
+                        DeviceActionType.START_SYNC -> actionTypeStartSync
                     }
                 }
                 is PlayMediaButtonAction -> {
@@ -564,6 +566,7 @@ fun ButtonConfigDialog(
             actionTypeStatusLoud -> ControlDeviceButtonAction(actionType = DeviceActionType.STATUS_LOUD)
             actionTypeToggleScanning -> ControlDeviceButtonAction(actionType = DeviceActionType.TOGGLE_SCANNING)
             actionTypeInstallUpdate -> ControlDeviceButtonAction(actionType = DeviceActionType.INSTALL_UPDATE)
+            actionTypeStartSync -> ControlDeviceButtonAction(actionType = DeviceActionType.START_SYNC)
 
             // Smart Home
             actionTypePhilipsHue -> SmartHomeButtonAction(
@@ -812,7 +815,8 @@ fun ButtonConfigDialog(
                                     actionTypeStatusVibrate to ControlDeviceButtonAction(DeviceActionType.STATUS_VIBRATE),
                                     actionTypeStatusLoud to ControlDeviceButtonAction(DeviceActionType.STATUS_LOUD),
                                     actionTypeToggleScanning to ControlDeviceButtonAction(DeviceActionType.TOGGLE_SCANNING),
-                                    actionTypeInstallUpdate to ControlDeviceButtonAction(DeviceActionType.INSTALL_UPDATE)
+                                    actionTypeInstallUpdate to ControlDeviceButtonAction(DeviceActionType.INSTALL_UPDATE),
+                                    actionTypeStartSync to ControlDeviceButtonAction(DeviceActionType.START_SYNC)
                                 ),
                                 com.andreas_kratzer.ghosttalk.core.model.ActionCategoryRegistry.GROUP_SMART_HOME to listOf(
                                     actionTypePhilipsHue to SmartHomeButtonAction(SmartHomeProvider.PHILIPS_HUE),

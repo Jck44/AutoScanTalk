@@ -48,6 +48,9 @@ class ControlDeviceIntegrationTest {
                 actionLogger = actionCoordinator,
                 updateManagerLazy = object : dagger.Lazy<com.andreas_kratzer.ghosttalk.core.UpdateManager> {
                     override fun get() = mockk<com.andreas_kratzer.ghosttalk.core.UpdateManager>(relaxed = true)
+                },
+                syncActionProxy = object : dagger.Lazy<SyncActionProxy> {
+                    override fun get() = mockk<SyncActionProxy>(relaxed = true)
                 }
             )
         )
@@ -59,7 +62,10 @@ class ControlDeviceIntegrationTest {
             buttonUsageRepository = buttonUsageRepository,
             handlers = handlers,
             actionCoordinator = actionCoordinator,
-            ttsHelper = ttsHelper
+            ttsHelper = ttsHelper,
+            scanCoordinatorProvider = object : javax.inject.Provider<com.andreas_kratzer.ghosttalk.core.scanning.ScanCoordinator> {
+                override fun get() = mockk<com.andreas_kratzer.ghosttalk.core.scanning.ScanCoordinator>(relaxed = true)
+            }
         )
 
         val action = ControlDeviceButtonAction(DeviceActionType.MEDIA_NEXT)

@@ -263,6 +263,7 @@ class ButtonTemplateRepositoryImpl @Inject constructor(
                 DeviceActionType.TOGGLE_SCANNING -> "Scannen an/aus"
                 DeviceActionType.START_CALL -> "Telefonanruf starten"
                 DeviceActionType.INSTALL_UPDATE -> "App aktualisieren"
+                DeviceActionType.START_SYNC -> "Synchronisation starten"
             }
             val label = when (type) {
                 DeviceActionType.READ_NOTIFICATIONS -> "Nachrichten"
@@ -285,6 +286,7 @@ class ButtonTemplateRepositoryImpl @Inject constructor(
                 DeviceActionType.TOGGLE_SCANNING -> "Scannen"
                 DeviceActionType.START_CALL -> "Anrufen"
                 DeviceActionType.INSTALL_UPDATE -> "Update"
+                DeviceActionType.START_SYNC -> "Sync"
             }
             list.add(
                 ButtonTemplate(

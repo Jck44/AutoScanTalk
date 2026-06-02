@@ -35,7 +35,8 @@ class ControlDeviceActionHandler @Inject constructor(
     private val scanControllerLazy: dagger.Lazy<ScannerController>,
     private val callActionProxy: dagger.Lazy<CallActionProxy>,
     private val actionLogger: ActionLogger,
-    private val updateManagerLazy: dagger.Lazy<com.andreas_kratzer.ghosttalk.core.UpdateManager>
+    private val updateManagerLazy: dagger.Lazy<com.andreas_kratzer.ghosttalk.core.UpdateManager>,
+    private val syncActionProxy: dagger.Lazy<SyncActionProxy>
 ) : ActionHandler {
     
     private val getString: (Int, Array<out Any?>) -> String = { id, args -> 
@@ -101,6 +102,12 @@ class ControlDeviceActionHandler @Inject constructor(
 
             DeviceActionType.INSTALL_UPDATE -> {
                 handleInstallUpdate(buttonConfig, deviceAction, executionId, onFinish)
+            }
+
+            DeviceActionType.START_SYNC -> {
+                actionLogger.log("Synchronisation starten", action, buttonConfig.label)
+                syncActionProxy.get().triggerSync()
+                onFinish(executionId)
             }
         }
     }
