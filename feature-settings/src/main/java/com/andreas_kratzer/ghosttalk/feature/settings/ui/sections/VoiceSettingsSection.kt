@@ -307,6 +307,7 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                 SettingsToggleItem(
                     label = stringResource(R.string.settings_block_volume_keys),
                     checked = blockVolumeKeys,
+                    description = stringResource(R.string.settings_block_volume_keys_desc),
                     onCheckedChange = { viewModel.setBlockVolumeKeys(it) }
                 )
 

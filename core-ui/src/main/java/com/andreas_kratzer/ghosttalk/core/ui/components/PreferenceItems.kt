@@ -71,6 +71,7 @@ fun SettingsToggleItem(
     label: String,
     checked: Boolean,
     enabled: Boolean = true,
+    description: String? = null,
     onValueChangeFinished: (() -> Unit)? = null,
     onCheckedChange: (Boolean) -> Unit
 ) {
@@ -85,12 +86,21 @@ fun SettingsToggleItem(
             .padding(vertical = dimensions.paddingSmall),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            text = label,
-            modifier = Modifier.weight(1f),
-            style = MaterialTheme.typography.bodyLarge,
-            color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyLarge,
+                color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+            )
+            if (description != null) {
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f),
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+            }
+        }
         Switch(
             checked = checked, 
             onCheckedChange = { 
