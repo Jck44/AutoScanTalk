@@ -7,6 +7,7 @@ import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.K
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_GEMINI_TIMEOUT
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_USE_GEMINI_API_KEY
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_USE_LOCAL_GENERATIVE_AI
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_HAS_ACCEPTED_PAGE_SPLIT_OPT_IN
 import kotlinx.coroutines.flow.StateFlow
 
 class GenAiSettingsRepository(
@@ -20,6 +21,7 @@ class GenAiSettingsRepository(
     private val _geminiTimeout = LongSetting(KEY_GEMINI_TIMEOUT, 6000L)
     private val _geminiApiKey = StringSetting(KEY_GEMINI_API_KEY)
     private val _useGeminiApiKey = BooleanSetting(KEY_USE_GEMINI_API_KEY, false)
+    private val _hasAcceptedPageSplitOptIn = BooleanSetting(KEY_HAS_ACCEPTED_PAGE_SPLIT_OPT_IN, false)
 
     val isGeminiEnabledFlow = _isGeminiEnabled.flow
     val useLocalGenerativeAiFlow = _useLocalGenerativeAi.flow
@@ -27,6 +29,7 @@ class GenAiSettingsRepository(
     val geminiTimeoutFlow = _geminiTimeout.flow
     val geminiApiKeyFlow = _geminiApiKey.flow
     val useGeminiApiKeyFlow = _useGeminiApiKey.flow
+    val hasAcceptedPageSplitOptInFlow = _hasAcceptedPageSplitOptIn.flow
 
     var isGeminiEnabled: Boolean by _isGeminiEnabled
     var useLocalGenerativeAi: Boolean by _useLocalGenerativeAi
@@ -34,7 +37,7 @@ class GenAiSettingsRepository(
     var geminiTimeout: Long by _geminiTimeout
     var geminiApiKey: String? by _geminiApiKey
     var useGeminiApiKey: Boolean by _useGeminiApiKey
-
+    var hasAcceptedPageSplitOptIn: Boolean by _hasAcceptedPageSplitOptIn
 
     override fun refresh() {
         _isGeminiEnabled.refresh()
@@ -43,5 +46,6 @@ class GenAiSettingsRepository(
         _geminiTimeout.refresh()
         _geminiApiKey.refresh()
         _useGeminiApiKey.refresh()
+        _hasAcceptedPageSplitOptIn.refresh()
     }
 }

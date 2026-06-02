@@ -47,14 +47,21 @@ class CreatePageUseCase @Inject constructor(
 
         if (template != null) {
             buttonConfigs = template.buttonConfigs.map { config ->
-                val action = config?.buttonAction
-                if (action is NavigateToPageButtonAction) {
-                    if (action.pageId.isEmpty() && homePageId != null) {
-                        config.copy(buttonAction = action.copy(pageId = homePageId))
-                    } else config
-                } else config
+                if (config != null) {
+                    val action = config.buttonAction
+                    val newAction = if (action is NavigateToPageButtonAction && action.pageId.isEmpty() && homePageId != null) {
+                        action.copy(pageId = homePageId)
+                    } else {
+                        action
+                    }
+                    config.copy(
+                        id = UUID.randomUUID().toString(),
+                        buttonAction = newAction
+                    )
+                } else {
+                    null
+                }
             }
-            
         } else {
             val initialConfigs = MutableList<ButtonConfig?>(GridUtils.TOTAL_SLOTS) { null }
 

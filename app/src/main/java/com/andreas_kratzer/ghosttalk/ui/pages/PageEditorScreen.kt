@@ -36,6 +36,12 @@ import com.andreas_kratzer.ghosttalk.ui.components.GridEditorContent
 import com.andreas_kratzer.ghosttalk.ui.components.ValidatedTextField
 import kotlinx.coroutines.delay
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import com.andreas_kratzer.ghosttalk.ui.pages.PageSplitOptInDialog
+import com.andreas_kratzer.ghosttalk.ui.pages.PageSplitManualPromptDialog
+import com.andreas_kratzer.ghosttalk.ui.pages.PageSplitWizardDialog
+import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,6 +72,16 @@ fun PageEditorScreen(
     }
 
     var localName by remember(page.name) { mutableStateOf(page.name) }
+    
+    // Page Split Dialog States
+    var showOptInDialog by remember { mutableStateOf(false) }
+    var showManualPromptDialog by remember { mutableStateOf(false) }
+    var showWizardDialog by remember { mutableStateOf(false) }
+    var manualPromptText by remember { mutableStateOf("") }
+    
+    val pageSplitProposal by pageViewModel.pageSplitProposal.collectAsState()
+    val isPageSplitLoading by pageViewModel.isPageSplitLoading.collectAsState()
+    val scope = rememberCoroutineScope()
 
     val handleNavigateBack = {
         if (localName.isNotBlank()) {
@@ -134,6 +150,25 @@ fun PageEditorScreen(
                             }
                         )
                     }
+                    IconButton(
+                        onClick = {
+                            val accepted = pageViewModel.settingsRepository.hasAcceptedPageSplitOptIn
+                            if (accepted) {
+                                showWizardDialog = true
+                                pageViewModel.generatePageSplitProposal(page.id)
+                            } else {
+                                showOptInDialog = true
+                            }
+                        },
+                        modifier = Modifier.testTag("page_editor_split_wizard_trigger")
+                    ) {
+                        Icon(
+                            imageVector = GhostTalkIcons.AutoAwesome,
+                            contentDescription = "Seite aufteilen",
+                            tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
                     if (onExitEditor != null) {
                         IconButton(
                             onClick = onExitEditor,
@@ -164,5 +199,61 @@ fun PageEditorScreen(
             initialButtonId = initialButtonId,
             pageViewModel = pageViewModel
         )
+
+        // Render Page Split Dialogs
+        if (showOptInDialog) {
+            PageSplitOptInDialog(
+                onConfirmCloud = { rememberDecision ->
+                    showOptInDialog = false
+                    if (rememberDecision) {
+                        pageViewModel.settingsRepository.hasAcceptedPageSplitOptIn = true
+                    }
+                    showWizardDialog = true
+                    pageViewModel.generatePageSplitProposal(page.id)
+                },
+                onConfirmManual = {
+                    showOptInDialog = false
+                    val defaultStartPageId = pageViewModel.settingsRepository.defaultStartPageId
+                    val labels = page.buttonConfigs
+                        .filter { !pageViewModel.shouldFilterButtonFromSplit(it, defaultStartPageId, page.id) }
+                        .map { it!!.label }
+                    manualPromptText = pageViewModel.generatePageSplitPrompt(labels)
+                    showManualPromptDialog = true
+                },
+                onDismiss = { showOptInDialog = false }
+            )
+        }
+
+        if (showManualPromptDialog) {
+            PageSplitManualPromptDialog(
+                promptText = manualPromptText,
+                onEvaluateResponse = { response ->
+                    pageViewModel.parsePageSplitProposal(response)
+                    showManualPromptDialog = false
+                    showWizardDialog = true
+                },
+                onDismiss = { showManualPromptDialog = false }
+            )
+        }
+
+        if (showWizardDialog) {
+            val activeButtons = page.buttonConfigs
+                .filter { it != null && it.isActive && it.label.isNotBlank() }
+                .map { it!! }
+
+            PageSplitWizardDialog(
+                proposal = pageSplitProposal,
+                allAvailableButtons = activeButtons,
+                isLoading = isPageSplitLoading,
+                onConfirm = { updatedProposal ->
+                    pageViewModel.applyPageSplit(page.id, updatedProposal)
+                    showWizardDialog = false
+                },
+                onDismiss = {
+                    showWizardDialog = false
+                    pageViewModel.clearPageSplitProposal()
+                }
+            )
+        }
     }
 }

@@ -232,11 +232,8 @@ fun EditorDialogs(
 
     if (showDuplicateDialog && selectedButtonIndex != null) {
         TargetPageSelectionDialog(
-            availablePages = availablePages, // Allow duplicating to same page too? The requirement says "in gleicher Art und Weise eine Zielseite ausgewählt werden". For Move we filter it out.
-            // Actually, if I duplicate to the same page, I need to make sure I find a DIFFERENT slot.
-            // MoveButtonToPageUseCase.execute fails if fromPageId == toPageId.
-            // DuplicateButtonToPageUseCase.execute should also probably handle same page if we want that.
-            // BUT for now I'll follow the "gleiche Art und Weise" which likely means other pages.
+            availablePages = availablePages,
+            currentPageId = item.id,
             onPageSelected = { targetPage ->
                 val sourceIndex = selectedButtonIndex
                 onShowDuplicateDialog(false)

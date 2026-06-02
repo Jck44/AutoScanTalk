@@ -26,11 +26,22 @@ import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.font.FontWeight
+
 @Composable
 fun TargetPageSelectionDialog(
     availablePages: List<Page>,
     onPageSelected: (Page) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    currentPageId: String? = null
 ) {
     val dimensions = LocalDimensions.current
     
@@ -40,11 +51,55 @@ fun TargetPageSelectionDialog(
         else availablePages.filter { it.name.contains(searchQuery, ignoreCase = true) }
     }
     
+    val currentPage = remember(currentPageId, availablePages) {
+        if (currentPageId != null) availablePages.find { it.id == currentPageId } else null
+    }
+    
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.button_move_target_title)) },
         text = {
             Column {
+                if (currentPage != null) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = dimensions.paddingMedium)
+                            .clickable { onPageSelected(currentPage) },
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        ),
+                        shape = MaterialTheme.shapes.medium
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(dimensions.paddingMedium),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Column {
+                                Text(
+                                    text = "Auf aktueller Seite duplizieren",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "Erstellt ein Duplikat auf dieser Seite (${currentPage.name})",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                                )
+                            }
+                        }
+                    }
+                }
+
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },

@@ -314,7 +314,7 @@ fun GridButton(
                                 .padding(top = 8.dp, end = 8.dp)
                         ) {
                             Text(
-                                text = "~${effortMetrics.accessTimeSec}s",
+                                text = "~${effortMetrics.shortestPathTimeSec}s",
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontSize = 9.sp, 
                                     fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
