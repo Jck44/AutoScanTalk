@@ -455,24 +455,31 @@ fun ReactionTimeFatigueChart(
     }
 
     // Recommendation logic: find the baseline (first bin with data) and compare
-    val recommendationText = remember(fatigueData) {
-        val activeBins = fatigueData.mapIndexedNotNull { index, pair ->
+    val activeBins = remember(fatigueData) {
+        fatigueData.mapIndexedNotNull { index, pair ->
             pair.second?.let { avg -> Triple(index, pair.first, avg) }
         }
-        if (activeBins.size >= 2) {
-            val baseline = activeBins.first().third
-            val threshold = baseline * 1.3 // 30% increase
-            val fatigueBin = activeBins.find { it.third >= threshold }
+    }
 
-            if (fatigueBin != null) {
-                val percentIncrease = ((fatigueBin.third - baseline) / baseline * 100).toInt()
-                "💡 **Empfehlung:** Ab der Phase **${fatigueBin.second}** steigt Stefanies Reaktionszeit um ca. **$percentIncrease%** im Vergleich zum Start an. Um Überlastung oder Frustration vorzubeugen, sollten Kommunikations-Sessions idealerweise auf **unter ${fatigueBin.second.split("-").first().split("+").first()} Minuten** begrenzt werden."
-            } else {
-                "✅ **Beobachtung:** Stefanies Reaktionsgeschwindigkeit bleibt auch in längeren Sessions erstaunlich stabil. Aktuell ist keine vorzeitige Ermüdung erkennbar!"
-            }
+    val recommendationText = if (activeBins.size >= 2) {
+        val baseline = activeBins.first().third
+        val threshold = baseline * 1.3 // 30% increase
+        val fatigueBin = activeBins.find { it.third >= threshold }
+
+        if (fatigueBin != null) {
+            val percentIncrease = ((fatigueBin.third - baseline) / baseline * 100).toInt()
+            val minutesLimit = fatigueBin.second.split("-").first().split("+").first()
+            stringResource(
+                R.string.analytics_fatigue_recommendation,
+                fatigueBin.second,
+                percentIncrease,
+                minutesLimit
+            )
         } else {
-            "ℹ️ **Hinweis:** Es sind noch nicht genügend reaktionszeitbezogene Daten über den Verlauf von Sessions vorhanden, um Ermüdungstrends zu berechnen."
+            stringResource(R.string.analytics_fatigue_observation)
         }
+    } else {
+        stringResource(R.string.analytics_fatigue_notice)
     }
 
     Card(

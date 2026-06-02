@@ -197,7 +197,6 @@ fun GhostTalkNavHost(
         composable("book_list") {
             BookListScreen(
                 bookViewModel = bookViewModel,
-                securityManager = securityManager,
                 settingsRepository = settingsRepository,
                 onBookSelected = { selectedBookId ->
                     pageViewModel.setActiveBookId(selectedBookId)

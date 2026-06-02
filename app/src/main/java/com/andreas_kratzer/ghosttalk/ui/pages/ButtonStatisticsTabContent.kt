@@ -33,6 +33,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository.ButtonUsageEvent
 import com.andreas_kratzer.ghosttalk.core.model.ButtonEffortMetrics
 import java.text.SimpleDateFormat
@@ -610,7 +612,7 @@ fun ButtonStatisticsTabContent(
                                 shape = MaterialTheme.shapes.extraSmall
                             ) {
                                 Text(
-                                    text = "~${recommendation.estimatedTimeSavedSec}s Ersparnis",
+                                    text = stringResource(R.string.analytics_recommendation_savings, recommendation.estimatedTimeSavedSec),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onTertiary,
                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
@@ -620,7 +622,7 @@ fun ButtonStatisticsTabContent(
                         }
 
                         Text(
-                            text = "Stefanie navigiert oft von der Seite „${recommendation.sourcePageName}“ zu diesem Button. Erstelle eine Abkürzung direkt auf „${recommendation.sourcePageName}“, um den Umweg zu sparen.",
+                            text = stringResource(R.string.button_stats_recommended_shortcut_desc, recommendation.sourcePageName),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.9f)
                         )
@@ -634,7 +636,7 @@ fun ButtonStatisticsTabContent(
                             shape = MaterialTheme.shapes.small
                         ) {
                             Text(
-                                text = "Abkürzung auf „${recommendation.sourcePageName}“ erstellen",
+                                text = stringResource(R.string.button_stats_btn_create_shortcut, recommendation.sourcePageName),
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.Bold
                             )

@@ -327,7 +327,7 @@ fun AnalyticsDashboardScreen(
                         modifier = Modifier.size(20.dp)
                     )
                     Text(
-                        text = "Dieses Dashboard analysiert Stefanies Nutzungsverlauf reaktiv. Es erkennt Navigations-Umwege und schlägt Abkürzungen vor, um Stefanies Scan-Zeiten zu reduzieren.",
+                        text = stringResource(R.string.analytics_dashboard_info),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -381,7 +381,7 @@ fun AnalyticsDashboardScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        text = "💡 Tipp: Kachel „${recommendation.targetButtonConfig.label}“",
+                                        text = stringResource(R.string.analytics_recommendation_tip_title, recommendation.targetButtonConfig.label),
                                         style = MaterialTheme.typography.titleSmall,
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.onTertiaryContainer
@@ -391,7 +391,7 @@ fun AnalyticsDashboardScreen(
                                         shape = MaterialTheme.shapes.extraSmall
                                     ) {
                                         Text(
-                                            text = "~${recommendation.estimatedTimeSavedSec}s Ersparnis",
+                                            text = stringResource(R.string.analytics_recommendation_savings, recommendation.estimatedTimeSavedSec),
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.onTertiary,
                                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
@@ -401,7 +401,7 @@ fun AnalyticsDashboardScreen(
                                 }
 
                                 Text(
-                                    text = "Stefanie wechselt sehr häufig von der Seite „${recommendation.sourcePageName}“ zu „${recommendation.targetButtonConfig.label}“. Eine Abkürzung direkt auf „${recommendation.sourcePageName}“ spart Zeit.",
+                                    text = stringResource(R.string.analytics_recommendation_shortcut_desc, recommendation.sourcePageName, recommendation.targetButtonConfig.label),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.85f)
                                 )
@@ -417,7 +417,7 @@ fun AnalyticsDashboardScreen(
                                     shape = MaterialTheme.shapes.small
                                 ) {
                                     Text(
-                                        text = "Auf „${recommendation.sourcePageName}“ erstellen",
+                                        text = stringResource(R.string.analytics_recommendation_btn_create, recommendation.sourcePageName),
                                         style = MaterialTheme.typography.labelMedium,
                                         fontWeight = FontWeight.Bold
                                     )
@@ -595,7 +595,7 @@ fun AnalyticsDashboardScreen(
                         } else {
                             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Text(
-                                    text = "Die folgenden Seiten wurden im Erfassungszeitraum nie aufgerufen. Überlege, sie zu löschen oder aufzuräumen, um Stefanies Navigation schlank zu halten:",
+                                    text = stringResource(R.string.analytics_cleanup_recommendation_desc),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )

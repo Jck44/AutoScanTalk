@@ -392,5 +392,18 @@
     <string name="analytics_duration_minutes_seconds">%1$d Min. %2$d Sek.</string>
     <string name="analytics_duration_hours_minutes">%1$d Std. %2$d Min.</string>
     <string name="analytics_duration_less_than_minute">&lt; 1 Min.</string>
+
+    <!-- Analytics & Recommendations generic strings -->
+    <string name="analytics_dashboard_info">Dieses Dashboard analysiert den Nutzungsverlauf reaktiv. Es erkennt Navigations-Umwege und schlägt Abkürzungen vor, um Scan-Zeiten zu reduzieren.</string>
+    <string name="analytics_recommendation_shortcut_desc">Der Benutzer wechselt sehr häufig von der Seite „%1$s“ zu „%2$s“. Eine Abkürzung direkt auf „%1$s“ spart Zeit.</string>
+    <string name="analytics_cleanup_recommendation_desc">Die folgenden Seiten wurden im Erfassungszeitraum nie aufgerufen. Überlege, sie zu löschen oder aufzuräumen, um die Navigation schlank zu halten:</string>
+    <string name="button_stats_recommended_shortcut_desc">Der Benutzer navigiert oft von der Seite „%1$s“ zu diesem Button. Erstelle eine Abkürzung direkt auf „%1$s“, um den Umweg zu sparen.</string>
+    <string name="analytics_fatigue_recommendation">💡 **Empfehlung:** Ab der Phase **%1$s** steigt die Reaktionszeit um ca. **%2$d%%** im Vergleich zum Start an. Um Überlastung oder Frustration vorzubeugen, sollten Kommunikations-Sessions idealerweise auf **unter %3$s Minuten** begrenzt werden.</string>
+    <string name="analytics_fatigue_observation">✅ **Beobachtung:** Die Reaktionsgeschwindigkeit bleibt auch in längeren Sessions erstaunlich stabil. Aktuell ist keine vorzeitige Ermüdung erkennbar!</string>
+    <string name="analytics_fatigue_notice">ℹ️ **Hinweis:** Es sind noch nicht genügend reaktionszeitbezogene Daten über den Verlauf von Sessions vorhanden, um Ermüdungstrends zu berechnen.</string>
+    <string name="analytics_recommendation_tip_title">💡 Tipp: Kachel „%1$s“</string>
+    <string name="analytics_recommendation_savings">~%1$ds Ersparnis</string>
+    <string name="analytics_recommendation_btn_create">Auf „%1$s“ erstellen</string>
+    <string name="button_stats_btn_create_shortcut">Abkürzung auf „%1$s“ erstellen</string>
 </resources>
 

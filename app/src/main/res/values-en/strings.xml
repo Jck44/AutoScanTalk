@@ -388,5 +388,18 @@
     <string name="analytics_duration_minutes_seconds">%1$d min. %2$d sec.</string>
     <string name="analytics_duration_hours_minutes">%1$d hr. %2$d min.</string>
     <string name="analytics_duration_less_than_minute">&lt; 1 min.</string>
+
+    <!-- Analytics & Recommendations generic strings -->
+    <string name="analytics_dashboard_info">This dashboard reactively analyzes the usage history. It detects navigation detours and suggests shortcuts to reduce scan times.</string>
+    <string name="analytics_recommendation_shortcut_desc">The user frequently navigates from page \"%1$s\" to \"%2$s\". A shortcut directly on \"%1$s\" saves time.</string>
+    <string name="analytics_cleanup_recommendation_desc">The following pages were never opened during the collection period. Consider deleting or cleaning them up to keep navigation lean:</string>
+    <string name="button_stats_recommended_shortcut_desc">The user frequently navigates from page \"%1$s\" to this button. Create a shortcut directly on \"%1$s\" to avoid the detour.</string>
+    <string name="analytics_fatigue_recommendation">💡 **Recommendation:** Starting from the phase **%1$s**, the reaction time increases by approx. **%2$d%%** compared to the start. To prevent overload or frustration, communication sessions should ideally be limited to **under %3$s minutes**.</string>
+    <string name="analytics_fatigue_observation">✅ **Observation:** The reaction speed remains surprisingly stable even in longer sessions. Currently, no premature fatigue is detectable!</string>
+    <string name="analytics_fatigue_notice">ℹ️ **Notice:** There is not enough reaction time data from sessions yet to calculate fatigue trends.</string>
+    <string name="analytics_recommendation_tip_title">💡 Tip: Tile \"%1$s\"</string>
+    <string name="analytics_recommendation_savings">~%1$ds savings</string>
+    <string name="analytics_recommendation_btn_create">Create on \"%1$s\"</string>
+    <string name="button_stats_btn_create_shortcut">Create shortcut on \"%1$s\"</string>
 </resources>
 

@@ -35,6 +35,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -42,7 +43,6 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
-import com.andreas_kratzer.ghosttalk.core.SecurityManager
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.ui.components.AppBrandHeader
 import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkCard
@@ -50,14 +50,12 @@ import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.Locale
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookListScreen(
     bookViewModel: BookViewModel,
-    securityManager: SecurityManager,
     settingsRepository: SettingsRepository,
     onBookSelected: (String) -> Unit,
     onNavigateToGlobalSettings: () -> Unit
@@ -67,6 +65,8 @@ fun BookListScreen(
     var showAddDialog by remember { mutableStateOf(false) }
 
     val dimensions = LocalDimensions.current
+    val locale = LocalConfiguration.current.locales[0]
+    val dateFormat = remember(locale) { SimpleDateFormat("dd.MM.yyyy HH:mm", locale) }
 
     Scaffold(
         topBar = {
@@ -117,7 +117,6 @@ fun BookListScreen(
             contentPadding = PaddingValues(vertical = dimensions.paddingMedium)
         ) {
             items(allBooks) { book ->
-                val dateFormat = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
                 val favoriteId by bookViewModel.favoriteBookId.collectAsState()
                 val isFavorite = favoriteId == book.id
 
