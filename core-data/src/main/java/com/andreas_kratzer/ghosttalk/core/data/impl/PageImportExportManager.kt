@@ -535,6 +535,9 @@ class PageImportExportManager @Inject constructor(
                     val fileName = entry.name.substringAfter("tts_cache/")
                     if (fileName.isNotEmpty()) {
                         val targetFile = File(ttsCacheDir, fileName)
+                        if (!isSafeFile(ttsCacheDir, targetFile)) {
+                            throw SecurityException("Ungültiger Pfad in Zip-Eintrag (Directory Traversal Versuch): ${entry.name}")
+                        }
                         val shouldExtract = !targetFile.exists() || (entry.time > targetFile.lastModified())
                         if (shouldExtract) {
                             FileOutputStream(targetFile).use { out ->
@@ -549,6 +552,9 @@ class PageImportExportManager @Inject constructor(
                     val fileName = entry.name.substringAfter("audio_recordings/")
                     if (fileName.isNotEmpty()) {
                         val targetFile = File(audioDir, fileName)
+                        if (!isSafeFile(audioDir, targetFile)) {
+                            throw SecurityException("Ungültiger Pfad in Zip-Eintrag (Directory Traversal Versuch): ${entry.name}")
+                        }
                         val shouldExtract = !targetFile.exists() || (entry.time > targetFile.lastModified())
                         if (shouldExtract) {
                             FileOutputStream(targetFile).use { out ->
@@ -626,6 +632,9 @@ class PageImportExportManager @Inject constructor(
                 val fileName = entry.name.substringAfter("tts_cache/")
                 if (fileName.isNotEmpty()) {
                     val targetFile = File(ttsCacheDir, fileName)
+                    if (!isSafeFile(ttsCacheDir, targetFile)) {
+                        throw SecurityException("Ungültiger Pfad in Zip-Eintrag (Directory Traversal Versuch): ${entry.name}")
+                    }
                     val shouldExtract = !targetFile.exists() || (entry.time > targetFile.lastModified())
                     if (shouldExtract) {
                         onProgress(0.5f, "Extracting: $fileName")
@@ -669,6 +678,9 @@ class PageImportExportManager @Inject constructor(
                     val fileName = entry.name.substringAfter("tts_cache/")
                     if (fileName.isNotEmpty()) {
                         val targetFile = File(ttsCacheDir, fileName)
+                        if (!isSafeFile(ttsCacheDir, targetFile)) {
+                            throw SecurityException("Ungültiger Pfad in Zip-Eintrag (Directory Traversal Versuch): ${entry.name}")
+                        }
                         val shouldExtract = !targetFile.exists() || (entry.time > targetFile.lastModified())
                         if (shouldExtract) {
                             FileOutputStream(targetFile).use { out ->
@@ -683,6 +695,9 @@ class PageImportExportManager @Inject constructor(
                     val fileName = entry.name.substringAfter("audio_recordings/")
                     if (fileName.isNotEmpty()) {
                         val targetFile = File(audioDir, fileName)
+                        if (!isSafeFile(audioDir, targetFile)) {
+                            throw SecurityException("Ungültiger Pfad in Zip-Eintrag (Directory Traversal Versuch): ${entry.name}")
+                        }
                         val shouldExtract = !targetFile.exists() || (entry.time > targetFile.lastModified())
                         if (shouldExtract) {
                             FileOutputStream(targetFile).use { out ->
@@ -859,5 +874,11 @@ class PageImportExportManager @Inject constructor(
         val lastStatTime = buttonUsageDao.getAllStatsForBook(bookId).maxOfOrNull { it.lastUsedAt } ?: 0L
         val lastSessionTime = userModeSessionRepository.getSessionsForBook(bookId).firstOrNull()?.maxOfOrNull { it.endTime } ?: 0L
         maxOf(lastHistoryTime, lastStatTime, lastSessionTime)
+    }
+
+    private fun isSafeFile(parentDir: File, file: File): Boolean {
+        val canonicalParent = parentDir.canonicalPath
+        val canonicalTarget = file.canonicalPath
+        return canonicalTarget.startsWith(canonicalParent + File.separator)
     }
 }

@@ -29,6 +29,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
+import androidx.fragment.app.FragmentActivity
 import com.andreas_kratzer.ghosttalk.core.SecurityManager
 import com.andreas_kratzer.ghosttalk.core.ui.components.PinEntryDialog
 import com.andreas_kratzer.ghosttalk.core.ui.components.PreferenceCategory
@@ -63,6 +65,7 @@ fun SecuritySettingsSection(
 ) {
     var showSetPinDialog by remember { mutableStateOf(false) }
     var showConfirmClearDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     val hasPin = !securityPin.isNullOrEmpty()
     val dimensions = LocalDimensions.current
@@ -157,7 +160,20 @@ fun SecuritySettingsSection(
                     else 
                         stringResource(R.string.settings_security_biometric_enabled) + " (" + stringResource(R.string.settings_security_biometric_unsupported) + ")",
                     checked = isBiometricEnabled,
-                    onCheckedChange = onBiometricEnabledChange,
+                    onCheckedChange = { checked ->
+                        if (checked) {
+                            if (context is FragmentActivity) {
+                                securityManager.enrollBiometric(context) { success ->
+                                    if (success) {
+                                        onBiometricEnabledChange(true)
+                                    }
+                                }
+                            }
+                        } else {
+                            onBiometricEnabledChange(false)
+                            securityManager.clearBiometricKey()
+                        }
+                    },
                     enabled = hasPin && isBiometricSupported
                 )
 

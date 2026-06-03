@@ -1,6 +1,8 @@
 package com.andreas_kratzer.ghosttalk.core
 
 import android.content.Context
+import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyProperties
 import android.util.Base64
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
@@ -9,59 +11,208 @@ import androidx.fragment.app.FragmentActivity
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.security.KeyStore
 import java.security.SecureRandom
-import javax.crypto.SecretKeyFactory
+import javax.crypto.Cipher
+import javax.crypto.KeyGenerator
+import javax.crypto.SecretKey
+import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.PBEKeySpec
+import javax.crypto.SecretKeyFactory
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class SecurityManager @Inject constructor(
-    private val securitySettings: SecuritySettings
+    private val securitySettings: SecuritySettings,
+    @dagger.hilt.android.qualifiers.ApplicationContext private val context: Context
 ) {
     private val _isUnlocked = MutableStateFlow(false)
     val isUnlocked: StateFlow<Boolean> = _isUnlocked.asStateFlow()
 
     private var lastActivityTime: Long = 0
+    private val keyStore: KeyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+
+    companion object {
+        private const val KEY_ALIAS = "ghosttalk_biometric_key"
+        private const val PREFS_BIOMETRIC_NAME = "security_biometric_prefs"
+        private const val KEY_CIPHERTEXT = "biometric_ciphertext"
+        private const val KEY_IV = "biometric_iv"
+        private const val DUMMY_DATA = "ghosttalk_biometric_verified_token"
+    }
 
     fun isBiometricSupported(context: Context): Boolean {
         val biometricManager = BiometricManager.from(context)
-        return biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK) == BiometricManager.BIOMETRIC_SUCCESS
+        return biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG) == BiometricManager.BIOMETRIC_SUCCESS
+    }
+
+    fun enrollBiometric(
+        activity: FragmentActivity,
+        onResult: (Boolean) -> Unit
+    ) {
+        try {
+            // Delete old key if it exists to start fresh
+            keyStore.deleteEntry(KEY_ALIAS)
+            
+            // Generate a new key in Android KeyStore
+            val keyGenerator = KeyGenerator.getInstance(
+                KeyProperties.KEY_ALGORITHM_AES,
+                "AndroidKeyStore"
+            )
+            val builder = KeyGenParameterSpec.Builder(
+                KEY_ALIAS,
+                KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
+            )
+                .setBlockModes(KeyProperties.BLOCK_MODE_CBC)
+                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_PKCS7)
+                .setUserAuthenticationRequired(true)
+                .setInvalidatedByBiometricEnrollment(true) // recommended for security
+            keyGenerator.init(builder.build())
+            keyGenerator.generateKey()
+
+            val secretKey = keyStore.getKey(KEY_ALIAS, null) as SecretKey
+            val cipher = Cipher.getInstance("AES/CBC/PKCS7Padding")
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey)
+
+            val executor = ContextCompat.getMainExecutor(activity)
+            val biometricPrompt = BiometricPrompt(activity, executor,
+                object : BiometricPrompt.AuthenticationCallback() {
+                    override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                        super.onAuthenticationSucceeded(result)
+                        try {
+                            val authenticatedCipher = result.cryptoObject?.cipher
+                            if (authenticatedCipher != null) {
+                                val encryptedBytes = authenticatedCipher.doFinal(DUMMY_DATA.toByteArray(Charsets.UTF_8))
+                                val iv = authenticatedCipher.iv
+                                
+                                val prefs = activity.getSharedPreferences(PREFS_BIOMETRIC_NAME, Context.MODE_PRIVATE)
+                                prefs.edit()
+                                    .putString(KEY_CIPHERTEXT, Base64.encodeToString(encryptedBytes, Base64.DEFAULT))
+                                    .putString(KEY_IV, Base64.encodeToString(iv, Base64.DEFAULT))
+                                    .apply()
+                                
+                                onResult(true)
+                            } else {
+                                onResult(false)
+                            }
+                        } catch (e: Exception) {
+                            onResult(false)
+                        }
+                    }
+
+                    override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                        super.onAuthenticationError(errorCode, errString)
+                        onResult(false)
+                    }
+
+                    override fun onAuthenticationFailed() {
+                        super.onAuthenticationFailed()
+                        onResult(false)
+                    }
+                })
+
+            val promptInfo = BiometricPrompt.PromptInfo.Builder()
+                .setTitle(activity.getString(com.andreas_kratzer.ghosttalk.core.R.string.security_biometric_enroll_title))
+                .setSubtitle(activity.getString(com.andreas_kratzer.ghosttalk.core.R.string.security_biometric_enroll_subtitle))
+                .setNegativeButtonText(activity.getString(com.andreas_kratzer.ghosttalk.core.R.string.security_biometric_cancel))
+                .build()
+
+            biometricPrompt.authenticate(promptInfo, BiometricPrompt.CryptoObject(cipher))
+        } catch (e: Exception) {
+            onResult(false)
+        }
     }
 
     fun authenticateBiometric(
         activity: FragmentActivity,
-        title: String = "Sicherheits-Check",
-        subtitle: String = "Fingerabdruck zum Entsperren verwenden",
+        title: String? = null,
+        subtitle: String? = null,
         onResult: (Boolean) -> Unit
     ) {
-        val executor = ContextCompat.getMainExecutor(activity)
-        val biometricPrompt = BiometricPrompt(activity, executor,
-            object : BiometricPrompt.AuthenticationCallback() {
-                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-                    super.onAuthenticationSucceeded(result)
-                    setUnlocked(true)
-                    onResult(true)
+        try {
+            val prefs = activity.getSharedPreferences(PREFS_BIOMETRIC_NAME, Context.MODE_PRIVATE)
+            val ciphertextStr = prefs.getString(KEY_CIPHERTEXT, null)
+            val ivStr = prefs.getString(KEY_IV, null)
+
+            if (ciphertextStr == null || ivStr == null) {
+                // Self-healing migration: disable biometric setting if credentials don't exist yet
+                securitySettings.isBiometricEnabled = false
+                activity.runOnUiThread {
+                    android.widget.Toast.makeText(
+                        activity,
+                        activity.getString(com.andreas_kratzer.ghosttalk.core.R.string.security_biometric_migration_toast),
+                        android.widget.Toast.LENGTH_LONG
+                    ).show()
                 }
+                onResult(false)
+                return
+            }
 
-                override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
-                    super.onAuthenticationError(errorCode, errString)
-                    onResult(false)
-                }
+            val ciphertext = Base64.decode(ciphertextStr, Base64.DEFAULT)
+            val iv = Base64.decode(ivStr, Base64.DEFAULT)
 
-                override fun onAuthenticationFailed() {
-                    super.onAuthenticationFailed()
-                    onResult(false)
-                }
-            })
+            val secretKey = keyStore.getKey(KEY_ALIAS, null) as SecretKey
+            val cipher = Cipher.getInstance("AES/CBC/PKCS7Padding")
+            cipher.init(Cipher.DECRYPT_MODE, secretKey, IvParameterSpec(iv))
 
-        val promptInfo = BiometricPrompt.PromptInfo.Builder()
-            .setTitle(title)
-            .setSubtitle(subtitle)
-            .setNegativeButtonText("Abbrechen")
-            .build()
+            val executor = ContextCompat.getMainExecutor(activity)
+            val biometricPrompt = BiometricPrompt(activity, executor,
+                object : BiometricPrompt.AuthenticationCallback() {
+                    override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                        super.onAuthenticationSucceeded(result)
+                        try {
+                            val authenticatedCipher = result.cryptoObject?.cipher
+                            if (authenticatedCipher != null) {
+                                val decryptedBytes = authenticatedCipher.doFinal(ciphertext)
+                                val decryptedStr = String(decryptedBytes, Charsets.UTF_8)
+                                if (decryptedStr == DUMMY_DATA) {
+                                    setUnlocked(true)
+                                    onResult(true)
+                                } else {
+                                    onResult(false)
+                                }
+                            } else {
+                                onResult(false)
+                            }
+                        } catch (e: Exception) {
+                            onResult(false)
+                        }
+                    }
 
-        biometricPrompt.authenticate(promptInfo)
+                    override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                        super.onAuthenticationError(errorCode, errString)
+                        onResult(false)
+                    }
+
+                    override fun onAuthenticationFailed() {
+                        super.onAuthenticationFailed()
+                        onResult(false)
+                    }
+                })
+
+            val resolvedTitle = title ?: activity.getString(com.andreas_kratzer.ghosttalk.core.R.string.security_biometric_auth_title)
+            val resolvedSubtitle = subtitle ?: activity.getString(com.andreas_kratzer.ghosttalk.core.R.string.security_biometric_auth_subtitle)
+
+            val promptInfo = BiometricPrompt.PromptInfo.Builder()
+                .setTitle(resolvedTitle)
+                .setSubtitle(resolvedSubtitle)
+                .setNegativeButtonText(activity.getString(com.andreas_kratzer.ghosttalk.core.R.string.security_biometric_cancel))
+                .build()
+
+            biometricPrompt.authenticate(promptInfo, BiometricPrompt.CryptoObject(cipher))
+        } catch (e: Exception) {
+            onResult(false)
+        }
+    }
+
+    fun clearBiometricKey() {
+        try {
+            keyStore.deleteEntry(KEY_ALIAS)
+            val prefs = context.getSharedPreferences(PREFS_BIOMETRIC_NAME, Context.MODE_PRIVATE)
+            prefs.edit().remove(KEY_CIPHERTEXT).remove(KEY_IV).apply()
+        } catch (e: Exception) {
+            // Ignore
+        }
     }
 
     fun unlock(pin: String): Boolean {
@@ -107,7 +258,6 @@ class SecurityManager @Inject constructor(
         return Base64.encodeToString(salt, Base64.DEFAULT).trim()
     }
 
-
     fun setUnlocked(unlocked: Boolean) {
         if (unlocked) updateActivity()
         _isUnlocked.value = unlocked
@@ -142,6 +292,7 @@ class SecurityManager @Inject constructor(
         securitySettings.securityPin = ""
         securitySettings.securityPinHash = ""
         securitySettings.securityPinSalt = ""
+        clearBiometricKey()
         lock()
     }
 

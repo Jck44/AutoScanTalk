@@ -22,6 +22,7 @@ fun SecurityEntryDialog(
 ) {
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
+    val incorrectPinMessage = stringResource(R.string.security_pin_incorrect)
 
     val triggerBiometric = {
         if (context is FragmentActivity) {
@@ -43,7 +44,7 @@ fun SecurityEntryDialog(
             if (securityManager.unlock(pinEntry)) {
                 onConfirm(true)
             } else {
-                errorMessage = "Falscher PIN"
+                errorMessage = incorrectPinMessage
             }
         },
         title = title,

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="security_biometric_migration_toast">Sicherheits-Update: Bitte aktiviere die Biometrie in den Einstellungen erneut.</string>
+    <string name="security_biometric_enroll_title">Biometrie einrichten</string>
+    <string name="security_biometric_enroll_subtitle">Bestätige deine Identität, um Biometrie zu aktivieren</string>
+    <string name="security_biometric_cancel">Abbrechen</string>
+    <string name="security_biometric_auth_title">Sicherheits-Check</string>
+    <string name="security_biometric_auth_subtitle">Fingerabdruck zum Entsperren verwenden</string>
+</resources>

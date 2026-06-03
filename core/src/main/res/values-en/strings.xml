@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="security_biometric_migration_toast">Security update: Please re-enable biometrics in the settings.</string>
+    <string name="security_biometric_enroll_title">Set up Biometrics</string>
+    <string name="security_biometric_enroll_subtitle">Confirm your identity to enable biometrics</string>
+    <string name="security_biometric_cancel">Cancel</string>
+    <string name="security_biometric_auth_title">Security Check</string>
+    <string name="security_biometric_auth_subtitle">Use fingerprint to unlock</string>
+</resources>

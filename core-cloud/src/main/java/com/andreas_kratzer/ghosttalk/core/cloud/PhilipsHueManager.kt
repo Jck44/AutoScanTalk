@@ -1,5 +1,6 @@
 package com.andreas_kratzer.ghosttalk.core.cloud
 
+import android.annotation.SuppressLint
 import com.andreas_kratzer.ghosttalk.core.settings.SmartHomeSettings
 import com.andreas_kratzer.ghosttalk.core.util.Logger
 import kotlinx.coroutines.Dispatchers
@@ -38,6 +39,8 @@ class PhilipsHueManager @Inject constructor(
 
     private val bypassHostnameVerifier = HostnameVerifier { _, _ -> true }
 
+    // lgtm[java/insecure-trustmanager] - Intentional TOFU (Trust-On-First-Use) to fetch local bridge cert details
+    @SuppressLint("TrustAllX509TrustManager")
     private class RecordingTrustManager : X509TrustManager {
         var acceptedCerts: Array<out X509Certificate>? = null
         override fun checkClientTrusted(chain: Array<out X509Certificate>?, authType: String?) {}

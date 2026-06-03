@@ -18,6 +18,9 @@
     <string name="security_use_biometric">Mit Fingerabdruck entsperren</string>
     <string name="settings_security_pin_label">PIN Schutz</string>
     <string name="security_pin_entry_title">PIN eingeben</string>
+    <string name="security_pin_incorrect">Falscher PIN</string>
+    <string name="pin_biometric_content_description">Biometrie</string>
+    <string name="pin_backspace_content_description">Löschen</string>
     
     <!-- Common Actions -->
     <string name="action_cancel">Abbrechen</string>

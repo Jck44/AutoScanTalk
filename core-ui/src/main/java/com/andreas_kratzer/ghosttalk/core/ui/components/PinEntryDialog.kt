@@ -33,12 +33,14 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
+import androidx.compose.ui.res.stringResource
+import com.andreas_kratzer.ghosttalk.core.ui.R
 
 @Composable
 fun PinEntryDialog(
     onDismiss: () -> Unit,
     onConfirm: (String) -> Unit,
-    title: String = "PIN eingeben",
+    title: String = stringResource(R.string.security_pin_entry_title),
     errorMessage: String? = null,
     isBiometricEnabled: Boolean = false,
     onBiometricClick: (() -> Unit)? = null
@@ -150,7 +152,7 @@ fun PinEntryDialog(
 
                 TextButton(onClick = onDismiss) {
                     Text(
-                        text = "Abbrechen",
+                        text = stringResource(R.string.action_cancel),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -176,13 +178,13 @@ fun PinKey(
         if (label == "back") {
             Icon(
                 imageVector = GhostTalkIcons.Backspace,
-                contentDescription = "Löschen",
+                contentDescription = stringResource(R.string.pin_backspace_content_description),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         } else if (label == "bio") {
             Icon(
                 imageVector = GhostTalkIcons.Fingerprint,
-                contentDescription = "Biometrie",
+                contentDescription = stringResource(R.string.pin_biometric_content_description),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         } else {

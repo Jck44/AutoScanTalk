@@ -18,6 +18,9 @@
     <string name="security_use_biometric">Unlock with fingerprint</string>
     <string name="settings_security_pin_label">PIN Protection</string>
     <string name="security_pin_entry_title">Enter PIN</string>
+    <string name="security_pin_incorrect">Incorrect PIN</string>
+    <string name="pin_biometric_content_description">Biometrics</string>
+    <string name="pin_backspace_content_description">Delete</string>
 
     <!-- Common Actions -->
     <string name="action_cancel">Cancel</string>
