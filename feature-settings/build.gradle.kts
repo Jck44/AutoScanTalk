@@ -87,7 +87,7 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
     testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation(libs.org.json)
+    testImplementation(libs.orgjson)
     implementation(libs.androidx.documentfile)
     
     androidTestImplementation(libs.androidx.junit)

@@ -1,7 +1,6 @@
 [versions]
 agp = "9.2.1"
 biometric = "1.1.0"
-appcompat = "1.7.1"
 kotlin = "2.3.20"
 coreKtx = "1.18.0"
 junit = "4.13.2"
@@ -71,8 +70,11 @@ androidx-room-testing = { group = "androidx.room", name = "room-testing", versio
 google-api-client-android = { group = "com.google.api-client", name = "google-api-client-android", version.ref = "googleApiClient" }
 google-api-services-drive = { group = "com.google.apis", name = "google-api-services-drive", version.ref = "googleDrive" }
 google-http-client-gson = { group = "com.google.http-client", name = "google-http-client-gson", version.ref = "googleHttpClient" }
+#noinspection GooglePlayDetector
 androidx-credentials = { group = "androidx.credentials", name = "credentials", version.ref = "credentialManager" }
+#noinspection GooglePlayDetector
 androidx-credentials-play-services-auth = { group = "androidx.credentials", name = "credentials-play-services-auth", version.ref = "credentialManager" }
+#noinspection GooglePlayDetector
 googleid = { group = "com.google.android.libraries.identity.googleid", name = "googleid", version.ref = "googleId" }
 play-app-update-ktx = { group = "com.google.android.play", name = "app-update-ktx", version.ref = "playAppUpdate" }
 google-generativeai-mlkit = { group = "com.google.mlkit", name = "genai-prompt", version.ref = "generativeAiMlKit" }
@@ -106,8 +108,8 @@ androidx-camera-lifecycle = { group = "androidx.camera", name = "camera-lifecycl
 androidx-camera-view = { group = "androidx.camera", name = "camera-view", version.ref = "camerax" }
 okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
 androidx-documentfile = { group = "androidx.documentfile", name = "documentfile", version.ref = "documentfile" }
-org-json = { group = "org.json", name = "json", version.ref = "json" }
-kotlin-reflect = { group = "org.jetbrains.kotlin", name = "kotlin-reflect", version.ref = "kotlin" }
+orgjson = { group = "org.json", name = "json", version.ref = "json" }
+kotlinreflect = { group = "org.jetbrains.kotlin", name = "kotlin-reflect", version.ref = "kotlin" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

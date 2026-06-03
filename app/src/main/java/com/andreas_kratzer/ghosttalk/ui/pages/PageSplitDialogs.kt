@@ -2,7 +2,6 @@
 package com.andreas_kratzer.ghosttalk.ui.pages
 
 
-import androidx.compose.animation.core.animateOffsetAsState
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box

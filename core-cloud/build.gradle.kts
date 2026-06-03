@@ -65,8 +65,11 @@ dependencies {
     api(libs.google.api.client.android)
     api(libs.google.api.services.drive)
     api(libs.google.http.client.gson)
+    //noinspection GooglePlayDetector
     implementation(libs.androidx.credentials)
+    //noinspection GooglePlayDetector
     implementation(libs.androidx.credentials.play.services.auth)
+    //noinspection GooglePlayDetector
     implementation(libs.googleid)
     implementation(libs.gms.play.services.auth)
     implementation(libs.androidx.work.runtime.ktx)

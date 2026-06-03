@@ -13,7 +13,7 @@ import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 
-@kotlin.OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class SettingsRepositoryTest {
 
     private lateinit var repository: SettingsRepositoryImpl

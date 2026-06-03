@@ -11,6 +11,7 @@ import kotlin.system.measureTimeMillis
 
 class PerformanceBenchmark {
 
+    @Suppress("UNUSED_VARIABLE", "ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
     @Test
     fun benchmarkLargeDataset() {
         // Timestamp: 2026-03-09T18:45:00
