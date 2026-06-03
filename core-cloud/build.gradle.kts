@@ -69,7 +69,7 @@ dependencies {
 
     implementation(libs.gson)
     implementation(libs.kotlinx.coroutines.android)
-    implementation("androidx.documentfile:documentfile:1.1.0")
+    implementation(libs.androidx.documentfile)
 
     testImplementation(libs.junit)
     testImplementation(libs.mockk)

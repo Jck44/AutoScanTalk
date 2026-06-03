@@ -440,7 +440,7 @@ open class ElevenLabsTtsProvider @Inject constructor(
             override fun onResponse(call: Call, response: Response) {
                 response.use { resp ->
                     val body = resp.body.string()
-                    Log.i("ElevenLabsTtsProvider", "Received response: ${resp.code}. Body length: ${body.length ?: 0}")
+                    Log.i("ElevenLabsTtsProvider", "Received response: ${resp.code}. Body length: ${body.length}")
                     
                     if (!resp.isSuccessful) {
                         val errorMsg = "Unsuccessful response or empty body: ${resp.code}. Body: $body"

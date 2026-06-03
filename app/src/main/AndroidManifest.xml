@@ -9,12 +9,13 @@
     <uses-permission android:name="android.permission.SEND_SMS"
         tools:ignore="SmsAndCallLogPolicy" />
     <uses-permission android:name="android.permission.READ_CONTACTS" />
-    <uses-permission android:name="android.permission.READ_CALL_LOG" />
+    <uses-permission android:name="android.permission.READ_CALL_LOG"
+        tools:ignore="SmsAndCallLogPolicy" />
     <uses-permission android:name="android.permission.READ_CALENDAR" />
     <uses-permission android:name="com.android.alarm.permission.SET_ALARM" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
-        tools:ignore="QueryAllPackagesPermission" />
+        tools:ignore="PackageVisibilityPolicy,QueryAllPackagesPermission" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.CALL_PHONE" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
@@ -43,7 +44,7 @@
         android:theme="@style/Theme.GhostTalk"
         android:networkSecurityConfig="@xml/network_security_config"
         android:resizeableActivity="false"
-        tools:ignore="RemoveWorkManagerInitializer,PlayStoreLogin">
+        tools:ignore="DiscouragedApi,PlayStoreLogin,RemoveWorkManagerInitializer">
 
         <meta-data
             android:name="asset_statements"
