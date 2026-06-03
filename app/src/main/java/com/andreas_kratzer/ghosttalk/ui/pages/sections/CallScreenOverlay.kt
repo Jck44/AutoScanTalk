@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
+import java.util.Locale
 
 // Colors for call buttons
 private val AnswerGreenLight = Color(0xFF2E7D32)
@@ -66,8 +67,8 @@ fun IncomingCallOverlay(
     focusedButton: String, // "ANNEHMEN" or "ABLEHNEN"
     onAnswer: () -> Unit,
     onReject: () -> Unit,
-    isSimulated: Boolean = false,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isSimulated: Boolean = false
 ) {
     val dimensions = LocalDimensions.current
     val isDark = isSystemInDarkTheme()
@@ -207,8 +208,8 @@ fun ActiveCallOverlay(
     isOutgoing: Boolean,
     isHangUpFocused: Boolean,
     onHangUp: () -> Unit,
-    isSimulated: Boolean = false,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isSimulated: Boolean = false
 ) {
     val dimensions = LocalDimensions.current
     val displayName = callerName?.takeIf { it.isNotBlank() }
@@ -315,7 +316,7 @@ fun ActiveCallOverlay(
             val minutes = durationSeconds / 60
             val seconds = durationSeconds % 60
             Text(
-                text = String.format("%02d:%02d", minutes, seconds),
+                text = String.format(Locale.US, "%02d:%02d", minutes, seconds),
                 style = MaterialTheme.typography.displayMedium.copy(
                     fontWeight = FontWeight.Light,
                     letterSpacing = 4.sp

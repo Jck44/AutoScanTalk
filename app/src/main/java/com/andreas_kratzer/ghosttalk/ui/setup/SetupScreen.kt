@@ -11,6 +11,7 @@ import android.provider.Settings
 import android.telecom.TelecomManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.net.toUri
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -149,7 +150,7 @@ fun SetupScreen(
     // Launcher for standard runtime permissions
     val basicPermissionsLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
-    ) { results ->
+    ) { _ ->
         checkPermissions()
     }
 
@@ -183,7 +184,7 @@ fun SetupScreen(
             if (currentStep != SetupStep.COMPLETED) {
                 Column(modifier = Modifier.navigationBarsPadding()) {
                     LinearProgressIndicator(
-                        progress = { (currentStep.index + 1).toFloat() / SetupStep.values().size.toFloat() },
+                        progress = { (currentStep.index + 1).toFloat() / SetupStep.entries.size.toFloat() },
                         modifier = Modifier.fillMaxWidth(),
                         color = MaterialTheme.colorScheme.primary,
                         trackColor = MaterialTheme.colorScheme.surfaceVariant
@@ -197,7 +198,7 @@ fun SetupScreen(
                         if (currentStep != SetupStep.WELCOME) {
                             OutlinedButton(
                                 onClick = {
-                                    val steps = SetupStep.values()
+                                    val steps = SetupStep.entries
                                     currentStep = steps[currentStep.index - 1]
                                 },
                                 shape = MaterialTheme.shapes.medium
@@ -212,7 +213,7 @@ fun SetupScreen(
 
                         Button(
                             onClick = {
-                                val steps = SetupStep.values()
+                                val steps = SetupStep.entries
                                 if (currentStep.index < steps.size - 1) {
                                     currentStep = steps[currentStep.index + 1]
                                 } else {
@@ -247,9 +248,8 @@ fun SetupScreen(
                 verticalArrangement = Arrangement.Center
             ) {
                 when (step) {
-                    SetupStep.WELCOME -> WelcomeStepContent(dimensions)
+                    SetupStep.WELCOME -> WelcomeStepContent()
                     SetupStep.BASIC_PERMISSIONS -> BasicPermissionsStepContent(
-                        dimensions = dimensions,
                         cameraGranted = cameraGranted,
                         locationGranted = locationGranted,
                         microphoneGranted = microphoneGranted,
@@ -273,18 +273,16 @@ fun SetupScreen(
                         }
                     )
                     SetupStep.OVERLAY -> OverlayStepContent(
-                        dimensions = dimensions,
                         isGranted = overlayGranted,
                         onRequest = {
                             val intent = Intent(
                                 Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                                Uri.parse("package:$packageName")
+                                "package:$packageName".toUri()
                             )
                             context.startActivity(intent)
                         }
                     )
                     SetupStep.NOTIFICATIONS -> NotificationListenerStepContent(
-                        dimensions = dimensions,
                         isGranted = notificationListenerGranted,
                         onRequest = {
                             val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
@@ -292,7 +290,6 @@ fun SetupScreen(
                         }
                     )
                     SetupStep.DIALER -> DialerStepContent(
-                        dimensions = dimensions,
                         isGranted = isDefaultDialer,
                         onRequest = {
                             val activity = context.findActivity()
@@ -302,7 +299,6 @@ fun SetupScreen(
                         }
                     )
                     SetupStep.COMPLETED -> CompletedStepContent(
-                        dimensions = dimensions,
                         onFinish = onSetupFinished
                     )
                 }
@@ -312,7 +308,7 @@ fun SetupScreen(
 }
 
 @Composable
-private fun WelcomeStepContent(dimensions: com.andreas_kratzer.ghosttalk.core.ui.theme.Dimensions) {
+private fun WelcomeStepContent() {
     val localDimensions = LocalDimensions.current
     Image(
         painter = painterResource(id = CoreR.drawable.ic_app_logo),
@@ -338,7 +334,6 @@ private fun WelcomeStepContent(dimensions: com.andreas_kratzer.ghosttalk.core.ui
 
 @Composable
 private fun BasicPermissionsStepContent(
-    dimensions: com.andreas_kratzer.ghosttalk.core.ui.theme.Dimensions,
     cameraGranted: Boolean,
     locationGranted: Boolean,
     microphoneGranted: Boolean,
@@ -412,7 +407,6 @@ private fun BasicPermissionsStepContent(
 
 @Composable
 private fun OverlayStepContent(
-    dimensions: com.andreas_kratzer.ghosttalk.core.ui.theme.Dimensions,
     isGranted: Boolean,
     onRequest: () -> Unit
 ) {
@@ -455,7 +449,6 @@ private fun OverlayStepContent(
 
 @Composable
 private fun NotificationListenerStepContent(
-    dimensions: com.andreas_kratzer.ghosttalk.core.ui.theme.Dimensions,
     isGranted: Boolean,
     onRequest: () -> Unit
 ) {
@@ -498,7 +491,6 @@ private fun NotificationListenerStepContent(
 
 @Composable
 private fun DialerStepContent(
-    dimensions: com.andreas_kratzer.ghosttalk.core.ui.theme.Dimensions,
     isGranted: Boolean,
     onRequest: () -> Unit
 ) {
@@ -541,7 +533,6 @@ private fun DialerStepContent(
 
 @Composable
 private fun CompletedStepContent(
-    dimensions: com.andreas_kratzer.ghosttalk.core.ui.theme.Dimensions,
     onFinish: () -> Unit
 ) {
     val localDimensions = LocalDimensions.current

@@ -36,12 +36,6 @@ import com.andreas_kratzer.ghosttalk.ui.components.GridEditorContent
 import com.andreas_kratzer.ghosttalk.ui.components.ValidatedTextField
 import kotlinx.coroutines.delay
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
-import androidx.compose.runtime.rememberCoroutineScope
-import kotlinx.coroutines.launch
-import com.andreas_kratzer.ghosttalk.ui.pages.PageSplitOptInDialog
-import com.andreas_kratzer.ghosttalk.ui.pages.PageSplitManualPromptDialog
-import com.andreas_kratzer.ghosttalk.ui.pages.PageSplitWizardDialog
-import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -74,14 +68,13 @@ fun PageEditorScreen(
     var localName by remember(page.name) { mutableStateOf(page.name) }
     
     // Page Split Dialog States
-    var showOptInDialog by remember { mutableStateOf(false) }
-    var showManualPromptDialog by remember { mutableStateOf(false) }
-    var showWizardDialog by remember { mutableStateOf(false) }
+    val showOptInDialog = remember { mutableStateOf(false) }
+    val showManualPromptDialog = remember { mutableStateOf(false) }
+    val showWizardDialog = remember { mutableStateOf(false) }
     var manualPromptText by remember { mutableStateOf("") }
     
     val pageSplitProposal by pageViewModel.pageSplitProposal.collectAsState()
     val isPageSplitLoading by pageViewModel.isPageSplitLoading.collectAsState()
-    val scope = rememberCoroutineScope()
 
     val handleNavigateBack = {
         if (localName.isNotBlank()) {
@@ -154,10 +147,10 @@ fun PageEditorScreen(
                         onClick = {
                             val accepted = pageViewModel.settingsRepository.hasAcceptedPageSplitOptIn
                             if (accepted) {
-                                showWizardDialog = true
+                                showWizardDialog.value = true
                                 pageViewModel.generatePageSplitProposal(page.id)
                             } else {
-                                showOptInDialog = true
+                                showOptInDialog.value = true
                             }
                         },
                         modifier = Modifier.testTag("page_editor_split_wizard_trigger")
@@ -201,42 +194,42 @@ fun PageEditorScreen(
         )
 
         // Render Page Split Dialogs
-        if (showOptInDialog) {
+        if (showOptInDialog.value) {
             PageSplitOptInDialog(
                 onConfirmCloud = { rememberDecision ->
-                    showOptInDialog = false
+                    showOptInDialog.value = false
                     if (rememberDecision) {
                         pageViewModel.settingsRepository.hasAcceptedPageSplitOptIn = true
                     }
-                    showWizardDialog = true
+                    showWizardDialog.value = true
                     pageViewModel.generatePageSplitProposal(page.id)
                 },
                 onConfirmManual = {
-                    showOptInDialog = false
+                    showOptInDialog.value = false
                     val defaultStartPageId = pageViewModel.settingsRepository.defaultStartPageId
                     val labels = page.buttonConfigs
                         .filter { !pageViewModel.shouldFilterButtonFromSplit(it, defaultStartPageId, page.id) }
                         .map { it!!.label }
                     manualPromptText = pageViewModel.generatePageSplitPrompt(labels)
-                    showManualPromptDialog = true
+                    showManualPromptDialog.value = true
                 },
-                onDismiss = { showOptInDialog = false }
+                onDismiss = { showOptInDialog.value = false }
             )
         }
 
-        if (showManualPromptDialog) {
+        if (showManualPromptDialog.value) {
             PageSplitManualPromptDialog(
                 promptText = manualPromptText,
                 onEvaluateResponse = { response ->
                     pageViewModel.parsePageSplitProposal(response)
-                    showManualPromptDialog = false
-                    showWizardDialog = true
+                    showManualPromptDialog.value = false
+                    showWizardDialog.value = true
                 },
-                onDismiss = { showManualPromptDialog = false }
+                onDismiss = { showManualPromptDialog.value = false }
             )
         }
 
-        if (showWizardDialog) {
+        if (showWizardDialog.value) {
             val activeButtons = page.buttonConfigs
                 .filter { it != null && it.isActive && it.label.isNotBlank() }
                 .map { it!! }
@@ -247,10 +240,10 @@ fun PageEditorScreen(
                 isLoading = isPageSplitLoading,
                 onConfirm = { updatedProposal ->
                     pageViewModel.applyPageSplit(page.id, updatedProposal)
-                    showWizardDialog = false
+                    showWizardDialog.value = false
                 },
                 onDismiss = {
-                    showWizardDialog = false
+                    showWizardDialog.value = false
                     pageViewModel.clearPageSplitProposal()
                 }
             )

@@ -41,6 +41,7 @@ import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.feature.settings.R
 import kotlinx.coroutines.delay
 
+@Suppress("UNUSED_PARAMETER", "UNUSED_VALUE")
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SecuritySettingsSection(

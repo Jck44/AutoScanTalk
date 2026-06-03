@@ -145,7 +145,7 @@ fun PreviewTabContent(
                             } else {
                                 ""
                             }
-                        } catch (e: Exception) {
+                        } catch (_: Exception) {
                             ""
                         }
                         "📱 Geräte-Funktion: $actionName$specificText"

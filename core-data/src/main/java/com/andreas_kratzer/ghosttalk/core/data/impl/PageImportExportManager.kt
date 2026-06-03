@@ -42,6 +42,7 @@ import java.util.zip.ZipOutputStream
 import javax.inject.Inject
 import javax.inject.Singleton
 
+@Suppress("UNUSED_PARAMETER")
 @Singleton
 class PageImportExportManager @Inject constructor(
     @param:ApplicationContext private val context: Context,
@@ -277,7 +278,7 @@ class PageImportExportManager @Inject constructor(
                     val spokenTextMode = if (modeString != null) {
                         try {
                             com.andreas_kratzer.ghosttalk.core.model.SpokenTextMode.valueOf(modeString)
-                        } catch (e: IllegalArgumentException) {
+                        } catch (_: IllegalArgumentException) {
                             com.andreas_kratzer.ghosttalk.core.model.SpokenTextMode.TTS
                         }
                     } else {
@@ -351,7 +352,7 @@ class PageImportExportManager @Inject constructor(
                         val spokenTextMode = if (modeString != null) {
                             try {
                                 com.andreas_kratzer.ghosttalk.core.model.SpokenTextMode.valueOf(modeString)
-                            } catch (e: IllegalArgumentException) {
+                            } catch (_: IllegalArgumentException) {
                                 com.andreas_kratzer.ghosttalk.core.model.SpokenTextMode.TTS
                             }
                         } else {
@@ -765,7 +766,7 @@ class PageImportExportManager @Inject constructor(
         
         val appVerName = try {
             context.packageManager.getPackageInfo(context.packageName, 0).versionName
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             null
         }
 

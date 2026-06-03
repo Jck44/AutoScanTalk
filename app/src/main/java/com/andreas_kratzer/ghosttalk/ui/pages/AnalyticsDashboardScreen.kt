@@ -443,7 +443,7 @@ fun AnalyticsDashboardScreen(
 
                                 Button(
                                     onClick = {
-                                        pageViewModel.applyShortcutRecommendation(recommendation) { success, msg ->
+                                        pageViewModel.applyShortcutRecommendation(recommendation) { _, msg ->
                                             Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
                                         }
                                     },

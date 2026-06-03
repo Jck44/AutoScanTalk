@@ -3,10 +3,8 @@ package com.andreas_kratzer.ghosttalk.ui.pages
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -20,7 +18,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -141,7 +138,7 @@ fun UsageDurationBarChart(
                         val barSpacing = chartWidth / numBars
                         val barWidth = barSpacing * 0.5f
                         
-                        dailyData.forEachIndexed { index, (dayLabel, minutes) ->
+                        dailyData.forEachIndexed { index, (_, minutes) ->
                             val ratio = minutes.toFloat() / maxVal
                             val barHeight = chartHeight * ratio
                             
@@ -203,7 +200,7 @@ fun UserModeSessionsSection(
     modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
-    var showClearConfirm by remember { mutableStateOf(false) }
+    val showClearConfirm = remember { mutableStateOf(false) }
     val locale = LocalConfiguration.current.locales[0]
 
     val sdfDate = remember(locale) { SimpleDateFormat("dd.MM.yyyy", locale) }
@@ -304,7 +301,7 @@ fun UserModeSessionsSection(
                                             style = MaterialTheme.typography.bodyMedium,
                                             fontWeight = FontWeight.Medium
                                         )
-                                        val displayRate = String.format(java.util.Locale.US, "%.1f", rate)
+                                        val displayRate = String.format(Locale.US, "%.1f", rate)
                                         Text(
                                             text = "$sessionClicks Klicks • $displayRate/Min",
                                             style = MaterialTheme.typography.labelSmall,
@@ -326,7 +323,7 @@ fun UserModeSessionsSection(
                         Spacer(modifier = Modifier.height(4.dp))
 
                         Button(
-                            onClick = { showClearConfirm = true },
+                            onClick = { showClearConfirm.value = true },
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.errorContainer,
                                 contentColor = MaterialTheme.colorScheme.onErrorContainer
@@ -354,16 +351,16 @@ fun UserModeSessionsSection(
         }
     }
 
-    if (showClearConfirm) {
+    if (showClearConfirm.value) {
         AlertDialog(
-            onDismissRequest = { showClearConfirm = false },
+            onDismissRequest = { showClearConfirm.value = false },
             title = { Text(stringResource(R.string.analytics_usage_sessions_clear)) },
             text = { Text(stringResource(R.string.analytics_usage_sessions_clear_confirm)) },
             confirmButton = {
                 TextButton(
                     onClick = {
                         onClearSessions()
-                        showClearConfirm = false
+                        showClearConfirm.value = false
                     }
                 ) {
                     Text(
@@ -374,7 +371,7 @@ fun UserModeSessionsSection(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showClearConfirm = false }) {
+                TextButton(onClick = { showClearConfirm.value = false }) {
                     Text(stringResource(android.R.string.cancel))
                 }
             }

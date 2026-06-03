@@ -21,11 +21,12 @@ import javax.crypto.spec.PBEKeySpec
 import javax.crypto.SecretKeyFactory
 import javax.inject.Inject
 import javax.inject.Singleton
+import androidx.core.content.edit
 
 @Singleton
 class SecurityManager @Inject constructor(
     private val securitySettings: SecuritySettings,
-    @dagger.hilt.android.qualifiers.ApplicationContext private val context: Context
+    @param:dagger.hilt.android.qualifiers.ApplicationContext private val context: Context
 ) {
     private val _isUnlocked = MutableStateFlow(false)
     val isUnlocked: StateFlow<Boolean> = _isUnlocked.asStateFlow()
@@ -86,16 +87,16 @@ class SecurityManager @Inject constructor(
                                 val iv = authenticatedCipher.iv
                                 
                                 val prefs = activity.getSharedPreferences(PREFS_BIOMETRIC_NAME, Context.MODE_PRIVATE)
-                                prefs.edit()
-                                    .putString(KEY_CIPHERTEXT, Base64.encodeToString(encryptedBytes, Base64.DEFAULT))
-                                    .putString(KEY_IV, Base64.encodeToString(iv, Base64.DEFAULT))
-                                    .apply()
+                                prefs.edit {
+                                    putString(KEY_CIPHERTEXT, Base64.encodeToString(encryptedBytes, Base64.DEFAULT))
+                                    putString(KEY_IV, Base64.encodeToString(iv, Base64.DEFAULT))
+                                }
                                 
                                 onResult(true)
                             } else {
                                 onResult(false)
                             }
-                        } catch (e: Exception) {
+                        } catch (_: Exception) {
                             onResult(false)
                         }
                     }
@@ -112,13 +113,13 @@ class SecurityManager @Inject constructor(
                 })
 
             val promptInfo = BiometricPrompt.PromptInfo.Builder()
-                .setTitle(activity.getString(com.andreas_kratzer.ghosttalk.core.R.string.security_biometric_enroll_title))
-                .setSubtitle(activity.getString(com.andreas_kratzer.ghosttalk.core.R.string.security_biometric_enroll_subtitle))
-                .setNegativeButtonText(activity.getString(com.andreas_kratzer.ghosttalk.core.R.string.security_biometric_cancel))
+                .setTitle(activity.getString(R.string.security_biometric_enroll_title))
+                .setSubtitle(activity.getString(R.string.security_biometric_enroll_subtitle))
+                .setNegativeButtonText(activity.getString(R.string.security_biometric_cancel))
                 .build()
 
             biometricPrompt.authenticate(promptInfo, BiometricPrompt.CryptoObject(cipher))
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             onResult(false)
         }
     }
@@ -140,7 +141,7 @@ class SecurityManager @Inject constructor(
                 activity.runOnUiThread {
                     android.widget.Toast.makeText(
                         activity,
-                        activity.getString(com.andreas_kratzer.ghosttalk.core.R.string.security_biometric_migration_toast),
+                        activity.getString(R.string.security_biometric_migration_toast),
                         android.widget.Toast.LENGTH_LONG
                     ).show()
                 }
@@ -174,7 +175,7 @@ class SecurityManager @Inject constructor(
                             } else {
                                 onResult(false)
                             }
-                        } catch (e: Exception) {
+                        } catch (_: Exception) {
                             onResult(false)
                         }
                     }
@@ -190,17 +191,17 @@ class SecurityManager @Inject constructor(
                     }
                 })
 
-            val resolvedTitle = title ?: activity.getString(com.andreas_kratzer.ghosttalk.core.R.string.security_biometric_auth_title)
-            val resolvedSubtitle = subtitle ?: activity.getString(com.andreas_kratzer.ghosttalk.core.R.string.security_biometric_auth_subtitle)
+            val resolvedTitle = title ?: activity.getString(R.string.security_biometric_auth_title)
+            val resolvedSubtitle = subtitle ?: activity.getString(R.string.security_biometric_auth_subtitle)
 
             val promptInfo = BiometricPrompt.PromptInfo.Builder()
                 .setTitle(resolvedTitle)
                 .setSubtitle(resolvedSubtitle)
-                .setNegativeButtonText(activity.getString(com.andreas_kratzer.ghosttalk.core.R.string.security_biometric_cancel))
+                .setNegativeButtonText(activity.getString(R.string.security_biometric_cancel))
                 .build()
 
             biometricPrompt.authenticate(promptInfo, BiometricPrompt.CryptoObject(cipher))
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             onResult(false)
         }
     }
@@ -209,8 +210,8 @@ class SecurityManager @Inject constructor(
         try {
             keyStore.deleteEntry(KEY_ALIAS)
             val prefs = context.getSharedPreferences(PREFS_BIOMETRIC_NAME, Context.MODE_PRIVATE)
-            prefs.edit().remove(KEY_CIPHERTEXT).remove(KEY_IV).apply()
-        } catch (e: Exception) {
+            prefs.edit { remove(KEY_CIPHERTEXT).remove(KEY_IV) }
+        } catch (_: Exception) {
             // Ignore
         }
     }

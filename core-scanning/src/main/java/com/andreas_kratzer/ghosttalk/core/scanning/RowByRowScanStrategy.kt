@@ -95,6 +95,7 @@ class RowByRowScanStrategy : ScanStrategy {
         }
     }
 
+    @Suppress("UNUSED_PARAMETER")
     suspend fun executeButtonScanInRow(
         scope: CoroutineScope,
         buttonConfigs: List<ButtonConfig?>,

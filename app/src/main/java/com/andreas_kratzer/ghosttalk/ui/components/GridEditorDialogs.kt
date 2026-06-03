@@ -1,3 +1,4 @@
+@file:Suppress("UNUSED_VALUE")
 package com.andreas_kratzer.ghosttalk.ui.components
 
 import androidx.compose.foundation.layout.Column

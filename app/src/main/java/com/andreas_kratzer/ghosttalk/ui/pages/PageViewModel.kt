@@ -52,6 +52,7 @@ import com.andreas_kratzer.ghosttalk.core.domain.pages.CreatePageUseCase
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.AuditoryCue
 import kotlinx.coroutines.withContext
+import androidx.core.net.toUri
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -60,10 +61,7 @@ class PageViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     val settingsRepository: SettingsRepository,
     private val bookRepository: com.andreas_kratzer.ghosttalk.core.data.BookRepository,
-    internal val importExportManager: PageImportExportManager,
     private val ttsHelper: TextToSpeechHelper,
-    private val logger: Logger,
-    private val weatherExecutor: com.andreas_kratzer.ghosttalk.domain.executors.WeatherExecutor,
     val featureGuard: FeatureGuard,
     val pageManagementDelegate: PageManagementDelegate,
     val interactionDelegate: InteractionDelegate,
@@ -305,7 +303,6 @@ class PageViewModel @Inject constructor(
 
     val focusedButtonIndex = scanCoordinator.focusedButtonIndex
     val focusedRowIndex = scanCoordinator.focusedRowIndex
-    val isStoppedDueToLimit = scanCoordinator.isStoppedDueToLimit
     val isScanning = scanCoordinator.isScanning
 
     // --- Telephony Call States ---
@@ -573,6 +570,7 @@ class PageViewModel @Inject constructor(
     fun resumeScanningIfEnabled() = scanCoordinator.resumeScanningIfEnabled()
     fun startScanning(startIndex: Int = 0) = scanCoordinator.startScanning(startIndex)
     fun stopScanning() = scanCoordinator.stopScanning()
+    @Suppress("unused")
     fun restartScanning() = scanCoordinator.restartScanning()
 
     override fun updateButtonConfig(itemId: String, index: Int, newConfig: ButtonConfig?) {
@@ -726,6 +724,7 @@ class PageViewModel @Inject constructor(
         }
     }
 
+    @Suppress("unused")
     suspend fun exportToJson(): String = pageManagementDelegate.exportToJson()
 
     override fun speakTtsPreview(text: String, onDone: () -> Unit) {
@@ -773,7 +772,7 @@ class PageViewModel @Inject constructor(
 
     fun connectSpotify(ctx: android.content.Context) {
         val authUrl = spotifyManager.getAuthorizationUrl()
-        val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(authUrl)).apply {
+        val intent = Intent(Intent.ACTION_VIEW, authUrl.toUri()).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         ctx.startActivity(intent)

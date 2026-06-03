@@ -1,4 +1,6 @@
+@file:Suppress("UNUSED_PARAMETER", "UNUSED_VALUE")
 package com.andreas_kratzer.ghosttalk.ui.pages
+
 
 import androidx.compose.animation.core.animateOffsetAsState
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress

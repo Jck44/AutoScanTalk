@@ -1,3 +1,4 @@
+@file:Suppress("DEPRECATION")
 package com.andreas_kratzer.ghosttalk.feature.settings.domain
 
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
@@ -17,7 +18,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
-@Suppress("DEPRECATION")
 class FeatureGuardTest {
 
     private lateinit var settingsRepository: SettingsRepository

@@ -26,6 +26,7 @@ import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsDropdownItem
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsEditTextItem
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsToggleItem
 
+@Suppress("UNUSED_PARAMETER")
 @Composable
 fun PlayMediaActionFields(
     selectedProvider: MediaProvider,

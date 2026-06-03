@@ -28,6 +28,7 @@ import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase
 import com.andreas_kratzer.ghosttalk.core.ui.components.PreferenceCategory
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsEditTextItem
@@ -177,7 +178,7 @@ fun GenAiSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                             onClick = {
                                 val intent = android.content.Intent(
                                     android.content.Intent.ACTION_VIEW,
-                                    android.net.Uri.parse("https://aistudio.google.com/app/apikey")
+                                    "https://aistudio.google.com/app/apikey".toUri()
                                 )
                                 context.startActivity(intent)
                             },

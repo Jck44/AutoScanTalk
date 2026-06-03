@@ -2,11 +2,8 @@ package com.andreas_kratzer.ghosttalk.core.scanning
 
 import com.andreas_kratzer.ghosttalk.core.actions.CallActionProxy
 import com.andreas_kratzer.ghosttalk.core.actions.ScannerActionProvider
-import com.andreas_kratzer.ghosttalk.core.ai.domain.CheckForPredictorUseCase
 import com.andreas_kratzer.ghosttalk.core.model.Page
-import com.andreas_kratzer.ghosttalk.core.settings.FeatureSettings
 import com.andreas_kratzer.ghosttalk.core.settings.ScanningSettings
-import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
@@ -24,10 +21,7 @@ class ActionScanningFlowTest {
     private val testDispatcher = UnconfinedTestDispatcher()
     private val scannerEngine = mockk<ScannerEngine>(relaxed = true)
     private val scanningSettings = mockk<ScanningSettings>(relaxed = true)
-    private val featureSettings = mockk<FeatureSettings>(relaxed = true)
     private val actionProvider = mockk<ScannerActionProvider>(relaxed = true)
-    private val checkForPredictorUseCase = mockk<CheckForPredictorUseCase>(relaxed = true)
-    private val ttsHelper = mockk<TextToSpeechHelper>(relaxed = true)
     private val callActionProxy = mockk<CallActionProxy>(relaxed = true)
 
     private val isExecuting = MutableStateFlow(false)
@@ -60,10 +54,7 @@ class ActionScanningFlowTest {
             scope = backgroundScope,
             scannerEngine = scannerEngine,
             scanningSettings = scanningSettings,
-            featureSettings = featureSettings,
             actionProvider = actionProvider,
-            checkForPredictorUseCase = checkForPredictorUseCase,
-            ttsHelper = ttsHelper,
             callActionProxy = callActionProxy
         )
         

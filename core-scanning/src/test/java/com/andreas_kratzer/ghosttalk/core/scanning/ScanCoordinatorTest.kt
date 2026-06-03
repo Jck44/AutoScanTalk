@@ -2,13 +2,10 @@ package com.andreas_kratzer.ghosttalk.core.scanning
 
 import com.andreas_kratzer.ghosttalk.core.actions.CallActionProxy
 import com.andreas_kratzer.ghosttalk.core.actions.ScannerActionProvider
-import com.andreas_kratzer.ghosttalk.core.ai.domain.CheckForPredictorUseCase
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
-import com.andreas_kratzer.ghosttalk.core.settings.FeatureSettings
 import com.andreas_kratzer.ghosttalk.core.settings.ScanningSettings
-import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
@@ -32,10 +29,7 @@ class ScanCoordinatorTest {
     // Fresh mocks for each test
     private lateinit var scannerEngine: ScannerEngine
     private lateinit var scanningSettings: ScanningSettings
-    private lateinit var featureSettings: FeatureSettings
     private lateinit var actionProvider: ScannerActionProvider
-    private lateinit var checkForPredictorUseCase: CheckForPredictorUseCase
-    private lateinit var ttsHelper: TextToSpeechHelper
     private lateinit var callActionProxy: CallActionProxy
 
     private val isExecuting = MutableStateFlow(false)
@@ -51,10 +45,7 @@ class ScanCoordinatorTest {
         scope = scope,
         scannerEngine = scannerEngine,
         scanningSettings = scanningSettings,
-        featureSettings = featureSettings,
         actionProvider = actionProvider,
-        checkForPredictorUseCase = checkForPredictorUseCase,
-        ttsHelper = ttsHelper,
         callActionProxy = callActionProxy
     ).apply {
         init(
@@ -70,14 +61,10 @@ class ScanCoordinatorTest {
     fun setup() {
         scannerEngine = mockk(relaxed = true)
         scanningSettings = mockk(relaxed = true)
-        featureSettings = mockk(relaxed = true)
         actionProvider = mockk(relaxed = true)
-        checkForPredictorUseCase = mockk(relaxed = true)
-        ttsHelper = mockk(relaxed = true)
         callActionProxy = mockk(relaxed = true)
 
         every { scanningSettings.scanDelayFlow } returns MutableStateFlow(1000L)
-        every { featureSettings.isSmartPredictionEnabled } returns true
         every { scanningSettings.autoStartScanning } returns true
         every { actionProvider.isExecuting } returns isExecuting
         every { scannerEngine.focusedButtonIndex } returns MutableStateFlow(null)
@@ -102,9 +89,6 @@ class ScanCoordinatorTest {
             every { name } returns "Raw Page"
             every { buttonConfigs } returns listOf(ButtonConfig(label = "Gemini", auditoryCue = null, buttonAction = SmartPredictionButtonAction(1), isActive = true))
         }
-        
-        // Setup mock answer before init triggers anything
-        every { checkForPredictorUseCase(rawPage) } returns true
         
         createCoordinator(backgroundScope)
         
@@ -131,7 +115,6 @@ class ScanCoordinatorTest {
             every { id } returns "res1"
             every { buttonConfigs } returns emptyList() // No more predictors
         }
-        every { checkForPredictorUseCase(resPage) } returns false
         resolvedPage.value = resPage
         advanceUntilIdle()
         
@@ -148,7 +131,6 @@ class ScanCoordinatorTest {
         }
         
         // Given: We are waiting for predictions (smartPredictions is null)
-        every { checkForPredictorUseCase(rawPage) } returns true
         
         val scanCoordinator = createCoordinator(backgroundScope)
         
@@ -188,8 +170,6 @@ class ScanCoordinatorTest {
             every { id } returns "p1"
             every { buttonConfigs } returns emptyList()
         }
-        every { checkForPredictorUseCase(any<Page>()) } returns false
-        
         createCoordinator(backgroundScope)
         
         currentPage.value = page
@@ -219,7 +199,6 @@ class ScanCoordinatorTest {
             every { id } returns "p1"
             every { buttonConfigs } returns emptyList()
         }
-        every { checkForPredictorUseCase(any<Page>()) } returns false
         currentPage.value = page
         resolvedPage.value = page
 
@@ -245,7 +224,6 @@ class ScanCoordinatorTest {
             every { id } returns "p1"
             every { buttonConfigs } returns emptyList()
         }
-        every { checkForPredictorUseCase(any<Page>()) } returns false
         currentPage.value = page
         resolvedPage.value = page
 
@@ -271,8 +249,6 @@ class ScanCoordinatorTest {
         every { scanningSettings.resumeScanningFromStart } returns true
         every { scanningSettings.defaultScanPattern } returns "linear"
         every { scanningSettings.scanDelayFlow } returns MutableStateFlow(1000L)
-        every { checkForPredictorUseCase(any<Page>()) } returns false
-
         val page = Page(
             id = "p1", 
             bookId = "book1",
@@ -326,8 +302,6 @@ class ScanCoordinatorTest {
             buttonConfigs = listOf(ButtonConfig(label = "Button 1"))
         )
         
-        every { checkForPredictorUseCase(any<Page>()) } returns false
-        
         currentPage.value = page
         resolvedPage.value = page
         isUserModeActive.value = true
@@ -361,8 +335,6 @@ class ScanCoordinatorTest {
             name = "Page 1",
             buttonConfigs = listOf(ButtonConfig(label = "Button 1"))
         )
-        every { checkForPredictorUseCase(any<Page>()) } returns false
-        
         currentPage.value = page
         resolvedPage.value = page
         isUserModeActive.value = true
@@ -396,7 +368,6 @@ class ScanCoordinatorTest {
             name = "Page 1",
             buttonConfigs = listOf(ButtonConfig(label = "Button 1"))
         )
-        every { checkForPredictorUseCase(any<Page>()) } returns false
         every { scanningSettings.autoStartScanning } returns true
         
         currentPage.value = page

@@ -503,7 +503,7 @@ fun DeviceActionFields(
                         } else {
                             ""
                         }
-                    } catch (e: Exception) {
+                    } catch (_: Exception) {
                         ""
                     }
                 }

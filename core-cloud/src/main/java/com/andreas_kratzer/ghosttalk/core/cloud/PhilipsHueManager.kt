@@ -40,7 +40,7 @@ class PhilipsHueManager @Inject constructor(
     private val bypassHostnameVerifier = HostnameVerifier { _, _ -> true }
 
     // lgtm[java/insecure-trustmanager] - Intentional TOFU (Trust-On-First-Use) to fetch local bridge cert details
-    @SuppressLint("TrustAllX509TrustManager")
+    @SuppressLint("TrustAllX509TrustManager", "CustomX509TrustManager")
     private class RecordingTrustManager : X509TrustManager {
         var acceptedCerts: Array<out X509Certificate>? = null
         override fun checkClientTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
@@ -50,6 +50,7 @@ class PhilipsHueManager @Inject constructor(
         override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
     }
 
+    @SuppressLint("CustomX509TrustManager", "TrustAllX509TrustManager")
     private class FingerprintTrustManager(private val expectedFingerprint: String) : X509TrustManager {
         override fun checkClientTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
         

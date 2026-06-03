@@ -41,6 +41,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+@Suppress("UNUSED_PARAMETER")
 @Composable
 fun ButtonStatisticsTabContent(
     metrics: ButtonEffortMetrics?,

@@ -1,3 +1,4 @@
+@file:Suppress("DEPRECATION")
 package com.andreas_kratzer.ghosttalk.core.data.impl
 
 import android.content.Context
@@ -901,8 +902,7 @@ class PageImportExportManagerTest {
         coEvery { pageRepository.getPageById(any()) } returns null 
         coEvery { pageRepository.insertPage(any()) } returns Unit
         
-        var capturedId: String? = null
-        every { settingsRepository.defaultStartPageId = any() } answers { capturedId = firstArg() }
+        every { settingsRepository.defaultStartPageId = any() } returns Unit
 
         // Act
         val result = manager.importFromJson(jsonString, bookId, regenerateIds = true)

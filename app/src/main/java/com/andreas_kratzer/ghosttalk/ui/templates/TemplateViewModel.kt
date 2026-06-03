@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+@Suppress("UNUSED_PARAMETER")
 @HiltViewModel
 class TemplateViewModel @Inject constructor(
     private val templateRepository: TemplateRepository,
@@ -319,7 +320,7 @@ class TemplateViewModel @Inject constructor(
                 }
                 val targetGlobal = visibleIndices[toIndex - 1]
                 newButtonConfigs[targetGlobal] = movedItem
-            } else if (fromIndex > toIndex) {
+            } else {
                 for (i in fromIndex downTo toIndex + 1) {
                     val currentGlobal = visibleIndices[i]
                     val prevGlobal = visibleIndices[i - 1]

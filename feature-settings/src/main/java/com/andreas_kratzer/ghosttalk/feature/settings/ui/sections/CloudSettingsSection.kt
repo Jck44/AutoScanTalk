@@ -1,3 +1,4 @@
+@file:Suppress("UNUSED_VALUE")
 package com.andreas_kratzer.ghosttalk.feature.settings.ui.sections
 
 import androidx.compose.foundation.layout.Arrangement

@@ -872,11 +872,11 @@ fun ButtonConfigDialog(
                                 iconProvider = { actionType ->
                                     if (actionType == actionTypeSpotify || actionType == actionTypeYoutube || actionType == actionTypeYoutubeMusic || actionType == actionTypeAudible) {
                                         val drawableRes = when (actionType) {
-                                            actionTypeSpotify -> com.andreas_kratzer.ghosttalk.core.ui.R.drawable.ic_spotify
-                                            actionTypeYoutube -> com.andreas_kratzer.ghosttalk.core.ui.R.drawable.ic_youtube
-                                            actionTypeYoutubeMusic -> com.andreas_kratzer.ghosttalk.core.ui.R.drawable.ic_youtube_music
-                                            actionTypeAudible -> com.andreas_kratzer.ghosttalk.core.ui.R.drawable.ic_audible
-                                            else -> com.andreas_kratzer.ghosttalk.core.ui.R.drawable.ic_spotify
+                                            actionTypeSpotify -> CoreR.drawable.ic_spotify
+                                            actionTypeYoutube -> CoreR.drawable.ic_youtube
+                                            actionTypeYoutubeMusic -> CoreR.drawable.ic_youtube_music
+                                            actionTypeAudible -> CoreR.drawable.ic_audible
+                                            else -> CoreR.drawable.ic_spotify
                                         }
                                         Icon(
                                             painter = androidx.compose.ui.res.painterResource(id = drawableRes),

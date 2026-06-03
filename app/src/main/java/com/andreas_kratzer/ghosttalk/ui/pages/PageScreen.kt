@@ -1,12 +1,11 @@
 package com.andreas_kratzer.ghosttalk.ui.pages
 
 import android.content.Intent
+import android.content.res.Configuration
 import android.provider.Settings
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
-import android.content.res.Configuration
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,6 +36,7 @@ import androidx.compose.ui.res.stringResource
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.call.CallState
 import com.andreas_kratzer.ghosttalk.core.ui.components.AppBrandHeader
+import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.ui.pages.sections.ActionLogCard
 import com.andreas_kratzer.ghosttalk.ui.pages.sections.ButtonGrid
@@ -131,11 +131,11 @@ fun PageScreen(
                             try {
                                 val intent = Intent("android.settings.panel.action.BLUETOOTH")
                                 bluetoothLauncher.launch(intent)
-                            } catch (e: android.content.ActivityNotFoundException) {
+                            } catch (_: android.content.ActivityNotFoundException) {
                                 try {
-                                    val fallbackIntent = Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS)
+                                    val fallbackIntent = Intent(Settings.ACTION_BLUETOOTH_SETTINGS)
                                     bluetoothLauncher.launch(fallbackIntent)
-                                } catch (e2: android.content.ActivityNotFoundException) {
+                                } catch (_: android.content.ActivityNotFoundException) {
                                     // If both fail (e.g. on emulators without Bluetooth capabilities),
                                     // resume scanning so scanning is not left permanently stuck.
                                     pageViewModel.resumeScanningIfEnabled()

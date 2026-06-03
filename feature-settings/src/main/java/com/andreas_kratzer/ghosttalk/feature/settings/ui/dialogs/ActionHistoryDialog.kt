@@ -1,4 +1,6 @@
+@file:Suppress("UNUSED_VALUE")
 package com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs
+
 
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image

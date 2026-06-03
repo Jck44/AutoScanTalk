@@ -1,3 +1,4 @@
+@file:Suppress("UNUSED_VALUE")
 package com.andreas_kratzer.ghosttalk.ui.pages
 
 import android.content.res.Configuration

@@ -1,6 +1,7 @@
 package com.andreas_kratzer.ghosttalk.core.data.impl.settings
 
 import android.content.SharedPreferences
+import androidx.core.content.edit
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_CLOUD_SYNC_ENABLED
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_GOOGLE_DRIVE_FOLDER_ID
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_GOOGLE_DRIVE_FOLDER_NAME
@@ -120,20 +121,20 @@ class CloudSettingsRepository(
 
         if (prefs.contains(scopedOldKey)) {
             val oldMode = prefs.getString(scopedOldKey, null)
-            val editor = prefs.edit()
-            if (oldMode != null) {
-                if (!prefs.contains(scopedBookKey)) {
-                    editor.putString(scopedBookKey, oldMode)
+            prefs.edit {
+                if (oldMode != null) {
+                    if (!prefs.contains(scopedBookKey)) {
+                        putString(scopedBookKey, oldMode)
+                    }
+                    if (!prefs.contains(scopedTtsKey)) {
+                        putString(scopedTtsKey, oldMode)
+                    }
+                    if (!prefs.contains(scopedStatsKey)) {
+                        putString(scopedStatsKey, "RESTORE_ONLY")
+                    }
                 }
-                if (!prefs.contains(scopedTtsKey)) {
-                    editor.putString(scopedTtsKey, oldMode)
-                }
-                if (!prefs.contains(scopedStatsKey)) {
-                    editor.putString(scopedStatsKey, "RESTORE_ONLY")
-                }
+                remove(scopedOldKey)
             }
-            editor.remove(scopedOldKey)
-            editor.apply()
             _syncModeBook.refresh()
             _syncModeTts.refresh()
             _syncModeStats.refresh()

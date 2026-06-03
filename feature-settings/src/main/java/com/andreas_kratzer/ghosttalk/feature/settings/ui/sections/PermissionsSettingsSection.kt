@@ -9,6 +9,7 @@ import android.net.Uri
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.net.toUri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -102,7 +103,7 @@ fun PermissionsSettingsSection(viewModel: SettingsViewModel) {
     var overlayGranted by remember {
         mutableStateOf(Settings.canDrawOverlays(context))
     }
-    var showOverlayExplanationDialog by remember { mutableStateOf(false) }
+    val showOverlayExplanationDialog = remember { mutableStateOf(false) }
 
 
     
@@ -221,7 +222,7 @@ fun PermissionsSettingsSection(viewModel: SettingsViewModel) {
                 description = stringResource(R.string.settings_permission_overlay_desc),
                 isGranted = overlayGranted,
                 onRequest = {
-                    showOverlayExplanationDialog = true
+                    showOverlayExplanationDialog.value = true
                 }
             )
 
@@ -357,9 +358,9 @@ fun PermissionsSettingsSection(viewModel: SettingsViewModel) {
         }
     }
 
-    if (showOverlayExplanationDialog) {
+    if (showOverlayExplanationDialog.value) {
         androidx.compose.material3.AlertDialog(
-            onDismissRequest = { showOverlayExplanationDialog = false },
+            onDismissRequest = { showOverlayExplanationDialog.value = false },
             title = {
                 Text(
                     text = stringResource(R.string.settings_permission_overlay_dialog_title),
@@ -375,10 +376,10 @@ fun PermissionsSettingsSection(viewModel: SettingsViewModel) {
             confirmButton = {
                 TextButton(
                     onClick = {
-                        showOverlayExplanationDialog = false
+                        showOverlayExplanationDialog.value = false
                         val intent = Intent(
                             Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                            Uri.parse("package:$packageName")
+                            "package:$packageName".toUri()
                         )
                         context.startActivity(intent)
                     }
@@ -388,7 +389,7 @@ fun PermissionsSettingsSection(viewModel: SettingsViewModel) {
             },
             dismissButton = {
                 TextButton(
-                    onClick = { showOverlayExplanationDialog = false }
+                    onClick = { showOverlayExplanationDialog.value = false }
                 ) {
                     Text(text = stringResource(R.string.settings_permission_overlay_dialog_dismiss))
                 }
@@ -532,7 +533,7 @@ private fun android.graphics.drawable.Drawable.toBitmapOrNull(): android.graphic
         setBounds(0, 0, canvas.width, canvas.height)
         draw(canvas)
         return bitmap
-    } catch (e: Exception) {
+    } catch (_: Exception) {
         return null
     }
 }
@@ -562,7 +563,7 @@ private fun PreferredAppsPicker(
                 val label = resolveInfo.loadLabel(pm).toString()
                 val icon = try {
                     resolveInfo.loadIcon(pm)?.toBitmapOrNull()
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     null
                 }
                 if (packageName.isNotEmpty()) InstalledAppInfo(packageName, label, icon) else null

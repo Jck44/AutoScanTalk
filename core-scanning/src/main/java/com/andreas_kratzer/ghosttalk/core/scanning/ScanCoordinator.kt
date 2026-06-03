@@ -3,12 +3,9 @@ package com.andreas_kratzer.ghosttalk.core.scanning
 import com.andreas_kratzer.ghosttalk.core.actions.CallActionProxy
 import com.andreas_kratzer.ghosttalk.core.actions.ScannerActionProvider
 import com.andreas_kratzer.ghosttalk.core.actions.ScannerController
-import com.andreas_kratzer.ghosttalk.core.ai.domain.CheckForPredictorUseCase
 import com.andreas_kratzer.ghosttalk.core.di.ApplicationScope
 import com.andreas_kratzer.ghosttalk.core.model.Page
-import com.andreas_kratzer.ghosttalk.core.settings.FeatureSettings
 import com.andreas_kratzer.ghosttalk.core.settings.ScanningSettings
-import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,10 +20,7 @@ class ScanCoordinator @Inject constructor(
     @param:ApplicationScope private val scope: CoroutineScope,
     private val scannerEngine: ScannerEngine,
     private val scanningSettings: ScanningSettings,
-    private val featureSettings: FeatureSettings,
     private val actionProvider: ScannerActionProvider,
-    private val checkForPredictorUseCase: CheckForPredictorUseCase,
-    private val ttsHelper: TextToSpeechHelper,
     private val callActionProxy: CallActionProxy
 ) : ScannerController {
     private var currentPage: StateFlow<Page?>? = null

@@ -69,7 +69,7 @@ class InteractionDelegate @Inject constructor(
         }
 
         scope.launch {
-            currentBookIdFlow.collect { bookId ->
+            currentBookIdFlow.collect { _ ->
                 // Optionally we could reload logs if we separate logs by book ID in persistence,
                 // but for now they are global but limited by the book's setting when ADDING.
             }

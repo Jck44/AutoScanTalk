@@ -1,3 +1,4 @@
+@file:Suppress("UNUSED_VALUE")
 package com.andreas_kratzer.ghosttalk.ui.pages.sections
 
 import androidx.compose.foundation.clickable

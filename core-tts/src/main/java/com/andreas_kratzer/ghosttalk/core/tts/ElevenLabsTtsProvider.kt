@@ -25,7 +25,6 @@ import org.json.JSONObject
 import java.io.File
 import java.io.IOException
 import java.util.Locale
-import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -43,7 +42,6 @@ open class ElevenLabsTtsProvider @Inject constructor(
         .connectTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
         .build()
     private val handler = Handler(Looper.getMainLooper())
-    private val playRequests = ConcurrentHashMap<String, File>()
     
     private var lastDeviceAddress: String? = "uninitialized"
     

@@ -3,13 +3,11 @@ package com.andreas_kratzer.ghosttalk.core.scanning
 import com.andreas_kratzer.ghosttalk.core.actions.ActionCoordinator
 import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
 import com.andreas_kratzer.ghosttalk.core.actions.CallActionProxy
-import com.andreas_kratzer.ghosttalk.core.ai.domain.CheckForPredictorUseCase
 import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
-import com.andreas_kratzer.ghosttalk.core.settings.FeatureSettings
 import com.andreas_kratzer.ghosttalk.core.settings.ScanningSettings
 import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
 import io.mockk.every
@@ -46,10 +44,8 @@ class ScanningIntegrationTest {
 
     private val settingsRepository = mockk<SettingsRepository>(relaxed = true)
     private val buttonUsageRepository = mockk<ButtonUsageRepository>(relaxed = true)
-    private val featureSettings = mockk<FeatureSettings>(relaxed = true)
     private val scanningSettings = mockk<ScanningSettings>(relaxed = true)
     private val ttsHelper = mockk<TextToSpeechHelper>(relaxed = true)
-    private val checkForPredictorUseCase = mockk<CheckForPredictorUseCase>(relaxed = true)
     private val featureGuard = mockk<FeatureGuardProxy>(relaxed = true)
     private val callActionProxy = mockk<CallActionProxy>(relaxed = true)
 
@@ -94,10 +90,7 @@ class ScanningIntegrationTest {
             scope = componentScope,
             scannerEngine = scannerEngine,
             scanningSettings = scanningSettings,
-            featureSettings = featureSettings,
             actionProvider = actionExecutor,
-            checkForPredictorUseCase = checkForPredictorUseCase,
-            ttsHelper = ttsHelper,
             callActionProxy = callActionProxy
         )
     }
@@ -117,8 +110,6 @@ class ScanningIntegrationTest {
                 scanPattern = "row_by_row"
             )
 
-            every { checkForPredictorUseCase(any()) } returns false
-            
             scanCoordinator.init(
                 currentPage = MutableStateFlow(page),
                 isUserModeActive = MutableStateFlow(true),
@@ -170,9 +161,7 @@ class ScanningIntegrationTest {
                 scanPattern = "linear"
             )
 
-            every { checkForPredictorUseCase(any()) } returns false
             every { settingsRepository.holdingTimeMillis } returns 2000L
-            every { checkForPredictorUseCase(any()) } returns false
             
             scanCoordinator.init(
                 currentPage = MutableStateFlow(page),
@@ -244,8 +233,6 @@ class ScanningIntegrationTest {
             val isSmartPredictionLoading = MutableStateFlow(true)
             val smartPredictions = MutableStateFlow<List<String>?>(null)
 
-            every { checkForPredictorUseCase(any()) } returns false
-
             scanCoordinator.init(
                 currentPage = currentPage,
                 isUserModeActive = isUserModeActive,
@@ -292,8 +279,6 @@ class ScanningIntegrationTest {
                 scanPattern = "linear"
             )
 
-            every { checkForPredictorUseCase(any()) } returns false
-            
             scanCoordinator.init(
                 currentPage = MutableStateFlow(page),
                 isUserModeActive = MutableStateFlow(true),

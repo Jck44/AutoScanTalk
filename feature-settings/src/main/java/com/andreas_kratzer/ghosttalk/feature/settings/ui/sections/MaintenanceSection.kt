@@ -33,6 +33,7 @@ import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.feature.settings.R
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
 
+@Suppress("UNUSED_PARAMETER", "UNUSED_VALUE")
 @SuppressLint("LocalContextGetResourceValueCall")
 @Composable
 fun MaintenanceSection(

@@ -10,7 +10,6 @@ import com.andreas_kratzer.ghosttalk.core.model.DeviceActionType
 import com.andreas_kratzer.ghosttalk.core.model.MediaProvider
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
-import com.andreas_kratzer.ghosttalk.core.model.PlayMediaButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.PredictionType
 import com.andreas_kratzer.ghosttalk.core.model.SmartHomeProvider
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
@@ -29,6 +28,7 @@ import com.andreas_kratzer.ghosttalk.ui.pages.actions.RankActionFields
 import com.andreas_kratzer.ghosttalk.ui.pages.actions.SmartHomeActionFields
 import com.andreas_kratzer.ghosttalk.ui.pages.actions.WeatherActionFields
 
+@Suppress("UNUSED_PARAMETER")
 @Composable
 fun ActionConfigFields(
     selectedActionType: String,
@@ -215,7 +215,7 @@ fun ActionConfigFields(
                     SingleChoiceSegmentedButtonRow(
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        val types = PredictionType.values()
+                        val types = PredictionType.entries
                         types.forEachIndexed { index, type ->
                             SegmentedButton(
                                 selected = predictionType == type,

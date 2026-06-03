@@ -197,7 +197,7 @@ class CloudSyncUseCase @Inject constructor(
                             } else {
                                 syncLogProvider.addLogEntry("BACKUP_ONLY: Cloud-Sicherung neu erstellt", bookId, book.name)
                             }
-                            var uploadedFileId: String? = null
+                            val uploadedFileId: String?
                             val updateSuccess = if (remoteZipFile != null) {
                                 uploadedFileId = remoteZipFile.id
                                 storageProvider.updateFile(remoteZipFile.id, tempFile, "application/zip", book.name) { p ->
@@ -841,8 +841,8 @@ class CloudSyncUseCase @Inject constructor(
         
         val shouldDownload = when (syncMode) {
             SyncMode.BACKUP_ONLY -> false
-            SyncMode.RESTORE_ONLY -> hasRemoteChanged || (localLastModified == 0L && remoteFile != null)
-            SyncMode.TWO_WAY -> hasRemoteChanged || (localLastModified == 0L && remoteFile != null)
+            SyncMode.RESTORE_ONLY -> hasRemoteChanged || localLastModified == 0L
+            SyncMode.TWO_WAY -> hasRemoteChanged || localLastModified == 0L
         }
         
         if (shouldUpload) {

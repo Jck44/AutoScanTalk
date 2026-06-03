@@ -158,7 +158,7 @@ fun NotificationAppPicker(
         } else null
     }
 
-    val onToggleApp: (String, String) -> Unit = { pkg, label ->
+    val onToggleApp: (String, String) -> Unit = { pkg, _ ->
         val updated = selectedPackages.toMutableSet()
         if (updated.contains(pkg)) {
             updated.remove(pkg)

@@ -12,6 +12,7 @@ import androidx.fragment.app.FragmentActivity
 import com.andreas_kratzer.ghosttalk.core.SecurityManager
 import com.andreas_kratzer.ghosttalk.core.ui.R
 
+@Suppress("UNUSED_VALUE")
 @Composable
 fun SecurityEntryDialog(
     onDismiss: () -> Unit,

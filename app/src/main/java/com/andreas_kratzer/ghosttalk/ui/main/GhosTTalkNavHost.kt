@@ -39,6 +39,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+@Suppress("UNUSED_VALUE")
 @Composable
 fun GhostTalkNavHost(
     navController: NavHostController,

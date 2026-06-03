@@ -401,7 +401,7 @@ class ControlDeviceActionHandler @Inject constructor(
             try {
                 val appInfo = packageManager.getApplicationInfo(sbn.packageName, 0)
                 packageManager.getApplicationLabel(appInfo).toString()
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 sbn.packageName
             }
         }
