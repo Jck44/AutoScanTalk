@@ -61,7 +61,7 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
     testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation(libs.kotlinreflect)
+    testImplementation("org.jetbrains.kotlin:kotlin-reflect:${libs.versions.kotlin.get()}")
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 }

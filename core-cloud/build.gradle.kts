@@ -14,10 +14,6 @@ android {
         consumerProguardFiles("consumer-rules.pro")
     }
 
-    lint {
-        disable += "GooglePlayDetector"
-    }
-
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -65,18 +61,15 @@ dependencies {
     api(libs.google.api.client.android)
     api(libs.google.api.services.drive)
     api(libs.google.http.client.gson)
-    //noinspection GooglePlayDetector
     implementation(libs.androidx.credentials)
-    //noinspection GooglePlayDetector
     implementation(libs.androidx.credentials.play.services.auth)
-    //noinspection GooglePlayDetector
     implementation(libs.googleid)
     implementation(libs.gms.play.services.auth)
     implementation(libs.androidx.work.runtime.ktx)
 
     implementation(libs.gson)
     implementation(libs.kotlinx.coroutines.android)
-    implementation(libs.androidx.documentfile)
+    implementation("androidx.documentfile:documentfile:1.1.0")
 
     testImplementation(libs.junit)
     testImplementation(libs.mockk)

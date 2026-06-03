@@ -63,11 +63,11 @@ fun CloudSettingsSection(
     val isCloudSyncEnabled by viewModel.isCloudSyncEnabled.collectAsState()
     val lastSyncTime by viewModel.lastSuccessfulSyncTime.collectAsState()
 
-    val googleDriveFolderId by viewModel.googleDriveFolderId.collectAsState(null)
-    val googleDriveFolderName by viewModel.googleDriveFolderName.collectAsState(null)
+    val googleDriveFolderId by viewModel.googleDriveFolderId.collectAsState()
+    val googleDriveFolderName by viewModel.googleDriveFolderName.collectAsState()
     val syncTargetType by viewModel.syncTargetType.collectAsState()
-    val localFolderSafUri by viewModel.localFolderSafUri.collectAsState(null)
-    val localFolderSafName by viewModel.localFolderSafName.collectAsState(null)
+    val localFolderSafUri by viewModel.localFolderSafUri.collectAsState()
+    val localFolderSafName by viewModel.localFolderSafName.collectAsState()
     val driveFolders by viewModel.driveFolders.collectAsState()
     val isBrowsingFolders by viewModel.isBrowsingFolders.collectAsState()
     val showFolderPicker = remember { mutableStateOf(false) }
@@ -79,7 +79,7 @@ fun CloudSettingsSection(
     val showManualImportUrlDialog = remember { mutableStateOf(false) }
     val syncLogs by viewModel.syncLogs.collectAsState()
     val showSyncLogDialog = remember { mutableStateOf(false) }
-    val spotifyUserDisplayName by viewModel.spotifyUserDisplayName.collectAsState(null)
+    val spotifyUserDisplayName by viewModel.spotifyUserDisplayName.collectAsState()
     
     val dimensions = LocalDimensions.current
     val locale = LocalConfiguration.current.locales[0]

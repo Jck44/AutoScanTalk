@@ -1,7 +1,7 @@
 [versions]
 agp = "9.2.1"
 biometric = "1.1.0"
-kotlin = "2.3.20"
+kotlin = "2.3.0"
 coreKtx = "1.18.0"
 junit = "4.13.2"
 junitVersion = "1.3.0"
@@ -9,21 +9,21 @@ espressoCore = "3.7.0"
 lifecycle = "2.10.0"
 activityCompose = "1.13.0"
 composeBom = "2026.05.01"
-navigation = "2.9.7"
+navigation = "2.9.8"
 room = "2.8.4"
 fragment = "1.8.9"
 ksp = "2.3.8"
 playPublisher = "4.0.0"
 googleApiClient = "2.9.0"
 googleDrive = "v3-rev20260428-2.0.0"
-credentialManager = "1.5.0"
+credentialManager = "1.6.0"
 googleId = "1.2.0"
 googleHttpClient = "2.1.0"
 playAppUpdate = "2.1.0"
-generativeAiMlKit = "1.0.0-beta1"
-playServicesAuth = "18.3.2"
+generativeAiMlKit = "1.0.0-beta2"
+playServicesAuth = "18.3.3"
 playServicesLocation = "21.3.0"
-mockk = "1.14.9"
+mockk = "1.14.11"
 coroutines = "1.11.0"
 gson = "2.14.0"
 hilt = "2.59.2"
@@ -32,10 +32,8 @@ hiltLifecycleViewModelCompose = "1.3.0"
 workRuntime = "2.11.2"
 hiltWork = "1.3.0"
 serialization = "1.11.0"
-camerax = "1.5.3"
-okhttp = "4.12.0"
-documentfile = "1.1.0"
-json = "20260522"
+camerax = "1.6.1"
+okhttp = "5.3.2"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -70,11 +68,8 @@ androidx-room-testing = { group = "androidx.room", name = "room-testing", versio
 google-api-client-android = { group = "com.google.api-client", name = "google-api-client-android", version.ref = "googleApiClient" }
 google-api-services-drive = { group = "com.google.apis", name = "google-api-services-drive", version.ref = "googleDrive" }
 google-http-client-gson = { group = "com.google.http-client", name = "google-http-client-gson", version.ref = "googleHttpClient" }
-#noinspection GooglePlayDetector
 androidx-credentials = { group = "androidx.credentials", name = "credentials", version.ref = "credentialManager" }
-#noinspection GooglePlayDetector
 androidx-credentials-play-services-auth = { group = "androidx.credentials", name = "credentials-play-services-auth", version.ref = "credentialManager" }
-#noinspection GooglePlayDetector
 googleid = { group = "com.google.android.libraries.identity.googleid", name = "googleid", version.ref = "googleId" }
 play-app-update-ktx = { group = "com.google.android.play", name = "app-update-ktx", version.ref = "playAppUpdate" }
 google-generativeai-mlkit = { group = "com.google.mlkit", name = "genai-prompt", version.ref = "generativeAiMlKit" }
@@ -107,9 +102,6 @@ androidx-camera-camera2 = { group = "androidx.camera", name = "camera-camera2", 
 androidx-camera-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", version.ref = "camerax" }
 androidx-camera-view = { group = "androidx.camera", name = "camera-view", version.ref = "camerax" }
 okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
-androidx-documentfile = { group = "androidx.documentfile", name = "documentfile", version.ref = "documentfile" }
-orgjson = { group = "org.json", name = "json", version.ref = "json" }
-kotlinreflect = { group = "org.jetbrains.kotlin", name = "kotlin-reflect", version.ref = "kotlin" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

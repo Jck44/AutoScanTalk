@@ -11,7 +11,6 @@ import kotlin.system.measureTimeMillis
 
 class PerformanceBenchmark {
 
-    @Suppress("UNUSED_VARIABLE", "ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
     @Test
     fun benchmarkLargeDataset() {
         // Timestamp: 2026-03-09T18:45:00
@@ -76,17 +75,19 @@ class PerformanceBenchmark {
 
         // 4. Lookup Map Creation - simulating ResolveDynamicButtonsUseCase
         // Pass 1: Initial build
-        val buttonLookup: Map<String, ButtonConfig>
-        val pageLookup: Map<String, Page>
+        var buttonLookup: Map<String, ButtonConfig> = emptyMap()
+        var pageLookup: Map<String, Page> = emptyMap()
         val lookupTime1 = measureTimeMillis {
             buttonLookup = pages.flatMap { it.buttonConfigs }.filterNotNull().associateBy { it.id }
             pageLookup = pages.associateBy { it.id }
         }
-        println("Lookup Map Creation Pass 1 (Initial): ${lookupTime1}ms")
+        println("Lookup Map Creation Pass 1 (Initial): ${lookupTime1}ms (${buttonLookup.size} buttons, ${pageLookup.size} pages)")
         
         // Pass 2: Cached build (simulating the new logic)
         val lookupTime2 = measureTimeMillis {
-            // Return cached version (simulated)
+            // Return cached version (simulated) – reuse existing maps
+            buttonLookup.size
+            pageLookup.size
         }
         println("Lookup Map Creation Pass 2 (Cached): ${lookupTime2}ms")
         

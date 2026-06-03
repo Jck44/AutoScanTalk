@@ -164,11 +164,8 @@ dependencies {
     implementation(libs.gson)
 
     // Cloud Sync (Google Drive & Credential Manager)
-    //noinspection GooglePlayDetector
     implementation(libs.androidx.credentials)
-    //noinspection GooglePlayDetector
     implementation(libs.androidx.credentials.play.services.auth)
-    //noinspection GooglePlayDetector
     implementation(libs.googleid)
     implementation(libs.google.api.client.android)
     implementation(libs.google.api.services.drive)
