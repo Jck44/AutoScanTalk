@@ -386,6 +386,42 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
     }
 
+    override fun onStop() {
+        super.onStop()
+        if (settingsRepository.isCloudSyncEnabled) {
+            triggerBackgroundSync()
+        }
+    }
+
+    private fun triggerBackgroundSync() {
+        try {
+            val workManager = androidx.work.WorkManager.getInstance(applicationContext)
+            val targetType = settingsRepository.syncTargetType
+            val isSaf = targetType == "LOCAL_FOLDER_SAF"
+
+            val constraintsBuilder = androidx.work.Constraints.Builder()
+            if (!isSaf) {
+                constraintsBuilder.setRequiredNetworkType(androidx.work.NetworkType.CONNECTED)
+            }
+            val constraints = constraintsBuilder.build()
+
+            val workRequest = androidx.work.OneTimeWorkRequest.Builder(
+                com.andreas_kratzer.ghosttalk.core.cloud.CloudSyncWorker::class.java
+            )
+                .setConstraints(constraints)
+                .build()
+
+            workManager.enqueueUniqueWork(
+                "CloudSyncWorker_OneTime",
+                androidx.work.ExistingWorkPolicy.REPLACE,
+                workRequest
+            )
+            Log.d("MainActivity", "Triggered background one-time sync because app was minimized (isSaf: $isSaf)")
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Failed to trigger background sync on stop: ${e.message}", e)
+        }
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         try {

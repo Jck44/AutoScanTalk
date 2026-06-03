@@ -76,13 +76,8 @@ fun GenAiSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
             SettingsToggleItem(
                 label = stringResource(R.string.settings_smart_prediction_enable),
                 checked = smartEnabled,
+                description = stringResource(R.string.settings_smart_prediction_hint),
                 onCheckedChange = { viewModel.setSmartPredictionEnabled(it) }
-            )
-            
-            Text(
-                text = "Ermöglicht der App, basierend auf Klick-Historie, Ort und Zeit des Nutzers, Kachel-Empfehlungen auf Smart-Prediction-Buttons anzuzeigen.",
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(horizontal = dimensions.paddingMedium, vertical = dimensions.paddingSmall)
             )
         }
 

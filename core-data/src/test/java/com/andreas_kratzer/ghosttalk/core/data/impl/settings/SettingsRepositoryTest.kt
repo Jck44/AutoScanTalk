@@ -359,4 +359,25 @@ class SettingsRepositoryTest {
         val newRepo = SettingsRepositoryImpl(mockContext, mockBookRepository, testScope)
         assertEquals("RESTORE_ONLY", newRepo.syncModeStats)
     }
+
+    @Test
+    fun testCloudSyncModeMigrationWorksOnBookSwitch() = runBlocking {
+        mockedPrefsStore.clear()
+        mockedPrefsStore["book-default_sync_mode"] = "TWO_WAY"
+        mockedPrefsStore["book-other_sync_mode"] = "BACKUP_ONLY"
+        
+        val newRepo = SettingsRepositoryImpl(mockContext, mockBookRepository, testScope)
+        
+        // Initial book is book-default
+        assertEquals("TWO_WAY", newRepo.syncModeBook)
+        
+        // Now switch active book to book-other
+        newRepo.activeBookId = "book-other"
+        
+        // The old sync mode for book-other should be migrated on switch
+        assertEquals("BACKUP_ONLY", newRepo.syncModeBook)
+        assertEquals("BACKUP_ONLY", newRepo.syncModeTts)
+        assertEquals("RESTORE_ONLY", newRepo.syncModeStats)
+        org.junit.Assert.assertFalse(mockedPrefsStore.containsKey("book-other_sync_mode"))
+    }
 }

@@ -879,101 +879,105 @@ class PageViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 _isPageSplitLoading.value = true
-                val sourcePage = pageManagementDelegate.getPageById(pageId) ?: return@launch
-                val bookId = sourcePage.bookId
-                val currentPages = pageManagementDelegate.unfilteredPages.value
+                
+                val finalSourcePage = pageManagementDelegate.pageRepository.runInTransaction {
+                    val sourcePage = pageManagementDelegate.getPageById(pageId) ?: throw IllegalArgumentException("Source page not found")
+                    val bookId = sourcePage.bookId
+                    val currentPages = pageManagementDelegate.unfilteredPages.value
 
-                // 1. Neue Seiten erstellen für jede Kategorie
-                val categoryPageIds = mutableMapOf<String, String>()
-                proposal.categories.forEach { category ->
-                    val buttonCount = category.buttonLabels.size
-                    val (rows, cols) = when {
-                        buttonCount <= 4 -> 2 to 2
-                        buttonCount <= 9 -> 3 to 3
-                        buttonCount <= 16 -> 4 to 4
-                        else -> 5 to 5
+                    // 1. Neue Seiten erstellen für jede Kategorie
+                    val categoryPageIds = mutableMapOf<String, String>()
+                    proposal.categories.forEach { category ->
+                        val buttonCount = category.buttonLabels.size
+                        val (rows, cols) = when {
+                            buttonCount <= 4 -> 2 to 2
+                            buttonCount <= 9 -> 3 to 3
+                            buttonCount <= 16 -> 4 to 4
+                            else -> 5 to 5
+                        }
+                        val newId = createPageUseCase.execute(
+                            name = category.name,
+                            rows = rows,
+                            columns = cols,
+                            bookId = bookId,
+                            currentPages = currentPages
+                        )
+                        categoryPageIds[category.name] = newId
                     }
-                    val newId = createPageUseCase.execute(
-                        name = category.name,
-                        rows = rows,
-                        columns = cols,
-                        bookId = bookId,
-                        currentPages = currentPages
-                    )
-                    categoryPageIds[category.name] = newId
-                }
 
-                // 2. Buttons von Quellseite auf Zielseiten verschieben
-                val sourcePageUpdated = pageManagementDelegate.getPageById(pageId) ?: return@launch
-                val sourceConfigs = sourcePageUpdated.buttonConfigs.toMutableList()
+                    // 2. Buttons von Quellseite auf Zielseiten verschieben
+                    val sourcePageUpdated = pageManagementDelegate.getPageById(pageId) ?: throw IllegalArgumentException("Source page not found after creation")
+                    val sourceConfigs = sourcePageUpdated.buttonConfigs.toMutableList()
 
-                proposal.categories.forEach { category ->
-                    val targetPageId = categoryPageIds[category.name] ?: return@forEach
-                    val targetPage = pageManagementDelegate.getPageById(targetPageId) ?: return@forEach
-                    val targetConfigs = targetPage.buttonConfigs.toMutableList()
+                    proposal.categories.forEach { category ->
+                        val targetPageId = categoryPageIds[category.name] ?: return@forEach
+                        val targetPage = pageManagementDelegate.getPageById(targetPageId) ?: return@forEach
+                        val targetConfigs = targetPage.buttonConfigs.toMutableList()
 
-                    category.buttonLabels.forEach { label ->
-                        val sourceIndex = sourceConfigs.indexOfFirst { it?.label == label }
-                        if (sourceIndex != -1) {
-                            val buttonToMove = sourceConfigs[sourceIndex] ?: return@forEach
-                            val targetIndex = targetConfigs.indexOfFirst { it == null }
-                            if (targetIndex != -1) {
-                                targetConfigs[targetIndex] = buttonToMove
-                                sourceConfigs[sourceIndex] = null
+                        category.buttonLabels.forEach { label ->
+                            val sourceIndex = sourceConfigs.indexOfFirst { it?.label == label }
+                            if (sourceIndex != -1) {
+                                val buttonToMove = sourceConfigs[sourceIndex] ?: return@forEach
+                                val targetIndex = targetConfigs.indexOfFirst { it == null }
+                                if (targetIndex != -1) {
+                                    targetConfigs[targetIndex] = buttonToMove
+                                    sourceConfigs[sourceIndex] = null
+                                }
+                            }
+                        }
+                        pageManagementDelegate.pageRepository.updatePage(targetPage.copy(buttonConfigs = targetConfigs))
+                    }
+
+                    // 3. Quellseite neu sortieren (freie Plätze entfernen) und schrumpfen
+                    val remainingConfigs = sourceConfigs.filterNotNull()
+                    
+                    // Neue Navigation-Buttons vorbereiten
+                    val newCategoryButtons = proposal.categories.mapNotNull { category ->
+                        val targetPageId = categoryPageIds[category.name] ?: return@mapNotNull null
+                        ButtonConfig(
+                            id = java.util.UUID.randomUUID().toString(),
+                            label = category.name,
+                            spokenText = "Öffne ${category.name}",
+                            buttonAction = NavigateToPageButtonAction(pageId = targetPageId),
+                            auditoryCue = AuditoryCue.TextToSpeechCue("Öffne ${category.name}")
+                        )
+                    }
+                    
+                    val finalSourceButtons = remainingConfigs + newCategoryButtons
+                    val finalCount = finalSourceButtons.size
+                    
+                    // Bestimme die optimal geschrumpfte Grid-Größe
+                    val (sourceRows, sourceCols) = when {
+                        finalCount <= 4 -> 2 to 2
+                        finalCount <= 9 -> 3 to 3
+                        finalCount <= 16 -> 4 to 4
+                        finalCount <= 25 -> 5 to 5
+                        finalCount <= 36 -> 6 to 6
+                        else -> 7 to 7
+                    }
+                    
+                    // Fülle die Knöpfe lückenlos in die sichtbaren Slots des neuen Grids
+                    val finalConfigs = MutableList<ButtonConfig?>(com.andreas_kratzer.ghosttalk.core.util.GridUtils.TOTAL_SLOTS) { null }
+                    var buttonIndex = 0
+                    for (r in 0 until sourceRows) {
+                        for (c in 0 until sourceCols) {
+                            if (buttonIndex < finalSourceButtons.size) {
+                                val globalPos = r * com.andreas_kratzer.ghosttalk.core.util.GridUtils.MAX_GRID_SIZE + c
+                                finalConfigs[globalPos] = finalSourceButtons[buttonIndex]
+                                buttonIndex++
                             }
                         }
                     }
-                    pageManagementDelegate.pageRepository.updatePage(targetPage.copy(buttonConfigs = targetConfigs))
-                }
-
-                // 3. Quellseite neu sortieren (freie Plätze entfernen) und schrumpfen
-                val remainingConfigs = sourceConfigs.filterNotNull()
-                
-                // Neue Navigation-Buttons vorbereiten
-                val newCategoryButtons = proposal.categories.mapNotNull { category ->
-                    val targetPageId = categoryPageIds[category.name] ?: return@mapNotNull null
-                    ButtonConfig(
-                        id = java.util.UUID.randomUUID().toString(),
-                        label = category.name,
-                        spokenText = "Öffne ${category.name}",
-                        buttonAction = NavigateToPageButtonAction(pageId = targetPageId),
-                        auditoryCue = AuditoryCue.TextToSpeechCue("Öffne ${category.name}")
+                    
+                    // Quellseite speichern
+                    val updatedPage = sourcePageUpdated.copy(
+                        buttonConfigs = finalConfigs,
+                        rows = sourceRows,
+                        columns = sourceCols
                     )
+                    pageManagementDelegate.pageRepository.updatePage(updatedPage)
+                    updatedPage
                 }
-                
-                val finalSourceButtons = remainingConfigs + newCategoryButtons
-                val finalCount = finalSourceButtons.size
-                
-                // Bestimme die optimal geschrumpfte Grid-Größe
-                val (sourceRows, sourceCols) = when {
-                    finalCount <= 4 -> 2 to 2
-                    finalCount <= 9 -> 3 to 3
-                    finalCount <= 16 -> 4 to 4
-                    finalCount <= 25 -> 5 to 5
-                    finalCount <= 36 -> 6 to 6
-                    else -> 7 to 7
-                }
-                
-                // Fülle die Knöpfe lückenlos in die sichtbaren Slots des neuen Grids
-                val finalConfigs = MutableList<ButtonConfig?>(com.andreas_kratzer.ghosttalk.core.util.GridUtils.TOTAL_SLOTS) { null }
-                var buttonIndex = 0
-                for (r in 0 until sourceRows) {
-                    for (c in 0 until sourceCols) {
-                        if (buttonIndex < finalSourceButtons.size) {
-                            val globalPos = r * com.andreas_kratzer.ghosttalk.core.util.GridUtils.MAX_GRID_SIZE + c
-                            finalConfigs[globalPos] = finalSourceButtons[buttonIndex]
-                            buttonIndex++
-                        }
-                    }
-                }
-                
-                // Quellseite speichern
-                val finalSourcePage = sourcePageUpdated.copy(
-                    buttonConfigs = finalConfigs,
-                    rows = sourceRows,
-                    columns = sourceCols
-                )
-                pageManagementDelegate.pageRepository.updatePage(finalSourcePage)
 
                 withContext(Dispatchers.Main) {
                     pageManagementDelegate.setCurrentPage(finalSourcePage)

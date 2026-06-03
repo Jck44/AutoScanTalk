@@ -23,10 +23,22 @@ class SetCloudSyncEnabledUseCase @Inject constructor(
         }
     }
 
+    fun reschedule() {
+        if (settingsRepository.isCloudSyncEnabled) {
+            scheduleCloudSync()
+        }
+    }
+
     private fun scheduleCloudSync() {
-        val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED)
-            .build()
+        val targetType = settingsRepository.syncTargetType
+        val isSaf = targetType == "LOCAL_FOLDER_SAF"
+
+        val constraintsBuilder = Constraints.Builder()
+        if (!isSaf) {
+            constraintsBuilder.setRequiredNetworkType(NetworkType.CONNECTED)
+        }
+        val constraints = constraintsBuilder.build()
+
         val intervalMin = settingsRepository.syncIntervalMinutes
         val workRequest = PeriodicWorkRequestBuilder<CloudSyncWorker>(intervalMin, TimeUnit.MINUTES)
             .setConstraints(constraints)

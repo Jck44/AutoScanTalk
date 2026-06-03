@@ -30,19 +30,24 @@ class PerformManualSyncUseCase @Inject constructor(
         onProgress: (Float, String) -> Unit = { _, _ -> }
     ): Result = withContext(Dispatchers.IO) {
         Log.d(TAG, "Starting manual sync execution. Mode: $mode")
-        val credential = googleAuthManager.getGoogleCredential()
-        if (credential == null) {
-            Log.e(TAG, "No Google credentials found.")
-            return@withContext Result.Error("Keine Google-Anmeldedaten gefunden.")
-        }
+        val isSaf = settingsRepository.syncTargetType == "LOCAL_FOLDER_SAF"
 
-        return@withContext try {
-            val drive = Drive.Builder(
+        val drive = if (isSaf) {
+            null
+        } else {
+            val credential = googleAuthManager.getGoogleCredential()
+            if (credential == null) {
+                Log.e(TAG, "No Google credentials found.")
+                return@withContext Result.Error("Keine Google-Anmeldedaten gefunden.")
+            }
+            Drive.Builder(
                 NetHttpTransport(), 
                 GsonFactory.getDefaultInstance(), 
                 credential
             ).setApplicationName("GhosTTalk").build()
-            
+        }
+
+        return@withContext try {
             Log.d(TAG, "Calling cloudSyncUseCase.syncBook...")
             val success = cloudSyncUseCase.syncBook(drive, settingsRepository.activeBookId, mode, onProgress)
             Log.d(TAG, "syncBook result: $success")

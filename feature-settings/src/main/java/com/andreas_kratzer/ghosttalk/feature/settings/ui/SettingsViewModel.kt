@@ -403,11 +403,18 @@ class SettingsViewModel @Inject constructor(
     fun setSyncModeBook(m: String) { settingsRepository.syncModeBook = m }
     fun setSyncModeTts(m: String) { settingsRepository.syncModeTts = m }
     fun setSyncModeStats(m: String) { settingsRepository.syncModeStats = m }
-    fun setSyncIntervalMinutes(minutes: Long) { settingsRepository.syncIntervalMinutes = minutes }
-    fun setSyncTargetType(type: String) { settingsRepository.syncTargetType = type }
+    fun setSyncIntervalMinutes(minutes: Long) {
+        settingsRepository.syncIntervalMinutes = minutes
+        cloudSyncDelegate.reschedule()
+    }
+    fun setSyncTargetType(type: String) {
+        settingsRepository.syncTargetType = type
+        cloudSyncDelegate.reschedule()
+    }
     fun selectLocalFolderSaf(uri: String, name: String) {
         settingsRepository.localFolderSafUri = uri
         settingsRepository.localFolderSafName = name
+        cloudSyncDelegate.reschedule()
     }
     fun setHueBridgeIp(ip: String) { settingsRepository.hueBridgeIp = ip }
     fun setHueUsername(username: String) { settingsRepository.hueUsername = username }

@@ -42,22 +42,28 @@ class CloudSyncWorker @AssistedInject constructor(
             Log.e("CloudSyncWorker", "Failed to run stats cleanup: ${e.message}", e)
         }
 
-        val credential = googleAuthManager.getGoogleCredential()
-        if (credential == null) {
-            Log.w("CloudSyncWorker", "No credential available. Failing sync.")
-            return@withContext Result.failure()
-        }
+        val targetType = settingsRepository.syncTargetType
+        val isSaf = targetType == "LOCAL_FOLDER_SAF"
 
-        val bookId = settingsRepository.activeBookId
-        try {
-            val drive = Drive.Builder(
+        val drive = if (isSaf) {
+            null
+        } else {
+            val credential = googleAuthManager.getGoogleCredential()
+            if (credential == null) {
+                Log.w("CloudSyncWorker", "No credential available. Failing sync.")
+                return@withContext Result.failure()
+            }
+            Drive.Builder(
                 NetHttpTransport(),
                 GsonFactory.getDefaultInstance(),
                 credential
             ).setApplicationName("GhosTTalk").build()
+        }
 
+        val bookId = settingsRepository.activeBookId
+        try {
             Log.d("CloudSyncWorker",
-                "Starting background sync for book: $bookId"
+                "Starting background sync for book: $bookId (SAF: $isSaf)"
             )
             cloudSyncUseCase.syncBook(drive, bookId, SyncMode.TWO_WAY)
             Log.d("CloudSyncWorker", "Background sync completed successfully")

@@ -26,6 +26,14 @@ class RowByRowScanStrategy : ScanStrategy {
     ) {
         focusedButtonIndex.value = null
         
+        val hasAnyVisibleButtons = buttonConfigs.any { config ->
+            config != null && config.isActive && featureGuard.isButtonVisible(config)
+        }
+        if (!hasAnyVisibleButtons) {
+            focusedRowIndex.value = null
+            return
+        }
+
         // Initial delay to settle race conditions
         delay(100)
 

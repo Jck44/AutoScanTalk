@@ -216,4 +216,105 @@ class ScanningIntegrationTest {
             componentJob.cancel()
         }
     }
+
+    @Test
+    fun `test scanning pauses when smart prediction is loading and resumes when loaded`() = testScope.runTest {
+        try {
+            val rawButtonConfigs = MutableList<ButtonConfig?>(49) { null }
+            rawButtonConfigs[0] = ButtonConfig(id = "b1", label = "B1", isActive = true, buttonAction = com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction(1))
+            val rawPage = Page(
+                id = "p1", bookId = "b1", name = "Test", rows = 1, columns = 1,
+                buttonConfigs = rawButtonConfigs,
+                scanPattern = "linear"
+            )
+
+            val resolvedButtonConfigs = MutableList<ButtonConfig?>(49) { null }
+            resolvedButtonConfigs[0] = ButtonConfig(id = "b1", label = "Prediction 1", isActive = true, buttonAction = SpeakTextButtonAction())
+            val resolvedPage = Page(
+                id = "p1", bookId = "b1", name = "Test", rows = 1, columns = 1,
+                buttonConfigs = resolvedButtonConfigs,
+                scanPattern = "linear"
+            )
+
+            val isUserModeActive = MutableStateFlow(true)
+            val currentPage = MutableStateFlow(rawPage)
+            val resolvedPageFlow = MutableStateFlow(resolvedPage)
+            
+            // Start in a LOADING state
+            val isSmartPredictionLoading = MutableStateFlow(true)
+            val smartPredictions = MutableStateFlow<List<String>?>(null)
+
+            every { checkForPredictorUseCase(any()) } returns false
+
+            scanCoordinator.init(
+                currentPage = currentPage,
+                isUserModeActive = isUserModeActive,
+                resolvedPage = resolvedPageFlow,
+                isSmartPredictionLoading = isSmartPredictionLoading,
+                smartPredictions = smartPredictions
+            )
+
+            // Let the scanner initialize in loading state (it should be paused)
+            advanceTimeBy(100)
+            assertTrue("Scanner should not be active initially when loading", !scannerEngine.isScanning.value)
+
+            // 1. Simulate Loading finished / Predictions arrive
+            isSmartPredictionLoading.value = false
+            smartPredictions.value = emptyList()
+            advanceTimeBy(200)
+            
+            // Now scanner should become active!
+            assertTrue("Scanner should be active after predictions load", scannerEngine.isScanning.value)
+
+            // 2. Simulate Smart Prediction Loading again (e.g. page refresh or new query)
+            isSmartPredictionLoading.value = true
+            advanceTimeBy(100)
+            // Scanner should pause/stop temporarily
+            assertTrue("Scanner should pause when loading starts", !scannerEngine.isScanning.value)
+
+            // 3. Simulate Loading finished again
+            isSmartPredictionLoading.value = false
+            advanceTimeBy(600) // Settle delays
+            assertTrue("Scanner should resume after loading finished", scannerEngine.isScanning.value)
+        } finally {
+            componentJob.cancel()
+        }
+    }
+
+    @Test
+    fun `test scan stops after cycle limit is reached`() = testScope.runTest {
+        try {
+            val buttonConfigs = MutableList<ButtonConfig?>(49) { null }
+            buttonConfigs[0] = ButtonConfig(id = "b1", label = "B1", isActive = true, buttonAction = SpeakTextButtonAction())
+            val page = Page(
+                id = "p1", bookId = "b1", name = "Test", rows = 1, columns = 1,
+                buttonConfigs = buttonConfigs,
+                scanPattern = "linear"
+            )
+
+            every { checkForPredictorUseCase(any()) } returns false
+            
+            scanCoordinator.init(
+                currentPage = MutableStateFlow(page),
+                isUserModeActive = MutableStateFlow(true),
+                resolvedPage = MutableStateFlow(page),
+                isSmartPredictionLoading = MutableStateFlow(false),
+                smartPredictions = MutableStateFlow(emptyList())
+            )
+            
+            scanCoordinator.setScanLimitSettings(enabled = true, limit = 1)
+            
+            advanceTimeBy(150)
+            assertTrue("Scanner should be active", scannerEngine.isScanning.value)
+            
+            // Advance time to complete cycle (it triggers onCycleCompleted)
+            advanceTimeBy(1000)
+            
+            // Scanner should stop after 1 cycle
+            assertTrue("Scanner should stop due to limit", !scannerEngine.isScanning.value)
+            assertTrue("isStoppedDueToLimit should be true", scanCoordinator.isStoppedDueToLimit.value)
+        } finally {
+            componentJob.cancel()
+        }
+    }
 }

@@ -122,4 +122,8 @@ class PageRepositoryImpl(
     override suspend fun updatePageGridSize(pageId: String, rows: Int, columns: Int) {
         pageDao.updatePageGridSize(pageId, rows, columns)
     }
+
+    override suspend fun <R> runInTransaction(block: suspend () -> R): R {
+        return appDatabase.withTransaction(block)
+    }
 }

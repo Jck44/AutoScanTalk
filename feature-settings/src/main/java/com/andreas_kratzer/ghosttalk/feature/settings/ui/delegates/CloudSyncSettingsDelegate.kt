@@ -125,6 +125,10 @@ class CloudSyncSettingsDelegate @Inject constructor(
         }
     }
 
+    fun reschedule() {
+        setCloudSyncEnabledUseCase.reschedule()
+    }
+
     fun performManualSync(
         mode: SyncMode,
         scope: CoroutineScope,

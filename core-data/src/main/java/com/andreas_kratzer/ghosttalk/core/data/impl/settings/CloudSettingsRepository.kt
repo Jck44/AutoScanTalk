@@ -89,6 +89,7 @@ class CloudSettingsRepository(
 
 
     override fun refresh() {
+        migrateOldSyncMode()
         _isCloudSyncEnabled.refresh()
         _syncIntervalMinutes.refresh()
         _syncModeBook.refresh()

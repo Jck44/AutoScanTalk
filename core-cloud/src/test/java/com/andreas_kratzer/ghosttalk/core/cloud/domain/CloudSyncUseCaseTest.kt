@@ -17,6 +17,8 @@ import io.mockk.mockkConstructor
 import io.mockk.mockkStatic
 import io.mockk.unmockkAll
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -423,5 +425,113 @@ class CloudSyncUseCaseTest {
         // Verify that stats were downloaded/restored because the manual RESTORE_ONLY overrides the BACKUP_ONLY setting
         coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile("stats_file_1", any(), any()) }
         coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadFile(any(), any<File>(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `syncBook with SAF failure performs local fallback backup`() = runTest {
+        val bookId = "test-book"
+        every { mockSettingsRepository.syncTargetType } returns "LOCAL_FOLDER_SAF"
+        every { mockSettingsRepository.localFolderSafUri } returns null // Will cause IllegalStateException in getStorageProvider
+        every { mockSettingsRepository.syncModeStats } returns "BACKUP_ONLY"
+        every { mockSettingsRepository.syncModeTts } returns "BACKUP_ONLY"
+
+        // Mock export calls to verify they are run in fallback path
+        coEvery { mockImportExportManager.exportBookToZip(eq(bookId), any(), any(), any()) } returns Unit
+        coEvery { mockImportExportManager.exportStatisticsToZip(eq(bookId), any()) } returns Unit
+        coEvery { mockImportExportManager.exportTtsCacheToZip(any(), any()) } returns Unit
+
+        val result = useCase.syncBook(null, bookId, SyncMode.TWO_WAY)
+        advanceUntilIdle()
+
+        // Sync returns false because remote sync failed, but fallback is executed
+        assertEquals(false, result)
+
+        // Verify fallback exports were called
+        coVerify(exactly = 1) { mockImportExportManager.exportBookToZip(eq(bookId), any(), any(), any()) }
+        coVerify(exactly = 1) { mockImportExportManager.exportStatisticsToZip(eq(bookId), any()) }
+        coVerify(exactly = 1) { mockImportExportManager.exportTtsCacheToZip(any(), any()) }
+        coVerify(exactly = 1) { mockSyncLogProvider.addLogEntry(
+            match { it.contains("Cloud-Sync fehlgeschlagen") && it.contains("Lokales Backup erfolgreich") },
+            eq(bookId),
+            any(),
+            isError = true
+        ) }
+    }
+
+    @Test
+    fun `syncBook returns false immediately if another sync is in progress`() = runTest {
+        val bookId = "test-book"
+        val testBook = Book(id = bookId, name = "Test", updatedAt = System.currentTimeMillis())
+        
+        // Mock a slow getBookById call to make syncBook execute slowly
+        coEvery { mockBookRepository.getBookById(bookId) } coAnswers {
+            delay(100)
+            testBook
+        }
+
+        // Launch first sync in background
+        val firstResultDeferred = async {
+            useCase.syncBook(mockDrive, bookId, SyncMode.TWO_WAY)
+        }
+
+        // Let the first sync start and grab the lock
+        delay(20)
+
+        // Try launching second sync concurrently
+        val secondResult = useCase.syncBook(mockDrive, bookId, SyncMode.TWO_WAY)
+
+        // Second sync should immediately abort and return false
+        assertEquals(false, secondResult)
+
+        // Wait for first sync to complete
+        firstResultDeferred.await()
+    }
+
+    @Test
+    fun `syncBook uploads for the first time if remote file does not exist in TWO_WAY mode`() = runTest {
+        val bookId = "test-book"
+        mockk<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>(relaxed = true)
+
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder(any()) } returns "folder_1"
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("folder_1") } returns emptyList() // No remote file exists
+        coEvery { mockImportExportManager.exportBookToZip(eq(bookId), any(), any(), any()) } returns Unit
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadFile(any(), any<File>(), any(), any(), any()) } returns "new_file_id"
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().getFileMetadata(any()) } returns com.google.api.services.drive.model.File().apply {
+            id = "new_file_id"
+            name = "book_test-book.zip"
+            modifiedTime = com.google.api.client.util.DateTime(System.currentTimeMillis())
+        }
+
+        val result = useCase.syncBook(mockDrive, bookId, SyncMode.TWO_WAY)
+        advanceUntilIdle()
+
+        assertEquals(true, result)
+        // Verify uploadFile was called and downloadFile was NOT called
+        coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadFile(any(), any<File>(), any(), any(), any()) }
+        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile(any(), any(), any()) }
+    }
+
+    @Test
+    fun `syncBook uploads for the first time if remote file does not exist in BACKUP_ONLY mode`() = runTest {
+        val bookId = "test-book"
+        mockk<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>(relaxed = true)
+
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder(any()) } returns "folder_1"
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("folder_1") } returns emptyList() // No remote file exists
+        coEvery { mockImportExportManager.exportBookToZip(eq(bookId), any(), any(), any()) } returns Unit
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadFile(any(), any<File>(), any(), any(), any()) } returns "new_file_id"
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().getFileMetadata(any()) } returns com.google.api.services.drive.model.File().apply {
+            id = "new_file_id"
+            name = "book_test-book.zip"
+            modifiedTime = com.google.api.client.util.DateTime(System.currentTimeMillis())
+        }
+
+        val result = useCase.syncBook(mockDrive, bookId, SyncMode.BACKUP_ONLY)
+        advanceUntilIdle()
+
+        assertEquals(true, result)
+        // Verify uploadFile was called and downloadFile was NOT called
+        coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadFile(any(), any<File>(), any(), any(), any()) }
+        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile(any(), any(), any()) }
     }
 }

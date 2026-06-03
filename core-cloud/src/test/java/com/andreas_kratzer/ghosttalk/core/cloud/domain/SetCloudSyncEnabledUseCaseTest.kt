@@ -51,4 +51,50 @@ class SetCloudSyncEnabledUseCaseTest {
         verify { workManager.cancelUniqueWork("CloudSyncWorker") }
         verify(exactly = 0) { workManager.enqueueUniquePeriodicWork(any(), any(), any()) }
     }
+
+    @Test
+    fun `reschedule enqueues work when sync is enabled`() {
+        every { settingsRepository.isCloudSyncEnabled } returns true
+        every { settingsRepository.syncIntervalMinutes } returns 15
+        every { settingsRepository.syncTargetType } returns "GOOGLE_DRIVE"
+
+        useCase.reschedule()
+
+        verify { workManager.enqueueUniquePeriodicWork("CloudSyncWorker", any(), any()) }
+    }
+
+    @Test
+    fun `reschedule does not enqueue work when sync is disabled`() {
+        every { settingsRepository.isCloudSyncEnabled } returns false
+
+        useCase.reschedule()
+
+        verify(exactly = 0) { workManager.enqueueUniquePeriodicWork(any(), any(), any()) }
+    }
+
+    @Test
+    fun `work request has connected network constraint when target is not SAF`() {
+        every { settingsRepository.syncTargetType } returns "GOOGLE_DRIVE"
+        every { settingsRepository.syncIntervalMinutes } returns 15
+        val slot = io.mockk.slot<androidx.work.PeriodicWorkRequest>()
+        every { workManager.enqueueUniquePeriodicWork(any(), any(), capture(slot)) } returns mockk()
+
+        useCase(true)
+
+        val request = slot.captured
+        org.junit.Assert.assertEquals(androidx.work.NetworkType.CONNECTED, request.workSpec.constraints.requiredNetworkType)
+    }
+
+    @Test
+    fun `work request has no network constraint when target is SAF`() {
+        every { settingsRepository.syncTargetType } returns "LOCAL_FOLDER_SAF"
+        every { settingsRepository.syncIntervalMinutes } returns 15
+        val slot = io.mockk.slot<androidx.work.PeriodicWorkRequest>()
+        every { workManager.enqueueUniquePeriodicWork(any(), any(), capture(slot)) } returns mockk()
+
+        useCase(true)
+
+        val request = slot.captured
+        org.junit.Assert.assertEquals(androidx.work.NetworkType.NOT_REQUIRED, request.workSpec.constraints.requiredNetworkType)
+    }
 }

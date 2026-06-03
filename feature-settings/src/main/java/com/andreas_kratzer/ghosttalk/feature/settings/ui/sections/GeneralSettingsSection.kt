@@ -133,6 +133,7 @@ fun GeneralSettingsSection(
                 SettingsToggleItem(
                     label = stringResource(R.string.settings_force_soft_keyboard),
                     checked = forceKeyboard,
+                    description = stringResource(R.string.settings_force_soft_keyboard_desc),
                     onCheckedChange = { viewModel.setForceSoftKeyboard(it) }
                 )
 

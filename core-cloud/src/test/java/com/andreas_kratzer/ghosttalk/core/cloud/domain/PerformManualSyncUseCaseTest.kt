@@ -86,4 +86,17 @@ class PerformManualSyncUseCaseTest {
             assertTrue("Intent mismatch", intent === result.intent)
         }
     }
+
+    @Test
+    fun `execute returns Success when target is SAF even if no Google credentials found`() = runTest {
+        every { googleAuthManager.getGoogleCredential() } returns null
+        every { settingsRepository.syncTargetType } returns "LOCAL_FOLDER_SAF"
+        every { settingsRepository.activeBookId } returns "book1"
+        coEvery { cloudSyncUseCase.syncBook(null, "book1", SyncMode.TWO_WAY, any()) } returns true
+
+        val result = useCase.execute(SyncMode.TWO_WAY)
+
+        assertTrue(result is PerformManualSyncUseCase.Result.Success)
+        coVerify { cloudSyncUseCase.syncBook(null, "book1", SyncMode.TWO_WAY, any()) }
+    }
 }

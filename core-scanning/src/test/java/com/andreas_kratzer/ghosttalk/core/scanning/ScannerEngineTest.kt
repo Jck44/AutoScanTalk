@@ -286,4 +286,45 @@ class ScannerEngineTest {
         assertNull(engine.focusedButtonIndex.value)
         assertNull(engine.focusedRowIndex.value)
     }
+
+    // --- Empty / Inactive grid behavior for Row-by-Row ---
+
+    @Test
+    fun `row_by_row scan with no active buttons exits immediately`() = runTest {
+        val engine = createEngine(this)
+        val configs = createConfigs(emptyList()) // All inactive
+
+        engine.startScanning(
+            buttonConfigs = configs,
+            startIndex = 0,
+            pattern = "row_by_row",
+            columns = 2,
+            pageId = "page1"
+        )
+        runCurrent()
+        
+        assertNull("focusedRowIndex should be null", engine.focusedRowIndex.value)
+        assertNull("focusedButtonIndex should be null", engine.focusedButtonIndex.value)
+    }
+
+    @Test
+    fun `row_by_row scan with all invisible buttons exits immediately`() = runTest {
+        // Setup featureGuard to return false for visibility
+        every { featureGuard.isButtonVisible(any()) } returns false
+
+        val engine = createEngine(this)
+        val configs = createConfigs(listOf(0, 1)) // Active but invisible
+
+        engine.startScanning(
+            buttonConfigs = configs,
+            startIndex = 0,
+            pattern = "row_by_row",
+            columns = 2,
+            pageId = "page1"
+        )
+        runCurrent()
+        
+        assertNull("focusedRowIndex should be null", engine.focusedRowIndex.value)
+        assertNull("focusedButtonIndex should be null", engine.focusedButtonIndex.value)
+    }
 }

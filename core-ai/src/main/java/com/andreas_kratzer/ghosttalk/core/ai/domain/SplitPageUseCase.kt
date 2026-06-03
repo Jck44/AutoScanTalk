@@ -48,12 +48,12 @@ class SplitPageUseCase @Inject constructor(
      * Parst die JSON-Antwort (entweder aus der API oder vom Benutzer eingefügt) in ein strukturiertes Ergebnis.
      */
     fun parseResponse(jsonResponse: String): PageSplitProposal {
-        // Bereinige eventuelle Markdown-Fences, falls vorhanden
-        val cleanedJson = jsonResponse
-            .replace("```json", "")
-            .replace("```", "")
-            .trim()
-            
+        val firstBrace = jsonResponse.indexOf('{')
+        val lastBrace = jsonResponse.lastIndexOf('}')
+        if (firstBrace == -1 || lastBrace == -1 || firstBrace > lastBrace) {
+            throw IllegalArgumentException("No valid JSON object found in response")
+        }
+        val cleanedJson = jsonResponse.substring(firstBrace, lastBrace + 1)
         val root = JSONObject(cleanedJson)
         val categoriesArray = root.getJSONArray("categories")
         val categories = mutableListOf<CategoryProposal>()

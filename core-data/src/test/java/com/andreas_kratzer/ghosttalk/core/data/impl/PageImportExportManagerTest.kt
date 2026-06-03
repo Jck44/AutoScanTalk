@@ -69,6 +69,7 @@ class PageImportExportManagerTest {
         every { sharedPrefs.edit() } returns prefsEditor
         every { prefsEditor.putString(any(), any()) } returns prefsEditor
         every { buttonTemplateRepository.getTemplates() } returns kotlinx.coroutines.flow.flowOf(emptyList())
+        every { context.filesDir } returns java.io.File(System.getProperty("java.io.tmpdir") ?: "/tmp")
     }
 
     @Test
@@ -1175,5 +1176,41 @@ class PageImportExportManagerTest {
         assertEquals(2000L, captured[0].endTime)
         assertEquals(3000L, captured[1].startTime)
         assertEquals(4000L, captured[1].endTime)
+    }
+
+    @Test
+    fun `importFromJson with invalid json structure returns failure and does not delete pages`() = runTest {
+        val corruptedJson = "{ invalid json structure... ]"
+        
+        coEvery { pageRepository.deletePagesForBook(any()) } returns Unit
+        
+        val result = manager.importFromJson(corruptedJson, "book1")
+        
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull() is kotlinx.serialization.SerializationException)
+        
+        // Verify deletePagesForBook was NOT called (ensuring no partial delete/corruption occurs)
+        coVerify(exactly = 0) { pageRepository.deletePagesForBook("book1") }
+    }
+
+    @Test
+    fun `importFromZip without backup json returns failure`() = runTest {
+        // Create a zip stream containing some random file, but NOT backup.json
+        val bos = java.io.ByteArrayOutputStream()
+        java.util.zip.ZipOutputStream(bos).use { zos ->
+            zos.putNextEntry(java.util.zip.ZipEntry("random_file.txt"))
+            zos.write("hello".toByteArray())
+            zos.closeEntry()
+        }
+        
+        val result = manager.importFromZip(
+            inputStream = java.io.ByteArrayInputStream(bos.toByteArray()),
+            bookId = "book1",
+            regenerateIds = false,
+            restoreSyncSettings = false
+        ) { _, _ -> }
+        
+        assertTrue(result.isFailure)
+        assertEquals("Keine backup.json im ZIP gefunden.", result.exceptionOrNull()?.message)
     }
 }

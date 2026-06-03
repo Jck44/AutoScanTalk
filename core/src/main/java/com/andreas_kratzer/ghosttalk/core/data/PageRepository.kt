@@ -22,4 +22,5 @@ interface PageRepository {
     suspend fun updatePageScanPattern(pageId: String, scanPattern: String?)
     suspend fun updatePageRowNames(pageId: String, rowNames: List<String>)
     suspend fun updatePageGridSize(pageId: String, rows: Int, columns: Int)
+    suspend fun <R> runInTransaction(block: suspend () -> R): R
 }
