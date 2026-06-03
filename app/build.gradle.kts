@@ -87,6 +87,16 @@ android {
             excludes += "/META-INF/LICENSE"
             excludes += "/META-INF/NOTICE"
             excludes += "/META-INF/INDEX.LIST"
+            excludes += "META-INF/INDEX.LIST"
+            // Es ist empfehlenswert, diese direkt mit auszuschließen,
+            // da Google-Bibliotheken hier oft Konflikte verursachen:
+            excludes += "META-INF/DEPENDENCIES"
+            excludes += "META-INF/LICENSE"
+            excludes += "META-INF/LICENSE.txt"
+            excludes += "META-INF/license.txt"
+            excludes += "META-INF/NOTICE"
+            excludes += "META-INF/NOTICE.txt"
+            excludes += "META-INF/notice.txt"
         }
     }
     buildFeatures {
@@ -199,4 +209,13 @@ dependencies {
     implementation(libs.androidx.camera.view)
     androidTestImplementation(libs.androidx.work.testing)
     ksp(libs.androidx.hilt.compiler)
+
+    // Automatischer Check: Wenn Hilt neuer als 2.59.2 ist, erinnere uns daran, den Workaround zu prüfen!
+    val currentHiltVersion = libs.versions.hilt.get()
+    if (currentHiltVersion <= "2.59.2") {
+        ksp("org.jetbrains.kotlin:kotlin-metadata-jvm:2.4.0")
+    } else {
+        logger.warn("⚠️ HINWEIS: Hilt wurde auf $currentHiltVersion aktualisiert. Prüfe, ob der kotlin-metadata-jvm Workaround in app/build.gradle.kts noch nötig ist!")
+    }
 }
+

@@ -157,10 +157,6 @@ open class ElevenLabsTtsProvider @Inject constructor(
                         }
 
                         val body = resp.body
-                        if (body == null) {
-                            handler.post { onDone?.invoke() }
-                            return
-                        }
 
                         try {
                             val tempFile = File(cachedFile.absolutePath + ".tmp")
@@ -265,7 +261,7 @@ open class ElevenLabsTtsProvider @Inject constructor(
                         Log.e("ElevenLabsTtsProvider", "Prefetch failed: ${resp.code} ${resp.message} for text: ${text.take(20)}...")
                         return@withContext
                     }
-                    val body = resp.body ?: return@withContext
+                    val body = resp.body
                     val tempFile = File(cachedFile.absolutePath + ".tmp")
                     java.io.FileOutputStream(tempFile).use { output ->
                         body.byteStream().copyTo(output)
@@ -443,10 +439,10 @@ open class ElevenLabsTtsProvider @Inject constructor(
 
             override fun onResponse(call: Call, response: Response) {
                 response.use { resp ->
-                    val body = resp.body?.string()
-                    Log.i("ElevenLabsTtsProvider", "Received response: ${resp.code}. Body length: ${body?.length ?: 0}")
+                    val body = resp.body.string()
+                    Log.i("ElevenLabsTtsProvider", "Received response: ${resp.code}. Body length: ${body.length ?: 0}")
                     
-                    if (!resp.isSuccessful || body == null) {
+                    if (!resp.isSuccessful) {
                         val errorMsg = "Unsuccessful response or empty body: ${resp.code}. Body: $body"
                         Log.e("ElevenLabsTtsProvider", errorMsg)
                         applyFallbackVoices()
