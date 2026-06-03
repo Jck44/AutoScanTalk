@@ -145,7 +145,6 @@ class SettingsRepositoryImpl @Inject constructor(
     override val headphoneVolumeFlow: StateFlow<Int> get() = scanningSettings.headphoneVolumeFlow
     override val isCloudSyncEnabledFlow: StateFlow<Boolean> get() = cloudSettings.isCloudSyncEnabledFlow
     override val syncIntervalMinutesFlow: StateFlow<Long> get() = cloudSettings.syncIntervalMinutesFlow
-    override val syncModeFlow: StateFlow<String> get() = cloudSettings.syncModeFlow
     override val syncModeBookFlow: StateFlow<String> get() = cloudSettings.syncModeBookFlow
     override val syncModeTtsFlow: StateFlow<String> get() = cloudSettings.syncModeTtsFlow
     override val syncModeStatsFlow: StateFlow<String> get() = cloudSettings.syncModeStatsFlow
@@ -319,9 +318,6 @@ class SettingsRepositoryImpl @Inject constructor(
         get() = cloudSettings.syncIntervalMinutes
         set(value) { cloudSettings.syncIntervalMinutes = value }
 
-    override var syncMode: String
-        get() = cloudSettings.syncMode
-        set(value) { cloudSettings.syncMode = value }
     override var syncModeBook: String
         get() = cloudSettings.syncModeBook
         set(value) { cloudSettings.syncModeBook = value }

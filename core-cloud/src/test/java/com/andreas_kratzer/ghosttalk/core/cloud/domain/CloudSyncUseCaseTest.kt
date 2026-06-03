@@ -52,6 +52,9 @@ class CloudSyncUseCaseTest {
         coEvery { mockBookRepository.getBookById(any()) } returns mockBook
         
         every { mockSettingsRepository.googleDriveFolderId } returns null
+        every { mockSettingsRepository.syncModeBook } returns "TWO_WAY"
+        every { mockSettingsRepository.syncModeTts } returns "TWO_WAY"
+        every { mockSettingsRepository.syncModeStats } returns "RESTORE_ONLY"
         
         useCase = CloudSyncUseCase(mockContext, mockBookRepository, mockImportExportManager, mockSettingsRepository, mockSyncLogProvider, mockLogger)
     }
@@ -316,5 +319,109 @@ class CloudSyncUseCaseTest {
 
         // Verify that listFiles was called with the custom folder ID
         coVerify(atLeast = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles(customFolderId) }
+    }
+
+    @Test
+    fun `syncBook with TWO_WAY mode respects syncModeBook set to RESTORE_ONLY`() = runTest {
+        val bookId = "test-book"
+        every { mockSettingsRepository.syncModeBook } returns "RESTORE_ONLY"
+        
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder(any()) } returns "folder_1"
+        
+        val remoteFile = com.google.api.services.drive.model.File().apply {
+            id = "file_1"
+            name = "book_$bookId.json"
+            modifiedTime = com.google.api.client.util.DateTime(System.currentTimeMillis() + 100000L) // Remote is newer
+        }
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("folder_1") } returns listOf(remoteFile)
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile(any(), any(), any()) } answers {
+            val file = args[1] as File
+            file.writeText("{\"restored\": true}")
+            true
+        }
+
+        useCase.syncBook(mockDrive, bookId, SyncMode.TWO_WAY)
+        advanceUntilIdle()
+
+        // Verify that downloadFile was called (overwriting local) because resolvedBookMode is RESTORE_ONLY
+        coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile("file_1", any(), any()) }
+        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().updateFile(any(), any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `syncBook with TWO_WAY mode respects syncModeBook set to OFF`() = runTest {
+        val bookId = "test-book"
+        every { mockSettingsRepository.syncModeBook } returns "OFF"
+        every { mockSettingsRepository.syncModeTts } returns "OFF"
+        every { mockSettingsRepository.syncModeStats } returns "OFF"
+        
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder(any()) } returns "folder_1"
+        
+        val remoteFile = com.google.api.services.drive.model.File().apply {
+            id = "file_1"
+            name = "book_$bookId.json"
+            modifiedTime = com.google.api.client.util.DateTime(System.currentTimeMillis() + 100000L)
+        }
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("folder_1") } returns listOf(remoteFile)
+
+        val result = useCase.syncBook(mockDrive, bookId, SyncMode.TWO_WAY)
+        advanceUntilIdle()
+
+        // Verify success is returned, but no downloading/importing/exporting or uploading took place
+        assert(result)
+        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile(any(), any(), any()) }
+        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().updateFile(any(), any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `syncBook with TWO_WAY mode respects syncModeStats set to BACKUP_ONLY`() = runTest {
+        val bookId = "test-book"
+        every { mockSettingsRepository.syncModeStats } returns "BACKUP_ONLY"
+        every { mockSettingsRepository.syncModeBook } returns "OFF"
+        every { mockSettingsRepository.syncModeTts } returns "OFF"
+        
+        // Mock local statistics as modified (so it should upload)
+        coEvery { mockImportExportManager.getStatisticsLastModified(bookId) } returns System.currentTimeMillis()
+        coEvery { mockImportExportManager.exportStatisticsToZip(bookId, any()) } answers {
+            val os = args[1] as java.io.OutputStream
+            os.write("dummy statistics data".toByteArray())
+        }
+        
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder(any()) } returns "folder_1"
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("folder_1") } returns emptyList() // No remote stats file
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadFile(any(), any(), any(), any()) } returns "new_stats_id"
+
+        useCase.syncBook(mockDrive, bookId, SyncMode.TWO_WAY)
+        advanceUntilIdle()
+
+        // Verify that statistics upload was invoked because statsMode resolves to BACKUP_ONLY
+        coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadFile(any(), any<File>(), eq("application/zip"), eq("Test"), any()) }
+    }
+
+    @Test
+    fun `syncBook with manual RESTORE_ONLY overrides syncModeStats set to BACKUP_ONLY`() = runTest {
+        val bookId = "test-book"
+        // Configure repository to BACKUP_ONLY, but the parameter passed is RESTORE_ONLY (forced restore)
+        every { mockSettingsRepository.syncModeStats } returns "BACKUP_ONLY"
+        every { mockSettingsRepository.syncModeBook } returns "OFF"
+        every { mockSettingsRepository.syncModeTts } returns "OFF"
+        
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder(any()) } returns "folder_1"
+        
+        val remoteFile = com.google.api.services.drive.model.File().apply {
+            id = "stats_file_1"
+            name = "statistics_$bookId.zip"
+            modifiedTime = com.google.api.client.util.DateTime(System.currentTimeMillis() + 100000L) // Newer remote file
+        }
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("folder_1") } returns listOf(remoteFile)
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile(any(), any(), any()) } returns true
+        coEvery { mockImportExportManager.importStatisticsFromZip(bookId, any()) } returns Unit
+
+        useCase.syncBook(mockDrive, bookId, SyncMode.RESTORE_ONLY)
+        advanceUntilIdle()
+
+        // Verify that stats were downloaded/restored because the manual RESTORE_ONLY overrides the BACKUP_ONLY setting
+        coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile("stats_file_1", any(), any()) }
+        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadFile(any(), any<File>(), any(), any(), any()) }
     }
 }

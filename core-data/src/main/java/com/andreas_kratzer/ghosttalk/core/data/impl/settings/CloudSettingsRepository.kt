@@ -22,7 +22,6 @@ class CloudSettingsRepository(
 
     private val _isCloudSyncEnabled = BooleanSetting(KEY_CLOUD_SYNC_ENABLED, false)
     private val _syncIntervalMinutes = LongSetting(KEY_SYNC_INTERVAL_MINUTES, 15L)
-    private val _syncMode = NonNullStringSetting(KEY_SYNC_MODE, "TWO_WAY")
     private val _syncModeBook = NonNullStringSetting(SettingsConstants.KEY_SYNC_MODE_BOOK, "TWO_WAY")
     private val _syncModeTts = NonNullStringSetting(SettingsConstants.KEY_SYNC_MODE_TTS, "TWO_WAY")
     private val _syncModeStats = NonNullStringSetting(SettingsConstants.KEY_SYNC_MODE_STATS, "RESTORE_ONLY")
@@ -48,7 +47,6 @@ class CloudSettingsRepository(
 
     override val isCloudSyncEnabledFlow = _isCloudSyncEnabled.flow
     override val syncIntervalMinutesFlow = _syncIntervalMinutes.flow
-    override val syncModeFlow = _syncMode.flow
     override val syncModeBookFlow = _syncModeBook.flow
     override val syncModeTtsFlow = _syncModeTts.flow
     override val syncModeStatsFlow = _syncModeStats.flow
@@ -70,7 +68,6 @@ class CloudSettingsRepository(
 
     override var isCloudSyncEnabled: Boolean by _isCloudSyncEnabled
     override var syncIntervalMinutes: Long by _syncIntervalMinutes
-    override var syncMode: String by _syncMode
     override var syncModeBook: String by _syncModeBook
     override var syncModeTts: String by _syncModeTts
     override var syncModeStats: String by _syncModeStats
@@ -94,7 +91,6 @@ class CloudSettingsRepository(
     override fun refresh() {
         _isCloudSyncEnabled.refresh()
         _syncIntervalMinutes.refresh()
-        _syncMode.refresh()
         _syncModeBook.refresh()
         _syncModeTts.refresh()
         _syncModeStats.refresh()
@@ -123,32 +119,23 @@ class CloudSettingsRepository(
 
         if (prefs.contains(scopedOldKey)) {
             val oldMode = prefs.getString(scopedOldKey, null)
+            val editor = prefs.edit()
             if (oldMode != null) {
-                val editor = prefs.edit()
-                var modified = false
-
                 if (!prefs.contains(scopedBookKey)) {
                     editor.putString(scopedBookKey, oldMode)
-                    modified = true
                 }
                 if (!prefs.contains(scopedTtsKey)) {
                     editor.putString(scopedTtsKey, oldMode)
-                    modified = true
                 }
                 if (!prefs.contains(scopedStatsKey)) {
-                    // Statistics sync mode defaults to RESTORE_ONLY when migrating from an old version.
-                    val statsMode = "RESTORE_ONLY"
-                    editor.putString(scopedStatsKey, statsMode)
-                    modified = true
-                }
-
-                if (modified) {
-                    editor.apply()
-                    _syncModeBook.refresh()
-                    _syncModeTts.refresh()
-                    _syncModeStats.refresh()
+                    editor.putString(scopedStatsKey, "RESTORE_ONLY")
                 }
             }
+            editor.remove(scopedOldKey)
+            editor.apply()
+            _syncModeBook.refresh()
+            _syncModeTts.refresh()
+            _syncModeStats.refresh()
         }
     }
 }

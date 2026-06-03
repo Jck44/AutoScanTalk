@@ -108,11 +108,25 @@ class CloudSyncUseCase @Inject constructor(
         val localLastModified = book.updatedAt // Use database timestamp, not file system
         logger.d(TAG, "Local updatedAt: $localLastModified")
 
-        val needsExport = remoteFile == null || when (syncMode) {
+        // Resolve component-specific sync mode for book
+        val bookModeStr = settingsRepository.syncModeBook
+        val resolvedBookMode = if (syncMode == SyncMode.TWO_WAY) {
+            if (bookModeStr == "OFF") null else {
+                try {
+                    SyncMode.valueOf(bookModeStr)
+                } catch (_: Exception) {
+                    SyncMode.TWO_WAY
+                }
+            }
+        } else {
+            if (bookModeStr == "OFF") null else syncMode
+        }
+
+        val needsExport = if (resolvedBookMode == null) false else (remoteFile == null || when (resolvedBookMode) {
             SyncMode.RESTORE_ONLY -> false
             SyncMode.BACKUP_ONLY -> localLastModified > remoteLastModified + 2000
             SyncMode.TWO_WAY -> localLastModified > remoteLastModified + 2000
-        }
+        })
 
         // Local Export (only needed for comparison or upload)
         val tempFile = File(context.cacheDir, currentFileName)
@@ -134,9 +148,12 @@ class CloudSyncUseCase @Inject constructor(
 
         var success: Boolean
 
-        if (remoteFile == null) {
+        if (resolvedBookMode == null) {
+            logger.d(TAG, "Book sync is OFF. Skipping book synchronization.")
+            success = true
+        } else if (remoteFile == null) {
             logger.d(TAG, "Step 4a: Remote file does not exist.")
-            if (syncMode == SyncMode.RESTORE_ONLY) {
+            if (resolvedBookMode == SyncMode.RESTORE_ONLY) {
                 logger.w(TAG, "RESTORE_ONLY mode but no remote file found. Cannot restore.")
                 success = false
             } else {
@@ -256,10 +273,14 @@ class CloudSyncUseCase @Inject constructor(
         // Sync TTS cache separately after book sync if enabled
         val ttsModeStr = settingsRepository.syncModeTts
         if (success && ttsModeStr != "OFF") {
-            val ttsMode = try {
-                SyncMode.valueOf(ttsModeStr)
-            } catch (_: Exception) {
-                SyncMode.TWO_WAY
+            val ttsMode = if (syncMode == SyncMode.TWO_WAY) {
+                try {
+                    SyncMode.valueOf(ttsModeStr)
+                } catch (_: Exception) {
+                    SyncMode.TWO_WAY
+                }
+            } else {
+                syncMode
             }
             try {
                 syncTtsCache(storageProvider, ttsMode)
@@ -273,10 +294,14 @@ class CloudSyncUseCase @Inject constructor(
         // Sync statistics separately after book sync if enabled
         val statsModeStr = settingsRepository.syncModeStats
         if (success && statsModeStr != "OFF") {
-            val statsMode = try {
-                SyncMode.valueOf(statsModeStr)
-            } catch (_: Exception) {
-                SyncMode.BACKUP_ONLY
+            val statsMode = if (syncMode == SyncMode.TWO_WAY) {
+                try {
+                    SyncMode.valueOf(statsModeStr)
+                } catch (_: Exception) {
+                    SyncMode.BACKUP_ONLY
+                }
+            } else {
+                syncMode
             }
             try {
                 syncStatistics(storageProvider, statsMode, bookId, book.name)

@@ -49,13 +49,6 @@ class CloudSyncWorker @AssistedInject constructor(
         }
 
         val bookId = settingsRepository.activeBookId
-        val syncModeStr = settingsRepository.syncMode
-        val mode = try {
-            SyncMode.valueOf(syncModeStr)
-        } catch (_: Exception) {
-            SyncMode.TWO_WAY
-        }
-
         try {
             val drive = Drive.Builder(
                 NetHttpTransport(),
@@ -64,9 +57,9 @@ class CloudSyncWorker @AssistedInject constructor(
             ).setApplicationName("GhosTTalk").build()
 
             Log.d("CloudSyncWorker",
-                $$"Starting background sync for book: $bookId with mode: $mode"
+                "Starting background sync for book: $bookId"
             )
-            cloudSyncUseCase.syncBook(drive, bookId, mode)
+            cloudSyncUseCase.syncBook(drive, bookId, SyncMode.TWO_WAY)
             Log.d("CloudSyncWorker", "Background sync completed successfully")
             settingsRepository.lastSuccessfulSyncTime = System.currentTimeMillis()
             Result.success()

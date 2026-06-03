@@ -127,7 +127,6 @@ class SettingsViewModel @Inject constructor(
     val showPageIdInLog = settingsRepository.showPageIdInLogFlow
     
     val isCloudSyncEnabled = settingsRepository.isCloudSyncEnabledFlow
-    val syncMode = settingsRepository.syncModeFlow
     val syncModeBook = settingsRepository.syncModeBookFlow
     val syncModeTts = settingsRepository.syncModeTtsFlow
     val syncModeStats = settingsRepository.syncModeStatsFlow
@@ -341,14 +340,8 @@ class SettingsViewModel @Inject constructor(
        fun syncNow() {
         backupDelegate.setBackupRestoreRunning(true)
         backupDelegate.setBackupRestoreProgress(0f)
-        val modeStr = settingsRepository.syncMode
-        val mode = try {
-            com.andreas_kratzer.ghosttalk.core.cloud.domain.SyncMode.valueOf(modeStr)
-        } catch (_: Exception) {
-            com.andreas_kratzer.ghosttalk.core.cloud.domain.SyncMode.TWO_WAY
-        }
         cloudSyncDelegate.performManualSync(
-            mode = mode,
+            mode = com.andreas_kratzer.ghosttalk.core.cloud.domain.SyncMode.TWO_WAY,
             scope = viewModelScope,
             onProgress = { p, s -> backupDelegate.handleCloudProgress(p, s) },
             onComplete = { backupDelegate.finishBackupRestoreProgress() }
@@ -407,7 +400,6 @@ class SettingsViewModel @Inject constructor(
     fun loadSyncLogs() = cloudSyncDelegate.loadSyncLogs(viewModelScope)
     fun clearSyncLogs() = cloudSyncDelegate.clearSyncLogs(viewModelScope)
     
-    fun setSyncMode(m: String) { settingsRepository.syncMode = m }
     fun setSyncModeBook(m: String) { settingsRepository.syncModeBook = m }
     fun setSyncModeTts(m: String) { settingsRepository.syncModeTts = m }
     fun setSyncModeStats(m: String) { settingsRepository.syncModeStats = m }

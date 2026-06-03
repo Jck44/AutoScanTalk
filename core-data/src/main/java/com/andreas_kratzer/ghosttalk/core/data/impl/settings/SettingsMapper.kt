@@ -59,7 +59,9 @@ class SettingsMapper @Inject constructor(
             useLocalGenerativeAi = settingsRepository.useLocalGenerativeAi,
             isCloudSyncEnabled = settingsRepository.isCloudSyncEnabled,
             syncIntervalMinutes = settingsRepository.syncIntervalMinutes,
-            syncMode = settingsRepository.syncMode,
+            syncModeBook = settingsRepository.syncModeBook,
+            syncModeTts = settingsRepository.syncModeTts,
+            syncModeStats = settingsRepository.syncModeStats,
             ttsLanguage = settingsRepository.ttsLanguage,
             ttsVoiceName = settingsRepository.ttsVoiceName,
             pageSortOrder = settingsRepository.getPageSortOrderForBook(bookId),
@@ -130,7 +132,9 @@ class SettingsMapper @Inject constructor(
         // They are still exported for diagnostic/backup visibility but intentionally skipped here.
         // data.isCloudSyncEnabled?.let { settingsRepository.isCloudSyncEnabled = it }
         // data.syncIntervalMinutes?.let { settingsRepository.syncIntervalMinutes = it }
-        // data.syncMode?.let { settingsRepository.syncMode = it }
+        // data.syncModeBook?.let { settingsRepository.syncModeBook = it }
+        // data.syncModeTts?.let { settingsRepository.syncModeTts = it }
+        // data.syncModeStats?.let { settingsRepository.syncModeStats = it }
         data.ttsLanguage?.let { settingsRepository.ttsLanguage = it }
         data.ttsVoiceName?.let { settingsRepository.ttsVoiceName = it }
         data.smartPredictionDelay?.let { settingsRepository.smartPredictionDelay = it }

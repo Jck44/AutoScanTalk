@@ -274,21 +274,6 @@ class SettingsRepositoryTest {
     }
 
     @Test
-    fun syncMode_initializesTwoWay() = runBlocking {
-        every { mockPrefs.getString("sync_mode", "TWO_WAY") } returns "TWO_WAY"
-        assertEquals("TWO_WAY", repository.syncMode)
-    }
-
-    @Test
-    fun syncMode_savesAndEmitsValue() = runBlocking {
-        val testMode = "BACKUP_ONLY"
-        repository.syncMode = testMode
-        
-        assertEquals(testMode, mockedPrefsStore["book-default_sync_mode"])
-        assertEquals(testMode, repository.syncMode)
-    }
-
-    @Test
     fun themeMode_initializesLight() = runBlocking {
         every { mockPrefs.getString("theme_mode", "LIGHT") } returns "LIGHT"
         assertEquals("LIGHT", repository.themeMode)
@@ -358,13 +343,14 @@ class SettingsRepositoryTest {
     @Test
     fun testCloudSyncModeMigrationDefaultsStatsToRestoreOnly() = runBlocking {
         mockedPrefsStore.clear()
-        mockedPrefsStore["sync_mode"] = "TWO_WAY"
+        mockedPrefsStore["book-default_sync_mode"] = "TWO_WAY"
         
         val newRepo = SettingsRepositoryImpl(mockContext, mockBookRepository, testScope)
         
         assertEquals("TWO_WAY", newRepo.syncModeBook)
         assertEquals("TWO_WAY", newRepo.syncModeTts)
         assertEquals("RESTORE_ONLY", newRepo.syncModeStats)
+        org.junit.Assert.assertFalse(mockedPrefsStore.containsKey("book-default_sync_mode"))
     }
 
     @Test

@@ -419,7 +419,12 @@ class MainActivity : AppCompatActivity() {
             globalPageViewModel.activateFocusedButton()
             return true
         }
-        return super.dispatchKeyEvent(event)
+        com.andreas_kratzer.ghosttalk.core.util.InputSourceTracker.isHardwareTriggered = true
+        try {
+            return super.dispatchKeyEvent(event)
+        } finally {
+            com.andreas_kratzer.ghosttalk.core.util.InputSourceTracker.isHardwareTriggered = false
+        }
     }
 
     override fun onUserInteraction() {

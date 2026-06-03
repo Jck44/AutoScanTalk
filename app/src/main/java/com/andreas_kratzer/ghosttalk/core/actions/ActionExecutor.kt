@@ -93,8 +93,12 @@ class ActionExecutor @Inject constructor(
 
         if (bookId != null && index != -1) {
             val onlyHardware = settingsRepository.onlyRecordHardwareStats
-            val isScanningActiveForBook = settingsRepository.getAutoStartScanningForBook(bookId)
-            val isTouchIntervention = isScanningActiveForBook && !isHardwareTriggered
+            val isScanningActive = try {
+                scanCoordinatorProvider.get().isScanning.value
+            } catch (_: Exception) {
+                false
+            }
+            val isTouchIntervention = isScanningActive && !isHardwareTriggered
 
             if (!onlyHardware || isHardwareTriggered || isTouchIntervention) {
                 val reactionTimeMs = try {

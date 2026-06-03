@@ -536,7 +536,12 @@ class PageViewModel @Inject constructor(
         interactionDelegate.setUserModeActive(isActive)
         savedStateHandle["isUserModeActive"] = isActive
     }
-    fun activateButtonAtIndex(index: Int) = interactionDelegate.activateButtonAtIndex(index, resolvedPage.value, activeBookId.value)
+    fun activateButtonAtIndex(index: Int) = interactionDelegate.activateButtonAtIndex(
+        index,
+        resolvedPage.value,
+        activeBookId.value,
+        isHardwareTriggered = com.andreas_kratzer.ghosttalk.core.util.InputSourceTracker.isHardwareTriggered
+    )
     fun activateFocusedButton() {
         val state = systemCallManager.callState.value
         if (state == com.andreas_kratzer.ghosttalk.core.call.CallState.RINGING) {

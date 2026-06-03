@@ -41,14 +41,7 @@ class SystemSyncManager @Inject constructor(
         Toast.makeText(context, "Synchronisation gestartet...", Toast.LENGTH_SHORT).show()
 
         scope.launch {
-            val modeStr = settingsRepository.syncMode
-            val mode = try {
-                SyncMode.valueOf(modeStr)
-            } catch (_: Exception) {
-                SyncMode.TWO_WAY
-            }
-
-            val result = performManualSyncUseCase.execute(mode)
+            val result = performManualSyncUseCase.execute(SyncMode.TWO_WAY)
             
             withContext(Dispatchers.Main) {
                 when (result) {
