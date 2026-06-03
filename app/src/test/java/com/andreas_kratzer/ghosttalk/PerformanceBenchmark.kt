@@ -84,11 +84,8 @@ class PerformanceBenchmark {
         println("Lookup Map Creation Pass 1 (Initial): ${lookupTime1}ms")
         
         // Pass 2: Cached build (simulating the new logic)
-        pages
         val lookupTime2 = measureTimeMillis {
             // Return cached version (simulated)
-            buttonLookup
-            pageLookup
         }
         println("Lookup Map Creation Pass 2 (Cached): ${lookupTime2}ms")
         

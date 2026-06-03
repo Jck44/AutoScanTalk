@@ -14,6 +14,10 @@ android {
         consumerProguardFiles("consumer-rules.pro")
     }
 
+    lint {
+        disable += "GooglePlayDetector"
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -69,7 +73,7 @@ dependencies {
 
     implementation(libs.gson)
     implementation(libs.kotlinx.coroutines.android)
-    implementation("androidx.documentfile:documentfile:1.0.1")
+    implementation(libs.androidx.documentfile)
 
     testImplementation(libs.junit)
     testImplementation(libs.mockk)

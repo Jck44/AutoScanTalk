@@ -39,7 +39,7 @@ import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun GenAiSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
+fun GenAiSettingsSection(viewModel: SettingsViewModel) {
     val isEnabled by viewModel.isGeminiEnabled.collectAsState(false)
     val toolStatus by viewModel.geminiToolStatus.collectAsState(emptyMap())
     val geminiApiKey by viewModel.geminiApiKey.collectAsState("")

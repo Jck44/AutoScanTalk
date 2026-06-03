@@ -42,10 +42,8 @@ class TtsSettingsDelegateTest {
         every { ttsHelper.getAvailableLanguages() } returns emptyList()
 
         delegate = TtsSettingsDelegate(
-            context,
             settingsRepository,
             audioDeviceManager,
-            getAudioDevicesUseCase,
             setTtsLanguageUseCase,
             ttsHelper,
             authManager
@@ -60,7 +58,7 @@ class TtsSettingsDelegateTest {
         val devicesFlow = MutableStateFlow(mockDevices)
         every { audioDeviceManager.availableDevicesFlow } returns devicesFlow
 
-        delegate.initialize(backgroundScope) { _, _ -> }
+        delegate.initialize(backgroundScope)
         runCurrent()
 
         assertEquals(mockDevices, delegate.availableAudioDevices.value)

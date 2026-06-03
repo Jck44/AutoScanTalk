@@ -180,7 +180,7 @@ fun ButtonTemplatesPanel(
                 verticalArrangement = Arrangement.spacedBy(dimensions.paddingMedium),
                 contentPadding = PaddingValues(bottom = dimensions.paddingExtraLarge)
             ) {
-                flatItems.forEachIndexed { globalListIdx, item ->
+                flatItems.forEach { item ->
                     when (item) {
                         is String -> {
                             item(key = "header_$item") {

@@ -137,7 +137,7 @@ fun PageSplitManualPromptDialog(
     val clipboard = LocalClipboard.current
     val coroutineScope = rememberCoroutineScope()
     var pastedJson by remember { mutableStateOf("") }
-    var parseError by remember { mutableStateOf<String?>(null) }
+    val parseError = remember { mutableStateOf<String?>(null) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -180,7 +180,7 @@ fun PageSplitManualPromptDialog(
                     value = pastedJson,
                     onValueChange = { 
                         pastedJson = it 
-                        parseError = null
+                        parseError.value = null
                     },
                     label = { Text("2. KI-Antwort (JSON) einfügen") },
                     placeholder = { Text("Füge hier das von der KI generierte JSON-Objekt ein...") },
@@ -188,11 +188,11 @@ fun PageSplitManualPromptDialog(
                         .fillMaxWidth()
                         .height(150.dp),
                     maxLines = 10,
-                    isError = parseError != null
+                    isError = parseError.value != null
                 )
-                if (parseError != null) {
+                if (parseError.value != null) {
                     Text(
-                        text = parseError ?: "",
+                        text = parseError.value ?: "",
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.padding(top = 4.dp)
@@ -206,7 +206,7 @@ fun PageSplitManualPromptDialog(
                     try {
                         onEvaluateResponse(pastedJson)
                     } catch (e: Exception) {
-                        parseError = "Ungültiges JSON-Format. Bitte stelle sicher, dass die Struktur genau dem Prompt entspricht."
+                        parseError.value = "Ungültiges JSON-Format. Bitte stelle sicher, dass die Struktur genau dem Prompt entspricht."
                     }
                 },
                 enabled = pastedJson.isNotBlank()
@@ -280,9 +280,11 @@ fun PageSplitWizardDialog(
     val categoryBounds = remember { mutableMapOf<String, Rect>() }
     var draggedItemId by remember { mutableStateOf<String?>(null) } // unique item buttonId
     var dragSourceCategory by remember { mutableStateOf<String?>(null) } // null = Unassigned
-    var dragStartCenter by remember { mutableStateOf(Offset.Zero) }
+    val dragStartCenter = remember { mutableStateOf(Offset.Zero) }
     var dragOffset by remember { mutableStateOf(Offset.Zero) }
-    val dragGlobalPos = dragStartCenter + dragOffset
+    var draggedSize by remember { mutableStateOf(Offset.Zero) }
+    var rootBoxBounds by remember { mutableStateOf<Rect?>(null) }
+    val dragGlobalPos = dragStartCenter.value + dragOffset
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -291,7 +293,10 @@ fun PageSplitWizardDialog(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(min = 150.dp, max = 500.dp),
+                    .heightIn(min = 150.dp, max = 500.dp)
+                    .onGloballyPositioned { layoutCoordinates ->
+                        rootBoxBounds = layoutCoordinates.boundsInRoot()
+                    },
                 contentAlignment = Alignment.Center
             ) {
                 if (isLoading) {
@@ -351,11 +356,11 @@ fun PageSplitWizardDialog(
                                                         DraggableChip(
                                                             label = item.label,
                                                             isDragged = draggedItemId == item.buttonId,
-                                                            dragOffset = if (draggedItemId == item.buttonId) dragOffset else Offset.Zero,
-                                                            onDragStart = { initialCenter ->
+                                                            onDragStart = { initialCenter, size ->
                                                                 draggedItemId = item.buttonId
                                                                 dragSourceCategory = null
-                                                                dragStartCenter = initialCenter
+                                                                dragStartCenter.value = initialCenter
+                                                                draggedSize = size
                                                                 dragOffset = Offset.Zero
                                                             },
                                                             onDrag = { amount ->
@@ -434,11 +439,11 @@ fun PageSplitWizardDialog(
                                                         DraggableChip(
                                                             label = item.label,
                                                             isDragged = draggedItemId == item.buttonId,
-                                                            dragOffset = if (draggedItemId == item.buttonId) dragOffset else Offset.Zero,
-                                                            onDragStart = { initialCenter ->
+                                                            onDragStart = { initialCenter, size ->
                                                                 draggedItemId = item.buttonId
                                                                 dragSourceCategory = category.name
-                                                                dragStartCenter = initialCenter
+                                                                dragStartCenter.value = initialCenter
+                                                                draggedSize = size
                                                                 dragOffset = Offset.Zero
                                                             },
                                                             onDrag = { amount ->
@@ -494,6 +499,36 @@ fun PageSplitWizardDialog(
                             }
                         }
                     }
+
+                    if (draggedItemId != null && rootBoxBounds != null) {
+                        val draggedLabel = allItems.find { it.buttonId == draggedItemId }?.label ?: ""
+                        val relativeX = dragGlobalPos.x - rootBoxBounds!!.left - draggedSize.x / 2
+                        val relativeY = dragGlobalPos.y - rootBoxBounds!!.top - draggedSize.y / 2
+                        
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.TopStart)
+                                .offset {
+                                    IntOffset(
+                                        relativeX.roundToInt(),
+                                        relativeY.roundToInt()
+                                    )
+                                }
+                        ) {
+                            Surface(
+                                shape = MaterialTheme.shapes.small,
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                tonalElevation = 8.dp
+                            ) {
+                                Text(
+                                    text = draggedLabel,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
                 }
             }
         },
@@ -527,18 +562,13 @@ fun PageSplitWizardDialog(
 fun DraggableChip(
     label: String,
     isDragged: Boolean,
-    dragOffset: Offset,
-    onDragStart: (Offset) -> Unit, // liefert die initiale globale Mitte
+    onDragStart: (center: Offset, size: Offset) -> Unit, // liefert die initiale globale Mitte und Größe
     onDrag: (Offset) -> Unit,      // liefert das Drag-Delta
     onDragEnd: () -> Unit,
     onDragCancel: () -> Unit = {}
 ) {
     var globalPos by remember { mutableStateOf(Offset.Zero) }
-
-    val animatedOffset = animateOffsetAsState(
-        targetValue = if (isDragged) dragOffset else Offset.Zero,
-        label = "drag"
-    )
+    var chipSize by remember { mutableStateOf(Offset.Zero) }
 
     val currentOnDragStart by rememberUpdatedState(onDragStart)
     val currentOnDrag by rememberUpdatedState(onDrag)
@@ -548,25 +578,20 @@ fun DraggableChip(
     Surface(
         shape = MaterialTheme.shapes.small,
         color = if (isDragged) {
-            MaterialTheme.colorScheme.primaryContainer
+            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
         } else {
             MaterialTheme.colorScheme.surfaceVariant
         },
-        tonalElevation = if (isDragged) 8.dp else 0.dp,
+        tonalElevation = 0.dp,
         modifier = Modifier
-            .zIndex(if (isDragged) 10f else 1f)
             .onGloballyPositioned { layoutCoordinates ->
-                globalPos = layoutCoordinates.boundsInRoot().center
-            }
-            .offset {
-                IntOffset(
-                    animatedOffset.value.x.roundToInt(),
-                    animatedOffset.value.y.roundToInt()
-                )
+                val bounds = layoutCoordinates.boundsInRoot()
+                globalPos = bounds.center
+                chipSize = Offset(bounds.width, bounds.height)
             }
             .pointerInput(Unit) {
                 detectDragGesturesAfterLongPress(
-                    onDragStart = { offset -> currentOnDragStart(globalPos) },
+                    onDragStart = { offset -> currentOnDragStart(globalPos, chipSize) },
                     onDrag = { change, dragAmount ->
                         change.consume()
                         currentOnDrag(dragAmount)
@@ -580,7 +605,11 @@ fun DraggableChip(
             text = label,
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-            fontWeight = if (isDragged) FontWeight.Bold else FontWeight.Normal
+            color = if (isDragged) {
+                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            }
         )
     }
 }

@@ -245,6 +245,7 @@ class ButtonUsageRepositoryTest {
         assertTrue("btn-recent ($recentIndex) should rank before btn-old ($oldIndex)", recentIndex < oldIndex)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun `getPredictiveButtons gives high priority to context specific buttons via TF-IDF`() = runTest {
         val bookId = "book1"

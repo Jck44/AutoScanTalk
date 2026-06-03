@@ -44,7 +44,7 @@ fun ActionLogCard(
     modifier: Modifier = Modifier
 ) {
     val dimensions = LocalDimensions.current
-    var showDetailDialog by remember { mutableStateOf(false) }
+    val showDetailDialog = remember { mutableStateOf(false) }
     val isLandscape = androidx.compose.ui.platform.LocalConfiguration.current.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
 
     val cardModifier = if (isLandscape) {
@@ -58,7 +58,7 @@ fun ActionLogCard(
 
     Card(
         modifier = cardModifier
-            .clickable { showDetailDialog = true },
+            .clickable { showDetailDialog.value = true },
         shape = MaterialTheme.shapes.large,
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         colors = CardDefaults.cardColors(
@@ -142,10 +142,10 @@ fun ActionLogCard(
         }
     }
 
-    if (showDetailDialog) {
+    if (showDetailDialog.value) {
         ActionLogDialog(
             lastActions = lastActions,
-            onDismiss = { showDetailDialog = false },
+            onDismiss = { showDetailDialog.value = false },
             actionLogUseCase = actionLogUseCase
         )
     }

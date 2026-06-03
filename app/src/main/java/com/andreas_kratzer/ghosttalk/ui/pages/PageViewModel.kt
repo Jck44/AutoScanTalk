@@ -15,7 +15,6 @@ import com.andreas_kratzer.ghosttalk.core.cloud.SpotifyManager
 import com.andreas_kratzer.ghosttalk.core.cloud.SpotifyPlaylist
 import com.andreas_kratzer.ghosttalk.core.data.ButtonTemplateRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.core.data.impl.PageImportExportManager
 import com.andreas_kratzer.ghosttalk.core.domain.pages.UsageLocation
 import com.andreas_kratzer.ghosttalk.core.model.Book
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
@@ -24,7 +23,6 @@ import com.andreas_kratzer.ghosttalk.core.model.GridSettingsUpdate
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.scanning.ScanCoordinator
 import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
-import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.andreas_kratzer.ghosttalk.domain.actions.ResolveDynamicButtonsUseCase
 import com.andreas_kratzer.ghosttalk.feature.settings.domain.FeatureGuard
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.InteractionDelegate
@@ -46,7 +44,6 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import javax.inject.Singleton
 import com.andreas_kratzer.ghosttalk.core.ai.domain.SplitPageUseCase
 import com.andreas_kratzer.ghosttalk.core.domain.pages.CreatePageUseCase
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction

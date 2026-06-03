@@ -44,7 +44,7 @@ fun MaintenanceSection(
 ) {
     val context = LocalContext.current
     val updateErrorFormat = stringResource(R.string.settings_maintenance_check_update_error)
-    var showDeleteEmptyButtonsConfirmation by remember { mutableStateOf(false) }
+    val showDeleteEmptyButtonsConfirmation = remember { mutableStateOf(false) }
     val updateStatus by viewModel.updateCheckStatus.collectAsState()
 
     LaunchedEffect(updateStatus) {
@@ -101,7 +101,7 @@ fun MaintenanceSection(
                 )
                 Spacer(modifier = Modifier.height(LocalDimensions.current.paddingSmall))
                 Button(
-                    onClick = { showDeleteEmptyButtonsConfirmation = true },
+                    onClick = { showDeleteEmptyButtonsConfirmation.value = true },
                     shape = MaterialTheme.shapes.medium,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.error
@@ -142,19 +142,19 @@ fun MaintenanceSection(
         }
     }
 
-    if (showDeleteEmptyButtonsConfirmation) {
+    if (showDeleteEmptyButtonsConfirmation.value) {
         AlertDialog(
-            onDismissRequest = { showDeleteEmptyButtonsConfirmation = false },
+            onDismissRequest = { showDeleteEmptyButtonsConfirmation.value = false },
             title = { Text(stringResource(R.string.settings_maintenance_delete_empty_buttons_confirm_title)) },
             text = { Text(stringResource(R.string.settings_maintenance_delete_empty_buttons_confirm_text)) },
             confirmButton = {
                 TextButton(
                     onClick = {
-                        showDeleteEmptyButtonsConfirmation = false
+                        showDeleteEmptyButtonsConfirmation.value = false
                         viewModel.deleteEmptyButtons { count ->
                             Toast.makeText(
                                 context,
-                                context.resources.getQuantityString(R.plurals.settings_maintenance_delete_empty_buttons_success, count, count),
+                                context.applicationContext.resources.getQuantityString(R.plurals.settings_maintenance_delete_empty_buttons_success, count, count),
                                 Toast.LENGTH_LONG
                             ).show()
                         }
@@ -167,7 +167,7 @@ fun MaintenanceSection(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteEmptyButtonsConfirmation = false }) {
+                TextButton(onClick = { showDeleteEmptyButtonsConfirmation.value = false }) {
                     Text(stringResource(com.andreas_kratzer.ghosttalk.core.ui.R.string.dialog_close))
                 }
             }

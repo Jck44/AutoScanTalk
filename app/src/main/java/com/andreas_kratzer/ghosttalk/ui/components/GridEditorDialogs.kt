@@ -67,7 +67,7 @@ fun EditorDialogs(
     val isSpotifyLoadingPlaylists by (actions as? PageViewModel)?.isLoadingPlaylists?.collectAsState(false) ?: remember { mutableStateOf(false) }
     val spotifyUserDisplayName by (actions as? PageViewModel)?.spotifyUserDisplayName?.collectAsState(null) ?: remember { mutableStateOf(null) }
 
-    var showSaveTemplateDialogConfig by remember { mutableStateOf<ButtonConfig?>(null) }
+    val showSaveTemplateDialogConfig = remember { mutableStateOf<ButtonConfig?>(null) }
     var newTemplateName by remember { mutableStateOf("") }
     
     if (showRowEditDialog && editingRowIndex != null) {
@@ -163,9 +163,9 @@ fun EditorDialogs(
             onDisconnectSpotify = { (actions as? PageViewModel)?.disconnectSpotify() },
             onLoadSpotifyPlaylists = { (actions as? PageViewModel)?.loadSpotifyPlaylists() },
             onSaveAsTemplate = { config ->
-                showSaveTemplateDialogConfig = config
-                newTemplateName = config.label
                 onDismissButtonDialog()
+                newTemplateName = config.label
+                showSaveTemplateDialogConfig.value = config
             },
             metrics = buttonMetrics,
             historyEvents = buttonHistory,
@@ -315,9 +315,9 @@ fun EditorDialogs(
         )
     }
 
-    if (showSaveTemplateDialogConfig != null) {
+    if (showSaveTemplateDialogConfig.value != null) {
         AlertDialog(
-            onDismissRequest = { showSaveTemplateDialogConfig = null },
+            onDismissRequest = { showSaveTemplateDialogConfig.value = null },
             title = { Text("Als Vorlage speichern") },
             text = {
                 Column {
@@ -335,19 +335,19 @@ fun EditorDialogs(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        val config = showSaveTemplateDialogConfig
+                        val config = showSaveTemplateDialogConfig.value
                         if (config != null && newTemplateName.isNotBlank()) {
                             (actions as? PageViewModel)?.saveButtonAsTemplate(newTemplateName, config)
                             android.widget.Toast.makeText(context, "Vorlage gespeichert", android.widget.Toast.LENGTH_SHORT).show()
                         }
-                        showSaveTemplateDialogConfig = null
+                        showSaveTemplateDialogConfig.value = null
                     }
                 ) {
                     Text("Speichern")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showSaveTemplateDialogConfig = null }) {
+                TextButton(onClick = { showSaveTemplateDialogConfig.value = null }) {
                     Text("Abbrechen")
                 }
             }

@@ -18,10 +18,8 @@ import java.util.Locale
 import javax.inject.Inject
 
 class TtsSettingsDelegate @Inject constructor(
-    @param:ApplicationContext private val context: Context,
     private val settingsRepository: SettingsRepository,
     private val audioDeviceManager: AudioDeviceManager,
-    private val getAudioDevicesUseCase: GetAudioDevicesUseCase,
     private val setTtsLanguageUseCase: SetTtsLanguageUseCase,
     private val ttsHelper: TextToSpeechHelper,
     private val authManager: com.andreas_kratzer.ghosttalk.core.cloud.AuthManager
@@ -40,7 +38,7 @@ class TtsSettingsDelegate @Inject constructor(
 
     private var scope: CoroutineScope? = null
 
-    fun initialize(scope: CoroutineScope, onVoiceMissing: (String, String?) -> Unit) {
+    fun initialize(scope: CoroutineScope) {
         this.scope = scope
         
         // Reactively update available voices when the provider or its voices change

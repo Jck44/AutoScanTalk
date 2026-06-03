@@ -64,8 +64,8 @@ fun SecuritySettingsSection(
     securityManager: SecurityManager,
     isBiometricSupported: Boolean
 ) {
-    var showSetPinDialog by remember { mutableStateOf(false) }
-    var showConfirmClearDialog by remember { mutableStateOf(false) }
+    val showSetPinDialog = remember { mutableStateOf(false) }
+    val showConfirmClearDialog = remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     val hasPin = !securityPin.isNullOrEmpty()
@@ -84,12 +84,12 @@ fun SecuritySettingsSection(
                 onCheckedChange = { 
                     if (!it) {
                         if (hasPin) {
-                            showConfirmClearDialog = true
+                            showConfirmClearDialog.value = true
                         } else {
                             onClearSecurityPin()
                         }
                     } else {
-                        showSetPinDialog = true
+                        showSetPinDialog.value = true
                     }
                 }
             )
@@ -107,12 +107,12 @@ fun SecuritySettingsSection(
                                 stringResource(R.string.settings_security_pin_inactive)
                             else
                                 "**** (${stringResource(R.string.settings_security_pin_active)})",
-                            onClick = { showSetPinDialog = true }
+                            onClick = { showSetPinDialog.value = true }
                         )
                     }
                     if (hasPin) {
                         TextButton(
-                            onClick = { showConfirmClearDialog = true },
+                            onClick = { showConfirmClearDialog.value = true },
                             colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                         ) {
                             Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.padding(end = 4.dp).width(18.dp))
@@ -217,24 +217,24 @@ fun SecuritySettingsSection(
         }
     }
 
-    if (showSetPinDialog) {
+    if (showSetPinDialog.value) {
         PinEntryDialog(
             title = stringResource(R.string.settings_security_set_pin_title),
-            onDismiss = { showSetPinDialog = false },
+            onDismiss = { showSetPinDialog.value = false },
             onConfirm = { pin: String ->
                 onSecurityPinChange(pin)
-                showSetPinDialog = false
+                showSetPinDialog.value = false
             }
         )
     }
 
-    if (showConfirmClearDialog) {
+    if (showConfirmClearDialog.value) {
         SecurityEntryDialog(
-            onDismiss = { showConfirmClearDialog = false },
+            onDismiss = { showConfirmClearDialog.value = false },
             onConfirm = { success: Boolean ->
                 if (success) {
                     onClearSecurityPin()
-                    showConfirmClearDialog = false
+                    showConfirmClearDialog.value = false
                 }
             },
             securityManager = securityManager,

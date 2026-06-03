@@ -497,12 +497,7 @@ class MainActivity : AppCompatActivity() {
         Log.d("MainActivity", "handleIntent: action = $action, type = $type")
         
         if (Intent.ACTION_SEND == action && type != null) {
-            val uri = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                intent.getParcelableExtra(Intent.EXTRA_STREAM, android.net.Uri::class.java)
-            } else {
-                @Suppress("DEPRECATION")
-                intent.getParcelableExtra(Intent.EXTRA_STREAM)
-            }
+            val uri = intent.getParcelableExtra(Intent.EXTRA_STREAM, android.net.Uri::class.java)
             if (uri != null) {
                 processSharedZip(uri)
             }

@@ -554,7 +554,7 @@ fun SubmenuContent(
             SmartHomeSettingsSection(viewModel, isGlobal = isGlobal)
         }
         SettingsSection.GEMINI -> {
-            GenAiSettingsSection(viewModel, isGlobal = isGlobal)
+            GenAiSettingsSection(viewModel)
         }
         SettingsSection.NOTIFICATIONS -> {
             PermissionsSettingsSection(viewModel)

@@ -60,7 +60,7 @@ fun ActionHistoryDialog(
     val buttonHistory by viewModel.buttonHistory.collectAsState(emptyList())
     val selectedHistoryItem by viewModel.selectedHistoryItem.collectAsState()
     val dimensions = LocalDimensions.current
-    var previewImagePath by remember { mutableStateOf<String?>(null) }
+    val previewImagePath = remember { mutableStateOf<String?>(null) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -87,7 +87,7 @@ fun ActionHistoryDialog(
                             HistoryItem(
                                 event = event,
                                 timeStr = sdf.format(Date(event.timestamp)),
-                                onImageClick = { previewImagePath = it },
+                                onImageClick = { previewImagePath.value = it },
                                 onEditButton = { pId, bId -> 
                                     viewModel.onEditButtonFromHistory(pId, bId)
                                     onDismiss()
@@ -113,20 +113,20 @@ fun ActionHistoryDialog(
         }
     )
 
-    if (previewImagePath != null) {
+    if (previewImagePath.value != null) {
         BasicAlertDialog(
-            onDismissRequest = { previewImagePath = null },
+            onDismissRequest = { previewImagePath.value = null },
             modifier = Modifier.fillMaxSize().padding(dimensions.paddingLarge)
         ) {
-            val bitmap = remember(previewImagePath) {
+            val bitmap = remember(previewImagePath.value) {
                 try {
-                    BitmapFactory.decodeFile(previewImagePath)
+                    BitmapFactory.decodeFile(previewImagePath.value)
                 } catch (_: Exception) {
                     null
                 }
             }
             Box(
-                modifier = Modifier.fillMaxSize().clickable { previewImagePath = null },
+                modifier = Modifier.fillMaxSize().clickable { previewImagePath.value = null },
                 contentAlignment = Alignment.Center
             ) {
                 if (bitmap != null) {

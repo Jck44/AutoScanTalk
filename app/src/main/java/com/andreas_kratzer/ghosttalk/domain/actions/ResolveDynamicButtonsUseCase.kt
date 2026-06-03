@@ -88,7 +88,7 @@ class ResolveDynamicButtonsUseCase @Inject constructor(
                 }
                 val predictionId = filteredPredictions.getOrNull(action.rank - 1)
                 val resolved = if (predictionId != null) {
-                    resolveSmartPrediction(predictionId, frequentlyResolvedPage, config, buttonLookup, pageLookup)
+                    resolveSmartPrediction(predictionId, frequentlyResolvedPage, buttonLookup, pageLookup)
                 } else {
                     null // No prediction available for this rank, deactivate/hide button
                 }
@@ -144,7 +144,6 @@ class ResolveDynamicButtonsUseCase @Inject constructor(
     private fun resolveSmartPrediction(
         predictionId: String, 
         currentPage: Page, 
-        originalConfig: ButtonConfig,
         buttonLookup: Map<String, ButtonConfig>,
         pageLookup: Map<String, Page>
     ): ButtonConfig? {

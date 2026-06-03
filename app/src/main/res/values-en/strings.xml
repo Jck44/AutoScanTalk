@@ -307,7 +307,7 @@
     <string name="settings_notifications_select_all">Select all</string>
     <string name="settings_notifications_deselect_all">Deselect all</string>
     <string name="device_control_time_prefix_std">It is</string>
-    <string name="device_control_time_suffix_std"></string>
+    <string name="device_control_time_suffix_std" />
     <string name="device_control_time_prefix_plus5">In five minutes it is</string>
     <string name="device_control_time_prefix_minus5">Five minutes ago it was</string>
     <string name="device_control_date_prefix_weekday_date">Today is</string>

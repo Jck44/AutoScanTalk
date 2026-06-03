@@ -71,15 +71,15 @@ fun CloudSettingsSection(
     val localFolderSafName by viewModel.localFolderSafName.collectAsState(null)
     val driveFolders by viewModel.driveFolders.collectAsState()
     val isBrowsingFolders by viewModel.isBrowsingFolders.collectAsState()
-    var showFolderPicker by remember { mutableStateOf(false) }
-    var showManualUrlDialog by remember { mutableStateOf(false) }
+    val showFolderPicker = remember { mutableStateOf(false) }
+    val showManualUrlDialog = remember { mutableStateOf(false) }
 
     val availableBackups by viewModel.availableBackups.collectAsState()
     val showBackupSelectionDialog by viewModel.showBackupSelectionDialog.collectAsState()
-    var showImportFolderPicker by remember { mutableStateOf(false) }
-    var showManualImportUrlDialog by remember { mutableStateOf(false) }
+    val showImportFolderPicker = remember { mutableStateOf(false) }
+    val showManualImportUrlDialog = remember { mutableStateOf(false) }
     val syncLogs by viewModel.syncLogs.collectAsState()
-    var showSyncLogDialog by remember { mutableStateOf(false) }
+    val showSyncLogDialog = remember { mutableStateOf(false) }
     val spotifyUserDisplayName by viewModel.spotifyUserDisplayName.collectAsState(null)
     
     val dimensions = LocalDimensions.current
@@ -194,7 +194,7 @@ fun CloudSettingsSection(
             PreferenceCategory(stringResource(R.string.settings_category_cloud_import)) {
                 // Option 1: Google Drive API
                 Button(
-                    onClick = { showImportFolderPicker = true },
+                    onClick = { showImportFolderPicker.value = true },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = userEmail != null && !isSyncing
                 ) {
@@ -206,7 +206,7 @@ fun CloudSettingsSection(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 OutlinedButton(
-                    onClick = { showManualImportUrlDialog = true },
+                    onClick = { showManualImportUrlDialog.value = true },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = userEmail != null && !isSyncing
                 ) {
@@ -300,11 +300,11 @@ fun CloudSettingsSection(
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }
-                        TextButton(onClick = { showFolderPicker = true }, enabled = userEmail != null) {
+                        TextButton(onClick = { showFolderPicker.value = true }, enabled = userEmail != null) {
                             Text(stringResource(R.string.settings_sync_change))
                         }
                         Spacer(modifier = Modifier.width(8.dp))
-                        TextButton(onClick = { showManualUrlDialog = true }, enabled = userEmail != null) {
+                        TextButton(onClick = { showManualUrlDialog.value = true }, enabled = userEmail != null) {
                             Text(stringResource(R.string.settings_sync_enter_link))
                         }
                     }
@@ -472,7 +472,7 @@ fun CloudSettingsSection(
                 OutlinedButton(
                     onClick = { 
                         viewModel.loadSyncLogs()
-                        showSyncLogDialog = true 
+                        showSyncLogDialog.value = true 
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -602,36 +602,36 @@ fun CloudSettingsSection(
         }
     }
 
-    if (showFolderPicker) {
+    if (showFolderPicker.value) {
         DriveFolderPickerDialog(
             folders = driveFolders,
             isLoading = isBrowsingFolders,
             onFetchFolders = { parentId -> viewModel.fetchDriveFolders(parentId) },
             onFolderSelected = { id, name ->
                 viewModel.selectDriveFolder(id, name)
-                showFolderPicker = false
+                showFolderPicker.value = false
             },
-            onDismiss = { showFolderPicker = false }
+            onDismiss = { showFolderPicker.value = false }
         )
     }
 
-    if (showImportFolderPicker) {
+    if (showImportFolderPicker.value) {
         DriveFolderPickerDialog(
             folders = driveFolders,
             isLoading = isBrowsingFolders,
             onFetchFolders = { parentId -> viewModel.fetchDriveFolders(parentId) },
             onFolderSelected = { id, _ ->
                 viewModel.fetchAvailableBackupsForImport(id)
-                showImportFolderPicker = false
+                showImportFolderPicker.value = false
             },
-            onDismiss = { showImportFolderPicker = false }
+            onDismiss = { showImportFolderPicker.value = false }
         )
     }
 
-    if (showSyncLogDialog) {
+    if (showSyncLogDialog.value) {
         SyncLogDialog(
             logs = syncLogs,
-            onDismiss = { showSyncLogDialog = false },
+            onDismiss = { showSyncLogDialog.value = false },
             onClearLogs = { viewModel.clearSyncLogs() }
         )
     }
@@ -646,13 +646,13 @@ fun CloudSettingsSection(
         )
     }
 
-    if (showManualUrlDialog) {
-        var urlOrIdInput by remember { mutableStateOf("") }
-        var isVerifying by remember { mutableStateOf(false) }
-        var verificationError by remember { mutableStateOf<String?>(null) }
+    if (showManualUrlDialog.value) {
+        val urlOrIdInput = remember { mutableStateOf("") }
+        val isVerifying = remember { mutableStateOf(false) }
+        val verificationError = remember { mutableStateOf<String?>(null) }
 
         androidx.compose.material3.AlertDialog(
-            onDismissRequest = { if (!isVerifying) showManualUrlDialog = false },
+            onDismissRequest = { if (!isVerifying.value) showManualUrlDialog.value = false },
             title = { Text("Freigabe-Link oder Ordner-ID eingeben") },
             text = {
                 Column {
@@ -662,22 +662,22 @@ fun CloudSettingsSection(
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
                     androidx.compose.material3.OutlinedTextField(
-                        value = urlOrIdInput,
-                        onValueChange = { urlOrIdInput = it },
+                        value = urlOrIdInput.value,
+                        onValueChange = { urlOrIdInput.value = it },
                         label = { Text("Link oder ID") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
-                        enabled = !isVerifying
+                        enabled = !isVerifying.value
                     )
-                    if (verificationError != null) {
+                    if (verificationError.value != null) {
                         Text(
-                            text = verificationError!!,
+                            text = verificationError.value!!,
                             color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodySmall,
                             modifier = Modifier.padding(top = 4.dp)
                         )
                     }
-                    if (isVerifying) {
+                    if (isVerifying.value) {
                         Spacer(modifier = Modifier.height(8.dp))
                         LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
                     }
@@ -686,26 +686,26 @@ fun CloudSettingsSection(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        isVerifying = true
-                        verificationError = null
-                        viewModel.selectDriveFolderByUrlOrId(urlOrIdInput) { success, folderName ->
-                            isVerifying = false
+                        isVerifying.value = true
+                        verificationError.value = null
+                        viewModel.selectDriveFolderByUrlOrId(urlOrIdInput.value) { success, folderName ->
+                            isVerifying.value = false
                             if (success) {
-                                showManualUrlDialog = false
+                                showManualUrlDialog.value = false
                             } else {
-                                verificationError = folderName ?: "Unbekannter Fehler beim Verifizieren"
+                                verificationError.value = folderName ?: "Unbekannter Fehler beim Verifizieren"
                             }
                         }
                     },
-                    enabled = urlOrIdInput.isNotBlank() && !isVerifying
+                    enabled = urlOrIdInput.value.isNotBlank() && !isVerifying.value
                 ) {
                     Text("Verknüpfen")
                 }
             },
             dismissButton = {
                 TextButton(
-                    onClick = { showManualUrlDialog = false },
-                    enabled = !isVerifying
+                    onClick = { showManualUrlDialog.value = false },
+                    enabled = !isVerifying.value
                 ) {
                     Text("Abbrechen")
                 }
@@ -713,11 +713,11 @@ fun CloudSettingsSection(
         )
     }
 
-    if (showManualImportUrlDialog) {
-        var urlOrIdInput by remember { mutableStateOf("") }
+    if (showManualImportUrlDialog.value) {
+        val urlOrIdInput = remember { mutableStateOf("") }
 
         androidx.compose.material3.AlertDialog(
-            onDismissRequest = { showManualImportUrlDialog = false },
+            onDismissRequest = { showManualImportUrlDialog.value = false },
             title = { Text("Aus geteiltem Ordner importieren") },
             text = {
                 Column {
@@ -727,8 +727,8 @@ fun CloudSettingsSection(
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
                     androidx.compose.material3.OutlinedTextField(
-                        value = urlOrIdInput,
-                        onValueChange = { urlOrIdInput = it },
+                        value = urlOrIdInput.value,
+                        onValueChange = { urlOrIdInput.value = it },
                         label = { Text("Link oder ID") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
@@ -738,17 +738,17 @@ fun CloudSettingsSection(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        viewModel.fetchAvailableBackupsForImportByUrlOrId(urlOrIdInput)
-                        showManualImportUrlDialog = false
+                        viewModel.fetchAvailableBackupsForImportByUrlOrId(urlOrIdInput.value)
+                        showManualImportUrlDialog.value = false
                     },
-                    enabled = urlOrIdInput.isNotBlank()
+                    enabled = urlOrIdInput.value.isNotBlank()
                 ) {
                     Text("Nach Backups suchen")
                 }
             },
             dismissButton = {
                 TextButton(
-                    onClick = { showManualImportUrlDialog = false }
+                    onClick = { showManualImportUrlDialog.value = false }
                 ) {
                     Text("Abbrechen")
                 }

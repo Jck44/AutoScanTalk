@@ -116,7 +116,7 @@ class PathAnalyzer @Inject constructor() {
 
             // Keep track of the active context (thematic source page)
             var activeSourcePageId: String? = null
-            var activeSourceTimestamp: Long = 0L
+            var activeSourceTimestamp = 0L
 
             for (event in session) {
                 val currentPageId = event.pageId ?: continue

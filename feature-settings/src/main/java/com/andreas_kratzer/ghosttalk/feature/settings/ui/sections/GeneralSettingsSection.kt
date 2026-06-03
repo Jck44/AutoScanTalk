@@ -59,8 +59,8 @@ fun GeneralSettingsSection(
     val activeBook by viewModel.activeBook.collectAsState()
     val forceKeyboard by viewModel.forceSoftKeyboard.collectAsState(false)
 
-    var showDeleteConfirm by remember { mutableStateOf(false) }
-    var showDeleteSecurity by remember { mutableStateOf(false) }
+    val showDeleteConfirm = remember { mutableStateOf(false) }
+    val showDeleteSecurity = remember { mutableStateOf(false) }
     var expandedStartPage by remember { mutableStateOf(false) }
     var startPageSearchQuery by remember { mutableStateOf("") }
 
@@ -306,9 +306,9 @@ fun GeneralSettingsSection(
                 Button(
                     onClick = {
                         if (viewModel.securityManager.isSecurityRequiredForDeletion()) {
-                            showDeleteSecurity = true
+                            showDeleteSecurity.value = true
                         } else {
-                            showDeleteConfirm = true
+                            showDeleteConfirm.value = true
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
@@ -321,13 +321,13 @@ fun GeneralSettingsSection(
         }
     }
 
-    if (showDeleteSecurity) {
+    if (showDeleteSecurity.value) {
         SecurityEntryDialog(
-            onDismiss = { showDeleteSecurity = false },
+            onDismiss = { showDeleteSecurity.value = false },
             onConfirm = { success ->
                 if (success) {
-                    showDeleteSecurity = false
-                    showDeleteConfirm = true
+                    showDeleteSecurity.value = false
+                    showDeleteConfirm.value = true
                 }
             },
             securityManager = viewModel.securityManager,
@@ -335,15 +335,15 @@ fun GeneralSettingsSection(
         )
     }
 
-    if (showDeleteConfirm) {
+    if (showDeleteConfirm.value) {
         AlertDialog(
-            onDismissRequest = { showDeleteConfirm = false },
+            onDismissRequest = { showDeleteConfirm.value = false },
             title = { Text(deleteConfirmTitle) },
             text = { Text(deleteConfirmMessage) },
             confirmButton = {
                 Button(
                     onClick = {
-                        showDeleteConfirm = false
+                        showDeleteConfirm.value = false
                         viewModel.deleteActiveBook {
                             onBookDeleted() 
                         }
@@ -354,7 +354,7 @@ fun GeneralSettingsSection(
                 }
             },
             dismissButton = {
-                OutlinedButton(onClick = { showDeleteConfirm = false }) {
+                OutlinedButton(onClick = { showDeleteConfirm.value = false }) {
                     Text(stringResource(CoreR.string.action_cancel))
                 }
             }

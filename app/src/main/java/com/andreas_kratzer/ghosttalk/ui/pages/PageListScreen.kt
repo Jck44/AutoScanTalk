@@ -85,10 +85,10 @@ fun PageListScreen(
     val usagesToDelete = remember { mutableStateOf<List<UsageLocation>>(emptyList()) }
     val activeTargetPageIds by pageViewModel.activeTargetPageIds.collectAsState()
     
-    var pageToActivate by remember { mutableStateOf<Page?>(null) }
-    var activationUsages by remember { mutableStateOf<List<UsageLocation>>(emptyList()) }
+    val pageToActivate = remember { mutableStateOf<Page?>(null) }
+    val activationUsages = remember { mutableStateOf<List<UsageLocation>>(emptyList()) }
     
-    var pageToDeactivate by remember { mutableStateOf<Page?>(null) }
+    val pageToDeactivate = remember { mutableStateOf<Page?>(null) }
     
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -130,35 +130,35 @@ fun PageListScreen(
         onNavigateBack()
     }
 
-    if (pageToActivate != null) {
+    if (pageToActivate.value != null) {
         ActivatePageDialog(
-            pageName = pageToActivate?.name ?: "",
-            usages = activationUsages,
+            pageName = pageToActivate.value?.name ?: "",
+            usages = activationUsages.value,
             onDismiss = {
-                pageToActivate = null
-                activationUsages = emptyList()
+                pageToActivate.value = null
+                activationUsages.value = emptyList()
             },
             onConfirm = { selectedUsages ->
                 pageViewModel.activateButtons(selectedUsages, true)
-                pageToActivate = null
-                activationUsages = emptyList()
+                pageToActivate.value = null
+                activationUsages.value = emptyList()
             }
         )
     }
 
-    if (pageToDeactivate != null) {
+    if (pageToDeactivate.value != null) {
         AlertDialog(
-            onDismissRequest = { pageToDeactivate = null },
+            onDismissRequest = { pageToDeactivate.value = null },
             title = { Text(stringResource(R.string.page_deactivate_dialog_title)) },
             text = { Text(stringResource(R.string.page_deactivate_dialog_message)) },
             confirmButton = {
                 TextButton(
                     onClick = {
-                        val page = pageToDeactivate ?: return@TextButton
+                        val page = pageToDeactivate.value ?: return@TextButton
                         coroutineScope.launch {
                             val usages = pageViewModel.getPageUsages(page.id)
                             pageViewModel.activateButtons(usages, false)
-                            pageToDeactivate = null
+                            pageToDeactivate.value = null
                         }
                     }
                 ) {
@@ -166,7 +166,7 @@ fun PageListScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { pageToDeactivate = null }) {
+                TextButton(onClick = { pageToDeactivate.value = null }) {
                     Text(stringResource(CoreR.string.action_cancel))
                 }
             }
@@ -450,7 +450,7 @@ fun PageListScreen(
                                         text = { Text(stringResource(R.string.action_page_deactivate)) },
                                         onClick = {
                                             showMenu = false
-                                            pageToDeactivate = page
+                                            pageToDeactivate.value = page
                                         },
                                         leadingIcon = {
                                             Icon(Icons.Default.Clear, contentDescription = null)
@@ -462,8 +462,8 @@ fun PageListScreen(
                                             showMenu = false
                                             coroutineScope.launch {
                                                 val usages = pageViewModel.getPageUsages(page.id)
-                                                activationUsages = usages
-                                                pageToActivate = page
+                                                activationUsages.value = usages
+                                                pageToActivate.value = page
                                             }
                                         },
                                         leadingIcon = {

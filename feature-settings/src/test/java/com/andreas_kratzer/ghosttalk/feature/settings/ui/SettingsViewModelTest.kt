@@ -163,7 +163,7 @@ class SettingsViewModelTest {
             audioCacheRepository = audioCacheRepository,
             pageRepository = mockk(relaxed = true),
             syncLogProvider = mockk(relaxed = true),
-            callActionProxy = dagger.Lazy { mockk(relaxed = true) }
+            callActionProxy = { mockk(relaxed = true) }
         )
 
         mockkStatic(Toast::class)

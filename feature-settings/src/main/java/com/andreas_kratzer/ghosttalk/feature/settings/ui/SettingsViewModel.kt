@@ -249,14 +249,7 @@ class SettingsViewModel @Inject constructor(
     private var prefetchJob: kotlinx.coroutines.Job? = null
 
     init {
-        ttsDelegate.initialize(viewModelScope) { original, fallback ->
-            val message = if (fallback != null) {
-                "Stimme $original nicht verfügbar. Fallback auf $fallback."
-            } else {
-                "Stimme $original nicht verfügbar. Fallback auf System-Standard."
-            }
-            Toast.makeText(application, message, Toast.LENGTH_LONG).show()
-        }
+        ttsDelegate.initialize(viewModelScope)
         genAiDelegate.updateGeminiToolStatus()
         initializeDefaultMessagingAppsIfNeeded()
         hueDelegate.initialize(viewModelScope)

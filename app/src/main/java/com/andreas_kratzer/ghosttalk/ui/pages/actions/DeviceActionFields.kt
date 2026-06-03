@@ -496,12 +496,10 @@ fun DeviceActionFields(
                             val prefix = prefixText.takeIf { it.isNotBlank() }?.let { if (it.endsWith(" ")) it else "$it " } ?: ""
                             val suffix = suffixText.takeIf { it.isNotBlank() }?.let { if (it.startsWith(" ")) it else " $it" } ?: ""
                             "$prefix$dateString$suffix"
-                        } else if (selectedType == DeviceActionType.READ_CALENDAR_ENTRIES) {
+                        } else {
                             val prefix = prefixText.takeIf { it.isNotBlank() }?.let { if (it.endsWith(" ")) it else "$it " } ?: ""
                             val suffix = suffixText.takeIf { it.isNotBlank() }?.let { if (it.startsWith(" ")) it else " $it" } ?: ""
                             "$prefix$appointmentsPlaceholder$suffix$countSuffix"
-                        } else {
-                            ""
                         }
                     } catch (_: Exception) {
                         ""

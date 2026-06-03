@@ -34,8 +34,13 @@ class SecurityManagerTest {
             java.util.Base64.getEncoder().encodeToString(args[0] as ByteArray)
         }
 
+        mockkStatic(java.security.KeyStore::class)
+        val mockKeyStore = mockk<java.security.KeyStore>(relaxed = true)
+        every { java.security.KeyStore.getInstance("AndroidKeyStore") } returns mockKeyStore
+
         settingsRepository = mockk(relaxed = true)
-        securityManager = SecurityManager(settingsRepository)
+        val mockContext = mockk<android.content.Context>(relaxed = true)
+        securityManager = SecurityManager(settingsRepository, mockContext)
     }
 
     @After

@@ -21,7 +21,7 @@ fun SecurityEntryDialog(
     title: String = stringResource(R.string.security_pin_title),
     isBiometricEnabled: Boolean = false
 ) {
-    var errorMessage by remember { mutableStateOf<String?>(null) }
+    val errorMessage = remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
     val incorrectPinMessage = stringResource(R.string.security_pin_incorrect)
 
@@ -45,11 +45,11 @@ fun SecurityEntryDialog(
             if (securityManager.unlock(pinEntry)) {
                 onConfirm(true)
             } else {
-                errorMessage = incorrectPinMessage
+                errorMessage.value = incorrectPinMessage
             }
         },
         title = title,
-        errorMessage = errorMessage,
+        errorMessage = errorMessage.value,
         isBiometricEnabled = isBiometricEnabled,
         onBiometricClick = { triggerBiometric() }
     )

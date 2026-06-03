@@ -5,7 +5,6 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -579,7 +578,7 @@ private fun PreferredAppsPicker(
         if (monitoredApps.isEmpty()) {
             context.getString(R.string.settings_notifications_no_preferred_apps)
         } else if (installedApps.isEmpty()) {
-            context.resources.getQuantityString(
+            context.applicationContext.resources.getQuantityString(
                 R.plurals.settings_notifications_apps_selected,
                 monitoredApps.size,
                 monitoredApps.size
@@ -602,7 +601,7 @@ private fun PreferredAppsPicker(
             } else {
                 val firstThree = displayLabels.take(3).joinToString(", ")
                 val remaining = displayLabels.size - 3
-                context.resources.getQuantityString(
+                context.applicationContext.resources.getQuantityString(
                     R.plurals.settings_notifications_apps_more_format,
                     remaining,
                     firstThree,

@@ -52,7 +52,7 @@ fun GhostTalkNavHost(
 ) {
     val isUnlocked by securityManager.isUnlocked.collectAsState()
     val coroutineScope = rememberCoroutineScope()
-    var pendingRoute by remember { mutableStateOf<String?>(null) }
+    val pendingRoute = remember { mutableStateOf<String?>(null) }
 
     val navigateWithSecurity: (String) -> Unit = { route ->
         val isProtected = when {
@@ -66,24 +66,24 @@ fun GhostTalkNavHost(
         }
         
         if (!isUnlocked && isProtected) {
-            pendingRoute = route
+            pendingRoute.value = route
         } else {
             navController.safeNavigate(route)
         }
     }
 
-    if (pendingRoute != null) {
+    if (pendingRoute.value != null) {
         SecurityEntryDialog(
             onDismiss = { 
-                pendingRoute = null
+                pendingRoute.value = null
             },
             onConfirm = { success: Boolean ->
                 if (success) {
-                    val route = pendingRoute!!
-                    pendingRoute = null
+                    val route = pendingRoute.value!!
+                    pendingRoute.value = null
                     navController.safeNavigate(route)
                 } else {
-                    pendingRoute = null
+                    pendingRoute.value = null
                 }
             },
             securityManager = securityManager,

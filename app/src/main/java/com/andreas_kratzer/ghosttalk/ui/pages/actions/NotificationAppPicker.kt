@@ -58,7 +58,7 @@ private fun Drawable.toBitmapOrNull(): Bitmap? {
         setBounds(0, 0, canvas.width, canvas.height)
         draw(canvas)
         return bitmap
-    } catch (e: Exception) {
+    } catch (_: Exception) {
         return null
     }
 }
@@ -87,7 +87,7 @@ fun NotificationAppPicker(
                 val label = resolveInfo.loadLabel(pm).toString()
                 val icon = try {
                     resolveInfo.loadIcon(pm)?.toBitmapOrNull()
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     null
                 }
                 if (packageName.isNotEmpty()) InstalledAppInfo(packageName, label, icon) else null
