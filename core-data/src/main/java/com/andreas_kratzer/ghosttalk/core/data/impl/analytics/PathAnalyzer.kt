@@ -82,12 +82,15 @@ class PathAnalyzer @Inject constructor() {
             return emptyList()
         }
 
-        // 1. Sort chronologically (ascending)
-        val sortedEvents = historyEvents.sortedBy { it.timestamp }
+        // 1. Sort chronologically (ascending) and ignore accidental/error clicks
+        val sortedEvents = historyEvents
+            .filter { !it.isAccidental }
+            .sortedBy { it.timestamp }
 
         // 2. Group into sessions based on sessionId if available, falling back to 5-minute inactivity gap
         val sessions = mutableListOf<List<ButtonUsageEvent>>()
         var currentSession = mutableListOf<ButtonUsageEvent>()
+
 
         for (event in sortedEvents) {
             if (currentSession.isEmpty()) {

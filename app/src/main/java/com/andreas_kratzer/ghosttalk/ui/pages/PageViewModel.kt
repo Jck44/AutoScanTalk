@@ -278,14 +278,26 @@ class PageViewModel @Inject constructor(
     .distinctUntilChanged()
     .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
+    private val _isEditPreviewActive = MutableStateFlow(false)
+    val isEditPreviewActive = _isEditPreviewActive.asStateFlow()
+
+    fun toggleEditPreviewActive() {
+        _isEditPreviewActive.value = !_isEditPreviewActive.value
+        Log.d("PageViewModel", "toggleEditPreviewActive: active = ${_isEditPreviewActive.value}")
+    }
+
+    private val isPreviewOrUserMode = combine(isUserModeActive, isEditPreviewActive) { userMode, editPreview ->
+        userMode || editPreview
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), isUserModeActive.value || isEditPreviewActive.value)
+
     val resolvedPage: StateFlow<Page?> = combine(
         currentPage,
-        isUserModeActive,
+        isPreviewOrUserMode,
         smartPredictions,
         activeBookId,
         unfilteredPages
-    ) { page, isUserMode, predictions, bookId, allPages ->
-        if (page != null && isUserMode && bookId != null) {
+    ) { page, isPreviewMode, predictions, bookId, allPages ->
+        if (page != null && isPreviewMode && bookId != null) {
             resolveDynamicButtonsUseCase.execute(page, bookId, predictions, allPages)
         } else {
             page
@@ -420,6 +432,26 @@ class PageViewModel @Inject constructor(
         }
     }
 
+    private val _selectedPageIds = MutableStateFlow<Set<String>>(emptySet())
+    val selectedPageIds: StateFlow<Set<String>> = _selectedPageIds.asStateFlow()
+
+    private val _aiRestructureProposal = MutableStateFlow<BookRestructureProposal?>(null)
+    val aiRestructureProposal: StateFlow<BookRestructureProposal?> = _aiRestructureProposal.asStateFlow()
+
+    private val _aiRestructureScope = MutableStateFlow("detailed")
+    val aiRestructureScope: StateFlow<String> = _aiRestructureScope.asStateFlow()
+
+    fun setAiRestructureScope(scope: String) {
+        _aiRestructureScope.value = scope
+    }
+
+    private val _aiRestructureError = MutableStateFlow<String?>(null)
+    val aiRestructureError: StateFlow<String?> = _aiRestructureError.asStateFlow()
+
+    fun clearAiRestructureError() {
+        _aiRestructureError.value = null
+    }
+
     val activeBook: StateFlow<Book?> = activeBookId.flatMapLatest { id ->
         if (id != null) bookRepository.getBookByIdFlow(id) else flowOf(null)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
@@ -440,7 +472,7 @@ class PageViewModel @Inject constructor(
             allPages = pageManagementDelegate.allPagesFlow,
             lastActions = lastActions,
             activeBookId = activeBookId,
-            isUserModeActive = isUserModeActive,
+            isUserModeActive = isPreviewOrUserMode,
             onPredictionsUpdated = { _smartPredictions.value = it }
         )
 
@@ -524,6 +556,37 @@ class PageViewModel @Inject constructor(
  
         val scanCycleCount: Int? = savedStateHandle["scanCycleCount"]
         scanCycleCount?.let { scanCoordinator.setCycleCount(it) }
+
+        // Observe book ID changes to load restructure proposal cache
+        viewModelScope.launch {
+            val flow = activeBookId ?: return@launch
+            flow.collect { bookId ->
+                if (bookId != null) {
+                    _aiRestructureProposal.value = loadProposalFromCache(bookId)
+                } else {
+                    _aiRestructureProposal.value = null
+                }
+            }
+        }
+
+        // Initialize selectedPageIds to active/reachable pages by default
+        viewModelScope.launch {
+            val unfilteredFlow = pageManagementDelegate.unfilteredPages ?: return@launch
+            val activeTargetFlow = pageManagementDelegate.activeTargetPageIds ?: return@launch
+            kotlinx.coroutines.flow.combine(
+                unfilteredFlow,
+                activeTargetFlow
+            ) { pages, activeIds ->
+                Pair(pages, activeIds)
+            }.collect { (pages, activeIds) ->
+                if (pages != null && activeIds != null && pages.isNotEmpty() && _selectedPageIds.value.isEmpty()) {
+                    _selectedPageIds.value = pages
+                        .filter { activeIds.contains(it.id) }
+                        .map { it.id }
+                        .toSet()
+                }
+            }
+        }
 
         // Set up Gemini command handlers
         geminiUseCase.setAppCommandHandler { command, args ->
@@ -959,13 +1022,14 @@ class PageViewModel @Inject constructor(
         unfilteredPages,
         activeBookId,
         currentProposalFilter,
-        currentProposalSort
-    ) { allPages, bookId, filter, sort ->
+        currentProposalSort,
+        buttonHistory
+    ) { allPages, bookId, filter, sort, historyEvents ->
         if (bookId != null && allPages.isNotEmpty()) {
             val delay = settingsRepository.scanDelayMillis
             val pattern = settingsRepository.defaultScanPattern
             val startPageId = settingsRepository.defaultStartPageId
-            val raw = pageLayoutOptimizer.analyzePages(allPages, startPageId, delay, pattern)
+            val raw = pageLayoutOptimizer.analyzePages(allPages, startPageId, delay, pattern, historyEvents)
             raw.filter { proposal ->
                 when (filter) {
                     ProposalFilter.ALL -> true
@@ -976,6 +1040,8 @@ class PageViewModel @Inject constructor(
                         val currentScanTime = when (proposal) {
                             is com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer.LayoutOptimizationProposal.SplitPageProposal -> proposal.currentAverageScanTimeSec
                             is com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer.LayoutOptimizationProposal.ChangeScanPatternProposal -> proposal.currentAverageScanTimeSec
+                            is com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer.LayoutOptimizationProposal.ChangeScanDelayProposal -> (proposal.currentScanDelayMs / 1000.0) * 4.0 // Baseline estimate
+                            is com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer.LayoutOptimizationProposal.SpacerRelocateProposal -> 6.0
                         }
                         currentScanTime > 8.0
                     }
@@ -988,6 +1054,10 @@ class PageViewModel @Inject constructor(
                                 proposal.currentAverageScanTimeSec - proposal.estimatedNewAverageScanTimeSec
                             is com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer.LayoutOptimizationProposal.ChangeScanPatternProposal ->
                                 proposal.currentAverageScanTimeSec - proposal.estimatedNewAverageScanTimeSec
+                            is com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer.LayoutOptimizationProposal.ChangeScanDelayProposal ->
+                                1.5 // Static priority score for delay change
+                            is com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer.LayoutOptimizationProposal.SpacerRelocateProposal ->
+                                proposal.accidentalClickCount * 0.5 // Priority based on errors
                         }
                     }
                     ProposalSort.PAGE_NAME_ASC -> compareBy { it.pageName.lowercase() }
@@ -995,12 +1065,16 @@ class PageViewModel @Inject constructor(
                         when (proposal) {
                             is com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer.LayoutOptimizationProposal.SplitPageProposal -> proposal.activeButtonsCount
                             is com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer.LayoutOptimizationProposal.ChangeScanPatternProposal -> proposal.activeButtonsCount
+                            is com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer.LayoutOptimizationProposal.ChangeScanDelayProposal -> 0
+                            is com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer.LayoutOptimizationProposal.SpacerRelocateProposal -> 0
                         }
                     }
                     ProposalSort.CURRENT_TIME_DESC -> compareByDescending { proposal ->
                         when (proposal) {
                             is com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer.LayoutOptimizationProposal.SplitPageProposal -> proposal.currentAverageScanTimeSec
                             is com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer.LayoutOptimizationProposal.ChangeScanPatternProposal -> proposal.currentAverageScanTimeSec
+                            is com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer.LayoutOptimizationProposal.ChangeScanDelayProposal -> proposal.currentScanDelayMs / 1000.0
+                            is com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer.LayoutOptimizationProposal.SpacerRelocateProposal -> 0.0
                         }
                     }
                 }
@@ -1011,6 +1085,7 @@ class PageViewModel @Inject constructor(
     }
     .flowOn(Dispatchers.Default)
     .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
 
     fun changePageScanPattern(pageId: String, pattern: String) {
         viewModelScope.launch {
@@ -1023,6 +1098,31 @@ class PageViewModel @Inject constructor(
                 )
             } catch (e: Exception) {
                 Log.e("PageViewModel", "Failed to update page scan pattern", e)
+            }
+        }
+    }
+
+    fun changeScanDelay(delayMs: Long) {
+        viewModelScope.launch {
+            try {
+                settingsRepository.scanDelayMillis = delayMs
+            } catch (e: Exception) {
+                Log.e("PageViewModel", "Failed to update scan delay", e)
+            }
+        }
+    }
+
+    fun applySpacerRelocate(pageId: String, buttonId: String, intendedButtonId: String) {
+        viewModelScope.launch {
+            try {
+                val page = pageManagementDelegate.getPageById(pageId) ?: return@launch
+                val fromIndex = page.buttonConfigs.indexOfFirst { it?.id == buttonId }
+                val toIndex = page.buttonConfigs.indexOfFirst { it?.id == intendedButtonId }
+                if (fromIndex != -1 && toIndex != -1) {
+                    pageManagementDelegate.moveButton(pageId, fromIndex, toIndex)
+                }
+            } catch (e: Exception) {
+                Log.e("PageViewModel", "Failed to swap buttons for spacer relocate proposal", e)
             }
         }
     }
@@ -1190,8 +1290,55 @@ class PageViewModel @Inject constructor(
 
     // --- AI Book Restructuring States & Functions ---
 
-    private val _aiRestructureProposal = MutableStateFlow<BookRestructureProposal?>(null)
-    val aiRestructureProposal: StateFlow<BookRestructureProposal?> = _aiRestructureProposal.asStateFlow()
+    fun togglePageSelection(pageId: String) {
+        val current = _selectedPageIds.value
+        _selectedPageIds.value = if (current.contains(pageId)) {
+            current - pageId
+        } else {
+            current + pageId
+        }
+    }
+
+    fun selectAllPages() {
+        _selectedPageIds.value = pageManagementDelegate.unfilteredPages.value.map { it.id }.toSet()
+    }
+
+    fun selectActivePagesOnly() {
+        val activeIds = pageManagementDelegate.activeTargetPageIds.value
+        _selectedPageIds.value = pageManagementDelegate.unfilteredPages.value
+            .filter { activeIds.contains(it.id) }
+            .map { it.id }
+            .toSet()
+    }
+
+    private fun saveProposalToCache(bookId: String, proposal: BookRestructureProposal) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val cacheDir = getApplication<Application>().cacheDir ?: return@launch
+                val file = java.io.File(cacheDir, "ai_restructure_proposal_${bookId}.json")
+                val json = kotlinx.serialization.json.Json.encodeToString(BookRestructureProposal.serializer(), proposal)
+                file.writeText(json)
+            } catch (e: Exception) {
+                Log.e("PageViewModel", "Error saving proposal to cache", e)
+            }
+        }
+    }
+
+    fun loadProposalFromCache(bookId: String): BookRestructureProposal? {
+        return try {
+            val cacheDir = getApplication<Application>().cacheDir ?: return null
+            val file = java.io.File(cacheDir, "ai_restructure_proposal_${bookId}.json")
+            if (file.exists()) {
+                val json = file.readText()
+                kotlinx.serialization.json.Json.decodeFromString(BookRestructureProposal.serializer(), json)
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            Log.e("PageViewModel", "Error loading proposal from cache", e)
+            null
+        }
+    }
 
     private val _isAiRestructureLoading = MutableStateFlow(false)
     val isAiRestructureLoading: StateFlow<Boolean> = _isAiRestructureLoading.asStateFlow()
@@ -1200,6 +1347,7 @@ class PageViewModel @Inject constructor(
         val bookId = activeBookId.value ?: return
         viewModelScope.launch(Dispatchers.Default) {
             _isAiRestructureLoading.value = true
+            _aiRestructureError.value = null
             try {
                 // Fetch stats to include click count
                 val stats = buttonUsageRepository.getGroupedUsageStats(bookId)
@@ -1212,29 +1360,32 @@ class PageViewModel @Inject constructor(
                 // Format pages and buttons into JSON representation
                 val pagesArray = org.json.JSONArray()
                 pages.forEach { page ->
-                    val pageObj = org.json.JSONObject()
-                    pageObj.put("pageName", page.name)
-                    val buttonsArray = org.json.JSONArray()
-                    page.buttonConfigs.forEach { btn ->
-                        if (btn != null && btn.isActive && btn.label.isNotBlank()) {
-                            val btnObj = org.json.JSONObject()
-                            btnObj.put("label", btn.label)
-                            btnObj.put("clicks", clickCounts[btn.id] ?: 0)
-                            val action = btn.buttonAction
-                            if (action is NavigateToPageButtonAction) {
-                                val targetPageName = pages.find { it.id == action.pageId }?.name ?: ""
-                                btnObj.put("destinationPage", targetPageName)
+                    if (_selectedPageIds.value.contains(page.id)) {
+                        val pageObj = org.json.JSONObject()
+                        pageObj.put("pageName", page.name)
+                        val buttonsArray = org.json.JSONArray()
+                        page.buttonConfigs.forEach { btn ->
+                            if (btn != null && btn.isActive && btn.label.isNotBlank()) {
+                                val btnObj = org.json.JSONObject()
+                                btnObj.put("label", btn.label)
+                                btnObj.put("clicks", clickCounts[btn.id] ?: 0)
+                                val action = btn.buttonAction
+                                if (action is NavigateToPageButtonAction) {
+                                    val targetPageName = pages.find { it.id == action.pageId }?.name ?: ""
+                                    btnObj.put("destinationPage", targetPageName)
+                                }
+                                buttonsArray.put(btnObj)
                             }
-                            buttonsArray.put(btnObj)
                         }
+                        pageObj.put("buttons", buttonsArray)
+                        pagesArray.put(pageObj)
                     }
-                    pageObj.put("buttons", buttonsArray)
-                    pagesArray.put(pageObj)
                 }
 
                 val pagesJsonString = pagesArray.toString()
-                val proposal = bookRestructureProposalUseCase.execute(pagesJsonString)
+                val proposal = bookRestructureProposalUseCase.execute(pagesJsonString, _aiRestructureScope.value)
                 _aiRestructureProposal.value = proposal
+                saveProposalToCache(bookId, proposal)
             } catch (e: Exception) {
                 Log.e("PageViewModel", "Error generating AI restructure proposal", e)
                 withContext(Dispatchers.Main) {
@@ -1246,8 +1397,88 @@ class PageViewModel @Inject constructor(
         }
     }
 
+    fun loadMoreAiRestructureProposals() {
+        val bookId = activeBookId.value ?: return
+        val currentProposal = _aiRestructureProposal.value ?: return
+        viewModelScope.launch(Dispatchers.Default) {
+            _isAiRestructureLoading.value = true
+            _aiRestructureError.value = null
+            try {
+                val stats = buttonUsageRepository.getGroupedUsageStats(bookId)
+                val clickCounts = stats.flatMap { it.children }
+                    .associate { it.buttonConfigId to it.usageCount }
+
+                val pages = pageManagementDelegate.unfilteredPages.value
+
+                val pagesArray = org.json.JSONArray()
+                pages.forEach { page ->
+                    if (_selectedPageIds.value.contains(page.id)) {
+                        val pageObj = org.json.JSONObject()
+                        pageObj.put("pageName", page.name)
+                        val buttonsArray = org.json.JSONArray()
+                        page.buttonConfigs.forEach { btn ->
+                            if (btn != null && btn.isActive && btn.label.isNotBlank()) {
+                                val btnObj = org.json.JSONObject()
+                                btnObj.put("label", btn.label)
+                                btnObj.put("clicks", clickCounts[btn.id] ?: 0)
+                                val action = btn.buttonAction
+                                if (action is NavigateToPageButtonAction) {
+                                    val targetPageName = pages.find { it.id == action.pageId }?.name ?: ""
+                                    btnObj.put("destinationPage", targetPageName)
+                                }
+                                buttonsArray.put(btnObj)
+                            }
+                        }
+                        pageObj.put("buttons", buttonsArray)
+                        pagesArray.put(pageObj)
+                    }
+                }
+
+                val pagesJsonString = pagesArray.toString()
+                
+                val existingActionsArray = org.json.JSONArray()
+                currentProposal.actions.forEach { act ->
+                    val actObj = org.json.JSONObject()
+                    actObj.put("type", act.type)
+                    actObj.put("rationale", act.rationale)
+                    act.buttonLabel?.let { actObj.put("buttonLabel", it) }
+                    act.sourcePageName?.let { actObj.put("sourcePageName", it) }
+                    act.targetPageName?.let { actObj.put("targetPageName", it) }
+                    existingActionsArray.put(actObj)
+                }
+                val existingProposalsJson = org.json.JSONObject().apply {
+                    put("actions", existingActionsArray)
+                }.toString()
+
+                val moreProposal = bookRestructureProposalUseCase.executeLoadMore(pagesJsonString, existingProposalsJson)
+                val combinedActions = currentProposal.actions + moreProposal.actions
+                val combinedProposal = BookRestructureProposal(combinedActions)
+                
+                _aiRestructureProposal.value = combinedProposal
+                saveProposalToCache(bookId, combinedProposal)
+            } catch (e: Exception) {
+                Log.e("PageViewModel", "Error loading more AI proposals", e)
+                _aiRestructureError.value = e.localizedMessage
+            } finally {
+                _isAiRestructureLoading.value = false
+            }
+        }
+    }
+
     fun clearAiRestructureProposal() {
         _aiRestructureProposal.value = null
+        val bookId = activeBookId.value ?: return
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val cacheDir = getApplication<Application>().cacheDir ?: return@launch
+                val file = java.io.File(cacheDir, "ai_restructure_proposal_${bookId}.json")
+                if (file.exists()) {
+                    file.delete()
+                }
+            } catch (e: Exception) {
+                Log.e("PageViewModel", "Error deleting proposal cache", e)
+            }
+        }
     }
 
     fun applyAiRestructureProposal(proposal: BookRestructureProposal, onResult: (String) -> Unit) {
@@ -1271,6 +1502,37 @@ class PageViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 Log.e("PageViewModel", "Error applying AI restructure proposal", e)
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(getApplication(), "Fehler beim Anwenden: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                }
+            } finally {
+                _isAiRestructureLoading.value = false
+            }
+        }
+    }
+
+    fun applySingleAiRestructureAction(action: com.andreas_kratzer.ghosttalk.core.model.RestructureAction, onResult: (String) -> Unit) {
+        val currentBookId = activeBookId.value ?: return
+        viewModelScope.launch(Dispatchers.IO) {
+            _isAiRestructureLoading.value = true
+            try {
+                val singleProposal = com.andreas_kratzer.ghosttalk.core.model.BookRestructureProposal(listOf(action))
+                val newBookId = cloneBookUseCase.execute(currentBookId, singleProposal)
+                
+                // Fetch the default start page of the new book from database directly to load it immediately
+                val startId = settingsRepository.getDefaultStartPageIdForBook(newBookId)
+                val pages = pageManagementDelegate.pageRepository.getPagesForBook(newBookId)
+                val startPage = pages.find { it.id == startId } ?: pages.firstOrNull()
+
+                withContext(Dispatchers.Main) {
+                    setActiveBookId(newBookId)
+                    if (startPage != null) {
+                        loadPage(startPage)
+                    }
+                    onResult(newBookId)
+                }
+            } catch (e: java.lang.Exception) {
+                Log.e("PageViewModel", "Error applying single AI restructure action", e)
                 withContext(Dispatchers.Main) {
                     Toast.makeText(getApplication(), "Fehler beim Anwenden: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
                 }

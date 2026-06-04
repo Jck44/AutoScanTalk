@@ -27,5 +27,8 @@ data class ButtonUsageHistoryEntity(
     val reactionTimeMs: Long? = null,
     val isTouchIntervention: Boolean = false,
     val wifiSsid: String? = null,
-    val isHardwareTriggered: Boolean = false
+    val isHardwareTriggered: Boolean = false,
+    val scanCyclesBeforeClick: Int? = null,
+    val isAccidental: Boolean = false,
+    val intendedButtonId: String? = null
 )

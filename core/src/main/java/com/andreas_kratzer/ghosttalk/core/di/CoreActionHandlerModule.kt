@@ -26,4 +26,9 @@ interface CoreActionHandlerModule {
     @Binds
     @IntoSet
     fun bindPlayMediaActionHandler(handler: PlayMediaActionHandler): ActionHandler
+
+    @Binds
+    @IntoSet
+    fun bindMarkAccidentalActionHandler(handler: com.andreas_kratzer.ghosttalk.core.actions.MarkAccidentalActionHandler): ActionHandler
 }
+

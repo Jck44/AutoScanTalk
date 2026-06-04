@@ -632,7 +632,7 @@ class PageViewModelTest {
         
         every { settingsRepository.defaultScanPattern } returns "linear"
         every { settingsRepository.defaultStartPageId } returns null
-        every { mockOptimizer.analyzePages(any(), any(), any(), any()) } returns proposals
+        every { mockOptimizer.analyzePages(any(), any(), any(), any(), any()) } returns proposals
         every { getPagesUseCase.execute(any()) } returns MutableStateFlow(listOf(page1, page2))
 
         viewModel = createViewModel(optimizer = mockOptimizer)

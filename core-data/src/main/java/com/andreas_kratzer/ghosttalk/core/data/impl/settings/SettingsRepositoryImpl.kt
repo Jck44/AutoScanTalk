@@ -146,6 +146,8 @@ class SettingsRepositoryImpl @Inject constructor(
     override val speakerVolumeFlow: StateFlow<Int> get() = scanningSettings.speakerVolumeFlow
     override val headphoneVolumeFlow: StateFlow<Int> get() = scanningSettings.headphoneVolumeFlow
     override val isCloudSyncEnabledFlow: StateFlow<Boolean> get() = cloudSettings.isCloudSyncEnabledFlow
+    override val lateClickThresholdFlow: StateFlow<Long> get() = scanningSettings.lateClickThresholdFlow
+
     override val syncIntervalMinutesFlow: StateFlow<Long> get() = cloudSettings.syncIntervalMinutesFlow
     override val syncModeBookFlow: StateFlow<String> get() = cloudSettings.syncModeBookFlow
     override val syncModeTtsFlow: StateFlow<String> get() = cloudSettings.syncModeTtsFlow
@@ -187,6 +189,7 @@ class SettingsRepositoryImpl @Inject constructor(
     override val googleTtsVoiceNameFlow: StateFlow<String?> get() = voiceSettings.googleTtsVoiceNameFlow
     override val elevenLabsTtsLanguageFlow: StateFlow<String?> get() = voiceSettings.elevenLabsTtsLanguageFlow
     override val elevenLabsTtsVoiceNameFlow: StateFlow<String?> get() = voiceSettings.elevenLabsTtsVoiceNameFlow
+    override val ttsPlaybackSpeedFlow: StateFlow<Float> get() = voiceSettings.ttsPlaybackSpeedFlow
 
     // --- CallSettings Flows ---
     override val maxCallDurationSecondsFlow: StateFlow<Int> get() = callSettings.maxCallDurationSecondsFlow
@@ -246,6 +249,11 @@ class SettingsRepositoryImpl @Inject constructor(
     override var staticRowScanPattern: String
         get() = scanningSettings.staticRowScanPattern
         set(value) { scanningSettings.staticRowScanPattern = value }
+
+    override var lateClickThresholdMillis: Long
+        get() = scanningSettings.lateClickThresholdMillis
+        set(value) { scanningSettings.lateClickThresholdMillis = value }
+
 
     override var defaultStartPageId: String?
         get() = generalSettings.defaultStartPageId
@@ -614,6 +622,10 @@ class SettingsRepositoryImpl @Inject constructor(
         get() = voiceSettings.elevenLabsTtsVoiceName
         set(value) { voiceSettings.elevenLabsTtsVoiceName = value }
 
+    override var ttsPlaybackSpeed: Float
+        get() = voiceSettings.ttsPlaybackSpeed
+        set(value) { voiceSettings.ttsPlaybackSpeed = value }
+
     override var logIgnoredActions: Boolean
         get() = advancedSettings.logIgnoredActions
         set(value) {
@@ -751,6 +763,9 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override fun getStaticRowScanPatternForBook(bookId: String): String =
         scanningSettings.getStringForBook(bookId, SettingsConstants.KEY_STATIC_ROW_SCAN_PATTERN, "linear") ?: "linear"
+
+    override fun getLateClickThresholdMillisForBook(bookId: String): Long =
+        scanningSettings.getLongForBook(bookId, SettingsConstants.KEY_LATE_CLICK_THRESHOLD_MILLIS, 250L)
 
     override fun getSmartPredictionDelayForBook(bookId: String): Long =
         advancedSettings.getLongForBook(bookId, SettingsConstants.KEY_SMART_PREDICTION_DELAY, 2000L)

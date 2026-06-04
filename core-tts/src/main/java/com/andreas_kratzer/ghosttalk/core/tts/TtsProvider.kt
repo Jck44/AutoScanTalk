@@ -12,8 +12,10 @@ interface TtsProvider {
     suspend fun prefetch(text: String)
     fun stopAll()
     fun shutdown()
+    fun isSpeaking(): Boolean
     
     fun setLanguageAndVoice(languageTag: String?, voiceName: String?)
+
     fun setVoice(voiceName: String?)
     fun getAvailableLanguages(): List<Locale>
     fun getAvailableVoices(languageTag: String?): List<TtsVoice>

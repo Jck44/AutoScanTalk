@@ -67,6 +67,19 @@ class ScanCoordinator @Inject constructor(
     private var lastFocusTimestamp = -1L
     private var lastFocusedIndex: Int? = null
 
+    // For reaction-time and late click heuristic tracking
+    private var _previousFocusedButtonId: String? = null
+    val previousFocusedButtonId: String? get() = _previousFocusedButtonId
+
+    private var _lastFocusChangeTime: Long = -1L
+    val lastFocusChangeTime: Long get() = _lastFocusChangeTime
+
+    fun getPreviousFocusedButton(): String? = _previousFocusedButtonId
+    fun getTimeSinceLastFocusChangeMs(): Long {
+        if (_lastFocusChangeTime == -1L) return Long.MAX_VALUE
+        return System.currentTimeMillis() - _lastFocusChangeTime
+    }
+
     fun getLastFocusDuration(index: Int): Long? {
         val focusTime = lastFocusTimestamp
         if (focusTime != -1L && lastFocusedIndex == index) {
@@ -89,7 +102,14 @@ class ScanCoordinator @Inject constructor(
         scope.launch {
             focusedButtonIndex.collect { index ->
                 if (index != null) {
+                    val prevId = lastFocusedIndex?.let { prevIdx ->
+                        resolvedPage?.value?.buttonConfigs?.getOrNull(prevIdx)?.id
+                    }
+                    if (prevId != null) {
+                        _previousFocusedButtonId = prevId
+                    }
                     lastFocusTimestamp = System.currentTimeMillis()
+                    _lastFocusChangeTime = lastFocusTimestamp
                     lastFocusedIndex = index
                 } else {
                     lastFocusTimestamp = -1L
@@ -98,6 +118,7 @@ class ScanCoordinator @Inject constructor(
             }
         }
     }
+
 
     fun init(
         currentPage: StateFlow<Page?>,

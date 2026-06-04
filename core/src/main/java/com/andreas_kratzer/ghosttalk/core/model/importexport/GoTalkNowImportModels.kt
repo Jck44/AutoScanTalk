@@ -114,6 +114,7 @@ data class ImportPage(
     val rowNames: List<String>? = null,
     val orderIndex: Int? = null,
     val createdAt: Long? = null,
+    val updatedAt: Long? = null,
     val buttons: List<ImportButton> = emptyList()
 )
 
@@ -128,7 +129,8 @@ data class ImportButton(
     val audioFileName: String? = null,
     val active: Boolean? = true,
     val playActionAsAuditoryCue: Boolean? = false,
-    val action: ImportAction? = null
+    val action: ImportAction? = null,
+    val updatedAt: Long? = null
 )
 
 @Serializable

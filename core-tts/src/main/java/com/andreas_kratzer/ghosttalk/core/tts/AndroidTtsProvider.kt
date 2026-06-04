@@ -191,6 +191,8 @@ open class AndroidTtsProvider @Inject constructor(
         val startAudio = {
             val actualQueueMode = if (delayedStart) TextToSpeech.QUEUE_ADD else queueMode
             
+            tts?.setSpeechRate(settingsRepository.ttsPlaybackSpeed)
+            
             if (resolvedDeviceAddress == null) {
                 val utteranceId = "direct_${System.currentTimeMillis()}_${text.hashCode()}"
                 if (onDone != null) {
@@ -377,4 +379,9 @@ open class AndroidTtsProvider @Inject constructor(
     }
 
     override fun isCached(text: String): Boolean = true
+
+    override fun isSpeaking(): Boolean {
+        return (tts?.isSpeaking ?: false) || playRequests.isNotEmpty() || directCallbacks.isNotEmpty()
+    }
 }
+

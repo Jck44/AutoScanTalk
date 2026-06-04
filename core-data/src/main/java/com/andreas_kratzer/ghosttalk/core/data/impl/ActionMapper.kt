@@ -13,7 +13,9 @@ import com.andreas_kratzer.ghosttalk.core.model.MediaProvider
 import com.andreas_kratzer.ghosttalk.core.model.NavigateBackButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.PlayMediaButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.MarkAccidentalButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.PreviousActionButtonAction
+
 import com.andreas_kratzer.ghosttalk.core.model.SmartHomeButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SmartHomeProvider
 import com.andreas_kratzer.ghosttalk.core.model.PredictionType
@@ -72,7 +74,9 @@ class ActionMapper @Inject constructor() {
                 smartHomeValue = action.value
             )
             is PreviousActionButtonAction -> ImportAction(type = "PREVIOUS_ACTION", rank = action.rank)
+            is MarkAccidentalButtonAction -> ImportAction(type = "MARK_ACCIDENTAL")
             is PlayMediaButtonAction -> ImportAction(
+
                 type = "PLAY_MEDIA",
                 mediaProvider = action.provider.name,
                 mediaContentUri = action.contentUri,
@@ -138,7 +142,9 @@ class ActionMapper @Inject constructor() {
                 value = importAction.smartHomeValue
             )
             "PREVIOUS_ACTION" -> PreviousActionButtonAction(importAction.rank ?: 1)
+            "MARK_ACCIDENTAL" -> MarkAccidentalButtonAction()
             "PLAY_MEDIA" -> PlayMediaButtonAction(
+
                 provider = try { MediaProvider.valueOf(importAction.mediaProvider ?: "SPOTIFY") } catch(_: Exception) { MediaProvider.SPOTIFY },
                 contentUri = importAction.mediaContentUri ?: "",
                 contentName = importAction.mediaContentName ?: "",

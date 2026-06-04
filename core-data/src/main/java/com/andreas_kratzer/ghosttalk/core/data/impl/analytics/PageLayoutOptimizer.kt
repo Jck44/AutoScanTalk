@@ -1,9 +1,11 @@
 package com.andreas_kratzer.ghosttalk.core.data.impl.analytics
 
+import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository.ButtonUsageEvent
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.util.GridUtils
 import javax.inject.Inject
 import javax.inject.Singleton
+
 
 @Singleton
 class PageLayoutOptimizer @Inject constructor() {
@@ -28,15 +30,36 @@ class PageLayoutOptimizer @Inject constructor() {
             val estimatedNewAverageScanTimeSec: Double,
             val targetScanPattern: String
         ) : LayoutOptimizationProposal
+
+        data class ChangeScanDelayProposal(
+            override val pageId: String,
+            override val pageName: String,
+            val currentScanDelayMs: Long,
+            val suggestedScanDelayMs: Long,
+            val lateClickRate: Double
+        ) : LayoutOptimizationProposal
+
+        data class SpacerRelocateProposal(
+            override val pageId: String,
+            override val pageName: String,
+            val buttonId: String,
+            val buttonLabel: String,
+            val intendedButtonId: String,
+            val intendedButtonLabel: String,
+            val accidentalClickCount: Int
+        ) : LayoutOptimizationProposal
     }
+
 
     fun analyzePages(
         pages: List<Page>,
         defaultStartPageId: String?,
         scanDelayMs: Long,
-        defaultScanPattern: String
+        defaultScanPattern: String,
+        historyEvents: List<ButtonUsageEvent>
     ): List<LayoutOptimizationProposal> {
         val proposals = mutableListOf<LayoutOptimizationProposal>()
+
 
         for (page in pages) {
             val isStartPage = page.id == defaultStartPageId
@@ -115,8 +138,58 @@ class PageLayoutOptimizer @Inject constructor() {
             }
         }
 
+        // 4. Accidental click / Reaction delay analysis
+        val eventsByPage = historyEvents.groupBy { it.pageId }
+        for (page in pages) {
+            val pageEvents = eventsByPage[page.id] ?: continue
+            val validClicksCount = pageEvents.count { !it.isAccidental }
+            if (validClicksCount < 5) continue
+
+            // A. Check for late clicks (rate >= 20%)
+            val lateClicks = pageEvents.filter { it.isAccidental && it.intendedButtonId != null }
+            val lateClickRate = lateClicks.size.toDouble() / pageEvents.size.toDouble()
+            if (lateClickRate >= 0.20) {
+                proposals.add(
+                    LayoutOptimizationProposal.ChangeScanDelayProposal(
+                        pageId = page.id,
+                        pageName = page.name,
+                        currentScanDelayMs = scanDelayMs,
+                        suggestedScanDelayMs = scanDelayMs + 500L,
+                        lateClickRate = lateClickRate
+                    )
+                )
+            }
+
+            // B. Check for neighbor misclicks
+            val misclicksByButtonPair = lateClicks.groupBy { it.buttonId to it.intendedButtonId }
+            for (entry in misclicksByButtonPair.entries) {
+                val buttonId = entry.key.first
+                val intendedButtonId = entry.key.second
+                val events = entry.value
+                if (buttonId != null && intendedButtonId != null && events.size >= 2) {
+                    val currentBtn = page.buttonConfigs.find { it?.id == buttonId }
+                    val intendedBtn = page.buttonConfigs.find { it?.id == intendedButtonId }
+                    if (currentBtn != null && intendedBtn != null) {
+                        proposals.add(
+                            LayoutOptimizationProposal.SpacerRelocateProposal(
+                                pageId = page.id,
+                                pageName = page.name,
+                                buttonId = buttonId,
+                                buttonLabel = currentBtn.label,
+                                intendedButtonId = intendedButtonId,
+                                intendedButtonLabel = intendedBtn.label,
+                                accidentalClickCount = events.size
+                            )
+                        )
+                    }
+                }
+            }
+
+        }
+
         return proposals
     }
+
 
     private fun calculateAverageRowColSteps(page: Page): Double {
         val rows = page.rows

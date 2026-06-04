@@ -4,6 +4,8 @@ import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.GroupedButtonUsageStat
 import kotlinx.coroutines.flow.StateFlow
 
+
+
 interface ButtonUsageRepository : ButtonUsageProvider {
     val buttonHistory: StateFlow<List<ButtonUsageEvent>>
 
@@ -19,15 +21,22 @@ interface ButtonUsageRepository : ButtonUsageProvider {
         timestamp: Long = System.currentTimeMillis(),
         reactionTimeMs: Long? = null,
         isTouchIntervention: Boolean = false,
-        isHardwareTriggered: Boolean = false
+        isHardwareTriggered: Boolean = false,
+        scanCyclesBeforeClick: Int? = null,
+        isAccidental: Boolean = false,
+        intendedButtonId: String? = null
     )
+    suspend fun markLastUsageAsAccidental(bookId: String): Boolean
     suspend fun clearStats(bookId: String)
+
     suspend fun cleanupOldStats(days: Int)
     suspend fun updateLastEventImage(imagePath: String)
     suspend fun updateLastEventDetails(details: String)
     suspend fun deleteUsageEvent(timestamp: Long)
     suspend fun getMarkovSuccessors(bookId: String, buttonId: String, limit: Int = 3): List<Pair<String, Int>>
     suspend fun getPredictiveButtons(bookId: String, limit: Int = 3): List<String>
+    suspend fun getHistoryEventsForBook(bookId: String): List<ButtonUsageEvent>
+
 
     data class ButtonUsageEvent(
         val timestamp: Long, 
@@ -41,6 +50,10 @@ interface ButtonUsageRepository : ButtonUsageProvider {
         val reactionTimeMs: Long? = null,
         val isTouchIntervention: Boolean = false,
         val wifiSsid: String? = null,
-        val isHardwareTriggered: Boolean = false
+        val isHardwareTriggered: Boolean = false,
+        val scanCyclesBeforeClick: Int? = null,
+        val isAccidental: Boolean = false,
+        val intendedButtonId: String? = null
     )
+
 }

@@ -191,7 +191,17 @@ open class TextToSpeechHelper @Inject constructor(
         currentProvider.stopAll()
     }
 
+    open fun isSpeaking(): Boolean {
+        val provider = currentProvider
+        return if (provider is AndroidTtsProvider) {
+            provider.isSpeaking()
+        } else {
+            false
+        }
+    }
+
     fun shutdown() {
+
         currentProvider.shutdown()
     }
 }

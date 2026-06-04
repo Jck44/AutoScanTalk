@@ -428,6 +428,23 @@
     <string name="analytics_ai_details_split">• New subpage \"%1$s\": %2$s</string>
     <string name="analytics_ai_btn_save_test">Save as New Book &amp; Evaluate</string>
     <string name="analytics_ai_toast_applied">New book loaded! Proposal has been applied.</string>
+    <string name="analytics_ai_page_selection_title">Select Pages for Analysis</string>
+    <string name="analytics_ai_btn_select_pages">Select Pages (%1$d/%2$d)</string>
+    <string name="analytics_ai_only_active_pages">Only Active Pages</string>
+    <string name="analytics_ai_all_pages">All Pages</string>
+    <string name="analytics_ai_active_badge">Active / Reachable</string>
+    <string name="analytics_ai_inactive_badge">Not directly reachable</string>
+    <string name="analytics_ai_no_pages_selected_warning">Please select at least one page for analysis.</string>
+    <string name="analytics_ai_scope_title">Optimization Depth</string>
+    <string name="analytics_ai_scope_quick">Quick (3-5 tips)</string>
+    <string name="analytics_ai_scope_detailed">Detailed (10-15 tips)</string>
+    <string name="analytics_ai_scope_full">Complete (20+ tips)</string>
+    <string name="analytics_ai_token_warning_title">⚠️ High Token Usage</string>
+    <string name="analytics_ai_token_warning_desc">A complete reorganization of the entire book performs a comprehensive hierarchical analysis. This consumes a significant amount of tokens and may hit limits on large books. Continue?</string>
+    <string name="analytics_ai_btn_load_more">Load More Suggestions</string>
+    <string name="analytics_ai_btn_loading_more">Loading more suggestions…</string>
+    <string name="analytics_ai_quota_error">Error loading (limit reached). Existing suggestions have been kept.</string>
+    <string name="analytics_ai_btn_apply_action">Apply suggestion</string>
     <string name="bluetooth_settings">Bluetooth Settings</string>
     <!-- Analytics Tabs & Expandable strings -->
     <string name="analytics_tab_overview">Overview</string>
@@ -444,5 +461,7 @@
     <string name="button_preview_previous_action_cue_1">Auditory Cue (Previous Action):\nSpeaks the name of the last executed button with the prefix \"Last action: [Tile Name]\".</string>
     <string name="button_preview_previous_action_cue_n">Auditory Cue (Previous Action):\nSpeaks the name of the %1$d. last executed button with the prefix \"%1$d. Last action: [Tile Name]\".</string>
     <string name="button_preview_smart_prediction_cue">Auditory Cue (Smart Prediction):\nUses the default auditory cue of the predicted button/page (without any additional prefix).</string>
+    <string name="page_editor_preview_toggle">Toggle dynamic resolution preview</string>
+    <string name="page_editor_preview_active_banner">Preview Mode Active (Editing Disabled)</string>
 </resources>
 

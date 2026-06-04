@@ -8,9 +8,11 @@ import com.google.android.play.core.appupdate.AppUpdateInfo
 import com.google.android.play.core.appupdate.AppUpdateManager
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
 import com.google.android.play.core.appupdate.AppUpdateOptions
+import com.google.android.play.core.install.InstallException
 import com.google.android.play.core.install.InstallState
 import com.google.android.play.core.install.InstallStateUpdatedListener
 import com.google.android.play.core.install.model.AppUpdateType
+import com.google.android.play.core.install.model.InstallErrorCode
 import com.google.android.play.core.install.model.InstallStatus
 import com.google.android.play.core.install.model.UpdateAvailability
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -85,7 +87,11 @@ class UpdateManager @Inject constructor(
                 _updateState.value = UpdateState.ReadyToInstall
             }
         }.addOnFailureListener { e ->
-            Log.e(TAG, "Failed to check initial update state", e)
+            if (e is InstallException && e.errorCode == InstallErrorCode.ERROR_APP_NOT_OWNED) {
+                Log.d(TAG, "App not installed via Play Store (sideloaded/ADB). Skipping initial update check.")
+            } else {
+                Log.e(TAG, "Failed to check initial update state", e)
+            }
         }
     }
 
@@ -106,8 +112,13 @@ class UpdateManager @Inject constructor(
                 _updateState.value = UpdateState.NoUpdateAvailable
             }
         }.addOnFailureListener { e ->
-            Log.e(TAG, "Failed to check for updates", e)
-            _updateState.value = UpdateState.Error(e.message ?: "Failed to check for updates")
+            if (e is InstallException && e.errorCode == InstallErrorCode.ERROR_APP_NOT_OWNED) {
+                Log.d(TAG, "App not installed via Play Store (sideloaded/ADB). Skipping update check.")
+                _updateState.value = UpdateState.NoUpdateAvailable
+            } else {
+                Log.e(TAG, "Failed to check for updates", e)
+                _updateState.value = UpdateState.Error(e.message ?: "Failed to check for updates")
+            }
         }
     }
 
@@ -127,8 +138,13 @@ class UpdateManager @Inject constructor(
                 _updateState.value = UpdateState.NoUpdateAvailable
             }
         }.addOnFailureListener { e ->
-            Log.e(TAG, "Silent update check failed", e)
-            _updateState.value = UpdateState.Error(e.message ?: "Failed to check for updates")
+            if (e is InstallException && e.errorCode == InstallErrorCode.ERROR_APP_NOT_OWNED) {
+                Log.d(TAG, "App not installed via Play Store (sideloaded/ADB). Skipping silent update check.")
+                _updateState.value = UpdateState.NoUpdateAvailable
+            } else {
+                Log.e(TAG, "Silent update check failed", e)
+                _updateState.value = UpdateState.Error(e.message ?: "Failed to check for updates")
+            }
         }
     }
 
@@ -167,9 +183,15 @@ class UpdateManager @Inject constructor(
                 }
             }
         }.addOnFailureListener { e ->
-            Log.e(TAG, "Manual update check failed", e)
-            _updateState.value = UpdateState.Error(e.message ?: "Unknown error")
-            onError(e.message ?: "Unknown error")
+            if (e is InstallException && e.errorCode == InstallErrorCode.ERROR_APP_NOT_OWNED) {
+                Log.d(TAG, "App not installed via Play Store (sideloaded/ADB). Skipping manual update check.")
+                _updateState.value = UpdateState.NoUpdateAvailable
+                onUpToDate()
+            } else {
+                Log.e(TAG, "Manual update check failed", e)
+                _updateState.value = UpdateState.Error(e.message ?: "Unknown error")
+                onError(e.message ?: "Unknown error")
+            }
         }
     }
 

@@ -103,7 +103,8 @@ fun SettingsScreen(
     onBookDeleted: () -> Unit = onNavigateBack,
     onNavigateToStart: () -> Unit = {},
     isGlobal: Boolean = false,
-    viewModel: SettingsViewModel = hiltViewModel()
+    viewModel: SettingsViewModel = hiltViewModel(),
+    onNavigateToGlobalSettings: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val dimensions = LocalDimensions.current
@@ -196,21 +197,22 @@ fun SettingsScreen(
             SettingsTopBar(
                 selectedSection = selectedSection,
                 isGlobal = isGlobal,
-                onBack = { if (selectedSection == null) onNavigateBack() else selectedSection = null }
+                onBack = { if (selectedSection == null) onNavigateBack() else selectedSection = null },
+                onNavigateToGlobalSettings = onNavigateToGlobalSettings
             )
         }
-    ) { padding ->
+    ) { paddingValues ->
         if (selectedSection == null) {
             SettingsMainMenu(
                 isGlobal = isGlobal,
-                padding = padding,
+                padding = paddingValues,
                 dimensions = dimensions,
                 onSectionSelected = { selectedSection = it }
             )
         } else {
             SettingsSubMenu(
                 section = selectedSection!!,
-                padding = padding,
+                padding = paddingValues,
                 dimensions = dimensions,
                 isGlobal = isGlobal,
                 viewModel = viewModel,
@@ -270,7 +272,8 @@ fun SettingsScreen(
 private fun SettingsTopBar(
     selectedSection: SettingsSection?,
     isGlobal: Boolean,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onNavigateToGlobalSettings: () -> Unit
 ) {
     TopAppBar(
         title = {
@@ -288,6 +291,19 @@ private fun SettingsTopBar(
                 modifier = Modifier.testTag("settings_back_button")
             ) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+            }
+        },
+        actions = {
+            if (!isGlobal && selectedSection == null) {
+                IconButton(
+                    onClick = onNavigateToGlobalSettings,
+                    modifier = Modifier.testTag("settings_global_button")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Settings,
+                        contentDescription = stringResource(CoreR.string.settings_title_global)
+                    )
+                }
             }
         }
     )

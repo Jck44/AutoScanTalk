@@ -47,7 +47,7 @@ open class RoutedAudioPlayer @Inject constructor(
                 type == AudioDeviceInfo.TYPE_USB_HEADSET
     }
 
-    open fun playAudioFile(file: File, deviceAddress: String?, volumeMultiplier: Float = 1.0f, onCompletion: (() -> Unit)? = null) {
+    open fun playAudioFile(file: File, deviceAddress: String?, volumeMultiplier: Float = 1.0f, playbackSpeed: Float = 1.0f, onCompletion: (() -> Unit)? = null) {
         if (!file.exists()) {
             Log.e("RoutedAudioPlayer", "Audio file does not exist: ${file.absolutePath}")
             onCompletion?.invoke()
@@ -162,6 +162,13 @@ open class RoutedAudioPlayer @Inject constructor(
                 }
                 val finalVolume = volumeMultiplier * scalingFactor
                 mediaPlayer.setVolume(finalVolume, finalVolume)
+                if (playbackSpeed != 1.0f) {
+                    try {
+                        mediaPlayer.playbackParams = mediaPlayer.playbackParams.setSpeed(playbackSpeed)
+                    } catch (e: Exception) {
+                        Log.e("RoutedAudioPlayer", "Failed to set playback speed: $playbackSpeed", e)
+                    }
+                }
                 mediaPlayer.start()
 
             } catch (e: Exception) {
@@ -243,4 +250,11 @@ open class RoutedAudioPlayer @Inject constructor(
         }
         activePlayers.clear()
     }
+
+    open fun isPlaying(): Boolean {
+        return activePlayers.keys.any {
+            try { it.isPlaying } catch (_: Exception) { false }
+        }
+    }
 }
+

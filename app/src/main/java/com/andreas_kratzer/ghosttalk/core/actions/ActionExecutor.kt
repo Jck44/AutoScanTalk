@@ -106,6 +106,31 @@ class ActionExecutor @Inject constructor(
                 } catch (_: Exception) {
                     null
                 }
+                
+                // Heuristic for late/accidental clicks:
+                // Pressed button within threshold milliseconds since last focus change OR predecessor speech audio is still playing.
+                var isAccidental = false
+                var intendedButtonId: String? = null
+                try {
+                    val scanCoord = scanCoordinatorProvider.get()
+                    val threshold = settingsRepository.lateClickThresholdMillis
+                    val timeSinceFocus = scanCoord.getTimeSinceLastFocusChangeMs()
+                    val isTtsSpeaking = ttsHelper.isSpeaking()
+                    
+                    if (timeSinceFocus <= threshold || isTtsSpeaking) {
+                        intendedButtonId = scanCoord.getPreviousFocusedButton()
+                        if (intendedButtonId != null && intendedButtonId != buttonConfig.id) {
+                            isAccidental = true
+                        }
+                    }
+                } catch (_: Exception) {}
+
+                val scanCycles = try {
+                    scanCoordinatorProvider.get().currentCycleCount.value
+                } catch (_: Exception) {
+                    null
+                }
+
                 scope.launch {
                     try {
                         buttonUsageRepository.recordUsage(
@@ -117,12 +142,16 @@ class ActionExecutor @Inject constructor(
                             indexInPage = index,
                             reactionTimeMs = reactionTimeMs,
                             isTouchIntervention = isTouchIntervention,
-                            isHardwareTriggered = isHardwareTriggered
+                            isHardwareTriggered = isHardwareTriggered,
+                            scanCyclesBeforeClick = scanCycles,
+                            isAccidental = isAccidental,
+                            intendedButtonId = intendedButtonId
                         )
                     } catch (_: Exception) { }
                 }
             }
         }
+
 
         val action = buttonConfig.buttonAction
         

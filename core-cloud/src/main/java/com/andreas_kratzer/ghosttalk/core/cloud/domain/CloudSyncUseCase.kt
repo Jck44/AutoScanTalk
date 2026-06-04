@@ -13,7 +13,12 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.FileOutputStream
 import javax.inject.Inject
+import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportExportData
+import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportPage
+import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportButton
+import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportButtonTemplate
 
 enum class SyncMode {
     TWO_WAY,
@@ -243,39 +248,110 @@ class CloudSyncUseCase @Inject constructor(
                         }
                     }
                     SyncMode.TWO_WAY -> {
-                        if (localLastModified > remoteLastModified + 2000) { // 2s Grace period
-                            logger.d(TAG, "Local version is newer. Updating remote file...")
-                            val updateSuccess = if (remoteZipFile != null) {
-                                storageProvider.updateFile(remoteZipFile.id, tempFile, "application/zip", book.name) { p ->
-                                    onProgress(0.3f + p * 0.7f, "Uploading to Drive...")
-                                }
-                            } else {
-                                // Migrate JSON to ZIP
-                                storageProvider.uploadFile(tempFile, "application/zip", book.name) { p ->
-                                    onProgress(0.3f + p * 0.7f, "Uploading to Drive...")
-                                } != null
-                            }
-                            if (updateSuccess) {
-                                syncLogProvider.addLogEntry("Lokale Version war neuer -> Cloud aktualisiert (ZIP)", bookId, book.name)
-                                val metadata = storageProvider.getFileMetadata(remoteFile.id)
-                                val driveTime = metadata?.modifiedTime ?: 0L
-                                if (driveTime > 0L) {
-                                    bookRepository.updateLastModified(bookId, driveTime)
-                                }
-                            } else {
-                                syncLogProvider.addLogEntry("Update der Cloud-Datei fehlgeschlagen", bookId, book.name, isError = true)
-                                if (tempFile.exists()) {
-                                    saveToLocalBackupFolder(currentFileName, tempFile)
-                                }
-                            }
-                            success = updateSuccess
-                        } else if (remoteLastModified > localLastModified + 2000) {
-                            logger.d(TAG, "Remote version is newer. Downloading and importing...")
-                            success = downloadAndImport(storageProvider, remoteFile.id, remoteFile.name, book, remoteLastModified, onProgress)
+                        logger.d(TAG, "TWO_WAY sync: Starting granular merge...")
+                        val downloadFile = File(context.cacheDir, "download_$currentFileName")
+                        val downloadSuccess = storageProvider.downloadFile(remoteFile.id, downloadFile) { _ -> }
+                        if (!downloadSuccess) {
+                            logger.e(TAG, "Failed to download remote file for merge.")
+                            success = false
                         } else {
-                            logger.d(TAG, "Local and remote versions are synchronized.")
-                            syncLogProvider.addLogEntry("Lokal und Cloud sind synchron", bookId, book.name)
-                            success = true
+                            try {
+                                if (remoteFile.name.endsWith(".zip")) {
+                                    downloadFile.inputStream().use { inputStream ->
+                                        java.util.zip.ZipInputStream(inputStream).use { zipIn ->
+                                            val audioDir = File(context.filesDir, "audio_recordings")
+                                            if (!audioDir.exists()) audioDir.mkdirs()
+                                            var entry = zipIn.nextEntry
+                                            while (entry != null) {
+                                                if (entry.name.startsWith("audio_recordings/")) {
+                                                    val fileName = entry.name.substringAfter("audio_recordings/")
+                                                    if (fileName.isNotEmpty()) {
+                                                        val targetFile = File(audioDir, fileName)
+                                                        val shouldExtract = !targetFile.exists() || (entry.time > targetFile.lastModified())
+                                                        if (shouldExtract) {
+                                                            FileOutputStream(targetFile).use { out -> zipIn.copyTo(out) }
+                                                            if (entry.time != -1L) {
+                                                                targetFile.setLastModified(entry.time)
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                                zipIn.closeEntry()
+                                                entry = zipIn.nextEntry
+                                            }
+                                        }
+                                    }
+                                }
+
+                                val remoteJson = readJsonFromFile(downloadFile)
+                                val localJson = importExportManager.exportBookToJson(bookId)
+
+                                val jsonParser = kotlinx.serialization.json.Json { ignoreUnknownKeys = true; encodeDefaults = true }
+                                val remoteData = jsonParser.decodeFromString<ImportExportData>(remoteJson)
+                                val localData = jsonParser.decodeFromString<ImportExportData>(localJson)
+
+                                val mergedData = mergeBooks(localData, remoteData)
+                                val mergedJson = jsonParser.encodeToString(mergedData)
+
+                                val localNeedsUpdate = localJson != mergedJson
+                                val remoteNeedsUpdate = remoteJson != mergedJson
+
+                                var localUpdateSuccess = true
+                                if (localNeedsUpdate) {
+                                    logger.d(TAG, "Merged data differs from local database. Writing merged data...")
+                                    val importResult = importExportManager.importFromJson(mergedJson, bookId, restoreSyncSettings = false)
+                                    localUpdateSuccess = importResult.isSuccess
+                                    if (!localUpdateSuccess) {
+                                        logger.e(TAG, "Failed to import merged data locally: ${importResult.exceptionOrNull()?.message}")
+                                    }
+                                }
+
+                                var remoteUpdateSuccess = true
+                                if (remoteNeedsUpdate && localUpdateSuccess) {
+                                    logger.d(TAG, "Merged data differs from remote file. Uploading merged data...")
+                                    val mergedTempFile = File(context.cacheDir, "merged_$currentFileName")
+                                    mergedTempFile.outputStream().use { os ->
+                                        java.util.zip.ZipOutputStream(os).use { zip ->
+                                            zip.putNextEntry(java.util.zip.ZipEntry("backup.json"))
+                                            zip.write(mergedJson.toByteArray(Charsets.UTF_8))
+                                            zip.closeEntry()
+
+                                            val audioDir = File(context.filesDir, "audio_recordings")
+                                            if (audioDir.exists() && audioDir.isDirectory) {
+                                                audioDir.listFiles()?.filter { it.isFile && it.name.endsWith(".ogg") }?.forEach { file ->
+                                                    zip.putNextEntry(java.util.zip.ZipEntry("audio_recordings/${file.name}"))
+                                                    file.inputStream().use { input -> input.copyTo(zip) }
+                                                    zip.closeEntry()
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    remoteUpdateSuccess = if (remoteZipFile != null) {
+                                        storageProvider.updateFile(remoteZipFile.id, mergedTempFile, "application/zip", book.name) { _ -> }
+                                    } else {
+                                        storageProvider.uploadFile(mergedTempFile, "application/zip", book.name) { _ -> } != null
+                                    }
+                                    mergedTempFile.delete()
+                                }
+
+                                if (localUpdateSuccess && remoteUpdateSuccess) {
+                                    val metadata = storageProvider.getFileMetadata(remoteFile.id)
+                                    val driveTime = metadata?.modifiedTime ?: 0L
+                                    if (driveTime > 0L) {
+                                        bookRepository.updateLastModified(bookId, driveTime)
+                                    }
+                                    syncLogProvider.addLogEntry("Zwei-Wege-Merge erfolgreich abgeschlossen", bookId, book.name)
+                                    success = true
+                                } else {
+                                    success = false
+                                }
+                            } catch (e: Exception) {
+                                logger.e(TAG, "Error during TWO_WAY merge sync", e)
+                                success = false
+                            } finally {
+                                downloadFile.delete()
+                            }
                         }
                     }
                 }
@@ -963,6 +1039,131 @@ class CloudSyncUseCase @Inject constructor(
             logger.e(TAG, "Failed to upload log file to remote storage provider", e)
             false
         }
+    }
+
+    private fun readJsonFromFile(file: File): String {
+        if (file.name.endsWith(".zip")) {
+            java.util.zip.ZipInputStream(file.inputStream()).use { zip ->
+                var entry = zip.nextEntry
+                while (entry != null) {
+                    if (entry.name == "backup.json") {
+                        return String(zip.readBytes(), Charsets.UTF_8)
+                    }
+                    zip.closeEntry()
+                    entry = zip.nextEntry
+                }
+            }
+            throw Exception("No backup.json found in ZIP")
+        } else {
+            return file.readText()
+        }
+    }
+
+    private fun mergeBooks(local: ImportExportData, remote: ImportExportData): ImportExportData {
+        val useLocalMetadata = (local.bookUpdatedAt ?: 0L) >= (remote.bookUpdatedAt ?: 0L)
+        val mergedBookName = if (useLocalMetadata) local.bookName else remote.bookName
+        val mergedDefaultStartPageId = if (useLocalMetadata) local.defaultStartPageId else remote.defaultStartPageId
+        val mergedPageSortOrder = if (useLocalMetadata) local.pageSortOrder else remote.pageSortOrder
+        val mergedTemplateSortOrder = if (useLocalMetadata) local.templateSortOrder else remote.templateSortOrder
+        val mergedActionLogLimit = if (useLocalMetadata) local.actionLogLimit else remote.actionLogLimit
+        val mergedLimitScanCycles = if (useLocalMetadata) local.limitScanCycles else remote.limitScanCycles
+        val mergedScanCycleLimit = if (useLocalMetadata) local.scanCycleLimit else remote.scanCycleLimit
+        val mergedLogIgnoredActions = if (useLocalMetadata) local.logIgnoredActions else remote.logIgnoredActions
+        val mergedLogStopActions = if (useLocalMetadata) local.logStopActions else remote.logStopActions
+
+        val localPagesMap = local.pages.associateBy { it.importId }
+        val remotePagesMap = remote.pages.associateBy { it.importId }
+        val allPageIds = localPagesMap.keys + remotePagesMap.keys
+        val mergedPages = allPageIds.map { pageId ->
+            val localPage = localPagesMap[pageId]
+            val remotePage = remotePagesMap[pageId]
+            if (localPage == null) {
+                remotePage!!
+            } else if (remotePage == null) {
+                localPage
+            } else {
+                val localPageTime = localPage.updatedAt ?: localPage.createdAt ?: 0L
+                val remotePageTime = remotePage.updatedAt ?: remotePage.createdAt ?: 0L
+                val useLocalPage = localPageTime >= remotePageTime
+
+                val name = if (useLocalPage) localPage.name else remotePage.name
+                val rows = if (useLocalPage) localPage.rows else remotePage.rows
+                val columns = if (useLocalPage) localPage.columns else remotePage.columns
+                val templateId = if (useLocalPage) localPage.templateId else remotePage.templateId
+                val scanPattern = if (useLocalPage) localPage.scanPattern else remotePage.scanPattern
+                val rowNames = if (useLocalPage) localPage.rowNames else remotePage.rowNames
+                val orderIndex = if (useLocalPage) localPage.orderIndex else remotePage.orderIndex
+                val createdAt = if (useLocalPage) localPage.createdAt else remotePage.createdAt
+                val updatedAt = maxOf(localPageTime, remotePageTime)
+
+                val localButtonsMap = localPage.buttons.associateBy { it.index }
+                val remoteButtonsMap = remotePage.buttons.associateBy { it.index }
+                val allButtonIndices = localButtonsMap.keys + remoteButtonsMap.keys
+                val mergedButtons = allButtonIndices.map { index ->
+                    val localButton = localButtonsMap[index]
+                    val remoteButton = remoteButtonsMap[index]
+                    if (localButton == null) {
+                        remoteButton!!
+                    } else if (remoteButton == null) {
+                        localButton
+                    } else {
+                        val localButtonTime = localButton.updatedAt ?: 0L
+                        val remoteButtonTime = remoteButton.updatedAt ?: 0L
+                        if (localButtonTime >= remoteButtonTime) {
+                            localButton
+                        } else {
+                            remoteButton
+                        }
+                    }
+                }
+
+                ImportPage(
+                    importId = pageId,
+                    name = name,
+                    rows = rows,
+                    columns = columns,
+                    templateId = templateId,
+                    scanPattern = scanPattern,
+                    rowNames = rowNames,
+                    orderIndex = orderIndex,
+                    createdAt = createdAt,
+                    updatedAt = updatedAt,
+                    buttons = mergedButtons
+                )
+            }
+        }
+
+        val localTemplatesMap = (local.buttonTemplates ?: emptyList()).associateBy { it.id }
+        val remoteTemplatesMap = (remote.buttonTemplates ?: emptyList()).associateBy { it.id }
+        val allTemplateIds = localTemplatesMap.keys + remoteTemplatesMap.keys
+        val mergedButtonTemplates = allTemplateIds.map { id ->
+            val localT = localTemplatesMap[id]
+            val remoteT = remoteTemplatesMap[id]
+            if (localT == null) {
+                remoteT!!
+            } else if (remoteT == null) {
+                localT
+            } else {
+                val localTime = localT.button?.updatedAt ?: 0L
+                val remoteTime = remoteT.button?.updatedAt ?: 0L
+                if (localTime >= remoteTime) localT else remoteT
+            }
+        }
+
+        return local.copy(
+            bookName = mergedBookName,
+            defaultStartPageId = mergedDefaultStartPageId,
+            pageSortOrder = mergedPageSortOrder,
+            templateSortOrder = mergedTemplateSortOrder,
+            actionLogLimit = mergedActionLogLimit,
+            limitScanCycles = mergedLimitScanCycles,
+            scanCycleLimit = mergedScanCycleLimit,
+            logIgnoredActions = mergedLogIgnoredActions,
+            logStopActions = mergedLogStopActions,
+            bookUpdatedAt = maxOf(local.bookUpdatedAt ?: 0L, remote.bookUpdatedAt ?: 0L),
+            pages = mergedPages,
+            buttonTemplates = mergedButtonTemplates
+        )
     }
 
     private fun saveToLocalBackupFolder(fileName: String, tempFile: File) {

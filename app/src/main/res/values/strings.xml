@@ -428,10 +428,27 @@
     <string name="analytics_ai_action_deactivate">Knopf deaktivieren: „%1$s“</string>
     <string name="analytics_ai_action_split">Seite aufteilen: „%1$s“</string>
     <string name="analytics_ai_action_default">Struktur-Anpassung</string>
-    <string name="analytics_ai_details_move">Von „%1$s“ nach „%2$s“</string>
+    <string name="analytics_ai_details_move">Verschiebe von „%1$s“ nach „%2$s“</string>
     <string name="analytics_ai_details_split">• Neue Unterseite „%1$s“: %2$s</string>
-    <string name="analytics_ai_btn_save_test">Als neues Buch speichern &amp; auswerten</string>
-    <string name="analytics_ai_toast_applied">Neues Buch geladen! Vorschlag wurde angewendet.</string>
+    <string name="analytics_ai_btn_save_test">Als neues Buch speichern &amp; testen</string>
+    <string name="analytics_ai_toast_applied">Neues Buch geladen! Vorschläge wurden angewendet.</string>
+    <string name="analytics_ai_page_selection_title">Seiten zur Analyse auswählen</string>
+    <string name="analytics_ai_btn_select_pages">Seiten auswählen (%1$d/%2$d)</string>
+    <string name="analytics_ai_only_active_pages">Nur aktive Seiten</string>
+    <string name="analytics_ai_all_pages">Alle Seiten</string>
+    <string name="analytics_ai_active_badge">Aktiv / Erreichbar</string>
+    <string name="analytics_ai_inactive_badge">Nicht direkt erreichbar</string>
+    <string name="analytics_ai_no_pages_selected_warning">Bitte wähle mindestens eine Seite für die Analyse aus.</string>
+    <string name="analytics_ai_scope_title">Optimierungs-Tiefe</string>
+    <string name="analytics_ai_scope_quick">Schnell (3-5 Tipps)</string>
+    <string name="analytics_ai_scope_detailed">Detailliert (10-15 Tipps)</string>
+    <string name="analytics_ai_scope_full">Vollständig (20+ Tipps)</string>
+    <string name="analytics_ai_token_warning_title">⚠️ Hoher Token-Verbrauch</string>
+    <string name="analytics_ai_token_warning_desc">Eine vollständige Reorganisation des gesamten Buchs analysiert alle Knöpfe und Verknüpfungen intensiv. Dies verbraucht eine hohe Anzahl an Tokens und kann bei großen Büchern das Limit erreichen. Fortfahren?</string>
+    <string name="analytics_ai_btn_load_more">Weitere Vorschläge laden</string>
+    <string name="analytics_ai_btn_loading_more">Lade weitere Vorschläge…</string>
+    <string name="analytics_ai_quota_error">Fehler beim Laden (Limit erreicht). Bisherige Vorschläge wurden beibehalten.</string>
+    <string name="analytics_ai_btn_apply_action">Vorschlag anwenden</string>
     <string name="bluetooth_settings">Bluetooth-Einstellungen</string>
     <!-- Analytics Tabs & Expandable strings -->
     <string name="analytics_tab_overview">Übersicht</string>
@@ -448,5 +465,7 @@
     <string name="button_preview_previous_action_cue_1">Flüsterton (Vorherige Aktion):\nSpricht leise den Namen des letzten ausgeführten Knopfs mit dem Präfix \"Letzte Aktion: [Kachelname]\"</string>
     <string name="button_preview_previous_action_cue_n">Flüsterton (Vorherige Aktion):\nSpricht leise den Namen des %1$d. zuletzt ausgeführten Knopfs mit dem Präfix \"%1$d. Letzte Aktion: [Kachelname]\"</string>
     <string name="button_preview_smart_prediction_cue">Flüsterton (Smarte Vorhersage):\nVerwendet den Standard-Auditory-Cue des vorhergesagten Knopfs/Seite (ohne zusätzliches Präfix).</string>
+    <string name="page_editor_preview_toggle">Auflösungsvorschau umschalten</string>
+    <string name="page_editor_preview_active_banner">Vorschaumodus aktiv (Bearbeiten deaktiviert)</string>
 </resources>
 

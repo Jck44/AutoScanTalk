@@ -2,6 +2,7 @@ package com.andreas_kratzer.ghosttalk.ui.pages
 
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -85,6 +86,11 @@ fun AnalyticsDashboardScreen(
     val aiProposal by pageViewModel.aiRestructureProposal.collectAsState()
     val isAiLoading by pageViewModel.isAiRestructureLoading.collectAsState()
     val aiToastApplied = stringResource(R.string.analytics_ai_toast_applied)
+    val selectedPageIds by pageViewModel.selectedPageIds.collectAsState()
+    val activeTargetPageIds by pageViewModel.activeTargetPageIds.collectAsState()
+    val aiRestructureScope by pageViewModel.aiRestructureScope.collectAsState()
+    val aiRestructureError by pageViewModel.aiRestructureError.collectAsState()
+    var showTokenWarningDialog by remember { mutableStateOf(false) }
 
     val statisticsTimeframeText = remember(historyEvents, userModeSessions, locale) {
         val minEvent = historyEvents.minOfOrNull { it.timestamp } ?: Long.MAX_VALUE
@@ -815,6 +821,61 @@ fun AnalyticsDashboardScreen(
                                                         )
                                                     }
                                                 }
+                                                is com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer.LayoutOptimizationProposal.ChangeScanDelayProposal -> {
+                                                    Text(
+                                                        text = "Scan-Verzögerung anpassen",
+                                                        style = MaterialTheme.typography.titleSmall,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                    val ratePct = (proposal.lateClickRate * 100).toInt()
+                                                    Text(
+                                                        text = "Auf Seite '${proposal.pageName}' gibt es eine hohe Spätklick-Rate von $ratePct%. Der Benutzer verpasst häufig Kacheln. Erhöhung der Verzögerung von ${proposal.currentScanDelayMs}ms auf ${proposal.suggestedScanDelayMs}ms empfohlen.",
+                                                        style = MaterialTheme.typography.bodyMedium,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f)
+                                                    )
+                                                    Button(
+                                                        onClick = {
+                                                            pageViewModel.changeScanDelay(proposal.suggestedScanDelayMs)
+                                                            Toast.makeText(context, "Scan-Verzögerung auf ${proposal.suggestedScanDelayMs}ms aktualisiert!", Toast.LENGTH_SHORT).show()
+                                                        },
+                                                        modifier = Modifier.align(Alignment.End),
+                                                        shape = MaterialTheme.shapes.small
+                                                    ) {
+                                                        Text(
+                                                            text = "Verzögerung anpassen",
+                                                            style = MaterialTheme.typography.labelMedium,
+                                                            fontWeight = FontWeight.Bold
+                                                        )
+                                                    }
+                                                }
+                                                is com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer.LayoutOptimizationProposal.SpacerRelocateProposal -> {
+                                                    Text(
+                                                        text = "Tausch-Optimierung für '${proposal.pageName}'",
+                                                        style = MaterialTheme.typography.titleSmall,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                    Text(
+                                                        text = "Der Benutzer klickt häufig unabsichtlich auf '${proposal.buttonLabel}' (${proposal.accidentalClickCount} Mal) statt '${proposal.intendedButtonLabel}'. Ein Tausch der Positionen beider Kacheln verringert Fehlklicks.",
+                                                        style = MaterialTheme.typography.bodyMedium,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f)
+                                                    )
+                                                    Button(
+                                                        onClick = {
+                                                            pageViewModel.applySpacerRelocate(proposal.pageId, proposal.buttonId, proposal.intendedButtonId)
+                                                            Toast.makeText(context, "Kacheln '${proposal.buttonLabel}' und '${proposal.intendedButtonLabel}' erfolgreich getauscht!", Toast.LENGTH_SHORT).show()
+                                                        },
+                                                        modifier = Modifier.align(Alignment.End),
+                                                        shape = MaterialTheme.shapes.small
+                                                    ) {
+                                                        Text(
+                                                            text = "Kacheln tauschen",
+                                                            style = MaterialTheme.typography.labelMedium,
+                                                            fontWeight = FontWeight.Bold
+                                                        )
+                                                    }
+                                                }
                                             }
                                         }
                                     }
@@ -841,6 +902,101 @@ fun AnalyticsDashboardScreen(
 
                         // --- SECTION: AI BOOK RESTRUCTURING (Gemini) ---
 
+                        var showPageSelectionDialog by remember { mutableStateOf(false) }
+
+                        if (showPageSelectionDialog) {
+                            androidx.compose.material3.AlertDialog(
+                                onDismissRequest = { showPageSelectionDialog = false },
+                                title = {
+                                    Text(
+                                        text = stringResource(R.string.analytics_ai_page_selection_title),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                },
+                                text = {
+                                    Column(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            TextButton(
+                                                onClick = { pageViewModel.selectActivePagesOnly() },
+                                                modifier = Modifier.weight(1f)
+                                            ) {
+                                                Text(stringResource(R.string.analytics_ai_only_active_pages))
+                                            }
+                                            TextButton(
+                                                onClick = { pageViewModel.selectAllPages() },
+                                                modifier = Modifier.weight(1f)
+                                            ) {
+                                                Text(stringResource(R.string.analytics_ai_all_pages))
+                                            }
+                                        }
+
+                                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(260.dp)
+                                                .verticalScroll(rememberScrollState()),
+                                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
+                                            unfilteredPages.forEach { page ->
+                                                val isSelected = selectedPageIds.contains(page.id)
+                                                val isActive = activeTargetPageIds.contains(page.id)
+                                                Row(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .clickable { pageViewModel.togglePageSelection(page.id) }
+                                                        .padding(vertical = 6.dp),
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                                ) {
+                                                    androidx.compose.material3.Checkbox(
+                                                        checked = isSelected,
+                                                        onCheckedChange = { pageViewModel.togglePageSelection(page.id) }
+                                                    )
+                                                    Column(modifier = Modifier.weight(1f)) {
+                                                        Text(
+                                                            text = page.name,
+                                                            style = MaterialTheme.typography.bodyLarge,
+                                                            fontWeight = FontWeight.Medium
+                                                        )
+                                                        val badgeText = if (isActive) {
+                                                            stringResource(R.string.analytics_ai_active_badge)
+                                                        } else {
+                                                            stringResource(R.string.analytics_ai_inactive_badge)
+                                                        }
+                                                        val badgeColor = if (isActive) {
+                                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+                                                        } else {
+                                                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                                                        }
+                                                        Text(
+                                                            text = badgeText,
+                                                            style = MaterialTheme.typography.labelSmall,
+                                                            color = badgeColor,
+                                                            fontWeight = FontWeight.Bold
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                confirmButton = {
+                                    TextButton(onClick = { showPageSelectionDialog = false }) {
+                                        Text("OK")
+                                    }
+                                }
+                            )
+                        }
+
                         Row(
                             modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
                             verticalAlignment = Alignment.CenterVertically,
@@ -855,6 +1011,183 @@ fun AnalyticsDashboardScreen(
                             if (aiProposal != null && !isAiLoading) {
                                 TextButton(onClick = { pageViewModel.clearAiRestructureProposal() }) {
                                     Text(stringResource(R.string.analytics_ai_reset))
+                                }
+                            }
+                        }
+
+                        if (isGeminiEnabled) {
+                            if (aiRestructureError != null) {
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.9f)),
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.error)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(12.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = androidx.compose.material.icons.Icons.Default.Info,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.error
+                                        )
+                                        Text(
+                                            text = aiRestructureError ?: stringResource(R.string.analytics_ai_quota_error),
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onErrorContainer,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                        IconButton(
+                                            onClick = { pageViewModel.clearAiRestructureError() },
+                                            modifier = Modifier.size(24.dp)
+                                        ) {
+                                            Text("✕", color = MaterialTheme.colorScheme.onErrorContainer, fontWeight = FontWeight.Bold)
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (showTokenWarningDialog) {
+                                androidx.compose.material3.AlertDialog(
+                                    onDismissRequest = { showTokenWarningDialog = false },
+                                    title = {
+                                        Text(
+                                            text = stringResource(R.string.analytics_ai_token_warning_title),
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    },
+                                    text = {
+                                        Text(
+                                            text = stringResource(R.string.analytics_ai_token_warning_desc),
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                    },
+                                    confirmButton = {
+                                        TextButton(
+                                            onClick = {
+                                                pageViewModel.setAiRestructureScope("full")
+                                                showTokenWarningDialog = false
+                                            }
+                                        ) {
+                                            Text(stringResource(android.R.string.ok))
+                                        }
+                                    },
+                                    dismissButton = {
+                                        TextButton(
+                                            onClick = {
+                                                showTokenWarningDialog = false
+                                            }
+                                        ) {
+                                            Text(stringResource(android.R.string.cancel))
+                                        }
+                                    }
+                                )
+                            }
+
+                            Column(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.analytics_ai_scope_title),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    val scopes = listOf(
+                                        "quick" to R.string.analytics_ai_scope_quick,
+                                        "detailed" to R.string.analytics_ai_scope_detailed,
+                                        "full" to R.string.analytics_ai_scope_full
+                                    )
+                                    scopes.forEach { (scopeKey, labelRes) ->
+                                        val isSelected = aiRestructureScope == scopeKey
+                                        val containerColor = if (isSelected) {
+                                            MaterialTheme.colorScheme.primaryContainer
+                                        } else {
+                                            MaterialTheme.colorScheme.surface
+                                        }
+                                        val contentColor = if (isSelected) {
+                                            MaterialTheme.colorScheme.onPrimaryContainer
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurface
+                                        }
+                                        val borderColor = if (isSelected) {
+                                            MaterialTheme.colorScheme.primary
+                                        } else {
+                                            MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+                                        }
+                                        Surface(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .clickable {
+                                                    if (scopeKey == "full") {
+                                                        showTokenWarningDialog = true
+                                                    } else {
+                                                        pageViewModel.setAiRestructureScope(scopeKey)
+                                                    }
+                                                },
+                                            shape = MaterialTheme.shapes.medium,
+                                            color = containerColor,
+                                            contentColor = contentColor,
+                                            border = BorderStroke(1.dp, borderColor)
+                                        ) {
+                                            Box(
+                                                modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(
+                                                    text = stringResource(labelRes),
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    fontWeight = FontWeight.Bold,
+                                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            val selectedPageCount = selectedPageIds.size
+                            val totalPageCount = unfilteredPages.size
+                            
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column {
+                                        Text(
+                                            text = stringResource(R.string.analytics_ai_page_selection_title),
+                                            style = MaterialTheme.typography.labelMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Text(
+                                            text = stringResource(R.string.analytics_ai_btn_select_pages, selectedPageCount, totalPageCount),
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                                        )
+                                    }
+                                    Button(
+                                        onClick = { showPageSelectionDialog = true },
+                                        shape = MaterialTheme.shapes.small,
+                                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                                    ) {
+                                        Text(stringResource(R.string.analytics_show_more).substringBefore(" "))
+                                    }
                                 }
                             }
                         }
@@ -882,7 +1215,7 @@ fun AnalyticsDashboardScreen(
                                     )
                                 }
                             }
-                        } else if (isAiLoading) {
+                        } else if (isAiLoading && aiProposal == null) {
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
@@ -924,9 +1257,16 @@ fun AnalyticsDashboardScreen(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                     Button(
-                                        onClick = { pageViewModel.generateAiRestructureProposal() },
+                                        onClick = {
+                                            if (selectedPageIds.isEmpty()) {
+                                                Toast.makeText(context, R.string.analytics_ai_no_pages_selected_warning, Toast.LENGTH_LONG).show()
+                                            } else {
+                                                pageViewModel.generateAiRestructureProposal()
+                                            }
+                                        },
                                         modifier = Modifier.fillMaxWidth(),
-                                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                                        enabled = selectedPageIds.isNotEmpty()
                                     ) {
                                         Text(stringResource(R.string.analytics_ai_btn_calculate))
                                     }
@@ -987,7 +1327,6 @@ fun AnalyticsDashboardScreen(
                                                         color = MaterialTheme.colorScheme.onSurface
                                                     )
                                                 }
-
                                                 Text(
                                                     text = action.rationale,
                                                     style = MaterialTheme.typography.bodyMedium,
@@ -1014,6 +1353,22 @@ fun AnalyticsDashboardScreen(
                                                         }
                                                     }
                                                 }
+
+                                                Spacer(modifier = Modifier.height(4.dp))
+                                                Button(
+                                                    onClick = {
+                                                        pageViewModel.applySingleAiRestructureAction(action) { _ ->
+                                                            Toast.makeText(context, aiToastApplied, Toast.LENGTH_LONG).show()
+                                                            onNavigateBack()
+                                                        }
+                                                    },
+                                                    modifier = Modifier.align(Alignment.End),
+                                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
+                                                    shape = MaterialTheme.shapes.small,
+                                                    enabled = !isAiLoading
+                                                ) {
+                                                    Text(stringResource(R.string.analytics_ai_btn_apply_action))
+                                                }
                                             }
                                         }
                                     }
@@ -1034,6 +1389,29 @@ fun AnalyticsDashboardScreen(
                                     }
 
                                     Button(
+                                        onClick = { pageViewModel.loadMoreAiRestructureProposals() },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
+                                        enabled = !isAiLoading
+                                    ) {
+                                        if (isAiLoading) {
+                                            Row(
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                CircularProgressIndicator(
+                                                    modifier = Modifier.size(16.dp),
+                                                    strokeWidth = 2.dp,
+                                                    color = MaterialTheme.colorScheme.onSecondary
+                                                )
+                                                Text(stringResource(R.string.analytics_ai_btn_loading_more))
+                                            }
+                                        } else {
+                                            Text(stringResource(R.string.analytics_ai_btn_load_more))
+                                        }
+                                    }
+
+                                    Button(
                                         onClick = {
                                             pageViewModel.applyAiRestructureProposal(proposal) { _ ->
                                                 Toast.makeText(context, aiToastApplied, Toast.LENGTH_LONG).show()
@@ -1041,7 +1419,8 @@ fun AnalyticsDashboardScreen(
                                             }
                                         },
                                         modifier = Modifier.fillMaxWidth(),
-                                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                                        enabled = !isAiLoading
                                     ) {
                                         Text(stringResource(R.string.analytics_ai_btn_save_test))
                                     }

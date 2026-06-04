@@ -93,48 +93,36 @@ fun PageEditorScreen(
             TopAppBar(
                 windowInsets = WindowInsets.statusBars,
                 title = { 
-                    if (page.id.startsWith("static_row_")) {
-                        Text(
-                            text = page.name,
-                            style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(end = dimensions.paddingLarge)
-                                .padding(vertical = 4.dp)
-                        )
-                    } else {
-                        LaunchedEffect(localName) {
-                            if (localName != page.name && localName.isNotBlank()) {
-                                delay(500)
+                    LaunchedEffect(localName) {
+                        if (localName != page.name && localName.isNotBlank()) {
+                            delay(500)
+                            pageViewModel.updatePageSettings(
+                                pageId = page.id,
+                                update = GridSettingsUpdate(name = localName)
+                            )
+                        }
+                    }
+
+                    ValidatedTextField(
+                        value = localName,
+                        onValueChange = { localName = it },
+                        isRequired = true,
+                        errorMessage = stringResource(R.string.error_page_name_required),
+                        onFocusLost = {
+                            if (it.isNotBlank() && it != page.name) {
                                 pageViewModel.updatePageSettings(
                                     pageId = page.id,
-                                    update = GridSettingsUpdate(name = localName)
+                                    update = GridSettingsUpdate(name = it)
                                 )
                             }
-                        }
-
-                        ValidatedTextField(
-                            value = localName,
-                            onValueChange = { localName = it },
-                            isRequired = true,
-                            errorMessage = stringResource(R.string.error_page_name_required),
-                            onFocusLost = {
-                                if (it.isNotBlank() && it != page.name) {
-                                    pageViewModel.updatePageSettings(
-                                        pageId = page.id,
-                                        update = GridSettingsUpdate(name = it)
-                                    )
-                                }
-                            },
-                            placeholder = { Text(stringResource(R.string.page_name_label)) },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(end = dimensions.paddingLarge)
-                                .padding(vertical = 4.dp) // Reduce vertical impact
-                                .testTag("page_editor_name_field")
-                        )
-                    }
+                        },
+                        placeholder = { Text(stringResource(R.string.page_name_label)) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(end = dimensions.paddingLarge)
+                            .padding(vertical = 4.dp) // Reduce vertical impact
+                            .testTag("page_editor_name_field")
+                    )
                 },
                 navigationIcon = {
                     IconButton(onClick = handleNavigateBack) {
@@ -142,6 +130,22 @@ fun PageEditorScreen(
                     }
                 },
                 actions = {
+                    val isEditPreviewActive by pageViewModel.isEditPreviewActive.collectAsState()
+                    IconButton(
+                        onClick = { pageViewModel.toggleEditPreviewActive() },
+                        modifier = Modifier.testTag("page_editor_preview_toggle")
+                    ) {
+                        Icon(
+                            imageVector = if (isEditPreviewActive) GhostTalkIcons.Visibility else GhostTalkIcons.VisibilityOff,
+                            contentDescription = stringResource(R.string.page_editor_preview_toggle),
+                            tint = if (isEditPreviewActive) {
+                                androidx.compose.material3.MaterialTheme.colorScheme.primary
+                            } else {
+                                androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
+                            }
+                        )
+                    }
+
                     val isAnalyticsEnabled by pageViewModel.isAnalyticsOverlayEnabled.collectAsState()
                     IconButton(
                         onClick = { pageViewModel.toggleAnalyticsOverlay() },

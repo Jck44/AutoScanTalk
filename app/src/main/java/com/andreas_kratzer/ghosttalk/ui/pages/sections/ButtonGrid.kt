@@ -1,5 +1,6 @@
 package com.andreas_kratzer.ghosttalk.ui.pages.sections
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -71,7 +73,14 @@ fun ButtonGrid(
         
         // Total size must include the contentPadding of the LazyVerticalGrid
         val totalWidth = (optimalWidth * page.columns) + (dimensions.gridSpacing * (page.columns - 1)) + (dimensions.paddingMedium * 2)
-        val totalHeight = (optimalHeight * visualRows) + (dimensions.gridSpacing * (visualRows - 1)) + (dimensions.paddingMedium * 2)
+        
+        // Static row requires extra height for background padding and spacing/divider
+        val staticRowExtraHeight = if (staticRowPage != null) {
+            (dimensions.paddingSmall * 2) + 1.dp + dimensions.gridSpacing
+        } else {
+            0.dp
+        }
+        val totalHeight = (optimalHeight * visualRows) + (dimensions.gridSpacing * (visualRows - 1)) + (dimensions.paddingMedium * 2) + staticRowExtraHeight
 
         val scrollState = rememberScrollState()
 
@@ -91,48 +100,65 @@ fun ButtonGrid(
             // Render static row if present
             if (staticRowPage != null) {
                 val isRowFocused = focusedRowIndex != null && focusedRowIndex == 0
-                Row(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .let { 
                             if (!dimensions.isTablet && totalHeight > this@BoxWithConstraints.maxHeight) {
-                                it.height(optimalHeight)
+                                it.height(optimalHeight + (dimensions.paddingSmall * 2) + 1.dp + dimensions.gridSpacing)
                             } else {
-                                it.weight(1f)
+                                it.weight(1.05f)
                             }
                         }
-                        .run {
-                            if (isRowFocused) {
-                                padding(2.dp)
-                                .border(
-                                    width = 3.dp,
-                                    color = MaterialTheme.colorScheme.secondary,
-                                    shape = MaterialTheme.shapes.small
-                                ).padding(4.dp)
-                            } else this
-                        },
-                    horizontalArrangement = Arrangement.spacedBy(dimensions.gridSpacing)
                 ) {
-                    for (c in 0 until staticRowPage.columns) {
-                        val globalIndex = GridUtils.getGlobalIndex(0, c)
-                        val buttonConfig = staticRowPage.buttonConfigs.getOrNull(globalIndex)
-                        val isFocused = focusedButtonIndex == globalIndex
-                        val isVisible = buttonConfig != null && pageViewModel.featureGuard.isButtonVisible(buttonConfig)
-                        if (buttonConfig != null && buttonConfig.isActive && isVisible) {
-                            GridButton(
-                                buttonConfig = buttonConfig,
-                                isFocused = isFocused,
-                                isRowFocused = isRowFocused,
-                                isEditorMode = false,
-                                onClick = { pageViewModel.activateButtonAtIndex(globalIndex) },
-                                modifier = Modifier.weight(1f).fillMaxHeight()
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                            .background(
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                                shape = MaterialTheme.shapes.medium
                             )
-                        } else {
-                            Spacer(
-                                modifier = Modifier.weight(1f).fillMaxHeight()
-                            )
+                            .padding(dimensions.paddingSmall)
+                            .run {
+                                if (isRowFocused) {
+                                    padding(2.dp)
+                                    .border(
+                                        width = 3.dp,
+                                        color = MaterialTheme.colorScheme.secondary,
+                                        shape = MaterialTheme.shapes.small
+                                    ).padding(4.dp)
+                                } else this
+                            },
+                        horizontalArrangement = Arrangement.spacedBy(dimensions.gridSpacing)
+                    ) {
+                        for (c in 0 until staticRowPage.columns) {
+                            val globalIndex = GridUtils.getGlobalIndex(0, c)
+                            val buttonConfig = staticRowPage.buttonConfigs.getOrNull(globalIndex)
+                            val isFocused = focusedButtonIndex == globalIndex
+                            val isVisible = buttonConfig != null && pageViewModel.featureGuard.isButtonVisible(buttonConfig)
+                            if (buttonConfig != null && buttonConfig.isActive && isVisible) {
+                                GridButton(
+                                    buttonConfig = buttonConfig,
+                                    isFocused = isFocused,
+                                    isRowFocused = isRowFocused,
+                                    isEditorMode = false,
+                                    onClick = { pageViewModel.activateButtonAtIndex(globalIndex) },
+                                    modifier = Modifier.weight(1f).fillMaxHeight()
+                                )
+                            } else {
+                                Spacer(
+                                    modifier = Modifier.weight(1f).fillMaxHeight()
+                                )
+                            }
                         }
                     }
+                    
+                    Spacer(modifier = Modifier.height(dimensions.gridSpacing))
+                    HorizontalDivider(
+                        thickness = 1.dp,
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                    )
                 }
             }
 

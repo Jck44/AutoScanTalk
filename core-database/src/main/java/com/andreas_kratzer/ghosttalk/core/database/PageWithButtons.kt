@@ -27,7 +27,8 @@ data class PageWithButtons(
                     auditoryCue = entity.auditoryCue,
                     isActive = entity.isActive,
                     playActionAsAuditoryCue = entity.playActionAsAuditoryCue,
-                    buttonAction = entity.buttonAction
+                    buttonAction = entity.buttonAction,
+                    updatedAt = entity.updatedAt
                 )
             }
         }
@@ -50,7 +51,8 @@ fun Page.toButtonEntities(): List<ButtonEntity> {
                 auditoryCue = it.auditoryCue,
                 buttonAction = it.buttonAction,
                 isActive = it.isActive,
-                playActionAsAuditoryCue = it.playActionAsAuditoryCue
+                playActionAsAuditoryCue = it.playActionAsAuditoryCue,
+                updatedAt = it.updatedAt
             )
         }
     }

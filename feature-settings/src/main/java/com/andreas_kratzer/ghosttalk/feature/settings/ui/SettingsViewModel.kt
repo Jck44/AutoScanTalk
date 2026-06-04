@@ -119,6 +119,7 @@ class SettingsViewModel @Inject constructor(
     val defaultScanPattern = settingsRepository.defaultScanPatternFlow
     val holdingTimeMillis = settingsRepository.holdingTimeMillisFlow
     val bluetoothDelay = settingsRepository.bluetoothDelayFlow
+    val lateClickThresholdMillis = settingsRepository.lateClickThresholdFlow
     
     val staticRowEnabled = settingsRepository.staticRowEnabledFlow
     val staticRowScanPattern = settingsRepository.staticRowScanPatternFlow
@@ -209,6 +210,7 @@ class SettingsViewModel @Inject constructor(
     val elevenLabsModel = settingsRepository.elevenLabsModelFlow
     val elevenLabsStability = settingsRepository.elevenLabsStabilityFlow
     val elevenLabsSimilarityBoost = settingsRepository.elevenLabsSimilarityBoostFlow
+    val ttsPlaybackSpeed = settingsRepository.ttsPlaybackSpeedFlow
 
     // --- CallSettings ---
     val maxCallDurationSeconds = settingsRepository.maxCallDurationSecondsFlow
@@ -491,6 +493,7 @@ class SettingsViewModel @Inject constructor(
     fun setElevenLabsModel(model: String) { ttsDelegate.setElevenLabsModel(model) }
     fun setElevenLabsStability(value: Float) = ttsDelegate.setElevenLabsStability(value)
     fun setElevenLabsSimilarityBoost(value: Float) = ttsDelegate.setElevenLabsSimilarityBoost(value)
+    fun setTtsPlaybackSpeed(value: Float) = ttsDelegate.setTtsPlaybackSpeed(value)
 
     fun testElevenLabsConnection() {
         viewModelScope.launch {
@@ -669,6 +672,7 @@ class SettingsViewModel @Inject constructor(
     
     fun setStaticRowEnabled(enabled: Boolean) = scanningDelegate.setStaticRowEnabled(enabled)
     fun setStaticRowScanPattern(pattern: String) = scanningDelegate.setStaticRowScanPattern(pattern)
+    fun setLateClickThresholdInput(input: String) = scanningDelegate.setLateClickThresholdInput(input)
     fun setActionLogLimitInput(input: String) {
         updateActionLogLimitUseCase(input)
     }

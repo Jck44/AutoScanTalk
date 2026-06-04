@@ -24,4 +24,7 @@ interface TtsSettings {
     val elevenLabsTtsLanguageFlow: StateFlow<String?>
     var elevenLabsTtsVoiceName: String?
     val elevenLabsTtsVoiceNameFlow: StateFlow<String?>
+    
+    var ttsPlaybackSpeed: Float
+    val ttsPlaybackSpeedFlow: StateFlow<Float>
 }

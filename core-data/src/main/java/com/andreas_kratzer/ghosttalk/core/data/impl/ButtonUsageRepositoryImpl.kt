@@ -113,7 +113,10 @@ class ButtonUsageRepositoryImpl @Inject constructor(
         timestamp: Long,
         reactionTimeMs: Long?,
         isTouchIntervention: Boolean,
-        isHardwareTriggered: Boolean
+        isHardwareTriggered: Boolean,
+        scanCyclesBeforeClick: Int?,
+        isAccidental: Boolean,
+        intendedButtonId: String?
     ) {
         val hasFine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
         val hasCoarse = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
@@ -171,7 +174,10 @@ class ButtonUsageRepositoryImpl @Inject constructor(
                 reactionTimeMs = reactionTimeMs,
                 isTouchIntervention = isTouchIntervention,
                 wifiSsid = wifiSsid,
-                isHardwareTriggered = isHardwareTriggered
+                isHardwareTriggered = isHardwareTriggered,
+                scanCyclesBeforeClick = scanCyclesBeforeClick,
+                isAccidental = isAccidental,
+                intendedButtonId = intendedButtonId
             )
             dao.insertHistoryEvent(event)
 
@@ -182,6 +188,28 @@ class ButtonUsageRepositoryImpl @Inject constructor(
             dao.pruneHistoryByTimestamp(threshold)
         }
     }
+
+    override suspend fun markLastUsageAsAccidental(bookId: String): Boolean {
+        return appDatabase.withTransaction {
+            val lastEvent = dao.getLastHistoryEvent(bookId)
+            if (lastEvent != null && !lastEvent.isAccidental) {
+                // Find potential intended predecessor button:
+                // Find the event preceding this one on the same page, if any.
+                val precedingEvents = dao.getRecentHistoryEvents(bookId, 5)
+                val currentIdx = precedingEvents.indexOfFirst { it.id == lastEvent.id }
+                val intendedButtonId = if (currentIdx != -1 && currentIdx + 1 < precedingEvents.size) {
+                    val prev = precedingEvents[currentIdx + 1]
+                    if (prev.pageId == lastEvent.pageId) prev.buttonId else null
+                } else null
+                
+                dao.markEventAsAccidental(lastEvent.id, intendedButtonId)
+                true
+            } else {
+                false
+            }
+        }
+    }
+
 
     override suspend fun updateLastEventImage(imagePath: String) {
         val bookId = settingsRepository.activeBookId
@@ -416,7 +444,13 @@ class ButtonUsageRepositoryImpl @Inject constructor(
     }
 
 
+    override suspend fun getHistoryEventsForBook(bookId: String): List<ButtonUsageRepository.ButtonUsageEvent> {
+        return dao.getHistoryEventsForBook(bookId).map { it.toDomain() }
+    }
+
+
     private fun ButtonUsageHistoryEntity.toDomain() = ButtonUsageRepository.ButtonUsageEvent(
+
         timestamp = timestamp,
         label = label,
         actionType = actionType,
@@ -428,6 +462,10 @@ class ButtonUsageRepositoryImpl @Inject constructor(
         reactionTimeMs = reactionTimeMs,
         isTouchIntervention = isTouchIntervention,
         wifiSsid = wifiSsid,
-        isHardwareTriggered = isHardwareTriggered
+        isHardwareTriggered = isHardwareTriggered,
+        scanCyclesBeforeClick = scanCyclesBeforeClick,
+        isAccidental = isAccidental,
+        intendedButtonId = intendedButtonId
     )
 }
+

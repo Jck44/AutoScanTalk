@@ -204,3 +204,13 @@ data class PlayMediaButtonAction(
     val forcePlayViaMediaSession: Boolean = true
 ) : ButtonAction()
 
+/**
+ * An action that marks the last executed action in the history as accidental.
+ */
+@Serializable
+@SerialName("MarkAccidentalButtonAction")
+data class MarkAccidentalButtonAction(
+    val version: Int = 1
+) : ButtonAction()
+
+

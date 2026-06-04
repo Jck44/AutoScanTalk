@@ -84,7 +84,8 @@ class ResolveDynamicButtonsUseCase @Inject constructor(
                     return@mapIndexed config // Keep placeholder while waiting
                 }
                 val filteredPredictions = smartPredictions.filter { predId ->
-                    matchesType(predId, action.predictionType, frequentlyResolvedPage, buttonLookup, pageLookup)
+                    matchesType(predId, action.predictionType, frequentlyResolvedPage, buttonLookup, pageLookup) &&
+                        resolveSmartPrediction(predId, frequentlyResolvedPage, buttonLookup, pageLookup) != null
                 }
                 val predictionId = filteredPredictions.getOrNull(action.rank - 1)
                 val resolved = if (predictionId != null) {

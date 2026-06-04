@@ -55,4 +55,8 @@ class ScanningSettingsDelegate @Inject constructor(
     fun setStaticRowScanPattern(pattern: String) {
         settingsRepository.staticRowScanPattern = pattern
     }
+
+    fun setLateClickThresholdInput(input: String) {
+        input.toLongOrNull()?.let { settingsRepository.lateClickThresholdMillis = it }
+    }
 }

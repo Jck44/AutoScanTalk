@@ -201,6 +201,11 @@ class TtsSettingsDelegate @Inject constructor(
         // No audio feedback for sliders to avoid noise during dragging
     }
 
+    fun setTtsPlaybackSpeed(value: Float) {
+        settingsRepository.ttsPlaybackSpeed = value
+        // No audio feedback for sliders to avoid noise during dragging
+    }
+
     fun setElevenLabsSimilarityBoost(value: Float) {
         settingsRepository.elevenLabsSimilarityBoost = value
         // No audio feedback for sliders to avoid noise during dragging

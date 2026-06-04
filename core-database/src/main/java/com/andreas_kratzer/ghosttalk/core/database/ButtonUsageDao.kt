@@ -59,6 +59,9 @@ interface ButtonUsageDao {
     @Query("SELECT * FROM button_usage_history WHERE bookId = :bookId ORDER BY timestamp DESC LIMIT 1")
     suspend fun getLastHistoryEvent(bookId: String): ButtonUsageHistoryEntity?
 
+    @Query("UPDATE button_usage_history SET isAccidental = 1, intendedButtonId = :intendedButtonId WHERE id = :id")
+    suspend fun markEventAsAccidental(id: Long, intendedButtonId: String?)
+
     @Query("DELETE FROM button_usage_history WHERE bookId = :bookId AND id NOT IN (SELECT id FROM button_usage_history WHERE bookId = :bookId ORDER BY timestamp DESC LIMIT :limit)")
     suspend fun pruneHistory(bookId: String, limit: Int)
 
@@ -225,7 +228,11 @@ interface ButtonUsageDao {
 
     @Query("SELECT * FROM button_usage_history WHERE bookId = :bookId ORDER BY timestamp DESC LIMIT :limit")
     suspend fun getRecentHistoryEvents(bookId: String, limit: Int): List<ButtonUsageHistoryEntity>
+
+    @Query("SELECT * FROM button_usage_history WHERE bookId = :bookId")
+    suspend fun getHistoryEventsForBook(bookId: String): List<ButtonUsageHistoryEntity>
 }
+
 
 data class SuccessorCount(
     val buttonId: String,

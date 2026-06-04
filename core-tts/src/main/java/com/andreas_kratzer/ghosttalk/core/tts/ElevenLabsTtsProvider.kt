@@ -8,6 +8,7 @@ import android.util.Log
 import com.andreas_kratzer.ghosttalk.core.audio.RoutedAudioPlayer
 import com.andreas_kratzer.ghosttalk.core.di.ApplicationScope
 import com.andreas_kratzer.ghosttalk.core.settings.CloudSettings
+import com.andreas_kratzer.ghosttalk.core.settings.TtsSettings
 import com.andreas_kratzer.ghosttalk.core.util.NetworkUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,6 +33,7 @@ import javax.inject.Singleton
 open class ElevenLabsTtsProvider @Inject constructor(
     private val context: Context,
     private val cloudSettings: CloudSettings,
+    private val ttsSettings: TtsSettings,
     private val routedAudioPlayer: RoutedAudioPlayer,
     @param:ApplicationScope private val scope: CoroutineScope
 ) : TtsProvider {
@@ -92,7 +94,7 @@ open class ElevenLabsTtsProvider @Inject constructor(
             if (cachedFile.exists() && cachedFile.length() > 0) {
                 Log.i("ElevenLabsTtsProvider", "Playing cached audio for ${cachedFile.name}")
                 handler.post {
-                    routedAudioPlayer.playAudioFile(cachedFile, deviceAddress) {
+                    routedAudioPlayer.playAudioFile(cachedFile, deviceAddress, playbackSpeed = ttsSettings.ttsPlaybackSpeed) {
                         onDone?.invoke()
                     }
                 }
@@ -167,7 +169,7 @@ open class ElevenLabsTtsProvider @Inject constructor(
                             Log.i("ElevenLabsTtsProvider", "Saved audio file size: ${cachedFile.length()} bytes")
 
                             handler.post {
-                                routedAudioPlayer.playAudioFile(cachedFile, deviceAddress) {
+                                routedAudioPlayer.playAudioFile(cachedFile, deviceAddress, playbackSpeed = ttsSettings.ttsPlaybackSpeed) {
                                     // Keep the file in cacheDir
                                     onDone?.invoke()
                                 }
@@ -511,7 +513,12 @@ open class ElevenLabsTtsProvider @Inject constructor(
         routedAudioPlayer.stopAll()
     }
 
+    override fun isSpeaking(): Boolean {
+        return routedAudioPlayer.isPlaying()
+    }
+
     override fun shutdown() {
+
         stopAll()
     }
 

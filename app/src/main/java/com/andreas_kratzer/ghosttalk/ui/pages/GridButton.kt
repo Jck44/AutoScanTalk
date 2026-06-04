@@ -56,6 +56,7 @@ import com.andreas_kratzer.ghosttalk.core.model.SmartHomeButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.WeatherButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.MarkAccidentalButtonAction
 import com.andreas_kratzer.ghosttalk.core.ui.theme.ControlDeviceBadgeBgDark
 import com.andreas_kratzer.ghosttalk.core.ui.theme.ControlDeviceBadgeBgLight
 import com.andreas_kratzer.ghosttalk.core.ui.theme.ControlDeviceBadgeTextDark
@@ -119,7 +120,7 @@ object GridButtonColors {
                 if (isDark) WeatherBadgeBgDark to WeatherBadgeTextDark
                 else WeatherBadgeBgLight to WeatherBadgeTextLight
             }
-            is FrequentActionButtonAction, is SmartPredictionButtonAction, is PreviousActionButtonAction -> {
+            is FrequentActionButtonAction, is SmartPredictionButtonAction, is PreviousActionButtonAction, is MarkAccidentalButtonAction -> {
                 if (isDark) FrequentActionBadgeBgDark to FrequentActionBadgeTextDark
                 else FrequentActionBadgeBgLight to FrequentActionBadgeTextLight
             }

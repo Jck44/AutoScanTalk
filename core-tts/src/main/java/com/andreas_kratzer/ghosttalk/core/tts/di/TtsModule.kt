@@ -46,10 +46,11 @@ object TtsModule {
     fun provideElevenLabsTtsProvider(
         @ApplicationContext context: Context,
         cloudSettings: CloudSettings,
+        ttsSettings: TtsSettings,
         routedAudioPlayer: RoutedAudioPlayer,
         @ApplicationScope scope: CoroutineScope
     ): ElevenLabsTtsProvider {
-        return ElevenLabsTtsProvider(context, cloudSettings, routedAudioPlayer, scope)
+        return ElevenLabsTtsProvider(context, cloudSettings, ttsSettings, routedAudioPlayer, scope)
     }
 
     @Provides

@@ -14,8 +14,10 @@ enum class ActionCategory {
     CONTROL_DEVICE,
     WEATHER,
     SMART_HOME,
-    PLAY_MEDIA
+    PLAY_MEDIA,
+    MARK_ACCIDENTAL
 }
+
 
 object ActionCategoryRegistry {
     const val GROUP_BASIS = "Basis & Seite"
@@ -71,6 +73,7 @@ object ActionCategoryRegistry {
             is FrequentActionButtonAction,
             is SmartPredictionButtonAction,
             is PreviousActionButtonAction -> GROUP_VERLAUF_VORHERSAGE
+            is MarkAccidentalButtonAction -> GROUP_VERLAUF_VORHERSAGE
         }
     }
 
@@ -91,6 +94,8 @@ object ActionCategoryRegistry {
             is WeatherButtonAction -> ActionCategory.WEATHER
             is SmartHomeButtonAction -> ActionCategory.SMART_HOME
             is PlayMediaButtonAction -> ActionCategory.PLAY_MEDIA
+            is MarkAccidentalButtonAction -> ActionCategory.MARK_ACCIDENTAL
         }
     }
+
 }

@@ -44,11 +44,12 @@ class PageRepositoryImpl(
     }
 
     override suspend fun updatePage(page: Page) {
+        val updatedPage = page.copy(updatedAt = System.currentTimeMillis())
         appDatabase.withTransaction {
-            pageDao.updatePageEntity(page)
+            pageDao.updatePageEntity(updatedPage)
             // Refresh buttons: delete old and insert new
-            buttonDao.deleteButtonsForPage(page.id)
-            buttonDao.insertButtons(page.toButtonEntities())
+            buttonDao.deleteButtonsForPage(updatedPage.id)
+            buttonDao.insertButtons(updatedPage.toButtonEntities())
         }
     }
 
@@ -108,19 +109,19 @@ class PageRepositoryImpl(
     }
 
     override suspend fun updatePageName(pageId: String, name: String) {
-        pageDao.updatePageName(pageId, name)
+        pageDao.updatePageName(pageId, name, System.currentTimeMillis())
     }
 
     override suspend fun updatePageScanPattern(pageId: String, scanPattern: String?) {
-        pageDao.updatePageScanPattern(pageId, scanPattern)
+        pageDao.updatePageScanPattern(pageId, scanPattern, System.currentTimeMillis())
     }
 
     override suspend fun updatePageRowNames(pageId: String, rowNames: List<String>) {
-        pageDao.updatePageRowNames(pageId, rowNames)
+        pageDao.updatePageRowNames(pageId, rowNames, System.currentTimeMillis())
     }
 
     override suspend fun updatePageGridSize(pageId: String, rows: Int, columns: Int) {
-        pageDao.updatePageGridSize(pageId, rows, columns)
+        pageDao.updatePageGridSize(pageId, rows, columns, System.currentTimeMillis())
     }
 
     override suspend fun <R> runInTransaction(block: suspend () -> R): R {

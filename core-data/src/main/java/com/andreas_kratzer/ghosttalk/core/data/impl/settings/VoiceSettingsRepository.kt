@@ -24,6 +24,7 @@ class VoiceSettingsRepository(
     private val _elevenLabsTtsLanguage = StringSetting(SettingsConstants.KEY_ELEVENLABS_TTS_LANGUAGE)
     private val _elevenLabsTtsVoiceName = StringSetting(SettingsConstants.KEY_ELEVENLABS_TTS_VOICE_NAME)
     private val _recordingAudioSource = IntSetting(KEY_RECORDING_AUDIO_SOURCE, MediaRecorder.AudioSource.VOICE_COMMUNICATION, isScoped = false)
+    private val _ttsPlaybackSpeed = FloatSetting(SettingsConstants.KEY_TTS_PLAYBACK_SPEED, 1.0f, isScoped = false)
 
     val ttsLanguageFlow = _ttsLanguage.flow
     val ttsVoiceNameFlow = _ttsVoiceName.flow
@@ -35,6 +36,7 @@ class VoiceSettingsRepository(
     val elevenLabsTtsLanguageFlow = _elevenLabsTtsLanguage.flow
     val elevenLabsTtsVoiceNameFlow = _elevenLabsTtsVoiceName.flow
     val recordingAudioSourceFlow = _recordingAudioSource.flow
+    val ttsPlaybackSpeedFlow = _ttsPlaybackSpeed.flow
 
     var ttsLanguage: String? by _ttsLanguage
     var ttsVoiceName: String? by _ttsVoiceName
@@ -46,6 +48,7 @@ class VoiceSettingsRepository(
     var elevenLabsTtsLanguage: String? by _elevenLabsTtsLanguage
     var elevenLabsTtsVoiceName: String? by _elevenLabsTtsVoiceName
     var recordingAudioSource: Int by _recordingAudioSource
+    var ttsPlaybackSpeed: Float by _ttsPlaybackSpeed
 
 
     override fun refresh() {
@@ -59,5 +62,6 @@ class VoiceSettingsRepository(
         _elevenLabsTtsLanguage.refresh()
         _elevenLabsTtsVoiceName.refresh()
         _recordingAudioSource.refresh()
+        _ttsPlaybackSpeed.refresh()
     }
 }

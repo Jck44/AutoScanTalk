@@ -27,6 +27,7 @@ fun ScanningSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
     val scanPattern by viewModel.defaultScanPattern.collectAsState("linear")
     val holdingTime by viewModel.holdingTimeMillis.collectAsState(0L)
     val bluetoothDelay by viewModel.bluetoothDelay.collectAsState(1500L)
+    val lateClickThreshold by viewModel.lateClickThresholdMillis.collectAsState(250L)
 
     val dimensions = LocalDimensions.current
 
@@ -41,6 +42,12 @@ fun ScanningSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                 label = stringResource(R.string.settings_scan_delay), 
                 value = scanDelay.toString(),
                 onValueChange = { viewModel.setScanDelayInput(it) },
+                numericOnly = true
+            )
+            SettingsEditTextItem(
+                label = stringResource(R.string.settings_late_click_threshold), 
+                value = lateClickThreshold.toString(),
+                onValueChange = { viewModel.setLateClickThresholdInput(it) },
                 numericOnly = true
             )
             SettingsEditTextItem(

@@ -245,7 +245,7 @@ fun calculateGridSize(
     val availableHeight = maxHeight - (horizontalPadding * 2) - 2.dp
 
     var buttonWidthToFit = (availableWidth - (dimensions.gridSpacing * (cols - 1))) / cols
-    val heightOffsetPerRow = if (isRowByRow) 16.dp else 0.dp
+    val heightOffsetPerRow = if (isRowByRow) 38.dp else 0.dp
     var buttonHeightToFit = ((availableHeight - (dimensions.gridSpacing * (rows - 1))) / rows) - heightOffsetPerRow
 
     val maxButtonSize = 180.dp

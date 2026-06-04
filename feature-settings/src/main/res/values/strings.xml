@@ -46,6 +46,8 @@
     <string name="settings_tts_engine">Sprach-Engine</string>
     <string name="settings_tts_engine_google">Google TTS (System)</string>
     <string name="settings_tts_engine_elevenlabs">ElevenLabs TTS (Cloud)</string>
+    <string name="settings_tts_playback_speed">Wiedergabegeschwindigkeit</string>
+    <string name="settings_tts_playback_speed_desc">Passt das Sprechtempo der Stimme an.</string>
     <string name="settings_system_default">System-Standard</string>
     <string name="settings_select_voice">Stimme wählen</string>
     <string name="settings_voice_default">Standard</string>
@@ -64,6 +66,8 @@
     <string name="settings_restart_scan">Nach Aktion von Anfang scannen</string>
     <string name="settings_scan_delay">Scangeschwindigkeit (ms)</string>
     <string name="settings_holding_time">Haltezeit / Doppelklick-Schutz (ms)</string>
+    <string name="settings_late_click_threshold">Spätklick-Schwellenwert (ms)</string>
+    <string name="settings_late_click_threshold_desc">Zeitfenster nach Fokuswechsel oder während TTS, in dem ein Klick als unabsichtlicher Spätklick auf den vorherigen Button gewertet wird.</string>
 
     <!-- Security Settings -->
     <string name="settings_security_require_pin">PIN Schutz für Einstellungen / Bearbeitung</string>

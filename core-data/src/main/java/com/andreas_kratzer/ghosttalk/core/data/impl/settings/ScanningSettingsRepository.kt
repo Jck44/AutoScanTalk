@@ -31,6 +31,7 @@ class ScanningSettingsRepository(
     private val _headphoneVolume = IntSetting(SettingsConstants.KEY_HEADPHONE_VOLUME, 100, isScoped = false)
     private val _staticRowEnabled = BooleanSetting(SettingsConstants.KEY_STATIC_ROW_ENABLED, false)
     private val _staticRowScanPattern = NonNullStringSetting(SettingsConstants.KEY_STATIC_ROW_SCAN_PATTERN, "linear")
+    private val _lateClickThreshold = LongSetting(SettingsConstants.KEY_LATE_CLICK_THRESHOLD_MILLIS, 250L)
 
     val autoStartScanningFlow = _autoStartScanning.flow
     val scanDelayFlow = _scanDelay.flow
@@ -47,6 +48,7 @@ class ScanningSettingsRepository(
     val headphoneVolumeFlow = _headphoneVolume.flow
     val staticRowEnabledFlow = _staticRowEnabled.flow
     val staticRowScanPatternFlow = _staticRowScanPattern.flow
+    val lateClickThresholdFlow = _lateClickThreshold.flow
 
     var autoStartScanning: Boolean by _autoStartScanning
     var scanDelayMillis: Long by _scanDelay
@@ -63,6 +65,7 @@ class ScanningSettingsRepository(
     var headphoneVolume: Int by _headphoneVolume
     var staticRowEnabled: Boolean by _staticRowEnabled
     var staticRowScanPattern: String by _staticRowScanPattern
+    var lateClickThresholdMillis: Long by _lateClickThreshold
 
 
     override fun refresh() {
@@ -81,5 +84,6 @@ class ScanningSettingsRepository(
         _headphoneVolume.refresh()
         _staticRowEnabled.refresh()
         _staticRowScanPattern.refresh()
+        _lateClickThreshold.refresh()
     }
 }

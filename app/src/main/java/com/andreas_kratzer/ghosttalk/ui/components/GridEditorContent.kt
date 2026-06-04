@@ -163,6 +163,10 @@ fun GridEditorContent(
         val isAnalyticsOverlayEnabled by pageViewModel?.isAnalyticsOverlayEnabled?.collectAsState(false) ?: remember { mutableStateOf(false) }
         val pageMetrics = if (isAnalyticsOverlayEnabled) pageMetricsMap else emptyMap()
 
+        val isEditPreviewActive by pageViewModel?.isEditPreviewActive?.collectAsState(false) ?: remember { mutableStateOf(false) }
+        val resolvedPage by pageViewModel?.resolvedPage?.collectAsState(null) ?: remember { mutableStateOf(null) }
+        val pageToShow = if (isEditPreviewActive) (resolvedPage ?: item) else item
+
         val editingTemplate = remember(editingTemplateId, buttonTemplates) {
             buttonTemplates.find { it.id == editingTemplateId }
         }
@@ -372,9 +376,29 @@ fun GridEditorContent(
                 ) {
                     // Standardmäßig zeigen wir jetzt die Chips-Bar an. 
                     // Diese öffnet bei Klick das Bottom Sheet mit den detaillierten Einstellungen.
-                    GridEditorSummaryBar(item = item, onClick = { showLayoutSettingsSheet = true })
+                    if (isEditPreviewActive) {
+                        androidx.compose.material3.Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = dimensions.paddingSmall),
+                            color = MaterialTheme.colorScheme.secondaryContainer,
+                            shape = MaterialTheme.shapes.small
+                        ) {
+                            Text(
+                                text = stringResource(R.string.page_editor_preview_active_banner),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                modifier = Modifier
+                                    .padding(vertical = 8.dp, horizontal = 12.dp)
+                                    .align(Alignment.CenterHorizontally),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    } else {
+                        GridEditorSummaryBar(item = item, onClick = { showLayoutSettingsSheet = true })
+                    }
 
-                    val effectiveScanPattern = item.scanPattern ?: bookDefaultScanPattern
+                    val effectiveScanPattern = pageToShow.scanPattern ?: bookDefaultScanPattern
                     val isRowByRow = effectiveScanPattern == "row_by_row" || effectiveScanPattern == "row_column"
 
                     BoxWithConstraints(
@@ -384,8 +408,8 @@ fun GridEditorContent(
                         val sizeInfo = calculateGridSize(
                             maxWidth = maxWidth,
                             maxHeight = maxHeight,
-                            rows = item.rows,
-                            cols = item.columns,
+                            rows = pageToShow.rows,
+                            cols = pageToShow.columns,
                             isRowByRow = isRowByRow,
                             horizontalPadding = horizontalPadding,
                             isTablet = dimensions.isTablet,
@@ -394,7 +418,7 @@ fun GridEditorContent(
 
                         val gridSpacingPx = with(LocalDensity.current) { dimensions.gridSpacing.toPx() }
                         LazyVerticalGrid(
-                            columns = GridCells.Fixed(item.columns),
+                            columns = GridCells.Fixed(pageToShow.columns),
                             state = gridState,
                             modifier = Modifier
                                 .width(sizeInfo.totalWidth)
@@ -405,7 +429,7 @@ fun GridEditorContent(
                         ) {
                             if (isRowByRow) {
                                 renderRowByRowGrid(
-                                    item = item,
+                                    item = pageToShow,
                                     actions = actions,
                                     gridState = gridState,
                                     rowReorderState = rowReorderState,
@@ -416,6 +440,7 @@ fun GridEditorContent(
                                     gridSpacingPx = gridSpacingPx,
                                     availablePages = availablePages,
                                     pageMetrics = pageMetrics,
+                                    isEditPreviewActive = isEditPreviewActive,
                                     onEditRow = { editingRowIndex = it; showRowEditDialog = true },
                                     onEditButton = { index ->
                                         selectedButtonIndex = index
@@ -424,7 +449,7 @@ fun GridEditorContent(
                                 )
                             } else {
                                 renderLinearGrid(
-                                    item = item,
+                                    item = pageToShow,
                                     actions = actions,
                                     gridState = gridState,
                                     buttonReorderState = buttonReorderState,
@@ -434,6 +459,7 @@ fun GridEditorContent(
                                     gridSpacingPx = gridSpacingPx,
                                     availablePages = availablePages,
                                     pageMetrics = pageMetrics,
+                                    isEditPreviewActive = isEditPreviewActive,
                                     onEditButton = { index ->
                                         selectedButtonIndex = index
                                         showDialog = true
@@ -662,12 +688,13 @@ private fun EditorButtonCell(
     targetPageName: String? = null,
     heatmapIntensity: Float? = null,
     effortMetrics: com.andreas_kratzer.ghosttalk.core.model.ButtonEffortMetrics? = null,
+    isEditPreviewActive: Boolean = false,
     onDragEnd: (Int) -> Unit,
     onClick: () -> Unit
 ) {
     val dragDropState = LocalDragDropState.current
-    val isDragging = dragDropState.isDragging
-    val isDraggedHovered = dragDropState.currentHoveredTarget == GridCellTarget(globalIndex)
+    val isDragging = if (isEditPreviewActive) false else dragDropState.isDragging
+    val isDraggedHovered = if (isEditPreviewActive) false else dragDropState.currentHoveredTarget == GridCellTarget(globalIndex)
     
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     val pulseAlpha by infiniteTransition.animateFloat(
@@ -686,19 +713,29 @@ private fun EditorButtonCell(
         modifier = Modifier
             .width(width)
             .height(height)
-            .reorderableItemVisuals(reorderState, localIndex)
-            .dragHandle(
-                state = reorderState,
-                index = localIndex,
-                onDragEnd = { fromIdx ->
-                    if (fromIdx != null) {
-                        onDragEnd(fromIdx)
-                    }
-                }
-            )
-            .dropTarget(key = GridCellTarget(globalIndex))
             .run {
-                if (buttonConfig != null) {
+                if (!isEditPreviewActive) reorderableItemVisuals(reorderState, localIndex)
+                else this
+            }
+            .run {
+                if (!isEditPreviewActive) {
+                    dragHandle(
+                        state = reorderState,
+                        index = localIndex,
+                        onDragEnd = { fromIdx ->
+                            if (fromIdx != null) {
+                                onDragEnd(fromIdx)
+                            }
+                        }
+                    )
+                } else this
+            }
+            .run {
+                if (!isEditPreviewActive) dropTarget(key = GridCellTarget(globalIndex))
+                else this
+            }
+            .run {
+                if (buttonConfig != null && !isEditPreviewActive) {
                     dragSource(item = DraggedGridCell(globalIndex, buttonConfig), longPress = true)
                 } else this
             }
@@ -796,11 +833,12 @@ private fun LazyGridScope.renderRowByRowGrid(
     gridSpacingPx: Float,
     availablePages: List<Page>,
     pageMetrics: Map<String, com.andreas_kratzer.ghosttalk.core.model.ButtonEffortMetrics>,
+    isEditPreviewActive: Boolean,
     onEditRow: (Int) -> Unit,
     onEditButton: (Int) -> Unit
 ) {
-    val rowTargetIndex = rowReorderState.findTargetIndexForGrid(gridState)
-    val buttonTargetIndex = buttonReorderState.findTargetButtonIndex(
+    val rowTargetIndex = if (isEditPreviewActive) -1 else rowReorderState.findTargetIndexForGrid(gridState)
+    val buttonTargetIndex = if (isEditPreviewActive) -1 else buttonReorderState.findTargetButtonIndex(
         gridState = gridState,
         numCols = item.columns,
         isRowByRow = true,
@@ -814,7 +852,10 @@ private fun LazyGridScope.renderRowByRowGrid(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .reorderableItemVisuals(rowReorderState, r)
+                    .run {
+                        if (!isEditPreviewActive) reorderableItemVisuals(rowReorderState, r)
+                        else this
+                    }
                     .background(
                         if (isRowTarget) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
                         else Color.Transparent
@@ -833,27 +874,33 @@ private fun LazyGridScope.renderRowByRowGrid(
                     modifier = Modifier
                         .width(48.dp)
                         .fillMaxHeight()
-                        .dragHandle(
-                            state = rowReorderState,
-                            index = r,
-                            onDragEnd = { fromIdx ->
-                                if (fromIdx != null) {
-                                    val to = rowReorderState.findTargetIndexForGrid(gridState)
-                                    if (to != null && to != fromIdx) {
-                                        actions.moveRow(item.id, fromIdx, to)
+                        .run {
+                            if (!isEditPreviewActive) {
+                                dragHandle(
+                                    state = rowReorderState,
+                                    index = r,
+                                    onDragEnd = { fromIdx ->
+                                        if (fromIdx != null) {
+                                            val to = rowReorderState.findTargetIndexForGrid(gridState)
+                                            if (to != null && to != fromIdx) {
+                                                actions.moveRow(item.id, fromIdx, to)
+                                            }
+                                        }
                                     }
-                                }
-                            }
-                        )
-                        .clickable { onEditRow(r) },
+                                )
+                                .clickable { onEditRow(r) }
+                            } else this
+                        },
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = GhostTalkIcons.Edit,
-                        contentDescription = stringResource(R.string.page_editor_row_name_label),
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(24.dp)
-                    )
+                    if (!isEditPreviewActive) {
+                        Icon(
+                            imageVector = GhostTalkIcons.Edit,
+                            contentDescription = stringResource(R.string.page_editor_row_name_label),
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
                 }
 
                 // Row Buttons
@@ -895,6 +942,7 @@ private fun LazyGridScope.renderRowByRowGrid(
                                 targetPageName = targetPageName,
                                 heatmapIntensity = metrics?.heatmapIntensity,
                                 effortMetrics = metrics,
+                                isEditPreviewActive = isEditPreviewActive,
                                 onDragEnd = { fromIdx ->
                                     val to = buttonReorderState.findTargetButtonIndex(
                                         gridState = gridState,
@@ -907,7 +955,13 @@ private fun LazyGridScope.renderRowByRowGrid(
                                         actions.moveButton(item.id, fromIdx, to)
                                     }
                                 },
-                                onClick = { onEditButton(globalIndex) }
+                                onClick = {
+                                    if (!isEditPreviewActive) {
+                                        onEditButton(globalIndex)
+                                    } else if (buttonConfig != null) {
+                                        actions.executeButtonAction(buttonConfig)
+                                    }
+                                }
                             )
                         }
                     }
@@ -928,9 +982,10 @@ private fun LazyGridScope.renderLinearGrid(
     gridSpacingPx: Float,
     availablePages: List<Page>,
     pageMetrics: Map<String, com.andreas_kratzer.ghosttalk.core.model.ButtonEffortMetrics>,
+    isEditPreviewActive: Boolean,
     onEditButton: (Int) -> Unit
 ) {
-    val buttonTargetIndex = buttonReorderState.findTargetButtonIndex(
+    val buttonTargetIndex = if (isEditPreviewActive) -1 else buttonReorderState.findTargetButtonIndex(
         gridState = gridState,
         numCols = item.columns,
         isRowByRow = false,
@@ -960,6 +1015,7 @@ private fun LazyGridScope.renderLinearGrid(
             targetPageName = targetPageName,
             heatmapIntensity = metrics?.heatmapIntensity,
             effortMetrics = metrics,
+            isEditPreviewActive = isEditPreviewActive,
             onDragEnd = { fromLocalIdx ->
                 val toGlobal = buttonReorderState.findTargetButtonIndex(
                     gridState = gridState,
@@ -975,7 +1031,13 @@ private fun LazyGridScope.renderLinearGrid(
                     }
                 }
             },
-            onClick = { onEditButton(globalIndex) }
+            onClick = {
+                if (!isEditPreviewActive) {
+                    onEditButton(globalIndex)
+                } else if (buttonConfig != null) {
+                    actions.executeButtonAction(buttonConfig)
+                }
+            }
         )
     }
 }

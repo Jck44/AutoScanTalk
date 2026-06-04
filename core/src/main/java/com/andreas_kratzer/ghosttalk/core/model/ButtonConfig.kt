@@ -21,6 +21,7 @@ data class ButtonConfig(
     val auditoryCue: AuditoryCue? = null,
     val isActive: Boolean = true,
     val playActionAsAuditoryCue: Boolean = false,
-    val buttonAction: ButtonAction = SpeakTextButtonAction()
+    val buttonAction: ButtonAction = SpeakTextButtonAction(),
+    val updatedAt: Long = System.currentTimeMillis()
 )
 

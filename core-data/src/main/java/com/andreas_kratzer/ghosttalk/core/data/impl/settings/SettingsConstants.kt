@@ -86,6 +86,7 @@ object SettingsConstants {
     const val KEY_ELEVENLABS_TTS_LANGUAGE = "elevenlabs_tts_language"
     const val KEY_ELEVENLABS_TTS_VOICE_NAME = "elevenlabs_tts_voice_name"
     const val KEY_ELEVENLABS_STABILITY = "elevenlabs_stability"
+    const val KEY_TTS_PLAYBACK_SPEED = "tts_playback_speed"
     const val KEY_ELEVENLABS_SIMILARITY_BOOST = "elevenlabs_similarity_boost"
     const val KEY_RECORDING_AUDIO_SOURCE = "recording_audio_source"
     const val KEY_GEMINI_API_KEY = "gemini_api_key"
@@ -128,5 +129,6 @@ object SettingsConstants {
     const val KEY_SYNC_LOGS_INTERVAL_HOURS = "sync_logs_interval_hours"
     const val KEY_LAST_LOGS_SYNC_TIME = "last_logs_sync_time"
     const val KEY_LAST_UPLOADED_LOG_HASH = "last_uploaded_log_hash"
+    const val KEY_LATE_CLICK_THRESHOLD_MILLIS = "late_click_threshold_millis"
 }
 

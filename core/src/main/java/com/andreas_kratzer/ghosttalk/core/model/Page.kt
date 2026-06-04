@@ -17,6 +17,7 @@ data class Page(
     @Ignore override val buttonConfigs: List<ButtonConfig?> = emptyList(),
     override val orderIndex: Int = 0,
     override val createdAt: Long = System.currentTimeMillis(),
+    val updatedAt: Long = System.currentTimeMillis(),
     val legacy_buttonConfigs: String? = null
 ) : GridItem {
     
@@ -32,8 +33,9 @@ data class Page(
         rowNames: List<String>,
         orderIndex: Int,
         createdAt: Long,
+        updatedAt: Long,
         legacy_buttonConfigs: String? = null
-    ) : this(id, bookId, name, templateId, rows, columns, scanPattern, rowNames, emptyList(), orderIndex, createdAt, legacy_buttonConfigs)
+    ) : this(id, bookId, name, templateId, rows, columns, scanPattern, rowNames, emptyList(), orderIndex, createdAt, updatedAt, legacy_buttonConfigs)
 
     init {
         require(rows in 1..7) { "Rows must be between 1 and 7." }

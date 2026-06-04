@@ -25,6 +25,8 @@ class SettingsBackupCoverageTest {
         "ttsAudioDeviceAddressFlow",
         "cuesAudioDeviceAddress",  // Hardware-specific
         "cuesAudioDeviceAddressFlow",
+        "ttsPlaybackSpeed",
+        "ttsPlaybackSpeedFlow",
         "recordingAudioSource",     // Hardware-specific
         "recordingAudioSourceFlow",
         "hueBridgeIp",             // Security / Secret
@@ -76,7 +78,11 @@ class SettingsBackupCoverageTest {
         "staticRowEnabledFlow",
         "staticRowScanPatternFlow",
         "filterCallsNotInContacts",
-        "filterCallsNotInContactsFlow"
+        "filterCallsNotInContactsFlow",
+        "syncModeLogs",
+        "syncLogsIntervalHours",
+        "lastLogsSyncTime",
+        "lastUploadedLogHash"
     )
 
     private val propertyMappings = mapOf(

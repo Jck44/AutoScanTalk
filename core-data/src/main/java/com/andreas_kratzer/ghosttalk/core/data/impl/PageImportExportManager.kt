@@ -148,6 +148,7 @@ class PageImportExportManager @Inject constructor(
                     rowNames = page.rowNames,
                     orderIndex = page.orderIndex,
                     createdAt = page.createdAt,
+                    updatedAt = page.updatedAt,
                     buttons = page.buttonConfigs.mapIndexedNotNull { index, config ->
                         config?.let {
                             ImportButton(
@@ -160,7 +161,8 @@ class PageImportExportManager @Inject constructor(
                                 auditoryCueText = (it.auditoryCue as? AuditoryCue.TextToSpeechCue)?.text,
                                 active = it.isActive,
                                 playActionAsAuditoryCue = it.playActionAsAuditoryCue,
-                                action = actionMapper.exportAction(it.buttonAction)
+                                action = actionMapper.exportAction(it.buttonAction),
+                                updatedAt = it.updatedAt
                             )
                         }
                     }
@@ -293,7 +295,8 @@ class PageImportExportManager @Inject constructor(
                         auditoryCue = importButton.auditoryCueText?.let { AuditoryCue.TextToSpeechCue(it) },
                         isActive = importButton.active ?: true,
                         playActionAsAuditoryCue = importButton.playActionAsAuditoryCue ?: false,
-                        buttonAction = finalAction
+                        buttonAction = finalAction,
+                        updatedAt = importButton.updatedAt ?: System.currentTimeMillis()
                     )
                     
                     // Spatial logic: if it's a GhostTalk backup, the index is already a 7x7 grid index.
@@ -334,7 +337,8 @@ class PageImportExportManager @Inject constructor(
                     rowNames = importPage.rowNames ?: emptyList(),
                     buttonConfigs = buttons,
                     orderIndex = importPage.orderIndex ?: 0,
-                    createdAt = importPage.createdAt ?: System.currentTimeMillis()
+                    createdAt = importPage.createdAt ?: System.currentTimeMillis(),
+                    updatedAt = importPage.updatedAt ?: importPage.createdAt ?: System.currentTimeMillis()
                 )
                 pageRepository.insertPage(page)
             }

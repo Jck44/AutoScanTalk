@@ -14,7 +14,7 @@ class UpdateButtonConfigUseCase @Inject constructor(
         val page = pageRepository.getPageById(pageId)
         if (page != null && index in page.buttonConfigs.indices) {
             val updatedConfigs = page.buttonConfigs.toMutableList()
-            updatedConfigs[index] = newConfig
+            updatedConfigs[index] = newConfig?.copy(updatedAt = System.currentTimeMillis())
             val updatedPage = page.copy(buttonConfigs = updatedConfigs)
             pageRepository.updatePage(updatedPage)
             bookRepository.updateLastModified(page.bookId)

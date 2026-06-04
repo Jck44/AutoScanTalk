@@ -32,6 +32,7 @@ data class ButtonEntity(
     val auditoryCue: AuditoryCue? = null,
     val buttonAction: ButtonAction,
     val isActive: Boolean = true,
-    val playActionAsAuditoryCue: Boolean = false
+    val playActionAsAuditoryCue: Boolean = false,
+    val updatedAt: Long = System.currentTimeMillis()
 )
 

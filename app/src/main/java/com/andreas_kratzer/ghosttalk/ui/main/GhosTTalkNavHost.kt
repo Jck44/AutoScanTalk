@@ -285,6 +285,9 @@ fun GhostTalkNavHost(
                     navController.navigate("start") {
                         popUpTo("start") { inclusive = true }
                     }
+                },
+                onNavigateToGlobalSettings = {
+                    navigateWithSecurity("settings?isGlobal=true")
                 }
             )
         }
@@ -381,8 +384,9 @@ private fun NavHostController.safeNavigate(route: String) {
             return@runOnMainThread
         }
         if (state != null && state.isAtLeast(Lifecycle.State.STARTED)) {
+            val shouldLaunchSingleTop = !route.startsWith("settings")
             navigate(route) {
-                launchSingleTop = true
+                launchSingleTop = shouldLaunchSingleTop
             }
         }
     }

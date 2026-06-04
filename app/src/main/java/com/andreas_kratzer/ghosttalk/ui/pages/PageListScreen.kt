@@ -404,7 +404,7 @@ fun PageListScreen(
             ) {
                 items(allPages.size, key = { index -> allPages[index].id }) { index ->
                     val page = allPages[index]
-                    val isReferenced = activeTargetPageIds.contains(page.id)
+                    val isReferenced = activeTargetPageIds.contains(page.id) || page.id.startsWith("static_row_")
                     GhostTalkCard(
                         title = page.name,
                         subtitle = stringResource(R.string.page_grid_info, page.rows, page.columns),
@@ -415,75 +415,77 @@ fun PageListScreen(
                         modifier = Modifier.then(
                             if (!isReferenced) Modifier.alpha(0.6f) else Modifier
                         ),
-                        trailingAction = {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                var showMenu by remember { mutableStateOf(false) }
-                                
-                                IconButton(onClick = { showMenu = true }) {
-                                    Icon(
-                                        imageVector = Icons.Default.MoreVert,
-                                        contentDescription = stringResource(R.string.action_more)
-                                    )
-                                }
+                        trailingAction = if (page.id.startsWith("static_row_")) null else {
+                            {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    var showMenu by remember { mutableStateOf(false) }
+                                    
+                                    IconButton(onClick = { showMenu = true }) {
+                                        Icon(
+                                            imageVector = Icons.Default.MoreVert,
+                                            contentDescription = stringResource(R.string.action_more)
+                                        )
+                                    }
 
-                                val duplicateSuffix = stringResource(R.string.duplicate_suffix)
+                                    val duplicateSuffix = stringResource(R.string.duplicate_suffix)
 
-                                DropdownMenu(
-                                    expanded = showMenu,
-                                    onDismissRequest = { showMenu = false }
-                                ) {
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(R.string.action_duplicate)) },
-                                        onClick = {
-                                            showMenu = false
-                                            pageViewModel.duplicatePage(page.id, duplicateSuffix) { newId ->
-                                                if (newId != null) {
-                                                    onEditPage(newId)
+                                    DropdownMenu(
+                                        expanded = showMenu,
+                                        onDismissRequest = { showMenu = false }
+                                    ) {
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(R.string.action_duplicate)) },
+                                            onClick = {
+                                                showMenu = false
+                                                pageViewModel.duplicatePage(page.id, duplicateSuffix) { newId ->
+                                                    if (newId != null) {
+                                                        onEditPage(newId)
+                                                    }
                                                 }
+                                            },
+                                            leadingIcon = {
+                                                Icon(GhostTalkIcons.Copy, contentDescription = null)
                                             }
-                                        },
-                                        leadingIcon = {
-                                            Icon(GhostTalkIcons.Copy, contentDescription = null)
-                                        }
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(R.string.action_page_deactivate)) },
-                                        onClick = {
-                                            showMenu = false
-                                            pageToDeactivate.value = page
-                                        },
-                                        leadingIcon = {
-                                            Icon(Icons.Default.Clear, contentDescription = null)
-                                        }
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(R.string.action_page_activate)) },
-                                        onClick = {
-                                            showMenu = false
-                                            coroutineScope.launch {
-                                                val usages = pageViewModel.getPageUsages(page.id)
-                                                activationUsages.value = usages
-                                                pageToActivate.value = page
+                                        )
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(R.string.action_page_deactivate)) },
+                                            onClick = {
+                                                showMenu = false
+                                                pageToDeactivate.value = page
+                                            },
+                                            leadingIcon = {
+                                                Icon(Icons.Default.Clear, contentDescription = null)
                                             }
-                                        },
-                                        leadingIcon = {
-                                            Icon(Icons.Default.Check, contentDescription = null)
-                                        }
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(CoreR.string.action_delete)) },
-                                        onClick = {
-                                            showMenu = false
-                                            coroutineScope.launch {
-                                                val usages = pageViewModel.getPageUsages(page.id)
-                                                usagesToDelete.value = usages
-                                                pageToDelete.value = page
+                                        )
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(R.string.action_page_activate)) },
+                                            onClick = {
+                                                showMenu = false
+                                                coroutineScope.launch {
+                                                    val usages = pageViewModel.getPageUsages(page.id)
+                                                    activationUsages.value = usages
+                                                    pageToActivate.value = page
+                                                }
+                                            },
+                                            leadingIcon = {
+                                                Icon(Icons.Default.Check, contentDescription = null)
                                             }
-                                        },
-                                        leadingIcon = {
-                                            Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
-                                        }
-                                    )
+                                        )
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(CoreR.string.action_delete)) },
+                                            onClick = {
+                                                showMenu = false
+                                                coroutineScope.launch {
+                                                    val usages = pageViewModel.getPageUsages(page.id)
+                                                    usagesToDelete.value = usages
+                                                    pageToDelete.value = page
+                                                }
+                                            },
+                                            leadingIcon = {
+                                                Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+                                            }
+                                        )
+                                    }
                                 }
                             }
                         }

@@ -170,13 +170,13 @@ class SpeechActionHandlerTest {
 
         val finishCallback = mockk<(Int) -> Unit>(relaxed = true)
         val onCompleteSlot = slot<() -> Unit>()
-        every { audioPlayer.playAudioFile(any(), any(), any(), capture(onCompleteSlot)) } answers {
+        every { audioPlayer.playAudioFile(any(), any(), any(), any(), capture(onCompleteSlot)) } answers {
             onCompleteSlot.captured.invoke()
         }
 
         handler.handle(config, action, 1, finishCallback)
 
-        verify { audioPlayer.playAudioFile(audioFile, "tts-device", any(), any()) }
+        verify { audioPlayer.playAudioFile(audioFile, "tts-device", any(), any(), any()) }
         verify { finishCallback(1) }
         verify { actionLogger.log("Sprachaufnahme abgespielt: \"audio_b1.ogg\"", action, "Label") }
         
