@@ -856,45 +856,56 @@ private fun LazyGridScope.renderRowByRowGrid(
                 }
 
                 // Row Buttons
-                Row(
-                    modifier = Modifier.weight(1f).padding(dimensions.paddingMedium),
-                    horizontalArrangement = Arrangement.spacedBy(dimensions.gridSpacing)
+                Column(
+                    modifier = Modifier.weight(1f).padding(dimensions.paddingMedium)
                 ) {
-                    for (c in 0 until item.columns) {
-                        val globalIndex = GridUtils.getGlobalIndex(r, c)
-                        val buttonConfig = item.buttonConfigs.getOrNull(globalIndex)
-                        val targetPageName = (buttonConfig?.buttonAction as? NavigateToPageButtonAction)?.let { action ->
-                            availablePages.find { it.id == action.pageId }?.name
+                    val rowName = item.rowNames.getOrNull(r) ?: stringResource(R.string.page_row_label).format(r + 1)
+                    Text(
+                        text = rowName,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        modifier = Modifier.padding(bottom = dimensions.paddingSmall)
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(dimensions.gridSpacing)
+                    ) {
+                        for (c in 0 until item.columns) {
+                            val globalIndex = GridUtils.getGlobalIndex(r, c)
+                            val buttonConfig = item.buttonConfigs.getOrNull(globalIndex)
+                            val targetPageName = (buttonConfig?.buttonAction as? NavigateToPageButtonAction)?.let { action ->
+                                availablePages.find { it.id == action.pageId }?.name
+                            }
+                            
+                            val metrics = buttonConfig?.let { pageMetrics[it.id] }
+                            EditorButtonCell(
+                                localIndex = globalIndex, // In RowByRow, buttons are NOT grid items, so we use globalIndex for visual reorder
+                                globalIndex = globalIndex,
+                                buttonConfig = buttonConfig,
+                                reorderState = buttonReorderState,
+                                isTarget = buttonTargetIndex == globalIndex,
+                                width = sizeInfo.optimalWidth,
+                                height = sizeInfo.optimalHeight,
+                                numCols = item.columns,
+                                gridSpacing = dimensions.gridSpacing,
+                                targetPageName = targetPageName,
+                                heatmapIntensity = metrics?.heatmapIntensity,
+                                effortMetrics = metrics,
+                                onDragEnd = { fromIdx ->
+                                    val to = buttonReorderState.findTargetButtonIndex(
+                                        gridState = gridState,
+                                        numCols = item.columns,
+                                        isRowByRow = true,
+                                        density = density,
+                                        gridSpacingPx = gridSpacingPx
+                                    )
+                                    if (to != null && to != fromIdx) {
+                                        actions.moveButton(item.id, fromIdx, to)
+                                    }
+                                },
+                                onClick = { onEditButton(globalIndex) }
+                            )
                         }
-                        
-                        val metrics = buttonConfig?.let { pageMetrics[it.id] }
-                        EditorButtonCell(
-                            localIndex = globalIndex, // In RowByRow, buttons are NOT grid items, so we use globalIndex for visual reorder
-                            globalIndex = globalIndex,
-                            buttonConfig = buttonConfig,
-                            reorderState = buttonReorderState,
-                            isTarget = buttonTargetIndex == globalIndex,
-                            width = sizeInfo.optimalWidth,
-                            height = sizeInfo.optimalHeight,
-                            numCols = item.columns,
-                            gridSpacing = dimensions.gridSpacing,
-                            targetPageName = targetPageName,
-                            heatmapIntensity = metrics?.heatmapIntensity,
-                            effortMetrics = metrics,
-                            onDragEnd = { fromIdx ->
-                                val to = buttonReorderState.findTargetButtonIndex(
-                                    gridState = gridState,
-                                    numCols = item.columns,
-                                    isRowByRow = true,
-                                    density = density,
-                                    gridSpacingPx = gridSpacingPx
-                                )
-                                if (to != null && to != fromIdx) {
-                                    actions.moveButton(item.id, fromIdx, to)
-                                }
-                            },
-                            onClick = { onEditButton(globalIndex) }
-                        )
                     }
                 }
             }

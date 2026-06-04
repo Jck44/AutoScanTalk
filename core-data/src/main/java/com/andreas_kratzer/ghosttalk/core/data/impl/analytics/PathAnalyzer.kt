@@ -85,7 +85,7 @@ class PathAnalyzer @Inject constructor() {
         // 1. Sort chronologically (ascending)
         val sortedEvents = historyEvents.sortedBy { it.timestamp }
 
-        // 2. Group into sessions based on 5-minute inactivity gap
+        // 2. Group into sessions based on sessionId if available, falling back to 5-minute inactivity gap
         val sessions = mutableListOf<List<ButtonUsageEvent>>()
         var currentSession = mutableListOf<ButtonUsageEvent>()
 
@@ -94,7 +94,12 @@ class PathAnalyzer @Inject constructor() {
                 currentSession.add(event)
             } else {
                 val lastEvent = currentSession.last()
-                if (event.timestamp - lastEvent.timestamp > 5 * 60 * 1000) {
+                val isNewSession = if (event.sessionId != null && lastEvent.sessionId != null) {
+                    event.sessionId != lastEvent.sessionId
+                } else {
+                    event.timestamp - lastEvent.timestamp > 5 * 60 * 1000
+                }
+                if (isNewSession) {
                     sessions.add(currentSession)
                     currentSession = mutableListOf(event)
                 } else {
@@ -324,7 +329,42 @@ class PathAnalyzer @Inject constructor() {
                         
                         val stepsToTarget = getScanSteps(targetPage, buttonConfig)
                         
-                        val stepsWithShortcut = activeButtonsOnSource + 1
+                        val targetIndex = when (val result = GridUtils.determineTargetSlot(sourcePage, forceMove = true)) {
+                            is GridUtils.SlotPlacementResult.Success -> result.targetIndex
+                            is GridUtils.SlotPlacementResult.NeedsConfirmation -> result.targetIndex
+                            else -> -1
+                        }
+                        val prospectiveIndex = if (targetIndex != -1) targetIndex else activeButtonsOnSource
+                        val pattern = sourcePage.scanPattern?.takeIf { it.isNotBlank() && it != "default" } ?: "row_by_row"
+                        
+                        val stepsWithShortcut = if (pattern == "row_by_row") {
+                            val rows = sourcePage.rows
+                            val columns = sourcePage.columns
+                            val r = prospectiveIndex / GridUtils.MAX_GRID_SIZE
+                            val col = prospectiveIndex % GridUtils.MAX_GRID_SIZE
+                            
+                            val activeRows = (0 until rows).filter { rowIdx ->
+                                rowIdx == r || (0 until columns).any { colIdx ->
+                                    val gIdx = GridUtils.getGlobalIndex(rowIdx, colIdx)
+                                    sourcePage.buttonConfigs.getOrNull(gIdx)?.let { it.isActive && GridUtils.isVisibleInGrid(gIdx, rows, columns) } == true
+                                }
+                            }
+                            val rowsBefore = activeRows.indexOf(r).coerceAtLeast(0)
+                            
+                            val activeButtonsInRow = (0 until columns).mapNotNull { colIdx ->
+                                val gIdx = GridUtils.getGlobalIndex(r, colIdx)
+                                if (colIdx == col) {
+                                    buttonConfig
+                                } else {
+                                    val btn = sourcePage.buttonConfigs.getOrNull(gIdx)
+                                    if (btn != null && btn.isActive && GridUtils.isVisibleInGrid(gIdx, rows, columns)) btn else null
+                                }
+                            }
+                            val buttonsBeforeInRow = activeButtonsInRow.indexOf(buttonConfig).coerceAtLeast(0)
+                            (rowsBefore + 1) + (buttonsBeforeInRow + 1)
+                        } else {
+                            activeButtonsOnSource + 1
+                        }
                         
                         // Collective degradation based on dynamic degradation factor
                         val degradation = (activeButtonsOnSource * degradationFactor).toInt()

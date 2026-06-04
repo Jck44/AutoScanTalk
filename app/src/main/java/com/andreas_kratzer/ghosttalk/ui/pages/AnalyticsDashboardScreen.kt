@@ -149,6 +149,34 @@ fun AnalyticsDashboardScreen(
     val totalHours = totalUsageTimeMs / (1000 * 60 * 60)
     val totalMinutes = (totalUsageTimeMs / (1000 * 60)) % 60
 
+    val avgDailyUsageTimeMs = remember(userModeSessions) {
+        if (userModeSessions.isEmpty()) 0L
+        else {
+            val calendar = java.util.Calendar.getInstance()
+            val dailySums = userModeSessions.groupBy { session ->
+                calendar.timeInMillis = session.startTime
+                val year = calendar.get(java.util.Calendar.YEAR)
+                val day = calendar.get(java.util.Calendar.DAY_OF_YEAR)
+                "$year-$day"
+            }.map { (_, sessions) ->
+                sessions.sumOf { it.endTime - it.startTime }
+            }
+            if (dailySums.isNotEmpty()) dailySums.average().toLong() else 0L
+        }
+    }
+
+    val avgDailyHours = avgDailyUsageTimeMs / (1000 * 60 * 60)
+    val avgDailyMinutes = (avgDailyUsageTimeMs / (1000 * 60)) % 60
+    val avgDailySeconds = (avgDailyUsageTimeMs / 1000) % 60
+
+    val avgDailyUsageText = when {
+        userModeSessions.isEmpty() -> stringResource(R.string.analytics_kpi_avg_usage_time_empty)
+        avgDailyHours > 0 -> stringResource(R.string.analytics_kpi_avg_usage_time_format_hours, avgDailyHours, avgDailyMinutes)
+        avgDailyMinutes > 0 -> stringResource(R.string.analytics_kpi_avg_usage_time_format_minutes, avgDailyMinutes)
+        avgDailySeconds > 0 -> stringResource(R.string.analytics_kpi_avg_usage_time_format_seconds, avgDailySeconds)
+        else -> stringResource(R.string.analytics_kpi_avg_usage_time_less_than_minute)
+    }
+
     // Communication Rate KPI (Buttons per Minute)
     val currentUsageMinutes = currentUsageMs / (1000.0 * 60.0)
     val currentCommRate = if (currentUsageMinutes > 0.0) currentClicks / currentUsageMinutes else 0.0
@@ -281,7 +309,7 @@ fun AnalyticsDashboardScreen(
                             ) {
                                 // Click count card
                                 Card(
-                                    modifier = Modifier.weight(1f).height(95.dp),
+                                    modifier = Modifier.weight(1f).height(105.dp),
                                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f))
                                 ) {
                                     Column(
@@ -302,7 +330,7 @@ fun AnalyticsDashboardScreen(
 
                                 // Active Vocab card
                                 Card(
-                                    modifier = Modifier.weight(1f).height(95.dp),
+                                    modifier = Modifier.weight(1f).height(105.dp),
                                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f))
                                 ) {
                                     Column(
@@ -328,7 +356,7 @@ fun AnalyticsDashboardScreen(
                             ) {
                                 // Total Usage Time Card
                                 Card(
-                                    modifier = Modifier.weight(1f).height(95.dp),
+                                    modifier = Modifier.weight(1f).height(105.dp),
                                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.35f))
                                 ) {
                                     Column(
@@ -343,18 +371,26 @@ fun AnalyticsDashboardScreen(
                                             Text(stringResource(R.string.analytics_kpi_usage_time), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f))
                                             TrendBadge(current = currentUsageMs, previous = previousUsageMs)
                                         }
-                                        Text(
-                                            text = stringResource(R.string.analytics_kpi_usage_time_format, totalHours, totalMinutes),
-                                            style = MaterialTheme.typography.titleLarge,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.onTertiaryContainer
-                                        )
+                                        Column {
+                                            Text(
+                                                text = stringResource(R.string.analytics_kpi_usage_time_format, totalHours, totalMinutes),
+                                                style = MaterialTheme.typography.titleLarge,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onTertiaryContainer
+                                            )
+                                            Text(
+                                                text = avgDailyUsageText,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                fontWeight = FontWeight.Medium,
+                                                color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.7f)
+                                            )
+                                        }
                                     }
                                 }
 
                                 // Communication Rate Card (Prio 4)
                                 Card(
-                                    modifier = Modifier.weight(1f).height(95.dp),
+                                    modifier = Modifier.weight(1f).height(105.dp),
                                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                                 ) {
                                     Column(

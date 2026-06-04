@@ -386,6 +386,11 @@
     <string name="analytics_usage_sessions_clear_confirm">Do you really want to clear the entire User Mode session log for this book?</string>
     <string name="analytics_kpi_usage_time">Total Usage Time</string>
     <string name="analytics_kpi_usage_time_format">%1$d hrs %2$d mins</string>
+    <string name="analytics_kpi_avg_usage_time_format_hours">Ø %1$d hrs %2$d mins / day</string>
+    <string name="analytics_kpi_avg_usage_time_format_minutes">Ø %1$d mins / day</string>
+    <string name="analytics_kpi_avg_usage_time_format_seconds">Ø %1$d sec / day</string>
+    <string name="analytics_kpi_avg_usage_time_less_than_minute">Ø &lt; 1 min / day</string>
+    <string name="analytics_kpi_avg_usage_time_empty">- / day</string>
     <string name="analytics_duration_seconds">%1$d sec.</string>
     <string name="analytics_duration_minutes_seconds">%1$d min. %2$d sec.</string>
     <string name="analytics_duration_hours_minutes">%1$d hr. %2$d min.</string>
