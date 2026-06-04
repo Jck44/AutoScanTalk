@@ -60,7 +60,7 @@ class InteractionDelegateTest {
         val page = Page(id = "p1", bookId = "b1", name = "Test", rows = 1, columns = 1, buttonConfigs = emptyList())
         val smartPredictions = MutableStateFlow<List<String>?>(null)
         
-        delegate.init(scope, actionExecutor, {}, smartPredictions, MutableStateFlow("b1"))
+        delegate.init(scope, actionExecutor, {}, {}, smartPredictions, MutableStateFlow("b1"))
         
         delegate.activateButtonAtIndex(5, page, "b1")
         
@@ -77,7 +77,7 @@ class InteractionDelegateTest {
 
     @Test
     fun `setUserModeActive(false) should stop notification TTS and actions`() {
-        delegate.init(scope, actionExecutor, {}, MutableStateFlow(null), MutableStateFlow("b1"))
+        delegate.init(scope, actionExecutor, {}, {}, MutableStateFlow(null), MutableStateFlow("b1"))
         
         delegate.setUserModeActive(false)
         

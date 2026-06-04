@@ -48,15 +48,9 @@ class CreatePageUseCase @Inject constructor(
         if (template != null) {
             buttonConfigs = template.buttonConfigs.map { config ->
                 if (config != null) {
-                    val action = config.buttonAction
-                    val newAction = if (action is NavigateToPageButtonAction && action.pageId.isEmpty() && homePageId != null) {
-                        action.copy(pageId = homePageId)
-                    } else {
-                        action
-                    }
                     config.copy(
                         id = UUID.randomUUID().toString(),
-                        buttonAction = newAction
+                        buttonAction = config.buttonAction
                     )
                 } else {
                     null
@@ -74,7 +68,7 @@ class CreatePageUseCase @Inject constructor(
                     label = "zurück zum Start",
                     spokenText = "Zurück zur Startseite",
                     buttonAction = NavigateToPageButtonAction(
-                        pageId = homePageId
+                        pageId = ""
                     ),
                     auditoryCue = AuditoryCue.TextToSpeechCue("Zurück zur Startseite")
                 )

@@ -57,5 +57,18 @@ interface CloudSettings {
 
     var localFolderSafName: String?
     val localFolderSafNameFlow: StateFlow<String?>
+
+    var syncModeLogs: String
+    val syncModeLogsFlow: StateFlow<String>
+
+    var syncLogsIntervalHours: Long
+    val syncLogsIntervalHoursFlow: StateFlow<Long>
+
+    var lastLogsSyncTime: Long
+    val lastLogsSyncTimeFlow: StateFlow<Long>
+
+    var lastUploadedLogHash: String?
+    val lastUploadedLogHashFlow: StateFlow<String?>
 }
+
 

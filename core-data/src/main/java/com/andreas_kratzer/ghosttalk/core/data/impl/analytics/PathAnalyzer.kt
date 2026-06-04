@@ -127,7 +127,6 @@ class PathAnalyzer @Inject constructor() {
 
         for ((sessionIndex, session) in sessions.withIndex()) {
             if (session.size < 2) {
-                Log.d("PathAnalyzer", "analyzePaths: Session $sessionIndex size < 2, skipping.")
                 continue
             }
 
@@ -180,14 +179,9 @@ class PathAnalyzer @Inject constructor() {
                                             transitionCounts.getOrPut(activeSourcePageId) { mutableMapOf() }
                                                 .getOrPut(buttonConfig.id) { mutableListOf() }
                                                 .add(event.timestamp)
-                                            Log.d("PathAnalyzer", "analyzePaths: Registered transition from ${sourcePage.name} to '${buttonConfig.label}' on page ${targetPage.name} (interval: ${interval}ms)")
-                                        } else {
-                                            Log.d("PathAnalyzer", "analyzePaths: Transition from ${sourcePage.name} to '${buttonConfig.label}' ignored because button already exists on source page")
                                         }
                                     }
                                 }
-                            } else {
-                                Log.d("PathAnalyzer", "analyzePaths: Transition from $activeSourcePageId to $currentPageId ignored. Interval $interval ms exceeds maxIntervalMs $maxIntervalMs")
                             }
                         }
                         
@@ -267,10 +261,15 @@ class PathAnalyzer @Inject constructor() {
         }
 
         // Sort final recommendations by occurrence count descending, then by time saved
-        return results.sortedWith(
+        val finalResults = results.sortedWith(
             compareByDescending<ShortcutRecommendation> { it.occurrenceCount }
                 .thenByDescending { it.estimatedTimeSavedSec }
         )
+        Log.d("PathAnalyzer", "analyzePaths: Final recommendations count = ${finalResults.size}")
+        finalResults.forEach { rec ->
+            Log.d("PathAnalyzer", "  -> Suggest '${rec.targetButtonConfig.label}' on '${rec.sourcePageName}' (saved: ${rec.estimatedTimeSavedSec}s, count: ${rec.occurrenceCount})")
+        }
+        return finalResults
     }
 
     private fun generateRecommendations(

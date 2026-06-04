@@ -41,9 +41,14 @@ class CloudSettingsRepository(
     private val _syncTargetType = NonNullStringSetting(SettingsConstants.KEY_SYNC_TARGET_TYPE, "DRIVE_API")
     private val _localFolderSafUri = StringSetting(SettingsConstants.KEY_LOCAL_FOLDER_SAF_URI)
     private val _localFolderSafName = StringSetting(SettingsConstants.KEY_LOCAL_FOLDER_SAF_NAME)
+    private val _syncModeLogs = NonNullStringSetting(SettingsConstants.KEY_SYNC_MODE_LOGS, "OFF")
+    private val _syncLogsIntervalHours = LongSetting(SettingsConstants.KEY_SYNC_LOGS_INTERVAL_HOURS, 12L)
+    private val _lastLogsSyncTime = LongSetting(SettingsConstants.KEY_LAST_LOGS_SYNC_TIME, 0L)
+    private val _lastUploadedLogHash = StringSetting(SettingsConstants.KEY_LAST_UPLOADED_LOG_HASH)
 
     init {
         migrateOldSyncMode()
+        migrateLogSyncSettings()
     }
 
     override val isCloudSyncEnabledFlow = _isCloudSyncEnabled.flow
@@ -66,6 +71,10 @@ class CloudSettingsRepository(
     override val syncTargetTypeFlow = _syncTargetType.flow
     override val localFolderSafUriFlow = _localFolderSafUri.flow
     override val localFolderSafNameFlow = _localFolderSafName.flow
+    override val syncModeLogsFlow = _syncModeLogs.flow
+    override val syncLogsIntervalHoursFlow = _syncLogsIntervalHours.flow
+    override val lastLogsSyncTimeFlow = _lastLogsSyncTime.flow
+    override val lastUploadedLogHashFlow = _lastUploadedLogHash.flow
 
     override var isCloudSyncEnabled: Boolean by _isCloudSyncEnabled
     override var syncIntervalMinutes: Long by _syncIntervalMinutes
@@ -87,6 +96,10 @@ class CloudSettingsRepository(
     override var syncTargetType: String by _syncTargetType
     override var localFolderSafUri: String? by _localFolderSafUri
     override var localFolderSafName: String? by _localFolderSafName
+    override var syncModeLogs: String by _syncModeLogs
+    override var syncLogsIntervalHours: Long by _syncLogsIntervalHours
+    override var lastLogsSyncTime: Long by _lastLogsSyncTime
+    override var lastUploadedLogHash: String? by _lastUploadedLogHash
 
 
     override fun refresh() {
@@ -111,6 +124,10 @@ class CloudSettingsRepository(
         _syncTargetType.refresh()
         _localFolderSafUri.refresh()
         _localFolderSafName.refresh()
+        _syncModeLogs.refresh()
+        _syncLogsIntervalHours.refresh()
+        _lastLogsSyncTime.refresh()
+        _lastUploadedLogHash.refresh()
     }
 
     private fun migrateOldSyncMode() {
@@ -138,6 +155,23 @@ class CloudSettingsRepository(
             _syncModeBook.refresh()
             _syncModeTts.refresh()
             _syncModeStats.refresh()
+        }
+    }
+
+    private fun migrateLogSyncSettings() {
+        val hasMigratedKey = "has_migrated_logs_sync"
+        if (!prefs.getBoolean(hasMigratedKey, false)) {
+            val isSyncEnabled = prefs.getBoolean(KEY_CLOUD_SYNC_ENABLED, false)
+            prefs.edit {
+                putBoolean(hasMigratedKey, true)
+                if (isSyncEnabled) {
+                    val scopedLogsKey = getScopedKey(SettingsConstants.KEY_SYNC_MODE_LOGS)
+                    if (!prefs.contains(scopedLogsKey)) {
+                        putString(scopedLogsKey, "BACKUP_ONLY")
+                    }
+                }
+            }
+            _syncModeLogs.refresh()
         }
     }
 }

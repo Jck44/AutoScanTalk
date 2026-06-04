@@ -83,6 +83,7 @@ import com.andreas_kratzer.ghosttalk.core.model.GeminiButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiNanoButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiSearchButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.MediaProvider
+import com.andreas_kratzer.ghosttalk.core.model.NavigateBackButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
@@ -145,7 +146,8 @@ fun ButtonConfigDialog(
     historyEvents: List<ButtonUsageEvent> = emptyList(),
     recommendations: List<com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PathAnalyzer.ShortcutRecommendation> = emptyList(),
     loadMarkovSuccessors: suspend (String) -> List<Pair<String, Int>> = { emptyList() },
-    onApplyRecommendation: ((com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PathAnalyzer.ShortcutRecommendation) -> Unit)? = null
+    onApplyRecommendation: ((com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PathAnalyzer.ShortcutRecommendation) -> Unit)? = null,
+    defaultStartPageId: String? = null
 ) {
     val context = LocalContext.current
     var label by remember { mutableStateOf(buttonConfig.label) }
@@ -238,6 +240,7 @@ fun ButtonConfigDialog(
 
     val actionTypeSpeak = stringResource(R.string.button_action_speak_text)
     val actionTypeNavigate = stringResource(R.string.button_action_navigate_page)
+    val actionTypeNavigateBack = stringResource(R.string.button_action_navigate_back)
     val actionTypeGemini = stringResource(R.string.button_action_gemini)
     val actionTypeGeminiSearch = stringResource(R.string.button_action_gemini_search)
     val actionTypeGeminiVision = stringResource(R.string.button_action_gemini_vision)
@@ -289,6 +292,7 @@ fun ButtonConfigDialog(
         mutableStateOf(
             when (val action = buttonConfig.buttonAction) {
                 is NavigateToPageButtonAction -> actionTypeNavigate
+                is NavigateBackButtonAction -> actionTypeNavigateBack
                 is GeminiButtonAction -> actionTypeGemini
                 is GeminiSearchButtonAction -> actionTypeGeminiSearch
                 is GeminiNanoButtonAction -> actionTypeGemini
@@ -495,7 +499,11 @@ fun ButtonConfigDialog(
 
     val buildCurrentAction = {
         when (selectedActionType) {
-            actionTypeNavigate -> NavigateToPageButtonAction(targetPageId)
+            actionTypeNavigate -> {
+                val resolvedPageId = if (targetPageId == defaultStartPageId) "" else targetPageId
+                NavigateToPageButtonAction(resolvedPageId)
+            }
+            actionTypeNavigateBack -> NavigateBackButtonAction()
             actionTypeGemini -> GeminiButtonAction(geminiPrompt)
             actionTypeGeminiSearch -> GeminiSearchButtonAction(geminiPrompt)
             actionTypeGeminiVision -> com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction(geminiPrompt, geminiVisionUseCloud, geminiVisionPlayShutterSound)
@@ -762,7 +770,7 @@ fun ButtonConfigDialog(
         properties = DialogProperties(usePlatformDefaultWidth = false),
         title = {
             val actionBadgeText = when (selectedActionType) {
-                actionTypeNavigate -> "Nav"
+                actionTypeNavigate, actionTypeNavigateBack -> "Nav"
                 actionTypeGemini, actionTypeGeminiSearch, actionTypeGeminiVision -> "KI"
                 actionTypeFrequent, actionTypePrevious, actionTypeSmart -> "Verlauf"
                 actionTypeWeather -> "Wetter"
@@ -806,7 +814,8 @@ fun ButtonConfigDialog(
                             val rawGroups = listOf(
                                 com.andreas_kratzer.ghosttalk.core.model.ActionCategoryRegistry.GROUP_BASIS to listOf(
                                     actionTypeSpeak to SpeakTextButtonAction(),
-                                    actionTypeNavigate to NavigateToPageButtonAction()
+                                    actionTypeNavigate to NavigateToPageButtonAction(),
+                                    actionTypeNavigateBack to NavigateBackButtonAction()
                                 ),
                                 com.andreas_kratzer.ghosttalk.core.model.ActionCategoryRegistry.GROUP_KI_ASSISTENZ to listOf(
                                     actionTypeGemini to GeminiButtonAction(),
@@ -902,6 +911,7 @@ fun ButtonConfigDialog(
                                         val icon = when (actionType) {
                                             actionTypeSpeak -> Icons.Default.PlayArrow
                                             actionTypeNavigate -> GhostTalkIcons.ArrowForward
+                                            actionTypeNavigateBack -> GhostTalkIcons.ArrowBack
                                             actionTypeGemini, actionTypeGeminiSearch, actionTypeGeminiVision -> GhostTalkIcons.AutoAwesome
                                             actionTypeWeather -> GhostTalkIcons.PartlyCloudy
                                             actionTypeReadNotifications, actionTypeClearNotifications -> GhostTalkIcons.Notifications

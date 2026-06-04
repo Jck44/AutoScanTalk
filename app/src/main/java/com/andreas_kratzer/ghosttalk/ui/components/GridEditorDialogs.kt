@@ -100,6 +100,7 @@ fun EditorDialogs(
             buttonConfig = buttonConfig,
             pages = availablePages,
             templates = templates,
+            defaultStartPageId = (actions as? PageViewModel)?.settingsRepository?.defaultStartPageId,
             onDismiss = onDismissButtonDialog,
             onSave = { newConfig ->
                 actions.updateButtonConfig(item.id, selectedButtonIndex, newConfig)

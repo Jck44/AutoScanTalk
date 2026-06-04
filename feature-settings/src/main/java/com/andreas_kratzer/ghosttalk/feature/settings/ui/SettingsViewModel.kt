@@ -32,6 +32,9 @@ import com.andreas_kratzer.ghosttalk.feature.settings.domain.UpdateActionLogLimi
 import com.andreas_kratzer.ghosttalk.feature.settings.domain.UpdateActiveBookNameUseCase
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.BackupSettingsDelegate
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.CloudSyncSettingsDelegate
+import com.andreas_kratzer.ghosttalk.core.cloud.domain.ExportLogsUseCase
+import com.andreas_kratzer.ghosttalk.core.cloud.domain.RescheduleLogUploadUseCase
+import com.andreas_kratzer.ghosttalk.core.cloud.domain.LogUploadResult
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.ExperimentalSettingsDelegate
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.GenAiSettingsDelegate
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.HueSettingsDelegate
@@ -86,7 +89,9 @@ class SettingsViewModel @Inject constructor(
     private val audioCacheRepository: AudioCacheRepository,
     private val pageRepository: PageRepository,
     private val syncLogProvider: SyncLogProvider,
-    private val callActionProxy: dagger.Lazy<CallActionProxy>
+    private val callActionProxy: dagger.Lazy<CallActionProxy>,
+    private val exportLogsUseCase: ExportLogsUseCase,
+    private val rescheduleLogUploadUseCase: RescheduleLogUploadUseCase
 ) : AndroidViewModel(application) {
 
     private val _activeBookId = settingsRepository.activeBookIdFlow
@@ -246,6 +251,11 @@ class SettingsViewModel @Inject constructor(
     val backupRestoreProgress = backupDelegate.backupRestoreProgress
     val backupRestoreStatus = backupDelegate.backupRestoreStatus
 
+    // --- Log Sync State ---
+    val syncModeLogs = settingsRepository.syncModeLogsFlow
+    val syncLogsIntervalHours = settingsRepository.syncLogsIntervalHoursFlow
+    val lastLogsSyncTime = settingsRepository.lastLogsSyncTimeFlow
+
     private val _manualUpdateCheckTrigger = kotlinx.coroutines.flow.MutableSharedFlow<Unit>()
     val manualUpdateCheckTrigger = _manualUpdateCheckTrigger.asSharedFlow()
 
@@ -343,7 +353,14 @@ class SettingsViewModel @Inject constructor(
             mode = com.andreas_kratzer.ghosttalk.core.cloud.domain.SyncMode.TWO_WAY,
             scope = viewModelScope,
             onProgress = { p, s -> backupDelegate.handleCloudProgress(p, s) },
-            onComplete = { backupDelegate.finishBackupRestoreProgress() }
+            onComplete = {
+                backupDelegate.finishBackupRestoreProgress()
+                if (settingsRepository.syncModeLogs == "BACKUP_ONLY") {
+                    viewModelScope.launch {
+                        exportLogsUseCase.performAutoUpload()
+                    }
+                }
+            }
         )
     }
     
@@ -354,7 +371,14 @@ class SettingsViewModel @Inject constructor(
             mode = com.andreas_kratzer.ghosttalk.core.cloud.domain.SyncMode.BACKUP_ONLY,
             scope = viewModelScope,
             onProgress = { p, s -> backupDelegate.handleCloudProgress(p, s) },
-            onComplete = { backupDelegate.finishBackupRestoreProgress() }
+            onComplete = {
+                backupDelegate.finishBackupRestoreProgress()
+                if (settingsRepository.syncModeLogs == "BACKUP_ONLY") {
+                    viewModelScope.launch {
+                        exportLogsUseCase.performAutoUpload()
+                    }
+                }
+            }
         )
     }
     
@@ -1081,6 +1105,44 @@ class SettingsViewModel @Inject constructor(
 
     fun simulateOutgoingCall(name: String, phone: String) {
         callActionProxy.get().simulateOutgoingCall(name, phone)
+    }
+
+    fun setSyncModeLogs(mode: String) {
+        settingsRepository.syncModeLogs = mode
+        rescheduleLogUploadUseCase()
+    }
+
+    fun setSyncLogsIntervalHours(hours: Long) {
+        settingsRepository.syncLogsIntervalHours = hours
+        rescheduleLogUploadUseCase()
+    }
+
+    fun shareLogs(ctx: Context) {
+        viewModelScope.launch {
+            try {
+                exportLogsUseCase.shareLogs(ctx)
+            } catch (e: Exception) {
+                Toast.makeText(application, "Fehler beim Teilen des Fehlerberichts: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    fun uploadLogsNow() {
+        viewModelScope.launch {
+            Toast.makeText(application, "Fehlerbericht wird hochgeladen...", Toast.LENGTH_SHORT).show()
+            val result = exportLogsUseCase.performAutoUpload(force = true)
+            when (result) {
+                is LogUploadResult.Success -> {
+                    Toast.makeText(application, R.string.settings_logs_upload_success, Toast.LENGTH_LONG).show()
+                }
+                is LogUploadResult.Skipped -> {
+                    Toast.makeText(application, R.string.settings_logs_upload_skipped, Toast.LENGTH_LONG).show()
+                }
+                is LogUploadResult.Error -> {
+                    Toast.makeText(application, "Upload fehlgeschlagen: ${result.message}", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
     }
 }
 

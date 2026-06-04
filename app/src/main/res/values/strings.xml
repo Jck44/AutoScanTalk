@@ -92,6 +92,8 @@
     <string name="button_action_label">Aktion</string>
     <string name="button_action_speak_text">Text Sprechen</string>
     <string name="button_action_navigate_page">Zu Seite navigieren</string>
+    <string name="button_action_navigate_back">Zur vorherigen Seite zurückkehren</string>
+    <string name="button_action_navigate_to_start_page">Startseite</string>
     <string name="button_action_gemini">Gemini (API) nutzen</string>
     <string name="button_action_gemini_search">Gemini-Suche (API) nutzen</string>
     <string name="button_action_gemini_nano">Gemini Nano (Offline) nutzen</string>

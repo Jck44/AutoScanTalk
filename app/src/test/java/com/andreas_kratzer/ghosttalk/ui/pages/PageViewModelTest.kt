@@ -15,6 +15,7 @@ import com.andreas_kratzer.ghosttalk.core.data.GetPagesUseCase
 import com.andreas_kratzer.ghosttalk.core.data.PageRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.data.TemplateRepository
+import com.andreas_kratzer.ghosttalk.core.data.ButtonTemplateRepository
 import com.andreas_kratzer.ghosttalk.core.data.impl.PageImportExportManager
 import com.andreas_kratzer.ghosttalk.core.domain.actions.ActionLogUseCase
 import com.andreas_kratzer.ghosttalk.core.domain.pages.CreatePageUseCase
@@ -84,6 +85,8 @@ class PageViewModelTest {
     private lateinit var buttonUsageRepository: ButtonUsageRepository
     private lateinit var featureGuard: FeatureGuard
     private lateinit var philipsHueManager: PhilipsHueManager
+    private lateinit var buttonTemplateRepository: ButtonTemplateRepository
+    private lateinit var userModeSessionRepository: com.andreas_kratzer.ghosttalk.core.data.UserModeSessionRepository
     
     private lateinit var actionLogUseCase: ActionLogUseCase
     private lateinit var getPagesUseCase: GetPagesUseCase
@@ -133,6 +136,8 @@ class PageViewModelTest {
         buttonUsageRepository = mockk<ButtonUsageRepository>(relaxed = true)
         featureGuard = mockk<FeatureGuard>(relaxed = true)
         philipsHueManager = mockk<PhilipsHueManager>(relaxed = true)
+        buttonTemplateRepository = mockk<ButtonTemplateRepository>(relaxed = true)
+        userModeSessionRepository = mockk<com.andreas_kratzer.ghosttalk.core.data.UserModeSessionRepository>(relaxed = true)
 
         actionLogUseCase = mockk<ActionLogUseCase>(relaxed = true)
         getPagesUseCase = mockk<GetPagesUseCase>(relaxed = true)
@@ -178,6 +183,14 @@ class PageViewModelTest {
         every { templateRepository.getAllTemplates() } returns MutableStateFlow<List<PageTemplate>>(emptyList())
         every { getPagesUseCase.execute(any()) } returns MutableStateFlow<List<Page>>(emptyList())
         coEvery { resolveDynamicButtonsUseCase.execute(any(), any(), any(), any()) } answers { firstArg() }
+        every { buttonTemplateRepository.getTemplates() } returns MutableStateFlow(emptyList())
+        every { buttonUsageRepository.buttonHistory } returns MutableStateFlow(emptyList())
+        every { userModeSessionRepository.getSessionsForBook(any()) } returns MutableStateFlow(emptyList())
+        every { bookRepository.getBookByIdFlow(any()) } returns MutableStateFlow(null)
+        every { settingsRepository.spotifyUserDisplayNameFlow } returns MutableStateFlow<String?>(null)
+        every { settingsRepository.cuesAudioDeviceAddress } returns null
+        every { updateSmartPredictionsUseCase.isLoading } returns MutableStateFlow(false)
+        every { updateSmartPredictionsUseCase.execute(any(), any(), any(), any(), any()) } returns MutableStateFlow<List<String>?>(null)
         
         // Mock scannerEngine flows
         every { scannerEngine.focusedButtonIndex } returns MutableStateFlow<Int?>(null)
@@ -220,7 +233,8 @@ class PageViewModelTest {
             getPageUsagesUseCase = getPageUsagesUseCase,
             updateMultipleButtonsUseCase = updateMultipleButtonsUseCase,
             identifyActivePageLinksUseCase = identifyActivePageLinksUseCase,
-            appStateRepository = appStateRepository
+            appStateRepository = appStateRepository,
+            settingsRepository = settingsRepository
         )
         val interactionDelegate = InteractionDelegate(
             application = application,
@@ -296,14 +310,14 @@ class PageViewModelTest {
             actionExecutor = actionExecutor,
             scanCoordinator = scanCoordinator,
             geminiUseCase = geminiUseCase,
-            buttonTemplateRepository = mockk(relaxed = true),
+            buttonTemplateRepository = buttonTemplateRepository,
             systemCallManager = systemCallManager,
             philipsHueManager = philipsHueManager,
             spotifyManager = mockk(relaxed = true),
             buttonUsageRepository = buttonUsageRepository,
             efficiencyAnalyzer = mockk(relaxed = true),
             pathAnalyzer = mockk(relaxed = true),
-            userModeSessionRepository = mockk(relaxed = true),
+            userModeSessionRepository = userModeSessionRepository,
             splitPageUseCase = mockk(relaxed = true),
             createPageUseCase = createPageUseCase,
             pageLayoutOptimizer = optimizer,
@@ -680,5 +694,48 @@ class PageViewModelTest {
         assertEquals("p1", list[1].pageId)
 
         collectionJob.cancel()
+    }
+
+    @Test
+    fun `navigateBack when stack is not empty loads previous page`() = runTest {
+        viewModel = createViewModel()
+        val startPage = Page(id = "p_start", bookId = "b1", name = "Start", rows = 1, columns = 1, buttonConfigs = List(49) { null })
+        val pageA = Page(id = "p_a", bookId = "b1", name = "Page A", rows = 1, columns = 1, buttonConfigs = List(49) { null })
+        
+        coEvery { pageRepository.getPageById("p_start") } returns startPage
+        coEvery { pageRepository.getPageById("p_a") } returns pageA
+        every { settingsRepository.defaultStartPageId } returns "p_start"
+        every { getPagesUseCase.execute(any()) } returns MutableStateFlow(listOf(startPage, pageA))
+
+        viewModel.setActiveBookId("b1")
+        viewModel.loadPage(startPage)
+        viewModel.loadPage(pageA) // Push startPage to stack
+
+        assertEquals("p_a", viewModel.currentPage.value?.id)
+
+        viewModel.navigateBack()
+        testScheduler.advanceUntilIdle()
+
+        assertEquals("p_start", viewModel.currentPage.value?.id)
+    }
+
+    @Test
+    fun `navigateBack when stack is empty reloads default start page`() = runTest {
+        viewModel = createViewModel()
+        val startPage = Page(id = "p_start", bookId = "b1", name = "Start", rows = 1, columns = 1, buttonConfigs = List(49) { null })
+        
+        coEvery { pageRepository.getPageById("p_start") } returns startPage
+        every { settingsRepository.defaultStartPageId } returns "p_start"
+        every { getPagesUseCase.execute(any()) } returns MutableStateFlow(listOf(startPage))
+
+        viewModel.setActiveBookId("b1")
+        viewModel.loadPage(startPage) // Stack is empty since startPage was loaded first
+
+        assertEquals("p_start", viewModel.currentPage.value?.id)
+
+        viewModel.navigateBack()
+        testScheduler.advanceUntilIdle()
+
+        assertEquals("p_start", viewModel.currentPage.value?.id)
     }
 }

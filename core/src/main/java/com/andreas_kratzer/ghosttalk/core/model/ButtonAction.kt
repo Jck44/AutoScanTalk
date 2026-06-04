@@ -30,6 +30,16 @@ data class NavigateToPageButtonAction(
 ) : ButtonAction()
 
 /**
+ * An action that navigates back to the previous page from history.
+ */
+@Serializable
+@SerialName("NavigateBackButtonAction")
+data class NavigateBackButtonAction(
+    val version: Int = 1
+) : ButtonAction()
+
+
+/**
  * An action that triggers a Gemini AI request with arbitrary skills/tools.
  */
 @Serializable

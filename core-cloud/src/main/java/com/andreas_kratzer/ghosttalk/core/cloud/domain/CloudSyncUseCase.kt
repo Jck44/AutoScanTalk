@@ -947,6 +947,24 @@ class CloudSyncUseCase @Inject constructor(
         }
     }
 
+    suspend fun uploadLogFile(
+        drive: com.google.api.services.drive.Drive?,
+        logFile: File
+    ): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val storageProvider = getStorageProvider(drive)
+            val existingFile = storageProvider.listFiles().find { it.name == logFile.name }
+            if (existingFile != null) {
+                storageProvider.updateFile(existingFile.id, logFile, "text/plain", "App Logcat Extract")
+            } else {
+                storageProvider.uploadFile(logFile, "text/plain", "App Logcat Extract") != null
+            }
+        } catch (e: Exception) {
+            logger.e(TAG, "Failed to upload log file to remote storage provider", e)
+            false
+        }
+    }
+
     private fun saveToLocalBackupFolder(fileName: String, tempFile: File) {
         try {
             val backupDir = File(context.filesDir, "local_backups")

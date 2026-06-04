@@ -51,17 +51,20 @@ class InteractionDelegate @Inject constructor(
 
     // Callback to PageViewModel to load a page
     private var onPageLoadRequested: (Page) -> Unit = {}
+    private var onGoBackRequested: () -> Unit = {}
 
     fun init(
         scope: CoroutineScope, 
         actionExecutor: ActionExecutor,
         onPageLoadRequested: (Page) -> Unit, 
+        onGoBackRequested: () -> Unit,
         smartPredictions: MutableStateFlow<List<String>?>,
         currentBookIdFlow: StateFlow<String?>
     ) {
         this.scope = scope
         this.actionExecutor = actionExecutor
         this.onPageLoadRequested = onPageLoadRequested
+        this.onGoBackRequested = onGoBackRequested
         this._smartPredictions = smartPredictions
         
         scope.launch {
@@ -85,6 +88,13 @@ class InteractionDelegate @Inject constructor(
                             logAction(effect.logMessage, bookId, effect.action, effect.label)
                         }
                         onPageLoadRequested(effect.page)
+                    }
+                    is HandleActionExecutionEventUseCase.Effect.GoBack -> {
+                        scope.launch {
+                            val bookId = appStateRepository.activeBookId.value
+                            logAction(effect.logMessage, bookId, effect.action, effect.label)
+                        }
+                        onGoBackRequested()
                     }
                     is HandleActionExecutionEventUseCase.Effect.LogAction -> {
                         scope.launch {

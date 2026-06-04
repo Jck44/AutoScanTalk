@@ -40,6 +40,14 @@ class PageViewModelStateTest {
     // Dependencies needed for constructor but can be mocked relaxed
     private val application = mockk<Application>(relaxed = true)
     private val actionExecutor = mockk<ActionExecutor>(relaxed = true)
+    
+    private val settingsRepository = mockk<com.andreas_kratzer.ghosttalk.core.data.SettingsRepository>(relaxed = true)
+    private val bookRepository = mockk<com.andreas_kratzer.ghosttalk.core.data.BookRepository>(relaxed = true)
+    private val buttonTemplateRepository = mockk<com.andreas_kratzer.ghosttalk.core.data.ButtonTemplateRepository>(relaxed = true)
+    private val buttonUsageRepository = mockk<com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository>(relaxed = true)
+    private val userModeSessionRepository = mockk<com.andreas_kratzer.ghosttalk.core.data.UserModeSessionRepository>(relaxed = true)
+    private val updateSmartPredictionsUseCase = mockk<com.andreas_kratzer.ghosttalk.core.ai.domain.UpdateSmartPredictionsUseCase>(relaxed = true)
+    private val resolveDynamicButtonsUseCase = mockk<com.andreas_kratzer.ghosttalk.domain.actions.ResolveDynamicButtonsUseCase>(relaxed = true)
 
     @Before
     fun setup() {
@@ -65,6 +73,21 @@ class PageViewModelStateTest {
         every { scanCoordinator.isStoppedDueToLimit } returns MutableStateFlow(false)
         every { scanCoordinator.isScanning } returns MutableStateFlow(false)
         every { scanCoordinator.currentCycleCount } returns MutableStateFlow(0)
+        
+        every { settingsRepository.spotifyUserDisplayNameFlow } returns MutableStateFlow<String?>(null)
+        every { settingsRepository.defaultScanPatternFlow } returns MutableStateFlow("linear")
+        every { settingsRepository.showTestButtonsFlow } returns MutableStateFlow(false)
+        every { settingsRepository.staticRowEnabledFlow } returns MutableStateFlow(false)
+        every { settingsRepository.staticRowScanPatternFlow } returns MutableStateFlow("linear")
+        
+        every { buttonTemplateRepository.getTemplates() } returns MutableStateFlow(emptyList())
+        every { buttonUsageRepository.buttonHistory } returns MutableStateFlow(emptyList())
+        every { userModeSessionRepository.getSessionsForBook(any()) } returns MutableStateFlow(emptyList())
+        every { bookRepository.getBookByIdFlow(any()) } returns MutableStateFlow(null)
+        
+        every { updateSmartPredictionsUseCase.isLoading } returns MutableStateFlow(false)
+        every { updateSmartPredictionsUseCase.execute(any(), any(), any(), any(), any()) } returns MutableStateFlow<List<String>?>(null)
+        coEvery { resolveDynamicButtonsUseCase.execute(any(), any(), any(), any()) } answers { firstArg() }
     }
 
     @After
@@ -93,33 +116,34 @@ class PageViewModelStateTest {
             every { callerPhone } returns MutableStateFlow(null)
             every { callDurationSeconds } returns MutableStateFlow(0)
             every { isOutgoing } returns MutableStateFlow(false)
+            every { isSimulatedFlow } returns MutableStateFlow(false)
         }
 
         // WHEN
         PageViewModel(
             application = application,
             savedStateHandle = savedStateHandle,
-            settingsRepository = mockk(relaxed = true),
-            bookRepository = mockk(relaxed = true),
+            settingsRepository = settingsRepository,
+            bookRepository = bookRepository,
             ttsHelper = mockk(relaxed = true),
             featureGuard = mockk(relaxed = true),
             pageManagementDelegate = pageManagementDelegate,
             interactionDelegate = interactionDelegate,
             screenManagementDelegate = mockk(relaxed = true),
             smartPredictionDelegate = mockk(relaxed = true),
-            resolveDynamicButtonsUseCase = mockk(relaxed = true),
-            updateSmartPredictionsUseCase = mockk(relaxed = true),
+            resolveDynamicButtonsUseCase = resolveDynamicButtonsUseCase,
+            updateSmartPredictionsUseCase = updateSmartPredictionsUseCase,
             actionExecutor = actionExecutor,
             scanCoordinator = scanCoordinator,
             geminiUseCase = mockk(relaxed = true),
-            buttonTemplateRepository = mockk(relaxed = true),
+            buttonTemplateRepository = buttonTemplateRepository,
             systemCallManager = systemCallManager,
             philipsHueManager = mockk(relaxed = true),
             spotifyManager = mockk(relaxed = true),
-            buttonUsageRepository = mockk(relaxed = true),
+            buttonUsageRepository = buttonUsageRepository,
             efficiencyAnalyzer = mockk(relaxed = true),
             pathAnalyzer = mockk(relaxed = true),
-            userModeSessionRepository = mockk(relaxed = true),
+            userModeSessionRepository = userModeSessionRepository,
             splitPageUseCase = mockk(relaxed = true),
             createPageUseCase = mockk(relaxed = true),
             pageLayoutOptimizer = mockk(relaxed = true),

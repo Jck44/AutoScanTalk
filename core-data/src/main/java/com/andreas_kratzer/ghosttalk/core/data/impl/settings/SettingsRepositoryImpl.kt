@@ -151,6 +151,10 @@ class SettingsRepositoryImpl @Inject constructor(
     override val syncModeTtsFlow: StateFlow<String> get() = cloudSettings.syncModeTtsFlow
     override val syncModeStatsFlow: StateFlow<String> get() = cloudSettings.syncModeStatsFlow
     override val lastSuccessfulSyncTimeFlow: StateFlow<Long> get() = cloudSettings.lastSuccessfulSyncTimeFlow
+    override val syncModeLogsFlow: StateFlow<String> get() = cloudSettings.syncModeLogsFlow
+    override val syncLogsIntervalHoursFlow: StateFlow<Long> get() = cloudSettings.syncLogsIntervalHoursFlow
+    override val lastLogsSyncTimeFlow: StateFlow<Long> get() = cloudSettings.lastLogsSyncTimeFlow
+    override val lastUploadedLogHashFlow: StateFlow<String?> get() = cloudSettings.lastUploadedLogHashFlow
     override val hueBridgeIpFlow: StateFlow<String> get() = smartHomeSettings.hueBridgeIpFlow
     override val hueUsernameFlow: StateFlow<String> get() = smartHomeSettings.hueUsernameFlow
     override val hueBridgeFingerprintFlow: StateFlow<String> get() = smartHomeSettings.hueBridgeFingerprintFlow
@@ -302,6 +306,22 @@ class SettingsRepositoryImpl @Inject constructor(
     override var lastSuccessfulSyncTime: Long
         get() = cloudSettings.lastSuccessfulSyncTime
         set(value) { cloudSettings.lastSuccessfulSyncTime = value }
+
+    override var syncModeLogs: String
+        get() = cloudSettings.syncModeLogs
+        set(value) { cloudSettings.syncModeLogs = value }
+
+    override var syncLogsIntervalHours: Long
+        get() = cloudSettings.syncLogsIntervalHours
+        set(value) { cloudSettings.syncLogsIntervalHours = value }
+
+    override var lastLogsSyncTime: Long
+        get() = cloudSettings.lastLogsSyncTime
+        set(value) { cloudSettings.lastLogsSyncTime = value }
+
+    override var lastUploadedLogHash: String?
+        get() = cloudSettings.lastUploadedLogHash
+        set(value) { cloudSettings.lastUploadedLogHash = value }
 
     override var smartPredictionDelay: Long
         get() = advancedSettings.smartPredictionDelay
@@ -725,6 +745,12 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override fun getScanCycleLimitForBook(bookId: String): Int =
         scanningSettings.getIntForBook(bookId, SettingsConstants.KEY_SCAN_CYCLE_LIMIT, 2)
+
+    override fun getStaticRowEnabledForBook(bookId: String): Boolean =
+        scanningSettings.getBooleanForBook(bookId, SettingsConstants.KEY_STATIC_ROW_ENABLED, false)
+
+    override fun getStaticRowScanPatternForBook(bookId: String): String =
+        scanningSettings.getStringForBook(bookId, SettingsConstants.KEY_STATIC_ROW_SCAN_PATTERN, "linear") ?: "linear"
 
     override fun getSmartPredictionDelayForBook(bookId: String): Long =
         advancedSettings.getLongForBook(bookId, SettingsConstants.KEY_SMART_PREDICTION_DELAY, 2000L)

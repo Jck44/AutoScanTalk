@@ -48,6 +48,7 @@ import com.andreas_kratzer.ghosttalk.core.model.GeminiButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiNanoButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiSearchButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.NavigateBackButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.PlayMediaButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.PreviousActionButtonAction
@@ -98,7 +99,7 @@ object GridButtonColors {
                 if (isDark) SpeakTextBadgeBgDark to SpeakTextBadgeTextDark
                 else SpeakTextBadgeBgLight to SpeakTextBadgeTextLight
             }
-            is NavigateToPageButtonAction -> {
+            is NavigateToPageButtonAction, is NavigateBackButtonAction -> {
                 if (isDark) NavigateBadgeBgDark to NavigateBadgeTextDark
                 else NavigateBadgeBgLight to NavigateBadgeTextLight
             }

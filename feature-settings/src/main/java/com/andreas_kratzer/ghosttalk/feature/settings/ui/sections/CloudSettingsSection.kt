@@ -41,6 +41,7 @@ import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.DriveFolderPick
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.SyncLogDialog
 import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.Locale
 
 @Suppress("UNUSED_VALUE", "AssignedValueDoubleCheck")
 @Composable
@@ -80,6 +81,12 @@ fun CloudSettingsSection(
     val syncLogs by viewModel.syncLogs.collectAsState()
     val showSyncLogDialog = remember { mutableStateOf(false) }
     val spotifyUserDisplayName by viewModel.spotifyUserDisplayName.collectAsState()
+
+    // Log sync state
+    val syncModeLogs by viewModel.syncModeLogs.collectAsState()
+    val syncLogsIntervalHours by viewModel.syncLogsIntervalHours.collectAsState()
+    val lastLogsSyncTime by viewModel.lastLogsSyncTime.collectAsState()
+    val logDateFormat = remember { SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()) }
     
     val dimensions = LocalDimensions.current
     val locale = LocalConfiguration.current.locales[0]
@@ -421,6 +428,85 @@ fun CloudSettingsSection(
                         stringResource(resId) to { viewModel.setSyncModeStats(mode) }
                     }
                 )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // --- Log Sync ---
+                val syncModeLogsLabel = when (syncModeLogs) {
+                    "BACKUP_ONLY" -> stringResource(R.string.settings_cloud_sync_mode_backup)
+                    else -> stringResource(R.string.settings_cloud_sync_mode_off)
+                }
+                SettingsDropdownItem(
+                    label = stringResource(R.string.settings_cloud_sync_mode_logs),
+                    selectedOption = syncModeLogsLabel,
+                    options = listOf(
+                        "OFF" to R.string.settings_cloud_sync_mode_off,
+                        "BACKUP_ONLY" to R.string.settings_cloud_sync_mode_backup
+                    ).map { (mode, resId) ->
+                        stringResource(resId) to { viewModel.setSyncModeLogs(mode) }
+                    }
+                )
+
+                if (syncModeLogs == "BACKUP_ONLY") {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    val intervalLabel = when (syncLogsIntervalHours) {
+                        3L -> stringResource(R.string.settings_interval_hours_plural, 3)
+                        6L -> stringResource(R.string.settings_interval_hours_plural, 6)
+                        24L -> stringResource(R.string.settings_interval_hours_plural, 24)
+                        else -> stringResource(R.string.settings_interval_hours_plural, 12)
+                    }
+                    SettingsDropdownItem(
+                        label = stringResource(R.string.settings_logs_sync_interval),
+                        selectedOption = intervalLabel,
+                        options = listOf(3L, 6L, 12L, 24L).map { hours ->
+                            val label = stringResource(R.string.settings_interval_hours_plural, hours.toInt())
+                            label to { viewModel.setSyncLogsIntervalHours(hours) }
+                        }
+                    )
+                }
+
+                // Last log upload timestamp
+                val lastLogSyncLabel = if (lastLogsSyncTime > 0L) {
+                    stringResource(R.string.settings_logs_last_sync, logDateFormat.format(Date(lastLogsSyncTime)))
+                } else {
+                    stringResource(R.string.settings_logs_last_sync, stringResource(R.string.settings_logs_last_sync_never))
+                }
+                Text(
+                    text = lastLogSyncLabel,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(vertical = 4.dp)
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // Manual log actions
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)
+                ) {
+                    OutlinedButton(
+                        onClick = { viewModel.shareLogs(context) },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            stringResource(R.string.settings_logs_share_report),
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    }
+                    if (syncModeLogs == "BACKUP_ONLY") {
+                        OutlinedButton(
+                            onClick = { viewModel.uploadLogsNow() },
+                            modifier = Modifier.weight(1f),
+                            enabled = userEmail != null && !isSyncing
+                        ) {
+                            Text(
+                                stringResource(R.string.settings_logs_upload_report),
+                                style = MaterialTheme.typography.labelSmall
+                            )
+                        }
+                    }
+                }
 
                 if (isCloudSyncEnabled) {
                     SettingsDropdownItem(

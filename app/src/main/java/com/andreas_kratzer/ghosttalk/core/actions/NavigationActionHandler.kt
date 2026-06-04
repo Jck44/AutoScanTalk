@@ -5,6 +5,7 @@ import com.andreas_kratzer.ghosttalk.core.di.ApplicationScope
 import com.andreas_kratzer.ghosttalk.core.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.NavigateBackButtonAction
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -17,7 +18,8 @@ class NavigationActionHandler @Inject constructor(
     private val actionLogger: ActionLogger
 ) : ActionHandler {
 
-    override fun canHandle(action: ButtonAction): Boolean = action is NavigateToPageButtonAction
+    override fun canHandle(action: ButtonAction): Boolean =
+        action is NavigateToPageButtonAction || action is NavigateBackButtonAction
 
     override fun handle(
         buttonConfig: ButtonConfig,
@@ -25,14 +27,28 @@ class NavigationActionHandler @Inject constructor(
         executionId: Int,
         onFinish: (Int) -> Unit
     ) {
-        val navAction = action as NavigateToPageButtonAction
         val feedback = buttonConfig.spokenText?.takeIf { it.isNotBlank() }
         
         val performNavigation = {
             scope.launch {
-                actionEventEmitter.emitEvent(
-                    ActionEvent.NavigateToPage(navAction.pageId, action, buttonConfig.label)
-                )
+                when (action) {
+                    is NavigateToPageButtonAction -> {
+                        val targetPageId = if (action.pageId.isEmpty()) {
+                            settingsRepository.defaultStartPageId ?: ""
+                        } else {
+                            action.pageId
+                        }
+                        actionEventEmitter.emitEvent(
+                            ActionEvent.NavigateToPage(targetPageId, action, buttonConfig.label)
+                        )
+                    }
+                    is NavigateBackButtonAction -> {
+                        actionEventEmitter.emitEvent(
+                            ActionEvent.NavigateBack(action, buttonConfig.label)
+                        )
+                    }
+                    else -> {}
+                }
                 onFinish(executionId)
             }
         }

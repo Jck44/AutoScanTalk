@@ -182,13 +182,13 @@ class SpotifyManager @Inject constructor(
                         val name = item.getString("name")
                         val uri = item.getString("uri")
                         val id = item.getString("id")
-                        val images = item.getJSONArray("images")
-                        val imageUrl = if (images.length() > 0) {
+                        val images = item.optJSONArray("images")
+                        val imageUrl = if (images != null && images.length() > 0) {
                             images.getJSONObject(0).getString("url")
                         } else ""
                         list.add(SpotifyPlaylist(id = id, name = name, uri = uri, imageUrl = imageUrl))
                     }
-                    nextUrl = if (json.isNull("next")) null else json.getString("next")
+                    nextUrl = if (json.isNull("next")) null else json.optString("next", null)
                 } else {
                     Log.e(TAG, "Failed to load playlists, response: ${connection.responseCode}")
                     nextUrl = null

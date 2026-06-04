@@ -416,4 +416,13 @@
     <string name="settings_block_volume_keys_desc">Verhindert versehentliche Lautstärkeänderungen durch Tasten im Nutzermodus.</string>
     <string name="settings_speaker_volume_label">Lautstärke: Laut Sprechen</string>
     <string name="settings_headphone_volume_label">Lautstärke: Audio-Hinweis</string>
+    <!-- Log Sync Settings -->
+    <string name="settings_cloud_sync_mode_logs">Fehlerprotokoll-Sync</string>
+    <string name="settings_logs_sync_interval">Fehlerprotokoll-Intervall</string>
+    <string name="settings_logs_last_sync">Fehlerbericht hochgeladen: %s</string>
+    <string name="settings_logs_last_sync_never">Nie</string>
+    <string name="settings_logs_share_report">Fehlerbericht teilen</string>
+    <string name="settings_logs_upload_report">Fehlerbericht in Cloud hochladen</string>
+    <string name="settings_logs_upload_success">Fehlerbericht erfolgreich hochgeladen.</string>
+    <string name="settings_logs_upload_skipped">Kein neuer Fehlerbericht nötig (keine neuen Einträge).</string>
 </resources>

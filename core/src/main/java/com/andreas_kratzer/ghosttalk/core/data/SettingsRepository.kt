@@ -66,6 +66,8 @@ interface SettingsRepository : SecuritySettings, KeyEventSettings, AudioSettings
     fun getDefaultScanPatternForBook(bookId: String): String
     fun getLimitScanCyclesForBook(bookId: String): Boolean
     fun getScanCycleLimitForBook(bookId: String): Int
+    fun getStaticRowEnabledForBook(bookId: String): Boolean
+    fun getStaticRowScanPatternForBook(bookId: String): String
     
     // Advanced settings for specific book
     fun getSmartPredictionDelayForBook(bookId: String): Long

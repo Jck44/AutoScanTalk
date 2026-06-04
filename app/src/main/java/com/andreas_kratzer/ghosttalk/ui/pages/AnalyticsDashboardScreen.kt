@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -68,6 +69,7 @@ fun AnalyticsDashboardScreen(
     val historyEvents by pageViewModel.buttonHistory.collectAsState(emptyList())
     val unfilteredPages by pageViewModel.unfilteredPages.collectAsState()
     val recommendations by pageViewModel.shortcutRecommendations.collectAsState(emptyList())
+    val isCalculatingRecommendations by pageViewModel.isCalculatingRecommendations.collectAsState()
     val userModeSessions by pageViewModel.userModeSessions.collectAsState(emptyList())
     val layoutProposals by pageViewModel.layoutOptimizationProposals.collectAsState(emptyList())
     val currentFilter by pageViewModel.currentProposalFilter.collectAsState()
@@ -454,12 +456,27 @@ fun AnalyticsDashboardScreen(
 
                     1 -> {
                         // --- SECTION 1: SHORTCUT WIZARD ---
-                        Text(
-                            text = "🪄 Der Abkürzungs-Assistent",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "🪄 Der Abkürzungs-Assistent",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            if (isCalculatingRecommendations && recommendations.isNotEmpty()) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    strokeWidth = 2.dp,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
 
                         if (recommendations.isEmpty()) {
                             Surface(
@@ -468,13 +485,31 @@ fun AnalyticsDashboardScreen(
                                 shape = MaterialTheme.shapes.small
                             ) {
                                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                    Text(
-                                        text = "Aktuell gibt es keine empfohlenen Abkürzungen.\nSammle mehr Klicks, damit das System Muster erkennen kann.",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                        modifier = Modifier.padding(16.dp),
-                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                                    )
+                                    if (isCalculatingRecommendations) {
+                                        Column(
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            CircularProgressIndicator(
+                                                modifier = Modifier.size(30.dp),
+                                                strokeWidth = 3.dp,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                            Text(
+                                                text = "Berechne Abkürzungen...",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    } else {
+                                        Text(
+                                            text = "Aktuell gibt es keine empfohlenen Abkürzungen.\nSammle mehr Klicks, damit das System Muster erkennen kann.",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                            modifier = Modifier.padding(16.dp),
+                                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                        )
+                                    }
                                 }
                             }
                         } else {

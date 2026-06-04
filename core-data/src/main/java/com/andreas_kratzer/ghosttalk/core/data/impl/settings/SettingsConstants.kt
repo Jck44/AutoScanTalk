@@ -124,4 +124,9 @@ object SettingsConstants {
     const val KEY_BLOCK_VOLUME_KEYS = "block_volume_keys"
     const val KEY_SPEAKER_VOLUME = "speaker_volume"
     const val KEY_HEADPHONE_VOLUME = "headphone_volume"
+    const val KEY_SYNC_MODE_LOGS = "sync_mode_logs"
+    const val KEY_SYNC_LOGS_INTERVAL_HOURS = "sync_logs_interval_hours"
+    const val KEY_LAST_LOGS_SYNC_TIME = "last_logs_sync_time"
+    const val KEY_LAST_UPLOADED_LOG_HASH = "last_uploaded_log_hash"
 }
+

@@ -4,6 +4,8 @@ import com.andreas_kratzer.ghosttalk.core.data.AppStateRepository
 import com.andreas_kratzer.ghosttalk.core.data.BookRepository
 import com.andreas_kratzer.ghosttalk.core.data.GetPagesUseCase
 import com.andreas_kratzer.ghosttalk.core.data.PageRepository
+import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.data.TemplateRepository
 import com.andreas_kratzer.ghosttalk.core.domain.pages.CreatePageUseCase
 import com.andreas_kratzer.ghosttalk.core.domain.pages.DeletePageUseCase
@@ -52,7 +54,8 @@ class PageManagementDelegate @Inject constructor(
     private val getPageUsagesUseCase: GetPageUsagesUseCase,
     private val updateMultipleButtonsUseCase: UpdateMultipleButtonsUseCase,
     private val identifyActivePageLinksUseCase: IdentifyActivePageLinksUseCase,
-    private val appStateRepository: AppStateRepository
+    private val appStateRepository: AppStateRepository,
+    private val settingsRepository: SettingsRepository
 ) {
     private lateinit var scope: CoroutineScope
 
@@ -125,6 +128,10 @@ class PageManagementDelegate @Inject constructor(
         this.scope = scope
 
         scope.launch {
+            migrateStartPageButtons()
+        }
+
+        scope.launch {
             getFilteredPagesUseCase.execute(_allPages, _searchQuery, _activeTargetPageIds)
                 .collect { _filteredPages.value = it }
         }
@@ -145,8 +152,19 @@ class PageManagementDelegate @Inject constructor(
         }
 
         scope.launch {
-            kotlinx.coroutines.flow.combine(_allPages, _templates) { pages, templates ->
-                identifyActivePageLinksUseCase.execute(pages, templates)
+            kotlinx.coroutines.flow.combine(
+                _allPages,
+                _templates,
+                settingsRepository.defaultStartPageIdFlow
+            ) { pages, templates, defaultStartPageId ->
+                val ids = identifyActivePageLinksUseCase.execute(pages, templates).toMutableSet()
+                // Resolve empty pageId (= "navigate to start page") to the actual default start page ID
+                if (ids.remove("") && defaultStartPageId != null) {
+                    ids.add(defaultStartPageId)
+                }
+                // The default start page is always considered active/reachable
+                defaultStartPageId?.let { ids.add(it) }
+                ids
             }.collect { ids ->
                 _activeTargetPageIds.value = ids
             }
@@ -445,4 +463,39 @@ class PageManagementDelegate @Inject constructor(
     }
 
     suspend fun getPageById(id: String): Page? = pageRepository.getPageById(id)
+
+    private fun migrateStartPageButtons() {
+        scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                val books = bookRepository.getAllBooksList()
+                books.forEach { book ->
+                    val startPageId = settingsRepository.getDefaultStartPageIdForBook(book.id)
+                    if (!startPageId.isNullOrEmpty()) {
+                        val pages = pageRepository.getPagesForBook(book.id)
+                        pages.forEach { page ->
+                            var updated = false
+                            val updatedConfigs = page.buttonConfigs.map { config ->
+                                if (config != null) {
+                                    val action = config.buttonAction
+                                    if (action is NavigateToPageButtonAction && action.pageId == startPageId) {
+                                        updated = true
+                                        config.copy(buttonAction = action.copy(pageId = ""))
+                                    } else {
+                                        config
+                                    }
+                                } else {
+                                    null
+                                }
+                            }
+                            if (updated) {
+                                pageRepository.updatePage(page.copy(buttonConfigs = updatedConfigs))
+                            }
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("PageManagementDelegate", "Fehler bei der Startseiten-Button Migration", e)
+            }
+        }
+    }
 }

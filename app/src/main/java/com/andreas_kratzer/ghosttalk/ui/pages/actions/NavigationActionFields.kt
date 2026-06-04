@@ -66,8 +66,12 @@ fun NavigationActionFields(
                 expanded = expandedPageSelect,
                 onExpandedChange = { expandedPageSelect = !expandedPageSelect }
             ) {
-                val selectedPageName = availablePages.find { it.id == navigateToPageId }?.name 
-                    ?: stringResource(R.string.button_no_page_selected)
+                val selectedPageName = if (navigateToPageId.isEmpty()) {
+                    stringResource(R.string.button_action_navigate_to_start_page)
+                } else {
+                    availablePages.find { it.id == navigateToPageId }?.name 
+                        ?: stringResource(R.string.button_no_page_selected)
+                }
                 
                 OutlinedTextField(
                     value = if (expandedPageSelect) pageSearchQuery else selectedPageName,
@@ -120,6 +124,22 @@ fun NavigationActionFields(
                         pageSearchQuery = ""
                     }
                 ) {
+                    val startPageLabel = stringResource(R.string.button_action_navigate_to_start_page)
+                    val showStartPage = pageSearchQuery.isBlank() || startPageLabel.contains(pageSearchQuery, ignoreCase = true)
+                    
+                    if (showStartPage) {
+                        DropdownMenuItem(
+                            text = { Text(startPageLabel, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.primary) },
+                            onClick = {
+                                onPageSelected("")
+                                focusManager.clearFocus()
+                                expandedPageSelect = false
+                                pageSearchQuery = ""
+                                onAutoSave()
+                            }
+                        )
+                    }
+
                     filteredPages.forEach { pageOption ->
                         DropdownMenuItem(
                             text = { Text(pageOption.name, style = MaterialTheme.typography.bodyLarge) },
@@ -132,7 +152,7 @@ fun NavigationActionFields(
                             }
                         )
                     }
-                    if (filteredPages.isEmpty()) {
+                    if (filteredPages.isEmpty() && !showStartPage) {
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.page_none_found), style = MaterialTheme.typography.bodyLarge) },
                             onClick = { },

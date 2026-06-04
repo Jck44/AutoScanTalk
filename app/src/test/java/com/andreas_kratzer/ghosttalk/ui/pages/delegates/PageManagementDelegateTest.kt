@@ -115,7 +115,8 @@ class PageManagementDelegateTest {
             getPageUsagesUseCase,
             updateMultipleButtonsUseCase,
             identifyActivePageLinksUseCase,
-            appStateRepository
+            appStateRepository,
+            settingsRepository
         )
     }
 

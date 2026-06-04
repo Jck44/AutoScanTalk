@@ -10,6 +10,7 @@ import com.andreas_kratzer.ghosttalk.core.model.GeminiNanoButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiSearchButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.MediaProvider
+import com.andreas_kratzer.ghosttalk.core.model.NavigateBackButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.PlayMediaButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.PreviousActionButtonAction
@@ -37,6 +38,7 @@ class ActionMapper @Inject constructor() {
         return when (action) {
             is SpeakTextButtonAction -> ImportAction(type = "SPEAK", textToSpeech = spokenText)
             is NavigateToPageButtonAction -> ImportAction(type = "NAVIGATE", targetPageId = action.pageId, targetPageImportId = action.pageId)
+            is NavigateBackButtonAction -> ImportAction(type = "NAVIGATE_BACK")
             is FrequentActionButtonAction -> ImportAction(type = "SMART_PREDICTION", rank = action.rank)
             is GeminiButtonAction -> ImportAction(type = "GEMINI", prompt = action.prompt)
             is GeminiSearchButtonAction -> ImportAction(type = "GEMINI_SEARCH", prompt = action.prompt)
@@ -92,6 +94,7 @@ class ActionMapper @Inject constructor() {
                 val oldId = importAction.targetPageId ?: importAction.targetPageImportId ?: ""
                 NavigateToPageButtonAction(idMap[oldId] ?: oldId)
             }
+            "NAVIGATE_BACK" -> NavigateBackButtonAction()
             "GEMINI" -> GeminiButtonAction(importAction.prompt ?: "")
             "GEMINI_SEARCH" -> GeminiSearchButtonAction(importAction.prompt ?: "")
             "GEMINI_NANO" -> GeminiNanoButtonAction(importAction.intent ?: "")

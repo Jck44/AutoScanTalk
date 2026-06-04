@@ -3,6 +3,7 @@ package com.andreas_kratzer.ghosttalk.core.model
 enum class ActionCategory {
     SPEAK_TEXT,
     NAVIGATE_PAGE,
+    NAVIGATE_BACK,
     GEMINI,
     GEMINI_SEARCH,
     GEMINI_NANO,
@@ -39,7 +40,8 @@ object ActionCategoryRegistry {
         @Suppress("DEPRECATION")
         return when (action) {
             is SpeakTextButtonAction,
-            is NavigateToPageButtonAction -> GROUP_BASIS
+            is NavigateToPageButtonAction,
+            is NavigateBackButtonAction -> GROUP_BASIS
 
             is GeminiButtonAction,
             is GeminiSearchButtonAction,
@@ -77,6 +79,7 @@ object ActionCategoryRegistry {
         return when (action) {
             is SpeakTextButtonAction -> ActionCategory.SPEAK_TEXT
             is NavigateToPageButtonAction -> ActionCategory.NAVIGATE_PAGE
+            is NavigateBackButtonAction -> ActionCategory.NAVIGATE_BACK
             is GeminiButtonAction -> ActionCategory.GEMINI
             is GeminiSearchButtonAction -> ActionCategory.GEMINI_SEARCH
             is GeminiNanoButtonAction -> ActionCategory.GEMINI_NANO

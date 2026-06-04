@@ -399,7 +399,7 @@ fun GridEditorContent(
                             modifier = Modifier
                                 .width(sizeInfo.totalWidth)
                                 .height(sizeInfo.totalHeight.coerceAtMost(maxHeight)),
-                            contentPadding = PaddingValues(horizontalPadding),
+                            contentPadding = PaddingValues(horizontal = horizontalPadding),
                             verticalArrangement = Arrangement.spacedBy(dimensions.gridSpacing),
                             horizontalArrangement = Arrangement.spacedBy(dimensions.gridSpacing)
                         ) {
@@ -553,6 +553,7 @@ fun GridEditorContent(
                     buttonConfig = template.buttonConfig,
                     pages = availablePages,
                     templates = templates,
+                    defaultStartPageId = pageViewModel?.settingsRepository?.defaultStartPageId,
                     onDismiss = { editingTemplateId = null },
                     onSave = { newConfig ->
                         pageViewModel?.updateButtonTemplate(template.copy(name = newConfig.label, buttonConfig = newConfig))
@@ -876,7 +877,8 @@ private fun LazyGridScope.renderRowByRowGrid(
                             val globalIndex = GridUtils.getGlobalIndex(r, c)
                             val buttonConfig = item.buttonConfigs.getOrNull(globalIndex)
                             val targetPageName = (buttonConfig?.buttonAction as? NavigateToPageButtonAction)?.let { action ->
-                                availablePages.find { it.id == action.pageId }?.name
+                                if (action.pageId.isEmpty()) androidx.compose.ui.res.stringResource(R.string.button_action_navigate_to_start_page)
+                                else availablePages.find { it.id == action.pageId }?.name
                             }
                             
                             val metrics = buttonConfig?.let { pageMetrics[it.id] }
@@ -940,7 +942,8 @@ private fun LazyGridScope.renderLinearGrid(
         val globalIndex = GridUtils.localToGlobalIndex(localIndex, item.columns)
         val buttonConfig = item.buttonConfigs.getOrNull(globalIndex)
         val targetPageName = (buttonConfig?.buttonAction as? NavigateToPageButtonAction)?.let { action ->
-            availablePages.find { it.id == action.pageId }?.name
+            if (action.pageId.isEmpty()) androidx.compose.ui.res.stringResource(R.string.button_action_navigate_to_start_page)
+            else availablePages.find { it.id == action.pageId }?.name
         }
 
         val metrics = buttonConfig?.let { pageMetrics[it.id] }

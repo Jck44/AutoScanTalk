@@ -14,6 +14,7 @@ import com.andreas_kratzer.ghosttalk.core.model.GeminiNanoButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiSearchButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.MediaProvider
+import com.andreas_kratzer.ghosttalk.core.model.NavigateBackButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.PlayMediaButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.PreviousActionButtonAction
@@ -97,6 +98,20 @@ class ButtonTemplateRepositoryImpl @Inject constructor(
                     id = UUID.randomUUID().toString(),
                     label = "Seite",
                     buttonAction = NavigateToPageButtonAction("")
+                )
+            )
+        )
+
+        // 2b. NavigateBackButtonAction
+        list.add(
+            ButtonTemplate(
+                id = "builtin_navigate_back",
+                name = "Vorherige Seite",
+                isBuiltIn = true,
+                buttonConfig = ButtonConfig(
+                    id = UUID.randomUUID().toString(),
+                    label = "Zurück",
+                    buttonAction = NavigateBackButtonAction()
                 )
             )
         )

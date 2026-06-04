@@ -103,7 +103,7 @@ class CreatePageUseCaseTest {
     }
 
     @Test
-    fun `execute patches empty navigation actions in template with homePageId`() = runTest {
+    fun `execute does not patch empty navigation actions in template`() = runTest {
         // Given
         val navAction = NavigateToPageButtonAction(pageId = "")
         val btnConfig = ButtonConfig(id = "b1", label = "Back", spokenText = "", buttonAction = navAction, auditoryCue = null)
@@ -125,7 +125,7 @@ class CreatePageUseCaseTest {
         coVerify {
             pageRepository.insertPage(match {
                 val action = it.buttonConfigs[0]?.buttonAction as? NavigateToPageButtonAction
-                action?.pageId == "home-id"
+                action?.pageId == ""
             })
         }
     }

@@ -87,6 +87,8 @@ class PageViewModel @Inject constructor(
     private val cloneBookUseCase: com.andreas_kratzer.ghosttalk.core.data.impl.CloneBookUseCase
 ) : AndroidViewModel(application), com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions {
 
+    private val pageBackStack = mutableListOf<String>()
+
     val activeBookId = pageManagementDelegate.activeBookId
 
     val userModeSessions: StateFlow<List<com.andreas_kratzer.ghosttalk.core.model.UserModeSession>> = activeBookId
@@ -118,17 +120,25 @@ class PageViewModel @Inject constructor(
 
     val buttonHistory = buttonUsageRepository.buttonHistory
 
+    private val _isCalculatingRecommendations = MutableStateFlow(false)
+    val isCalculatingRecommendations: StateFlow<Boolean> = _isCalculatingRecommendations.asStateFlow()
+
     val shortcutRecommendations: StateFlow<List<com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PathAnalyzer.ShortcutRecommendation>> = combine(
         buttonHistory,
         unfilteredPages,
         activeBookId
     ) { history, allPages, bookId ->
-        if (bookId != null && history.isNotEmpty() && allPages.isNotEmpty()) {
-            val delay = settingsRepository.scanDelayMillis
-            val startPageId = settingsRepository.defaultStartPageId
-            pathAnalyzer.analyzePaths(history, allPages, delay, startPageId)
-        } else {
-            emptyList()
+        _isCalculatingRecommendations.value = true
+        try {
+            if (bookId != null && history.isNotEmpty() && allPages.isNotEmpty()) {
+                val delay = settingsRepository.scanDelayMillis
+                val startPageId = settingsRepository.defaultStartPageId
+                pathAnalyzer.analyzePaths(history, allPages, delay, startPageId)
+            } else {
+                emptyList()
+            }
+        } finally {
+            _isCalculatingRecommendations.value = false
         }
     }
     .flowOn(Dispatchers.Default)
@@ -401,6 +411,7 @@ class PageViewModel @Inject constructor(
     }
 
     fun loadStartPage() {
+        pageBackStack.clear()
         val allPages = pageManagementDelegate.allPagesFlow.value
         val startId = settingsRepository.defaultStartPageId ?: allPages.firstOrNull()?.id
         val startPage = allPages.find { it.id == startId }
@@ -419,7 +430,7 @@ class PageViewModel @Inject constructor(
             buttonTemplateRepository.ensureBuiltInTemplates()
         }
         pageManagementDelegate.init(viewModelScope)
-        interactionDelegate.init(viewModelScope, actionExecutor, ::loadPage, _smartPredictions, activeBookId)
+        interactionDelegate.init(viewModelScope, actionExecutor, ::loadPage, ::navigateBack, _smartPredictions, activeBookId)
         interactionDelegate.scanCoordinator = scanCoordinator
         screenManagementDelegate.init(viewModelScope, isUserModeActive)
         
@@ -551,8 +562,16 @@ class PageViewModel @Inject constructor(
     }
 
     fun updateSearchQuery(query: String) = pageManagementDelegate.updateSearchQuery(query)
-    fun setActiveBookId(bookId: String?) = pageManagementDelegate.setActiveBookId(bookId)
+    fun setActiveBookId(bookId: String?) {
+        pageBackStack.clear()
+        pageManagementDelegate.setActiveBookId(bookId)
+    }
+
     fun loadPage(page: Page) {
+        loadPageInternal(page, isBackNavigation = false)
+    }
+
+    private fun loadPageInternal(page: Page, isBackNavigation: Boolean = false) {
         viewModelScope.launch {
             val isSamePage = currentPage.value?.id == page.id
             val redoPrediction = settingsRepository.geminiRedoPrediction
@@ -568,10 +587,36 @@ class PageViewModel @Inject constructor(
                     _smartPredictions.value = null // Clear to null to indicate "waiting for results"
                 }
             }
+
+            // Track backstack: push current page ID before switching
+            if (!isSamePage && !isBackNavigation) {
+                currentPage.value?.id?.let { prevId ->
+                    if (pageBackStack.lastOrNull() != prevId) {
+                        pageBackStack.add(prevId)
+                    }
+                }
+            }
+
             pageManagementDelegate.setCurrentPage(page)
             savedStateHandle["currentPageId"] = page.id
             savedStateHandle["focusedButtonIndex"] = focusedButtonIndex.value
             savedStateHandle["focusedRowIndex"] = focusedRowIndex.value
+        }
+    }
+
+    fun hasHistory(): Boolean = pageBackStack.isNotEmpty()
+
+    fun navigateBack() {
+        if (pageBackStack.isNotEmpty()) {
+            val prevPageId = pageBackStack.removeAt(pageBackStack.lastIndex)
+            viewModelScope.launch {
+                val prevPage = pageManagementDelegate.getPageById(prevPageId)
+                if (prevPage != null) {
+                    loadPageInternal(prevPage, isBackNavigation = true)
+                }
+            }
+        } else {
+            loadStartPage()
         }
     }
 
