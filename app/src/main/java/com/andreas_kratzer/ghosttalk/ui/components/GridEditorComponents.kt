@@ -56,7 +56,9 @@ fun GridEditorControls(
             modifier = modifier.fillMaxWidth().padding(horizontal = dimensions.paddingMedium),
             verticalArrangement = Arrangement.spacedBy(dimensions.paddingLarge)
         ) {
-            GridEditorRowsControl(item, actions, Modifier.fillMaxWidth())
+            if (!item.id.startsWith("static_row_")) {
+                GridEditorRowsControl(item, actions, Modifier.fillMaxWidth())
+            }
             GridEditorColsControl(item, actions, Modifier.fillMaxWidth())
             GridEditorPatternControl(item, actions, Modifier.fillMaxWidth())
         }
@@ -69,7 +71,9 @@ fun GridEditorControls(
         ) {
             // Hier verzichten wir auf weight(), um Inkompatibilitäten in FlowRow zu vermeiden
             val itemModifier = Modifier.widthIn(min = 200.dp, max = 300.dp)
-            GridEditorRowsControl(item, actions, itemModifier)
+            if (!item.id.startsWith("static_row_")) {
+                GridEditorRowsControl(item, actions, itemModifier)
+            }
             GridEditorColsControl(item, actions, itemModifier)
             GridEditorPatternControl(item, actions, itemModifier)
         }
@@ -197,11 +201,13 @@ fun GridEditorSummaryBar(
         horizontalArrangement = Arrangement.spacedBy(dimensions.paddingSmall, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        AssistChip(
-            onClick = onClick,
-            label = { Text("${item.rows} ${stringResource(R.string.page_rows_field)}") },
-            leadingIcon = { Icon(GhostTalkIcons.Sort, contentDescription = null, modifier = Modifier.size(18.dp)) }
-        )
+        if (!item.id.startsWith("static_row_")) {
+            AssistChip(
+                onClick = onClick,
+                label = { Text("${item.rows} ${stringResource(R.string.page_rows_field)}") },
+                leadingIcon = { Icon(GhostTalkIcons.Sort, contentDescription = null, modifier = Modifier.size(18.dp)) }
+            )
+        }
         AssistChip(
             onClick = onClick,
             label = { Text("${item.columns} ${stringResource(R.string.page_cols_field)}") },

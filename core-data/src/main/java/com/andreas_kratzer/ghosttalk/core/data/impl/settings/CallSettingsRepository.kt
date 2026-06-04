@@ -15,6 +15,7 @@ import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.K
 import kotlinx.coroutines.flow.StateFlow
 
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_CALL_HANG_UP_PRESSES_REQUIRED
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_FILTER_CALLS_NOT_IN_CONTACTS
 
 class CallSettingsRepository(
     prefs: SharedPreferences,
@@ -33,6 +34,7 @@ class CallSettingsRepository(
     private val _callAutoEnableSpeakerphone = BooleanSetting(KEY_CALL_AUTO_ENABLE_SPEAKERPHONE, true, isScoped = false)
     private val _simulateCallsEnabled = BooleanSetting(KEY_SIMULATE_CALLS_ENABLED, false, isScoped = false)
     private val _hangUpPressesRequired = IntSetting(KEY_CALL_HANG_UP_PRESSES_REQUIRED, 2, isScoped = false)
+    private val _filterCallsNotInContacts = BooleanSetting(KEY_FILTER_CALLS_NOT_IN_CONTACTS, false, isScoped = false)
 
     val maxCallDurationSecondsFlow = _maxCallDurationSeconds.flow
     val callDurationFeedbackIntervalSecondsFlow = _callDurationFeedbackIntervalSeconds.flow
@@ -46,6 +48,7 @@ class CallSettingsRepository(
     val autoEnableSpeakerphoneFlow = _callAutoEnableSpeakerphone.flow
     val simulateCallsEnabledFlow = _simulateCallsEnabled.flow
     val hangUpPressesRequiredFlow = _hangUpPressesRequired.flow
+    val filterCallsNotInContactsFlow = _filterCallsNotInContacts.flow
 
     var maxCallDurationSeconds: Int by _maxCallDurationSeconds
     var callDurationFeedbackIntervalSeconds: Int by _callDurationFeedbackIntervalSeconds
@@ -59,6 +62,7 @@ class CallSettingsRepository(
     var autoEnableSpeakerphone: Boolean by _callAutoEnableSpeakerphone
     var simulateCallsEnabled: Boolean by _simulateCallsEnabled
     var hangUpPressesRequired: Int by _hangUpPressesRequired
+    var filterCallsNotInContacts: Boolean by _filterCallsNotInContacts
 
     override fun refresh() {
         _maxCallDurationSeconds.refresh()
@@ -73,5 +77,6 @@ class CallSettingsRepository(
         _callAutoEnableSpeakerphone.refresh()
         _simulateCallsEnabled.refresh()
         _hangUpPressesRequired.refresh()
+        _filterCallsNotInContacts.refresh()
     }
 }

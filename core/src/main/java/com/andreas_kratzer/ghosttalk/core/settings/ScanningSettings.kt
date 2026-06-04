@@ -26,4 +26,9 @@ interface ScanningSettings {
     val scanCycleLimitFlow: StateFlow<Int>
     val cuesAudioDeviceAddressFlow: StateFlow<String?>
     var cuesAudioDeviceAddress: String?
+    
+    var staticRowEnabled: Boolean
+    var staticRowScanPattern: String
+    val staticRowEnabledFlow: StateFlow<Boolean>
+    val staticRowScanPatternFlow: StateFlow<String>
 }

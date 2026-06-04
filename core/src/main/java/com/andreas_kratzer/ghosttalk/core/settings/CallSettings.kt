@@ -40,4 +40,7 @@ interface CallSettings {
 
     var hangUpPressesRequired: Int
     val hangUpPressesRequiredFlow: StateFlow<Int>
+
+    var filterCallsNotInContacts: Boolean
+    val filterCallsNotInContactsFlow: StateFlow<Boolean>
 }

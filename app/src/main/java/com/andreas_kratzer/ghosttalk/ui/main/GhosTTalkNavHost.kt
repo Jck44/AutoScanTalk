@@ -240,9 +240,14 @@ fun GhostTalkNavHost(
             )
         }
         composable("content_management") {
+            val activeBookId by pageViewModel.activeBookId.collectAsState()
             ContentManagementScreen(
                 onNavigateToPageManager = { navController.safeNavigate("page_list") },
                 onNavigateToTemplateManager = { navController.safeNavigate("templates") },
+                onNavigateToStaticRowEditor = {
+                    val bookId = activeBookId ?: "book-default"
+                    navController.safeNavigate("page_editor/static_row_$bookId")
+                },
                 onNavigateBack = { navController.safePopBackStack() }
             )
         }

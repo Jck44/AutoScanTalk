@@ -115,6 +115,9 @@ class SettingsViewModel @Inject constructor(
     val holdingTimeMillis = settingsRepository.holdingTimeMillisFlow
     val bluetoothDelay = settingsRepository.bluetoothDelayFlow
     
+    val staticRowEnabled = settingsRepository.staticRowEnabledFlow
+    val staticRowScanPattern = settingsRepository.staticRowScanPatternFlow
+    
     val defaultStartPageId = settingsRepository.defaultStartPageIdFlow
     val selectedTtsAudioDeviceAddress = settingsRepository.ttsAudioDeviceAddressFlow
     val selectedCuesAudioDeviceAddress = settingsRepository.cuesAudioDeviceAddressFlow
@@ -215,6 +218,7 @@ class SettingsViewModel @Inject constructor(
     val autoEnableSpeakerphone = settingsRepository.autoEnableSpeakerphoneFlow
     val simulateCallsEnabled = settingsRepository.simulateCallsEnabledFlow
     val hangUpPressesRequired = settingsRepository.hangUpPressesRequiredFlow
+    val filterCallsNotInContacts = settingsRepository.filterCallsNotInContactsFlow
     
     private val _showActionHistoryDialog = MutableStateFlow(false)
     val showActionHistoryDialog = _showActionHistoryDialog.asStateFlow()
@@ -636,8 +640,11 @@ class SettingsViewModel @Inject constructor(
         spotifyDelegate.loadSpotifyPlaylists()
     }
 
-    fun setLimitScanCycles(e: Boolean) = scanningDelegate.setLimitScanCycles(e)
+    fun setLimitScanCycles(enabled: Boolean) = scanningDelegate.setLimitScanCycles(enabled)
     fun setScanCycleLimitInput(input: String) = scanningDelegate.setScanCycleLimitInput(input)
+    
+    fun setStaticRowEnabled(enabled: Boolean) = scanningDelegate.setStaticRowEnabled(enabled)
+    fun setStaticRowScanPattern(pattern: String) = scanningDelegate.setStaticRowScanPattern(pattern)
     fun setActionLogLimitInput(input: String) {
         updateActionLogLimitUseCase(input)
     }
@@ -752,6 +759,9 @@ class SettingsViewModel @Inject constructor(
     }
     fun setHangUpPressesRequired(presses: Int) {
         settingsRepository.hangUpPressesRequired = presses
+    }
+    fun setFilterCallsNotInContacts(filter: Boolean) {
+        settingsRepository.filterCallsNotInContacts = filter
     }
 
     val isDefaultDialer: Boolean

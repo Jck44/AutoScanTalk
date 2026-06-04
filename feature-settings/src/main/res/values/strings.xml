@@ -354,6 +354,8 @@
     <string name="settings_call_intro_incoming">Einleitungstext (eingehend)</string>
     <string name="settings_call_announcement_as_cue">Anruferansage als Audio-Hinweis ausgeben</string>
     <string name="settings_call_auto_enable_speakerphone">Freisprechfunktion automatisch aktivieren</string>
+    <string name="settings_call_filter_not_in_contacts">Anrufe von unbekannten Nummern blockieren</string>
+    <string name="settings_call_filter_not_in_contacts_desc">Lehnt Anrufe automatisch ab, wenn die Telefonnummer nicht in deinen Kontakten (Adressbuch) gefunden wird.</string>
     <string name="settings_call_behavior_active">Automatisches Anrufverhalten (Benutzermodus aktiv)</string>
     <string name="settings_call_scan_limit">Scanning-Durchläufe</string>
     <string name="settings_call_auto_action">Aktion nach Limit</string>

@@ -859,7 +859,9 @@ private fun LazyGridScope.renderRowByRowGrid(
                 Column(
                     modifier = Modifier.weight(1f).padding(dimensions.paddingMedium)
                 ) {
-                    val rowName = item.rowNames.getOrNull(r) ?: stringResource(R.string.page_row_label).format(r + 1)
+                    val rowName = item.rowNames.getOrNull(r)
+                        ?: if (item.id.startsWith("static_row_")) "Statische Zeile"
+                           else stringResource(R.string.page_row_label).format(r + 1)
                     Text(
                         text = rowName,
                         style = MaterialTheme.typography.labelSmall,

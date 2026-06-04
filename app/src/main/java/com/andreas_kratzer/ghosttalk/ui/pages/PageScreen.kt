@@ -56,6 +56,7 @@ fun PageScreen(
         pageViewModel.resumeScanningIfEnabled()
     }
     val currentPage by pageViewModel.resolvedPage.collectAsState()
+    val staticRowPage by pageViewModel.staticRowPage.collectAsState()
     val focusedButtonIndex by pageViewModel.focusedButtonIndex.collectAsState()
     val focusedRowIndex by pageViewModel.focusedRowIndex.collectAsState()
     val lastActions by pageViewModel.lastActions.collectAsState()
@@ -171,7 +172,8 @@ fun PageScreen(
                         focusedButtonIndex = focusedButtonIndex,
                         focusedRowIndex = focusedRowIndex,
                         isScanning = isScanning,
-                        pageViewModel = pageViewModel
+                        pageViewModel = pageViewModel,
+                        staticRowPage = staticRowPage
                     )
                 }
 
@@ -211,7 +213,8 @@ fun PageScreen(
                         focusedButtonIndex = focusedButtonIndex,
                         focusedRowIndex = focusedRowIndex,
                         isScanning = isScanning,
-                        pageViewModel = pageViewModel
+                        pageViewModel = pageViewModel,
+                        staticRowPage = staticRowPage
                     )
                 }
                 Spacer(modifier = Modifier.height(dimensions.paddingMedium))

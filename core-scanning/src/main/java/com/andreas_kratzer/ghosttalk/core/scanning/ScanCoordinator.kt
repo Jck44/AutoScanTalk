@@ -28,6 +28,8 @@ class ScanCoordinator @Inject constructor(
     private var resolvedPage: StateFlow<Page?>? = null
     private var isSmartPredictionLoading: StateFlow<Boolean>? = null
     private var smartPredictions: StateFlow<List<String>?>? = null
+    private var staticRowPage: StateFlow<Page?>? = null
+    private var staticRowScanPattern: StateFlow<String>? = null
     private var observeJob: kotlinx.coroutines.Job? = null
 
     private data class Data(
@@ -102,13 +104,16 @@ class ScanCoordinator @Inject constructor(
         isUserModeActive: StateFlow<Boolean>,
         resolvedPage: StateFlow<Page?>,
         isSmartPredictionLoading: StateFlow<Boolean>,
-        smartPredictions: StateFlow<List<String>?>
+        smartPredictions: StateFlow<List<String>?>,
+        staticRowPage: StateFlow<Page?> = MutableStateFlow(null),
+        staticRowScanPattern: StateFlow<String> = MutableStateFlow("linear")
     ) {
         this.currentPage = currentPage
         this.isUserModeActive = isUserModeActive
         this.resolvedPage = resolvedPage
         this.isSmartPredictionLoading = isSmartPredictionLoading
         this.smartPredictions = smartPredictions
+        this.staticRowPage = staticRowPage
 
         observeJob?.cancel()
         observeJob = scope.launch {
@@ -120,7 +125,8 @@ class ScanCoordinator @Inject constructor(
                 isSmartPredictionLoading,
                 smartPredictions,
                 isPausedManually,
-                callActionProxy.isInCall
+                callActionProxy.isInCall,
+                this@ScanCoordinator.staticRowPage ?: MutableStateFlow(null)
             ) { array ->
                 Data(
                     isExecuting = array[1] as Boolean,
@@ -256,7 +262,12 @@ class ScanCoordinator @Inject constructor(
             rows = page.rows,
             columns = page.columns,
             rowNames = page.rowNames,
-            pageId = page.id
+            pageId = page.id,
+            staticRowPage = staticRowPage?.value,
+            staticRowPattern = staticRowPage?.value?.let {
+                val pat = it.scanPattern?.takeIf { p -> p != "default" } ?: scanningSettings.defaultScanPattern
+                if (pat == "row_column") "row_by_row" else pat
+            } ?: "linear"
         )
     }
 
@@ -315,7 +326,12 @@ class ScanCoordinator @Inject constructor(
             rows = page.rows,
             columns = page.columns,
             rowNames = page.rowNames,
-            pageId = page.id
+            pageId = page.id,
+            staticRowPage = staticRowPage?.value,
+            staticRowPattern = staticRowPage?.value?.let {
+                val pat = it.scanPattern?.takeIf { p -> p != "default" } ?: scanningSettings.defaultScanPattern
+                if (pat == "row_column") "row_by_row" else pat
+            } ?: "linear"
         )
     }
 

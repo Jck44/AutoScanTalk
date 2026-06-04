@@ -28,7 +28,8 @@ class GetFilteredPagesUseCase @Inject constructor(
             } catch (_: Exception) {
                 SortOrder.MANUAL
             }
-            pages.filterAndSort(query, sortOrder, activeIds)
+            val nonStaticPages = pages.filter { !it.id.startsWith("static_row_") }
+            nonStaticPages.filterAndSort(query, sortOrder, activeIds)
         }
     }
 }

@@ -29,6 +29,8 @@ class ScanningSettingsRepository(
     private val _blockVolumeKeys = BooleanSetting(SettingsConstants.KEY_BLOCK_VOLUME_KEYS, false, isScoped = false)
     private val _speakerVolume = IntSetting(SettingsConstants.KEY_SPEAKER_VOLUME, 100, isScoped = false)
     private val _headphoneVolume = IntSetting(SettingsConstants.KEY_HEADPHONE_VOLUME, 100, isScoped = false)
+    private val _staticRowEnabled = BooleanSetting(SettingsConstants.KEY_STATIC_ROW_ENABLED, false)
+    private val _staticRowScanPattern = NonNullStringSetting(SettingsConstants.KEY_STATIC_ROW_SCAN_PATTERN, "linear")
 
     val autoStartScanningFlow = _autoStartScanning.flow
     val scanDelayFlow = _scanDelay.flow
@@ -43,6 +45,8 @@ class ScanningSettingsRepository(
     val blockVolumeKeysFlow = _blockVolumeKeys.flow
     val speakerVolumeFlow = _speakerVolume.flow
     val headphoneVolumeFlow = _headphoneVolume.flow
+    val staticRowEnabledFlow = _staticRowEnabled.flow
+    val staticRowScanPatternFlow = _staticRowScanPattern.flow
 
     var autoStartScanning: Boolean by _autoStartScanning
     var scanDelayMillis: Long by _scanDelay
@@ -57,6 +61,8 @@ class ScanningSettingsRepository(
     var blockVolumeKeys: Boolean by _blockVolumeKeys
     var speakerVolume: Int by _speakerVolume
     var headphoneVolume: Int by _headphoneVolume
+    var staticRowEnabled: Boolean by _staticRowEnabled
+    var staticRowScanPattern: String by _staticRowScanPattern
 
 
     override fun refresh() {
@@ -73,5 +79,7 @@ class ScanningSettingsRepository(
         _blockVolumeKeys.refresh()
         _speakerVolume.refresh()
         _headphoneVolume.refresh()
+        _staticRowEnabled.refresh()
+        _staticRowScanPattern.refresh()
     }
 }

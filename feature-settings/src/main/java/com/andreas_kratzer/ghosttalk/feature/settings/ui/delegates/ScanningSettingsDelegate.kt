@@ -47,4 +47,12 @@ class ScanningSettingsDelegate @Inject constructor(
     fun setScanCycleLimitInput(input: String) {
         updateScanCycleLimitUseCase(input)
     }
+
+    fun setStaticRowEnabled(enabled: Boolean) {
+        settingsRepository.staticRowEnabled = enabled
+    }
+
+    fun setStaticRowScanPattern(pattern: String) {
+        settingsRepository.staticRowScanPattern = pattern
+    }
 }

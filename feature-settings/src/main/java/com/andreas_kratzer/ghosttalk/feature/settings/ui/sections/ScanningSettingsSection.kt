@@ -88,6 +88,16 @@ fun ScanningSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
             }
         }
 
+        PreferenceCategory("Statische Zeile", modifier = Modifier.weight(1f)) {
+            val staticRowEnabled by viewModel.staticRowEnabled.collectAsState(false)
+
+            SettingsToggleItem(
+                label = "Statische Zeile über jeder Seite anzeigen",
+                checked = staticRowEnabled,
+                onCheckedChange = { viewModel.setStaticRowEnabled(it) }
+            )
+        }
+
         PreferenceCategory(stringResource(R.string.settings_category_hardware), modifier = Modifier.weight(1f)) {
             val switchKey by viewModel.switchActivationKey.collectAsState("Space")
             SettingsEditTextItem(

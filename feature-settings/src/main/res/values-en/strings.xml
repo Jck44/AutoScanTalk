@@ -353,6 +353,8 @@
     <string name="settings_call_intro_incoming">Introduction Text (Incoming)</string>
     <string name="settings_call_announcement_as_cue">Play caller announcement as Auditory Cue</string>
     <string name="settings_call_auto_enable_speakerphone">Automatically enable speakerphone</string>
+    <string name="settings_call_filter_not_in_contacts">Block calls from unknown numbers</string>
+    <string name="settings_call_filter_not_in_contacts_desc">Automatically rejects calls if the phone number is not found in your contacts (address book).</string>
     <string name="settings_call_behavior_active">Auto-action on incoming call (Active User Mode)</string>
     <string name="settings_call_scan_limit">Scanning cycles</string>
     <string name="settings_call_auto_action">Action after limit</string>

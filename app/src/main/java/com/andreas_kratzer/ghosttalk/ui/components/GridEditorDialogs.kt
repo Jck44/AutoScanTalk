@@ -71,8 +71,10 @@ fun EditorDialogs(
     var newTemplateName by remember { mutableStateOf("") }
     
     if (showRowEditDialog && editingRowIndex != null) {
+        val defaultRowName = if (item.id.startsWith("static_row_")) "Statische Zeile" 
+                             else stringResource(R.string.page_row_label).format(editingRowIndex + 1)
         RowEditDialog(
-            initialName = item.rowNames.getOrNull(editingRowIndex) ?: stringResource(R.string.page_row_label).format(editingRowIndex + 1),
+            initialName = item.rowNames.getOrNull(editingRowIndex) ?: defaultRowName,
             onDismiss = onDismissRowDialog,
             onSave = { newName ->
                 actions.updateRowName(item.id, editingRowIndex, newName)

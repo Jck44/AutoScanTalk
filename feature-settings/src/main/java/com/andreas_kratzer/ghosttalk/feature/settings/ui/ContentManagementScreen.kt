@@ -30,6 +30,7 @@ import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 fun ContentManagementScreen(
     onNavigateToPageManager: () -> Unit,
     onNavigateToTemplateManager: () -> Unit,
+    onNavigateToStaticRowEditor: () -> Unit,
     onNavigateBack: () -> Unit
 ) {
     val dimensions = LocalDimensions.current
@@ -84,6 +85,14 @@ fun ContentManagementScreen(
                 onClick = onNavigateToTemplateManager,
                 height = dynamicCardHeight,
                 testTag = "content_manage_templates"
+            )
+            
+            GhostTalkCard(
+                title = "Statische Zeile konfigurieren",
+                icon = GhostTalkIcons.GridView,
+                onClick = onNavigateToStaticRowEditor,
+                height = dynamicCardHeight,
+                testTag = "content_manage_static_row"
             )
         }
     }

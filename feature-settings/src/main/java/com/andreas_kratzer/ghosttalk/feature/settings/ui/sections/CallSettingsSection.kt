@@ -62,6 +62,7 @@ fun CallSettingsSection(viewModel: SettingsViewModel) {
             val callAnnouncementAsCue by viewModel.callAnnouncementAsCue.collectAsState(true)
             val autoEnableSpeakerphone by viewModel.autoEnableSpeakerphone.collectAsState(true)
             val hangUpPressesRequired by viewModel.hangUpPressesRequired.collectAsState(2)
+            val filterCallsNotInContacts by viewModel.filterCallsNotInContacts.collectAsState(false)
 
             var isDefaultDialer by remember { mutableStateOf(false) }
             val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
@@ -174,6 +175,14 @@ fun CallSettingsSection(viewModel: SettingsViewModel) {
                 label = stringResource(R.string.settings_call_auto_enable_speakerphone),
                 checked = autoEnableSpeakerphone,
                 onCheckedChange = { viewModel.setAutoEnableSpeakerphone(it) }
+            )
+
+            // Block calls not in contacts Toggle
+            SettingsToggleItem(
+                label = stringResource(R.string.settings_call_filter_not_in_contacts),
+                description = stringResource(R.string.settings_call_filter_not_in_contacts_desc),
+                checked = filterCallsNotInContacts,
+                onCheckedChange = { viewModel.setFilterCallsNotInContacts(it) }
             )
 
             Spacer(modifier = Modifier.height(dimensions.paddingSmall))

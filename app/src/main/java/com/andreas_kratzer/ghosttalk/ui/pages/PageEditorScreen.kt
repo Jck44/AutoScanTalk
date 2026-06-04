@@ -16,6 +16,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -47,9 +48,10 @@ fun PageEditorScreen(
     onEditPage: ((String, String?) -> Unit)? = null,
     onExitEditor: (() -> Unit)? = null
 ) {
+    val allPages by pageViewModel.allPages.collectAsState()
     val unfilteredPages by pageViewModel.unfilteredPages.collectAsState()
     val bookDefaultScanPattern by pageViewModel.defaultScanPattern.collectAsState()
-    val page = unfilteredPages.find { it.id == pageId }
+    val page = allPages.find { it.id == pageId }
     val dimensions = LocalDimensions.current
 
     LaunchedEffect(page) {
@@ -91,36 +93,48 @@ fun PageEditorScreen(
             TopAppBar(
                 windowInsets = WindowInsets.statusBars,
                 title = { 
-                    LaunchedEffect(localName) {
-                        if (localName != page.name && localName.isNotBlank()) {
-                            delay(500)
-                            pageViewModel.updatePageSettings(
-                                pageId = page.id,
-                                update = GridSettingsUpdate(name = localName)
-                            )
-                        }
-                    }
-
-                    ValidatedTextField(
-                        value = localName,
-                        onValueChange = { localName = it },
-                        isRequired = true,
-                        errorMessage = stringResource(R.string.error_page_name_required),
-                        onFocusLost = {
-                            if (it.isNotBlank() && it != page.name) {
+                    if (page.id.startsWith("static_row_")) {
+                        Text(
+                            text = page.name,
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(end = dimensions.paddingLarge)
+                                .padding(vertical = 4.dp)
+                        )
+                    } else {
+                        LaunchedEffect(localName) {
+                            if (localName != page.name && localName.isNotBlank()) {
+                                delay(500)
                                 pageViewModel.updatePageSettings(
                                     pageId = page.id,
-                                    update = GridSettingsUpdate(name = it)
+                                    update = GridSettingsUpdate(name = localName)
                                 )
                             }
-                        },
-                        placeholder = { Text(stringResource(R.string.page_name_label)) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(end = dimensions.paddingLarge)
-                            .padding(vertical = 4.dp) // Reduce vertical impact
-                            .testTag("page_editor_name_field")
-                    )
+                        }
+
+                        ValidatedTextField(
+                            value = localName,
+                            onValueChange = { localName = it },
+                            isRequired = true,
+                            errorMessage = stringResource(R.string.error_page_name_required),
+                            onFocusLost = {
+                                if (it.isNotBlank() && it != page.name) {
+                                    pageViewModel.updatePageSettings(
+                                        pageId = page.id,
+                                        update = GridSettingsUpdate(name = it)
+                                    )
+                                }
+                            },
+                            placeholder = { Text(stringResource(R.string.page_name_label)) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(end = dimensions.paddingLarge)
+                                .padding(vertical = 4.dp) // Reduce vertical impact
+                                .testTag("page_editor_name_field")
+                        )
+                    }
                 },
                 navigationIcon = {
                     IconButton(onClick = handleNavigateBack) {

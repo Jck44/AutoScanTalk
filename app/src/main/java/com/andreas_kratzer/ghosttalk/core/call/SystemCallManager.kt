@@ -260,8 +260,21 @@ class SystemCallManager @Inject constructor(
         Log.i(TAG, "onCallAdded: call=$call, state=${call.details?.state}")
         isSimulated = false
         activeCall = call
+
+        val rawState = call.details?.state ?: Call.STATE_NEW
+        if (rawState == Call.STATE_RINGING && settingsRepository.filterCallsNotInContacts) {
+            val uri = call.details?.handle
+            val rawPhone = uri?.schemeSpecificPart ?: ""
+            val contactName = getContactName(context, rawPhone)
+            if (contactName == null) {
+                Log.i(TAG, "onCallAdded: Incoming call filtered (number not in contacts: $rawPhone). Rejecting immediately.")
+                call.reject(false, null)
+                return
+            }
+        }
+
         call.registerCallback(callCallback)
-        updateCallState(call, call.details?.state ?: Call.STATE_NEW)
+        updateCallState(call, rawState)
 
         // Launch MainActivity so the call UI displays
         val intent = Intent(context, MainActivity::class.java).apply {

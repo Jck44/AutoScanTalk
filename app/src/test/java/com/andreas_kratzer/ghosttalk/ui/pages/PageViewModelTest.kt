@@ -168,6 +168,8 @@ class PageViewModelTest {
         every { settingsRepository.userModeScreenBehaviorFlow } returns MutableStateFlow<String>("NONE")
         every { settingsRepository.holdingTimeMillis } returns 0L
         every { settingsRepository.pageSortOrderFlow } returns MutableStateFlow("MANUAL")
+        every { settingsRepository.staticRowEnabledFlow } returns MutableStateFlow(false)
+        every { settingsRepository.staticRowScanPatternFlow } returns MutableStateFlow("linear")
         every { settingsRepository.geminiRedoPrediction } returns false
         every { settingsRepository.autoStartScanning } returns false
         every { settingsRepository.resumeScanningFromStart } returns true

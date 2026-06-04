@@ -91,6 +91,8 @@ class SettingsRepositoryImpl @Inject constructor(
     override val defaultScanPatternFlow: StateFlow<String> get() = scanningSettings.defaultScanPatternFlow
     override val limitScanCyclesFlow: StateFlow<Boolean> get() = scanningSettings.limitScanCyclesFlow
     override val scanCycleLimitFlow: StateFlow<Int> get() = scanningSettings.scanCycleLimitFlow
+    override val staticRowEnabledFlow: StateFlow<Boolean> get() = scanningSettings.staticRowEnabledFlow
+    override val staticRowScanPatternFlow: StateFlow<String> get() = scanningSettings.staticRowScanPatternFlow
     
     
 
@@ -195,6 +197,7 @@ class SettingsRepositoryImpl @Inject constructor(
     override val autoEnableSpeakerphoneFlow: StateFlow<Boolean> get() = callSettings.autoEnableSpeakerphoneFlow
     override val simulateCallsEnabledFlow: StateFlow<Boolean> get() = callSettings.simulateCallsEnabledFlow
     override val hangUpPressesRequiredFlow: StateFlow<Int> get() = callSettings.hangUpPressesRequiredFlow
+    override val filterCallsNotInContactsFlow: StateFlow<Boolean> get() = callSettings.filterCallsNotInContactsFlow
 
     // ── Public API: Properties ───────────────────────────────────────────
 
@@ -231,6 +234,14 @@ class SettingsRepositoryImpl @Inject constructor(
             scanningSettings.scanCycleLimit = value
             syncBookSettings()
         }
+
+    override var staticRowEnabled: Boolean
+        get() = scanningSettings.staticRowEnabled
+        set(value) { scanningSettings.staticRowEnabled = value }
+
+    override var staticRowScanPattern: String
+        get() = scanningSettings.staticRowScanPattern
+        set(value) { scanningSettings.staticRowScanPattern = value }
 
     override var defaultStartPageId: String?
         get() = generalSettings.defaultStartPageId
@@ -778,4 +789,8 @@ class SettingsRepositoryImpl @Inject constructor(
     override var hangUpPressesRequired: Int
         get() = callSettings.hangUpPressesRequired
         set(value) { callSettings.hangUpPressesRequired = value }
+
+    override var filterCallsNotInContacts: Boolean
+        get() = callSettings.filterCallsNotInContacts
+        set(value) { callSettings.filterCallsNotInContacts = value }
 }

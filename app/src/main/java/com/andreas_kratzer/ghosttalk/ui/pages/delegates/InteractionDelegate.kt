@@ -122,11 +122,29 @@ class InteractionDelegate @Inject constructor(
         }
     }
 
-    fun activateButtonAtIndex(index: Int, currentPage: Page?, activeBookId: String?, isHardwareTriggered: Boolean = false) {
+    fun activateButtonAtIndex(
+        index: Int,
+        currentPage: Page?,
+        activeBookId: String?,
+        isHardwareTriggered: Boolean = false,
+        staticRowPage: Page? = null
+    ) {
         scope.launch {
+            val targetPage = if (staticRowPage != null) {
+                if (index < 49) staticRowPage else currentPage
+            } else {
+                currentPage
+            }
+            val targetIndex = if (staticRowPage != null) {
+                if (index < 49) index else index - 49
+            } else {
+                index
+            }
+            if (targetPage == null) return@launch
+
             activateButtonUseCase.execute(
-                index = index,
-                currentPage = currentPage,
+                index = targetIndex,
+                currentPage = targetPage,
                 activeBookId = activeBookId,
                 isUserModeActive = isUserModeActive.value,
                 smartPredictions = _smartPredictions.value ?: emptyList(),
@@ -137,7 +155,7 @@ class InteractionDelegate @Inject constructor(
         }
     }
 
-    fun activateFocusedButton(currentPage: Page?, activeBookId: String?) {
+    fun activateFocusedButton(currentPage: Page?, activeBookId: String?, staticRowPage: Page? = null) {
         if (scanCoordinator.isStoppedDueToLimit.value) {
             scanCoordinator.restartScanning()
             return
@@ -145,7 +163,7 @@ class InteractionDelegate @Inject constructor(
         val focusedIdx = scanCoordinator.focusedButtonIndex.value
         val focusedRow = scanCoordinator.focusedRowIndex.value
         if (focusedIdx != null) {
-            activateButtonAtIndex(focusedIdx, currentPage, activeBookId, isHardwareTriggered = true)
+            activateButtonAtIndex(focusedIdx, currentPage, activeBookId, isHardwareTriggered = true, staticRowPage = staticRowPage)
         } else if (focusedRow != null) {
             scanCoordinator.selectCurrentRow()
         }

@@ -108,6 +108,7 @@ class PageViewModel @Inject constructor(
     val searchQuery = pageManagementDelegate.searchQuery
     val filteredPages = pageManagementDelegate.filteredPages
     val unfilteredPages = pageManagementDelegate.unfilteredPages
+    val allPages = pageManagementDelegate.allPagesFlow
     val currentPage = pageManagementDelegate.currentPage
     val templates = pageManagementDelegate.templates
     val activeTargetPageIds = pageManagementDelegate.activeTargetPageIds
@@ -228,6 +229,44 @@ class PageViewModel @Inject constructor(
     
     private val _isLoadingPlaylists = MutableStateFlow(false)
     val isLoadingPlaylists: StateFlow<Boolean> = _isLoadingPlaylists.asStateFlow()
+
+    val staticRowPage: StateFlow<Page?> = combine(
+        activeBookId,
+        allPages,
+        settingsRepository.staticRowEnabledFlow
+    ) { bookId, allPages, enabled ->
+        if (bookId != null && enabled) {
+            val expectedId = "static_row_$bookId"
+            val existing = allPages.find { it.id == expectedId }
+            if (existing == null) {
+                viewModelScope.launch(Dispatchers.IO) {
+                    if (pageManagementDelegate.getPageById(expectedId) == null) {
+                        val newPage = Page(
+                            id = expectedId,
+                            bookId = bookId,
+                            name = "Statische Zeile",
+                            templateId = null,
+                            rows = 1,
+                            columns = 4,
+                            scanPattern = "linear",
+                            rowNames = emptyList(),
+                            buttonConfigs = emptyList(),
+                            orderIndex = -1
+                        )
+                        pageManagementDelegate.pageRepository.insertPage(newPage)
+                    }
+                }
+                null
+            } else {
+                resolveDynamicButtonsUseCase.execute(existing, bookId, _smartPredictions.value, allPages)
+            }
+        } else {
+            null
+        }
+    }
+    .flowOn(Dispatchers.Default)
+    .distinctUntilChanged()
+    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     val resolvedPage: StateFlow<Page?> = combine(
         currentPage,
@@ -399,7 +438,9 @@ class PageViewModel @Inject constructor(
             isUserModeActive = isUserModeActive,
             resolvedPage = resolvedPage,
             isSmartPredictionLoading = isSmartPredictionLoading,
-            smartPredictions = smartPredictions
+            smartPredictions = smartPredictions,
+            staticRowPage = staticRowPage,
+            staticRowScanPattern = settingsRepository.staticRowScanPatternFlow
         )
 
         // Observe book settings for scan limit
@@ -544,7 +585,8 @@ class PageViewModel @Inject constructor(
         index,
         resolvedPage.value,
         activeBookId.value,
-        isHardwareTriggered = com.andreas_kratzer.ghosttalk.core.util.InputSourceTracker.isHardwareTriggered
+        isHardwareTriggered = com.andreas_kratzer.ghosttalk.core.util.InputSourceTracker.isHardwareTriggered,
+        staticRowPage = staticRowPage.value
     )
     private var lastCallPressTime = 0L
 
@@ -584,7 +626,7 @@ class PageViewModel @Inject constructor(
             return
         }
 
-        interactionDelegate.activateFocusedButton(resolvedPage.value, activeBookId.value)
+        interactionDelegate.activateFocusedButton(resolvedPage.value, activeBookId.value, staticRowPage = staticRowPage.value)
     }
     fun clearActionLogs() = interactionDelegate.clearActionLogs()
 

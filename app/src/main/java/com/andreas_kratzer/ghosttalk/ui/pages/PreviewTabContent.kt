@@ -10,7 +10,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
@@ -54,17 +53,36 @@ fun PreviewTabContent(
     actionTypePrevious: String = stringResource(R.string.action_previous_action),
     actionTypeSmart: String = stringResource(R.string.button_action_smart_prediction)
 ) {
-    val context = LocalContext.current
     val isSpeech = selectedActionType == actionTypeSpeak
     val speakTextToUse = if (isSpeech) {
         spokenText.takeIf { it.isNotBlank() } ?: label
     } else ""
 
+    // Resolve string resources safely outside the remember block
+    val frequentActionSpeak = stringResource(R.string.button_preview_frequent_action_speak, rank)
+    val previousActionSpeak = stringResource(R.string.button_preview_previous_action_speak, rank)
+    val smartTypeAll = stringResource(R.string.button_smart_prediction_type_all)
+    val smartTypeAction = stringResource(R.string.button_smart_prediction_type_action)
+    val smartTypeNav = stringResource(R.string.button_smart_prediction_type_navigation)
+    val smartFilterText = when (predictionType) {
+        PredictionType.ALL -> smartTypeAll
+        PredictionType.ACTION -> smartTypeAction
+        PredictionType.NAVIGATION -> smartTypeNav
+    }
+    val smartPredictionSpeak = stringResource(R.string.button_preview_smart_prediction_speak, rank, smartFilterText)
+
+    val frequentActionCue1 = stringResource(R.string.button_preview_frequent_action_cue_1)
+    val frequentActionCueN = stringResource(R.string.button_preview_frequent_action_cue_n, rank)
+    val previousActionCue1 = stringResource(R.string.button_preview_previous_action_cue_1)
+    val previousActionCueN = stringResource(R.string.button_preview_previous_action_cue_n, rank)
+    val smartPredictionCue = stringResource(R.string.button_preview_smart_prediction_cue)
+
     val speakDescription = remember(
         selectedActionType, spokenText, label, geminiPrompt, targetPageId,
         deviceActionType, includeWeekday, offsetValue, prefixText, suffixText,
         contactName, contactPhone, messageText, smartHomeDeviceName,
-        mediaProvider, mediaContentName, mediaReturnToAppDelaySec, rank, predictionType
+        mediaProvider, mediaContentName, mediaReturnToAppDelaySec,
+        frequentActionSpeak, previousActionSpeak, smartPredictionSpeak
     ) {
         when {
             isSpeech -> {
@@ -160,27 +178,19 @@ fun PreviewTabContent(
                     }
                     actionTypeWeather -> "🌤️ Wetteransage:\nRuft aktuellen Wetterbericht ab und spricht ihn laut vor."
                     actionTypeSmartHome -> "🏠 Smart Home:\nSchaltet Gerät \"$smartHomeDeviceName\"."
-                    actionTypeFrequent -> {
-                        context.getString(R.string.button_preview_frequent_action_speak, rank)
-                    }
-                    actionTypePrevious -> {
-                        context.getString(R.string.button_preview_previous_action_speak, rank)
-                    }
-                    actionTypeSmart -> {
-                        val filterText = when (predictionType) {
-                            PredictionType.ALL -> context.getString(R.string.button_smart_prediction_type_all)
-                            PredictionType.ACTION -> context.getString(R.string.button_smart_prediction_type_action)
-                            PredictionType.NAVIGATION -> context.getString(R.string.button_smart_prediction_type_navigation)
-                        }
-                        context.getString(R.string.button_preview_smart_prediction_speak, rank, filterText)
-                    }
+                    actionTypeFrequent -> frequentActionSpeak
+                    actionTypePrevious -> previousActionSpeak
+                    actionTypeSmart -> smartPredictionSpeak
                     else -> "🔄 Führt dynamische Aktion aus."
                 }
             }
         }
     }
 
-    val cueDescription = remember(playActionAsAuditoryCue, isSpeech, speakTextToUse, auditoryCueText, label, selectedActionType, rank) {
+    val cueDescription = remember(
+        playActionAsAuditoryCue, isSpeech, speakTextToUse, auditoryCueText, label, selectedActionType,
+        frequentActionCue1, frequentActionCueN, previousActionCue1, previousActionCueN, smartPredictionCue
+    ) {
         when {
             playActionAsAuditoryCue -> {
                 if (isSpeech) {
@@ -196,20 +206,20 @@ fun PreviewTabContent(
                 when (selectedActionType) {
                     actionTypeFrequent -> {
                         if (rank == 1) {
-                            "🔊 " + context.getString(R.string.button_preview_frequent_action_cue_1)
+                            "🔊 $frequentActionCue1"
                         } else {
-                            "🔊 " + context.getString(R.string.button_preview_frequent_action_cue_n, rank)
+                            "🔊 $frequentActionCueN"
                         }
                     }
                     actionTypePrevious -> {
                         if (rank == 1) {
-                            "🔊 " + context.getString(R.string.button_preview_previous_action_cue_1)
+                            "🔊 $previousActionCue1"
                         } else {
-                            "🔊 " + context.getString(R.string.button_preview_previous_action_cue_n, rank)
+                            "🔊 $previousActionCueN"
                         }
                     }
                     actionTypeSmart -> {
-                        "🔊 " + context.getString(R.string.button_preview_smart_prediction_cue)
+                        "🔊 $smartPredictionCue"
                     }
                     else -> {
                         "🔊 Spricht leise (Fallback auf Label):\n\"$label\"\n\n(Da der Hinweistext leer ist, wird die Kachel-Beschriftung als Scanning-Cue verwendet)"
