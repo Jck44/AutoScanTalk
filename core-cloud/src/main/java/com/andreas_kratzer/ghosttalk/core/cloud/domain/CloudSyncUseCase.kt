@@ -308,6 +308,7 @@ class CloudSyncUseCase @Inject constructor(
 
             // Sync statistics separately after book sync if enabled
             val statsModeStr = settingsRepository.syncModeStats
+            logger.w(TAG, "[STATS-DEBUG] Gate check: success=$success, statsModeStr='$statsModeStr', bookId='$bookId'")
             if (success && statsModeStr != "OFF") {
                 val statsMode = if (syncMode == SyncMode.TWO_WAY) {
                     try {
@@ -318,6 +319,7 @@ class CloudSyncUseCase @Inject constructor(
                 } else {
                     syncMode
                 }
+                logger.w(TAG, "[STATS-DEBUG] Resolved statsMode=$statsMode (from statsModeStr='$statsModeStr', syncMode=$syncMode)")
                 try {
                     syncStatistics(storageProvider, statsMode, bookId, book.name)
                 } catch (e: Exception) {
@@ -325,6 +327,8 @@ class CloudSyncUseCase @Inject constructor(
                 }
             } else if (statsModeStr == "OFF") {
                 logger.d(TAG, "Statistics sync mode is OFF. Skipping statistics sync.")
+            } else if (!success) {
+                logger.w(TAG, "[STATS-DEBUG] Book sync failed (success=false), skipping statistics sync!")
             }
 
         } catch (e: Exception) {
@@ -823,10 +827,12 @@ class CloudSyncUseCase @Inject constructor(
         val lastSyncedLocalTime = prefs.getLong("stats_last_synced_local_time_$bookId", 0L)
         val lastSyncedRemoteTime = prefs.getLong("stats_last_synced_remote_time_$bookId", 0L)
         
-        logger.d(TAG, "Stats sync: local=$localLastModified, remote=$remoteLastModified, lastSyncedLocal=$lastSyncedLocalTime, lastSyncedRemote=$lastSyncedRemoteTime")
+        logger.w(TAG, "[STATS-DEBUG] syncStatistics called: syncMode=$syncMode, bookId='$bookId', statsFileName='$statsFileName'")
+        logger.w(TAG, "[STATS-DEBUG] remoteFile found: ${remoteFile != null} (name=${remoteFile?.name}, id=${remoteFile?.id})")
+        logger.w(TAG, "[STATS-DEBUG] localLastModified=$localLastModified, remoteLastModified=$remoteLastModified, lastSyncedLocal=$lastSyncedLocalTime, lastSyncedRemote=$lastSyncedRemoteTime")
         
         if (localLastModified == 0L && remoteFile == null) {
-            logger.d(TAG, "No statistics to sync.")
+            logger.w(TAG, "[STATS-DEBUG] EARLY EXIT: No statistics to sync (localLastModified=0 AND no remote file).")
             return@withContext
         }
         
@@ -844,6 +850,8 @@ class CloudSyncUseCase @Inject constructor(
             SyncMode.RESTORE_ONLY -> hasRemoteChanged || localLastModified == 0L
             SyncMode.TWO_WAY -> hasRemoteChanged || localLastModified == 0L
         }
+        
+        logger.w(TAG, "[STATS-DEBUG] Decision: hasLocalChanged=$hasLocalChanged, hasRemoteChanged=$hasRemoteChanged, shouldUpload=$shouldUpload, shouldDownload=$shouldDownload")
         
         if (shouldUpload) {
             logger.d(TAG, "Uploading statistics...")

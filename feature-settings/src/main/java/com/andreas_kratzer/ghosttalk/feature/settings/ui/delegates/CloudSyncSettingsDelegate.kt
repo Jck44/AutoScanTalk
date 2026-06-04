@@ -179,9 +179,12 @@ class CloudSyncSettingsDelegate @Inject constructor(
             try {
                 val drive = com.google.api.services.drive.Drive.Builder(
                     com.google.api.client.http.javanet.NetHttpTransport(),
-                    com.google.api.client.json.gson.GsonFactory.getDefaultInstance(),
-                    credential
-                ).setApplicationName("GhostTalk").build()
+                    com.google.api.client.json.gson.GsonFactory.getDefaultInstance()
+                ) { request ->
+                    credential.initialize(request)
+                    request.connectTimeout = 3 * 60 * 1000 // 3 minutes
+                    request.readTimeout = 3 * 60 * 1000    // 3 minutes
+                }.setApplicationName("GhostTalk").build()
 
                 _driveFolders.value = getDriveFoldersUseCase.execute(drive, parentFolderId)
             } catch (e: UserRecoverableAuthIOException) {
@@ -245,9 +248,12 @@ class CloudSyncSettingsDelegate @Inject constructor(
                     }
                     val drive = com.google.api.services.drive.Drive.Builder(
                         com.google.api.client.http.javanet.NetHttpTransport(),
-                        com.google.api.client.json.gson.GsonFactory.getDefaultInstance(),
-                        credential
-                    ).setApplicationName("GhostTalk").build()
+                        com.google.api.client.json.gson.GsonFactory.getDefaultInstance()
+                    ) { request ->
+                        credential.initialize(request)
+                        request.connectTimeout = 3 * 60 * 1000 // 3 minutes
+                        request.readTimeout = 3 * 60 * 1000    // 3 minutes
+                    }.setApplicationName("GhostTalk").build()
                     cloudSyncUseCase.getAvailableBackups(drive, folderId)
                 }
 
@@ -293,9 +299,12 @@ class CloudSyncSettingsDelegate @Inject constructor(
                     }
                     com.google.api.services.drive.Drive.Builder(
                         com.google.api.client.http.javanet.NetHttpTransport(),
-                        com.google.api.client.json.gson.GsonFactory.getDefaultInstance(),
-                        credential
-                    ).setApplicationName("GhostTalk").build()
+                        com.google.api.client.json.gson.GsonFactory.getDefaultInstance()
+                    ) { request ->
+                        credential.initialize(request)
+                        request.connectTimeout = 3 * 60 * 1000 // 3 minutes
+                        request.readTimeout = 3 * 60 * 1000    // 3 minutes
+                    }.setApplicationName("GhostTalk").build()
                 }
 
                 val result = cloudSyncUseCase.importCloudBackup(drive, backupInfo.fileId, backupInfo.fileName, onProgress)
@@ -344,9 +353,12 @@ class CloudSyncSettingsDelegate @Inject constructor(
             try {
                 val drive = com.google.api.services.drive.Drive.Builder(
                     com.google.api.client.http.javanet.NetHttpTransport(),
-                    com.google.api.client.json.gson.GsonFactory.getDefaultInstance(),
-                    credential
-                ).setApplicationName("GhostTalk").build()
+                    com.google.api.client.json.gson.GsonFactory.getDefaultInstance()
+                ) { request ->
+                    credential.initialize(request)
+                    request.connectTimeout = 3 * 60 * 1000 // 3 minutes
+                    request.readTimeout = 3 * 60 * 1000    // 3 minutes
+                }.setApplicationName("GhostTalk").build()
 
                 val folder = withContext(Dispatchers.IO) {
                     drive.files().get(folderId)

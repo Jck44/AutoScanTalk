@@ -45,9 +45,12 @@ open class GeminiUseCase @Inject constructor(
         } else {
             Drive.Builder(
                 NetHttpTransport(),
-                GsonFactory.getDefaultInstance(),
-                credential
-            ).setApplicationName("GhosTTalk").build()
+                GsonFactory.getDefaultInstance()
+            ) { request ->
+                credential.initialize(request)
+                request.connectTimeout = 3 * 60 * 1000 // 3 minutes
+                request.readTimeout = 3 * 60 * 1000    // 3 minutes
+            }.setApplicationName("GhosTTalk").build()
         }
     }
 

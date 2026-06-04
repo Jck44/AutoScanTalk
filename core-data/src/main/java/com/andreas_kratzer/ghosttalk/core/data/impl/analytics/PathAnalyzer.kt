@@ -199,7 +199,86 @@ class PathAnalyzer @Inject constructor() {
             }
         }
 
-        // 4. Build recommendations list
+        // 4. Run dynamic self-adjusting recommendation generation
+        var currentDegradation = 0.15
+        var currentMinOccurrences = 2
+        var currentMinStepsSaved = 2
+
+        var results = generateRecommendations(
+            transitionCounts = transitionCounts,
+            targetButtonConfigs = targetButtonConfigs,
+            pageMap = pageMap,
+            pages = pages,
+            scanDelayMs = scanDelayMs,
+            defaultStartPageId = defaultStartPageId,
+            minOccurrences = currentMinOccurrences,
+            degradationFactor = currentDegradation,
+            minStepsSaved = currentMinStepsSaved
+        )
+
+        Log.d("PathAnalyzer", "analyzePaths: Initial pass yielded ${results.size} recommendations (degradation=$currentDegradation, minOccurrences=$currentMinOccurrences, minStepsSaved=$currentMinStepsSaved)")
+
+        if (results.isEmpty()) {
+            // Self-adjust: LOOSEN constraints since we have no suggestions
+            currentDegradation = 0.05
+            currentMinStepsSaved = 1
+            Log.d("PathAnalyzer", "analyzePaths: Zero recommendations found. Relaxing rules (degradation=$currentDegradation, minStepsSaved=$currentMinStepsSaved)")
+            results = generateRecommendations(
+                transitionCounts = transitionCounts,
+                targetButtonConfigs = targetButtonConfigs,
+                pageMap = pageMap,
+                pages = pages,
+                scanDelayMs = scanDelayMs,
+                defaultStartPageId = defaultStartPageId,
+                minOccurrences = currentMinOccurrences,
+                degradationFactor = currentDegradation,
+                minStepsSaved = currentMinStepsSaved
+            )
+        } else if (results.size > 5) {
+            // Self-adjust: TIGHTEN constraints since we have too many suggestions
+            currentDegradation = 0.3
+            currentMinOccurrences = 3
+            currentMinStepsSaved = 3
+            Log.d("PathAnalyzer", "analyzePaths: Too many recommendations (${results.size}). Tightening rules (degradation=$currentDegradation, minOccurrences=$currentMinOccurrences, minStepsSaved=$currentMinStepsSaved)")
+            results = generateRecommendations(
+                transitionCounts = transitionCounts,
+                targetButtonConfigs = targetButtonConfigs,
+                pageMap = pageMap,
+                pages = pages,
+                scanDelayMs = scanDelayMs,
+                defaultStartPageId = defaultStartPageId,
+                minOccurrences = currentMinOccurrences,
+                degradationFactor = currentDegradation,
+                minStepsSaved = currentMinStepsSaved
+            )
+
+            // Hard cap as fallback to avoid UI clutter
+            if (results.size > 5) {
+                results = results.sortedWith(
+                    compareByDescending<ShortcutRecommendation> { it.occurrenceCount }
+                        .thenByDescending { it.estimatedTimeSavedSec }
+                ).take(5)
+            }
+        }
+
+        // Sort final recommendations by occurrence count descending, then by time saved
+        return results.sortedWith(
+            compareByDescending<ShortcutRecommendation> { it.occurrenceCount }
+                .thenByDescending { it.estimatedTimeSavedSec }
+        )
+    }
+
+    private fun generateRecommendations(
+        transitionCounts: Map<String, Map<String, List<Long>>>,
+        targetButtonConfigs: Map<String, ButtonConfig>,
+        pageMap: Map<String, Page>,
+        pages: List<Page>,
+        scanDelayMs: Long,
+        defaultStartPageId: String?,
+        minOccurrences: Int,
+        degradationFactor: Double,
+        minStepsSaved: Int
+    ): List<ShortcutRecommendation> {
         val recommendations = mutableListOf<ShortcutRecommendation>()
 
         for ((sourcePageId, targetMap) in transitionCounts) {
@@ -209,25 +288,20 @@ class PathAnalyzer @Inject constructor() {
                 val buttonConfig = targetButtonConfigs[buttonId] ?: continue
                 val count = timestamps.size
 
-                Log.d("PathAnalyzer", "analyzePaths: Evaluating candidate: ${sourcePage.name} -> '${buttonConfig.label}', occurrence count = $count")
-
-                // We only recommend if it occurs at least 2 times (reliable pattern)
-                if (count >= 2) {
+                // We only recommend if it occurs at least minOccurrences times
+                if (count >= minOccurrences) {
                     val activeButtonsOnSource = sourcePage.buttonConfigs.count { it != null && it.isActive }
                     
                     // Apply dynamic start page limits and general capacity checks
                     val isStartPage = sourcePageId == defaultStartPageId
                     val maxVisibleSlots = sourcePage.rows * sourcePage.columns
                     val maxAllowedOnSource = if (isStartPage) {
-                        // Relaxed start page limit: allow up to 24 buttons or active + 1 (capped at max slots)
                         maxOf(24, activeButtonsOnSource + 1).coerceAtMost(maxVisibleSlots)
                     } else {
-                        // Relaxed normal page limit: allow up to 36 buttons or active + 1 (capped at max slots)
                         maxOf(36, activeButtonsOnSource + 1).coerceAtMost(maxVisibleSlots)
                     }
 
                     if (activeButtonsOnSource >= maxAllowedOnSource) {
-                        Log.d("PathAnalyzer", "analyzePaths: Candidate ${sourcePage.name} -> '${buttonConfig.label}' discarded: activeButtonsOnSource ($activeButtonsOnSource) >= maxAllowedOnSource ($maxAllowedOnSource)")
                         continue
                     }
 
@@ -252,33 +326,24 @@ class PathAnalyzer @Inject constructor() {
                         
                         val stepsWithShortcut = activeButtonsOnSource + 1
                         
-                        // Collective degradation: reduced to 0.1 steps per existing button to be more realistic
-                        val degradation = (activeButtonsOnSource * 0.1).toInt()
+                        // Collective degradation based on dynamic degradation factor
+                        val degradation = (activeButtonsOnSource * degradationFactor).toInt()
                         
                         // Penalty if adding the button forces a row/col size increase
                         val expansionPenalty = if (requiresExpansion) 3 else 0
                         
                         val stepsSaved = ((stepsToNavigate + stepsToTarget) - (stepsWithShortcut + degradation + expansionPenalty))
-                        Log.d("PathAnalyzer", "analyzePaths: Candidate ${sourcePage.name} -> '${buttonConfig.label}': stepsToNavigate=$stepsToNavigate, stepsToTarget=$stepsToTarget, stepsWithShortcut=$stepsWithShortcut, degradation=$degradation, expansionPenalty=$expansionPenalty -> stepsSaved=$stepsSaved")
                         
                         // Only recommend if we actually save positive scan steps
-                        if (stepsSaved < 2) {
-                            Log.d("PathAnalyzer", "analyzePaths: Candidate discarded: stepsSaved ($stepsSaved) < 2")
-                            continue
-                        }
+                        if (stepsSaved < minStepsSaved) continue
                         
                         max(5, (((stepsSaved * scanDelayMs) + 3000) / 1000).toInt())
                     } else {
                         val stepsSaved = 6 - (if (requiresExpansion) 3 else 0)
-                        Log.d("PathAnalyzer", "analyzePaths: Candidate ${sourcePage.name} -> '${buttonConfig.label}' (no target page context): stepsSaved=$stepsSaved")
-                        if (stepsSaved < 2) {
-                            Log.d("PathAnalyzer", "analyzePaths: Candidate discarded: stepsSaved ($stepsSaved) < 2")
-                            continue
-                        }
+                        if (stepsSaved < minStepsSaved) continue
                         max(5, (((stepsSaved * scanDelayMs) + 3000) / 1000).toInt())
                     }
 
-                    Log.d("PathAnalyzer", "analyzePaths: ADDING RECOMMENDATION: ${sourcePage.name} -> '${buttonConfig.label}', estimatedTimeSavedSec = $timeSavedSec")
                     recommendations.add(
                         ShortcutRecommendation(
                             sourcePageId = sourcePageId,
@@ -288,16 +353,9 @@ class PathAnalyzer @Inject constructor() {
                             estimatedTimeSavedSec = timeSavedSec
                         )
                     )
-                } else {
-                    Log.d("PathAnalyzer", "analyzePaths: Candidate discarded: count ($count) < 2")
                 }
             }
         }
-
-        // Sort by occurrence count descending, then by time saved
-        return recommendations.sortedWith(
-            compareByDescending<ShortcutRecommendation> { it.occurrenceCount }
-                .thenByDescending { it.estimatedTimeSavedSec }
-        )
+        return recommendations
     }
 }
