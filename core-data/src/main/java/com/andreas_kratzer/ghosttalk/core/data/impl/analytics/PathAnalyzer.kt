@@ -1,5 +1,6 @@
 package com.andreas_kratzer.ghosttalk.core.data.impl.analytics
 
+import android.util.Log
 import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository.ButtonUsageEvent
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
@@ -75,7 +76,11 @@ class PathAnalyzer @Inject constructor() {
         scanDelayMs: Long,
         defaultStartPageId: String? = null
     ): List<ShortcutRecommendation> {
-        if (historyEvents.size < 3 || pages.isEmpty()) return emptyList()
+        Log.d("PathAnalyzer", "analyzePaths: historyEvents size = ${historyEvents.size}, pages size = ${pages.size}, scanDelay = $scanDelayMs, startPage = $defaultStartPageId")
+        if (historyEvents.size < 3 || pages.isEmpty()) {
+            Log.d("PathAnalyzer", "analyzePaths: Aborting. historyEvents < 3 or pages is empty.")
+            return emptyList()
+        }
 
         // 1. Sort chronologically (ascending)
         val sortedEvents = historyEvents.sortedBy { it.timestamp }
@@ -100,6 +105,7 @@ class PathAnalyzer @Inject constructor() {
         if (currentSession.isNotEmpty()) {
             sessions.add(currentSession)
         }
+        Log.d("PathAnalyzer", "analyzePaths: Grouped into ${sessions.size} sessions")
 
         // 3. Process sessions to identify page-to-button transition bottlenecks
         val pageMap = pages.associateBy { it.id }
@@ -112,9 +118,13 @@ class PathAnalyzer @Inject constructor() {
         // Calculate dynamic threshold based on scan delay
         // 10 steps minimum navigation + 25s cognitive/reading/selection tolerance padding
         val maxIntervalMs = (10 * scanDelayMs) + 25000L
+        Log.d("PathAnalyzer", "analyzePaths: maxIntervalMs = $maxIntervalMs")
 
-        for (session in sessions) {
-            if (session.size < 2) continue
+        for ((sessionIndex, session) in sessions.withIndex()) {
+            if (session.size < 2) {
+                Log.d("PathAnalyzer", "analyzePaths: Session $sessionIndex size < 2, skipping.")
+                continue
+            }
 
             // Keep track of the active context (thematic source page)
             var activeSourcePageId: String? = null
@@ -165,9 +175,14 @@ class PathAnalyzer @Inject constructor() {
                                             transitionCounts.getOrPut(activeSourcePageId) { mutableMapOf() }
                                                 .getOrPut(buttonConfig.id) { mutableListOf() }
                                                 .add(event.timestamp)
+                                            Log.d("PathAnalyzer", "analyzePaths: Registered transition from ${sourcePage.name} to '${buttonConfig.label}' on page ${targetPage.name} (interval: ${interval}ms)")
+                                        } else {
+                                            Log.d("PathAnalyzer", "analyzePaths: Transition from ${sourcePage.name} to '${buttonConfig.label}' ignored because button already exists on source page")
                                         }
                                     }
                                 }
+                            } else {
+                                Log.d("PathAnalyzer", "analyzePaths: Transition from $activeSourcePageId to $currentPageId ignored. Interval $interval ms exceeds maxIntervalMs $maxIntervalMs")
                             }
                         }
                         
@@ -194,25 +209,29 @@ class PathAnalyzer @Inject constructor() {
                 val buttonConfig = targetButtonConfigs[buttonId] ?: continue
                 val count = timestamps.size
 
+                Log.d("PathAnalyzer", "analyzePaths: Evaluating candidate: ${sourcePage.name} -> '${buttonConfig.label}', occurrence count = $count")
+
                 // We only recommend if it occurs at least 2 times (reliable pattern)
                 if (count >= 2) {
                     val activeButtonsOnSource = sourcePage.buttonConfigs.count { it != null && it.isActive }
                     
                     // Apply dynamic start page limits and general capacity checks
                     val isStartPage = sourcePageId == defaultStartPageId
+                    val maxVisibleSlots = sourcePage.rows * sourcePage.columns
                     val maxAllowedOnSource = if (isStartPage) {
-                        ((12000L / maxOf(500L, scanDelayMs)).toInt()).coerceIn(6, 12)
+                        // Relaxed start page limit: allow up to 24 buttons or active + 1 (capped at max slots)
+                        maxOf(24, activeButtonsOnSource + 1).coerceAtMost(maxVisibleSlots)
                     } else {
-                        // 75% of max slots (7x7 = 49 * 0.75 = 36)
-                        36
+                        // Relaxed normal page limit: allow up to 36 buttons or active + 1 (capped at max slots)
+                        maxOf(36, activeButtonsOnSource + 1).coerceAtMost(maxVisibleSlots)
                     }
 
                     if (activeButtonsOnSource >= maxAllowedOnSource) {
+                        Log.d("PathAnalyzer", "analyzePaths: Candidate ${sourcePage.name} -> '${buttonConfig.label}' discarded: activeButtonsOnSource ($activeButtonsOnSource) >= maxAllowedOnSource ($maxAllowedOnSource)")
                         continue
                     }
 
                     // Check if adding this button requires grid expansion
-                    val maxVisibleSlots = sourcePage.rows * sourcePage.columns
                     val visibleActiveButtons = sourcePage.buttonConfigs.filterNotNull().count {
                         it.isActive && GridUtils.isVisibleInGrid(
                             sourcePage.buttonConfigs.indexOf(it), sourcePage.rows, sourcePage.columns
@@ -233,24 +252,33 @@ class PathAnalyzer @Inject constructor() {
                         
                         val stepsWithShortcut = activeButtonsOnSource + 1
                         
-                        // Collective degradation: 0.5 steps per existing button
-                        val degradation = (activeButtonsOnSource * 0.5).toInt()
+                        // Collective degradation: reduced to 0.1 steps per existing button to be more realistic
+                        val degradation = (activeButtonsOnSource * 0.1).toInt()
                         
                         // Penalty if adding the button forces a row/col size increase
                         val expansionPenalty = if (requiresExpansion) 3 else 0
                         
                         val stepsSaved = ((stepsToNavigate + stepsToTarget) - (stepsWithShortcut + degradation + expansionPenalty))
+                        Log.d("PathAnalyzer", "analyzePaths: Candidate ${sourcePage.name} -> '${buttonConfig.label}': stepsToNavigate=$stepsToNavigate, stepsToTarget=$stepsToTarget, stepsWithShortcut=$stepsWithShortcut, degradation=$degradation, expansionPenalty=$expansionPenalty -> stepsSaved=$stepsSaved")
                         
                         // Only recommend if we actually save positive scan steps
-                        if (stepsSaved < 2) continue
+                        if (stepsSaved < 2) {
+                            Log.d("PathAnalyzer", "analyzePaths: Candidate discarded: stepsSaved ($stepsSaved) < 2")
+                            continue
+                        }
                         
                         max(5, (((stepsSaved * scanDelayMs) + 3000) / 1000).toInt())
                     } else {
                         val stepsSaved = 6 - (if (requiresExpansion) 3 else 0)
-                        if (stepsSaved < 2) continue
+                        Log.d("PathAnalyzer", "analyzePaths: Candidate ${sourcePage.name} -> '${buttonConfig.label}' (no target page context): stepsSaved=$stepsSaved")
+                        if (stepsSaved < 2) {
+                            Log.d("PathAnalyzer", "analyzePaths: Candidate discarded: stepsSaved ($stepsSaved) < 2")
+                            continue
+                        }
                         max(5, (((stepsSaved * scanDelayMs) + 3000) / 1000).toInt())
                     }
 
+                    Log.d("PathAnalyzer", "analyzePaths: ADDING RECOMMENDATION: ${sourcePage.name} -> '${buttonConfig.label}', estimatedTimeSavedSec = $timeSavedSec")
                     recommendations.add(
                         ShortcutRecommendation(
                             sourcePageId = sourcePageId,
@@ -260,6 +288,8 @@ class PathAnalyzer @Inject constructor() {
                             estimatedTimeSavedSec = timeSavedSec
                         )
                     )
+                } else {
+                    Log.d("PathAnalyzer", "analyzePaths: Candidate discarded: count ($count) < 2")
                 }
             }
         }

@@ -212,7 +212,12 @@ data class ExportedHistoryEvent(
     val imagePath: String? = null,
     val geminiResponse: String? = null,
     val latitude: Double? = null,
-    val longitude: Double? = null
+    val longitude: Double? = null,
+    val sessionId: Long? = null,
+    val reactionTimeMs: Long? = null,
+    val isTouchIntervention: Boolean = false,
+    val wifiSsid: String? = null,
+    val isHardwareTriggered: Boolean = false
 )
 
 @Serializable

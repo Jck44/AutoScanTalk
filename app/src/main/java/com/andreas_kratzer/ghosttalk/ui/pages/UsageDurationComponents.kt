@@ -410,7 +410,35 @@ fun ReactionTimeFatigueChart(
     // Analyze fatigue reaction times grouped by elapsed minutes in sessions
     val fatigueData = remember(sessions, historyEvents) {
         val sessionMap = sessions.associateBy { it.id }
-        val bins = listOf("0-3 Min", "3-6 Min", "6-9 Min", "9-12 Min", "12-15 Min", "15+ Min")
+        
+        val maxMins = historyEvents.mapNotNull { event ->
+            val reaction = event.reactionTimeMs
+            if (reaction != null && reaction > 0) {
+                val session = event.sessionId?.let { sessionMap[it] }
+                    ?: sessions.find { event.timestamp in it.startTime..it.endTime }
+                if (session != null) {
+                    val elapsedMs = event.timestamp - session.startTime
+                    if (elapsedMs >= 0) elapsedMs / (1000 * 60) else null
+                } else null
+            } else null
+        }.maxOfOrNull { it } ?: 15L
+
+        val step = when {
+            maxMins <= 15 -> 3
+            maxMins <= 30 -> 6
+            maxMins <= 60 -> 10
+            maxMins <= 120 -> 20
+            else -> ((maxMins + 5) / 6).toInt().coerceAtLeast(1)
+        }
+
+        val bins = listOf(
+            "0-$step min",
+            "$step-${2 * step} min",
+            "${2 * step}-${3 * step} min",
+            "${3 * step}-${4 * step} min",
+            "${4 * step}-${5 * step} min",
+            "${5 * step}+ min"
+        )
         val binValues = MutableList(6) { mutableListOf<Long>() }
 
         historyEvents.forEach { event ->
@@ -424,11 +452,11 @@ fun ReactionTimeFatigueChart(
                     if (elapsedMs >= 0) {
                         val elapsedMins = elapsedMs / (1000 * 60)
                         val binIndex = when {
-                            elapsedMins < 3 -> 0
-                            elapsedMins < 6 -> 1
-                            elapsedMins < 9 -> 2
-                            elapsedMins < 12 -> 3
-                            elapsedMins < 15 -> 4
+                            elapsedMins < step -> 0
+                            elapsedMins < 2 * step -> 1
+                            elapsedMins < 3 * step -> 2
+                            elapsedMins < 4 * step -> 3
+                            elapsedMins < 5 * step -> 4
                             else -> 5
                         }
                         binValues[binIndex].add(reaction)
@@ -637,9 +665,9 @@ fun ReactionTimeFatigueChart(
                     ) {
                         fatigueData.forEach { (label, _) ->
                             Text(
-                                text = label.replace(" Min", ""),
+                                text = label,
                                 style = textStyle,
-                                modifier = Modifier.width(48.dp),
+                                modifier = Modifier.width(64.dp),
                                 textAlign = TextAlign.Center
                             )
                         }

@@ -753,7 +753,12 @@ class PageImportExportManager @Inject constructor(
                 imagePath = event.imagePath,
                 geminiResponse = event.geminiResponse,
                 latitude = event.latitude,
-                longitude = event.longitude
+                longitude = event.longitude,
+                sessionId = event.sessionId,
+                reactionTimeMs = event.reactionTimeMs,
+                isTouchIntervention = event.isTouchIntervention,
+                wifiSsid = event.wifiSsid,
+                isHardwareTriggered = event.isHardwareTriggered
             )
         }
 
@@ -803,7 +808,12 @@ class PageImportExportManager @Inject constructor(
                     imagePath = event.imagePath,
                     geminiResponse = event.geminiResponse,
                     latitude = event.latitude,
-                    longitude = event.longitude
+                    longitude = event.longitude,
+                    sessionId = event.sessionId,
+                    reactionTimeMs = event.reactionTimeMs,
+                    isTouchIntervention = event.isTouchIntervention,
+                    wifiSsid = event.wifiSsid,
+                    isHardwareTriggered = event.isHardwareTriggered
                 )
                 buttonUsageDao.insertHistoryEvent(entity)
             }

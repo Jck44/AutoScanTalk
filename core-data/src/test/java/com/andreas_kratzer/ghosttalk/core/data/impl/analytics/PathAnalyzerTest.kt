@@ -3,13 +3,29 @@ package com.andreas_kratzer.ghosttalk.core.data.impl.analytics
 import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository.ButtonUsageEvent
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.Page
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
+import io.mockk.every
 
 class PathAnalyzerTest {
 
     private val pathAnalyzer = PathAnalyzer()
+
+    @Before
+    fun setUp() {
+        mockkStatic(android.util.Log::class)
+        every { android.util.Log.d(any(), any()) } returns 0
+    }
+
+    @After
+    fun tearDown() {
+        unmockkStatic(android.util.Log::class)
+    }
 
     @Test
     fun testSessionGroupingAndShortcutMining() {
@@ -72,8 +88,8 @@ class PathAnalyzerTest {
         assertEquals("Apfelsaft", rec.targetButtonConfig.label)
         assertEquals(2, rec.occurrenceCount) // Occurred twice across the two sessions
         
-        // Time saved = max(5, ((2 * 2000) + 3000)/1000) = max(5, 7) = 7s
-        assertEquals(7, rec.estimatedTimeSavedSec)
+        // Time saved = max(5, ((3 * 2000) + 3000)/1000) = max(5, 9) = 9s
+        assertEquals(9, rec.estimatedTimeSavedSec)
     }
 
     @Test
@@ -123,7 +139,7 @@ class PathAnalyzerTest {
     @Test
     fun testStartPageStricterLimits() {
         val legoButtons = MutableList<ButtonConfig?>(49) { null }
-        for (i in 0 until 10) {
+        for (i in 0 until 16) {
             legoButtons[i] = ButtonConfig(id = "lego_btn_$i", label = "Lego $i", isActive = true)
         }
 

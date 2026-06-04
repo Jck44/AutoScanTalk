@@ -1045,7 +1045,12 @@ class PageImportExportManagerTest {
             label = "Hallo",
             actionType = "SpeakTextButtonAction",
             buttonId = "btn-rt",
-            pageId = "page-rt"
+            pageId = "page-rt",
+            sessionId = 42L,
+            reactionTimeMs = 1200L,
+            isTouchIntervention = true,
+            wifiSsid = "Test-WiFi",
+            isHardwareTriggered = true
         )
         val statEntity = com.andreas_kratzer.ghosttalk.core.model.ButtonUsageStat(
             bookId = "book-rt",
@@ -1087,7 +1092,15 @@ class PageImportExportManagerTest {
         coVerify { buttonUsageDao.clearHistoryForBook("book-rt") }
         coVerify { buttonUsageDao.clearStatsForBook("book-rt") }
         coVerify {
-            buttonUsageDao.insertHistoryEvent(match { it.label == "Hallo" && it.timestamp == 9999L })
+            buttonUsageDao.insertHistoryEvent(match { 
+                it.label == "Hallo" && 
+                it.timestamp == 9999L &&
+                it.sessionId == 42L &&
+                it.reactionTimeMs == 1200L &&
+                it.isTouchIntervention &&
+                it.wifiSsid == "Test-WiFi" &&
+                it.isHardwareTriggered
+            })
         }
         coVerify {
             buttonUsageDao.upsert(match { it.label == "Hallo" && it.usageCount == 7L })
