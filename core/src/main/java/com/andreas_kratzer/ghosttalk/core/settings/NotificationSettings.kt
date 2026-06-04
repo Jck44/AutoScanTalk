@@ -8,4 +8,13 @@ interface NotificationSettings {
 
     var isNotificationReadingEnabled: Boolean
     var monitoredNotificationApps: Set<String>
+
+    val autoReadModeFlow: StateFlow<AutoReadMode>
+    var autoReadMode: AutoReadMode
+
+    val autoReadOnlyInUserModeFlow: StateFlow<Boolean>
+    var autoReadOnlyInUserMode: Boolean
+
+    val autoReadInStandbyFlow: StateFlow<Boolean>
+    var autoReadInStandby: Boolean
 }

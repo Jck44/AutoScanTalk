@@ -101,6 +101,10 @@ abstract class DataModule {
 
     @Binds
     @Singleton
+    abstract fun bindVocalProfileRepository(impl: com.andreas_kratzer.ghosttalk.core.data.impl.VocalProfileRepositoryImpl): com.andreas_kratzer.ghosttalk.core.data.VocalProfileRepository
+
+    @Binds
+    @Singleton
     abstract fun bindPageImportExportProvider(manager: PageImportExportManager): PageImportExportProvider
 
     companion object {

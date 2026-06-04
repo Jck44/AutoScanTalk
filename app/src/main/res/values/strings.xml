@@ -100,6 +100,7 @@
     <string name="button_action_frequent_action">Häufigste Aktion</string>
     <string name="button_action_smart_prediction">Smarte Vorhersage</string>
     <string name="button_action_notification">Benachrichtigungen vorlesen</string>
+    <string name="button_action_toggle_auto_read_notifications">Automatisches Vorlesen umschalten</string>
     <string name="button_action_clear_notifications">Benachrichtigungen löschen</string>
     <string name="notification_permission_dialog_title">Benachrichtigungszugriff erforderlich</string>
     <string name="notification_permission_dialog_message">Um Benachrichtigungen vorlesen oder löschen zu können, muss die App Zugriff auf deine Benachrichtigungen haben.\n\nBitte aktiviere in den folgenden Einstellungen den Schalter für \"GoSTalk\".</string>

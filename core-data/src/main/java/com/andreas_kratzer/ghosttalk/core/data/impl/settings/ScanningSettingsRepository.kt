@@ -9,6 +9,7 @@ import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.K
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SCAN_DELAY_MILLIS
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SWITCH_ACTIVATION_KEY
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_VOLUME_KEYS_ACTIVATE
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_VOCAL_SWITCH_ENABLED
 import kotlinx.coroutines.flow.StateFlow
 
 class ScanningSettingsRepository(
@@ -32,6 +33,7 @@ class ScanningSettingsRepository(
     private val _staticRowEnabled = BooleanSetting(SettingsConstants.KEY_STATIC_ROW_ENABLED, false)
     private val _staticRowScanPattern = NonNullStringSetting(SettingsConstants.KEY_STATIC_ROW_SCAN_PATTERN, "linear")
     private val _lateClickThreshold = LongSetting(SettingsConstants.KEY_LATE_CLICK_THRESHOLD_MILLIS, 250L)
+    private val _vocalSwitchEnabled = BooleanSetting(KEY_VOCAL_SWITCH_ENABLED, false)
 
     val autoStartScanningFlow = _autoStartScanning.flow
     val scanDelayFlow = _scanDelay.flow
@@ -49,6 +51,7 @@ class ScanningSettingsRepository(
     val staticRowEnabledFlow = _staticRowEnabled.flow
     val staticRowScanPatternFlow = _staticRowScanPattern.flow
     val lateClickThresholdFlow = _lateClickThreshold.flow
+    val vocalSwitchEnabledFlow = _vocalSwitchEnabled.flow
 
     var autoStartScanning: Boolean by _autoStartScanning
     var scanDelayMillis: Long by _scanDelay
@@ -66,6 +69,7 @@ class ScanningSettingsRepository(
     var staticRowEnabled: Boolean by _staticRowEnabled
     var staticRowScanPattern: String by _staticRowScanPattern
     var lateClickThresholdMillis: Long by _lateClickThreshold
+    var vocalSwitchEnabled: Boolean by _vocalSwitchEnabled
 
 
     override fun refresh() {
@@ -85,5 +89,6 @@ class ScanningSettingsRepository(
         _staticRowEnabled.refresh()
         _staticRowScanPattern.refresh()
         _lateClickThreshold.refresh()
+        _vocalSwitchEnabled.refresh()
     }
 }

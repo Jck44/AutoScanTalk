@@ -59,4 +59,8 @@ class ScanningSettingsDelegate @Inject constructor(
     fun setLateClickThresholdInput(input: String) {
         input.toLongOrNull()?.let { settingsRepository.lateClickThresholdMillis = it }
     }
+
+    fun setVocalSwitchEnabled(enabled: Boolean) {
+        settingsRepository.isVocalSwitchEnabled = enabled
+    }
 }

@@ -111,6 +111,10 @@ class ControlDeviceActionHandler @Inject constructor(
                 syncActionProxy.get().triggerSync()
                 onFinish(executionId)
             }
+
+            DeviceActionType.TOGGLE_AUTO_READ_NOTIFICATIONS -> {
+                handleToggleAutoRead(buttonConfig, deviceAction, executionId, onFinish)
+            }
         }
     }
 
@@ -247,6 +251,18 @@ class ControlDeviceActionHandler @Inject constructor(
             actionLogger.log("Modus auf $modeName gesetzt", action, label)
         }
         onFinish(executionId)
+    }
+
+    private fun handleToggleAutoRead(config: ButtonConfig, action: ControlDeviceButtonAction, executionId: Int, onFinish: (Int) -> Unit) {
+        val current = settings.isNotificationReadingEnabled
+        settings.isNotificationReadingEnabled = !current
+        val msg = if (!current) "Automatisches Vorlesen aktiviert" else "Automatisches Vorlesen deaktiviert"
+        actionLogger.log(msg, action, config.label)
+        
+        val targetDeviceAddress = if (config.playActionAsAuditoryCue) settings.cuesAudioDeviceAddress else settings.ttsAudioDeviceAddress
+        ttsProxyLazy.get().speakRouted(msg, targetDeviceAddress) {
+            onFinish(executionId)
+        }
     }
 
     private fun handleSendMessage(action: ControlDeviceButtonAction, label: String?, executionId: Int, onFinish: (Int) -> Unit) {

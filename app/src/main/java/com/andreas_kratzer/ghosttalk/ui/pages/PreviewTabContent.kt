@@ -135,6 +135,7 @@ fun PreviewTabContent(
                             DeviceActionType.START_SYNC -> "Synchronisation starten"
                             DeviceActionType.READ_NOTIFICATIONS -> "Benachrichtigungen vorlesen"
                             DeviceActionType.CLEAR_NOTIFICATIONS -> "Benachrichtigungen löschen"
+                            DeviceActionType.TOGGLE_AUTO_READ_NOTIFICATIONS -> "Automatisches Vorlesen umschalten"
                         }
                         val specificText = try {
                             val calendar = java.util.Calendar.getInstance()

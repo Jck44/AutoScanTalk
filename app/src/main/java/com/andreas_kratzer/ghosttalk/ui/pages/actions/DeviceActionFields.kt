@@ -81,6 +81,7 @@ private fun getDeviceActionIcon(type: DeviceActionType): ImageVector {
         DeviceActionType.START_SYNC -> Icons.Default.Refresh
         DeviceActionType.VOLUME_IN_APP_TTS -> GhostTalkIcons.VolumeUp
         DeviceActionType.VOLUME_IN_APP_CUES -> GhostTalkIcons.VolumeUp
+        DeviceActionType.TOGGLE_AUTO_READ_NOTIFICATIONS -> GhostTalkIcons.Notifications
     }
 }
 
@@ -143,7 +144,8 @@ fun DeviceActionFields(
         DeviceActionType.INSTALL_UPDATE to stringResource(R.string.button_device_control_install_update),
         DeviceActionType.START_SYNC to stringResource(R.string.button_device_control_start_sync),
         DeviceActionType.VOLUME_IN_APP_TTS to stringResource(R.string.volume_in_app_tts),
-        DeviceActionType.VOLUME_IN_APP_CUES to stringResource(R.string.volume_in_app_cues)
+        DeviceActionType.VOLUME_IN_APP_CUES to stringResource(R.string.volume_in_app_cues),
+        DeviceActionType.TOGGLE_AUTO_READ_NOTIFICATIONS to stringResource(R.string.button_action_toggle_auto_read_notifications)
     )
 
     val currentLabel = types.find { it.first == selectedType }?.second ?: types.first().second
@@ -188,8 +190,10 @@ fun DeviceActionFields(
                                 expandedType = false
                                 onAutoSave()
                                 
-                                // Permission check for Notification Access
-                                if (type == DeviceActionType.READ_NOTIFICATIONS || type == DeviceActionType.CLEAR_NOTIFICATIONS) {
+                                 // Permission check for Notification Access
+                                if (type == DeviceActionType.READ_NOTIFICATIONS || 
+                                    type == DeviceActionType.CLEAR_NOTIFICATIONS ||
+                                    type == DeviceActionType.TOGGLE_AUTO_READ_NOTIFICATIONS) {
                                     if (!androidx.core.app.NotificationManagerCompat.getEnabledListenerPackages(context).contains(context.packageName)) {
                                         showNotificationPermissionDialog = true
                                     }

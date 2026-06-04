@@ -33,6 +33,7 @@ class ActionCoordinator @Inject constructor(
         val executionEvent = when (event) {
             is ActionEvent.NavigateToPage -> ActionExecutionEvent.NavigateToPage(event.pageId, event.action, event.label)
             is ActionEvent.NavigateBack -> ActionExecutionEvent.NavigateBack(event.action, event.label)
+            is ActionEvent.VocalSwitchTriggered -> ActionExecutionEvent.VocalSwitchTriggered(event.action, event.label)
             is ActionEvent.RecoverableAuthError -> ActionExecutionEvent.RecoverableAuthError(event.intent)
             is ActionEvent.RequestPermissions -> ActionExecutionEvent.RequestPermissions(event.permissions)
         }

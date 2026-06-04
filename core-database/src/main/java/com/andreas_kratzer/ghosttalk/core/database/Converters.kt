@@ -88,4 +88,16 @@ class Converters {
         if (buttonConfigsString == null) return null
         return json.decodeFromString<List<ButtonConfig?>>(buttonConfigsString)
     }
+
+    @TypeConverter
+    fun fromFloatList(floats: List<Float>?): String? {
+        if (floats == null) return null
+        return json.encodeToString(floats)
+    }
+
+    @TypeConverter
+    fun toFloatList(floatsString: String?): List<Float>? {
+        if (floatsString == null) return null
+        return json.decodeFromString<List<Float>>(floatsString)
+    }
 }

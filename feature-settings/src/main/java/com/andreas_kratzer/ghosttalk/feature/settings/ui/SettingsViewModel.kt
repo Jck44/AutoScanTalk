@@ -120,6 +120,7 @@ class SettingsViewModel @Inject constructor(
     val holdingTimeMillis = settingsRepository.holdingTimeMillisFlow
     val bluetoothDelay = settingsRepository.bluetoothDelayFlow
     val lateClickThresholdMillis = settingsRepository.lateClickThresholdFlow
+    val isVocalSwitchEnabled = settingsRepository.isVocalSwitchEnabledFlow
     
     val staticRowEnabled = settingsRepository.staticRowEnabledFlow
     val staticRowScanPattern = settingsRepository.staticRowScanPatternFlow
@@ -174,6 +175,9 @@ class SettingsViewModel @Inject constructor(
     
     val isNotificationReadingEnabled = settingsRepository.isNotificationReadingEnabledFlow
     val monitoredNotificationApps = settingsRepository.monitoredNotificationAppsFlow
+    val autoReadMode = settingsRepository.autoReadModeFlow
+    val autoReadOnlyInUserMode = settingsRepository.autoReadOnlyInUserModeFlow
+    val autoReadInStandby = settingsRepository.autoReadInStandbyFlow
     
     val selectedAppLanguage = settingsRepository.appLanguageFlow
     val themeMode = settingsRepository.themeModeFlow
@@ -585,6 +589,15 @@ class SettingsViewModel @Inject constructor(
     fun setThemeMode(m: String) { settingsRepository.themeMode = m }
 
     fun setNotificationReadingEnabled(e: Boolean) { settingsRepository.isNotificationReadingEnabled = e }
+    fun setAutoReadMode(mode: com.andreas_kratzer.ghosttalk.core.settings.AutoReadMode) {
+        settingsRepository.autoReadMode = mode
+    }
+    fun setAutoReadOnlyInUserMode(e: Boolean) {
+        settingsRepository.autoReadOnlyInUserMode = e
+    }
+    fun setAutoReadInStandby(e: Boolean) {
+        settingsRepository.autoReadInStandby = e
+    }
     fun toggleMonitoredNotificationApp(pkg: String, e: Boolean) {
         val current = settingsRepository.monitoredNotificationApps.toMutableSet()
         if (e) current.add(pkg) else current.remove(pkg)

@@ -20,7 +20,11 @@ import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun ScanningSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
+fun ScanningSettingsSection(
+    viewModel: SettingsViewModel,
+    isGlobal: Boolean,
+    onNavigateToVocalTraining: () -> Unit
+) {
     val autoStart by viewModel.autoStartScanning.collectAsState(true)
     val scanDelay by viewModel.scanDelayMillis.collectAsState(1000L)
     val resumeFromStart by viewModel.resumeScanningFromStart.collectAsState(true)
@@ -28,6 +32,7 @@ fun ScanningSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
     val holdingTime by viewModel.holdingTimeMillis.collectAsState(0L)
     val bluetoothDelay by viewModel.bluetoothDelay.collectAsState(1500L)
     val lateClickThreshold by viewModel.lateClickThresholdMillis.collectAsState(250L)
+    val isVocalSwitchEnabled by viewModel.isVocalSwitchEnabled.collectAsState(false)
 
     val dimensions = LocalDimensions.current
 
@@ -102,6 +107,19 @@ fun ScanningSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                 label = "Statische Zeile über jeder Seite anzeigen",
                 checked = staticRowEnabled,
                 onCheckedChange = { viewModel.setStaticRowEnabled(it) }
+            )
+        }
+
+        PreferenceCategory("Vocal Switch (Mund-Steuerung)", modifier = Modifier.weight(1f)) {
+            SettingsToggleItem(
+                label = "Vocal Switch aktivieren",
+                checked = isVocalSwitchEnabled,
+                onCheckedChange = { viewModel.scanningDelegate.setVocalSwitchEnabled(it) }
+            )
+            com.andreas_kratzer.ghosttalk.core.ui.components.SettingsClickableItem(
+                label = "Vocal-Profile anlernen & verwalten",
+                value = "Tippen zum Anlernen und Verwalten",
+                onClick = onNavigateToVocalTraining
             )
         }
 

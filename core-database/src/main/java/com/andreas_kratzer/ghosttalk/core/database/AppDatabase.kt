@@ -28,7 +28,15 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonPrimitive
 import java.util.UUID
 
-@Database(entities = [Page::class, Book::class, ButtonUsageStat::class, PageTemplate::class, ButtonEntity::class, ButtonUsageHistoryEntity::class, ButtonTemplateEntity::class, UserModeSessionEntity::class], version = 28, exportSchema = false)
+@Database(
+    entities = [
+        Page::class, Book::class, ButtonUsageStat::class, PageTemplate::class,
+        ButtonEntity::class, ButtonUsageHistoryEntity::class, ButtonTemplateEntity::class,
+        UserModeSessionEntity::class, VocalProfileEntity::class
+    ],
+    version = 29,
+    exportSchema = false
+)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
 
@@ -39,10 +47,27 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun buttonDao(): ButtonDao
     abstract fun buttonTemplateDao(): ButtonTemplateDao
     abstract fun userModeSessionDao(): UserModeSessionDao
+    abstract fun vocalProfileDao(): VocalProfileDao
 
     companion object {
         @Volatile
         private var INSTANCE: AppDatabase? = null
+
+        val MIGRATION_28_29: Migration = object : Migration(28, 29) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `vocal_profiles` (
+                        `id` TEXT NOT NULL, 
+                        `name` TEXT NOT NULL, 
+                        `referenceEmbedding` TEXT NOT NULL, 
+                        `buttonAction` TEXT, 
+                        `spokenText` TEXT, 
+                        `isActive` INTEGER NOT NULL DEFAULT 1, 
+                        PRIMARY KEY(`id`)
+                    )
+                """)
+            }
+        }
 
         val MIGRATION_27_28: Migration = object : Migration(27, 28) {
             override fun migrate(db: SupportSQLiteDatabase) {
@@ -501,7 +526,8 @@ abstract class AppDatabase : RoomDatabase() {
                     MIGRATION_24_25,
                     MIGRATION_25_26,
                     MIGRATION_26_27,
-                    MIGRATION_27_28
+                    MIGRATION_27_28,
+                    MIGRATION_28_29
                 )
                 .build()
                 INSTANCE = instance

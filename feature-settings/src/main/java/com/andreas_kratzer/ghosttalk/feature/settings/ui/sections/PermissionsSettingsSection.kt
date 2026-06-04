@@ -161,20 +161,104 @@ fun PermissionsSettingsSection(viewModel: SettingsViewModel) {
             )
 
             if (notificationListenerGranted) {
-                PreferredAppsPicker(
-                    monitoredApps = monitoredApps,
-                    onToggleApp = { pkg, checked ->
-                        viewModel.toggleMonitoredNotificationApp(pkg, checked)
-                    },
-                    onToggleAll = { apps ->
-                        viewModel.setMonitoredNotificationApps(apps)
-                    }
+                val isReadingEnabled by viewModel.isNotificationReadingEnabled.collectAsState(false)
+                SettingsToggleItem(
+                    label = "Benachrichtigungen vorlesen",
+                    checked = isReadingEnabled,
+                    description = "Aktiviert das Vorlesen von Benachrichtigungen.",
+                    onCheckedChange = { viewModel.setNotificationReadingEnabled(it) }
                 )
-                TextButton(
-                    onClick = { viewModel.resetMonitoredNotificationAppsToMessagingDefaults() },
-                    modifier = Modifier.padding(top = dimensions.paddingSmall)
-                ) {
-                    Text(stringResource(R.string.settings_notifications_apps_reset))
+
+                if (isReadingEnabled) {
+                    Spacer(modifier = Modifier.height(dimensions.paddingSmall))
+                    PreferredAppsPicker(
+                        monitoredApps = monitoredApps,
+                        onToggleApp = { pkg, checked ->
+                            viewModel.toggleMonitoredNotificationApp(pkg, checked)
+                        },
+                        onToggleAll = { apps ->
+                            viewModel.setMonitoredNotificationApps(apps)
+                        }
+                    )
+                    TextButton(
+                        onClick = { viewModel.resetMonitoredNotificationAppsToMessagingDefaults() },
+                        modifier = Modifier.padding(top = dimensions.paddingSmall)
+                    ) {
+                        Text(stringResource(R.string.settings_notifications_apps_reset))
+                    }
+
+                    Spacer(modifier = Modifier.height(dimensions.paddingSmall))
+
+                    // Auto Read Mode Dropdown
+                    val autoReadModeVal by viewModel.autoReadMode.collectAsState(com.andreas_kratzer.ghosttalk.core.settings.AutoReadMode.OFF)
+                    var modeExpanded by remember { mutableStateOf(false) }
+
+                    Column(verticalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)) {
+                        Text("Automatisches Vorlesen", style = MaterialTheme.typography.titleSmall)
+                        ExposedDropdownMenuBox(
+                            expanded = modeExpanded,
+                            onExpandedChange = { modeExpanded = !modeExpanded }
+                        ) {
+                            OutlinedTextField(
+                                readOnly = true,
+                                value = when(autoReadModeVal) {
+                                    com.andreas_kratzer.ghosttalk.core.settings.AutoReadMode.OFF -> "Aus"
+                                    com.andreas_kratzer.ghosttalk.core.settings.AutoReadMode.IMMEDIATE -> "Sofort"
+                                    com.andreas_kratzer.ghosttalk.core.settings.AutoReadMode.EVERY_2_MIN -> "Alle 2 Minuten"
+                                    com.andreas_kratzer.ghosttalk.core.settings.AutoReadMode.EVERY_5_MIN -> "Alle 5 Minuten"
+                                    com.andreas_kratzer.ghosttalk.core.settings.AutoReadMode.EVERY_10_MIN -> "Alle 10 Minuten"
+                                    com.andreas_kratzer.ghosttalk.core.settings.AutoReadMode.EVERY_15_MIN -> "Alle 15 Minuten"
+                                    com.andreas_kratzer.ghosttalk.core.settings.AutoReadMode.EVERY_30_MIN -> "Alle 30 Minuten"
+                                },
+                                onValueChange = { },
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = modeExpanded) },
+                                shape = MaterialTheme.shapes.large,
+                                modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
+                            )
+                            ExposedDropdownMenu(
+                                expanded = modeExpanded,
+                                onDismissRequest = { modeExpanded = false }
+                            ) {
+                                com.andreas_kratzer.ghosttalk.core.settings.AutoReadMode.values().forEach { mode ->
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(when(mode) {
+                                                com.andreas_kratzer.ghosttalk.core.settings.AutoReadMode.OFF -> "Aus"
+                                                com.andreas_kratzer.ghosttalk.core.settings.AutoReadMode.IMMEDIATE -> "Sofort"
+                                                com.andreas_kratzer.ghosttalk.core.settings.AutoReadMode.EVERY_2_MIN -> "Alle 2 Minuten"
+                                                com.andreas_kratzer.ghosttalk.core.settings.AutoReadMode.EVERY_5_MIN -> "Alle 5 Minuten"
+                                                com.andreas_kratzer.ghosttalk.core.settings.AutoReadMode.EVERY_10_MIN -> "Alle 10 Minuten"
+                                                com.andreas_kratzer.ghosttalk.core.settings.AutoReadMode.EVERY_15_MIN -> "Alle 15 Minuten"
+                                                com.andreas_kratzer.ghosttalk.core.settings.AutoReadMode.EVERY_30_MIN -> "Alle 30 Minuten"
+                                            })
+                                        },
+                                        onClick = {
+                                            viewModel.setAutoReadMode(mode)
+                                            modeExpanded = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    if (autoReadModeVal != com.andreas_kratzer.ghosttalk.core.settings.AutoReadMode.OFF) {
+                        val autoReadOnlyInUserModeVal by viewModel.autoReadOnlyInUserMode.collectAsState(true)
+                        SettingsToggleItem(
+                            label = "Nur im Benutzermodus aktiv",
+                            checked = autoReadOnlyInUserModeVal,
+                            description = "Wenn aktiv, werden Benachrichtigungen nur im Benutzermodus vorgelesen.",
+                            onCheckedChange = { viewModel.setAutoReadOnlyInUserMode(it) }
+                        )
+
+                        val autoReadInStandbyVal by viewModel.autoReadInStandby.collectAsState(false)
+                        SettingsToggleItem(
+                            label = "Auch im Standby vorlesen",
+                            checked = autoReadInStandbyVal,
+                            description = "Liest Benachrichtigungen auch bei ausgeschaltetem Bildschirm vor.",
+                            onCheckedChange = { viewModel.setAutoReadInStandby(it) }
+                        )
+                    }
                 }
             }
 

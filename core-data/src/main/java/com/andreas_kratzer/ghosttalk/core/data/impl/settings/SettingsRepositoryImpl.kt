@@ -98,6 +98,8 @@ class SettingsRepositoryImpl @Inject constructor(
 
     // --- FeatureSettings ---
     override val appLanguageFlow: StateFlow<String?> get() = generalSettings.appLanguageFlow
+    override val isVocalSwitchEnabledFlow: StateFlow<Boolean> get() = scanningSettings.vocalSwitchEnabledFlow
+
     
     // --- GeneralSettings ---
     override val templateSortOrderFlow: StateFlow<String> get() = generalSettings.templateSortOrderFlow
@@ -134,6 +136,9 @@ class SettingsRepositoryImpl @Inject constructor(
     // --- NotificationSettings ---
     override val isNotificationReadingEnabledFlow: StateFlow<Boolean> get() = notificationSettings.isNotificationReadingEnabledFlow
     override val monitoredNotificationAppsFlow: StateFlow<Set<String>> get() = notificationSettings.monitoredNotificationAppsFlow
+    override val autoReadModeFlow: StateFlow<com.andreas_kratzer.ghosttalk.core.settings.AutoReadMode> get() = notificationSettings.autoReadModeFlow
+    override val autoReadOnlyInUserModeFlow: StateFlow<Boolean> get() = notificationSettings.autoReadOnlyInUserModeFlow
+    override val autoReadInStandbyFlow: StateFlow<Boolean> get() = notificationSettings.autoReadInStandbyFlow
     
     // --- Other Flows ---
     override val ttsAudioDeviceAddressFlow: StateFlow<String?> get() = voiceSettings.ttsAudioDeviceAddressFlow
@@ -428,9 +433,25 @@ class SettingsRepositoryImpl @Inject constructor(
         get() = notificationSettings.monitoredNotificationApps
         set(value) { notificationSettings.monitoredNotificationApps = value }
 
+    override var autoReadMode: com.andreas_kratzer.ghosttalk.core.settings.AutoReadMode
+        get() = notificationSettings.autoReadMode
+        set(value) { notificationSettings.autoReadMode = value }
+
+    override var autoReadOnlyInUserMode: Boolean
+        get() = notificationSettings.autoReadOnlyInUserMode
+        set(value) { notificationSettings.autoReadOnlyInUserMode = value }
+
+    override var autoReadInStandby: Boolean
+        get() = notificationSettings.autoReadInStandby
+        set(value) { notificationSettings.autoReadInStandby = value }
+
     override var appLanguage: String?
         get() = generalSettings.appLanguage
         set(value) { generalSettings.appLanguage = value }
+
+    override var isVocalSwitchEnabled: Boolean
+        get() = scanningSettings.vocalSwitchEnabled
+        set(value) { scanningSettings.vocalSwitchEnabled = value }
     
     override var initialTemplatesCreated: Boolean
         get() = prefs.getBoolean(SettingsConstants.KEY_INITIAL_TEMPLATES_CREATED, false)

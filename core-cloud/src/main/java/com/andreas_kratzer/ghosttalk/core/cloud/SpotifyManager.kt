@@ -188,7 +188,7 @@ class SpotifyManager @Inject constructor(
                         } else ""
                         list.add(SpotifyPlaylist(id = id, name = name, uri = uri, imageUrl = imageUrl))
                     }
-                    nextUrl = if (json.isNull("next")) null else json.optString("next", null)
+                    nextUrl = if (json.isNull("next")) null else json.getString("next")
                 } else {
                     Log.e(TAG, "Failed to load playlists, response: ${connection.responseCode}")
                     nextUrl = null

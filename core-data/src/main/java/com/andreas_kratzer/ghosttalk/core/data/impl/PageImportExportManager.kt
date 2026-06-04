@@ -21,6 +21,7 @@ import com.andreas_kratzer.ghosttalk.core.model.importexport.ExportedUserModeSes
 import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportButton
 import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportButtonTemplate
 import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportExportData
+import com.andreas_kratzer.ghosttalk.core.data.VocalProfileRepository
 import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportPage
 import com.andreas_kratzer.ghosttalk.core.util.Logger
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -54,6 +55,7 @@ class PageImportExportManager @Inject constructor(
     private val buttonTemplateRepository: ButtonTemplateRepository,
     private val buttonUsageDao: com.andreas_kratzer.ghosttalk.core.database.ButtonUsageDao,
     private val userModeSessionRepository: UserModeSessionRepository,
+    private val vocalProfileRepository: VocalProfileRepository,
     private val logger: Logger
 ) : PageImportExportProvider {
     private val TAG = "PageImportExportManager"
@@ -470,6 +472,19 @@ class PageImportExportManager @Inject constructor(
             zip.putNextEntry(ZipEntry("backup.json"))
             zip.write(jsonContent.toByteArray(Charsets.UTF_8))
             zip.closeEntry()
+
+            // 1.1 Write vocal_profiles.json
+            try {
+                val profiles = vocalProfileRepository.getAllProfilesFlow().first()
+                val profilesJson = json.encodeToString(profiles)
+                zip.putNextEntry(ZipEntry("vocal_profiles.json"))
+                zip.write(profilesJson.toByteArray(Charsets.UTF_8))
+                zip.closeEntry()
+                logger.d(TAG, "Exported ${profiles.size} vocal profiles to ZIP")
+            } catch (e: Exception) {
+                logger.e(TAG, "Failed to export vocal profiles to ZIP", e)
+            }
+
             onProgress(0.1f, "Database exported.")
 
             // 2. Gather all files to compress (10-100%)
@@ -522,6 +537,7 @@ class PageImportExportManager @Inject constructor(
             val audioDir = File(context.filesDir, "audio_recordings")
             if (!audioDir.exists()) audioDir.mkdirs()
             
+            var vocalProfilesJson: String? = null
             var entry = zipIn.nextEntry
             while (entry != null) {
                 onProgress(0.1f, "Extracting: ${entry.name}")
@@ -529,6 +545,9 @@ class PageImportExportManager @Inject constructor(
                 if (entry.name == "backup.json") {
                     val bytes = zipIn.readBytes()
                     jsonContent = String(bytes, Charsets.UTF_8)
+                } else if (entry.name == "vocal_profiles.json") {
+                    val bytes = zipIn.readBytes()
+                    vocalProfilesJson = String(bytes, Charsets.UTF_8)
                 } else if (entry.name == "statistics.json") {
                     val bytes = zipIn.readBytes()
                     val statsJson = String(bytes, Charsets.UTF_8)
@@ -581,6 +600,19 @@ class PageImportExportManager @Inject constructor(
 
             onProgress(0.9f, "Importing data...")
             val result = importFromJson(jsonContent, bookId, regenerateIds, restoreSyncSettings)
+            
+            vocalProfilesJson?.let {
+                try {
+                    val profiles = json.decodeFromString<List<com.andreas_kratzer.ghosttalk.core.model.VocalProfile>>(it)
+                    profiles.forEach { profile ->
+                        vocalProfileRepository.saveProfile(profile)
+                    }
+                    logger.d(TAG, "Imported ${profiles.size} vocal profiles from ZIP")
+                } catch (e: Exception) {
+                    logger.e(TAG, "Failed to import vocal profiles from ZIP", e)
+                }
+            }
+
             onProgress(1.0f, "Import complete.")
             result
         } catch (e: Exception) {

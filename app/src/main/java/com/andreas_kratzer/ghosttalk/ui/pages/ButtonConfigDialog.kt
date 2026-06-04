@@ -248,6 +248,7 @@ fun ButtonConfigDialog(
 
     // Kommunikation
     val actionTypeReadNotifications = stringResource(R.string.button_action_notification)
+    val actionTypeToggleAutoRead = "Automatisches Vorlesen umschalten"
     val actionTypeClearNotifications = stringResource(R.string.button_action_clear_notifications)
     val actionTypeSendMessage = stringResource(R.string.action_send_message)
     val actionTypeStartCall = stringResource(R.string.action_start_call)
@@ -301,6 +302,7 @@ fun ButtonConfigDialog(
                 is ControlDeviceButtonAction -> {
                     when (action.actionType) {
                         DeviceActionType.READ_NOTIFICATIONS -> actionTypeReadNotifications
+                        DeviceActionType.TOGGLE_AUTO_READ_NOTIFICATIONS -> actionTypeToggleAutoRead
                         DeviceActionType.CLEAR_NOTIFICATIONS -> actionTypeClearNotifications
                         DeviceActionType.SEND_MESSAGE -> actionTypeSendMessage
                         DeviceActionType.START_CALL -> actionTypeStartCall
@@ -518,6 +520,9 @@ fun ButtonConfigDialog(
                 contactName = contactName,
                 contactPhone = contactPhone,
                 ignoreEmojis = ignoreEmojis
+            )
+            actionTypeToggleAutoRead -> ControlDeviceButtonAction(
+                actionType = DeviceActionType.TOGGLE_AUTO_READ_NOTIFICATIONS
             )
             actionTypeClearNotifications -> ControlDeviceButtonAction(
                 actionType = DeviceActionType.CLEAR_NOTIFICATIONS,
@@ -827,7 +832,8 @@ fun ButtonConfigDialog(
                                     actionTypeReadNotifications to ControlDeviceButtonAction(DeviceActionType.READ_NOTIFICATIONS),
                                     actionTypeClearNotifications to ControlDeviceButtonAction(DeviceActionType.CLEAR_NOTIFICATIONS),
                                     actionTypeSendMessage to ControlDeviceButtonAction(DeviceActionType.SEND_MESSAGE),
-                                    actionTypeStartCall to ControlDeviceButtonAction(DeviceActionType.START_CALL)
+                                    actionTypeStartCall to ControlDeviceButtonAction(DeviceActionType.START_CALL),
+                                    actionTypeToggleAutoRead to ControlDeviceButtonAction(DeviceActionType.TOGGLE_AUTO_READ_NOTIFICATIONS)
                                 ),
                                 com.andreas_kratzer.ghosttalk.core.model.ActionCategoryRegistry.GROUP_MEDIEN_MUSIK to listOf(
                                     actionTypeSpotify to PlayMediaButtonAction(MediaProvider.SPOTIFY),
@@ -914,7 +920,7 @@ fun ButtonConfigDialog(
                                             actionTypeNavigateBack -> GhostTalkIcons.ArrowBack
                                             actionTypeGemini, actionTypeGeminiSearch, actionTypeGeminiVision -> GhostTalkIcons.AutoAwesome
                                             actionTypeWeather -> GhostTalkIcons.PartlyCloudy
-                                            actionTypeReadNotifications, actionTypeClearNotifications -> GhostTalkIcons.Notifications
+                                            actionTypeReadNotifications, actionTypeClearNotifications, actionTypeToggleAutoRead -> GhostTalkIcons.Notifications
                                             actionTypeSendMessage -> GhostTalkIcons.Message
                                             actionTypeStartCall -> GhostTalkIcons.Phone
                                             actionTypeMediaPlayPause -> GhostTalkIcons.PlayPause

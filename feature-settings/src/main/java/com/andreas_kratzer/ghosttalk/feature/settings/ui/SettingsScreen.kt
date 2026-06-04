@@ -104,7 +104,8 @@ fun SettingsScreen(
     onNavigateToStart: () -> Unit = {},
     isGlobal: Boolean = false,
     viewModel: SettingsViewModel = hiltViewModel(),
-    onNavigateToGlobalSettings: () -> Unit = {}
+    onNavigateToGlobalSettings: () -> Unit = {},
+    onNavigateToVocalTraining: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val dimensions = LocalDimensions.current
@@ -225,7 +226,8 @@ fun SettingsScreen(
                 onLocalExport = { localExportLauncher.launch("GhostTalk_Backup.zip") },
                 onLocalImport = { localImportLauncher.launch("*/*") },
                 onSelectSafFolder = { safFolderLauncher.launch(null) },
-                onSelectSafFolderForImport = { safImportFolderLauncher.launch(null) }
+                onSelectSafFolderForImport = { safImportFolderLauncher.launch(null) },
+                onNavigateToVocalTraining = onNavigateToVocalTraining
             )
         }
     }
@@ -387,7 +389,8 @@ private fun SettingsSubMenu(
     onLocalExport: () -> Unit,
     onLocalImport: () -> Unit,
     onSelectSafFolder: () -> Unit,
-    onSelectSafFolderForImport: () -> Unit
+    onSelectSafFolderForImport: () -> Unit,
+    onNavigateToVocalTraining: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -406,7 +409,8 @@ private fun SettingsSubMenu(
             onLocalExport = onLocalExport,
             onLocalImport = onLocalImport,
             onSelectSafFolder = onSelectSafFolder,
-            onSelectSafFolderForImport = onSelectSafFolderForImport
+            onSelectSafFolderForImport = onSelectSafFolderForImport,
+            onNavigateToVocalTraining = onNavigateToVocalTraining
         )
         Spacer(modifier = Modifier.height(dimensions.paddingDoubleExtraLarge * 2))
     }
@@ -515,7 +519,8 @@ fun SubmenuContent(
     onLocalExport: () -> Unit = {},
     onLocalImport: () -> Unit = {},
     onSelectSafFolder: () -> Unit = {},
-    onSelectSafFolderForImport: () -> Unit = {}
+    onSelectSafFolderForImport: () -> Unit = {},
+    onNavigateToVocalTraining: () -> Unit = {}
 ) {
     when (section) {
         SettingsSection.GENERAL -> {
@@ -525,7 +530,7 @@ fun SubmenuContent(
             VoiceSettingsSection(viewModel, isGlobal = isGlobal)
         }
         SettingsSection.SCANNING -> {
-            ScanningSettingsSection(viewModel, isGlobal = isGlobal)
+            ScanningSettingsSection(viewModel, isGlobal = isGlobal, onNavigateToVocalTraining = onNavigateToVocalTraining)
         }
         SettingsSection.SECURITY -> {
             val pin by viewModel.securityPin.collectAsState(null)

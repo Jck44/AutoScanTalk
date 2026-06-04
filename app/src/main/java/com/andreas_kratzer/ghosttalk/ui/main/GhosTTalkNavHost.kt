@@ -23,6 +23,7 @@ import com.andreas_kratzer.ghosttalk.core.ui.components.SecurityEntryDialog
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.ContentManagementScreen
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsScreen
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
+import com.andreas_kratzer.ghosttalk.feature.settings.ui.VocalTrainingScreen
 import com.andreas_kratzer.ghosttalk.ui.books.BookListScreen
 import com.andreas_kratzer.ghosttalk.ui.books.BookViewModel
 import com.andreas_kratzer.ghosttalk.ui.pages.AnalyticsDashboardScreen
@@ -288,6 +289,9 @@ fun GhostTalkNavHost(
                 },
                 onNavigateToGlobalSettings = {
                     navigateWithSecurity("settings?isGlobal=true")
+                },
+                onNavigateToVocalTraining = {
+                    navController.safeNavigate("vocal_training")
                 }
             )
         }
@@ -353,6 +357,11 @@ fun GhostTalkNavHost(
                     }
                 )
             }
+        }
+        composable("vocal_training") {
+            VocalTrainingScreen(
+                onNavigateBack = { navController.safePopBackStack() }
+            )
         }
     }
 }

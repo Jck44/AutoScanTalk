@@ -100,6 +100,7 @@
     <string name="button_action_frequent_action">Most Frequent Action</string>
     <string name="button_action_smart_prediction">Smart Prediction</string>
     <string name="button_action_notification">Read Notifications</string>
+    <string name="button_action_toggle_auto_read_notifications">Toggle Auto-Read Notifications</string>
     <string name="button_action_clear_notifications">Clear Notifications</string>
     <string name="notification_permission_dialog_title">Notification Access Required</string>
     <string name="notification_permission_dialog_message">To read or clear notifications, the app needs access to your notifications.\n\nPlease enable the switch for \"GoSTalk\" in the settings screen that opens next.</string>

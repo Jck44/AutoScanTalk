@@ -40,6 +40,9 @@ object SettingsConstants {
     const val KEY_SMART_PREDICTION_ENABLED = "smart_prediction_enabled"
     const val KEY_NOTIFICATION_READING_ENABLED = "notification_reading_enabled"
     const val KEY_MONITORED_NOTIFICATION_APPS = "monitored_notification_apps"
+    const val KEY_AUTO_READ_MODE = "notification_auto_read_mode"
+    const val KEY_AUTO_READ_ONLY_IN_USER_MODE = "notification_auto_read_only_in_user_mode"
+    const val KEY_AUTO_READ_IN_STANDBY = "notification_auto_read_in_standby"
     const val KEY_BLUETOOTH_DELAY = "bluetooth_delay_ms"
     const val KEY_ACTIVE_BOOK_ID = "active_book_id"
     const val KEY_KEEP_SCREEN_ON_USER_MODE = "keep_screen_on_user_mode"
@@ -130,5 +133,6 @@ object SettingsConstants {
     const val KEY_LAST_LOGS_SYNC_TIME = "last_logs_sync_time"
     const val KEY_LAST_UPLOADED_LOG_HASH = "last_uploaded_log_hash"
     const val KEY_LATE_CLICK_THRESHOLD_MILLIS = "late_click_threshold_millis"
+    const val KEY_VOCAL_SWITCH_ENABLED = "vocal_switch_enabled"
 }
 

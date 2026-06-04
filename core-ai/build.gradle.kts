@@ -53,10 +53,10 @@ dependencies {
     
     // AI Libraries
     implementation(libs.google.generativeai.mlkit)
-    
-    // Support for Executors
-    implementation(libs.gms.play.services.location)
-    implementation(libs.gms.play.services.auth)
+    // MediaPipe Audio Tasks – official Google successor to tensorflow-lite-task-audio.
+    // Fully 16 KB page-size compatible, actively maintained, provides AudioEmbedder
+    // with the neural YAMNet model for accurate sound fingerprinting.
+    implementation(libs.mediapipe.tasks.audio)
     
     implementation(libs.kotlinx.coroutines.android)
 

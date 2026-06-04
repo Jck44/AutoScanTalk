@@ -87,6 +87,9 @@ class SettingsMapper @Inject constructor(
             appLanguage = settingsRepository.appLanguage,
             isNotificationReadingEnabled = settingsRepository.isNotificationReadingEnabled,
             monitoredNotificationApps = settingsRepository.monitoredNotificationApps.toList(),
+            autoReadMode = settingsRepository.autoReadMode.name,
+            autoReadOnlyInUserMode = settingsRepository.autoReadOnlyInUserMode,
+            autoReadInStandby = settingsRepository.autoReadInStandby,
             showPageIdInLog = settingsRepository.showPageIdInLog,
             bluetoothDelay = settingsRepository.bluetoothDelay,
             ttsEngine = settingsRepository.ttsEngine,
@@ -159,6 +162,13 @@ class SettingsMapper @Inject constructor(
         data.appLanguage?.let { settingsRepository.appLanguage = it }
         data.isNotificationReadingEnabled?.let { settingsRepository.isNotificationReadingEnabled = it }
         data.monitoredNotificationApps?.let { settingsRepository.monitoredNotificationApps = it.toSet() }
+        data.autoReadMode?.let {
+            try {
+                settingsRepository.autoReadMode = com.andreas_kratzer.ghosttalk.core.settings.AutoReadMode.valueOf(it)
+            } catch (_: Exception) {}
+        }
+        data.autoReadOnlyInUserMode?.let { settingsRepository.autoReadOnlyInUserMode = it }
+        data.autoReadInStandby?.let { settingsRepository.autoReadInStandby = it }
         data.showPageIdInLog?.let { settingsRepository.showPageIdInLog = it }
         data.bluetoothDelay?.let { settingsRepository.bluetoothDelay = it }
         data.ttsEngine?.let { settingsRepository.ttsEngine = it }

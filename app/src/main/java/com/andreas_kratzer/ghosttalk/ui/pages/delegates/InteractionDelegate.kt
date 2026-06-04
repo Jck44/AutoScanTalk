@@ -10,6 +10,7 @@ import com.andreas_kratzer.ghosttalk.core.model.ActionLogEntry
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.scanning.ScanCoordinator
 import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
+import com.andreas_kratzer.ghosttalk.core.services.NotificationReaderService
 import com.andreas_kratzer.ghosttalk.domain.actions.ActivateButtonUseCase
 import com.andreas_kratzer.ghosttalk.domain.actions.HandleActionExecutionEventUseCase
 import kotlinx.coroutines.CoroutineScope
@@ -59,7 +60,8 @@ class InteractionDelegate @Inject constructor(
         onPageLoadRequested: (Page) -> Unit, 
         onGoBackRequested: () -> Unit,
         smartPredictions: MutableStateFlow<List<String>?>,
-        currentBookIdFlow: StateFlow<String?>
+        currentBookIdFlow: StateFlow<String?>,
+        onVocalSwitchTriggered: (com.andreas_kratzer.ghosttalk.core.model.ButtonAction?, String?) -> Unit
     ) {
         this.scope = scope
         this.actionExecutor = actionExecutor
@@ -80,6 +82,10 @@ class InteractionDelegate @Inject constructor(
 
         scope.launch {
             actionExecutor.events.collect { event ->
+                if (event is com.andreas_kratzer.ghosttalk.core.actions.ActionExecutionEvent.VocalSwitchTriggered) {
+                    onVocalSwitchTriggered(event.action, event.label)
+                    return@collect
+                }
                 val effect = handleActionExecutionEventUseCase.execute(event) ?: return@collect
                 when (effect) {
                     is HandleActionExecutionEventUseCase.Effect.LoadPage -> {
@@ -139,6 +145,10 @@ class InteractionDelegate @Inject constructor(
         isHardwareTriggered: Boolean = false,
         staticRowPage: Page? = null
     ) {
+        if (ttsHelper.isReadingNotification) {
+            NotificationReaderService.instance?.passiveReader?.cancelReading()
+            return
+        }
         scope.launch {
             val targetPage = if (staticRowPage != null) {
                 if (index < 49) staticRowPage else currentPage

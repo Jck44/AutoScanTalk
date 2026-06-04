@@ -67,6 +67,6 @@ interface PageDao {
     @Query("UPDATE pages SET rowNames = :rowNames, updatedAt = :updatedAt WHERE id = :pageId")
     suspend fun updatePageRowNames(pageId: String, rowNames: List<String>, updatedAt: Long)
 
-    @Query("UPDATE pages SET rows = :rows, columns = :columns, updatedAt = :updatedAt WHERE id = :pageId")
+    @Query("UPDATE pages SET `rows` = :rows, `columns` = :columns, updatedAt = :updatedAt WHERE id = :pageId")
     suspend fun updatePageGridSize(pageId: String, rows: Int, columns: Int, updatedAt: Long)
 }

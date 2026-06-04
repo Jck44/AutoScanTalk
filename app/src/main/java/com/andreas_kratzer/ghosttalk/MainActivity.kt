@@ -149,6 +149,35 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // Manage VocalSwitchService foreground service lifecycle based on User Mode state
+        lifecycleScope.launch {
+            kotlinx.coroutines.flow.combine(
+                pageViewModel.isUserModeActive,
+                settingsRepository.isVocalSwitchEnabledFlow
+            ) { isUserModeActive, isVocalSwitchEnabled ->
+                isUserModeActive && isVocalSwitchEnabled
+            }.collect { shouldListen ->
+                val serviceIntent = Intent(this@MainActivity, com.andreas_kratzer.ghosttalk.core.services.VocalSwitchService::class.java)
+                if (shouldListen) {
+                    val hasPermission = androidx.core.content.ContextCompat.checkSelfPermission(
+                        this@MainActivity,
+                        android.Manifest.permission.RECORD_AUDIO
+                    ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                    if (hasPermission) {
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                            startForegroundService(serviceIntent)
+                        } else {
+                            startService(serviceIntent)
+                        }
+                    } else {
+                        Log.w("MainActivity", "Vocal switch enabled but RECORD_AUDIO permission not granted.")
+                    }
+                } else {
+                    stopService(serviceIntent)
+                }
+            }
+        }
+
         // Android 14+ requires export flags for receivers
         registerReceiver(
             screenOffReceiver, 

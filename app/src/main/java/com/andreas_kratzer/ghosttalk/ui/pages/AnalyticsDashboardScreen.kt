@@ -1,5 +1,6 @@
 package com.andreas_kratzer.ghosttalk.ui.pages
 
+import android.annotation.SuppressLint
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
@@ -58,6 +59,7 @@ import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 import java.text.SimpleDateFormat
 import java.util.Date
 
+@SuppressLint("LocalContextGetResourceValueCall")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AnalyticsDashboardScreen(

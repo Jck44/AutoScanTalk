@@ -183,7 +183,8 @@ enum class DeviceActionType {
     INSTALL_UPDATE,
     START_SYNC,
     VOLUME_IN_APP_TTS,
-    VOLUME_IN_APP_CUES
+    VOLUME_IN_APP_CUES,
+    TOGGLE_AUTO_READ_NOTIFICATIONS
 }
 
 @Serializable

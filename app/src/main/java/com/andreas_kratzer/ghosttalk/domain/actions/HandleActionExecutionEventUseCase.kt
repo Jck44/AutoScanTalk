@@ -39,6 +39,8 @@ class HandleActionExecutionEventUseCase @Inject constructor(
             is ActionExecutionEvent.Error -> Effect.LogAction("Fehler: ${event.message}", event.action, event.label)
             is ActionExecutionEvent.RecoverableAuthError -> Effect.EmitAuthIntent(event.intent)
             is ActionExecutionEvent.RequestPermissions -> Effect.RequestPermissions(event.permissions)
+            // VocalSwitchTriggered is handled directly in PageViewModel; no effect needed here.
+            is ActionExecutionEvent.VocalSwitchTriggered -> null
         }
     }
 }

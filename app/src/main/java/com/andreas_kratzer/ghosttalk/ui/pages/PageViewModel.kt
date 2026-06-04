@@ -4,22 +4,30 @@ import android.app.Application
 import android.content.Intent
 import android.provider.MediaStore
 import android.util.Log
+import android.widget.Toast
+import androidx.core.net.toUri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
 import com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase
+import com.andreas_kratzer.ghosttalk.core.ai.domain.SplitPageUseCase
 import com.andreas_kratzer.ghosttalk.core.ai.domain.UpdateSmartPredictionsUseCase
 import com.andreas_kratzer.ghosttalk.core.cloud.PhilipsHueManager
 import com.andreas_kratzer.ghosttalk.core.cloud.SpotifyManager
 import com.andreas_kratzer.ghosttalk.core.cloud.SpotifyPlaylist
 import com.andreas_kratzer.ghosttalk.core.data.ButtonTemplateRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.domain.pages.CreatePageUseCase
 import com.andreas_kratzer.ghosttalk.core.domain.pages.UsageLocation
+import com.andreas_kratzer.ghosttalk.core.model.AuditoryCue
 import com.andreas_kratzer.ghosttalk.core.model.Book
+import com.andreas_kratzer.ghosttalk.core.model.BookRestructureProposal
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.ButtonTemplate
 import com.andreas_kratzer.ghosttalk.core.model.GridSettingsUpdate
+import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.OptionalProperty
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.scanning.ScanCoordinator
 import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
@@ -43,16 +51,8 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import javax.inject.Inject
-import com.andreas_kratzer.ghosttalk.core.ai.domain.SplitPageUseCase
-import com.andreas_kratzer.ghosttalk.core.domain.pages.CreatePageUseCase
-import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.AuditoryCue
-import com.andreas_kratzer.ghosttalk.core.model.OptionalProperty
 import kotlinx.coroutines.withContext
-import com.andreas_kratzer.ghosttalk.core.model.BookRestructureProposal
-import android.widget.Toast
-import androidx.core.net.toUri
+import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -462,7 +462,29 @@ class PageViewModel @Inject constructor(
             buttonTemplateRepository.ensureBuiltInTemplates()
         }
         pageManagementDelegate.init(viewModelScope)
-        interactionDelegate.init(viewModelScope, actionExecutor, ::loadPage, ::navigateBack, _smartPredictions, activeBookId)
+        interactionDelegate.init(
+            scope = viewModelScope,
+            actionExecutor = actionExecutor,
+            onPageLoadRequested = ::loadPage,
+            onGoBackRequested = ::navigateBack,
+            smartPredictions = _smartPredictions,
+            currentBookIdFlow = activeBookId,
+            onVocalSwitchTriggered = { action, label ->
+                if (action != null) {
+                    val config = com.andreas_kratzer.ghosttalk.core.model.ButtonConfig(
+                        id = java.util.UUID.randomUUID().toString(),
+                        label = label ?: "",
+                        spokenText = label,
+                        buttonAction = action
+                    )
+                    viewModelScope.launch {
+                        actionExecutor.executeButtonAction(config)
+                    }
+                } else {
+                    activateFocusedButton()
+                }
+            }
+        )
         interactionDelegate.scanCoordinator = scanCoordinator
         screenManagementDelegate.init(viewModelScope, isUserModeActive)
         
@@ -559,7 +581,7 @@ class PageViewModel @Inject constructor(
 
         // Observe book ID changes to load restructure proposal cache
         viewModelScope.launch {
-            val flow = activeBookId ?: return@launch
+            val flow = activeBookId
             flow.collect { bookId ->
                 if (bookId != null) {
                     _aiRestructureProposal.value = loadProposalFromCache(bookId)
@@ -571,15 +593,15 @@ class PageViewModel @Inject constructor(
 
         // Initialize selectedPageIds to active/reachable pages by default
         viewModelScope.launch {
-            val unfilteredFlow = pageManagementDelegate.unfilteredPages ?: return@launch
-            val activeTargetFlow = pageManagementDelegate.activeTargetPageIds ?: return@launch
+            val unfilteredFlow = pageManagementDelegate.unfilteredPages
+            val activeTargetFlow = pageManagementDelegate.activeTargetPageIds
             kotlinx.coroutines.flow.combine(
                 unfilteredFlow,
                 activeTargetFlow
             ) { pages, activeIds ->
                 Pair(pages, activeIds)
             }.collect { (pages, activeIds) ->
-                if (pages != null && activeIds != null && pages.isNotEmpty() && _selectedPageIds.value.isEmpty()) {
+                if (pages.isNotEmpty() && _selectedPageIds.value.isEmpty()) {
                     _selectedPageIds.value = pages
                         .filter { activeIds.contains(it.id) }
                         .map { it.id }
@@ -1279,7 +1301,7 @@ class PageViewModel @Inject constructor(
             } catch (e: Exception) {
                 Log.e("PageViewModel", "Error applying page split", e)
                 withContext(Dispatchers.Main) {
-                    android.widget.Toast.makeText(getApplication(), "Fehler beim Anwenden: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
+                    Toast.makeText(getApplication(), "Fehler beim Anwenden: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
                 }
             } finally {
                 _isPageSplitLoading.value = false

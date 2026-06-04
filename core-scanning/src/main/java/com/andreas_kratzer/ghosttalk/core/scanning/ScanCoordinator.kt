@@ -54,6 +54,21 @@ class ScanCoordinator @Inject constructor(
 
     private val _isPausedManually = MutableStateFlow(false)
     override val isPausedManually: StateFlow<Boolean> = _isPausedManually.asStateFlow()
+
+    private val _isPausedForNotification = MutableStateFlow(false)
+    override val isPausedForNotification: StateFlow<Boolean> = _isPausedForNotification.asStateFlow()
+
+    override fun pauseForNotification() {
+        _isPausedForNotification.value = true
+        debugLog("pauseForNotification() called")
+        stopScanningTemporarily()
+    }
+
+    override fun resumeFromNotification() {
+        _isPausedForNotification.value = false
+        debugLog("resumeFromNotification() called")
+        resumeScanningIfEnabled()
+    }
     
     private var scanCycleLimitEnabled = false
     private var scanCycleLimit = 2
@@ -146,6 +161,7 @@ class ScanCoordinator @Inject constructor(
                 isSmartPredictionLoading,
                 smartPredictions,
                 isPausedManually,
+                isPausedForNotification,
                 callActionProxy.isInCall,
                 this@ScanCoordinator.staticRowPage ?: MutableStateFlow(null)
             ) { array ->
@@ -156,10 +172,11 @@ class ScanCoordinator @Inject constructor(
                     isActive = array[0] as Boolean,
                     isLoading = array[4] as Boolean,
                     predictions = (array[5] as? List<*>)?.filterIsInstance<String>(),
-                    isInCall = array[7] as Boolean
+                    isInCall = array[8] as Boolean
                 )
             }.collect { data ->
-                if (!data.isActive || _isPausedManually.value || data.isInCall) {
+                val pausedForNotif = _isPausedForNotification.value
+                if (!data.isActive || _isPausedManually.value || data.isInCall || pausedForNotif) {
                     if (!data.isActive) {
                         debugLog("User mode deactivated. Stopping scan.")
                         stopScanning()
@@ -168,6 +185,9 @@ class ScanCoordinator @Inject constructor(
                         _isPausedManually.value = false
                     } else if (data.isInCall) {
                         debugLog("In a call. Stopping scan.")
+                        stopScanningTemporarily()
+                    } else if (pausedForNotif) {
+                        debugLog("Scanning is paused for notification auto-read.")
                         stopScanningTemporarily()
                     } else {
                         debugLog("Scanning is manually paused.")
@@ -244,6 +264,7 @@ class ScanCoordinator @Inject constructor(
         if (!scanningSettings.autoStartScanning) return
         if (_isStoppedDueToLimit.value) return
         if (_isPausedManually.value) return
+        if (_isPausedForNotification.value) return
         if (actionProvider.isExecuting.value) return
         if (callActionProxy.isInCall.value) return
         

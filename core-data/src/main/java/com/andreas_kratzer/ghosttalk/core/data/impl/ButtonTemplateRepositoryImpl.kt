@@ -287,6 +287,7 @@ class ButtonTemplateRepositoryImpl @Inject constructor(
                 DeviceActionType.START_SYNC -> "Synchronisation starten"
                 DeviceActionType.VOLUME_IN_APP_TTS -> "In-App Lautstärke (Laut Sprechen)"
                 DeviceActionType.VOLUME_IN_APP_CUES -> "In-App Lautstärke (Audio-Hinweis)"
+                DeviceActionType.TOGGLE_AUTO_READ_NOTIFICATIONS -> "Automatisches Vorlesen ein-/ausschalten"
             }
             val label = when (type) {
                 DeviceActionType.READ_NOTIFICATIONS -> "Nachrichten"
@@ -312,6 +313,7 @@ class ButtonTemplateRepositoryImpl @Inject constructor(
                 DeviceActionType.START_SYNC -> "Sync"
                 DeviceActionType.VOLUME_IN_APP_TTS -> "Vol Laut"
                 DeviceActionType.VOLUME_IN_APP_CUES -> "Vol Hinweis"
+                DeviceActionType.TOGGLE_AUTO_READ_NOTIFICATIONS -> "Auto Vorlesen"
             }
             list.add(
                 ButtonTemplate(
