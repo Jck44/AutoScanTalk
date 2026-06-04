@@ -71,7 +71,8 @@ class SettingsBackupCoverageTest {
         "speakerVolume",            // Audio volume scaling (local)
         "speakerVolumeFlow",
         "headphoneVolume",          // Audio volume scaling (local)
-        "headphoneVolumeFlow"
+        "headphoneVolumeFlow",
+        "hangUpPressesRequired"     // Call hang-up presses setting (local)
     )
 
     private val propertyMappings = mapOf(

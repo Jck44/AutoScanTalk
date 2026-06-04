@@ -437,5 +437,14 @@
     <string name="analytics_tab_details">Detailanalyse</string>
     <string name="analytics_show_more">Mehr anzeigen</string>
     <string name="analytics_show_less">Weniger anzeigen</string>
+    <!-- Dynamic action previews -->
+    <string name="button_preview_frequent_action_speak">Häufigste Aktion (Rang %1$d):\nErmittelt dynamisch die am häufigsten ausgeführte Aktion auf Rang %1$d und führt diese aus.</string>
+    <string name="button_preview_previous_action_speak">Vorherige Aktion (Rang %1$d):\nFührt die %1$d. zuletzt ausgeführte Aktion aus dem Verlauf aus.</string>
+    <string name="button_preview_smart_prediction_speak">Smarte Vorhersage (Rang %1$d, Typ: %2$s):\nBietet die %1$d. beste Vorhersage basierend auf dem aktuellen Kontext an.</string>
+    <string name="button_preview_frequent_action_cue_1">Flüsterton (Häufigste Aktion):\nSpricht leise den Namen des am häufigsten ausgeführten Knopfs mit dem Präfix \"Häufigste Aktion: [Kachelname]\"</string>
+    <string name="button_preview_frequent_action_cue_n">Flüsterton (Häufigste Aktion):\nSpricht leise den Namen des %1$d. am häufigsten ausgeführten Knopfs mit dem Präfix \"%1$d. Häufigste Aktion: [Kachelname]\"</string>
+    <string name="button_preview_previous_action_cue_1">Flüsterton (Vorherige Aktion):\nSpricht leise den Namen des letzten ausgeführten Knopfs mit dem Präfix \"Letzte Aktion: [Kachelname]\"</string>
+    <string name="button_preview_previous_action_cue_n">Flüsterton (Vorherige Aktion):\nSpricht leise den Namen des %1$d. zuletzt ausgeführten Knopfs mit dem Präfix \"%1$d. Letzte Aktion: [Kachelname]\"</string>
+    <string name="button_preview_smart_prediction_cue">Flüsterton (Smarte Vorhersage):\nVerwendet den Standard-Auditory-Cue des vorhergesagten Knopfs/Seite (ohne zusätzliches Präfix).</string>
 </resources>
 

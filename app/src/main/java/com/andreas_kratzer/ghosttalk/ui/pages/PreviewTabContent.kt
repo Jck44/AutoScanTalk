@@ -10,11 +10,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.model.DeviceActionType
 import com.andreas_kratzer.ghosttalk.core.model.MediaProvider
+import com.andreas_kratzer.ghosttalk.core.model.PredictionType
 
 @Composable
 fun PreviewTabContent(
@@ -37,6 +39,8 @@ fun PreviewTabContent(
     mediaProvider: MediaProvider = MediaProvider.SPOTIFY,
     mediaContentName: String = "",
     mediaReturnToAppDelaySec: String = "2",
+    rank: Int = 1,
+    predictionType: PredictionType = PredictionType.ALL,
     actionTypeSpeak: String = stringResource(R.string.button_action_speak_text),
     actionTypeNavigate: String = stringResource(R.string.button_action_navigate_page),
     actionTypeGemini: String = stringResource(R.string.button_action_gemini),
@@ -45,8 +49,12 @@ fun PreviewTabContent(
     actionTypeWeather: String = stringResource(R.string.button_action_weather),
     actionTypeDevice: String = stringResource(R.string.button_action_control_device),
     actionTypeSmartHome: String = stringResource(R.string.button_action_smart_home),
-    actionTypePlayMedia: String = stringResource(R.string.button_action_play_media)
+    actionTypePlayMedia: String = stringResource(R.string.button_action_play_media),
+    actionTypeFrequent: String = stringResource(R.string.button_action_frequent_action),
+    actionTypePrevious: String = stringResource(R.string.action_previous_action),
+    actionTypeSmart: String = stringResource(R.string.button_action_smart_prediction)
 ) {
+    val context = LocalContext.current
     val isSpeech = selectedActionType == actionTypeSpeak
     val speakTextToUse = if (isSpeech) {
         spokenText.takeIf { it.isNotBlank() } ?: label
@@ -56,7 +64,7 @@ fun PreviewTabContent(
         selectedActionType, spokenText, label, geminiPrompt, targetPageId,
         deviceActionType, includeWeekday, offsetValue, prefixText, suffixText,
         contactName, contactPhone, messageText, smartHomeDeviceName,
-        mediaProvider, mediaContentName, mediaReturnToAppDelaySec
+        mediaProvider, mediaContentName, mediaReturnToAppDelaySec, rank, predictionType
     ) {
         when {
             isSpeech -> {
@@ -152,13 +160,27 @@ fun PreviewTabContent(
                     }
                     actionTypeWeather -> "🌤️ Wetteransage:\nRuft aktuellen Wetterbericht ab und spricht ihn laut vor."
                     actionTypeSmartHome -> "🏠 Smart Home:\nSchaltet Gerät \"$smartHomeDeviceName\"."
-                    else -> "🔄 Führt dynamische Aktion aus (Verlauf / Prediction)."
+                    actionTypeFrequent -> {
+                        context.getString(R.string.button_preview_frequent_action_speak, rank)
+                    }
+                    actionTypePrevious -> {
+                        context.getString(R.string.button_preview_previous_action_speak, rank)
+                    }
+                    actionTypeSmart -> {
+                        val filterText = when (predictionType) {
+                            PredictionType.ALL -> context.getString(R.string.button_smart_prediction_type_all)
+                            PredictionType.ACTION -> context.getString(R.string.button_smart_prediction_type_action)
+                            PredictionType.NAVIGATION -> context.getString(R.string.button_smart_prediction_type_navigation)
+                        }
+                        context.getString(R.string.button_preview_smart_prediction_speak, rank, filterText)
+                    }
+                    else -> "🔄 Führt dynamische Aktion aus."
                 }
             }
         }
     }
 
-    val cueDescription = remember(playActionAsAuditoryCue, isSpeech, speakTextToUse, auditoryCueText, label) {
+    val cueDescription = remember(playActionAsAuditoryCue, isSpeech, speakTextToUse, auditoryCueText, label, selectedActionType, rank) {
         when {
             playActionAsAuditoryCue -> {
                 if (isSpeech) {
@@ -171,7 +193,28 @@ fun PreviewTabContent(
                 "🔊 Spricht leise (Benutzerdefinierter Cue):\n\"$auditoryCueText\"\n\n(Eigener Hinweistext wird verwendet)"
             }
             else -> {
-                "🔊 Spricht leise (Fallback auf Label):\n\"$label\"\n\n(Da der Hinweistext leer ist, wird die Kachel-Beschriftung als Scanning-Cue verwendet)"
+                when (selectedActionType) {
+                    actionTypeFrequent -> {
+                        if (rank == 1) {
+                            "🔊 " + context.getString(R.string.button_preview_frequent_action_cue_1)
+                        } else {
+                            "🔊 " + context.getString(R.string.button_preview_frequent_action_cue_n, rank)
+                        }
+                    }
+                    actionTypePrevious -> {
+                        if (rank == 1) {
+                            "🔊 " + context.getString(R.string.button_preview_previous_action_cue_1)
+                        } else {
+                            "🔊 " + context.getString(R.string.button_preview_previous_action_cue_n, rank)
+                        }
+                    }
+                    actionTypeSmart -> {
+                        "🔊 " + context.getString(R.string.button_preview_smart_prediction_cue)
+                    }
+                    else -> {
+                        "🔊 Spricht leise (Fallback auf Label):\n\"$label\"\n\n(Da der Hinweistext leer ist, wird die Kachel-Beschriftung als Scanning-Cue verwendet)"
+                    }
+                }
             }
         }
     }
@@ -221,3 +264,4 @@ fun PreviewTabContent(
         }
     }
 }
+

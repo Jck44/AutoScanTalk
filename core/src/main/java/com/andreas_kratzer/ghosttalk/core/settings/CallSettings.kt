@@ -37,4 +37,7 @@ interface CallSettings {
 
     var simulateCallsEnabled: Boolean
     val simulateCallsEnabledFlow: StateFlow<Boolean>
+
+    var hangUpPressesRequired: Int
+    val hangUpPressesRequiredFlow: StateFlow<Int>
 }

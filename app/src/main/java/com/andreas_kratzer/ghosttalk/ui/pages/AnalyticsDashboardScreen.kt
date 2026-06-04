@@ -33,7 +33,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
+import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -82,6 +82,7 @@ fun AnalyticsDashboardScreen(
     val isGeminiEnabled = pageViewModel.settingsRepository.isGeminiEnabled
     val aiProposal by pageViewModel.aiRestructureProposal.collectAsState()
     val isAiLoading by pageViewModel.isAiRestructureLoading.collectAsState()
+    val aiToastApplied = stringResource(R.string.analytics_ai_toast_applied)
 
     val statisticsTimeframeText = remember(historyEvents, userModeSessions, locale) {
         val minEvent = historyEvents.minOfOrNull { it.timestamp } ?: Long.MAX_VALUE
@@ -250,7 +251,7 @@ fun AnalyticsDashboardScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            TabRow(selectedTabIndex = selectedTabIndex) {
+            SecondaryTabRow(selectedTabIndex = selectedTabIndex) {
                 Tab(
                     selected = selectedTabIndex == 0,
                     onClick = { selectedTabIndex = 0 },
@@ -999,8 +1000,8 @@ fun AnalyticsDashboardScreen(
 
                                     Button(
                                         onClick = {
-                                            pageViewModel.applyAiRestructureProposal(proposal) { newBookId ->
-                                                Toast.makeText(context, context.getString(R.string.analytics_ai_toast_applied), Toast.LENGTH_LONG).show()
+                                            pageViewModel.applyAiRestructureProposal(proposal) { _ ->
+                                                Toast.makeText(context, aiToastApplied, Toast.LENGTH_LONG).show()
                                                 onNavigateBack()
                                             }
                                         },

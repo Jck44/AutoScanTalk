@@ -14,6 +14,8 @@ import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.K
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SIMULATE_CALLS_ENABLED
 import kotlinx.coroutines.flow.StateFlow
 
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_CALL_HANG_UP_PRESSES_REQUIRED
+
 class CallSettingsRepository(
     prefs: SharedPreferences,
     activeBookIdFlow: StateFlow<String?>
@@ -30,6 +32,7 @@ class CallSettingsRepository(
     private val _callAnnouncementAsCue = BooleanSetting(KEY_CALL_ANNOUNCEMENT_AS_CUE, true, isScoped = false)
     private val _callAutoEnableSpeakerphone = BooleanSetting(KEY_CALL_AUTO_ENABLE_SPEAKERPHONE, true, isScoped = false)
     private val _simulateCallsEnabled = BooleanSetting(KEY_SIMULATE_CALLS_ENABLED, false, isScoped = false)
+    private val _hangUpPressesRequired = IntSetting(KEY_CALL_HANG_UP_PRESSES_REQUIRED, 2, isScoped = false)
 
     val maxCallDurationSecondsFlow = _maxCallDurationSeconds.flow
     val callDurationFeedbackIntervalSecondsFlow = _callDurationFeedbackIntervalSeconds.flow
@@ -42,6 +45,7 @@ class CallSettingsRepository(
     val callAnnouncementAsCueFlow = _callAnnouncementAsCue.flow
     val autoEnableSpeakerphoneFlow = _callAutoEnableSpeakerphone.flow
     val simulateCallsEnabledFlow = _simulateCallsEnabled.flow
+    val hangUpPressesRequiredFlow = _hangUpPressesRequired.flow
 
     var maxCallDurationSeconds: Int by _maxCallDurationSeconds
     var callDurationFeedbackIntervalSeconds: Int by _callDurationFeedbackIntervalSeconds
@@ -54,6 +58,7 @@ class CallSettingsRepository(
     var callAnnouncementAsCue: Boolean by _callAnnouncementAsCue
     var autoEnableSpeakerphone: Boolean by _callAutoEnableSpeakerphone
     var simulateCallsEnabled: Boolean by _simulateCallsEnabled
+    var hangUpPressesRequired: Int by _hangUpPressesRequired
 
     override fun refresh() {
         _maxCallDurationSeconds.refresh()
@@ -67,5 +72,6 @@ class CallSettingsRepository(
         _callAnnouncementAsCue.refresh()
         _callAutoEnableSpeakerphone.refresh()
         _simulateCallsEnabled.refresh()
+        _hangUpPressesRequired.refresh()
     }
 }

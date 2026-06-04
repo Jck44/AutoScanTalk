@@ -109,6 +109,7 @@ object SettingsConstants {
     const val KEY_CALL_ANNOUNCEMENT_AS_CUE = "pref_call_announcement_as_cue"
     const val KEY_CALL_AUTO_ENABLE_SPEAKERPHONE = "pref_call_auto_enable_speakerphone"
     const val KEY_SIMULATE_CALLS_ENABLED = "pref_simulate_calls_enabled"
+    const val KEY_CALL_HANG_UP_PRESSES_REQUIRED = "pref_call_hang_up_presses_required"
     const val KEY_IS_SETUP_COMPLETED = "is_setup_completed"
     
     const val KEY_GOOGLE_DRIVE_FOLDER_ID = "google_drive_folder_id"

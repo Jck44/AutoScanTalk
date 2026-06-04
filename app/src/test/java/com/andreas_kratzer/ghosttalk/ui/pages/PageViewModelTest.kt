@@ -171,6 +171,7 @@ class PageViewModelTest {
         every { settingsRepository.geminiRedoPrediction } returns false
         every { settingsRepository.autoStartScanning } returns false
         every { settingsRepository.resumeScanningFromStart } returns true
+        every { settingsRepository.hangUpPressesRequired } returns 2
         
         every { templateRepository.getAllTemplates() } returns MutableStateFlow<List<PageTemplate>>(emptyList())
         every { getPagesUseCase.execute(any()) } returns MutableStateFlow<List<Page>>(emptyList())
@@ -403,6 +404,7 @@ class PageViewModelTest {
 
     @Test
     fun `activateFocusedButton focuses hang up on first press and hangs up on second press`() = runTest {
+        every { settingsRepository.hangUpPressesRequired } returns 2
         every { application.getString(com.andreas_kratzer.ghosttalk.R.string.call_hang_up) } returns "Hang Up"
         viewModel = createViewModel()
         mockCallStateFlow.value = com.andreas_kratzer.ghosttalk.core.call.CallState.ACTIVE
@@ -416,6 +418,77 @@ class PageViewModelTest {
 
         viewModel.activateFocusedButton()
         io.mockk.verify { systemCallManager.hangUp() }
+
+        // Clean up
+        mockCallStateFlow.value = com.andreas_kratzer.ghosttalk.core.call.CallState.NONE
+        testScheduler.runCurrent()
+    }
+
+    @Test
+    fun `activateFocusedButton hangs up on first press when hangUpPressesRequired is 1`() = runTest {
+        every { settingsRepository.hangUpPressesRequired } returns 1
+        viewModel = createViewModel()
+        mockCallStateFlow.value = com.andreas_kratzer.ghosttalk.core.call.CallState.ACTIVE
+        testScheduler.runCurrent()
+
+        viewModel.activateFocusedButton()
+        io.mockk.verify { systemCallManager.hangUp() }
+
+        // Clean up
+        mockCallStateFlow.value = com.andreas_kratzer.ghosttalk.core.call.CallState.NONE
+        testScheduler.runCurrent()
+    }
+
+    @Test
+    fun `activateFocusedButton hangs up on third press when hangUpPressesRequired is 3`() = runTest {
+        every { settingsRepository.hangUpPressesRequired } returns 3
+        every { settingsRepository.holdingTimeMillis } returns 0L // No debounce in this test
+        every { application.getString(com.andreas_kratzer.ghosttalk.R.string.call_hang_up) } returns "Hang Up"
+        viewModel = createViewModel()
+        mockCallStateFlow.value = com.andreas_kratzer.ghosttalk.core.call.CallState.ACTIVE
+        testScheduler.runCurrent()
+
+        viewModel.activateFocusedButton() // Press 1
+        assertEquals(true, viewModel.isHangUpButtonFocused.value)
+        assertEquals(1, viewModel.hangUpPressCount.value)
+
+        viewModel.activateFocusedButton() // Press 2
+        assertEquals(2, viewModel.hangUpPressCount.value)
+        io.mockk.verify(exactly = 0) { systemCallManager.hangUp() }
+
+        viewModel.activateFocusedButton() // Press 3
+        io.mockk.verify(exactly = 1) { systemCallManager.hangUp() }
+
+        // Clean up
+        mockCallStateFlow.value = com.andreas_kratzer.ghosttalk.core.call.CallState.NONE
+        testScheduler.runCurrent()
+    }
+
+    @Test
+    fun `activateFocusedButton enforces holdingTime debounce during active calls`() = runTest {
+        every { settingsRepository.hangUpPressesRequired } returns 2
+        every { settingsRepository.holdingTimeMillis } returns 500L
+        every { application.getString(com.andreas_kratzer.ghosttalk.R.string.call_hang_up) } returns "Hang Up"
+        viewModel = createViewModel()
+        mockCallStateFlow.value = com.andreas_kratzer.ghosttalk.core.call.CallState.ACTIVE
+        testScheduler.runCurrent()
+
+        // First press: accepted, triggers focus overlay and starts holding time tracker
+        viewModel.activateFocusedButton()
+        assertEquals(1, viewModel.hangUpPressCount.value)
+
+        // Second press: happens instantly (0ms delta), should be ignored because it is < 500ms
+        viewModel.activateFocusedButton()
+        assertEquals(1, viewModel.hangUpPressCount.value)
+        io.mockk.verify(exactly = 0) { systemCallManager.hangUp() }
+
+        // Simulate waiting for 600ms
+        Thread.sleep(600)
+
+        // Third press: happens after holding time, should be accepted and trigger hang up (since required presses is 2)
+        viewModel.activateFocusedButton()
+        assertEquals(2, viewModel.hangUpPressCount.value)
+        io.mockk.verify(exactly = 1) { systemCallManager.hangUp() }
 
         // Clean up
         mockCallStateFlow.value = com.andreas_kratzer.ghosttalk.core.call.CallState.NONE

@@ -61,6 +61,7 @@ fun CallSettingsSection(viewModel: SettingsViewModel) {
             val incomingCallAutoActionInactive by viewModel.incomingCallAutoActionUserModeInactive.collectAsState("NONE")
             val callAnnouncementAsCue by viewModel.callAnnouncementAsCue.collectAsState(true)
             val autoEnableSpeakerphone by viewModel.autoEnableSpeakerphone.collectAsState(true)
+            val hangUpPressesRequired by viewModel.hangUpPressesRequired.collectAsState(2)
 
             var isDefaultDialer by remember { mutableStateOf(false) }
             val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
@@ -206,6 +207,32 @@ fun CallSettingsSection(viewModel: SettingsViewModel) {
                 selectedOption = selectedActionLabel,
                 options = actionOptions.map { (action, label) ->
                     label to { viewModel.setIncomingCallAutoActionUserModeActive(action) }
+                }
+            )
+
+            val hangUpPressesLabel = stringResource(R.string.settings_call_hang_up_presses)
+            val hangUpPressesOptions = listOf(1, 2, 3, 4, 5)
+            val selectedHangUpOptionLabel = when (hangUpPressesRequired) {
+                1 -> "1 (Sofort / Immediate)"
+                2 -> "2 (Bestätigung / Confirmation)"
+                3 -> "3"
+                4 -> "4"
+                5 -> "5"
+                else -> hangUpPressesRequired.toString()
+            }
+            SettingsDropdownItem(
+                label = hangUpPressesLabel,
+                selectedOption = selectedHangUpOptionLabel,
+                options = hangUpPressesOptions.map { presses ->
+                    val optLabel = when (presses) {
+                        1 -> "1 (Sofort / Immediate)"
+                        2 -> "2 (Bestätigung / Confirmation)"
+                        3 -> "3"
+                        4 -> "4"
+                        5 -> "5"
+                        else -> presses.toString()
+                    }
+                    optLabel to { viewModel.setHangUpPressesRequired(presses) }
                 }
             )
 

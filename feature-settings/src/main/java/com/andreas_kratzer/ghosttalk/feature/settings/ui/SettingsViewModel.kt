@@ -214,6 +214,7 @@ class SettingsViewModel @Inject constructor(
     val callAnnouncementAsCue = settingsRepository.callAnnouncementAsCueFlow
     val autoEnableSpeakerphone = settingsRepository.autoEnableSpeakerphoneFlow
     val simulateCallsEnabled = settingsRepository.simulateCallsEnabledFlow
+    val hangUpPressesRequired = settingsRepository.hangUpPressesRequiredFlow
     
     private val _showActionHistoryDialog = MutableStateFlow(false)
     val showActionHistoryDialog = _showActionHistoryDialog.asStateFlow()
@@ -748,6 +749,9 @@ class SettingsViewModel @Inject constructor(
     }
     fun setSimulateCallsEnabled(enable: Boolean) {
         settingsRepository.simulateCallsEnabled = enable
+    }
+    fun setHangUpPressesRequired(presses: Int) {
+        settingsRepository.hangUpPressesRequired = presses
     }
 
     val isDefaultDialer: Boolean

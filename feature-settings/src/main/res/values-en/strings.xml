@@ -362,6 +362,7 @@
     <string name="settings_call_action_none">No action</string>
     <string name="settings_call_action_answer">Answer</string>
     <string name="settings_call_action_reject">Reject</string>
+    <string name="settings_call_hang_up_presses">Key presses to hang up</string>
     <string name="settings_dialer_register_title">Set as default phone app</string>
     <string name="settings_dialer_register_desc">Registers GhostTalk as the system\'s default phone app (dialer) to receive and control calls.</string>
     <string name="settings_dialer_registered">Already set as default phone app</string>

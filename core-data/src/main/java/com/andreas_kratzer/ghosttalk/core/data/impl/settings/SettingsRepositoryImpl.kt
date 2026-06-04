@@ -194,6 +194,7 @@ class SettingsRepositoryImpl @Inject constructor(
     override val callAnnouncementAsCueFlow: StateFlow<Boolean> get() = callSettings.callAnnouncementAsCueFlow
     override val autoEnableSpeakerphoneFlow: StateFlow<Boolean> get() = callSettings.autoEnableSpeakerphoneFlow
     override val simulateCallsEnabledFlow: StateFlow<Boolean> get() = callSettings.simulateCallsEnabledFlow
+    override val hangUpPressesRequiredFlow: StateFlow<Int> get() = callSettings.hangUpPressesRequiredFlow
 
     // ── Public API: Properties ───────────────────────────────────────────
 
@@ -773,4 +774,8 @@ class SettingsRepositoryImpl @Inject constructor(
     override var simulateCallsEnabled: Boolean
         get() = callSettings.simulateCallsEnabled
         set(value) { callSettings.simulateCallsEnabled = value }
+
+    override var hangUpPressesRequired: Int
+        get() = callSettings.hangUpPressesRequired
+        set(value) { callSettings.hangUpPressesRequired = value }
 }

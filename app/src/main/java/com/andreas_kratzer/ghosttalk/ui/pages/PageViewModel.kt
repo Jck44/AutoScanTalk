@@ -317,6 +317,7 @@ class PageViewModel @Inject constructor(
     val isOutgoing = systemCallManager.isOutgoing
     val isSimulatedCall = systemCallManager.isSimulatedFlow
     val isHangUpButtonFocused = MutableStateFlow(false)
+    val hangUpPressCount = MutableStateFlow(0)
     val focusedCallScreenButton = MutableStateFlow("ANNEHMEN") // "ANNEHMEN" or "ABLEHNEN"
     private var callScanJob: kotlinx.coroutines.Job? = null
 
@@ -427,10 +428,12 @@ class PageViewModel @Inject constructor(
                         actionExecutor.stopActions()
                         stopCallScanning()
                         isHangUpButtonFocused.value = false
+                        hangUpPressCount.value = 0
                     }
                     com.andreas_kratzer.ghosttalk.core.call.CallState.NONE -> {
                         stopCallScanning()
                         isHangUpButtonFocused.value = false
+                        hangUpPressCount.value = 0
                         if (isUserModeActive.value) {
                             loadStartPage()
                             scanCoordinator.restartScanning()
@@ -543,6 +546,8 @@ class PageViewModel @Inject constructor(
         activeBookId.value,
         isHardwareTriggered = com.andreas_kratzer.ghosttalk.core.util.InputSourceTracker.isHardwareTriggered
     )
+    private var lastCallPressTime = 0L
+
     fun activateFocusedButton() {
         val state = systemCallManager.callState.value
         if (state == com.andreas_kratzer.ghosttalk.core.call.CallState.RINGING) {
@@ -556,7 +561,19 @@ class PageViewModel @Inject constructor(
         
         if (state == com.andreas_kratzer.ghosttalk.core.call.CallState.ACTIVE ||
             state == com.andreas_kratzer.ghosttalk.core.call.CallState.DIALING) {
-            if (isHangUpButtonFocused.value) {
+            val currentTime = System.currentTimeMillis()
+            val holdingTime = settingsRepository.holdingTimeMillis
+            if (currentTime - lastCallPressTime < holdingTime) {
+                // Ignore rapid accidental presses (debounce / Haltezeit)
+                return
+            }
+            lastCallPressTime = currentTime
+
+            val requiredPresses = settingsRepository.hangUpPressesRequired
+            val nextPressCount = hangUpPressCount.value + 1
+            hangUpPressCount.value = nextPressCount
+            
+            if (requiredPresses <= 1 || nextPressCount >= requiredPresses) {
                 systemCallManager.hangUp()
             } else {
                 isHangUpButtonFocused.value = true

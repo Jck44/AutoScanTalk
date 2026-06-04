@@ -433,5 +433,14 @@
     <string name="analytics_tab_details">Details</string>
     <string name="analytics_show_more">Show more</string>
     <string name="analytics_show_less">Show less</string>
+    <!-- Dynamic action previews -->
+    <string name="button_preview_frequent_action_speak">Most Frequent Action (Rank %1$d):\nDynamically determines the most frequently executed action at rank %1$d and executes it.</string>
+    <string name="button_preview_previous_action_speak">Previous Action (Rank %1$d):\nExecutes the %1$d. last executed action from the history.</string>
+    <string name="button_preview_smart_prediction_speak">Smart Prediction (Rank %1$d, Type: %2$s):\nOffers the rank %1$d prediction based on the current context.</string>
+    <string name="button_preview_frequent_action_cue_1">Auditory Cue (Most Frequent Action):\nSpeaks the name of the most frequently executed button with the prefix \"Most frequent action: [Tile Name]\".</string>
+    <string name="button_preview_frequent_action_cue_n">Auditory Cue (Most Frequent Action):\nSpeaks the name of the %1$d. most frequently executed button with the prefix \"%1$d. Most frequent action: [Tile Name]\".</string>
+    <string name="button_preview_previous_action_cue_1">Auditory Cue (Previous Action):\nSpeaks the name of the last executed button with the prefix \"Last action: [Tile Name]\".</string>
+    <string name="button_preview_previous_action_cue_n">Auditory Cue (Previous Action):\nSpeaks the name of the %1$d. last executed button with the prefix \"%1$d. Last action: [Tile Name]\".</string>
+    <string name="button_preview_smart_prediction_cue">Auditory Cue (Smart Prediction):\nUses the default auditory cue of the predicted button/page (without any additional prefix).</string>
 </resources>
 

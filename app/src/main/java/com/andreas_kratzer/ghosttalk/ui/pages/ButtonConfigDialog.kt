@@ -2,7 +2,11 @@
 package com.andreas_kratzer.ghosttalk.ui.pages
 
 import android.Manifest
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import android.content.pm.PackageManager
+import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -151,6 +155,16 @@ fun ButtonConfigDialog(
 
     val audioRecorder = remember(context) { com.andreas_kratzer.ghosttalk.core.audio.AudioRecorder(context) }
     var isRecording by remember { mutableStateOf(false) }
+
+    val activity = remember(context) { context.findActivity() }
+    DisposableEffect(isRecording) {
+        if (isRecording) {
+            activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+        onDispose {
+            activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+    }
     var isPlayingAudio by remember { mutableStateOf(false) }
     var mediaPlayer by remember { mutableStateOf<android.media.MediaPlayer?>(null) }
     var showDeleteConfirmation by remember { mutableStateOf(false) }
@@ -1495,7 +1509,9 @@ fun ButtonConfigDialog(
                                 auditoryCueText = auditoryCueText,
                                 mediaProvider = mediaProvider,
                                 mediaContentName = mediaContentName,
-                                mediaReturnToAppDelaySec = mediaReturnToAppDelaySec
+                                mediaReturnToAppDelaySec = mediaReturnToAppDelaySec,
+                                rank = rank,
+                                predictionType = predictionType
                             )
                         }
                         2 -> {
@@ -1538,4 +1554,13 @@ fun ButtonConfigDialog(
 )
 }
 
-
+private fun Context.findActivity(): Activity? {
+    var currentContext = this
+    while (currentContext is ContextWrapper) {
+        if (currentContext is Activity) {
+            return currentContext
+        }
+        currentContext = currentContext.baseContext
+    }
+    return null
+}

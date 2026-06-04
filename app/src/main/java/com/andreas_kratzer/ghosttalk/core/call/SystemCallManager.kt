@@ -291,7 +291,7 @@ class SystemCallManager @Inject constructor(
         val mappedState = when (state) {
             Call.STATE_RINGING -> CallState.RINGING
             Call.STATE_DIALING, Call.STATE_CONNECTING -> CallState.DIALING
-            Call.STATE_ACTIVE -> CallState.ACTIVE
+            Call.STATE_ACTIVE, Call.STATE_HOLDING -> CallState.ACTIVE
             Call.STATE_DISCONNECTED -> CallState.DISCONNECTED
             else -> CallState.NONE
         }
