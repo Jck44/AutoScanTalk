@@ -72,8 +72,8 @@ class PathAnalyzerTest {
         assertEquals("Apfelsaft", rec.targetButtonConfig.label)
         assertEquals(2, rec.occurrenceCount) // Occurred twice across the two sessions
         
-        // Time saved = max(5, ((6 * 2000) + 3000)/1000) = max(5, 15) = 15s
-        assertEquals(15, rec.estimatedTimeSavedSec)
+        // Time saved = max(5, ((2 * 2000) + 3000)/1000) = max(5, 7) = 7s
+        assertEquals(7, rec.estimatedTimeSavedSec)
     }
 
     @Test
@@ -118,5 +118,50 @@ class PathAnalyzerTest {
 
         val recommendations = pathAnalyzer.analyzePaths(events, pages, scanDelayMs)
         assertTrue(recommendations.isEmpty()) // Should be empty because Apfelsaft already exists on Lego page!
+    }
+
+    @Test
+    fun testStartPageStricterLimits() {
+        val legoButtons = MutableList<ButtonConfig?>(49) { null }
+        for (i in 0 until 10) {
+            legoButtons[i] = ButtonConfig(id = "lego_btn_$i", label = "Lego $i", isActive = true)
+        }
+
+        val pageLego = Page(
+            id = "page_lego",
+            bookId = "book-default",
+            name = "Lego-Seite",
+            rows = 4,
+            columns = 4,
+            buttonConfigs = legoButtons
+        )
+
+        val drinksButtons = MutableList<ButtonConfig?>(49) { null }
+        drinksButtons[0] = ButtonConfig(id = "drinks_btn_1", label = "Apfelsaft", isActive = true)
+
+        val pageDrinks = Page(
+            id = "page_drinks",
+            bookId = "book-default",
+            name = "Getränke",
+            rows = 2,
+            columns = 2,
+            buttonConfigs = drinksButtons
+        )
+
+        val pages = listOf(pageLego, pageDrinks)
+        val baseTime = 1000000000000L
+        val scanDelayMs = 2000L // 2.0s -> max allowed on start page is 6
+
+        val events = listOf(
+            ButtonUsageEvent(baseTime, "Lego 0", "SpeakText", buttonId = "lego_btn_0", pageId = "page_lego"),
+            ButtonUsageEvent(baseTime + 4000, "Apfelsaft", "SpeakText", buttonId = "drinks_btn_1", pageId = "page_drinks"),
+            
+            // Session 2
+            ButtonUsageEvent(baseTime + 10 * 60 * 1000, "Lego 0", "SpeakText", buttonId = "lego_btn_0", pageId = "page_lego"),
+            ButtonUsageEvent(baseTime + 10 * 60 * 1000 + 4000, "Apfelsaft", "SpeakText", buttonId = "drinks_btn_1", pageId = "page_drinks")
+        )
+
+        val recommendations = pathAnalyzer.analyzePaths(events, pages, scanDelayMs, defaultStartPageId = "page_lego")
+        assertTrue(recommendations.isEmpty()) // Should be empty because start page is too full (10 >= 6 limit)!
     }
 }

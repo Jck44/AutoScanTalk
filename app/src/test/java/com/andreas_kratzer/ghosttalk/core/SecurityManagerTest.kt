@@ -154,4 +154,18 @@ class SecurityManagerTest {
         every { settingsRepository.securityPin } returns ""
         assertFalse(securityManager.isSecurityRequiredForSettings())
     }
+
+    @Test
+    fun `isSecurityRequiredForAnalytics returns true only if enabled and pin set`() {
+        every { settingsRepository.isSecurityRequiredForAnalytics } returns true
+        every { settingsRepository.securityPin } returns "1234"
+        assertTrue(securityManager.isSecurityRequiredForAnalytics())
+
+        every { settingsRepository.isSecurityRequiredForAnalytics } returns false
+        assertFalse(securityManager.isSecurityRequiredForAnalytics())
+
+        every { settingsRepository.isSecurityRequiredForAnalytics } returns true
+        every { settingsRepository.securityPin } returns ""
+        assertFalse(securityManager.isSecurityRequiredForAnalytics())
+    }
 }

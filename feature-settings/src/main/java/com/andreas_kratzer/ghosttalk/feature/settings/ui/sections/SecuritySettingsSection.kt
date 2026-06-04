@@ -58,6 +58,8 @@ fun SecuritySettingsSection(
     onSecurityRequiredForEditChange: (Boolean) -> Unit,
     isSecurityRequiredForSettings: Boolean,
     onSecurityRequiredForSettingsChange: (Boolean) -> Unit,
+    isSecurityRequiredForAnalytics: Boolean,
+    onSecurityRequiredForAnalyticsChange: (Boolean) -> Unit,
     onLockClicked: () -> Unit,
     isPinRequired: Boolean,
     onPinRequiredChange: (Boolean) -> Unit,
@@ -196,6 +198,13 @@ fun SecuritySettingsSection(
                     label = stringResource(R.string.settings_security_require_for_settings),
                     checked = isSecurityRequiredForSettings,
                     onCheckedChange = onSecurityRequiredForSettingsChange,
+                    enabled = hasPin
+                )
+
+                SettingsToggleItem(
+                    label = stringResource(R.string.settings_security_require_for_analytics),
+                    checked = isSecurityRequiredForAnalytics,
+                    onCheckedChange = onSecurityRequiredForAnalyticsChange,
                     enabled = hasPin
                 )
 

@@ -78,6 +78,7 @@ class SettingsRoundTripTest {
             "smartPredictionDelay", "keepScreenOnUserMode", "userModeScreenBehavior",
             "themeMode", "securityPinTimeoutMinutes", "isPinRequiredForDeletion",
             "isBiometricEnabled", "isSecurityRequiredForEdit", "isSecurityRequiredForSettings",
+            "isSecurityRequiredForAnalytics",
             "startupBehavior", "weatherCacheTimeout", "securityPinHash",
             "securityPinSalt", "appLanguage", "isNotificationReadingEnabled",
             "maxCallDurationSeconds", "callDurationFeedbackIntervalSeconds", "outgoingCallIntro",

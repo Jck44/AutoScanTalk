@@ -11,6 +11,9 @@ interface UserModeSessionDao {
     @Query("SELECT * FROM user_mode_sessions WHERE bookId = :bookId ORDER BY startTime DESC")
     fun getSessionsForBook(bookId: String): Flow<List<UserModeSessionEntity>>
 
+    @Query("SELECT * FROM user_mode_sessions WHERE bookId = :bookId ORDER BY startTime DESC")
+    suspend fun getSessionsForBookList(bookId: String): List<UserModeSessionEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSession(session: UserModeSessionEntity): Long
 

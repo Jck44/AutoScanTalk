@@ -23,4 +23,8 @@ interface ButtonTemplateDao {
 
     @Query("SELECT COUNT(*) FROM button_templates")
     suspend fun getTemplateCount(): Int
+
+    @Query("SELECT * FROM button_templates")
+    suspend fun getAllTemplates(): List<ButtonTemplateEntity>
 }
+

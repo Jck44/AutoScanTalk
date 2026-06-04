@@ -78,6 +78,7 @@
     <string name="settings_security_biometric_enabled">Use fingerprint to unlock</string>
     <string name="settings_security_require_for_edit">Protect book editing</string>
     <string name="settings_security_require_for_settings">Protect access to settings</string>
+    <string name="settings_security_require_for_analytics">Protect access to statistics &amp; recommendations</string>
     <string name="settings_security_biometric_unsupported">Not supported by device</string>
 
     <!-- Cloud Sync Settings -->

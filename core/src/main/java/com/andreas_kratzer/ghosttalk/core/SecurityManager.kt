@@ -308,4 +308,8 @@ class SecurityManager @Inject constructor(
     fun isSecurityRequiredForSettings(): Boolean {
         return securitySettings.isSecurityRequiredForSettings && isPinSet()
     }
+
+    fun isSecurityRequiredForAnalytics(): Boolean {
+        return securitySettings.isSecurityRequiredForAnalytics && isPinSet()
+    }
 }

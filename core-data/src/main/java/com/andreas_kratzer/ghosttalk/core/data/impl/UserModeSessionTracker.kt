@@ -1,6 +1,7 @@
 package com.andreas_kratzer.ghosttalk.core.data.impl
 
 import android.util.Log
+import com.andreas_kratzer.ghosttalk.core.actions.CallActionProxy
 import com.andreas_kratzer.ghosttalk.core.data.AppStateRepository
 import com.andreas_kratzer.ghosttalk.core.data.UserModeSessionRepository
 import com.andreas_kratzer.ghosttalk.core.di.ApplicationScope
@@ -16,11 +17,15 @@ import javax.inject.Singleton
 class UserModeSessionTracker @Inject constructor(
     private val appStateRepository: AppStateRepository,
     private val sessionRepository: UserModeSessionRepository,
+    private val callActionProxy: dagger.Lazy<CallActionProxy>,
     @param:ApplicationScope private val scope: CoroutineScope
 ) {
     private var trackingJob: Job? = null
     private var updateLoopJob: Job? = null
     private var activeSessionId: Long? = null
+    
+    private var interruptedSessionId: Long? = null
+    private var interruptedBookId: String? = null
 
     val currentSessionId: Long?
         get() = activeSessionId
@@ -33,12 +38,24 @@ class UserModeSessionTracker @Inject constructor(
                 if (isActive) {
                     val bookId = appStateRepository.activeBookId.value
                     if (bookId != null) {
-                        startNewSession(bookId)
+                        if (interruptedSessionId != null && interruptedBookId == bookId) {
+                            resumeSession(interruptedSessionId!!, bookId)
+                        } else {
+                            startNewSession(bookId)
+                        }
                     } else {
                         Log.e("UserModeSessionTracker", "Cannot start user mode session: activeBookId is null")
                     }
                 } else {
-                    stopActiveSession()
+                    val isCallActive = callActionProxy.get().isInCall.value
+                    val currentBookId = appStateRepository.activeBookId.value
+                    if (isCallActive && activeSessionId != null && currentBookId != null) {
+                        interruptedSessionId = activeSessionId
+                        interruptedBookId = currentBookId
+                        pauseActiveSession()
+                    } else {
+                        stopActiveSession()
+                    }
                 }
             }
         }
@@ -64,6 +81,47 @@ class UserModeSessionTracker @Inject constructor(
         }
     }
 
+    private suspend fun pauseActiveSession() {
+        updateLoopJob?.cancel()
+        updateLoopJob = null
+
+        activeSessionId?.let { sessionId ->
+            try {
+                sessionRepository.updateActiveSession(sessionId, System.currentTimeMillis())
+            } catch (e: Exception) {
+                Log.e("UserModeSessionTracker", "Error pausing user mode session", e)
+            }
+            activeSessionId = null
+        }
+    }
+
+    private suspend fun resumeSession(sessionId: Long, bookId: String) {
+        // Stop any current active session if it exists, though it shouldn't
+        stopActiveSession()
+
+        try {
+            activeSessionId = sessionId
+            interruptedSessionId = null
+            interruptedBookId = null
+
+            // Update database row immediately to reflect we resumed it
+            sessionRepository.updateActiveSession(sessionId, System.currentTimeMillis())
+
+            updateLoopJob = scope.launch {
+                while (true) {
+                    delay(10000) // Update database row every 10 seconds
+                    activeSessionId?.let { sId ->
+                        sessionRepository.updateActiveSession(sId, System.currentTimeMillis())
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("UserModeSessionTracker", "Error resuming user mode session", e)
+            // Fallback: start a new session if resuming fails
+            startNewSession(bookId)
+        }
+    }
+
     private suspend fun stopActiveSession() {
         updateLoopJob?.cancel()
         updateLoopJob = null
@@ -76,5 +134,8 @@ class UserModeSessionTracker @Inject constructor(
             }
             activeSessionId = null
         }
+        interruptedSessionId = null
+        interruptedBookId = null
     }
 }
+

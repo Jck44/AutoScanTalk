@@ -67,11 +67,13 @@ class PathAnalyzer @Inject constructor() {
      * @param historyEvents Chronological list of past button presses.
      * @param pages All unfiltered pages in the current book (to find page names and verify slots/buttons).
      * @param scanDelayMs Current autoscan delay in milliseconds.
+     * @param defaultStartPageId The ID of the start page.
      */
     fun analyzePaths(
         historyEvents: List<ButtonUsageEvent>,
         pages: List<Page>,
-        scanDelayMs: Long
+        scanDelayMs: Long,
+        defaultStartPageId: String? = null
     ): List<ShortcutRecommendation> {
         if (historyEvents.size < 3 || pages.isEmpty()) return emptyList()
 
@@ -194,6 +196,30 @@ class PathAnalyzer @Inject constructor() {
 
                 // We only recommend if it occurs at least 2 times (reliable pattern)
                 if (count >= 2) {
+                    val activeButtonsOnSource = sourcePage.buttonConfigs.count { it != null && it.isActive }
+                    
+                    // Apply dynamic start page limits and general capacity checks
+                    val isStartPage = sourcePageId == defaultStartPageId
+                    val maxAllowedOnSource = if (isStartPage) {
+                        ((12000L / maxOf(500L, scanDelayMs)).toInt()).coerceIn(6, 12)
+                    } else {
+                        // 75% of max slots (7x7 = 49 * 0.75 = 36)
+                        36
+                    }
+
+                    if (activeButtonsOnSource >= maxAllowedOnSource) {
+                        continue
+                    }
+
+                    // Check if adding this button requires grid expansion
+                    val maxVisibleSlots = sourcePage.rows * sourcePage.columns
+                    val visibleActiveButtons = sourcePage.buttonConfigs.filterNotNull().count {
+                        it.isActive && GridUtils.isVisibleInGrid(
+                            sourcePage.buttonConfigs.indexOf(it), sourcePage.rows, sourcePage.columns
+                        )
+                    }
+                    val requiresExpansion = visibleActiveButtons >= maxVisibleSlots
+
                     // Find which page this button belongs to
                     val targetPage = pages.find { page -> page.buttonConfigs.any { it?.id == buttonId } }
                     
@@ -205,13 +231,24 @@ class PathAnalyzer @Inject constructor() {
                         
                         val stepsToTarget = getScanSteps(targetPage, buttonConfig)
                         
-                        val activeButtonsOnSource = sourcePage.buttonConfigs.count { it != null && it.isActive }
                         val stepsWithShortcut = activeButtonsOnSource + 1
                         
-                        val stepsSaved = ((stepsToNavigate + stepsToTarget) - stepsWithShortcut).coerceAtLeast(6)
+                        // Collective degradation: 0.5 steps per existing button
+                        val degradation = (activeButtonsOnSource * 0.5).toInt()
+                        
+                        // Penalty if adding the button forces a row/col size increase
+                        val expansionPenalty = if (requiresExpansion) 3 else 0
+                        
+                        val stepsSaved = ((stepsToNavigate + stepsToTarget) - (stepsWithShortcut + degradation + expansionPenalty))
+                        
+                        // Only recommend if we actually save positive scan steps
+                        if (stepsSaved < 2) continue
+                        
                         max(5, (((stepsSaved * scanDelayMs) + 3000) / 1000).toInt())
                     } else {
-                        max(5, (((6 * scanDelayMs) + 3000) / 1000).toInt())
+                        val stepsSaved = 6 - (if (requiresExpansion) 3 else 0)
+                        if (stepsSaved < 2) continue
+                        max(5, (((stepsSaved * scanDelayMs) + 3000) / 1000).toInt())
                     }
 
                     recommendations.add(

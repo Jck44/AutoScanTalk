@@ -162,6 +162,7 @@ class SettingsRepositoryImpl @Inject constructor(
     override val isBiometricEnabledFlow: StateFlow<Boolean> get() = securitySettings.isBiometricEnabledFlow
     override val isSecurityRequiredForEditFlow: StateFlow<Boolean> get() = securitySettings.isSecurityRequiredForEditFlow
     override val isSecurityRequiredForSettingsFlow: StateFlow<Boolean> get() = securitySettings.isSecurityRequiredForSettingsFlow
+    override val isSecurityRequiredForAnalyticsFlow: StateFlow<Boolean> get() = securitySettings.isSecurityRequiredForAnalyticsFlow
     override val elevenLabsApiKeyFlow: StateFlow<String?> get() = cloudSettings.elevenLabsApiKeyFlow
     override val elevenLabsModelFlow: StateFlow<String> get() = cloudSettings.elevenLabsModelFlow
     override val elevenLabsStabilityFlow: StateFlow<Float> get() = cloudSettings.elevenLabsStabilityFlow
@@ -483,6 +484,10 @@ class SettingsRepositoryImpl @Inject constructor(
     override var isSecurityRequiredForSettings: Boolean
         get() = securitySettings.isSecurityRequiredForSettings
         set(value) { securitySettings.isSecurityRequiredForSettings = value }
+
+    override var isSecurityRequiredForAnalytics: Boolean
+        get() = securitySettings.isSecurityRequiredForAnalytics
+        set(value) { securitySettings.isSecurityRequiredForAnalytics = value }
 
     override var startupBehavior: String
         get() = generalSettings.startupBehavior

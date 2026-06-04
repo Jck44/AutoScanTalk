@@ -403,6 +403,30 @@
     <string name="analytics_recommendation_savings">~%1$ds savings</string>
     <string name="analytics_recommendation_btn_create">Create on \"%1$s\"</string>
     <string name="button_stats_btn_create_shortcut">Create shortcut on \"%1$s\"</string>
+    <!-- AI Book Restructuring Strings -->
+    <string name="analytics_ai_title">🪄 AI Layout Restructuring (Gemini)</string>
+    <string name="analytics_ai_reset">Reset</string>
+    <string name="analytics_ai_disabled_title">Gemini Disabled</string>
+    <string name="analytics_ai_disabled_desc">Enable Gemini in settings (Settings -> AI) to receive automatic layout optimizations for this book based on user behavior and semantic content.</string>
+    <string name="analytics_ai_loading_text">Analyzing click statistics and page content…</string>
+    <string name="analytics_ai_intro_title">Optimize Book Structure with Gemini</string>
+    <string name="analytics_ai_intro_desc">The AI analyzes click frequencies of all buttons, scanning times of pages, and semantic groupings. You will receive suggestions to merge categories, deactivate unused buttons, or promote frequently used buttons to the home page.</string>
+    <string name="analytics_ai_btn_calculate">Calculate AI Layout Proposals</string>
+    <string name="analytics_ai_no_proposals">The AI analyzed the book and found the current structure to be optimal. No changes are necessary!</string>
+    <string name="analytics_ai_action_move">Move button: \"%1$s\"</string>
+    <string name="analytics_ai_action_deactivate">Deactivate button: \"%1$s\"</string>
+    <string name="analytics_ai_action_split">Split page: \"%1$s\"</string>
+    <string name="analytics_ai_action_default">Layout Adjustment</string>
+    <string name="analytics_ai_details_move">From \"%1$s\" to \"%2$s\"</string>
+    <string name="analytics_ai_details_split">• New subpage \"%1$s\": %2$s</string>
+    <string name="analytics_ai_btn_save_test">Save as New Book &amp; Evaluate</string>
+    <string name="analytics_ai_toast_applied">New book loaded! Proposal has been applied.</string>
     <string name="bluetooth_settings">Bluetooth Settings</string>
+    <!-- Analytics Tabs & Expandable strings -->
+    <string name="analytics_tab_overview">Overview</string>
+    <string name="analytics_tab_recommendations">Suggestions</string>
+    <string name="analytics_tab_details">Details</string>
+    <string name="analytics_show_more">Show more</string>
+    <string name="analytics_show_less">Show less</string>
 </resources>
 

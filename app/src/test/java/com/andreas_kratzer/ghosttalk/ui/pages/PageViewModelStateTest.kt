@@ -121,7 +121,10 @@ class PageViewModelStateTest {
             pathAnalyzer = mockk(relaxed = true),
             userModeSessionRepository = mockk(relaxed = true),
             splitPageUseCase = mockk(relaxed = true),
-            createPageUseCase = mockk(relaxed = true)
+            createPageUseCase = mockk(relaxed = true),
+            pageLayoutOptimizer = mockk(relaxed = true),
+            bookRestructureProposalUseCase = mockk(relaxed = true),
+            cloneBookUseCase = mockk(relaxed = true)
         )
         
         // Advance to allow launch in init to execute

@@ -75,6 +75,7 @@ class SettingsMapper @Inject constructor(
             isBiometricEnabled = settingsRepository.isBiometricEnabled,
             isSecurityRequiredForEdit = settingsRepository.isSecurityRequiredForEdit,
             isSecurityRequiredForSettings = settingsRepository.isSecurityRequiredForSettings,
+            isSecurityRequiredForAnalytics = settingsRepository.isSecurityRequiredForAnalytics,
             startupBehavior = settingsRepository.startupBehavior,
             favoriteBookId = settingsRepository.favoriteBookId,
             weatherCacheTimeout = settingsRepository.weatherCacheTimeout,
@@ -146,6 +147,7 @@ class SettingsMapper @Inject constructor(
         data.isBiometricEnabled?.let { settingsRepository.isBiometricEnabled = it }
         data.isSecurityRequiredForEdit?.let { settingsRepository.isSecurityRequiredForEdit = it }
         data.isSecurityRequiredForSettings?.let { settingsRepository.isSecurityRequiredForSettings = it }
+        data.isSecurityRequiredForAnalytics?.let { settingsRepository.isSecurityRequiredForAnalytics = it }
         data.startupBehavior?.let { settingsRepository.startupBehavior = it }
         data.weatherCacheTimeout?.let { settingsRepository.weatherCacheTimeout = it }
         data.securityPinHash?.let { settingsRepository.securityPinHash = it }

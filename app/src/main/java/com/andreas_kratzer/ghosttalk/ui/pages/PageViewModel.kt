@@ -48,7 +48,10 @@ import com.andreas_kratzer.ghosttalk.core.ai.domain.SplitPageUseCase
 import com.andreas_kratzer.ghosttalk.core.domain.pages.CreatePageUseCase
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.AuditoryCue
+import com.andreas_kratzer.ghosttalk.core.model.OptionalProperty
 import kotlinx.coroutines.withContext
+import com.andreas_kratzer.ghosttalk.core.model.BookRestructureProposal
+import android.widget.Toast
 import androidx.core.net.toUri
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -78,7 +81,10 @@ class PageViewModel @Inject constructor(
     private val pathAnalyzer: com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PathAnalyzer,
     private val userModeSessionRepository: com.andreas_kratzer.ghosttalk.core.data.UserModeSessionRepository,
     private val splitPageUseCase: SplitPageUseCase,
-    private val createPageUseCase: CreatePageUseCase
+    private val createPageUseCase: CreatePageUseCase,
+    private val pageLayoutOptimizer: com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer,
+    private val bookRestructureProposalUseCase: com.andreas_kratzer.ghosttalk.core.ai.domain.BookRestructureProposalUseCase,
+    private val cloneBookUseCase: com.andreas_kratzer.ghosttalk.core.data.impl.CloneBookUseCase
 ) : AndroidViewModel(application), com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions {
 
     val activeBookId = pageManagementDelegate.activeBookId
@@ -118,7 +124,8 @@ class PageViewModel @Inject constructor(
     ) { history, allPages, bookId ->
         if (bookId != null && history.isNotEmpty() && allPages.isNotEmpty()) {
             val delay = settingsRepository.scanDelayMillis
-            pathAnalyzer.analyzePaths(history, allPages, delay)
+            val startPageId = settingsRepository.defaultStartPageId
+            pathAnalyzer.analyzePaths(history, allPages, delay, startPageId)
         } else {
             emptyList()
         }
@@ -830,6 +837,92 @@ class PageViewModel @Inject constructor(
         _pageSplitProposal.value = null
     }
 
+    private val _currentProposalFilter = MutableStateFlow(ProposalFilter.ALL)
+    val currentProposalFilter: StateFlow<ProposalFilter> = _currentProposalFilter.asStateFlow()
+
+    private val _currentProposalSort = MutableStateFlow(ProposalSort.TIME_SAVED_DESC)
+    val currentProposalSort: StateFlow<ProposalSort> = _currentProposalSort.asStateFlow()
+
+    fun setProposalFilter(filter: ProposalFilter) {
+        _currentProposalFilter.value = filter
+    }
+
+    fun setProposalSort(sort: ProposalSort) {
+        _currentProposalSort.value = sort
+    }
+
+    val layoutOptimizationProposals: StateFlow<List<com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer.LayoutOptimizationProposal>> = combine(
+        unfilteredPages,
+        activeBookId,
+        currentProposalFilter,
+        currentProposalSort
+    ) { allPages, bookId, filter, sort ->
+        if (bookId != null && allPages.isNotEmpty()) {
+            val delay = settingsRepository.scanDelayMillis
+            val pattern = settingsRepository.defaultScanPattern
+            val startPageId = settingsRepository.defaultStartPageId
+            val raw = pageLayoutOptimizer.analyzePages(allPages, startPageId, delay, pattern)
+            raw.filter { proposal ->
+                when (filter) {
+                    ProposalFilter.ALL -> true
+                    ProposalFilter.SPLIT_ONLY -> proposal is com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer.LayoutOptimizationProposal.SplitPageProposal
+                    ProposalFilter.PATTERN_ONLY -> proposal is com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer.LayoutOptimizationProposal.ChangeScanPatternProposal
+                    ProposalFilter.START_PAGE_ONLY -> proposal.pageId == startPageId
+                    ProposalFilter.CRITICAL_ONLY -> {
+                        val currentScanTime = when (proposal) {
+                            is com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer.LayoutOptimizationProposal.SplitPageProposal -> proposal.currentAverageScanTimeSec
+                            is com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer.LayoutOptimizationProposal.ChangeScanPatternProposal -> proposal.currentAverageScanTimeSec
+                        }
+                        currentScanTime > 8.0
+                    }
+                }
+            }.sortedWith(
+                when (sort) {
+                    ProposalSort.TIME_SAVED_DESC -> compareByDescending { proposal ->
+                        when (proposal) {
+                            is com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer.LayoutOptimizationProposal.SplitPageProposal ->
+                                proposal.currentAverageScanTimeSec - proposal.estimatedNewAverageScanTimeSec
+                            is com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer.LayoutOptimizationProposal.ChangeScanPatternProposal ->
+                                proposal.currentAverageScanTimeSec - proposal.estimatedNewAverageScanTimeSec
+                        }
+                    }
+                    ProposalSort.PAGE_NAME_ASC -> compareBy { it.pageName.lowercase() }
+                    ProposalSort.BUTTONS_COUNT_DESC -> compareByDescending { proposal ->
+                        when (proposal) {
+                            is com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer.LayoutOptimizationProposal.SplitPageProposal -> proposal.activeButtonsCount
+                            is com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer.LayoutOptimizationProposal.ChangeScanPatternProposal -> proposal.activeButtonsCount
+                        }
+                    }
+                    ProposalSort.CURRENT_TIME_DESC -> compareByDescending { proposal ->
+                        when (proposal) {
+                            is com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer.LayoutOptimizationProposal.SplitPageProposal -> proposal.currentAverageScanTimeSec
+                            is com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer.LayoutOptimizationProposal.ChangeScanPatternProposal -> proposal.currentAverageScanTimeSec
+                        }
+                    }
+                }
+            )
+        } else {
+            emptyList()
+        }
+    }
+    .flowOn(Dispatchers.Default)
+    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun changePageScanPattern(pageId: String, pattern: String) {
+        viewModelScope.launch {
+            try {
+                pageManagementDelegate.updatePageSettings(
+                    pageId = pageId,
+                    update = GridSettingsUpdate(
+                        scanPattern = OptionalProperty(pattern)
+                    )
+                )
+            } catch (e: Exception) {
+                Log.e("PageViewModel", "Failed to update page scan pattern", e)
+            }
+        }
+    }
+
     fun shouldFilterButtonFromSplit(buttonConfig: ButtonConfig?, defaultStartPageId: String?, currentPageId: String?): Boolean {
         if (buttonConfig == null || !buttonConfig.isActive || buttonConfig.label.isBlank()) return true
         val action = buttonConfig.buttonAction
@@ -990,4 +1083,111 @@ class PageViewModel @Inject constructor(
             }
         }
     }
+
+    // --- AI Book Restructuring States & Functions ---
+
+    private val _aiRestructureProposal = MutableStateFlow<BookRestructureProposal?>(null)
+    val aiRestructureProposal: StateFlow<BookRestructureProposal?> = _aiRestructureProposal.asStateFlow()
+
+    private val _isAiRestructureLoading = MutableStateFlow(false)
+    val isAiRestructureLoading: StateFlow<Boolean> = _isAiRestructureLoading.asStateFlow()
+
+    fun generateAiRestructureProposal() {
+        val bookId = activeBookId.value ?: return
+        viewModelScope.launch(Dispatchers.Default) {
+            _isAiRestructureLoading.value = true
+            try {
+                // Fetch stats to include click count
+                val stats = buttonUsageRepository.getGroupedUsageStats(bookId)
+                val clickCounts = stats.flatMap { it.children }
+                    .associate { it.buttonConfigId to it.usageCount }
+
+                // Retrieve all pages of the book
+                val pages = pageManagementDelegate.unfilteredPages.value
+
+                // Format pages and buttons into JSON representation
+                val pagesArray = org.json.JSONArray()
+                pages.forEach { page ->
+                    val pageObj = org.json.JSONObject()
+                    pageObj.put("pageName", page.name)
+                    val buttonsArray = org.json.JSONArray()
+                    page.buttonConfigs.forEach { btn ->
+                        if (btn != null && btn.isActive && btn.label.isNotBlank()) {
+                            val btnObj = org.json.JSONObject()
+                            btnObj.put("label", btn.label)
+                            btnObj.put("clicks", clickCounts[btn.id] ?: 0)
+                            val action = btn.buttonAction
+                            if (action is NavigateToPageButtonAction) {
+                                val targetPageName = pages.find { it.id == action.pageId }?.name ?: ""
+                                btnObj.put("destinationPage", targetPageName)
+                            }
+                            buttonsArray.put(btnObj)
+                        }
+                    }
+                    pageObj.put("buttons", buttonsArray)
+                    pagesArray.put(pageObj)
+                }
+
+                val pagesJsonString = pagesArray.toString()
+                val proposal = bookRestructureProposalUseCase.execute(pagesJsonString)
+                _aiRestructureProposal.value = proposal
+            } catch (e: Exception) {
+                Log.e("PageViewModel", "Error generating AI restructure proposal", e)
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(getApplication(), "Fehler: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                }
+            } finally {
+                _isAiRestructureLoading.value = false
+            }
+        }
+    }
+
+    fun clearAiRestructureProposal() {
+        _aiRestructureProposal.value = null
+    }
+
+    fun applyAiRestructureProposal(proposal: BookRestructureProposal, onResult: (String) -> Unit) {
+        val currentBookId = activeBookId.value ?: return
+        viewModelScope.launch(Dispatchers.IO) {
+            _isAiRestructureLoading.value = true
+            try {
+                val newBookId = cloneBookUseCase.execute(currentBookId, proposal)
+                
+                // Fetch the default start page of the new book from database directly to load it immediately
+                val startId = settingsRepository.getDefaultStartPageIdForBook(newBookId)
+                val pages = pageManagementDelegate.pageRepository.getPagesForBook(newBookId)
+                val startPage = pages.find { it.id == startId } ?: pages.firstOrNull()
+
+                withContext(Dispatchers.Main) {
+                    setActiveBookId(newBookId)
+                    if (startPage != null) {
+                        loadPage(startPage)
+                    }
+                    onResult(newBookId)
+                }
+            } catch (e: Exception) {
+                Log.e("PageViewModel", "Error applying AI restructure proposal", e)
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(getApplication(), "Fehler beim Anwenden: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                }
+            } finally {
+                _isAiRestructureLoading.value = false
+            }
+        }
+    }
+}
+
+enum class ProposalFilter {
+    ALL,
+    SPLIT_ONLY,
+    PATTERN_ONLY,
+    START_PAGE_ONLY,
+    CRITICAL_ONLY
+}
+
+enum class ProposalSort {
+    TIME_SAVED_DESC,
+    PAGE_NAME_ASC,
+    BUTTONS_COUNT_DESC,
+    CURRENT_TIME_DESC
 }

@@ -5,10 +5,38 @@ import com.andreas_kratzer.ghosttalk.core.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.ControlDeviceButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.DeviceActionType
 import io.mockk.mockk
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.slot
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ButtonTemplateCoverageTest {
+
+    @Test
+    fun testEnsureBuiltInTemplates_insertsOnlyMissing() = runTest {
+        val dao = mockk<ButtonTemplateDao>(relaxed = true)
+        val repository = ButtonTemplateRepositoryImpl(dao)
+
+        val existingEntity = ButtonTemplateEntity(
+            id = "builtin_speak_text",
+            name = "Hallo sprechen",
+            isBuiltIn = true,
+            buttonConfig = mockk(relaxed = true),
+            orderIndex = 0
+        )
+        coEvery { dao.getAllTemplates() } returns listOf(existingEntity)
+
+        repository.ensureBuiltInTemplates()
+
+        val slot = slot<List<ButtonTemplateEntity>>()
+        coVerify { dao.insertTemplates(capture(slot)) }
+
+        val inserted = slot.captured
+        assertTrue(inserted.none { it.id == "builtin_speak_text" })
+        assertTrue(inserted.any { it.id == "builtin_navigate_page" })
+    }
 
     @Test
     fun testBuiltInTemplatesCoverage() {

@@ -187,6 +187,7 @@ class SettingsViewModel @Inject constructor(
     val isBiometricEnabled = settingsRepository.isBiometricEnabledFlow
     val isSecurityRequiredForEdit = settingsRepository.isSecurityRequiredForEditFlow
     val isSecurityRequiredForSettings = settingsRepository.isSecurityRequiredForSettingsFlow
+    val isSecurityRequiredForAnalytics = settingsRepository.isSecurityRequiredForAnalyticsFlow
     val startupBehavior = settingsRepository.startupBehaviorFlow
     val logIgnoredActions = settingsRepository.logIgnoredActionsFlow
     val logStopActions = settingsRepository.logStopActionsFlow
@@ -666,6 +667,10 @@ class SettingsViewModel @Inject constructor(
 
     fun setSecurityRequiredForSettings(required: Boolean) {
         settingsRepository.isSecurityRequiredForSettings = required
+    }
+
+    fun setSecurityRequiredForAnalytics(required: Boolean) {
+        settingsRepository.isSecurityRequiredForAnalytics = required
     }
 
     fun setStartupBehavior(behavior: String) {

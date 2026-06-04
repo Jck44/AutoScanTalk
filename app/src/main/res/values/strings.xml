@@ -407,6 +407,30 @@
     <string name="analytics_recommendation_savings">~%1$ds Ersparnis</string>
     <string name="analytics_recommendation_btn_create">Auf „%1$s“ erstellen</string>
     <string name="button_stats_btn_create_shortcut">Abkürzung auf „%1$s“ erstellen</string>
+    <!-- AI Book Restructuring Strings -->
+    <string name="analytics_ai_title">🪄 KI-Struktur-Optimierung (Gemini)</string>
+    <string name="analytics_ai_reset">Zurücksetzen</string>
+    <string name="analytics_ai_disabled_title">Gemini Deaktiviert</string>
+    <string name="analytics_ai_disabled_desc">Aktiviere Gemini in den Einstellungen (Einstellungen -> KI), um automatische Verbesserungsvorschläge für die Struktur dieses Buchs basierend auf dem Nutzerverhalten und semantischen Inhalten zu erhalten.</string>
+    <string name="analytics_ai_loading_text">Analysiere Klickstatistiken und Seiten-Inhalte…</string>
+    <string name="analytics_ai_intro_title">Optimiere die Buchstruktur mit Gemini</string>
+    <string name="analytics_ai_intro_desc">Die KI analysiert die Klickhäufigkeiten aller Knöpfe, die Scanning-Zeiten der Seiten sowie die semantischen Zusammenhänge. Du erhältst Vorschläge zum Zusammenführen von Kategorien, Deaktivieren ungenutzer Knöpfe oder Befördern häufig genutzter Knöpfe auf die Startseite.</string>
+    <string name="analytics_ai_btn_calculate">KI-Struktur-Vorschläge berechnen</string>
+    <string name="analytics_ai_no_proposals">Die KI hat das Buch analysiert und findet die aktuelle Struktur bereits optimal aufgeteilt. Es sind keine Änderungen notwendig!</string>
+    <string name="analytics_ai_action_move">Knopf verschieben: „%1$s“</string>
+    <string name="analytics_ai_action_deactivate">Knopf deaktivieren: „%1$s“</string>
+    <string name="analytics_ai_action_split">Seite aufteilen: „%1$s“</string>
+    <string name="analytics_ai_action_default">Struktur-Anpassung</string>
+    <string name="analytics_ai_details_move">Von „%1$s“ nach „%2$s“</string>
+    <string name="analytics_ai_details_split">• Neue Unterseite „%1$s“: %2$s</string>
+    <string name="analytics_ai_btn_save_test">Als neues Buch speichern &amp; auswerten</string>
+    <string name="analytics_ai_toast_applied">Neues Buch geladen! Vorschlag wurde angewendet.</string>
     <string name="bluetooth_settings">Bluetooth-Einstellungen</string>
+    <!-- Analytics Tabs & Expandable strings -->
+    <string name="analytics_tab_overview">Übersicht</string>
+    <string name="analytics_tab_recommendations">Vorschläge</string>
+    <string name="analytics_tab_details">Detailanalyse</string>
+    <string name="analytics_show_more">Mehr anzeigen</string>
+    <string name="analytics_show_less">Weniger anzeigen</string>
 </resources>
 

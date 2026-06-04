@@ -56,6 +56,7 @@ fun GhostTalkNavHost(
     val navigateWithSecurity: (String) -> Unit = { route ->
         val isProtected = when {
             route.startsWith("settings") -> securityManager.isSecurityRequiredForSettings()
+            route == "analytics_dashboard" -> securityManager.isSecurityRequiredForAnalytics()
             route == "content_management" || 
             route == "page_list" || 
             route == "templates" || 
@@ -234,7 +235,7 @@ fun GhostTalkNavHost(
                 },
                 onNavigateToSettings = { navigateWithSecurity("settings?isGlobal=false") },
                 onNavigateToContentManagement = { navigateWithSecurity("content_management") },
-                onNavigateToAnalyticsDashboard = { navController.safeNavigate("analytics_dashboard") },
+                onNavigateToAnalyticsDashboard = { navigateWithSecurity("analytics_dashboard") },
                 onNavigateToBooks = { navController.safePopBackStack() }
             )
         }

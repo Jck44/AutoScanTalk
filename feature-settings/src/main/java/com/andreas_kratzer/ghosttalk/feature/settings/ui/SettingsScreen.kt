@@ -518,6 +518,7 @@ fun SubmenuContent(
             val biometricEnabled by viewModel.isBiometricEnabled.collectAsState(false)
             val reqEdit by viewModel.isSecurityRequiredForEdit.collectAsState(false)
             val reqSettings by viewModel.isSecurityRequiredForSettings.collectAsState(false)
+            val reqAnalytics by viewModel.isSecurityRequiredForAnalytics.collectAsState(false)
             
             SecuritySettingsSection(
                 securityPin = pin,
@@ -533,6 +534,8 @@ fun SubmenuContent(
                 onSecurityRequiredForEditChange = viewModel::setSecurityRequiredForEdit,
                 isSecurityRequiredForSettings = reqSettings,
                 onSecurityRequiredForSettingsChange = viewModel::setSecurityRequiredForSettings,
+                isSecurityRequiredForAnalytics = reqAnalytics,
+                onSecurityRequiredForAnalyticsChange = viewModel::setSecurityRequiredForAnalytics,
                 onLockClicked = onLockClicked,
                 isPinRequired = !pin.isNullOrEmpty(),
                 onPinRequiredChange = { /* Handled within SecuritySettingsSection via onClearSecurityPin and onSecurityPinChange */ },

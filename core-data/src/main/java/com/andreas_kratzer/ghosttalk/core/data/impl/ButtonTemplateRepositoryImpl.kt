@@ -53,15 +53,21 @@ class ButtonTemplateRepositoryImpl @Inject constructor(
     }
 
     override suspend fun ensureBuiltInTemplates() {
-        // We only insert if the database templates are empty
-        if (buttonTemplateDao.getTemplateCount() > 0) return
+        val existingTemplates = buttonTemplateDao.getAllTemplates()
+        val existingIds = existingTemplates.map { it.id }.toSet()
 
         val builtInTemplates = generateBuiltInTemplatesList()
-        val entities = builtInTemplates.mapIndexed { index, template ->
-            template.copy(orderIndex = index).toEntity()
+        val missingTemplates = builtInTemplates.filter { it.id !in existingIds }
+
+        if (missingTemplates.isNotEmpty()) {
+            val maxOrderIndex = existingTemplates.maxOfOrNull { it.orderIndex } ?: -1
+            val newEntities = missingTemplates.mapIndexed { index, template ->
+                template.copy(orderIndex = maxOrderIndex + 1 + index).toEntity()
+            }
+            buttonTemplateDao.insertTemplates(newEntities)
         }
-        buttonTemplateDao.insertTemplates(entities)
     }
+
 
     fun generateBuiltInTemplatesList(): List<ButtonTemplate> {
         val list = mutableListOf<ButtonTemplate>()

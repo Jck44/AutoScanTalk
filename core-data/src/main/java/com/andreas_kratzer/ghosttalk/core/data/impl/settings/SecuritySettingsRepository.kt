@@ -9,6 +9,7 @@ import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.K
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SECURITY_PIN_TIMEOUT_MINUTES
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SECURITY_REQUIRED_FOR_EDIT
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SECURITY_REQUIRED_FOR_SETTINGS
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SECURITY_REQUIRED_FOR_ANALYTICS
 import kotlinx.coroutines.flow.StateFlow
 
 class SecuritySettingsRepository(
@@ -24,6 +25,7 @@ class SecuritySettingsRepository(
     private val _isBiometricEnabled = BooleanSetting(KEY_BIOMETRIC_ENABLED, false, isScoped = false)
     private val _isSecurityRequiredForEdit = BooleanSetting(KEY_SECURITY_REQUIRED_FOR_EDIT, false, isScoped = false)
     private val _isSecurityRequiredForSettings = BooleanSetting(KEY_SECURITY_REQUIRED_FOR_SETTINGS, false, isScoped = false)
+    private val _isSecurityRequiredForAnalytics = BooleanSetting(KEY_SECURITY_REQUIRED_FOR_ANALYTICS, false, isScoped = false)
 
     val securityPinHashFlow = _securityPinHash.flow
     val securityPinSaltFlow = _securityPinSalt.flow
@@ -33,6 +35,7 @@ class SecuritySettingsRepository(
     val isBiometricEnabledFlow = _isBiometricEnabled.flow
     val isSecurityRequiredForEditFlow = _isSecurityRequiredForEdit.flow
     val isSecurityRequiredForSettingsFlow = _isSecurityRequiredForSettings.flow
+    val isSecurityRequiredForAnalyticsFlow = _isSecurityRequiredForAnalytics.flow
 
     var securityPinHash: String? by _securityPinHash
     var securityPinSalt: String? by _securityPinSalt
@@ -42,6 +45,7 @@ class SecuritySettingsRepository(
     var isBiometricEnabled: Boolean by _isBiometricEnabled
     var isSecurityRequiredForEdit: Boolean by _isSecurityRequiredForEdit
     var isSecurityRequiredForSettings: Boolean by _isSecurityRequiredForSettings
+    var isSecurityRequiredForAnalytics: Boolean by _isSecurityRequiredForAnalytics
 
 
     override fun refresh() {
@@ -53,5 +57,6 @@ class SecuritySettingsRepository(
         _isBiometricEnabled.refresh()
         _isSecurityRequiredForEdit.refresh()
         _isSecurityRequiredForSettings.refresh()
+        _isSecurityRequiredForAnalytics.refresh()
     }
 }

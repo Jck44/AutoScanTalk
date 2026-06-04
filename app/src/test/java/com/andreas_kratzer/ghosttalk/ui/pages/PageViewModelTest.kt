@@ -53,6 +53,7 @@ import io.mockk.mockkStatic
 import io.mockk.unmockkAll
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -188,7 +189,9 @@ class PageViewModelTest {
         unmockkAll()
     }
 
-    private fun createViewModel(): PageViewModel {
+    private fun createViewModel(
+        optimizer: com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer = mockk(relaxed = true)
+    ): PageViewModel {
         val appStateRepository = mockk<com.andreas_kratzer.ghosttalk.core.data.AppStateRepository>(relaxed = true)
         every { appStateRepository.isUserModeActive } returns MutableStateFlow(true)
         every { appStateRepository.activeBookId } returns MutableStateFlow("b1")
@@ -299,7 +302,10 @@ class PageViewModelTest {
             pathAnalyzer = mockk(relaxed = true),
             userModeSessionRepository = mockk(relaxed = true),
             splitPageUseCase = mockk(relaxed = true),
-            createPageUseCase = createPageUseCase
+            createPageUseCase = createPageUseCase,
+            pageLayoutOptimizer = optimizer,
+            bookRestructureProposalUseCase = mockk(relaxed = true),
+            cloneBookUseCase = mockk(relaxed = true)
         )
     }
 
@@ -509,5 +515,95 @@ class PageViewModelTest {
 
         assertEquals("", suggestionResult)
         io.mockk.coVerify(exactly = 0) { geminiUseCase.generateResponse(any()) }
+    }
+
+    @Test
+    fun testLayoutOptimizationFilterAndSort() = runTest {
+        val page1 = Page(id = "p1", bookId = "b1", name = "Banana Page", rows = 4, columns = 4, buttonConfigs = List(49) { null })
+        val page2 = Page(id = "p2", bookId = "b1", name = "Apple Page", rows = 4, columns = 4, buttonConfigs = List(49) { null })
+        
+        val mockOptimizer = mockk<com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer>()
+        val proposals = listOf(
+            com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer.LayoutOptimizationProposal.SplitPageProposal(
+                pageId = "p1",
+                pageName = "Banana Page",
+                activeButtonsCount = 15,
+                currentAverageScanTimeSec = 10.0,
+                estimatedNewAverageScanTimeSec = 6.0
+            ),
+            com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer.LayoutOptimizationProposal.ChangeScanPatternProposal(
+                pageId = "p2",
+                pageName = "Apple Page",
+                activeButtonsCount = 10,
+                currentAverageScanTimeSec = 7.0,
+                estimatedNewAverageScanTimeSec = 5.0,
+                targetScanPattern = "row_by_row"
+            )
+        )
+        
+        every { settingsRepository.defaultScanPattern } returns "linear"
+        every { settingsRepository.defaultStartPageId } returns null
+        every { mockOptimizer.analyzePages(any(), any(), any(), any()) } returns proposals
+        every { getPagesUseCase.execute(any()) } returns MutableStateFlow(listOf(page1, page2))
+
+        viewModel = createViewModel(optimizer = mockOptimizer)
+        testScheduler.runCurrent()
+
+        // Subscribe to flow to start collection (required for WhileSubscribed stateIn flows)
+        val collectionJob = launch {
+            viewModel.layoutOptimizationProposals.collect {}
+        }
+        testScheduler.runCurrent()
+
+        // 1. ALL and TIME_SAVED_DESC (Default)
+        // Banana savings = 10 - 6 = 4. Apple savings = 7 - 5 = 2.
+        // Banana should be first.
+        // Wait for background thread to compute proposals due to flowOn(Dispatchers.Default)
+        var list = emptyList<com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer.LayoutOptimizationProposal>()
+        for (i in 1..40) {
+            list = viewModel.layoutOptimizationProposals.value
+            if (list.isNotEmpty()) break
+            Thread.sleep(25)
+        }
+        assertEquals("Proposals size was ${list.size}. unfilteredPages was ${viewModel.unfilteredPages.value.size}. activeBookId was ${viewModel.activeBookId.value}", 2, list.size)
+        assertEquals("p1", list[0].pageId)
+        assertEquals("p2", list[1].pageId)
+
+        // 2. Filter SPLIT_ONLY
+        viewModel.setProposalFilter(ProposalFilter.SPLIT_ONLY)
+        testScheduler.runCurrent()
+        for (i in 1..40) {
+            list = viewModel.layoutOptimizationProposals.value
+            if (list.size == 1) break
+            Thread.sleep(25)
+        }
+        assertEquals(1, list.size)
+        assertEquals("p1", list[0].pageId)
+
+        // 3. Filter PATTERN_ONLY
+        viewModel.setProposalFilter(ProposalFilter.PATTERN_ONLY)
+        testScheduler.runCurrent()
+        for (i in 1..40) {
+            list = viewModel.layoutOptimizationProposals.value
+            if (list.size == 1 && list[0].pageId == "p2") break
+            Thread.sleep(25)
+        }
+        assertEquals(1, list.size)
+        assertEquals("p2", list[0].pageId)
+
+        // 4. Sort PAGE_NAME_ASC with ALL filter
+        viewModel.setProposalFilter(ProposalFilter.ALL)
+        viewModel.setProposalSort(ProposalSort.PAGE_NAME_ASC)
+        testScheduler.runCurrent()
+        for (i in 1..40) {
+            list = viewModel.layoutOptimizationProposals.value
+            if (list.size == 2 && list[0].pageId == "p2") break
+            Thread.sleep(25)
+        }
+        assertEquals(2, list.size)
+        assertEquals("p2", list[0].pageId) // "Apple Page" comes before "Banana Page"
+        assertEquals("p1", list[1].pageId)
+
+        collectionJob.cancel()
     }
 }

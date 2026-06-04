@@ -41,6 +41,7 @@ data class ImportExportData(
     val isBiometricEnabled: Boolean? = null,
     val isSecurityRequiredForEdit: Boolean? = null,
     val isSecurityRequiredForSettings: Boolean? = null,
+    val isSecurityRequiredForAnalytics: Boolean? = null,
     val startupBehavior: String? = null,
     val favoriteBookId: String? = null,
     val weatherCacheTimeout: Long? = null,
