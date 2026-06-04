@@ -15,7 +15,10 @@ data class RestructureAction(
     val buttonLabel: String? = null,
     val sourcePageName: String? = null,
     val targetPageName: String? = null,
-    val newCategories: List<CategoryInfo>? = null
+    val newCategories: List<CategoryInfo>? = null,
+    val displaceButtonLabel: String? = null,
+    val displaceTargetPageName: String? = null,
+    val targetPlacementDescription: String? = null
 )
 
 @Serializable

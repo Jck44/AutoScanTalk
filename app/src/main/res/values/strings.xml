@@ -429,6 +429,8 @@
     <string name="analytics_ai_action_split">Seite aufteilen: „%1$s“</string>
     <string name="analytics_ai_action_default">Struktur-Anpassung</string>
     <string name="analytics_ai_details_move">Verschiebe von „%1$s“ nach „%2$s“</string>
+    <string name="analytics_ai_details_move_displace">Verdrängt „%1$s“ nach „%2$s“</string>
+    <string name="analytics_ai_details_move_placement">Platzierung: %1$s</string>
     <string name="analytics_ai_details_split">• Neue Unterseite „%1$s“: %2$s</string>
     <string name="analytics_ai_btn_save_test">Als neues Buch speichern &amp; testen</string>
     <string name="analytics_ai_toast_applied">Neues Buch geladen! Vorschläge wurden angewendet.</string>

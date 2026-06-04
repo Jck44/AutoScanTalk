@@ -1363,6 +1363,8 @@ class PageViewModel @Inject constructor(
                     if (_selectedPageIds.value.contains(page.id)) {
                         val pageObj = org.json.JSONObject()
                         pageObj.put("pageName", page.name)
+                        pageObj.put("rows", page.rows)
+                        pageObj.put("columns", page.columns)
                         val buttonsArray = org.json.JSONArray()
                         page.buttonConfigs.forEach { btn ->
                             if (btn != null && btn.isActive && btn.label.isNotBlank()) {
@@ -1415,6 +1417,8 @@ class PageViewModel @Inject constructor(
                     if (_selectedPageIds.value.contains(page.id)) {
                         val pageObj = org.json.JSONObject()
                         pageObj.put("pageName", page.name)
+                        pageObj.put("rows", page.rows)
+                        pageObj.put("columns", page.columns)
                         val buttonsArray = org.json.JSONArray()
                         page.buttonConfigs.forEach { btn ->
                             if (btn != null && btn.isActive && btn.label.isNotBlank()) {
@@ -1444,6 +1448,9 @@ class PageViewModel @Inject constructor(
                     act.buttonLabel?.let { actObj.put("buttonLabel", it) }
                     act.sourcePageName?.let { actObj.put("sourcePageName", it) }
                     act.targetPageName?.let { actObj.put("targetPageName", it) }
+                    act.displaceButtonLabel?.let { actObj.put("displaceButtonLabel", it) }
+                    act.displaceTargetPageName?.let { actObj.put("displaceTargetPageName", it) }
+                    act.targetPlacementDescription?.let { actObj.put("targetPlacementDescription", it) }
                     existingActionsArray.put(actObj)
                 }
                 val existingProposalsJson = org.json.JSONObject().apply {

@@ -429,4 +429,88 @@ class CloneBookUseCaseTest {
         val navAction = navButton!!.buttonAction as NavigateToPageButtonAction
         assertEquals(newFoodSubpage.id, navAction.pageId)
     }
+
+    @Test
+    fun `cloning book with MOVE_BUTTON and displacement swap applies swap correctly`() = runTest {
+        val sourceBookId = "srcBookId"
+        val sourceBook = Book(id = sourceBookId, name = "My Book")
+
+        val page1Id = "p1"
+        val page2Id = "p2"
+        val page3Id = "p3"
+
+        val page1 = Page(id = page1Id, bookId = sourceBookId, name = "Hauptseite", rows = 2, columns = 2)
+        val page2 = Page(id = page2Id, bookId = sourceBookId, name = "Kategorie 1", rows = 2, columns = 2)
+        val page3 = Page(id = page3Id, bookId = sourceBookId, name = "Unterseite 1", rows = 2, columns = 2)
+
+        val btnToMoveEntity = ButtonEntity(
+            id = "btnToMove",
+            pageId = page2Id,
+            globalIndex = 0,
+            label = "Apple",
+            buttonAction = NavigateToPageButtonAction(""),
+            isActive = true
+        )
+
+        // Target page (Hauptseite) has a button "Banana" at slot 1
+        val btnToDisplaceEntity = ButtonEntity(
+            id = "btnToDisplace",
+            pageId = page1Id,
+            globalIndex = 1,
+            label = "Banana",
+            buttonAction = NavigateToPageButtonAction(""),
+            isActive = true
+        )
+
+        val oldPagesWithButtons = listOf(
+            PageWithButtons(page = page1, buttons = listOf(btnToDisplaceEntity)),
+            PageWithButtons(page = page2, buttons = listOf(btnToMoveEntity)),
+            PageWithButtons(page = page3, buttons = emptyList())
+        )
+
+        coEvery { mockBookRepository.getBookById(sourceBookId) } returns sourceBook
+        coEvery { mockPageDao.getPagesForBookWithButtons(sourceBookId) } returns oldPagesWithButtons
+
+        val proposal = BookRestructureProposal(
+            actions = listOf(
+                RestructureAction(
+                    type = "MOVE_BUTTON",
+                    rationale = "Apple nach Hauptseite, verdrängt Banana nach Unterseite 1.",
+                    buttonLabel = "Apple",
+                    sourcePageName = "Kategorie 1",
+                    targetPageName = "Hauptseite",
+                    displaceButtonLabel = "Banana",
+                    displaceTargetPageName = "Unterseite 1",
+                    targetPlacementDescription = "Reihe 1 Spalte 2"
+                )
+            )
+        )
+
+        val targetBookId = cloneBookUseCase.execute(sourceBookId, proposal)
+
+        val buttonSlots = mutableListOf<List<ButtonEntity>>()
+        coVerify { mockButtonDao.insertButtons(capture(buttonSlots)) }
+        val allInsertedButtons = buttonSlots.flatten()
+
+        val movedButton = allInsertedButtons.find { it.label == "Apple" }
+        val displacedButton = allInsertedButtons.find { it.label == "Banana" }
+
+        assertNotNull(movedButton)
+        assertNotNull(displacedButton)
+
+        // Verify "Apple" took slot 1 (Banana's old slot) on Hauptseite
+        assertEquals(1, movedButton!!.globalIndex)
+
+        // Verify "Banana" was moved to Unterseite 1
+        val pageSlots = mutableListOf<Page>()
+        coVerify { mockPageDao.insertPageEntity(capture(pageSlots)) }
+        val newHauptseite = pageSlots.find { it.name == "Hauptseite" }
+        val newUnterseite1 = pageSlots.find { it.name == "Unterseite 1" }
+        assertNotNull(newHauptseite)
+        assertNotNull(newUnterseite1)
+
+        assertEquals(newHauptseite!!.id, movedButton.pageId)
+        assertEquals(newUnterseite1!!.id, displacedButton!!.pageId)
+        assertEquals(0, displacedButton.globalIndex) // first free slot on Unterseite 1
+    }
 }

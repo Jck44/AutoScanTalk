@@ -47,7 +47,10 @@ class BookRestructureProposalUseCaseTest {
                   "rationale": "Apple wird sehr oft geklickt",
                   "buttonLabel": "Apple",
                   "sourcePageName": "Kategorie 1",
-                  "targetPageName": "Hauptseite"
+                  "targetPageName": "Hauptseite",
+                  "displaceButtonLabel": "Banana",
+                  "displaceTargetPageName": "Unterseite 1",
+                  "targetPlacementDescription": "Reihe 1 Spalte 2"
                 },
                 {
                   "type": "DEACTIVATE_BUTTON",
@@ -79,6 +82,9 @@ class BookRestructureProposalUseCaseTest {
         assertEquals("Apple", action1.buttonLabel)
         assertEquals("Kategorie 1", action1.sourcePageName)
         assertEquals("Hauptseite", action1.targetPageName)
+        assertEquals("Banana", action1.displaceButtonLabel)
+        assertEquals("Unterseite 1", action1.displaceTargetPageName)
+        assertEquals("Reihe 1 Spalte 2", action1.targetPlacementDescription)
 
         val action2 = proposal.actions[1]
         assertEquals("DEACTIVATE_BUTTON", action2.type)

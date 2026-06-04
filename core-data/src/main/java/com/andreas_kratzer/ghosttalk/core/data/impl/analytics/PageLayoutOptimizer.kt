@@ -145,7 +145,7 @@ class PageLayoutOptimizer @Inject constructor() {
             val validClicksCount = pageEvents.count { !it.isAccidental }
             if (validClicksCount < 5) continue
 
-            // A. Check for late clicks (rate >= 20%)
+            // A. Check for late clicks (rate >= 20%) or check if scan speed can be increased (lateClickRate < 5%)
             val lateClicks = pageEvents.filter { it.isAccidental && it.intendedButtonId != null }
             val lateClickRate = lateClicks.size.toDouble() / pageEvents.size.toDouble()
             if (lateClickRate >= 0.20) {
@@ -158,6 +158,22 @@ class PageLayoutOptimizer @Inject constructor() {
                         lateClickRate = lateClickRate
                     )
                 )
+            } else if (lateClickRate < 0.05 && scanDelayMs > 750L) {
+                val reactionTimes = pageEvents.mapNotNull { it.reactionTimeMs }
+                if (reactionTimes.size >= 5) {
+                    val avgReaction = reactionTimes.average()
+                    if (avgReaction < scanDelayMs * 0.4) {
+                        proposals.add(
+                            LayoutOptimizationProposal.ChangeScanDelayProposal(
+                                pageId = page.id,
+                                pageName = page.name,
+                                currentScanDelayMs = scanDelayMs,
+                                suggestedScanDelayMs = maxOf(500L, scanDelayMs - 250L),
+                                lateClickRate = lateClickRate
+                            )
+                        )
+                    }
+                }
             }
 
             // B. Check for neighbor misclicks

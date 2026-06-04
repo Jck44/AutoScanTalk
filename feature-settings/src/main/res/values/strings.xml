@@ -68,6 +68,13 @@
     <string name="settings_holding_time">Haltezeit / Doppelklick-Schutz (ms)</string>
     <string name="settings_late_click_threshold">Spätklick-Schwellenwert (ms)</string>
     <string name="settings_late_click_threshold_desc">Zeitfenster nach Fokuswechsel oder während TTS, in dem ein Klick als unabsichtlicher Spätklick auf den vorherigen Button gewertet wird.</string>
+    <string name="settings_scan_delay_proposal_slowing_title">Scan-Verzögerung vergrößern</string>
+    <string name="settings_scan_delay_proposal_slowing_desc">Auf Seite „%1$s“ gibt es eine hohe Spätklick-Rate von %2$d%%. Der Benutzer verpasst häufig Kacheln. Erhöhung der Verzögerung von %3$dms auf %4$dms empfohlen.</string>
+    <string name="settings_scan_delay_proposal_slowing_btn">Verzögerung erhöhen</string>
+    <string name="settings_scan_delay_proposal_speeding_title">Scan-Verzögerung verringern (Schnelleres Scannen)</string>
+    <string name="settings_scan_delay_proposal_speeding_desc">Auf Seite „%1$s“ reagiert der Benutzer sehr schnell und fehlerfrei. Um Zeit zu sparen, wird eine Verringerung der Verzögerung von %2$dms auf %3$dms empfohlen.</string>
+    <string name="settings_scan_delay_proposal_speeding_btn">Verzögerung verringern</string>
+    <string name="settings_scan_delay_proposal_toast">Scan-Verzögerung auf %1$dms aktualisiert!</string>
 
     <!-- Security Settings -->
     <string name="settings_security_require_pin">PIN Schutz für Einstellungen / Bearbeitung</string>

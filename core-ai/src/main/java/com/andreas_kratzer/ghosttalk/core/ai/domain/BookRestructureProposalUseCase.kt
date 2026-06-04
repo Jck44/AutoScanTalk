@@ -25,7 +25,7 @@ class BookRestructureProposalUseCase @Inject constructor(
             Du bist ein Experte für Unterstützte Kommunikation (AAC) und Ergotherapie.
             Deine Aufgabe ist es, die Struktur eines AAC-Kommunikationsbuchs vollständig zu optimieren, um die Scan-Zeiten, die Suchzeiten und die kognitive Belastung des Benutzers drastisch zu verringern.
             
-            Hier ist die aktuelle Struktur des Buchs mit Klickstatistiken für jeden Knopf im JSON-Format:
+            Hier ist die aktuelle Struktur des Buchs mit Klickstatistiken für jeden Knopf im JSON-Format. Jede Seite enthält ihre Dimensionen ("rows" und "columns"):
             $pagesJsonString
             
             Führe eine tiefgehende, ganzheitliche semantische Analyse aller Seiten und Knöpfe durch. Optimiere nicht nur lokale Hotspots, sondern ordne die gesamte Hierarchie semantisch neu nach folgenden Prinzipien:
@@ -34,6 +34,10 @@ class BookRestructureProposalUseCase @Inject constructor(
             3. PRÄSENZ DER WICHTIGSTEN BEGRIFFE: Häufig geklickte Knöpfe (hohe Klickzahlen) müssen auf der Startseite ("Hauptseite") oder einer leicht erreichbaren Hauptebene platziert werden. Knöpfe auf tiefen Unterseiten mit vielen Klicks sollten nach oben verschoben werden (Aktionstyp: "MOVE_BUTTON").
             4. BEREINIGUNG: Knöpfe, die im Erfassungszeitraum kaum oder gar nicht (0 oder 1 Klicks) verwendet wurden, blockieren Platz und verlangsamen das Scannen. Deaktiviere/Archiviere diese (Aktionstyp: "DEACTIVATE_BUTTON").
             5. Steuerungs-Knöpfe wie "Zurück", "Startseite" oder "Lautstärke" dürfen nicht verschoben oder deaktiviert werden.
+            
+            KAPAZITÄTS- UND VERDRÄNGUNGSREGELUNG (WICHTIG):
+            - Wenn du einen Knopf auf eine Zielseite verschieben möchtest ("MOVE_BUTTON") und diese Zielseite bereits voll oder sehr voll ist (die Anzahl der aktiven Knöpfe erreicht fast rows * columns, oder die Seite hat mehr als 8 Knöpfe und ist die Startseite "Hauptseite"), schlage vor, welcher andere Knopf (z.B. ein seltener geklickter Knopf) von der Zielseite verdrängt werden soll ("displaceButtonLabel") und wohin er verschoben werden soll ("displaceTargetPageName").
+            - Wenn du einen Knopf verschiebst, gib optional an, an welche Stelle er kommen soll (z.B. "oben links", "Mitte" oder "anstelle von [displaceButtonLabel]") unter "targetPlacementDescription".
             
             $scopeInstruction
             
@@ -45,7 +49,10 @@ class BookRestructureProposalUseCase @Inject constructor(
                   "rationale": "Ausführliche Begründung auf Deutsch für den Betreuer, warum diese Verschiebung semantisch oder statistisch sinnvoll ist...",
                   "buttonLabel": "Knopfbeschriftung",
                   "sourcePageName": "Name der aktuellen Seite",
-                  "targetPageName": "Name der Zielseite"
+                  "targetPageName": "Name der Zielseite",
+                  "displaceButtonLabel": "Knopfbeschriftung des Knopfes, der auf der Zielseite verdrängt/ersetzt werden soll (optional, falls Zielseite voll)",
+                  "displaceTargetPageName": "Zielseite für den verdrängten Knopf (optional, falls displaceButtonLabel gesetzt)",
+                  "targetPlacementDescription": "Beschreibung der Platzierung, z.B. 'Reihe 1 Spalte 2' oder 'anstelle von X' (optional)"
                 },
                 {
                   "type": "DEACTIVATE_BUTTON",
@@ -72,13 +79,17 @@ class BookRestructureProposalUseCase @Inject constructor(
     fun generateLoadMorePrompt(pagesJsonString: String, existingProposalsJson: String): String {
         return """
             Du bist ein Experte für Unterstützte Kommunikation (AAC) und Ergotherapie.
-            Hier ist die aktuelle Struktur des Buchs mit Klickstatistiken im JSON-Format:
+            Hier ist die aktuelle Struktur des Buchs mit Klickstatistiken im JSON-Format. Jede Seite enthält ihre Dimensionen ("rows" und "columns"):
             $pagesJsonString
             
             Folgende Vorschläge wurden bereits generiert und dem Benutzer angezeigt:
             $existingProposalsJson
             
             Generiere 10 bis 15 ZUSÄTZLICHE, NEUE Vorschläge, die sich von den bereits generierten Vorschlägen unterscheiden. Wiederhole keinesfalls die Vorschläge, die bereits in der Liste enthalten sind.
+            
+            KAPAZITÄTS- UND VERDRÄNGUNGSREGELUNG (WICHTIG):
+            - Wenn du einen Knopf auf eine Zielseite verschieben möchtest ("MOVE_BUTTON") und diese Zielseite bereits voll oder sehr voll ist (die Anzahl der aktiven Knöpfe erreicht fast rows * columns, oder die Seite hat mehr als 8 Knöpfe und ist die Startseite "Hauptseite"), schlage vor, welcher andere Knopf von der Zielseite verdrängt werden soll ("displaceButtonLabel") und wohin er verschoben werden soll ("displaceTargetPageName").
+            - Wenn du einen Knopf verschiebst, gib optional an, an welche Stelle er kommen soll (z.B. "oben links", "Mitte" oder "anstelle von [displaceButtonLabel]") unter "targetPlacementDescription".
             
             Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt im folgenden Format (ohne Markdown-Formatierung wie ```json ... ```):
             {
@@ -88,7 +99,10 @@ class BookRestructureProposalUseCase @Inject constructor(
                   "rationale": "Ausführliche Begründung auf Deutsch...",
                   "buttonLabel": "Knopfbeschriftung",
                   "sourcePageName": "Name der aktuellen Seite",
-                  "targetPageName": "Name der Zielseite"
+                  "targetPageName": "Name der Zielseite",
+                  "displaceButtonLabel": "Knopfbeschriftung des Knopfes, der auf der Zielseite verdrängt/ersetzt werden soll (optional, falls Zielseite voll)",
+                  "displaceTargetPageName": "Zielseite für den verdrängten Knopf (optional, falls displaceButtonLabel gesetzt)",
+                  "targetPlacementDescription": "Beschreibung der Platzierung, z.B. 'Reihe 1 Spalte 2' oder 'anstelle von X' (optional)"
                 },
                 {
                   "type": "DEACTIVATE_BUTTON",
@@ -127,9 +141,12 @@ class BookRestructureProposalUseCase @Inject constructor(
             val actObj = actionsArray.getJSONObject(i)
             val type = actObj.getString("type")
             val rationale = actObj.getString("rationale")
-            val buttonLabel = actObj.optString("buttonLabel", null)
-            val sourcePageName = actObj.optString("sourcePageName", null)
-            val targetPageName = actObj.optString("targetPageName", null)
+            val buttonLabel = actObj.optString("buttonLabel", "").takeIf { it.isNotEmpty() }
+            val sourcePageName = actObj.optString("sourcePageName", "").takeIf { it.isNotEmpty() }
+            val targetPageName = actObj.optString("targetPageName", "").takeIf { it.isNotEmpty() }
+            val displaceButtonLabel = actObj.optString("displaceButtonLabel", "").takeIf { it.isNotEmpty() }
+            val displaceTargetPageName = actObj.optString("displaceTargetPageName", "").takeIf { it.isNotEmpty() }
+            val targetPlacementDescription = actObj.optString("targetPlacementDescription", "").takeIf { it.isNotEmpty() }
 
             val newCategoriesArray = actObj.optJSONArray("newCategories")
             val newCategories = if (newCategoriesArray != null) {
@@ -154,7 +171,10 @@ class BookRestructureProposalUseCase @Inject constructor(
                     buttonLabel = buttonLabel,
                     sourcePageName = sourcePageName,
                     targetPageName = targetPageName,
-                    newCategories = newCategories
+                    newCategories = newCategories,
+                    displaceButtonLabel = displaceButtonLabel,
+                    displaceTargetPageName = displaceTargetPageName,
+                    targetPlacementDescription = targetPlacementDescription
                 )
             )
         }

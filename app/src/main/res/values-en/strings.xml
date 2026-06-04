@@ -425,6 +425,8 @@
     <string name="analytics_ai_action_split">Split page: \"%1$s\"</string>
     <string name="analytics_ai_action_default">Layout Adjustment</string>
     <string name="analytics_ai_details_move">From \"%1$s\" to \"%2$s\"</string>
+    <string name="analytics_ai_details_move_displace">Displaces \"%1$s\" to \"%2$s\"</string>
+    <string name="analytics_ai_details_move_placement">Placement: %1$s</string>
     <string name="analytics_ai_details_split">• New subpage \"%1$s\": %2$s</string>
     <string name="analytics_ai_btn_save_test">Save as New Book &amp; Evaluate</string>
     <string name="analytics_ai_toast_applied">New book loaded! Proposal has been applied.</string>

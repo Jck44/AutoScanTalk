@@ -52,6 +52,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.feature.settings.R as SettingsR
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 import java.text.SimpleDateFormat
@@ -822,28 +823,44 @@ fun AnalyticsDashboardScreen(
                                                     }
                                                 }
                                                 is com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer.LayoutOptimizationProposal.ChangeScanDelayProposal -> {
+                                                    val isSlowingDown = proposal.suggestedScanDelayMs > proposal.currentScanDelayMs
+                                                    val title = if (isSlowingDown) {
+                                                        stringResource(SettingsR.string.settings_scan_delay_proposal_slowing_title)
+                                                    } else {
+                                                        stringResource(SettingsR.string.settings_scan_delay_proposal_speeding_title)
+                                                    }
+                                                    val ratePct = (proposal.lateClickRate * 100).toInt()
+                                                    val detailText = if (isSlowingDown) {
+                                                        stringResource(SettingsR.string.settings_scan_delay_proposal_slowing_desc, proposal.pageName, ratePct, proposal.currentScanDelayMs, proposal.suggestedScanDelayMs)
+                                                    } else {
+                                                        stringResource(SettingsR.string.settings_scan_delay_proposal_speeding_desc, proposal.pageName, proposal.currentScanDelayMs, proposal.suggestedScanDelayMs)
+                                                    }
+                                                    val btnText = if (isSlowingDown) {
+                                                        stringResource(SettingsR.string.settings_scan_delay_proposal_slowing_btn)
+                                                    } else {
+                                                        stringResource(SettingsR.string.settings_scan_delay_proposal_speeding_btn)
+                                                    }
                                                     Text(
-                                                        text = "Scan-Verzögerung anpassen",
+                                                        text = title,
                                                         style = MaterialTheme.typography.titleSmall,
                                                         fontWeight = FontWeight.Bold,
                                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                                     )
-                                                    val ratePct = (proposal.lateClickRate * 100).toInt()
                                                     Text(
-                                                        text = "Auf Seite '${proposal.pageName}' gibt es eine hohe Spätklick-Rate von $ratePct%. Der Benutzer verpasst häufig Kacheln. Erhöhung der Verzögerung von ${proposal.currentScanDelayMs}ms auf ${proposal.suggestedScanDelayMs}ms empfohlen.",
+                                                        text = detailText,
                                                         style = MaterialTheme.typography.bodyMedium,
                                                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f)
                                                     )
                                                     Button(
                                                         onClick = {
                                                             pageViewModel.changeScanDelay(proposal.suggestedScanDelayMs)
-                                                            Toast.makeText(context, "Scan-Verzögerung auf ${proposal.suggestedScanDelayMs}ms aktualisiert!", Toast.LENGTH_SHORT).show()
+                                                            Toast.makeText(context, context.getString(SettingsR.string.settings_scan_delay_proposal_toast, proposal.suggestedScanDelayMs), Toast.LENGTH_SHORT).show()
                                                         },
                                                         modifier = Modifier.align(Alignment.End),
                                                         shape = MaterialTheme.shapes.small
                                                     ) {
                                                         Text(
-                                                            text = "Verzögerung anpassen",
+                                                            text = btnText,
                                                             style = MaterialTheme.typography.labelMedium,
                                                             fontWeight = FontWeight.Bold
                                                         )
@@ -1335,12 +1352,30 @@ fun AnalyticsDashboardScreen(
 
                                                 when (action.type) {
                                                     "MOVE_BUTTON" -> {
-                                                        Text(
-                                                            text = stringResource(R.string.analytics_ai_details_move, action.sourcePageName ?: "", action.targetPageName ?: ""),
-                                                            style = MaterialTheme.typography.labelSmall,
-                                                            fontWeight = FontWeight.SemiBold,
-                                                            color = MaterialTheme.colorScheme.secondary
-                                                        )
+                                                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                                            Text(
+                                                                text = stringResource(R.string.analytics_ai_details_move, action.sourcePageName ?: "", action.targetPageName ?: ""),
+                                                                style = MaterialTheme.typography.labelSmall,
+                                                                fontWeight = FontWeight.SemiBold,
+                                                                color = MaterialTheme.colorScheme.secondary
+                                                            )
+                                                            if (!action.displaceButtonLabel.isNullOrBlank()) {
+                                                                Text(
+                                                                    text = stringResource(R.string.analytics_ai_details_move_displace, action.displaceButtonLabel ?: "", action.displaceTargetPageName ?: ""),
+                                                                    style = MaterialTheme.typography.labelSmall,
+                                                                    fontWeight = FontWeight.Normal,
+                                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                                )
+                                                            }
+                                                            if (!action.targetPlacementDescription.isNullOrBlank()) {
+                                                                Text(
+                                                                    text = stringResource(R.string.analytics_ai_details_move_placement, action.targetPlacementDescription ?: ""),
+                                                                    style = MaterialTheme.typography.labelSmall,
+                                                                    fontWeight = FontWeight.Normal,
+                                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                                )
+                                                            }
+                                                        }
                                                     }
                                                     "SPLIT_PAGE" -> {
                                                         action.newCategories?.forEach { cat ->

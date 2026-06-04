@@ -69,6 +69,13 @@
     <string name="settings_holding_time">Holding Time / Debounce (ms)</string>
     <string name="settings_late_click_threshold">Late Click Threshold (ms)</string>
     <string name="settings_late_click_threshold_desc">Time window after focus change or during TTS where clicks are evaluated as accidental late clicks of the predecessor button.</string>
+    <string name="settings_scan_delay_proposal_slowing_title">Increase Scan Delay</string>
+    <string name="settings_scan_delay_proposal_slowing_desc">On page „%1$s“, there is a high late-click rate of %2$d%%. The user frequently misses buttons. Increasing the delay from %3$dms to %4$dms is recommended.</string>
+    <string name="settings_scan_delay_proposal_slowing_btn">Increase Delay</string>
+    <string name="settings_scan_delay_proposal_speeding_title">Decrease Scan Delay (Faster Scanning)</string>
+    <string name="settings_scan_delay_proposal_speeding_desc">On page „%1$s“, the user reacts very quickly and error-free. To save time, decreasing the delay from %2$dms to %3$dms is recommended.</string>
+    <string name="settings_scan_delay_proposal_speeding_btn">Decrease Delay</string>
+    <string name="settings_scan_delay_proposal_toast">Scan delay updated to %1$dms!</string>
     
     <!-- Security Settings -->
     <string name="settings_security_require_pin">PIN protection for settings / editing</string>

@@ -111,11 +111,67 @@ class CloneBookUseCase @Inject constructor(
                         if (btnIndex != -1) {
                             val buttonToMove = srcPage.buttons.removeAt(btnIndex)
 
-                            // Find first empty grid index in destination page
-                            val destOccupiedIndices = destPage.buttons.map { it.globalIndex }.toSet()
-                            var targetSlot = 0
-                            while (destOccupiedIndices.contains(targetSlot)) {
-                                targetSlot++
+                            val displaceLabel = action.displaceButtonLabel
+                            val displaceTargetName = action.displaceTargetPageName
+                            var targetSlot = -1
+
+                            if (!displaceLabel.isNullOrBlank()) {
+                                val displaceIndex = destPage.buttons.indexOfFirst { it.label.equals(displaceLabel, ignoreCase = true) }
+                                if (displaceIndex != -1) {
+                                    val buttonToDisplace = destPage.buttons.removeAt(displaceIndex)
+                                    targetSlot = buttonToDisplace.globalIndex
+
+                                    val displaceDestPage = if (!displaceTargetName.isNullOrBlank()) {
+                                        mutablePages.find { it.page.name.equals(displaceTargetName, ignoreCase = true) }
+                                    } else null
+
+                                    if (displaceDestPage != null) {
+                                        val displaceOccupied = displaceDestPage.buttons.map { it.globalIndex }.toSet()
+                                        var displaceSlot = 0
+                                        while (displaceOccupied.contains(displaceSlot)) {
+                                            displaceSlot++
+                                        }
+                                        val maxDisplaceSlots = displaceDestPage.page.rows * displaceDestPage.page.columns
+                                        if (displaceSlot >= maxDisplaceSlots) {
+                                            var newRows = displaceDestPage.page.rows
+                                            var newCols = displaceDestPage.page.columns
+                                            if (newCols < 7) newCols++
+                                            else if (newRows < 7) newRows++
+                                            displaceDestPage.page = displaceDestPage.page.copy(rows = newRows, columns = newCols)
+                                        }
+                                        displaceDestPage.buttons.add(buttonToDisplace.copy(
+                                            pageId = displaceDestPage.page.id,
+                                            globalIndex = displaceSlot
+                                        ))
+                                    } else {
+                                        val destOccupied = destPage.buttons.map { it.globalIndex }.toSet()
+                                        var freeSlot = 0
+                                        while (destOccupied.contains(freeSlot) || freeSlot == targetSlot) {
+                                            freeSlot++
+                                        }
+                                        val maxDestSlots = destPage.page.rows * destPage.page.columns
+                                        if (freeSlot >= maxDestSlots) {
+                                            var newRows = destPage.page.rows
+                                            var newCols = destPage.page.columns
+                                            if (newCols < 7) newCols++
+                                            else if (newRows < 7) newRows++
+                                            destPage.page = destPage.page.copy(rows = newRows, columns = newCols)
+                                        }
+                                        destPage.buttons.add(buttonToDisplace.copy(
+                                            isActive = false,
+                                            globalIndex = freeSlot
+                                        ))
+                                    }
+                                }
+                            }
+
+                            if (targetSlot == -1) {
+                                // Find first empty grid index in destination page
+                                val destOccupiedIndices = destPage.buttons.map { it.globalIndex }.toSet()
+                                targetSlot = 0
+                                while (destOccupiedIndices.contains(targetSlot)) {
+                                    targetSlot++
+                                }
                             }
 
                             // If destination page is smaller than targetSlot, expand it up to 7x7

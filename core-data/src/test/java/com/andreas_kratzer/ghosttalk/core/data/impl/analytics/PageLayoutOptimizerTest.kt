@@ -37,7 +37,8 @@ class PageLayoutOptimizerTest {
             pages = listOf(page),
             defaultStartPageId = "start_page",
             scanDelayMs = 2000L,
-            defaultScanPattern = "linear"
+            defaultScanPattern = "linear",
+            historyEvents = emptyList()
         )
 
         // Assert
@@ -77,7 +78,8 @@ class PageLayoutOptimizerTest {
             pages = listOf(page),
             defaultStartPageId = "start_page",
             scanDelayMs = 1000L,
-            defaultScanPattern = "linear"
+            defaultScanPattern = "linear",
+            historyEvents = emptyList()
         )
 
         // Assert
@@ -112,7 +114,8 @@ class PageLayoutOptimizerTest {
             pages = listOf(page),
             defaultStartPageId = "start_page",
             scanDelayMs = 1000L,
-            defaultScanPattern = "linear"
+            defaultScanPattern = "linear",
+            historyEvents = emptyList()
         )
 
         // Assert
