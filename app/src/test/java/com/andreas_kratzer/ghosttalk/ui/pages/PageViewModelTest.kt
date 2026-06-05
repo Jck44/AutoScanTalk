@@ -32,6 +32,7 @@ import com.andreas_kratzer.ghosttalk.core.domain.pages.UpdatePageSettingsUseCase
 import com.andreas_kratzer.ghosttalk.core.domain.pages.UpdateRowNameUseCase
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.NavigateToStartPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.core.scanning.ScanCoordinator
@@ -799,5 +800,160 @@ class PageViewModelTest {
         testScheduler.advanceUntilIdle()
 
         assertEquals("p_start", viewModel.currentPage.value?.id)
+    }
+
+    @Test
+    fun `reorderByClickStats sorts active buttons descending by click count`() = runTest {
+        val targetPageId = "p1"
+        val btn1 = ButtonConfig(id = "btn1", label = "A", isActive = true)
+        val btn2 = ButtonConfig(id = "btn2", label = "B", isActive = true)
+        val btn3 = ButtonConfig(id = "btn3", label = "C", isActive = false)
+        
+        val buttonConfigs = MutableList<ButtonConfig?>(49) { null }
+        buttonConfigs[0] = btn1
+        buttonConfigs[1] = btn2
+        buttonConfigs[2] = btn3
+        
+        val page = Page(id = targetPageId, bookId = "b1", name = "P1", rows = 4, columns = 4, buttonConfigs = buttonConfigs)
+        coEvery { pageRepository.getPageById(targetPageId) } returns page
+        
+        val mockUsageStat = mockk<com.andreas_kratzer.ghosttalk.core.model.GroupedButtonUsageStat>(relaxed = true)
+        val mockChild1 = mockk<com.andreas_kratzer.ghosttalk.core.model.ButtonUsageStat>(relaxed = true) {
+            every { buttonConfigId } returns "btn1"
+            every { pageId } returns "p1"
+            every { usageCount } returns 5L
+        }
+        val mockChild2 = mockk<com.andreas_kratzer.ghosttalk.core.model.ButtonUsageStat>(relaxed = true) {
+            every { buttonConfigId } returns "btn2"
+            every { pageId } returns "p1"
+            every { usageCount } returns 10L
+        }
+        every { mockUsageStat.children } returns listOf(mockChild1, mockChild2)
+        coEvery { buttonUsageRepository.getGroupedUsageStats("b1") } returns listOf(mockUsageStat)
+        
+        viewModel = createViewModel()
+        viewModel.setActiveBookId("b1")
+        
+        val updatedPageSlot = io.mockk.slot<Page>()
+        coEvery { pageRepository.updatePage(capture(updatedPageSlot)) } returns Unit
+        
+        val latch = java.util.concurrent.CountDownLatch(1)
+        viewModel.reorderByClickStats(targetPageId) {
+            latch.countDown()
+        }
+        latch.await(3, java.util.concurrent.TimeUnit.SECONDS)
+        
+        val updated = updatedPageSlot.captured
+        // btn2 has 10 clicks, so it should be first. btn1 has 5 clicks, so second. btn3 (inactive) should be third.
+        assertEquals("btn2", updated.buttonConfigs[0]?.id)
+        assertEquals("btn1", updated.buttonConfigs[1]?.id)
+        assertEquals("btn3", updated.buttonConfigs[2]?.id)
+    }
+
+    @Test
+    fun `insertHomeNavigationEveryX inserts home buttons at correct index and removes old ones`() = runTest {
+        val pageId = "p1"
+        // btn1, btn2 are standard. btn3 is an existing home button. btn4 is standard.
+        val btn1 = ButtonConfig(id = "btn1", label = "A", isActive = true)
+        val btn2 = ButtonConfig(id = "btn2", label = "B", isActive = true)
+        val btn3 = ButtonConfig(id = "btn3", label = "Startseite", isActive = true, buttonAction = NavigateToStartPageButtonAction())
+        val btn4 = ButtonConfig(id = "btn4", label = "C", isActive = true)
+        
+        val buttonConfigs = MutableList<ButtonConfig?>(49) { null }
+        buttonConfigs[0] = btn1
+        buttonConfigs[1] = btn2
+        buttonConfigs[2] = btn3
+        buttonConfigs[3] = btn4
+        
+        val page = Page(id = pageId, bookId = "b1", name = "P1", rows = 4, columns = 4, buttonConfigs = buttonConfigs)
+        coEvery { pageRepository.getPageById(pageId) } returns page
+        
+        viewModel = createViewModel()
+        viewModel.setActiveBookId("b1")
+        every { settingsRepository.defaultStartPageId } returns "p_start"
+        
+        val updatedPageSlot = io.mockk.slot<Page>()
+        coEvery { pageRepository.updatePage(capture(updatedPageSlot)) } returns Unit
+        
+        // Insert every 2 buttons.
+        // nonHomeButtons = [btn1, btn2, btn4]
+        // Counter logic:
+        // - btn1: counter=0. result=[btn1]. counter=1.
+        // - btn2: counter=1. result=[btn1, btn2]. counter=2.
+        // - btn4: counter=2. counter % 2 == 0, so insert home first: result=[btn1, btn2, home, btn4]. counter=3.
+        val latch = java.util.concurrent.CountDownLatch(1)
+        viewModel.insertHomeNavigationEveryX(pageId, 2) {
+            latch.countDown()
+        }
+        latch.await(3, java.util.concurrent.TimeUnit.SECONDS)
+        
+        val updated = updatedPageSlot.captured
+        assertEquals("btn1", updated.buttonConfigs[0]?.id)
+        assertEquals("btn2", updated.buttonConfigs[1]?.id)
+        // At index 2 there should be a Home button
+        val targetAction = updated.buttonConfigs[2]?.buttonAction
+        assertEquals(true, targetAction is NavigateToStartPageButtonAction)
+        assertEquals("btn4", updated.buttonConfigs[3]?.id)
+    }
+
+    @Test
+    fun `shrinkGridToMinimum resizes grid to match button count`() = runTest {
+        val pageId = "p1"
+        // 5 buttons total. Minimal grid size should be 2 rows, 3 columns (fits up to 6 buttons).
+        val buttons = (1..5).map { ButtonConfig(id = "btn$it", label = "btn$it", isActive = true) }
+        val buttonConfigs = MutableList<ButtonConfig?>(49) { null }
+        buttons.forEachIndexed { i, btn -> buttonConfigs[i] = btn }
+        
+        val page = Page(id = pageId, bookId = "b1", name = "P1", rows = 4, columns = 4, buttonConfigs = buttonConfigs)
+        coEvery { pageRepository.getPageById(pageId) } returns page
+        
+        viewModel = createViewModel()
+        viewModel.setActiveBookId("b1")
+        
+        val updatedPageSlot = io.mockk.slot<Page>()
+        coEvery { pageRepository.updatePage(capture(updatedPageSlot)) } returns Unit
+        
+        val latch = java.util.concurrent.CountDownLatch(1)
+        viewModel.shrinkGridToMinimum(pageId) {
+            latch.countDown()
+        }
+        latch.await(3, java.util.concurrent.TimeUnit.SECONDS)
+        
+        val updated = updatedPageSlot.captured
+        assertEquals(2, updated.rows)
+        assertEquals(3, updated.columns)
+    }
+
+    @Test
+    fun `deleteDeactivatedButtons deletes buttons where isActive is false`() = runTest {
+        val pageId = "p1"
+        val btn1 = ButtonConfig(id = "btn1", label = "A", isActive = true)
+        val btn2 = ButtonConfig(id = "btn2", label = "B", isActive = false)
+        val btn3 = ButtonConfig(id = "btn3", label = "C", isActive = true)
+        
+        val buttonConfigs = MutableList<ButtonConfig?>(49) { null }
+        buttonConfigs[0] = btn1
+        buttonConfigs[1] = btn2
+        buttonConfigs[2] = btn3
+        
+        val page = Page(id = pageId, bookId = "b1", name = "P1", rows = 4, columns = 4, buttonConfigs = buttonConfigs)
+        coEvery { pageRepository.getPageById(pageId) } returns page
+        
+        viewModel = createViewModel()
+        viewModel.setActiveBookId("b1")
+        
+        val updatedPageSlot = io.mockk.slot<Page>()
+        coEvery { pageRepository.updatePage(capture(updatedPageSlot)) } returns Unit
+        
+        val latch = java.util.concurrent.CountDownLatch(1)
+        viewModel.deleteDeactivatedButtons(pageId) {
+            latch.countDown()
+        }
+        latch.await(3, java.util.concurrent.TimeUnit.SECONDS)
+        
+        val updated = updatedPageSlot.captured
+        assertEquals("btn1", updated.buttonConfigs[0]?.id)
+        assertEquals("btn3", updated.buttonConfigs[1]?.id)
+        assertEquals(null, updated.buttonConfigs[2])
     }
 }

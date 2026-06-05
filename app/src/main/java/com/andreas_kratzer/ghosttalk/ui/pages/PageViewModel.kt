@@ -27,6 +27,7 @@ import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.ButtonTemplate
 import com.andreas_kratzer.ghosttalk.core.model.GridSettingsUpdate
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.NavigateToStartPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.OptionalProperty
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.scanning.ScanCoordinator
@@ -1610,6 +1611,175 @@ class PageViewModel @Inject constructor(
                 }
             } finally {
                 _isAiRestructureLoading.value = false
+            }
+        }
+    }
+
+    // --- Layout- & Struktur-Assistent Actions ---
+
+    private fun isHomeButton(config: ButtonConfig?, defaultStartPageId: String?): Boolean {
+        if (config == null) return false
+        val action = config.buttonAction
+        return action is NavigateToStartPageButtonAction ||
+                (action is NavigateToPageButtonAction && (action.pageId.isEmpty() || action.pageId == defaultStartPageId))
+    }
+
+    private fun packButtonsIntoGrid(buttons: List<ButtonConfig>, rows: Int, cols: Int): List<ButtonConfig?> {
+        val finalConfigs = MutableList<ButtonConfig?>(com.andreas_kratzer.ghosttalk.core.util.GridUtils.TOTAL_SLOTS) { null }
+        var buttonIndex = 0
+        for (r in 0 until rows) {
+            for (c in 0 until cols) {
+                if (buttonIndex < buttons.size) {
+                    val globalPos = r * com.andreas_kratzer.ghosttalk.core.util.GridUtils.MAX_GRID_SIZE + c
+                    finalConfigs[globalPos] = buttons[buttonIndex]
+                    buttonIndex++
+                }
+            }
+        }
+        return finalConfigs
+    }
+
+    private fun calculateOptimalGridSize(buttonCount: Int): Pair<Int, Int> {
+        return when {
+            buttonCount <= 1 -> 1 to 1
+            buttonCount <= 2 -> 1 to 2
+            buttonCount <= 4 -> 2 to 2
+            buttonCount <= 6 -> 2 to 3
+            buttonCount <= 9 -> 3 to 3
+            buttonCount <= 12 -> 3 to 4
+            buttonCount <= 16 -> 4 to 4
+            buttonCount <= 20 -> 4 to 5
+            buttonCount <= 25 -> 5 to 5
+            buttonCount <= 30 -> 5 to 6
+            buttonCount <= 36 -> 6 to 6
+            buttonCount <= 42 -> 6 to 7
+            else -> 7 to 7
+        }
+    }
+
+    fun reorderByClickStats(pageId: String, onComplete: () -> Unit = {}) {
+        val bookId = activeBookId.value ?: return
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val page = pageManagementDelegate.getPageById(pageId) ?: return@launch
+                val stats = buttonUsageRepository.getGroupedUsageStats(bookId)
+                val clickCounts = stats.flatMap { it.children }
+                    .filter { it.pageId == pageId }
+                    .associate { it.buttonConfigId to it.usageCount }
+
+                val allButtons = page.buttonConfigs.filterNotNull()
+                val activeButtons = allButtons.filter { it.isActive }
+                val deactivatedButtons = allButtons.filter { !it.isActive }
+
+                val sortedActive = activeButtons.sortedByDescending { clickCounts[it.id] ?: 0L }
+                val combinedButtons = sortedActive + deactivatedButtons
+
+                val packed = packButtonsIntoGrid(combinedButtons, page.rows, page.columns)
+                val updatedPage = page.copy(buttonConfigs = packed)
+                pageManagementDelegate.pageRepository.updatePage(updatedPage)
+                withContext(Dispatchers.Main) {
+                    pageManagementDelegate.setCurrentPage(updatedPage)
+                    onComplete()
+                }
+            } catch (e: Exception) {
+                Log.e("PageViewModel", "Error reordering buttons", e)
+            }
+        }
+    }
+
+    fun insertHomeNavigationEveryX(pageId: String, x: Int, onComplete: () -> Unit = {}) {
+        val defaultStartPageId = settingsRepository.defaultStartPageId
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val page = pageManagementDelegate.getPageById(pageId) ?: return@launch
+                val nonHomeButtons = page.buttonConfigs.filterNotNull().filter { !isHomeButton(it, defaultStartPageId) }
+
+                val result = mutableListOf<ButtonConfig>()
+                var counter = 0
+                for (btn in nonHomeButtons) {
+                    if (counter > 0 && counter % x == 0) {
+                        val homeButton = ButtonConfig(
+                            id = java.util.UUID.randomUUID().toString(),
+                            label = "Startseite",
+                            spokenText = "Zurück zur Startseite",
+                            buttonAction = NavigateToStartPageButtonAction(),
+                            auditoryCue = AuditoryCue.TextToSpeechCue("Zurück zur Startseite")
+                        )
+                        result.add(homeButton)
+                    }
+                    result.add(btn)
+                    counter++
+                }
+
+                var finalRows = page.rows
+                var finalCols = page.columns
+                if (result.size > finalRows * finalCols) {
+                    val (optRows, optCols) = calculateOptimalGridSize(result.size)
+                    if (optRows * optCols > finalRows * finalCols) {
+                        finalRows = maxOf(finalRows, optRows)
+                        finalCols = maxOf(finalCols, optCols)
+                    }
+                }
+                finalRows = finalRows.coerceIn(1, 7)
+                finalCols = finalCols.coerceIn(1, 7)
+
+                val packed = packButtonsIntoGrid(result, finalRows, finalCols)
+                val updatedPage = page.copy(
+                    rows = finalRows,
+                    columns = finalCols,
+                    buttonConfigs = packed
+                )
+                pageManagementDelegate.pageRepository.updatePage(updatedPage)
+                withContext(Dispatchers.Main) {
+                    pageManagementDelegate.setCurrentPage(updatedPage)
+                    onComplete()
+                }
+            } catch (e: Exception) {
+                Log.e("PageViewModel", "Error inserting home navigation", e)
+            }
+        }
+    }
+
+    fun shrinkGridToMinimum(pageId: String, onComplete: () -> Unit = {}) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val page = pageManagementDelegate.getPageById(pageId) ?: return@launch
+                val remainingButtons = page.buttonConfigs.filterNotNull()
+                val count = remainingButtons.size
+                val (newRows, newCols) = calculateOptimalGridSize(count)
+
+                val packed = packButtonsIntoGrid(remainingButtons, newRows, newCols)
+                val updatedPage = page.copy(
+                    rows = newRows,
+                    columns = newCols,
+                    buttonConfigs = packed
+                )
+                pageManagementDelegate.pageRepository.updatePage(updatedPage)
+                withContext(Dispatchers.Main) {
+                    pageManagementDelegate.setCurrentPage(updatedPage)
+                    onComplete()
+                }
+            } catch (e: Exception) {
+                Log.e("PageViewModel", "Error shrinking grid", e)
+            }
+        }
+    }
+
+    fun deleteDeactivatedButtons(pageId: String, onComplete: () -> Unit = {}) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val page = pageManagementDelegate.getPageById(pageId) ?: return@launch
+                val remainingButtons = page.buttonConfigs.filterNotNull().filter { it.isActive }
+
+                val packed = packButtonsIntoGrid(remainingButtons, page.rows, page.columns)
+                val updatedPage = page.copy(buttonConfigs = packed)
+                pageManagementDelegate.pageRepository.updatePage(updatedPage)
+                withContext(Dispatchers.Main) {
+                    pageManagementDelegate.setCurrentPage(updatedPage)
+                    onComplete()
+                }
+            } catch (e: Exception) {
+                Log.e("PageViewModel", "Error deleting deactivated buttons", e)
             }
         }
     }

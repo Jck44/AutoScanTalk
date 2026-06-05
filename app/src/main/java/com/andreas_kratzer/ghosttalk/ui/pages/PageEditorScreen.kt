@@ -69,7 +69,8 @@ fun PageEditorScreen(
 
     var localName by remember(page.name) { mutableStateOf(page.name) }
     
-    // Page Split Dialog States
+    // Layout & Page Split Dialog States
+    val showLayoutAssistantDialog = remember { mutableStateOf(false) }
     val showOptInDialog = remember { mutableStateOf(false) }
     val showManualPromptDialog = remember { mutableStateOf(false) }
     val showWizardDialog = remember { mutableStateOf(false) }
@@ -163,19 +164,13 @@ fun PageEditorScreen(
                     }
                     IconButton(
                         onClick = {
-                            val accepted = pageViewModel.settingsRepository.hasAcceptedPageSplitOptIn
-                            if (accepted) {
-                                showWizardDialog.value = true
-                                pageViewModel.generatePageSplitProposal(page.id)
-                            } else {
-                                showOptInDialog.value = true
-                            }
+                            showLayoutAssistantDialog.value = true
                         },
                         modifier = Modifier.testTag("page_editor_split_wizard_trigger")
                     ) {
                         Icon(
                             imageVector = GhostTalkIcons.AutoAwesome,
-                            contentDescription = "Seite aufteilen",
+                            contentDescription = "Layout- & Struktur-Assistent",
                             tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -211,7 +206,24 @@ fun PageEditorScreen(
             pageViewModel = pageViewModel
         )
 
-        // Render Page Split Dialogs
+        // Render Layout & Split Dialogs
+        if (showLayoutAssistantDialog.value) {
+            PageLayoutAssistantDialog(
+                page = page,
+                pageViewModel = pageViewModel,
+                onStartPageSplit = {
+                    val accepted = pageViewModel.settingsRepository.hasAcceptedPageSplitOptIn
+                    if (accepted) {
+                        showWizardDialog.value = true
+                        pageViewModel.generatePageSplitProposal(page.id)
+                    } else {
+                        showOptInDialog.value = true
+                    }
+                },
+                onDismiss = { showLayoutAssistantDialog.value = false }
+            )
+        }
+
         if (showOptInDialog.value) {
             PageSplitOptInDialog(
                 onConfirmCloud = { rememberDecision ->
