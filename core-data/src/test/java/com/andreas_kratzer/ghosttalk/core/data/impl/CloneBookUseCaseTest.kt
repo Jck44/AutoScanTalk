@@ -510,4 +510,167 @@ class CloneBookUseCaseTest {
         assertEquals(newUnterseite1!!.id, displacedButton!!.pageId)
         assertEquals(0, displacedButton.globalIndex) // first free slot on Unterseite 1
     }
+
+    @Test
+    fun `cloning book with applyHierarchyRestructure creates pages and maps layouts and archives unplaced buttons`() = runTest {
+        val sourceBookId = "srcBookId"
+        val sourceBook = Book(id = sourceBookId, name = "My Book")
+
+        val page1Id = "p1"
+        val page1 = Page(id = page1Id, bookId = sourceBookId, name = "Hauptseite", rows = 3, columns = 3)
+
+        val btn1 = ButtonEntity(id = "b1", pageId = page1Id, globalIndex = 0, label = "Apple", buttonAction = NavigateToPageButtonAction(""), isActive = true)
+        val btn2 = ButtonEntity(id = "b2", pageId = page1Id, globalIndex = 1, label = "UnplacedButton", buttonAction = NavigateToPageButtonAction(""), isActive = true)
+
+        val oldPagesWithButtons = listOf(
+            PageWithButtons(page = page1, buttons = listOf(btn1, btn2))
+        )
+
+        coEvery { mockBookRepository.getBookById(sourceBookId) } returns sourceBook
+        coEvery { mockPageDao.getPagesForBookWithButtons(sourceBookId) } returns oldPagesWithButtons
+
+        val proposal = com.andreas_kratzer.ghosttalk.core.model.BookHierarchyProposal(
+            pages = listOf(
+                com.andreas_kratzer.ghosttalk.core.model.HierarchyPageNode(
+                    name = "Hauptseite",
+                    description = "Startseite",
+                    subpages = listOf("Food")
+                ),
+                com.andreas_kratzer.ghosttalk.core.model.HierarchyPageNode(
+                    name = "Food",
+                    description = "Food page",
+                    subpages = emptyList()
+                )
+            )
+        )
+
+        val layouts = mapOf(
+            "Hauptseite" to com.andreas_kratzer.ghosttalk.core.model.PageLayoutProposal(
+                pageName = "Hauptseite",
+                actions = listOf(
+                    com.andreas_kratzer.ghosttalk.core.model.PageButtonAction(
+                        type = "CREATE_NAV_BUTTON",
+                        buttonLabel = "Food",
+                        targetPageName = "Food",
+                        rationale = "Nav link"
+                    )
+                )
+            ),
+            "Food" to com.andreas_kratzer.ghosttalk.core.model.PageLayoutProposal(
+                pageName = "Food",
+                actions = listOf(
+                    com.andreas_kratzer.ghosttalk.core.model.PageButtonAction(
+                        type = "MOVE_BUTTON",
+                        buttonLabel = "Apple",
+                        sourcePageName = "Hauptseite",
+                        rationale = "Move Apple"
+                    )
+                )
+            )
+        )
+
+        val newBookId = cloneBookUseCase.applyHierarchyRestructure(sourceBookId, proposal, layouts)
+
+        assertNotEquals(sourceBookId, newBookId)
+
+        val pageSlots = mutableListOf<Page>()
+        coVerify { mockPageDao.insertPageEntity(capture(pageSlots)) }
+        val newHauptseite = pageSlots.find { it.name == "Hauptseite" }
+        val newFood = pageSlots.find { it.name == "Food" }
+        val archivPage = pageSlots.find { it.name == "Archiv" }
+
+        assertNotNull(newHauptseite)
+        assertNotNull(newFood)
+        assertNotNull(archivPage)
+
+        val buttonSlots = mutableListOf<List<ButtonEntity>>()
+        coVerify { mockButtonDao.insertButtons(capture(buttonSlots)) }
+        val allInsertedButtons = buttonSlots.flatten()
+
+        val movedApple = allInsertedButtons.find { it.label == "Apple" }
+        assertNotNull(movedApple)
+        assertEquals(newFood!!.id, movedApple!!.pageId)
+
+        val navFood = allInsertedButtons.find { it.label == "Food" && it.pageId == newHauptseite!!.id }
+        assertNotNull(navFood)
+        assertTrue(navFood!!.buttonAction is NavigateToPageButtonAction)
+        assertEquals(newFood.id, (navFood.buttonAction as NavigateToPageButtonAction).pageId)
+
+        val archivedBtn = allInsertedButtons.find { it.label == "UnplacedButton" }
+        assertNotNull(archivedBtn)
+        assertEquals(archivPage!!.id, archivedBtn!!.pageId)
+        assertFalse(archivedBtn.isActive)
+    }
+
+    @Test
+    fun `cloning book with applyHierarchyRestructure creates multiple linked Archive pages when unplaced count exceeds 49`() = runTest {
+        val sourceBookId = "srcBookId"
+        val sourceBook = Book(id = sourceBookId, name = "My Book")
+
+        val page1Id = "p1"
+        val page1 = Page(id = page1Id, bookId = sourceBookId, name = "Hauptseite", rows = 3, columns = 3)
+
+        // Create 50 unplaced buttons to trigger multi-page archiving
+        val buttons = mutableListOf<ButtonEntity>()
+        for (i in 1..50) {
+            buttons.add(ButtonEntity(
+                id = "b_$i",
+                pageId = page1Id,
+                globalIndex = i - 1,
+                label = "UnplacedButton_$i",
+                buttonAction = NavigateToPageButtonAction(""),
+                isActive = true
+            ))
+        }
+
+        val oldPagesWithButtons = listOf(
+            PageWithButtons(page = page1, buttons = buttons)
+        )
+
+        coEvery { mockBookRepository.getBookById(sourceBookId) } returns sourceBook
+        coEvery { mockPageDao.getPagesForBookWithButtons(sourceBookId) } returns oldPagesWithButtons
+
+        val proposal = com.andreas_kratzer.ghosttalk.core.model.BookHierarchyProposal(
+            pages = listOf(
+                com.andreas_kratzer.ghosttalk.core.model.HierarchyPageNode(
+                    name = "Hauptseite",
+                    description = "Startseite",
+                    subpages = emptyList()
+                )
+            )
+        )
+
+        val layouts = mapOf(
+            "Hauptseite" to com.andreas_kratzer.ghosttalk.core.model.PageLayoutProposal(
+                pageName = "Hauptseite",
+                actions = emptyList()
+            )
+        )
+
+        val newBookId = cloneBookUseCase.applyHierarchyRestructure(sourceBookId, proposal, layouts)
+
+        val pageSlots = mutableListOf<Page>()
+        coVerify { mockPageDao.insertPageEntity(capture(pageSlots)) }
+        val archivPage1 = pageSlots.find { it.name == "Archiv" }
+        val archivPage2 = pageSlots.find { it.name == "Archiv 2" }
+
+        assertNotNull(archivPage1)
+        assertNotNull(archivPage2)
+
+        val buttonSlots = mutableListOf<List<ButtonEntity>>()
+        coVerify { mockButtonDao.insertButtons(capture(buttonSlots)) }
+        val allInsertedButtons = buttonSlots.flatten()
+
+        // 48 buttons should be on page 1, 1 navigation button on page 1, and 2 buttons on page 2. Total = 51 inserted buttons
+        val page1Buttons = allInsertedButtons.filter { it.pageId == archivPage1!!.id }
+        val page2Buttons = allInsertedButtons.filter { it.pageId == archivPage2!!.id }
+
+        assertEquals(49, page1Buttons.size) // 48 original + 1 nav link
+        assertEquals(2, page2Buttons.size) // 2 remaining original
+
+        val navLink = page1Buttons.find { it.label == "Archiv 2" }
+        assertNotNull(navLink)
+        assertTrue(navLink!!.buttonAction is NavigateToPageButtonAction)
+        assertEquals(archivPage2?.id, (navLink.buttonAction as NavigateToPageButtonAction).pageId)
+    }
 }

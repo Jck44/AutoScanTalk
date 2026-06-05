@@ -453,6 +453,12 @@
     <string name="analytics_ai_btn_loading_more">Lade weitere Vorschläge…</string>
     <string name="analytics_ai_quota_error">Fehler beim Laden (Limit erreicht). Bisherige Vorschläge wurden beibehalten.</string>
     <string name="analytics_ai_btn_apply_action">Vorschlag anwenden</string>
+    <string name="analytics_ai_hierarchy_title">Gesamtkonzept der Seitenhierarchie</string>
+    <string name="analytics_ai_load_layout">Belegung laden</string>
+    <string name="analytics_ai_layout_loaded">Belegung geladen (%1$d Aktionen)</string>
+    <string name="analytics_ai_load_all_layouts">Alle Belegungen laden</string>
+    <string name="analytics_ai_saving_loading_layout">Lade Knopflayout für „%1$s“ (%2$d/%3$d)…</string>
+    <string name="analytics_ai_hierarchy_desc">Die KI erstellt zuerst ein Gesamtkonzept der Seitenstruktur und lädt die genauen Knöpfe danach einzeln, um Fehler zu vermeiden.</string>
     <string name="bluetooth_settings">Bluetooth-Einstellungen</string>
     <!-- Analytics Tabs & Expandable strings -->
     <string name="analytics_tab_overview">Übersicht</string>

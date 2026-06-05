@@ -103,8 +103,10 @@ class ControlDeviceActionHandler @Inject constructor(
                 onFinish(executionId)
             }
 
+
             DeviceActionType.INSTALL_UPDATE -> {
-                handleInstallUpdate(buttonConfig, deviceAction, executionId, onFinish)
+                actionLogger.log("Aktion 'App aktualisieren' ist nicht mehr verfügbar", action, buttonConfig.label)
+                onFinish(executionId)
             }
 
             DeviceActionType.START_SYNC -> {
@@ -115,70 +117,6 @@ class ControlDeviceActionHandler @Inject constructor(
 
             DeviceActionType.TOGGLE_AUTO_READ_NOTIFICATIONS -> {
                 handleToggleAutoRead(buttonConfig, deviceAction, executionId, onFinish)
-            }
-        }
-    }
-
-    private fun handleInstallUpdate(
-        config: ButtonConfig,
-        action: ControlDeviceButtonAction,
-        executionId: Int,
-        onFinish: (Int) -> Unit
-    ) {
-        val updateManager = updateManagerLazy.get()
-        val targetDeviceAddress = if (config.playActionAsAuditoryCue) {
-            settings.cuesAudioDeviceAddress
-        } else {
-            settings.ttsAudioDeviceAddress
-        }
-        val tts = ttsProxyLazy.get()
-
-        fun speak(msgName: String, fallback: String, andThen: () -> Unit) {
-            val text = getAppString(msgName)
-            val msg = if (text.isNotEmpty()) text else fallback
-            actionLogger.log(msg, action, config.label)
-            tts.speakRouted(msg, targetDeviceAddress) {
-                andThen()
-            }
-        }
-
-        updateManager.triggerInstallAction { result ->
-            when (result) {
-                is com.andreas_kratzer.ghosttalk.core.UpdateActionResult.Installing -> {
-                    speak("update_installing", "Update wird installiert. Die App startet gleich neu.") {
-                        onFinish(executionId)
-                    }
-                }
-                is com.andreas_kratzer.ghosttalk.core.UpdateActionResult.DownloadStarted -> {
-                    speak("update_downloading", "Update wird heruntergeladen, bitte warten.") {
-                        onFinish(executionId)
-                    }
-                }
-                is com.andreas_kratzer.ghosttalk.core.UpdateActionResult.AlreadyDownloading -> {
-                    speak("update_downloading", "Update wird heruntergeladen, bitte warten.") {
-                        onFinish(executionId)
-                    }
-                }
-                is com.andreas_kratzer.ghosttalk.core.UpdateActionResult.AlreadyChecking -> {
-                    speak("update_searching", "Suche nach Updates, bitte warten.") {
-                        onFinish(executionId)
-                    }
-                }
-                is com.andreas_kratzer.ghosttalk.core.UpdateActionResult.NoUpdate -> {
-                    speak("update_not_available", "Die App ist auf dem neuesten Stand.") {
-                        onFinish(executionId)
-                    }
-                }
-                is com.andreas_kratzer.ghosttalk.core.UpdateActionResult.NotFromPlayStore -> {
-                    speak("update_not_available", "Die App ist auf dem neuesten Stand.") {
-                        onFinish(executionId)
-                    }
-                }
-                is com.andreas_kratzer.ghosttalk.core.UpdateActionResult.Error -> {
-                    speak("update_check_error", "Updateprüfung fehlgeschlagen.") {
-                        onFinish(executionId)
-                    }
-                }
             }
         }
     }

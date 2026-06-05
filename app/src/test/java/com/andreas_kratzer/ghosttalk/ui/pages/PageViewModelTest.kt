@@ -323,6 +323,8 @@ class PageViewModelTest {
             createPageUseCase = createPageUseCase,
             pageLayoutOptimizer = optimizer,
             bookRestructureProposalUseCase = mockk(relaxed = true),
+            bookHierarchyProposalUseCase = mockk(relaxed = true),
+            pageLayoutProposalUseCase = mockk(relaxed = true),
             cloneBookUseCase = mockk(relaxed = true)
         )
     }

@@ -221,6 +221,9 @@ class MainActivity : AppCompatActivity() {
             pageViewModel.setActiveBookId(finalActiveBookId)
             backgroundScheduler.scheduleLocationUpdate()
             backgroundScheduler.scheduleWeatherUpdate()
+            withContext(Dispatchers.IO) {
+                pageRepository.purgeInstallUpdateButtons()
+            }
             isDbInitialized = true
             handleIntent(intent)
         }

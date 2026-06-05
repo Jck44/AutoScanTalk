@@ -449,6 +449,12 @@
     <string name="analytics_ai_btn_loading_more">Loading more suggestions…</string>
     <string name="analytics_ai_quota_error">Error loading (limit reached). Existing suggestions have been kept.</string>
     <string name="analytics_ai_btn_apply_action">Apply suggestion</string>
+    <string name="analytics_ai_hierarchy_title">Page Hierarchy Concept</string>
+    <string name="analytics_ai_load_layout">Load Layout</string>
+    <string name="analytics_ai_layout_loaded">Layout loaded (%1$d actions)</string>
+    <string name="analytics_ai_load_all_layouts">Load All Layouts</string>
+    <string name="analytics_ai_saving_loading_layout">Loading layout for „%1$s“ (%2$d/%3$d)…</string>
+    <string name="analytics_ai_hierarchy_desc">The AI creates an overall concept of the page structure first, and then loads the exact button layout for each page individually to ensure correctness.</string>
     <string name="bluetooth_settings">Bluetooth Settings</string>
     <!-- Analytics Tabs & Expandable strings -->
     <string name="analytics_tab_overview">Overview</string>

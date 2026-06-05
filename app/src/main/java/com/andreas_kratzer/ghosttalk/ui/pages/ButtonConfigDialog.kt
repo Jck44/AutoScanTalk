@@ -877,7 +877,6 @@ fun ButtonConfigDialog(
                                     actionTypeStatusVibrate to ControlDeviceButtonAction(DeviceActionType.STATUS_VIBRATE),
                                     actionTypeStatusLoud to ControlDeviceButtonAction(DeviceActionType.STATUS_LOUD),
                                     actionTypeToggleScanning to ControlDeviceButtonAction(DeviceActionType.TOGGLE_SCANNING),
-                                    actionTypeInstallUpdate to ControlDeviceButtonAction(DeviceActionType.INSTALL_UPDATE),
                                     actionTypeStartSync to ControlDeviceButtonAction(DeviceActionType.START_SYNC)
                                 ),
                                 com.andreas_kratzer.ghosttalk.core.model.ActionCategoryRegistry.GROUP_SMART_HOME to listOf(

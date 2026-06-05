@@ -51,6 +51,7 @@ class ButtonTemplateCoverageTest {
             if (subclass == ControlDeviceButtonAction::class) {
                 // Assert that for every DeviceActionType there is a template
                 for (deviceActionType in DeviceActionType.entries) {
+                    if (deviceActionType == DeviceActionType.INSTALL_UPDATE) continue
                     val hasTemplate = templates.any { template ->
                         val action = template.buttonConfig.buttonAction
                         action is ControlDeviceButtonAction && action.actionType == deviceActionType

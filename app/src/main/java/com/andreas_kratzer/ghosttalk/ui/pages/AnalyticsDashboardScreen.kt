@@ -17,13 +17,18 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -95,6 +100,10 @@ fun AnalyticsDashboardScreen(
 
     val isGeminiEnabled = pageViewModel.settingsRepository.isGeminiEnabled
     val aiProposal by pageViewModel.aiRestructureProposal.collectAsState()
+    val aiHierarchy by pageViewModel.aiHierarchyProposal.collectAsState()
+    val aiPageLayouts by pageViewModel.aiPageLayoutProposals.collectAsState()
+    val isAiHierarchyLoading by pageViewModel.isAiHierarchyLoading.collectAsState()
+    val isLoadingPageLayout by pageViewModel.isLoadingPageLayout.collectAsState()
     val isAiLoading by pageViewModel.isAiRestructureLoading.collectAsState()
     val aiToastApplied = stringResource(R.string.analytics_ai_toast_applied)
     val selectedPageIds by pageViewModel.selectedPageIds.collectAsState()
@@ -1012,13 +1021,16 @@ fun AnalyticsDashboardScreen(
                                     }
                                 }
                             }
-
                             HorizontalDivider()
                         }
 
                         // --- SECTION: AI BOOK RESTRUCTURING (Gemini) ---
 
                         var showPageSelectionDialog by remember { mutableStateOf(false) }
+                        var editingNode by remember { mutableStateOf<com.andreas_kratzer.ghosttalk.core.model.HierarchyPageNode?>(null) }
+                        var editingNodeNewName by remember { mutableStateOf("") }
+                        var editingNodeNewDesc by remember { mutableStateOf("") }
+                        var editingNodeNewSubpages by remember { mutableStateOf<Set<String>>(emptySet()) }
 
                         if (showPageSelectionDialog) {
                             AlertDialog(
@@ -1302,266 +1314,394 @@ fun AnalyticsDashboardScreen(
                                         shape = MaterialTheme.shapes.small,
                                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
                                     ) {
-                                        Text(stringResource(R.string.analytics_show_more).substringBefore(" "))
+                                        Text("Auswählen")
                                     }
                                 }
                             }
-                        }
+                                                         Spacer(modifier = Modifier.height(12.dp))
 
-                        if (!isGeminiEnabled) {
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f)),
-                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.3f))
-                            ) {
-                                Column(
-                                    modifier = Modifier.padding(16.dp),
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Text(
-                                        text = stringResource(R.string.analytics_ai_disabled_title),
-                                        style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.error
-                                    )
-                                    Text(
-                                        text = stringResource(R.string.analytics_ai_disabled_desc),
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                        } else if (isAiLoading && aiProposal == null) {
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
-                            ) {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(24.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                                ) {
-                                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                                    Text(
-                                        text = stringResource(R.string.analytics_ai_loading_text),
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                        } else if (aiProposal == null) {
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f)),
-                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
-                            ) {
-                                Column(
-                                    modifier = Modifier.padding(16.dp),
-                                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                                ) {
-                                    Text(
-                                        text = stringResource(R.string.analytics_ai_intro_title),
-                                        style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                    Text(
-                                        text = stringResource(R.string.analytics_ai_intro_desc),
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
+                                val hierarchy = aiHierarchy
+                                if (hierarchy == null) {
                                     Button(
-                                        onClick = {
-                                            if (selectedPageIds.isEmpty()) {
-                                                Toast.makeText(context, R.string.analytics_ai_no_pages_selected_warning, Toast.LENGTH_LONG).show()
-                                            } else {
-                                                pageViewModel.generateAiRestructureProposal()
-                                            }
-                                        },
+                                        onClick = { pageViewModel.generateAiHierarchyProposal() },
                                         modifier = Modifier.fillMaxWidth(),
-                                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                                        enabled = selectedPageIds.isNotEmpty()
+                                        enabled = !isAiHierarchyLoading
                                     ) {
-                                        Text(stringResource(R.string.analytics_ai_btn_calculate))
-                                    }
-                                }
-                            }
-                        } else {
-                            val proposal = aiProposal!!
-                            Column(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                if (proposal.actions.isEmpty()) {
-                                    Card(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
-                                    ) {
-                                        Text(
-                                            text = stringResource(R.string.analytics_ai_no_proposals),
-                                            modifier = Modifier.padding(16.dp),
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
+                                        if (isAiHierarchyLoading) {
+                                            CircularProgressIndicator(
+                                                modifier = Modifier.size(20.dp),
+                                                strokeWidth = 2.dp,
+                                                color = MaterialTheme.colorScheme.onPrimary
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text("Berechne Struktur...")
+                                        } else {
+                                            Text("Gesamtkonzept erstellen")
+                                        }
                                     }
                                 } else {
-                                    val visibleAiActions = if (showAllAiActions) proposal.actions else proposal.actions.take(3)
-                                    visibleAiActions.forEach { action ->
+                                    if (editingNode != null) {
+                                        val node = editingNode!!
+                                        AlertDialog(
+                                            onDismissRequest = { editingNode = null },
+                                            title = { Text("Seite bearbeiten") },
+                                            text = {
+                                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                    OutlinedTextField(
+                                                        value = editingNodeNewName,
+                                                        onValueChange = { editingNodeNewName = it },
+                                                        label = { Text("Name") },
+                                                        singleLine = true,
+                                                        modifier = Modifier.fillMaxWidth()
+                                                    )
+                                                    OutlinedTextField(
+                                                        value = editingNodeNewDesc,
+                                                        onValueChange = { editingNodeNewDesc = it },
+                                                        label = { Text("Beschreibung / Begründung") },
+                                                        modifier = Modifier.fillMaxWidth()
+                                                    )
+                                                    
+                                                    Text("Unterseiten verknüpfen:", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                                                    val otherPages = hierarchy.pages.filter { it.name != node.name && it.name != "Hauptseite" }
+                                                    Column(
+                                                        modifier = Modifier.height(150.dp).verticalScroll(rememberScrollState()),
+                                                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                                                    ) {
+                                                        otherPages.forEach { other ->
+                                                            val isLinked = editingNodeNewSubpages.contains(other.name)
+                                                            Row(
+                                                                modifier = Modifier.fillMaxWidth().clickable {
+                                                                    editingNodeNewSubpages = if (isLinked) {
+                                                                        editingNodeNewSubpages - other.name
+                                                                    } else {
+                                                                        editingNodeNewSubpages + other.name
+                                                                    }
+                                                                },
+                                                                verticalAlignment = Alignment.CenterVertically
+                                                            ) {
+                                                                Checkbox(
+                                                                    checked = isLinked,
+                                                                    onCheckedChange = {
+                                                                        editingNodeNewSubpages = if (isLinked) {
+                                                                            editingNodeNewSubpages - other.name
+                                                                        } else {
+                                                                            editingNodeNewSubpages + other.name
+                                                                        }
+                                                                    }
+                                                                )
+                                                                Text(other.name)
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            confirmButton = {
+                                                TextButton(
+                                                    onClick = {
+                                                        val updatedPages = hierarchy.pages.map { page ->
+                                                            if (page.name == node.name) {
+                                                                page.copy(
+                                                                    name = editingNodeNewName,
+                                                                    description = editingNodeNewDesc,
+                                                                    subpages = editingNodeNewSubpages.toList()
+                                                                )
+                                                            } else {
+                                                                val newSubpages = page.subpages.map { subName ->
+                                                                    if (subName == node.name) editingNodeNewName else subName
+                                                                }
+                                                                page.copy(subpages = newSubpages)
+                                                            }
+                                                        }
+                                                        pageViewModel.updateHierarchyManualEdit(com.andreas_kratzer.ghosttalk.core.model.BookHierarchyProposal(updatedPages))
+                                                        editingNode = null
+                                                    }
+                                                ) {
+                                                    Text("Speichern")
+                                                }
+                                            },
+                                            dismissButton = {
+                                                TextButton(onClick = { editingNode = null }) {
+                                                    Text("Abbrechen")
+                                                }
+                                            }
+                                        )
+                                    }
+
+                                    Column(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        hierarchy.pages.forEach { node ->
+                                            val isPageLoading = isLoadingPageLayout[node.name] == true
+                                            val layoutProposal = aiPageLayouts[node.name]
+                                            
+                                            Card(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f)),
+                                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                                            ) {
+                                                Column(
+                                                    modifier = Modifier.padding(14.dp),
+                                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                                ) {
+                                                    Row(
+                                                        modifier = Modifier.fillMaxWidth(),
+                                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                                        verticalAlignment = Alignment.CenterVertically
+                                                    ) {
+                                                        Column(modifier = Modifier.weight(1f)) {
+                                                            Text(
+                                                                text = node.name,
+                                                                style = MaterialTheme.typography.titleSmall,
+                                                                fontWeight = FontWeight.Bold,
+                                                                color = MaterialTheme.colorScheme.primary
+                                                            )
+                                                            if (!node.sourcePageName.isNullOrBlank()) {
+                                                                Text(
+                                                                    text = "(Original: ${node.sourcePageName})",
+                                                                    style = MaterialTheme.typography.labelSmall,
+                                                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                                                )
+                                                            }
+                                                        }
+                                                        
+                                                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                            IconButton(
+                                                                onClick = {
+                                                                    editingNode = node
+                                                                    editingNodeNewName = node.name
+                                                                    editingNodeNewDesc = node.description
+                                                                    editingNodeNewSubpages = node.subpages.toSet()
+                                                                },
+                                                                modifier = Modifier.size(28.dp)
+                                                            ) {
+                                                                Icon(
+                                                                    imageVector = Icons.Default.Edit,
+                                                                    contentDescription = "Bearbeiten",
+                                                                    modifier = Modifier.size(16.dp),
+                                                                    tint = MaterialTheme.colorScheme.primary
+                                                                )
+                                                            }
+                                                            
+                                                            if (node.name != "Hauptseite") {
+                                                                IconButton(
+                                                                    onClick = {
+                                                                        val updatedList = hierarchy.pages.filter { it.name != node.name }
+                                                                            .map { page ->
+                                                                                page.copy(subpages = page.subpages.filter { it != node.name })
+                                                                            }
+                                                                        pageViewModel.updateHierarchyManualEdit(com.andreas_kratzer.ghosttalk.core.model.BookHierarchyProposal(updatedList))
+                                                                    },
+                                                                    modifier = Modifier.size(28.dp)
+                                                                ) {
+                                                                    Icon(
+                                                                        imageVector = Icons.Default.Delete,
+                                                                        contentDescription = "Löschen",
+                                                                        modifier = Modifier.size(16.dp),
+                                                                        tint = MaterialTheme.colorScheme.error
+                                                                    )
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                    
+                                                    Text(
+                                                        text = node.description,
+                                                        style = MaterialTheme.typography.bodyMedium,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                    
+                                                    if (node.subpages.isNotEmpty()) {
+                                                        Row(
+                                                            modifier = Modifier.fillMaxWidth(),
+                                                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                                            verticalAlignment = Alignment.CenterVertically
+                                                        ) {
+                                                            Text(
+                                                                text = "Unterseiten:",
+                                                                style = MaterialTheme.typography.labelSmall,
+                                                                fontWeight = FontWeight.Bold,
+                                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                            )
+                                                            node.subpages.forEach { sub ->
+                                                                SuggestionChip(
+                                                                    onClick = {},
+                                                                    label = { Text(sub, style = MaterialTheme.typography.labelSmall) }
+                                                                )
+                                                            }
+                                                        }
+                                                    }
+                                                    
+                                                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                                                    
+                                                    if (isPageLoading) {
+                                                        Row(
+                                                            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                                                            horizontalArrangement = Arrangement.Center,
+                                                            verticalAlignment = Alignment.CenterVertically
+                                                        ) {
+                                                            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                                                            Spacer(modifier = Modifier.width(8.dp))
+                                                            Text("Lade Knopflayout...", style = MaterialTheme.typography.bodySmall)
+                                                        }
+                                                    } else if (layoutProposal != null) {
+                                                        Column(
+                                                            modifier = Modifier.fillMaxWidth(),
+                                                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                                                        ) {
+                                                            Text(
+                                                                text = stringResource(R.string.analytics_ai_layout_loaded, layoutProposal.actions.size),
+                                                                style = MaterialTheme.typography.labelSmall,
+                                                                fontWeight = FontWeight.Bold,
+                                                                color = MaterialTheme.colorScheme.secondary
+                                                            )
+                                                            
+                                                            layoutProposal.actions.take(4).forEach { action ->
+                                                                val icon = when (action.type) {
+                                                                    "MOVE_BUTTON" -> "📦"
+                                                                    "CREATE_NAV_BUTTON" -> "➡️"
+                                                                    else -> "⚙️"
+                                                                }
+                                                                Row(
+                                                                    modifier = Modifier.fillMaxWidth(),
+                                                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                                                    verticalAlignment = Alignment.CenterVertically
+                                                                ) {
+                                                                    Text(icon, style = MaterialTheme.typography.bodySmall)
+                                                                    Text(
+                                                                        text = if (action.type == "MOVE_BUTTON") {
+                                                                            "Verschiebe „${action.buttonLabel}“ von „${action.sourcePageName ?: "Unbekannt"}“"
+                                                                        } else {
+                                                                            "Navigationsknopf „${action.buttonLabel}“ zu „${action.targetPageName}“ erstellen"
+                                                                        },
+                                                                        style = MaterialTheme.typography.bodySmall,
+                                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                                    )
+                                                                }
+                                                            }
+                                                        }
+                                                    } else {
+                                                        Row(
+                                                            modifier = Modifier.fillMaxWidth(),
+                                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                                            verticalAlignment = Alignment.CenterVertically
+                                                        ) {
+                                                            Text(
+                                                                text = "Knopf-Belegung ausstehend",
+                                                                style = MaterialTheme.typography.labelSmall,
+                                                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                                            )
+                                                            Button(
+                                                                onClick = { pageViewModel.loadPageLayoutProposal(node.name) },
+                                                                shape = MaterialTheme.shapes.small,
+                                                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                                                            ) {
+                                                                Text(stringResource(R.string.analytics_ai_load_layout))
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        
+                                        val allLayoutsLoaded = hierarchy.pages.all { aiPageLayouts.containsKey(it.name) }
+                                        
+                                        if (!allLayoutsLoaded) {
+                                            Button(
+                                                onClick = { pageViewModel.loadAllPageLayoutProposals {} },
+                                                modifier = Modifier.fillMaxWidth(),
+                                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
+                                                enabled = !isAiHierarchyLoading && isLoadingPageLayout.isEmpty()
+                                            ) {
+                                                Text(stringResource(R.string.analytics_ai_load_all_layouts))
+                                            }
+                                        }
+                                        
+                                        Spacer(modifier = Modifier.height(8.dp))
+
+                                        var feedbackText by remember { mutableStateOf("") }
                                         Card(
                                             modifier = Modifier.fillMaxWidth(),
-                                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f)),
-                                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)),
+                                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
                                         ) {
                                             Column(
                                                 modifier = Modifier.padding(14.dp),
-                                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                                                verticalArrangement = Arrangement.spacedBy(8.dp)
                                             ) {
-                                                val actionTitle = when (action.type) {
-                                                    "MOVE_BUTTON" -> stringResource(R.string.analytics_ai_action_move, action.buttonLabel ?: "")
-                                                    "DEACTIVATE_BUTTON" -> stringResource(R.string.analytics_ai_action_deactivate, action.buttonLabel ?: "")
-                                                    "SPLIT_PAGE" -> stringResource(R.string.analytics_ai_action_split, action.sourcePageName ?: "")
-                                                    else -> stringResource(R.string.analytics_ai_action_default)
-                                                }
-                                                val icon = when (action.type) {
-                                                    "MOVE_BUTTON" -> "📦"
-                                                    "DEACTIVATE_BUTTON" -> "🗑️"
-                                                    "SPLIT_PAGE" -> "✂️"
-                                                    else -> "⚙️"
-                                                }
-
-                                                Row(
-                                                    verticalAlignment = Alignment.CenterVertically,
-                                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                                ) {
-                                                    Text(icon, style = MaterialTheme.typography.titleMedium)
-                                                    Text(
-                                                        text = actionTitle,
-                                                        style = MaterialTheme.typography.titleSmall,
-                                                        fontWeight = FontWeight.Bold,
-                                                        color = MaterialTheme.colorScheme.onSurface
-                                                    )
-                                                }
-                                                Text(
-                                                    text = action.rationale,
-                                                    style = MaterialTheme.typography.bodyMedium,
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                Text("AI-Konzept verfeinern (Feedback)", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                                                OutlinedTextField(
+                                                    value = feedbackText,
+                                                    onValueChange = { feedbackText = it },
+                                                    placeholder = { Text("Z.B.: 'Ernährung in Essen und Trinken aufteilen'") },
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    maxLines = 2
                                                 )
-
-                                                when (action.type) {
-                                                    "MOVE_BUTTON" -> {
-                                                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                                            Text(
-                                                                text = stringResource(R.string.analytics_ai_details_move, action.sourcePageName ?: "", action.targetPageName ?: ""),
-                                                                style = MaterialTheme.typography.labelSmall,
-                                                                fontWeight = FontWeight.SemiBold,
-                                                                color = MaterialTheme.colorScheme.secondary
-                                                            )
-                                                            if (!action.displaceButtonLabel.isNullOrBlank()) {
-                                                                Text(
-                                                                    text = stringResource(R.string.analytics_ai_details_move_displace, action.displaceButtonLabel ?: "", action.displaceTargetPageName ?: ""),
-                                                                    style = MaterialTheme.typography.labelSmall,
-                                                                    fontWeight = FontWeight.Normal,
-                                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                                )
-                                                            }
-                                                            if (!action.targetPlacementDescription.isNullOrBlank()) {
-                                                                Text(
-                                                                    text = stringResource(R.string.analytics_ai_details_move_placement, action.targetPlacementDescription ?: ""),
-                                                                    style = MaterialTheme.typography.labelSmall,
-                                                                    fontWeight = FontWeight.Normal,
-                                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                                )
-                                                            }
-                                                        }
-                                                    }
-                                                    "SPLIT_PAGE" -> {
-                                                        action.newCategories?.forEach { cat ->
-                                                            Text(
-                                                                text = stringResource(R.string.analytics_ai_details_split, cat.name, cat.buttonLabels.joinToString(", ")),
-                                                                style = MaterialTheme.typography.labelSmall,
-                                                                color = MaterialTheme.colorScheme.secondary,
-                                                                modifier = Modifier.padding(start = 8.dp)
-                                                            )
-                                                        }
-                                                    }
-                                                }
-
-                                                Spacer(modifier = Modifier.height(4.dp))
                                                 Button(
                                                     onClick = {
-                                                        pageViewModel.applySingleAiRestructureAction(action) { _ ->
-                                                            Toast.makeText(context, aiToastApplied, Toast.LENGTH_LONG).show()
-                                                            onNavigateBack()
-                                                        }
+                                                        pageViewModel.generateAiHierarchyProposal(feedbackText)
+                                                        feedbackText = ""
                                                     },
-                                                    modifier = Modifier.align(Alignment.End),
-                                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
-                                                    shape = MaterialTheme.shapes.small,
-                                                    enabled = !isAiLoading
+                                                    enabled = feedbackText.isNotBlank() && !isAiHierarchyLoading,
+                                                    modifier = Modifier.align(Alignment.End)
                                                 ) {
-                                                    Text(stringResource(R.string.analytics_ai_btn_apply_action))
+                                                    Text("Neu berechnen mit Feedback")
                                                 }
                                             }
                                         }
-                                    }
-
-                                    if (proposal.actions.size > 3) {
-                                        TextButton(
-                                            onClick = { showAllAiActions = !showAllAiActions },
-                                            modifier = Modifier.align(Alignment.CenterHorizontally)
-                                        ) {
-                                            Text(
-                                                text = if (showAllAiActions) {
-                                                    stringResource(R.string.analytics_show_less)
-                                                } else {
-                                                    stringResource(R.string.analytics_show_more) + " (${proposal.actions.size - 3})"
+                                        
+                                        var isSavingAndLoadingLayouts by remember { mutableStateOf(false) }
+                                        var savingProgressText by remember { mutableStateOf("") }
+                                        
+                                        if (isSavingAndLoadingLayouts) {
+                                            AlertDialog(
+                                                onDismissRequest = {},
+                                                confirmButton = {},
+                                                title = { Text("Struktur anwenden...") },
+                                                text = {
+                                                    Row(
+                                                        modifier = Modifier.fillMaxWidth(),
+                                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                                        verticalAlignment = Alignment.CenterVertically
+                                                    ) {
+                                                        CircularProgressIndicator()
+                                                        Text(savingProgressText)
+                                                    }
                                                 }
                                             )
                                         }
-                                    }
-
-                                    Button(
-                                        onClick = { pageViewModel.loadMoreAiRestructureProposals() },
-                                        modifier = Modifier.fillMaxWidth(),
-                                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
-                                        enabled = !isAiLoading
-                                    ) {
-                                        if (isAiLoading) {
-                                            Row(
-                                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                CircularProgressIndicator(
-                                                    modifier = Modifier.size(16.dp),
-                                                    strokeWidth = 2.dp,
-                                                    color = MaterialTheme.colorScheme.onSecondary
-                                                )
-                                                Text(stringResource(R.string.analytics_ai_btn_loading_more))
-                                            }
-                                        } else {
-                                            Text(stringResource(R.string.analytics_ai_btn_load_more))
+                                        
+                                        Button(
+                                            onClick = {
+                                                val missingNodes = hierarchy.pages.filter { !aiPageLayouts.containsKey(it.name) }
+                                                if (missingNodes.isNotEmpty()) {
+                                                    isSavingAndLoadingLayouts = true
+                                                    coroutineScope.launch {
+                                                        pageViewModel.applyHierarchyProposal { _ ->
+                                                            isSavingAndLoadingLayouts = false
+                                                            Toast.makeText(context, aiToastApplied, Toast.LENGTH_LONG).show()
+                                                            onNavigateBack()
+                                                        }
+                                                    }
+                                                } else {
+                                                    pageViewModel.applyHierarchyProposal { _ ->
+                                                        Toast.makeText(context, aiToastApplied, Toast.LENGTH_LONG).show()
+                                                        onNavigateBack()
+                                                    }
+                                                }
+                                            },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                                            enabled = !isAiHierarchyLoading && !isAiLoading
+                                        ) {
+                                            Text(stringResource(R.string.analytics_ai_btn_save_test))
                                         }
-                                    }
-
-                                    Button(
-                                        onClick = {
-                                            pageViewModel.applyAiRestructureProposal(proposal) { _ ->
-                                                Toast.makeText(context, aiToastApplied, Toast.LENGTH_LONG).show()
-                                                onNavigateBack()
-                                            }
-                                        },
-                                        modifier = Modifier.fillMaxWidth(),
-                                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                                        enabled = !isAiLoading
-                                    ) {
-                                        Text(stringResource(R.string.analytics_ai_btn_save_test))
                                     }
                                 }
                             }
                         }
-                    }
 
                     2 -> {
                         // --- SECTION 2: TRANSITIONS TIMELINE ---

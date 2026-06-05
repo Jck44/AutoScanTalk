@@ -7,6 +7,8 @@ import com.andreas_kratzer.ghosttalk.core.database.ButtonDao
 import com.andreas_kratzer.ghosttalk.core.database.PageDao
 import com.andreas_kratzer.ghosttalk.core.database.toButtonEntities
 import com.andreas_kratzer.ghosttalk.core.model.Page
+import com.andreas_kratzer.ghosttalk.core.model.ControlDeviceButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.DeviceActionType
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -150,5 +152,46 @@ class PageRepositoryImpl(
 
     override suspend fun <R> runInTransaction(block: suspend () -> R): R {
         return appDatabase.withTransaction(block)
+    }
+
+    override suspend fun purgeInstallUpdateButtons() {
+        appDatabase.withTransaction {
+            val allPages = getAllPages()
+            for (page in allPages) {
+                val hasUpdateAction = page.buttonConfigs.any { config ->
+                    config?.buttonAction is ControlDeviceButtonAction &&
+                            (config.buttonAction as ControlDeviceButtonAction).actionType == DeviceActionType.INSTALL_UPDATE
+                }
+                if (hasUpdateAction) {
+                    val updatedButtonConfigs = page.buttonConfigs.map { config ->
+                        if (config?.buttonAction is ControlDeviceButtonAction &&
+                            (config.buttonAction as ControlDeviceButtonAction).actionType == DeviceActionType.INSTALL_UPDATE
+                        ) {
+                            // Insert tombstone for the deleted button
+                            appDatabase.deletedEntityDao().insertDeletedEntity(
+                                com.andreas_kratzer.ghosttalk.core.database.DeletedEntity(
+                                    entityId = config.id,
+                                    entityType = "BUTTON",
+                                    bookId = page.bookId
+                                )
+                            )
+                            null
+                        } else {
+                            config
+                        }
+                    }
+                    val now = System.currentTimeMillis()
+                    val updatedPage = page.copy(
+                        buttonConfigs = updatedButtonConfigs,
+                        updatedAt = now
+                    )
+                    pageDao.updatePageEntity(updatedPage)
+                    buttonDao.deleteButtonsForPage(updatedPage.id)
+                    buttonDao.insertButtons(updatedPage.toButtonEntities())
+                    // Update book timestamp to trigger sync
+                    appDatabase.bookDao().updateLastModified(page.bookId, now)
+                }
+            }
+        }
     }
 }

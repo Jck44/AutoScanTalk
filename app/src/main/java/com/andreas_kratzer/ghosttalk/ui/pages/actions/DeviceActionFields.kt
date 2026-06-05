@@ -143,7 +143,6 @@ fun DeviceActionFields(
         DeviceActionType.READ_CALENDAR_ENTRIES to stringResource(R.string.button_device_control_calendar),
         DeviceActionType.TOGGLE_SCANNING to stringResource(R.string.button_device_control_toggle_scanning),
         DeviceActionType.START_CALL to stringResource(R.string.action_start_call),
-        DeviceActionType.INSTALL_UPDATE to stringResource(R.string.button_device_control_install_update),
         DeviceActionType.START_SYNC to stringResource(R.string.button_device_control_start_sync),
         DeviceActionType.VOLUME_IN_APP_TTS to stringResource(R.string.volume_in_app_tts),
         DeviceActionType.VOLUME_IN_APP_CUES to stringResource(R.string.volume_in_app_cues),

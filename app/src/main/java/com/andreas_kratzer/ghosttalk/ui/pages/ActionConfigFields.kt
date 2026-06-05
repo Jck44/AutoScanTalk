@@ -275,7 +275,6 @@ fun ActionConfigFields(
             actionTypeStatusVibrate,
             actionTypeStatusLoud,
             actionTypeToggleScanning,
-            actionTypeInstallUpdate,
             actionTypeStartSync -> {
                 val mappedDeviceActionType = when (selectedActionType) {
                     actionTypeReadNotifications -> DeviceActionType.READ_NOTIFICATIONS
@@ -300,7 +299,6 @@ fun ActionConfigFields(
                     actionTypeStatusVibrate -> DeviceActionType.STATUS_VIBRATE
                     actionTypeStatusLoud -> DeviceActionType.STATUS_LOUD
                     actionTypeToggleScanning -> DeviceActionType.TOGGLE_SCANNING
-                    actionTypeInstallUpdate -> DeviceActionType.INSTALL_UPDATE
                     actionTypeStartSync -> DeviceActionType.START_SYNC
                     else -> DeviceActionType.READ_TIME
                 }

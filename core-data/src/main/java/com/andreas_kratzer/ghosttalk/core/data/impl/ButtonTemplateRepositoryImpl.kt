@@ -289,8 +289,8 @@ class ButtonTemplateRepositoryImpl @Inject constructor(
             )
         )
 
-        // 13. ControlDeviceButtonAction (For every DeviceActionType)
-        DeviceActionType.entries.forEach { type ->
+        // 13. ControlDeviceButtonAction (For every DeviceActionType except INSTALL_UPDATE)
+        DeviceActionType.entries.filter { it != DeviceActionType.INSTALL_UPDATE }.forEach { type ->
             val name = when (type) {
                 DeviceActionType.READ_NOTIFICATIONS -> "Benachrichtigungen vorlesen"
                 DeviceActionType.MEDIA_NEXT -> "Nächster Medientitel"
