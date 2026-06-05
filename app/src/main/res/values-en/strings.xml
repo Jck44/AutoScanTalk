@@ -519,5 +519,13 @@
     <string name="device_action_read_notifications">Read notifications</string>
     <string name="device_action_clear_notifications">Clear notifications</string>
     <string name="device_action_toggle_auto_read_notifications">Toggle automatic reading</string>
+
+    <!-- Session Error Rate Chart -->
+    <string name="analytics_session_error_rate_title">⚠️ Session Error Rate Timeline</string>
+    <string name="analytics_session_error_rate_subtitle">Percentage of accidental or late clicks during active user sessions.</string>
+    <string name="analytics_session_error_rate_empty">No accidental click statistics recorded yet.</string>
+    <string name="analytics_session_error_rate_recommendation">💡 **Recommendation:** Starting from the phase **%1$s**, the error rate increases by approx. **%2$d%%** (to **%3$d%%**) compared to the start. This suggests fatigue. Session duration should ideally be limited to **under %4$s minutes**.</string>
+    <string name="analytics_session_error_rate_observation">✅ **Observation:** The error rate remains stable and low throughout the sessions. No premature fatigue detected!</string>
+    <string name="analytics_session_error_rate_notice">ℹ️ **Notice:** There is not enough usage data from sessions yet to calculate error rate trends.</string>
 </resources>
 

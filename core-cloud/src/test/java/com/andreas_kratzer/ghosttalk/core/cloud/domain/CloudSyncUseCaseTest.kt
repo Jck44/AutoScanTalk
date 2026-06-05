@@ -48,7 +48,9 @@ class CloudSyncUseCaseTest {
         every { Log.e(any(), any()) } returns 0
         
         mockkConstructor(com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper::class)
-        every { mockContext.cacheDir } returns File(System.getProperty("java.io.tmpdir") ?: "/tmp")
+        val tempDir = File(System.getProperty("java.io.tmpdir") ?: "/tmp")
+        every { mockContext.cacheDir } returns tempDir
+        every { mockContext.filesDir } returns tempDir
 
         val mockBook = Book(id = "test-book", name = "Test", updatedAt = System.currentTimeMillis())
         coEvery { mockBookRepository.getBookById(any()) } returns mockBook
@@ -197,7 +199,6 @@ class CloudSyncUseCaseTest {
     }
 
     @Test
-    @Test
     fun `syncBook with TWO_WAY mode uploads if local is newer`() = runTest {
         val bookId = "test-book"
         val now = System.currentTimeMillis()
@@ -254,7 +255,7 @@ class CloudSyncUseCaseTest {
             true
         }
         coEvery { mockImportExportManager.exportBookToJson(bookId) } returns "{\"bookUpdatedAt\": 0}"
-        coEvery { mockImportExportManager.importFromJson(any(), any(), any()) } returns Result.success(Unit)
+        coEvery { mockImportExportManager.importFromJson(any(), any(), any()) } returns Result.success(5)
 
         useCase.syncBook(mockDrive, bookId, SyncMode.TWO_WAY)
         advanceUntilIdle()
@@ -276,16 +277,23 @@ class CloudSyncUseCaseTest {
             modifiedTime = com.google.api.client.util.DateTime(now + 500L) // Remote is only 0.5s newer
         }
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("folder_1") } returns listOf(remoteFile)
+        val jsonParser = kotlinx.serialization.json.Json { ignoreUnknownKeys = true; encodeDefaults = true }
+        val testData = com.andreas_kratzer.ghosttalk.core.model.importexport.ImportExportData(
+            bookUpdatedAt = now,
+            buttonTemplates = emptyList()
+        )
+        val testJson = jsonParser.encodeToString(testData)
+
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile(any(), any(), any()) } answers {
             val file = args[1] as File
             java.util.zip.ZipOutputStream(file.outputStream()).use { zos ->
                 zos.putNextEntry(java.util.zip.ZipEntry("backup.json"))
-                zos.write("{\"bookUpdatedAt\": ${now + 500L}}".toByteArray())
+                zos.write(testJson.toByteArray())
                 zos.closeEntry()
             }
             true
         }
-        coEvery { mockImportExportManager.exportBookToJson(bookId) } returns "{\"bookUpdatedAt\": $now}"
+        coEvery { mockImportExportManager.exportBookToJson(bookId) } returns testJson
 
         useCase.syncBook(mockDrive, bookId, SyncMode.TWO_WAY)
         advanceUntilIdle()

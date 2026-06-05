@@ -11,14 +11,17 @@ data class VocalProfileEntity(
     @PrimaryKey val id: String,
     val name: String,
     /** V2: JSON of List<List<Float>> – all 5 raw training vectors. */
+    @ColumnInfo(defaultValue = "[]")
     val positiveTemplatesJson: String = "[]",
     /** V2: JSON of List<List<Float>> – learned false-positive vectors to block. */
+    @ColumnInfo(defaultValue = "[]")
     val negativeTemplatesJson: String = "[]",
     val buttonAction: ButtonAction? = null,
     val spokenText: String? = null,
+    @ColumnInfo(defaultValue = "1")
     val isActive: Boolean = true,
     /** Legacy column, kept for non-destructive migration. */
-    @ColumnInfo(name = "referenceEmbedding", defaultValue = "[]")
+    @ColumnInfo(name = "referenceEmbedding")
     val referenceEmbeddingJson: String = "[]"
 ) {
     @Suppress("DEPRECATION")

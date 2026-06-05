@@ -523,5 +523,13 @@
     <string name="device_action_read_notifications">Benachrichtigungen vorlesen</string>
     <string name="device_action_clear_notifications">Benachrichtigungen löschen</string>
     <string name="device_action_toggle_auto_read_notifications">Automatisches Vorlesen umschalten</string>
+
+    <!-- Session Error Rate Chart -->
+    <string name="analytics_session_error_rate_title">⚠️ Fehlerrate im Session-Verlauf</string>
+    <string name="analytics_session_error_rate_subtitle">Prozentsatz versehentlicher oder zu später Klicks während einer aktiven Session.</string>
+    <string name="analytics_session_error_rate_empty">Noch keine fehlerhaften Klickstatistiken vorhanden.</string>
+    <string name="analytics_session_error_rate_recommendation">💡 **Empfehlung:** Ab der Phase **%1$s** steigt die Fehlerrate um ca. **%2$d%%** (auf **%3$d%%**) im Vergleich zum Start an. Dies deutet auf Ermüdung hin. Die Session-Dauer sollte ggf. auf **unter %4$s Minuten** begrenzt werden.</string>
+    <string name="analytics_session_error_rate_observation">✅ **Beobachtung:** Die Fehlerrate bleibt über die gesamte Session hinweg stabil und gering. Keine Ermüdungserscheinungen feststellbar!</string>
+    <string name="analytics_session_error_rate_notice">ℹ️ **Hinweis:** Es sind noch nicht genügend Klicks in Sessions aufgezeichnet, um Fehlerratentrends zu berechnen.</string>
 </resources>
 

@@ -529,6 +529,11 @@ fun AnalyticsDashboardScreen(
                             historyEvents = historyEvents
                         )
 
+                        SessionErrorRateChart(
+                            sessions = userModeSessions,
+                            historyEvents = historyEvents
+                        )
+
                         // Info Card
                         Surface(
                             modifier = Modifier.fillMaxWidth(),

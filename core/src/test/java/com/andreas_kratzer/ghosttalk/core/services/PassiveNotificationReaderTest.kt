@@ -18,7 +18,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlinx.coroutines.test.resetMain
@@ -41,7 +40,6 @@ class PassiveNotificationReaderTest {
 
     private val isUserModeActiveFlow = MutableStateFlow(true)
     private val testDispatcher = StandardTestDispatcher()
-    private val testScope = TestScope(testDispatcher)
 
     private lateinit var reader: PassiveNotificationReader
 
@@ -94,21 +92,22 @@ class PassiveNotificationReaderTest {
         isGroupSummary: Boolean = false
     ): StatusBarNotification {
         val sbn = mockk<StatusBarNotification>()
-        
-        // Use Unsafe to allocate Notification without triggering the Stub! constructor
-        val unsafeField = sun.misc.Unsafe::class.java.getDeclaredField("theUnsafe")
-        unsafeField.isAccessible = true
-        val unsafe = unsafeField.get(null) as sun.misc.Unsafe
-        val realNotification = unsafe.allocateInstance(Notification::class.java) as Notification
-        
-        val extras = mockk<Bundle>()
+        val realNotification = mockk<Notification>(relaxed = true)
+        val extras = mockk<Bundle>(relaxed = true)
+
+        try {
+            val flagsField = Notification::class.java.getField("flags")
+            flagsField.set(realNotification, if (isGroupSummary) Notification.FLAG_GROUP_SUMMARY else 0)
+            
+            val extrasField = Notification::class.java.getField("extras")
+            extrasField.set(realNotification, extras)
+        } catch (e: Exception) {
+            // fallback if reflection fails
+        }
 
         every { sbn.packageName } returns packageName
         every { sbn.key } returns key
         every { sbn.notification } returns realNotification
-        
-        realNotification.flags = if (isGroupSummary) Notification.FLAG_GROUP_SUMMARY else 0
-        realNotification.extras = extras
         
         every { extras.getString(Notification.EXTRA_TITLE) } returns title
         every { extras.getCharSequence(Notification.EXTRA_TEXT) } returns text
