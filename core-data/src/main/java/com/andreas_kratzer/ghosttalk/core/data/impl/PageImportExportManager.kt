@@ -225,11 +225,14 @@ class PageImportExportManager @Inject constructor(
             val regeneratedPages = mutableSetOf<String>()
             importData.pages.forEach { importPage ->
                 var targetPageId = importPage.importId
-                val existingPage = pageRepository.getPageById(targetPageId)
-                
-                if (forceRegeneration || (existingPage != null && existingPage.bookId != bookId)) {
-                    targetPageId = UUID.randomUUID().toString()
-                    regeneratedPages.add(importPage.importId)
+                if (targetPageId.startsWith("static_row_")) {
+                    targetPageId = "static_row_$bookId"
+                } else {
+                    val existingPage = pageRepository.getPageById(targetPageId)
+                    if (forceRegeneration || (existingPage != null && existingPage.bookId != bookId)) {
+                        targetPageId = UUID.randomUUID().toString()
+                        regeneratedPages.add(importPage.importId)
+                    }
                 }
                 idMap[importPage.importId] = targetPageId
             }
@@ -834,13 +837,16 @@ class PageImportExportManager @Inject constructor(
             
             // Re-insert history events
             statistics.history.forEach { event ->
+                val mappedPageId = event.pageId?.let { 
+                    if (it.startsWith("static_row_")) "static_row_$bookId" else it 
+                }
                 val entity = com.andreas_kratzer.ghosttalk.core.database.ButtonUsageHistoryEntity(
                     bookId = bookId,
                     timestamp = event.timestamp,
                     label = event.label,
                     actionType = event.actionType,
                     buttonId = event.buttonId,
-                    pageId = event.pageId,
+                    pageId = mappedPageId,
                     imagePath = event.imagePath,
                     geminiResponse = event.geminiResponse,
                     latitude = event.latitude,
@@ -856,10 +862,15 @@ class PageImportExportManager @Inject constructor(
             
             // Re-insert stats counters
             statistics.stats.forEach { stat ->
+                val mappedPageId = if (stat.pageId.startsWith("static_row_")) {
+                    "static_row_$bookId"
+                } else {
+                    stat.pageId
+                }
                 val entity = com.andreas_kratzer.ghosttalk.core.model.ButtonUsageStat(
                     bookId = bookId,
                     buttonConfigId = stat.buttonConfigId,
-                    pageId = stat.pageId,
+                    pageId = mappedPageId,
                     label = stat.label,
                     actionJson = stat.actionJson,
                     usageCount = stat.usageCount,

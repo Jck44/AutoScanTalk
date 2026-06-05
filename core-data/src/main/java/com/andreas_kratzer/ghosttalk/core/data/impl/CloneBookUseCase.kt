@@ -19,7 +19,7 @@ import javax.inject.Singleton
 
 @Singleton
 class CloneBookUseCase @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val appDatabase: AppDatabase,
     private val bookRepository: BookRepository,
     private val prefs: SharedPreferences
