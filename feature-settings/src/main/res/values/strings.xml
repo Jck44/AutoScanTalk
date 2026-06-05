@@ -13,6 +13,7 @@
     <string name="settings_category_cloud_book">Sicherung</string>
     <string name="settings_category_cloud_sync">Synchronisierung</string>
     <string name="settings_category_advanced">Erweiterte Einstellungen</string>
+    <string name="settings_category_vocal_switch">Vocal Switch (Mund-Steuerung)</string>
     <string name="settings_analytics_dashboard">Statistiken &amp; Empfehlungen</string>
 
     <!-- General Settings -->

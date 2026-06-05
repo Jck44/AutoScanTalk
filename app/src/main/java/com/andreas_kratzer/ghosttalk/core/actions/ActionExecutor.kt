@@ -116,14 +116,21 @@ class ActionExecutor @Inject constructor(
                     val threshold = settingsRepository.lateClickThresholdMillis
                     val timeSinceFocus = scanCoord.getTimeSinceLastFocusChangeMs()
                     val isTtsSpeaking = ttsHelper.isSpeaking()
+                    val prevFocused = scanCoord.getPreviousFocusedButton()
+                    
+                    intendedButtonId = prevFocused
+                    
+                    android.util.Log.d("ActionExecutorHeuristic", "Heuristic calculation: threshold=$threshold, timeSinceFocus=$timeSinceFocus, isTtsSpeaking=$isTtsSpeaking, prevFocused=$prevFocused, currentButtonId=${buttonConfig.id}")
                     
                     if (timeSinceFocus <= threshold || isTtsSpeaking) {
-                        intendedButtonId = scanCoord.getPreviousFocusedButton()
                         if (intendedButtonId != null && intendedButtonId != buttonConfig.id) {
                             isAccidental = true
                         }
                     }
-                } catch (_: Exception) {}
+                    android.util.Log.d("ActionExecutorHeuristic", "Heuristic result: isAccidental=$isAccidental, intendedButtonId=$intendedButtonId")
+                } catch (e: Exception) {
+                    android.util.Log.e("ActionExecutorHeuristic", "Error calculating heuristic", e)
+                }
 
                 val scanCycles = try {
                     scanCoordinatorProvider.get().currentCycleCount.value

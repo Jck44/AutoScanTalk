@@ -62,6 +62,15 @@ interface ButtonUsageDao {
     @Query("UPDATE button_usage_history SET isAccidental = 1, intendedButtonId = :intendedButtonId WHERE id = :id")
     suspend fun markEventAsAccidental(id: Long, intendedButtonId: String?)
 
+    @Query("""
+        UPDATE button_usage_history 
+        SET isAccidental = CASE 
+            WHEN (intendedButtonId IS NOT NULL AND intendedButtonId != buttonId AND (reactionTimeMs IS NOT NULL AND reactionTimeMs <= :threshold)) THEN 1 
+            ELSE 0 
+        END
+    """)
+    suspend fun updateAccidentalFlags(threshold: Long)
+
     @Query("DELETE FROM button_usage_history WHERE bookId = :bookId AND id NOT IN (SELECT id FROM button_usage_history WHERE bookId = :bookId ORDER BY timestamp DESC LIMIT :limit)")
     suspend fun pruneHistory(bookId: String, limit: Int)
 

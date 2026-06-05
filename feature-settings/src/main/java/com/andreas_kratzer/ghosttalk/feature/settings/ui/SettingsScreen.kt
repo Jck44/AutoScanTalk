@@ -64,6 +64,7 @@ import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.GeneralSetting
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.MaintenanceSection
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.PermissionsSettingsSection
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.ScanningSettingsSection
+import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.VocalSwitchSettingsSection
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.SecuritySettingsSection
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.SmartHomeSettingsSection
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.TestSettingsSection
@@ -77,7 +78,8 @@ import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 
 enum class SettingsSection(private val titleRes: Int, val icon: ImageVector, val isGlobal: Boolean, val isScoped: Boolean) {
     GENERAL(R.string.settings_category_general, Icons.Default.Settings, isGlobal = true, isScoped = true),
-    VOICE(R.string.settings_category_voice, GhostTalkIcons.RecordVoiceOver, isGlobal = false, isScoped = true),
+    VOICE(R.string.settings_category_voice, GhostTalkIcons.VolumeUp, isGlobal = false, isScoped = true),
+    VOCAL_SWITCH(R.string.settings_category_vocal_switch, GhostTalkIcons.RecordVoiceOver, isGlobal = false, isScoped = true),
     SCANNING(R.string.settings_category_scanning, GhostTalkIcons.SwitchAccessShortcut, isGlobal = false, isScoped = true),
     SECURITY(R.string.settings_category_security, GhostTalkIcons.Security, isGlobal = true, isScoped = false),
     TELEPHONY(R.string.settings_category_call, Icons.Default.Phone, isGlobal = true, isScoped = false),
@@ -529,8 +531,11 @@ fun SubmenuContent(
         SettingsSection.VOICE -> {
             VoiceSettingsSection(viewModel, isGlobal = isGlobal)
         }
+        SettingsSection.VOCAL_SWITCH -> {
+            VocalSwitchSettingsSection(viewModel, isGlobal = isGlobal, onNavigateToVocalTraining = onNavigateToVocalTraining)
+        }
         SettingsSection.SCANNING -> {
-            ScanningSettingsSection(viewModel, isGlobal = isGlobal, onNavigateToVocalTraining = onNavigateToVocalTraining)
+            ScanningSettingsSection(viewModel, isGlobal = isGlobal)
         }
         SettingsSection.SECURITY -> {
             val pin by viewModel.securityPin.collectAsState(null)

@@ -15,6 +15,7 @@ import com.andreas_kratzer.ghosttalk.core.model.GroupedButtonUsageStat
 import com.google.android.gms.location.LocationServices
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
@@ -82,6 +83,14 @@ class ButtonUsageRepositoryImpl @Inject constructor(
             )
         } catch (_: Exception) {
             // Safe fallback
+        }
+
+        scope.launch {
+            settingsRepository.lateClickThresholdFlow.collect { threshold ->
+                try {
+                    dao.updateAccidentalFlags(threshold)
+                } catch (_: Exception) {}
+            }
         }
     }
 
