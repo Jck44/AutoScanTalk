@@ -91,7 +91,16 @@ data class ImportExportData(
     val sourceDevice: String? = null,
     val templates: List<ImportTemplate>? = null,
     val buttonTemplates: List<ImportButtonTemplate>? = null,
-    val pages: List<ImportPage> = emptyList()
+    val pages: List<ImportPage> = emptyList(),
+    val logicalVersion: Int? = null,
+    val deletedEntities: List<ExportedTombstone>? = null
+)
+
+@Serializable
+data class ExportedTombstone(
+    val entityId: String,
+    val entityType: String,
+    val deletedAt: Long
 )
 
 @Serializable

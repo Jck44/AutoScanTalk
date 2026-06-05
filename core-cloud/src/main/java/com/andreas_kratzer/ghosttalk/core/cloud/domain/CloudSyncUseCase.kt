@@ -9,6 +9,7 @@ import com.andreas_kratzer.ghosttalk.core.data.SyncLogProvider
 import com.andreas_kratzer.ghosttalk.core.data.impl.PageImportExportManager
 import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportExportData
 import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportPage
+import com.andreas_kratzer.ghosttalk.core.model.importexport.ExportedTombstone
 import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.google.api.services.drive.Drive
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -305,6 +306,7 @@ class CloudSyncUseCase @Inject constructor(
                                 }
 
                                 var remoteUpdateSuccess = true
+                                var uploadedFileId = remoteZipFile?.id ?: remoteFile.id
                                 if (remoteNeedsUpdate && localUpdateSuccess) {
                                     logger.d(TAG, "Merged data differs from remote file. Uploading merged data...")
                                     val mergedTempFile = File(context.cacheDir, "merged_$currentFileName")
@@ -328,13 +330,19 @@ class CloudSyncUseCase @Inject constructor(
                                     remoteUpdateSuccess = if (remoteZipFile != null) {
                                         storageProvider.updateFile(remoteZipFile.id, mergedTempFile, "application/zip", book.name) { _ -> }
                                     } else {
-                                        storageProvider.uploadFile(mergedTempFile, "application/zip", book.name) { _ -> } != null
+                                        val newId = storageProvider.uploadFile(mergedTempFile, "application/zip", book.name) { _ -> }
+                                        if (newId != null) {
+                                            uploadedFileId = newId
+                                            true
+                                        } else {
+                                            false
+                                        }
                                     }
                                     mergedTempFile.delete()
                                 }
 
                                 if (localUpdateSuccess && remoteUpdateSuccess) {
-                                    val metadata = storageProvider.getFileMetadata(remoteFile.id)
+                                    val metadata = storageProvider.getFileMetadata(uploadedFileId)
                                     val driveTime = metadata?.modifiedTime ?: 0L
                                     if (driveTime > 0L) {
                                         bookRepository.updateLastModified(bookId, driveTime)
@@ -1071,15 +1079,32 @@ class CloudSyncUseCase @Inject constructor(
 
         val localPagesMap = local.pages.associateBy { it.importId }
         val remotePagesMap = remote.pages.associateBy { it.importId }
+        
+        val localTombstones = local.deletedEntities?.associateBy { it.entityId } ?: emptyMap()
+        val remoteTombstones = remote.deletedEntities?.associateBy { it.entityId } ?: emptyMap()
+
         val allPageIds = localPagesMap.keys + remotePagesMap.keys
-        val mergedPages = allPageIds.map { pageId ->
+        val mergedPages = allPageIds.mapNotNull { pageId ->
             val localPage = localPagesMap[pageId]
             val remotePage = remotePagesMap[pageId]
-            if (localPage == null) {
-                remotePage!!
-            } else if (remotePage == null) {
-                localPage
-            } else {
+            
+            if (localPage == null && remotePage != null) {
+                val tombstone = localTombstones[pageId]
+                if (tombstone != null) {
+                    val remoteTime = remotePage.updatedAt ?: remotePage.createdAt ?: 0L
+                    if (tombstone.deletedAt >= remoteTime) null else remotePage
+                } else {
+                    remotePage
+                }
+            } else if (remotePage == null && localPage != null) {
+                val tombstone = remoteTombstones[pageId]
+                if (tombstone != null) {
+                    val localTime = localPage.updatedAt ?: localPage.createdAt ?: 0L
+                    if (tombstone.deletedAt >= localTime) null else localPage
+                } else {
+                    localPage
+                }
+            } else if (localPage != null && remotePage != null) {
                 val localPageTime = localPage.updatedAt ?: localPage.createdAt ?: 0L
                 val remotePageTime = remotePage.updatedAt ?: remotePage.createdAt ?: 0L
                 val useLocalPage = localPageTime >= remotePageTime
@@ -1097,21 +1122,22 @@ class CloudSyncUseCase @Inject constructor(
                 val localButtonsMap = localPage.buttons.associateBy { it.index }
                 val remoteButtonsMap = remotePage.buttons.associateBy { it.index }
                 val allButtonIndices = localButtonsMap.keys + remoteButtonsMap.keys
-                val mergedButtons = allButtonIndices.map { index ->
+                val mergedButtons = allButtonIndices.mapNotNull { index ->
                     val localButton = localButtonsMap[index]
                     val remoteButton = remoteButtonsMap[index]
-                    if (localButton == null) {
-                        remoteButton!!
-                    } else if (remoteButton == null) {
-                        localButton
-                    } else {
+                    
+                    if (localButton == null && remoteButton != null) {
+                        val remoteTime = remoteButton.updatedAt ?: 0L
+                        if (localPageTime >= remoteTime) null else remoteButton
+                    } else if (remoteButton == null && localButton != null) {
+                        val localTime = localButton.updatedAt ?: 0L
+                        if (remotePageTime >= localTime) null else localButton
+                    } else if (localButton != null && remoteButton != null) {
                         val localButtonTime = localButton.updatedAt ?: 0L
                         val remoteButtonTime = remoteButton.updatedAt ?: 0L
-                        if (localButtonTime >= remoteButtonTime) {
-                            localButton
-                        } else {
-                            remoteButton
-                        }
+                        if (localButtonTime >= remoteButtonTime) localButton else remoteButton
+                    } else {
+                        null
                     }
                 }
 
@@ -1128,6 +1154,8 @@ class CloudSyncUseCase @Inject constructor(
                     updatedAt = updatedAt,
                     buttons = mergedButtons
                 )
+            } else {
+                null
             }
         }
 
@@ -1148,6 +1176,18 @@ class CloudSyncUseCase @Inject constructor(
             }
         }
 
+        val mergedTombstones = if (local.deletedEntities == null && remote.deletedEntities == null) {
+            null
+        } else {
+            val cutoff = System.currentTimeMillis() - 90L * 24 * 60 * 60 * 1000 // 90 days
+            (local.deletedEntities.orEmpty() + remote.deletedEntities.orEmpty())
+                .associateBy { it.entityId }
+                .filterKeys { pageId -> mergedPages.none { it.importId == pageId } }
+                .values
+                .filter { it.deletedAt >= cutoff }
+                .toList()
+        }
+
         return local.copy(
             bookName = mergedBookName,
             defaultStartPageId = mergedDefaultStartPageId,
@@ -1160,7 +1200,8 @@ class CloudSyncUseCase @Inject constructor(
             logStopActions = mergedLogStopActions,
             bookUpdatedAt = maxOf(local.bookUpdatedAt ?: 0L, remote.bookUpdatedAt ?: 0L),
             pages = mergedPages,
-            buttonTemplates = mergedButtonTemplates
+            buttonTemplates = mergedButtonTemplates,
+            deletedEntities = mergedTombstones
         )
     }
 

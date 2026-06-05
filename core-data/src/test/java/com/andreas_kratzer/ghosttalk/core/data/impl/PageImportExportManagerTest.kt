@@ -64,6 +64,7 @@ class PageImportExportManagerTest {
         buttonUsageDao = mockk(relaxed = true),
         userModeSessionRepository = userModeSessionRepository,
         vocalProfileRepository = vocalProfileRepository,
+        deletedEntityDao = mockk(relaxed = true),
         logger = mockk(relaxed = true)
     )
 
@@ -992,6 +993,7 @@ class PageImportExportManagerTest {
             buttonUsageDao = buttonUsageDao,
             userModeSessionRepository = userModeSessionRepository,
             vocalProfileRepository = vocalProfileRepository,
+            deletedEntityDao = mockk(relaxed = true),
             logger = mockk(relaxed = true)
         )
 
@@ -1081,6 +1083,7 @@ class PageImportExportManagerTest {
             buttonUsageDao = buttonUsageDao,
             userModeSessionRepository = userModeSessionRepository,
             vocalProfileRepository = vocalProfileRepository,
+            deletedEntityDao = mockk(relaxed = true),
             logger = mockk(relaxed = true)
         )
 
@@ -1126,6 +1129,7 @@ class PageImportExportManagerTest {
             buttonUsageDao = buttonUsageDao,
             userModeSessionRepository = userModeSessionRepository,
             vocalProfileRepository = vocalProfileRepository,
+            deletedEntityDao = mockk(relaxed = true),
             logger = mockk(relaxed = true)
         )
 
@@ -1171,6 +1175,7 @@ class PageImportExportManagerTest {
             buttonUsageDao = buttonUsageDao,
             userModeSessionRepository = mockUserModeSessionRepository,
             vocalProfileRepository = vocalProfileRepository,
+            deletedEntityDao = mockk(relaxed = true),
             logger = mockk(relaxed = true)
         )
 

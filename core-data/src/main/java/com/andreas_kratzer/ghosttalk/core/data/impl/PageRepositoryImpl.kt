@@ -50,9 +50,9 @@ class PageRepositoryImpl(
 
     override suspend fun updatePage(page: Page) {
         val now = System.currentTimeMillis()
+        val finalUpdatedAt = maxOf(now, page.updatedAt)
         val updatedPage = page.copy(
-            updatedAt = now,
-            buttonConfigs = page.buttonConfigs.map { it?.copy(updatedAt = now) }
+            updatedAt = finalUpdatedAt
         )
         appDatabase.withTransaction {
             pageDao.updatePageEntity(updatedPage)
@@ -74,10 +74,19 @@ class PageRepositoryImpl(
     }
 
     override suspend fun deletePage(page: Page) {
-        // buttons will be deleted via CASCADE FK
-        pageDao.deletePageEntity(page)
+        appDatabase.withTransaction {
+            pageDao.deletePageEntity(page)
+            appDatabase.deletedEntityDao().insertDeletedEntity(
+                com.andreas_kratzer.ghosttalk.core.database.DeletedEntity(
+                    entityId = page.id,
+                    entityType = "PAGE",
+                    bookId = page.bookId
+                )
+            )
+        }
     }
 
+    // IMPORTANT: Only use for import! Does NOT create tombstones.
     override suspend fun deletePagesForBook(bookId: String) {
         pageDao.deletePagesForBook(bookId)
     }

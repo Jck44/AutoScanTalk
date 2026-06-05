@@ -1,6 +1,7 @@
 package com.andreas_kratzer.ghosttalk.core.cloud.domain
 
 import android.content.Context
+import android.provider.DocumentsContract
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import java.io.File
@@ -15,15 +16,52 @@ class DocumentFolderSyncStorageProvider(
 
     override suspend fun listFiles(): List<RemoteSyncFile> {
         val root = rootDoc ?: return emptyList()
-        val files = root.listFiles()
-        return files.map { doc ->
-            RemoteSyncFile(
-                id = doc.uri.toString(),
-                name = doc.name ?: "",
-                description = doc.name, // SAF doesn't support custom descriptions, fallback to name
-                modifiedTime = doc.lastModified()
+        val resultList = mutableListOf<RemoteSyncFile>()
+        
+        try {
+            val documentId = DocumentsContract.getTreeDocumentId(treeUri)
+            val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, documentId)
+            
+            val projection = arrayOf(
+                DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                DocumentsContract.Document.COLUMN_LAST_MODIFIED
             )
+            
+            context.contentResolver.query(childrenUri, projection, null, null, null)?.use { cursor ->
+                val idIndex = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DOCUMENT_ID)
+                val nameIndex = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
+                val modifiedIndex = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_LAST_MODIFIED)
+                
+                while (cursor.moveToNext()) {
+                    val docId = cursor.getString(idIndex)
+                    val name = cursor.getString(nameIndex)
+                    val modifiedTime = cursor.getLong(modifiedIndex)
+                    
+                    val docUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, docId)
+                    resultList.add(
+                        RemoteSyncFile(
+                            id = docUri.toString(),
+                            name = name,
+                            description = name,
+                            modifiedTime = modifiedTime
+                        )
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            // Fallback to cached listFiles
+            val files = root.listFiles()
+            return files.map { doc ->
+                RemoteSyncFile(
+                    id = doc.uri.toString(),
+                    name = doc.name ?: "",
+                    description = doc.name,
+                    modifiedTime = doc.lastModified()
+                )
+            }
         }
+        return resultList
     }
 
     override suspend fun uploadFile(
@@ -35,8 +73,14 @@ class DocumentFolderSyncStorageProvider(
         val root = rootDoc ?: return null
         
         // If file already exists, delete it first to prevent duplicates (SAF createDocument appends suffixes)
-        val existing = root.findFile(tempFile.name)
-        existing?.delete()
+        val existing = listFiles().find { it.name == tempFile.name }
+        if (existing != null) {
+            try {
+                DocumentsContract.deleteDocument(context.contentResolver, existing.id.toUri())
+            } catch (_: Exception) {
+                root.findFile(tempFile.name)?.delete()
+            }
+        }
         
         val doc = root.createFile(mimeType, tempFile.name) ?: return null
         return try {
@@ -126,6 +170,29 @@ class DocumentFolderSyncStorageProvider(
 
     override suspend fun getFileMetadata(fileId: String): RemoteSyncFile? {
         val uri = fileId.toUri()
+        val projection = arrayOf(
+            DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+            DocumentsContract.Document.COLUMN_LAST_MODIFIED
+        )
+        
+        try {
+            context.contentResolver.query(uri, projection, null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val nameIndex = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
+                    val modifiedIndex = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_LAST_MODIFIED)
+                    val name = cursor.getString(nameIndex)
+                    val modifiedTime = cursor.getLong(modifiedIndex)
+                    
+                    return RemoteSyncFile(
+                        id = fileId,
+                        name = name,
+                        description = name,
+                        modifiedTime = modifiedTime
+                    )
+                }
+            }
+        } catch (_: Exception) {}
+        
         val doc = DocumentFile.fromSingleUri(context, uri) ?: return null
         if (!doc.exists()) return null
         return RemoteSyncFile(

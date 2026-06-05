@@ -32,9 +32,9 @@ import java.util.UUID
     entities = [
         Page::class, Book::class, ButtonUsageStat::class, PageTemplate::class,
         ButtonEntity::class, ButtonUsageHistoryEntity::class, ButtonTemplateEntity::class,
-        UserModeSessionEntity::class, VocalProfileEntity::class
+        UserModeSessionEntity::class, VocalProfileEntity::class, DeletedEntity::class
     ],
-    version = 30,
+    version = 31,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -48,6 +48,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun buttonTemplateDao(): ButtonTemplateDao
     abstract fun userModeSessionDao(): UserModeSessionDao
     abstract fun vocalProfileDao(): VocalProfileDao
+    abstract fun deletedEntityDao(): DeletedEntityDao
 
     companion object {
         @Volatile
@@ -60,6 +61,21 @@ abstract class AppDatabase : RoomDatabase() {
                 db.execSQL("ALTER TABLE `vocal_profiles` ADD COLUMN `negativeTemplatesJson` TEXT NOT NULL DEFAULT '[]'")
                 // Rename the old referenceEmbedding column is not supported by SQLite ALTER TABLE;
                 // we keep the old column as-is (it maps to referenceEmbeddingJson with ColumnInfo).
+            }
+        }
+
+        val MIGRATION_30_31: Migration = object : Migration(30, 31) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `deleted_entities` (
+                        `entityId` TEXT NOT NULL, 
+                        `entityType` TEXT NOT NULL, 
+                        `bookId` TEXT NOT NULL, 
+                        `deletedAt` INTEGER NOT NULL, 
+                        PRIMARY KEY(`entityId`)
+                    )
+                """)
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_deleted_entities_bookId` ON `deleted_entities` (`bookId`)")
             }
         }
 
@@ -538,7 +554,8 @@ abstract class AppDatabase : RoomDatabase() {
                     MIGRATION_26_27,
                     MIGRATION_27_28,
                     MIGRATION_28_29,
-                    MIGRATION_29_30
+                    MIGRATION_29_30,
+                    MIGRATION_30_31
                 )
                 .build()
                 INSTANCE = instance

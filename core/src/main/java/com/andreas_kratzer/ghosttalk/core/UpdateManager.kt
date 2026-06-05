@@ -204,8 +204,8 @@ class UpdateManager @Inject constructor(
                     val installStatus = info.installStatus()
                     val availability = info.updateAvailability()
                     Log.d(TAG, "triggerInstallAction: Play Store response – " +
-                            "installStatus=\$installStatus, availability=\$availability, " +
-                            "stalenessDays=\${info.clientVersionStalenessDays()}")
+                            "installStatus=$installStatus, availability=$availability, " +
+                            "stalenessDays=${info.clientVersionStalenessDays()}")
                     when {
                         installStatus == InstallStatus.DOWNLOADED -> {
                             Log.i(TAG, "triggerInstallAction: update already DOWNLOADED – installing silently")
@@ -233,7 +233,7 @@ class UpdateManager @Inject constructor(
                             onResult(UpdateActionResult.Error("Update verfügbar, aber kein Update-Typ erlaubt"))
                         }
                         else -> {
-                            Log.i(TAG, "triggerInstallAction: no update available (installStatus=\$installStatus, availability=\$availability)")
+                            Log.i(TAG, "triggerInstallAction: no update available (installStatus=$installStatus, availability=$availability)")
                             _updateState.value = UpdateState.NoUpdateAvailable
                             onResult(UpdateActionResult.NoUpdate)
                         }
@@ -306,8 +306,8 @@ class UpdateManager @Inject constructor(
         appUpdateManager.appUpdateInfo.addOnSuccessListener { appUpdateInfo ->
             val availability = appUpdateInfo.updateAvailability()
             val installStatus = appUpdateInfo.installStatus()
-            Log.d(TAG, "checkManualUpdate: availability=\$availability, installStatus=\$installStatus, " +
-                    "stalenessDays=\${appUpdateInfo.clientVersionStalenessDays()}")
+            Log.d(TAG, "checkManualUpdate: availability=$availability, installStatus=$installStatus, " +
+                    "stalenessDays=${appUpdateInfo.clientVersionStalenessDays()}")
             when {
                 installStatus == InstallStatus.DOWNLOADED -> {
                     Log.i(TAG, "checkManualUpdate: update already downloaded – installing silently")
@@ -328,7 +328,7 @@ class UpdateManager @Inject constructor(
                     startUpdate(appUpdateInfo, updateLauncher, AppUpdateType.FLEXIBLE)
                 }
                 else -> {
-                    Log.d(TAG, "checkManualUpdate: no update available (availability=\$availability)")
+                    Log.d(TAG, "checkManualUpdate: no update available (availability=$availability)")
                     _updateState.value = UpdateState.NoUpdateAvailable
                     onUpToDate()
                 }

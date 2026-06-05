@@ -45,6 +45,7 @@ class SettingsRoundTripTest {
         val buttonUsageDao = mockk<com.andreas_kratzer.ghosttalk.core.database.ButtonUsageDao>(relaxed = true)
         val userModeSessionRepository = mockk<UserModeSessionRepository>(relaxed = true)
         val vocalProfileRepository = mockk<com.andreas_kratzer.ghosttalk.core.data.VocalProfileRepository>(relaxed = true)
+        val deletedEntityDao = mockk<com.andreas_kratzer.ghosttalk.core.database.DeletedEntityDao>(relaxed = true)
         val manager = PageImportExportManager(
             context = context,
             pageRepository = pageRepository,
@@ -56,6 +57,7 @@ class SettingsRoundTripTest {
             buttonUsageDao = buttonUsageDao,
             userModeSessionRepository = userModeSessionRepository,
             vocalProfileRepository = vocalProfileRepository,
+            deletedEntityDao = deletedEntityDao,
             logger = logger
         )
 

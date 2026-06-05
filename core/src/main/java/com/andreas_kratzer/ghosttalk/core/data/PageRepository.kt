@@ -14,6 +14,7 @@ interface PageRepository {
     suspend fun updatePageSettingsOnly(page: Page)
     suspend fun movePages(fromPage: Page, toPage: Page)
     suspend fun deletePage(page: Page)
+    // IMPORTANT: Only use for import! Does NOT create tombstones.
     suspend fun deletePagesForBook(bookId: String)
     suspend fun duplicatePage(pageId: String, duplicateSuffix: String): String?
     fun getUsedTemplateIdsFlow(): Flow<Set<String>>

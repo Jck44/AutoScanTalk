@@ -55,6 +55,7 @@ interface PageDao {
     @Delete
     suspend fun deletePageEntity(page: Page)
 
+    // IMPORTANT: Only use for import! Does NOT create tombstones.
     @Query("DELETE FROM pages WHERE bookId = :bookId")
     suspend fun deletePagesForBook(bookId: String)
 

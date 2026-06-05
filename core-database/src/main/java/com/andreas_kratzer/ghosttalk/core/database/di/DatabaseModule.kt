@@ -66,4 +66,9 @@ object DatabaseModule {
     fun provideVocalProfileDao(database: AppDatabase): VocalProfileDao {
         return database.vocalProfileDao()
     }
+
+    @Provides
+    fun provideDeletedEntityDao(database: AppDatabase): com.andreas_kratzer.ghosttalk.core.database.DeletedEntityDao {
+        return database.deletedEntityDao()
+    }
 }

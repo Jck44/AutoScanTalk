@@ -19,6 +19,7 @@ import com.andreas_kratzer.ghosttalk.core.model.importexport.ExportedButtonStat
 import com.andreas_kratzer.ghosttalk.core.model.importexport.ExportedHistoryEvent
 import com.andreas_kratzer.ghosttalk.core.model.importexport.ExportedStatistics
 import com.andreas_kratzer.ghosttalk.core.model.importexport.ExportedUserModeSession
+import com.andreas_kratzer.ghosttalk.core.model.importexport.ExportedTombstone
 import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportButton
 import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportButtonTemplate
 import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportExportData
@@ -56,6 +57,7 @@ class PageImportExportManager @Inject constructor(
     private val buttonUsageDao: com.andreas_kratzer.ghosttalk.core.database.ButtonUsageDao,
     private val userModeSessionRepository: UserModeSessionRepository,
     private val vocalProfileRepository: VocalProfileRepository,
+    private val deletedEntityDao: com.andreas_kratzer.ghosttalk.core.database.DeletedEntityDao,
     private val logger: Logger
 ) : PageImportExportProvider {
     private val TAG = "PageImportExportManager"
@@ -130,6 +132,18 @@ class PageImportExportManager @Inject constructor(
             )
         }
         
+        // Prune database tombstones older than 90 days
+        val cutoff = System.currentTimeMillis() - 90L * 24 * 60 * 60 * 1000
+        deletedEntityDao.pruneTombstones(cutoff)
+
+        val tombstones = deletedEntityDao.getDeletedEntitiesForBook(bookId).map {
+            ExportedTombstone(
+                entityId = it.entityId,
+                entityType = it.entityType,
+                deletedAt = it.deletedAt
+            )
+        }
+
         val baseExportData = ImportExportData(
             ghosttalk_import_version = "1.1",
             appName = "GhostTalk",
@@ -169,7 +183,9 @@ class PageImportExportManager @Inject constructor(
                         }
                     }
                 )
-            }
+            },
+            logicalVersion = null, // Deprecated/unused, kept for JSON compatibility
+            deletedEntities = tombstones
         )
 
         val exportData = settingsMapper.exportSettings(bookId, baseExportData)
@@ -191,7 +207,19 @@ class PageImportExportManager @Inject constructor(
             // 1. Clean state: Delete existing pages for this book before importing
             // This ensures that the restored book exactly matches the backup
             pageRepository.deletePagesForBook(bookId)
-            logger.d(TAG, "Cleared existing pages for book $bookId before import.")
+            deletedEntityDao.deleteTombstonesForBook(bookId)
+            val importCutoff = System.currentTimeMillis() - 90L * 24 * 60 * 60 * 1000
+            importData.deletedEntities?.filter { it.deletedAt >= importCutoff }?.forEach { tombstone ->
+                deletedEntityDao.insertDeletedEntity(
+                    com.andreas_kratzer.ghosttalk.core.database.DeletedEntity(
+                        entityId = tombstone.entityId,
+                        entityType = tombstone.entityType,
+                        bookId = bookId,
+                        deletedAt = tombstone.deletedAt
+                    )
+                )
+            }
+            logger.d(TAG, "Cleared existing pages and tombstones for book $bookId before import.")
 
             // 2. Update book and app settings if provided
             if (restoreSyncSettings) {
