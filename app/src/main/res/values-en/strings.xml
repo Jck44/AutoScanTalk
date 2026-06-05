@@ -127,6 +127,7 @@
     <string name="update_downloading">Update is downloading, please wait.</string>
     <string name="update_not_available">The app is up to date.</string>
     <string name="update_check_error">Update check failed.</string>
+    <string name="update_searching">Searching for updates, please wait.</string>
 
     <string name="button_device_control_date">Read Date</string>
     <string name="button_device_control_time">Read Time</string>
