@@ -28,6 +28,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.res.stringResource
+import com.andreas_kratzer.ghosttalk.R
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -50,6 +52,7 @@ import com.andreas_kratzer.ghosttalk.core.model.GeminiSearchButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.NavigateBackButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.NavigateToStartPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.PlayMediaButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.PreviousActionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SmartHomeButtonAction
@@ -100,7 +103,7 @@ object GridButtonColors {
                 if (isDark) SpeakTextBadgeBgDark to SpeakTextBadgeTextDark
                 else SpeakTextBadgeBgLight to SpeakTextBadgeTextLight
             }
-            is NavigateToPageButtonAction, is NavigateBackButtonAction -> {
+            is NavigateToPageButtonAction, is NavigateBackButtonAction, is NavigateToStartPageButtonAction -> {
                 if (isDark) NavigateBadgeBgDark to NavigateBadgeTextDark
                 else NavigateBadgeBgLight to NavigateBadgeTextLight
             }
@@ -208,6 +211,7 @@ fun GridButton(
 
                             val actionBadgeText = when (buttonConfig.buttonAction) {
                                 is NavigateToPageButtonAction -> targetPageName
+                                is NavigateToStartPageButtonAction -> stringResource(R.string.button_action_navigate_to_start_page)
                                 else -> null
                             }
                             

@@ -543,6 +543,68 @@ class PageViewModelTest {
     }
 
     @Test
+    fun `suggestButtonLabel returns suggestion when Gemini is enabled`() = runTest {
+        every { settingsRepository.isGeminiEnabled } returns true
+        coEvery { geminiUseCase.generateResponse(any()) } returns "Begrüßung"
+
+        viewModel = createViewModel()
+        testScheduler.runCurrent()
+
+        var suggestionResult = ""
+        val buttonConfig = ButtonConfig(
+            spokenText = "Hallo Welt",
+            buttonAction = com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction()
+        )
+        viewModel.suggestButtonLabel(buttonConfig) { result ->
+            suggestionResult = result
+        }
+        testScheduler.advanceUntilIdle()
+
+        assertEquals("Begrüßung", suggestionResult)
+    }
+
+    @Test
+    fun `suggestButtonLabel returns empty when Gemini is disabled`() = runTest {
+        every { settingsRepository.isGeminiEnabled } returns false
+
+        viewModel = createViewModel()
+        testScheduler.runCurrent()
+
+        var suggestionResult = "initial"
+        val buttonConfig = ButtonConfig(
+            spokenText = "Hallo Welt",
+            buttonAction = com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction()
+        )
+        viewModel.suggestButtonLabel(buttonConfig) { result ->
+            suggestionResult = result
+        }
+        testScheduler.advanceUntilIdle()
+
+        assertEquals("", suggestionResult)
+    }
+
+    @Test
+    fun `suggestButtonLabel returns empty on API failure`() = runTest {
+        every { settingsRepository.isGeminiEnabled } returns true
+        coEvery { geminiUseCase.generateResponse(any()) } throws RuntimeException("Network Error")
+
+        viewModel = createViewModel()
+        testScheduler.runCurrent()
+
+        var suggestionResult = "initial"
+        val buttonConfig = ButtonConfig(
+            spokenText = "Hallo Welt",
+            buttonAction = com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction()
+        )
+        viewModel.suggestButtonLabel(buttonConfig) { result ->
+            suggestionResult = result
+        }
+        testScheduler.advanceUntilIdle()
+
+        assertEquals("", suggestionResult)
+    }
+
+    @Test
     fun `suggestRowName returns empty when Gemini is disabled`() = runTest {
         every { settingsRepository.isGeminiEnabled } returns false
 

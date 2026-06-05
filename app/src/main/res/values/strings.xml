@@ -531,5 +531,52 @@
     <string name="analytics_session_error_rate_recommendation">💡 **Empfehlung:** Ab der Phase **%1$s** steigt die Fehlerrate um ca. **%2$d%%** (auf **%3$d%%**) im Vergleich zum Start an. Dies deutet auf Ermüdung hin. Die Session-Dauer sollte ggf. auf **unter %4$s Minuten** begrenzt werden.</string>
     <string name="analytics_session_error_rate_observation">✅ **Beobachtung:** Die Fehlerrate bleibt über die gesamte Session hinweg stabil und gering. Keine Ermüdungserscheinungen feststellbar!</string>
     <string name="analytics_session_error_rate_notice">ℹ️ **Hinweis:** Es sind noch nicht genügend Klicks in Sessions aufgezeichnet, um Fehlerratentrends zu berechnen.</string>
+    
+    <!-- Gemini Suggestions -->
+    <string name="ki_suggestion">✨ KI-Vorschlag</string>
+    <string name="generating_suggestion">Generiere Vorschlag…</string>
+    <string name="error_label_suggestion_failed">Vorschlag konnte nicht generiert werden. Bitte stellen Sie sicher, dass alle nötigen Eigenschaften ausgefüllt sind.</string>
+    <string name="error_row_suggestion_failed">Vorschlag konnte nicht generiert werden. Bitte stellen Sie sicher, dass die Zeile aktivierte Buttons enthält und Gemini in den Einstellungen aktiviert ist.</string>
+
+    <!-- Suggest Label Local Fallbacks -->
+    <string name="suggest_label_navigate">Zu %s</string>
+    <string name="suggest_label_start_page">Zu Startseite</string>
+    <string name="suggest_label_back">Vorherige Seite</string>
+    <string name="suggest_label_weather">Wetter</string>
+    <string name="suggest_label_time">Uhrzeit</string>
+    <string name="suggest_label_date">Datum</string>
+    <string name="suggest_label_calendar">Nächste Kalendereinträge</string>
+    <string name="suggest_label_battery">Akkustand</string>
+    <string name="suggest_label_notifications">Benachrichtungen vorlesen</string>
+    <string name="suggest_label_clear_notifications">Benachrichtungen löschen</string>
+    <string name="suggest_label_toggle_auto_read">Benachrichtungen automatisch vorlesen umschalten</string>
+    <string name="suggest_label_media_play_pause">Musik Wiedergabe</string>
+    <string name="suggest_label_media_next">Musik weiter</string>
+    <string name="suggest_label_media_previous">Musik zurück</string>
+    <string name="suggest_label_volume_media">Lautstärke Medien: %s%%</string>
+    <string name="suggest_label_volume_notification">Lautstärke Meldungen: %s%%</string>
+    <string name="suggest_label_volume_alarm">Lautstärke Wecker: %s%%</string>
+    <string name="suggest_label_volume_call">Lautstärke Anruf: %s%%</string>
+    <string name="suggest_label_volume_tts">Lautstärke TTS: %s%%</string>
+    <string name="suggest_label_volume_cues">Lautstärke Hinweise: %s%%</string>
+    <string name="suggest_label_status_silent">Stummschalten</string>
+    <string name="suggest_label_status_vibrate">Vibrieren</string>
+    <string name="suggest_label_status_loud">Lautschalten</string>
+    <string name="suggest_label_toggle_scanning">Scannen umschalten</string>
+    <string name="suggest_label_install_update">Update installieren</string>
+    <string name="suggest_label_start_sync">Buch synchronisieren</string>
+    <string name="suggest_label_send_message">SMS an %s</string>
+    <string name="suggest_label_start_call">%s anrufen</string>
+    <string name="suggest_label_play_media">%s abspielen</string>
+    <string name="suggest_label_sh_on">einschalten</string>
+    <string name="suggest_label_sh_off">ausschalten</string>
+    <string name="suggest_label_smart_home">%1$s %2$s</string>
+    <string name="suggest_label_frequent">%d. Häufigste Aktion</string>
+    <string name="suggest_label_previous">%d. Vorherige Aktion</string>
+    <string name="suggest_label_smart">%d. Smarte Vorhersage</string>
+    <string name="suggest_label_gemini">Gemini fragen</string>
+    <string name="suggest_label_gemini_search">Gemini Suche</string>
+    <string name="suggest_label_gemini_vision">Gemini Auge</string>
+    <string name="local_suggestion_action">Vorschlag</string>
 </resources>
 

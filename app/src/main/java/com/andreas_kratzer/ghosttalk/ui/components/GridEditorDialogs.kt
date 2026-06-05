@@ -80,9 +80,9 @@ fun EditorDialogs(
                 actions.updateRowName(item.id, editingRowIndex, newName)
                 onDismissRowDialog()
             },
-            onSuggestName = { callback ->
+            onSuggestName = if (actions.isGeminiEnabled) { callback ->
                 actions.suggestRowName(item.id, editingRowIndex, callback)
-            }
+            } else null
         )
     }
 
@@ -108,6 +108,9 @@ fun EditorDialogs(
             onTest = { config ->
                 actions.executeButtonAction(config)
             },
+            onSuggestLabel = if (actions.isGeminiEnabled) { config, callback ->
+                actions.suggestButtonLabel(config, callback)
+            } else null,
             onMove = {
                 onShowMoveDialog(true)
                 onDismissButtonDialog()

@@ -6,6 +6,7 @@ import com.andreas_kratzer.ghosttalk.core.data.GetPagesUseCase
 import com.andreas_kratzer.ghosttalk.core.data.PageRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.NavigateToStartPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.data.TemplateRepository
 import com.andreas_kratzer.ghosttalk.core.domain.pages.CreatePageUseCase
 import com.andreas_kratzer.ghosttalk.core.domain.pages.DeletePageUseCase
@@ -158,10 +159,6 @@ class PageManagementDelegate @Inject constructor(
                 settingsRepository.defaultStartPageIdFlow
             ) { pages, templates, defaultStartPageId ->
                 val ids = identifyActivePageLinksUseCase.execute(pages, templates).toMutableSet()
-                // Resolve empty pageId (= "navigate to start page") to the actual default start page ID
-                if (ids.remove("") && defaultStartPageId != null) {
-                    ids.add(defaultStartPageId)
-                }
                 // The default start page is always considered active/reachable
                 defaultStartPageId?.let { ids.add(it) }
                 ids
@@ -477,9 +474,9 @@ class PageManagementDelegate @Inject constructor(
                             val updatedConfigs = page.buttonConfigs.map { config ->
                                 if (config != null) {
                                     val action = config.buttonAction
-                                    if (action is NavigateToPageButtonAction && action.pageId == startPageId) {
+                                    if (action is NavigateToPageButtonAction && (action.pageId.isEmpty() || action.pageId == startPageId)) {
                                         updated = true
-                                        config.copy(buttonAction = action.copy(pageId = ""))
+                                        config.copy(buttonAction = NavigateToStartPageButtonAction())
                                     } else {
                                         config
                                     }

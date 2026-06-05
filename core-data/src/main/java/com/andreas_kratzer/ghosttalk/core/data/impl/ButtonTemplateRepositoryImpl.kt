@@ -16,6 +16,7 @@ import com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.MediaProvider
 import com.andreas_kratzer.ghosttalk.core.model.NavigateBackButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.NavigateToStartPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.PlayMediaButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.PreviousActionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SmartHomeButtonAction
@@ -113,6 +114,20 @@ class ButtonTemplateRepositoryImpl @Inject constructor(
                     id = UUID.randomUUID().toString(),
                     label = "Zurück",
                     buttonAction = NavigateBackButtonAction()
+                )
+            )
+        )
+
+        // 2c. NavigateToStartPageButtonAction
+        list.add(
+            ButtonTemplate(
+                id = "builtin_navigate_to_start",
+                name = "Zur Startseite",
+                isBuiltIn = true,
+                buttonConfig = ButtonConfig(
+                    id = UUID.randomUUID().toString(),
+                    label = "Startseite",
+                    buttonAction = NavigateToStartPageButtonAction()
                 )
             )
         )

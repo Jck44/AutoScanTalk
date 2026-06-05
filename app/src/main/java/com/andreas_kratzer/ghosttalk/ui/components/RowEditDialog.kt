@@ -89,7 +89,7 @@ fun RowEditDialog(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Generiere Vorschlag...",
+                                text = stringResource(R.string.generating_suggestion),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.outline
                             )
@@ -107,7 +107,7 @@ fun RowEditDialog(
                                         } else {
                                             android.widget.Toast.makeText(
                                                 context,
-                                                "Vorschlag konnte nicht generiert werden. Bitte stellen Sie sicher, dass die Zeile aktivierte Buttons enthält und Gemini in den Einstellungen aktiviert ist.",
+                                                R.string.error_row_suggestion_failed,
                                                 android.widget.Toast.LENGTH_LONG
                                             ).show()
                                         }
@@ -120,7 +120,7 @@ fun RowEditDialog(
                                     modifier = Modifier.size(18.dp)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("✨ KI-Vorschlag")
+                                Text(stringResource(R.string.ki_suggestion))
                             }
                         }
                     }

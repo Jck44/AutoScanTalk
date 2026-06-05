@@ -191,6 +191,28 @@ class TemplateViewModel @Inject constructor(
         }
     }
 
+    override val isGeminiEnabled: Boolean
+        get() = settingsRepository.isGeminiEnabled
+
+    override fun suggestButtonLabel(config: ButtonConfig, onResult: (String) -> Unit) {
+        if (!settingsRepository.isGeminiEnabled) {
+            onResult("")
+            return
+        }
+        viewModelScope.launch {
+            try {
+                val prompt = com.andreas_kratzer.ghosttalk.ui.util.generateSuggestButtonLabelPrompt(config) { pageId ->
+                    pageRepository.getPageById(pageId)?.name
+                }
+                val response = geminiUseCase.generateResponse(prompt)
+                val cleaned = response.trim().removeSurrounding("\"").removeSurrounding("'").trim()
+                onResult(cleaned)
+            } catch (e: Exception) {
+                onResult("")
+            }
+        }
+    }
+
     override fun updateRowName(itemId: String, rowIndex: Int, newName: String) {
         val current = templates.value.find { it.id == itemId } ?: return
         saveUndoState(itemId)

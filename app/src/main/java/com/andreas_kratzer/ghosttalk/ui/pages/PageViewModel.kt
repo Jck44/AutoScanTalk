@@ -852,6 +852,29 @@ class PageViewModel @Inject constructor(
         pageManagementDelegate.updateRowName(itemId, rowIndex, newName)
     }
 
+    override val isGeminiEnabled: Boolean
+        get() = settingsRepository.isGeminiEnabled
+
+    override fun suggestButtonLabel(config: ButtonConfig, onResult: (String) -> Unit) {
+        if (!settingsRepository.isGeminiEnabled) {
+            onResult("")
+            return
+        }
+        viewModelScope.launch {
+            try {
+                val prompt = com.andreas_kratzer.ghosttalk.ui.util.generateSuggestButtonLabelPrompt(config) { pageId ->
+                    pageManagementDelegate.unfilteredPages.value.find { it.id == pageId }?.name
+                }
+                val response = geminiUseCase.generateResponse(prompt)
+                val cleaned = response.trim().removeSurrounding("\"").removeSurrounding("'").trim()
+                onResult(cleaned)
+            } catch (e: Exception) {
+                Log.e("PageViewModel", "Error generating button label suggestion", e)
+                onResult("")
+            }
+        }
+    }
+
     override fun suggestRowName(itemId: String, rowIndex: Int, onResult: (String) -> Unit) {
         val page = pageManagementDelegate.unfilteredPages.value.find { it.id == itemId }
         if (page == null) {

@@ -527,5 +527,52 @@
     <string name="analytics_session_error_rate_recommendation">💡 **Recommendation:** Starting from the phase **%1$s**, the error rate increases by approx. **%2$d%%** (to **%3$d%%**) compared to the start. This suggests fatigue. Session duration should ideally be limited to **under %4$s minutes**.</string>
     <string name="analytics_session_error_rate_observation">✅ **Observation:** The error rate remains stable and low throughout the sessions. No premature fatigue detected!</string>
     <string name="analytics_session_error_rate_notice">ℹ️ **Notice:** There is not enough usage data from sessions yet to calculate error rate trends.</string>
+    
+    <!-- Gemini Suggestions -->
+    <string name="ki_suggestion">✨ AI Suggestion</string>
+    <string name="generating_suggestion">Generating suggestion…</string>
+    <string name="error_label_suggestion_failed">Could not generate suggestion. Please make sure all required fields are filled.</string>
+    <string name="error_row_suggestion_failed">Could not generate suggestion. Please make sure the row contains active buttons and Gemini is enabled in settings.</string>
+
+    <!-- Suggest Label Local Fallbacks -->
+    <string name="suggest_label_navigate">Go to %s</string>
+    <string name="suggest_label_start_page">Go to Home</string>
+    <string name="suggest_label_back">Previous Page</string>
+    <string name="suggest_label_weather">Weather</string>
+    <string name="suggest_label_time">Time</string>
+    <string name="suggest_label_date">Date</string>
+    <string name="suggest_label_calendar">Upcoming Calendar Entries</string>
+    <string name="suggest_label_battery">Battery Level</string>
+    <string name="suggest_label_notifications">Read notifications</string>
+    <string name="suggest_label_clear_notifications">Clear Alerts</string>
+    <string name="suggest_label_toggle_auto_read">Toggle automatic reading of notifications</string>
+    <string name="suggest_label_media_play_pause">Play/Pause Music</string>
+    <string name="suggest_label_media_next">Next Track</string>
+    <string name="suggest_label_media_previous">Previous Track</string>
+    <string name="suggest_label_volume_media">Media Volume: %s%%</string>
+    <string name="suggest_label_volume_notification">Alert Volume: %s%%</string>
+    <string name="suggest_label_volume_alarm">Alarm Volume: %s%%</string>
+    <string name="suggest_label_volume_call">Call Volume: %s%%</string>
+    <string name="suggest_label_volume_tts">TTS Volume: %s%%</string>
+    <string name="suggest_label_volume_cues">Cue Volume: %s%%</string>
+    <string name="suggest_label_status_silent">Mute</string>
+    <string name="suggest_label_status_vibrate">Vibrate</string>
+    <string name="suggest_label_status_loud">Set Loud</string>
+    <string name="suggest_label_toggle_scanning">Toggle Scanning</string>
+    <string name="suggest_label_install_update">Install Update</string>
+    <string name="suggest_label_start_sync">Sync Book</string>
+    <string name="suggest_label_send_message">SMS to %s</string>
+    <string name="suggest_label_start_call">Call %s</string>
+    <string name="suggest_label_play_media">Play %s</string>
+    <string name="suggest_label_sh_on">turn on</string>
+    <string name="suggest_label_sh_off">turn off</string>
+    <string name="suggest_label_smart_home">%1$s %2$s</string>
+    <string name="suggest_label_frequent">%d. Frequent Action</string>
+    <string name="suggest_label_previous">%d. Previous Action</string>
+    <string name="suggest_label_smart">%d. Smart Prediction</string>
+    <string name="suggest_label_gemini">Ask Gemini</string>
+    <string name="suggest_label_gemini_search">Gemini Search</string>
+    <string name="suggest_label_gemini_vision">Gemini Vision</string>
+    <string name="local_suggestion_action">Suggestion</string>
 </resources>
 

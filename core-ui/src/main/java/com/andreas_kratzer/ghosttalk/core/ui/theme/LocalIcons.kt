@@ -45,6 +45,7 @@ object GhostTalkIcons {
             ActionCategory.PLAY_MEDIA -> MusicNote
             ActionCategory.NAVIGATE_PAGE -> ArrowForward
             ActionCategory.NAVIGATE_BACK -> ArrowBack
+            ActionCategory.NAVIGATE_TO_START_PAGE -> Icons.Default.Home
             ActionCategory.GEMINI,
             ActionCategory.GEMINI_SEARCH,
             ActionCategory.GEMINI_NANO,

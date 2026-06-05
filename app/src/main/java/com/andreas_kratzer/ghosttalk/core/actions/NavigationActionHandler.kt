@@ -6,6 +6,7 @@ import com.andreas_kratzer.ghosttalk.core.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.NavigateBackButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.NavigateToStartPageButtonAction
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -19,7 +20,7 @@ class NavigationActionHandler @Inject constructor(
 ) : ActionHandler {
 
     override fun canHandle(action: ButtonAction): Boolean =
-        action is NavigateToPageButtonAction || action is NavigateBackButtonAction
+        action is NavigateToPageButtonAction || action is NavigateBackButtonAction || action is NavigateToStartPageButtonAction
 
     override fun handle(
         buttonConfig: ButtonConfig,
@@ -38,6 +39,12 @@ class NavigationActionHandler @Inject constructor(
                         } else {
                             action.pageId
                         }
+                        actionEventEmitter.emitEvent(
+                            ActionEvent.NavigateToPage(targetPageId, action, buttonConfig.label)
+                        )
+                    }
+                    is NavigateToStartPageButtonAction -> {
+                        val targetPageId = settingsRepository.defaultStartPageId ?: ""
                         actionEventEmitter.emitEvent(
                             ActionEvent.NavigateToPage(targetPageId, action, buttonConfig.label)
                         )

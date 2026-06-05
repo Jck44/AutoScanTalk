@@ -64,6 +64,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
@@ -85,6 +86,7 @@ import com.andreas_kratzer.ghosttalk.core.model.GeminiSearchButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.MediaProvider
 import com.andreas_kratzer.ghosttalk.core.model.NavigateBackButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.NavigateToStartPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.core.model.PlayMediaButtonAction
@@ -123,6 +125,7 @@ fun ButtonConfigDialog(
     currentPageId: String? = null,
     isTextCached: ((String) -> Boolean)? = null,
     onPrefetchText: ((String, () -> Unit) -> Unit)? = null,
+    onSuggestLabel: ((ButtonConfig, onResult: (String) -> Unit) -> Unit)? = null,
     // AI Tools
     availableGeminiTools: List<com.andreas_kratzer.ghosttalk.core.ai.domain.AiTool> = emptyList(),
     // Philips Hue Support
@@ -151,6 +154,7 @@ fun ButtonConfigDialog(
 ) {
     val context = LocalContext.current
     var label by remember { mutableStateOf(buttonConfig.label) }
+    var isSuggestingLabel by remember { mutableStateOf(false) }
     var spokenText by remember { mutableStateOf(buttonConfig.spokenText ?: "") }
     var spokenTextMode by remember { mutableStateOf(buttonConfig.spokenTextMode) }
     var audioFileNameState by remember { mutableStateOf(buttonConfig.audioFileName) }
@@ -159,12 +163,15 @@ fun ButtonConfigDialog(
     var isRecording by remember { mutableStateOf(false) }
 
     val activity = remember(context) { context.findActivity() }
+    val view = LocalView.current
     DisposableEffect(isRecording) {
         if (isRecording) {
             activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            view.keepScreenOn = true
         }
         onDispose {
             activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            view.keepScreenOn = false
         }
     }
     var isPlayingAudio by remember { mutableStateOf(false) }
@@ -241,6 +248,7 @@ fun ButtonConfigDialog(
     val actionTypeSpeak = stringResource(R.string.button_action_speak_text)
     val actionTypeNavigate = stringResource(R.string.button_action_navigate_page)
     val actionTypeNavigateBack = stringResource(R.string.button_action_navigate_back)
+    val actionTypeNavigateToStartPage = stringResource(R.string.button_action_navigate_to_start_page)
     val actionTypeGemini = stringResource(R.string.button_action_gemini)
     val actionTypeGeminiSearch = stringResource(R.string.button_action_gemini_search)
     val actionTypeGeminiVision = stringResource(R.string.button_action_gemini_vision)
@@ -294,6 +302,7 @@ fun ButtonConfigDialog(
             when (val action = buttonConfig.buttonAction) {
                 is NavigateToPageButtonAction -> actionTypeNavigate
                 is NavigateBackButtonAction -> actionTypeNavigateBack
+                is NavigateToStartPageButtonAction -> actionTypeNavigateToStartPage
                 is GeminiButtonAction -> actionTypeGemini
                 is GeminiSearchButtonAction -> actionTypeGeminiSearch
                 is GeminiNanoButtonAction -> actionTypeGemini
@@ -502,10 +511,10 @@ fun ButtonConfigDialog(
     val buildCurrentAction = {
         when (selectedActionType) {
             actionTypeNavigate -> {
-                val resolvedPageId = if (targetPageId == defaultStartPageId) "" else targetPageId
-                NavigateToPageButtonAction(resolvedPageId)
+                NavigateToPageButtonAction(targetPageId)
             }
             actionTypeNavigateBack -> NavigateBackButtonAction()
+            actionTypeNavigateToStartPage -> NavigateToStartPageButtonAction()
             actionTypeGemini -> GeminiButtonAction(geminiPrompt)
             actionTypeGeminiSearch -> GeminiSearchButtonAction(geminiPrompt)
             actionTypeGeminiVision -> com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction(geminiPrompt, geminiVisionUseCloud, geminiVisionPlayShutterSound)
@@ -820,6 +829,7 @@ fun ButtonConfigDialog(
                                 com.andreas_kratzer.ghosttalk.core.model.ActionCategoryRegistry.GROUP_BASIS to listOf(
                                     actionTypeSpeak to SpeakTextButtonAction(),
                                     actionTypeNavigate to NavigateToPageButtonAction(),
+                                    actionTypeNavigateToStartPage to NavigateToStartPageButtonAction(),
                                     actionTypeNavigateBack to NavigateBackButtonAction()
                                 ),
                                 com.andreas_kratzer.ghosttalk.core.model.ActionCategoryRegistry.GROUP_KI_ASSISTENZ to listOf(
@@ -876,9 +886,21 @@ fun ButtonConfigDialog(
                             val dropdownGroups = rawGroups.map { (groupName, actionList) ->
                                 val enabledItems = actionList.filter { (_, action) ->
                                     featureGuard?.isActionEnabled(action) ?: true
-                                }.map { (label, action) ->
-                                    label to {
-                                        selectedActionType = label
+                                }.map { (actionLabel, action) ->
+                                    actionLabel to {
+                                        selectedActionType = actionLabel
+                                        if (label.isBlank()) {
+                                            if (actionLabel == actionTypeNavigateToStartPage) {
+                                                label = "Zu Startseite"
+                                            } else if (actionLabel == actionTypeNavigateBack) {
+                                                label = "Vorherige Seite"
+                                            } else if (actionLabel == actionTypeNavigate && targetPageId.isNotEmpty()) {
+                                                val pageName = pages.find { it.id == targetPageId }?.name
+                                                if (pageName != null) {
+                                                    label = "Zu $pageName"
+                                                }
+                                            }
+                                        }
                                         // Permission check for Weather
                                         if (action is WeatherButtonAction) {
                                             val hasFine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
@@ -932,7 +954,7 @@ fun ButtonConfigDialog(
                                             actionTypeVolumeMedia, actionTypeVolumeNotification, actionTypeVolumeAlarm, actionTypeVolumeCall, actionTypeStatusLoud -> GhostTalkIcons.VolumeUp
                                             actionTypeStatusSilent -> GhostTalkIcons.VolumeOff
                                             actionTypeStatusVibrate -> GhostTalkIcons.Vibration
-                                            actionTypePhilipsHue, actionTypeGoogleHome -> Icons.Default.Home
+                                            actionTypePhilipsHue, actionTypeGoogleHome, actionTypeNavigateToStartPage -> Icons.Default.Home
                                             actionTypeFrequent, actionTypePrevious, actionTypeSmart -> GhostTalkIcons.History
                                             else -> Icons.Default.Settings
                                         }
@@ -951,11 +973,17 @@ fun ButtonConfigDialog(
                                 androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(8.dp))
                                 NavigationActionFields(
                                     navigateToPageId = targetPageId,
-                                    onPageSelected = { 
-                                        targetPageId = it
+                                    onPageSelected = { selectedId -> 
+                                        targetPageId = selectedId
+                                        if (label.isBlank()) {
+                                            val pageName = pages.find { it.id == selectedId }?.name
+                                            if (pageName != null) {
+                                                label = "Zu $pageName"
+                                            }
+                                        }
                                         handleAutoSave()
                                     },
-                                    availablePages = pages,
+                                    availablePages = pages.filter { it.id != defaultStartPageId },
                                     templates = templates,
                                     onNavigateToPage = onNavigateToPage,
                                     onCreatePage = onCreatePage,
@@ -989,6 +1017,89 @@ fun ButtonConfigDialog(
                                     }
                                 }
                             )
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 4.dp),
+                                horizontalArrangement = Arrangement.End,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                if (isSuggestingLabel) {
+                                    androidx.compose.material3.CircularProgressIndicator(
+                                        modifier = Modifier.size(16.dp),
+                                        strokeWidth = 2.dp,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                    androidx.compose.foundation.layout.Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = stringResource(R.string.generating_suggestion),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.outline
+                                    )
+                                } else {
+                                    val hasAi = onSuggestLabel != null
+                                    TextButton(
+                                        onClick = {
+                                            val currentConfig = buttonConfig.copy(
+                                                label = label,
+                                                spokenText = if (spokenText.isNotBlank()) spokenText else null,
+                                                spokenTextMode = spokenTextMode,
+                                                audioFileName = audioFileNameState,
+                                                auditoryCue = if (auditoryCueText.isNotBlank()) AuditoryCue.TextToSpeechCue(auditoryCueText) else null,
+                                                isActive = isActive,
+                                                playActionAsAuditoryCue = playActionAsAuditoryCue,
+                                                buttonAction = buildCurrentAction()
+                                            )
+                                            if (onSuggestLabel != null) {
+                                                isSuggestingLabel = true
+                                                onSuggestLabel(currentConfig) { suggestion ->
+                                                    isSuggestingLabel = false
+                                                    if (suggestion.isNotBlank()) {
+                                                        label = suggestion
+                                                        handleFocusLost(suggestion, { isLabelCached = it }, { isLabelPrefetching = it })
+                                                    } else {
+                                                        val localSuggest = getLocalLabelSuggestion(currentConfig, pages, context)
+                                                        if (localSuggest.isNotBlank()) {
+                                                            label = localSuggest
+                                                            handleFocusLost(localSuggest, { isLabelCached = it }, { isLabelPrefetching = it })
+                                                        } else {
+                                                            Toast.makeText(
+                                                                context,
+                                                                R.string.error_label_suggestion_failed,
+                                                                Toast.LENGTH_LONG
+                                                            ).show()
+                                                        }
+                                                    }
+                                                }
+                                            } else {
+                                                val localSuggest = getLocalLabelSuggestion(currentConfig, pages, context)
+                                                if (localSuggest.isNotBlank()) {
+                                                    label = localSuggest
+                                                    handleFocusLost(localSuggest, { isLabelCached = it }, { isLabelPrefetching = it })
+                                                } else {
+                                                    Toast.makeText(
+                                                        context,
+                                                        R.string.error_label_suggestion_failed,
+                                                        Toast.LENGTH_LONG
+                                                    ).show()
+                                                }
+                                            }
+                                        }
+                                    ) {
+                                        Icon(
+                                            imageVector = GhostTalkIcons.AutoAwesome,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        androidx.compose.foundation.layout.Spacer(modifier = Modifier.width(4.dp))
+                                        Text(
+                                            text = stringResource(if (hasAi) R.string.ki_suggestion else R.string.local_suggestion_action),
+                                            style = MaterialTheme.typography.bodySmall
+                                        )
+                                    }
+                                }
+                            }
                             
                             Text(
                                 text = stringResource(R.string.button_spoken_text_field),
@@ -1378,8 +1489,39 @@ fun ButtonConfigDialog(
                                 onTargetPageIdChange = { targetPageId = it },
                                 geminiPrompt = geminiPrompt,
                                 onGeminiPromptChange = { geminiPrompt = it },
-                                rank = rank,
-                                onRankChange = { rank = it },
+                                 rank = rank,
+                                 onRankChange = { newRank ->
+                                    val currentConfigWithOldRank = buttonConfig.copy(
+                                        label = label,
+                                        spokenText = if (spokenText.isNotBlank()) spokenText else null,
+                                        spokenTextMode = spokenTextMode,
+                                        audioFileName = audioFileNameState,
+                                        auditoryCue = if (auditoryCueText.isNotBlank()) AuditoryCue.TextToSpeechCue(auditoryCueText) else null,
+                                        isActive = isActive,
+                                        playActionAsAuditoryCue = playActionAsAuditoryCue,
+                                        buttonAction = buildCurrentAction()
+                                    )
+                                    val oldSuggest = getLocalLabelSuggestion(currentConfigWithOldRank, pages, context)
+                                    
+                                    rank = newRank
+                                    
+                                    val currentConfigWithNewRank = buttonConfig.copy(
+                                        label = label,
+                                        spokenText = if (spokenText.isNotBlank()) spokenText else null,
+                                        spokenTextMode = spokenTextMode,
+                                        audioFileName = audioFileNameState,
+                                        auditoryCue = if (auditoryCueText.isNotBlank()) AuditoryCue.TextToSpeechCue(auditoryCueText) else null,
+                                        isActive = isActive,
+                                        playActionAsAuditoryCue = playActionAsAuditoryCue,
+                                        buttonAction = buildCurrentAction()
+                                    )
+                                    val newSuggest = getLocalLabelSuggestion(currentConfigWithNewRank, pages, context)
+                                    
+                                    if (label == oldSuggest || label.isBlank()) {
+                                        label = newSuggest
+                                    }
+                                    handleAutoSave()
+                                },
                                 predictionType = predictionType,
                                 onPredictionTypeChange = { 
                                     predictionType = it
@@ -1579,4 +1721,99 @@ private fun Context.findActivity(): Activity? {
         currentContext = currentContext.baseContext
     }
     return null
+}
+
+private fun getLocalLabelSuggestion(
+    config: ButtonConfig,
+    pages: List<Page>,
+    context: Context
+): String {
+    val action = config.buttonAction ?: return ""
+    return when (action) {
+        is SpeakTextButtonAction -> {
+            val text = config.spokenText ?: ""
+            if (text.isNotBlank()) {
+                val words = text.trim().split("\\s+".toRegex())
+                if (words.size <= 3) text else words.take(3).joinToString(" ") + "…"
+            } else ""
+        }
+        is NavigateToPageButtonAction -> {
+            val pageName = pages.find { it.id == action.pageId }?.name
+            if (!pageName.isNullOrBlank()) {
+                context.getString(R.string.suggest_label_navigate, pageName)
+            } else ""
+        }
+        is NavigateToStartPageButtonAction -> {
+            context.getString(R.string.suggest_label_start_page)
+        }
+        is NavigateBackButtonAction -> {
+            context.getString(R.string.suggest_label_back)
+        }
+        is WeatherButtonAction -> {
+            context.getString(R.string.suggest_label_weather)
+        }
+        is ControlDeviceButtonAction -> {
+            when (action.actionType) {
+                DeviceActionType.READ_TIME -> context.getString(R.string.suggest_label_time)
+                DeviceActionType.READ_DATE -> context.getString(R.string.suggest_label_date)
+                DeviceActionType.READ_CALENDAR_ENTRIES -> context.getString(R.string.suggest_label_calendar)
+                DeviceActionType.READ_BATTERY -> context.getString(R.string.suggest_label_battery)
+                DeviceActionType.READ_NOTIFICATIONS -> context.getString(R.string.suggest_label_notifications)
+                DeviceActionType.CLEAR_NOTIFICATIONS -> context.getString(R.string.suggest_label_clear_notifications)
+                DeviceActionType.TOGGLE_AUTO_READ_NOTIFICATIONS -> context.getString(R.string.suggest_label_toggle_auto_read)
+                DeviceActionType.MEDIA_PLAY_PAUSE -> context.getString(R.string.suggest_label_media_play_pause)
+                DeviceActionType.MEDIA_NEXT -> context.getString(R.string.suggest_label_media_next)
+                DeviceActionType.MEDIA_PREVIOUS -> context.getString(R.string.suggest_label_media_previous)
+                DeviceActionType.VOLUME_MEDIA -> context.getString(R.string.suggest_label_volume_media, action.volumeValue ?: "")
+                DeviceActionType.VOLUME_NOTIFICATION -> context.getString(R.string.suggest_label_volume_notification, action.volumeValue ?: "")
+                DeviceActionType.VOLUME_ALARM -> context.getString(R.string.suggest_label_volume_alarm, action.volumeValue ?: "")
+                DeviceActionType.VOLUME_CALL -> context.getString(R.string.suggest_label_volume_call, action.volumeValue ?: "")
+                DeviceActionType.VOLUME_IN_APP_TTS -> context.getString(R.string.suggest_label_volume_tts, action.volumeValue ?: "")
+                DeviceActionType.VOLUME_IN_APP_CUES -> context.getString(R.string.suggest_label_volume_cues, action.volumeValue ?: "")
+                DeviceActionType.STATUS_SILENT -> context.getString(R.string.suggest_label_status_silent)
+                DeviceActionType.STATUS_VIBRATE -> context.getString(R.string.suggest_label_status_vibrate)
+                DeviceActionType.STATUS_LOUD -> context.getString(R.string.suggest_label_status_loud)
+                DeviceActionType.TOGGLE_SCANNING -> context.getString(R.string.suggest_label_toggle_scanning)
+                DeviceActionType.INSTALL_UPDATE -> context.getString(R.string.suggest_label_install_update)
+                DeviceActionType.START_SYNC -> context.getString(R.string.suggest_label_start_sync)
+                DeviceActionType.SEND_MESSAGE -> {
+                    val contact = action.contactName ?: ""
+                    if (contact.isNotBlank()) {
+                        context.getString(R.string.suggest_label_send_message, contact)
+                    } else ""
+                }
+                DeviceActionType.START_CALL -> {
+                    val contact = action.contactName ?: ""
+                    if (contact.isNotBlank()) {
+                        context.getString(R.string.suggest_label_start_call, contact)
+                    } else ""
+                }
+            }
+        }
+        is PlayMediaButtonAction -> {
+            val content = action.contentName ?: ""
+            if (content.isNotBlank()) {
+                context.getString(R.string.suggest_label_play_media, content)
+            } else ""
+        }
+        is SmartHomeButtonAction -> {
+            val device = action.deviceName ?: ""
+            val intent = action.intent ?: ""
+            if (device.isNotBlank() && intent.isNotBlank()) {
+                val localizedIntent = when (intent.lowercase()) {
+                    "on", "turnon" -> context.getString(R.string.suggest_label_sh_on)
+                    "off", "turnoff" -> context.getString(R.string.suggest_label_sh_off)
+                    else -> intent
+                }
+                context.getString(R.string.suggest_label_smart_home, device, localizedIntent)
+            } else ""
+        }
+        is FrequentActionButtonAction -> context.getString(R.string.suggest_label_frequent)
+        is PreviousActionButtonAction -> context.getString(R.string.suggest_label_previous)
+        is SmartPredictionButtonAction -> context.getString(R.string.suggest_label_smart)
+        is GeminiButtonAction -> context.getString(R.string.suggest_label_gemini)
+        is GeminiSearchButtonAction -> context.getString(R.string.suggest_label_gemini_search)
+        is com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction -> context.getString(R.string.suggest_label_gemini_vision)
+        else -> ""
+    }
 }

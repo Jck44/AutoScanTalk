@@ -4,6 +4,7 @@ enum class ActionCategory {
     SPEAK_TEXT,
     NAVIGATE_PAGE,
     NAVIGATE_BACK,
+    NAVIGATE_TO_START_PAGE,
     GEMINI,
     GEMINI_SEARCH,
     GEMINI_NANO,
@@ -43,7 +44,8 @@ object ActionCategoryRegistry {
         return when (action) {
             is SpeakTextButtonAction,
             is NavigateToPageButtonAction,
-            is NavigateBackButtonAction -> GROUP_BASIS
+            is NavigateBackButtonAction,
+            is NavigateToStartPageButtonAction -> GROUP_BASIS
 
             is GeminiButtonAction,
             is GeminiSearchButtonAction,
@@ -83,6 +85,7 @@ object ActionCategoryRegistry {
             is SpeakTextButtonAction -> ActionCategory.SPEAK_TEXT
             is NavigateToPageButtonAction -> ActionCategory.NAVIGATE_PAGE
             is NavigateBackButtonAction -> ActionCategory.NAVIGATE_BACK
+            is NavigateToStartPageButtonAction -> ActionCategory.NAVIGATE_TO_START_PAGE
             is GeminiButtonAction -> ActionCategory.GEMINI
             is GeminiSearchButtonAction -> ActionCategory.GEMINI_SEARCH
             is GeminiNanoButtonAction -> ActionCategory.GEMINI_NANO

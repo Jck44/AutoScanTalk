@@ -8,6 +8,7 @@ import com.andreas_kratzer.ghosttalk.core.model.ControlDeviceButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiNanoButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiSearchButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SmartHomeButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SmartHomeProvider
 import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
@@ -29,7 +30,7 @@ class FeatureGuard @Inject constructor(
     override fun isActionEnabled(action: ButtonAction): Boolean {
         return when (action) {
             is SmartPredictionButtonAction -> settingsRepository.isSmartPredictionEnabled
-            is GeminiButtonAction, is GeminiSearchButtonAction -> {
+            is GeminiButtonAction, is GeminiSearchButtonAction, is GeminiVisionButtonAction -> {
                 settingsRepository.isGeminiEnabled
             }
             is GeminiNanoButtonAction -> {

@@ -4,6 +4,7 @@ import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.NavigateBackButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.NavigateToStartPageButtonAction
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
@@ -95,6 +96,29 @@ class NavigationActionHandlerTest {
             actionEventEmitter = actionEventEmitter
         )
         val action = NavigateToPageButtonAction("")
+        val config = ButtonConfig(id = "b1", label = "Go Home", spokenText = null, buttonAction = action, auditoryCue = null)
+        val onFinish = mockk<(Int) -> Unit>(relaxed = true)
+
+        handler.handle(config, action, 1, onFinish)
+        runCurrent()
+
+        coVerify { actionEventEmitter.emitEvent(match { it is ActionEvent.NavigateToPage && it.pageId == "start_page_123" && it.label == "Go Home" }) }
+        verify { onFinish(1) }
+    }
+
+    @Test
+    fun `handle handles NavigateToStartPageButtonAction successfully`() = runTest {
+        every { settingsRepository.defaultStartPageId } returns "start_page_123"
+        handler = NavigationActionHandler(
+            scope = this,
+            settingsRepository = settingsRepository,
+            ttsProxyLazy = object : dagger.Lazy<ActionTtsProxy> {
+                override fun get() = ttsProxy
+            },
+            actionLogger = actionLogger,
+            actionEventEmitter = actionEventEmitter
+        )
+        val action = NavigateToStartPageButtonAction()
         val config = ButtonConfig(id = "b1", label = "Go Home", spokenText = null, buttonAction = action, auditoryCue = null)
         val onFinish = mockk<(Int) -> Unit>(relaxed = true)
 

@@ -38,6 +38,15 @@ data class NavigateBackButtonAction(
     val version: Int = 1
 ) : ButtonAction()
 
+/**
+ * An action that navigates to the default start page of the active book.
+ */
+@Serializable
+@SerialName("NavigateToStartPageButtonAction")
+data class NavigateToStartPageButtonAction(
+    val version: Int = 1
+) : ButtonAction()
+
 
 /**
  * An action that triggers a Gemini AI request with arbitrary skills/tools.
