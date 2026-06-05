@@ -27,14 +27,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
-import androidx.compose.ui.res.stringResource
 import com.andreas_kratzer.ghosttalk.core.ui.R
+import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 
 @Composable
 fun PinEntryDialog(

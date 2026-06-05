@@ -182,8 +182,7 @@ class ScannerEngine @Inject constructor(
                         
                         // Prefetch next step cue
                         val nextStepPos = if (i + 1 < steps.size) i + 1 else 0
-                        val nextStep = steps[nextStepPos]
-                        val nextCueText = when (nextStep) {
+                        val nextCueText = when (val nextStep = steps[nextStepPos]) {
                             is ScanStep.Button -> {
                                 val nextConfig = nextStep.config
                                 val nextCue = nextConfig.auditoryCue

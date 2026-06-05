@@ -9,17 +9,16 @@ import com.andreas_kratzer.ghosttalk.core.model.GeminiButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiNanoButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiSearchButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.MarkAccidentalButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.MediaProvider
 import com.andreas_kratzer.ghosttalk.core.model.NavigateBackButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToStartPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.PlayMediaButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.MarkAccidentalButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.PredictionType
 import com.andreas_kratzer.ghosttalk.core.model.PreviousActionButtonAction
-
 import com.andreas_kratzer.ghosttalk.core.model.SmartHomeButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SmartHomeProvider
-import com.andreas_kratzer.ghosttalk.core.model.PredictionType
 import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.WeatherButtonAction

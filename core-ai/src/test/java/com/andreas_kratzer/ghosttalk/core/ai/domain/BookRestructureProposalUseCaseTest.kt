@@ -1,7 +1,5 @@
 package com.andreas_kratzer.ghosttalk.core.ai.domain
 
-import com.andreas_kratzer.ghosttalk.core.model.BookRestructureProposal
-import com.andreas_kratzer.ghosttalk.core.model.RestructureAction
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi

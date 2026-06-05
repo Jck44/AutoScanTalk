@@ -128,7 +128,7 @@ class PathAnalyzer @Inject constructor() {
         val maxIntervalMs = (10 * scanDelayMs) + 25000L
         Log.d("PathAnalyzer", "analyzePaths: maxIntervalMs = $maxIntervalMs")
 
-        for ((sessionIndex, session) in sessions.withIndex()) {
+        for ((_, session) in sessions.withIndex()) {
             if (session.size < 2) {
                 continue
             }

@@ -7,6 +7,7 @@ import com.andreas_kratzer.ghosttalk.core.data.ButtonTemplateRepository
 import com.andreas_kratzer.ghosttalk.core.data.PageRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.data.UserModeSessionRepository
+import com.andreas_kratzer.ghosttalk.core.data.VocalProfileRepository
 import com.andreas_kratzer.ghosttalk.core.data.export.PageImportExportProvider
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsMapper
@@ -21,7 +22,6 @@ import com.andreas_kratzer.ghosttalk.core.model.importexport.ExportedUserModeSes
 import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportButton
 import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportButtonTemplate
 import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportExportData
-import com.andreas_kratzer.ghosttalk.core.data.VocalProfileRepository
 import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportPage
 import com.andreas_kratzer.ghosttalk.core.util.Logger
 import dagger.hilt.android.qualifiers.ApplicationContext

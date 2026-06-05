@@ -1,7 +1,6 @@
 package com.andreas_kratzer.ghosttalk.core.services
 
 import android.content.Context
-import android.content.Intent
 import android.os.PowerManager
 import android.service.notification.StatusBarNotification
 import com.andreas_kratzer.ghosttalk.core.actions.ControlDeviceSettings
@@ -9,7 +8,15 @@ import com.andreas_kratzer.ghosttalk.core.actions.ControlDeviceTtsProxy
 import com.andreas_kratzer.ghosttalk.core.actions.ScannerController
 import com.andreas_kratzer.ghosttalk.core.data.AppStateRepository
 import com.andreas_kratzer.ghosttalk.core.settings.AutoReadMode
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.coroutines.resume
 

@@ -53,8 +53,6 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -474,7 +472,7 @@ class PageViewModel @Inject constructor(
             currentBookIdFlow = activeBookId,
             onVocalSwitchTriggered = { action, label, positiveConfidence, negativeConfidence, threshold ->
                 if (action != null) {
-                    val config = com.andreas_kratzer.ghosttalk.core.model.ButtonConfig(
+                    val config = ButtonConfig(
                         id = java.util.UUID.randomUUID().toString(),
                         label = label ?: "",
                         spokenText = label,
@@ -618,7 +616,7 @@ class PageViewModel @Inject constructor(
         viewModelScope.launch {
             val unfilteredFlow = pageManagementDelegate.unfilteredPages
             val activeTargetFlow = pageManagementDelegate.activeTargetPageIds
-            kotlinx.coroutines.flow.combine(
+            combine(
                 unfilteredFlow,
                 activeTargetFlow
             ) { pages, activeIds ->
@@ -663,7 +661,7 @@ class PageViewModel @Inject constructor(
                     } else {
                         "Stimme $originalVoice nicht verfügbar (Offline). Fallback auf System-Standard."
                     }
-                    android.widget.Toast.makeText(getApplication<Application>(), message, android.widget.Toast.LENGTH_LONG).show()
+                    Toast.makeText(getApplication<Application>(), message, Toast.LENGTH_LONG).show()
                 }
             }
         }
@@ -886,7 +884,7 @@ class PageViewModel @Inject constructor(
         }
 
         if (!settingsRepository.isGeminiEnabled) {
-            android.widget.Toast.makeText(getApplication(), "Gemini ist in den Einstellungen deaktiviert.", android.widget.Toast.LENGTH_SHORT).show()
+            Toast.makeText(getApplication(), "Gemini ist in den Einstellungen deaktiviert.", Toast.LENGTH_SHORT).show()
             onResult("")
             return
         }
@@ -901,7 +899,7 @@ class PageViewModel @Inject constructor(
         }
 
         if (labels.isEmpty()) {
-            android.widget.Toast.makeText(getApplication(), "Keine aktiven Buttons in dieser Zeile vorhanden.", android.widget.Toast.LENGTH_SHORT).show()
+            Toast.makeText(getApplication(), "Keine aktiven Buttons in dieser Zeile vorhanden.", Toast.LENGTH_SHORT).show()
             onResult("")
             return
         }
@@ -914,7 +912,7 @@ class PageViewModel @Inject constructor(
                 onResult(cleaned)
             } catch (e: Exception) {
                 Log.e("PageViewModel", "Error generating row name suggestion", e)
-                android.widget.Toast.makeText(getApplication(), "Fehler bei der Generierung: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
+                Toast.makeText(getApplication(), "Fehler bei der Generierung: ${e.message}", Toast.LENGTH_LONG).show()
                 onResult("")
             }
         }
@@ -979,7 +977,7 @@ class PageViewModel @Inject constructor(
         val username = settingsRepository.hueUsername
         if (ip.isBlank() || username.isBlank()) {
             if (!silentOnFailure) {
-                android.widget.Toast.makeText(getApplication(), "Bitte zuerst in den Einstellungen koppeln.", android.widget.Toast.LENGTH_LONG).show()
+                Toast.makeText(getApplication(), "Bitte zuerst in den Einstellungen koppeln.", Toast.LENGTH_LONG).show()
             }
             onResult?.invoke(false)
             return
@@ -998,11 +996,11 @@ class PageViewModel @Inject constructor(
                     array.put(obj)
                 }
                 settingsRepository.hueCachedDevices = array.toString()
-                android.widget.Toast.makeText(getApplication(), "${fetchedDevices.size} Lampen geladen und im Cache gespeichert.", android.widget.Toast.LENGTH_LONG).show()
+                Toast.makeText(getApplication(), "${fetchedDevices.size} Lampen geladen und im Cache gespeichert.", Toast.LENGTH_LONG).show()
                 onResult?.invoke(true)
             } else {
                 if (!silentOnFailure) {
-                    android.widget.Toast.makeText(getApplication(), "Konnte Bridge nicht erreichen. Alter Cache wird beibehalten.", android.widget.Toast.LENGTH_LONG).show()
+                    Toast.makeText(getApplication(), "Konnte Bridge nicht erreichen. Alter Cache wird beibehalten.", Toast.LENGTH_LONG).show()
                 }
                 onResult?.invoke(false)
             }
@@ -1229,7 +1227,7 @@ class PageViewModel @Inject constructor(
                 _pageSplitProposal.value = result
             } catch (e: Exception) {
                 Log.e("PageViewModel", "Error generating page split proposal", e)
-                android.widget.Toast.makeText(getApplication(), "Fehler beim Erstellen des Vorschlags: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
+                Toast.makeText(getApplication(), "Fehler beim Erstellen des Vorschlags: ${e.message}", Toast.LENGTH_LONG).show()
             } finally {
                 _isPageSplitLoading.value = false
             }
@@ -1342,12 +1340,12 @@ class PageViewModel @Inject constructor(
 
                 withContext(Dispatchers.Main) {
                     pageManagementDelegate.setCurrentPage(finalSourcePage)
-                    android.widget.Toast.makeText(getApplication(), "Seite erfolgreich aufgeteilt!", android.widget.Toast.LENGTH_LONG).show()
+                    Toast.makeText(getApplication(), "Seite erfolgreich aufgeteilt!", Toast.LENGTH_LONG).show()
                 }
             } catch (e: Exception) {
                 Log.e("PageViewModel", "Error applying page split", e)
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(getApplication(), "Fehler beim Anwenden: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
+                    Toast.makeText(getApplication(), "Fehler beim Anwenden: ${e.message}", Toast.LENGTH_LONG).show()
                 }
             } finally {
                 _isPageSplitLoading.value = false
@@ -1591,7 +1589,7 @@ class PageViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             _isAiRestructureLoading.value = true
             try {
-                val singleProposal = com.andreas_kratzer.ghosttalk.core.model.BookRestructureProposal(listOf(action))
+                val singleProposal = BookRestructureProposal(listOf(action))
                 val newBookId = cloneBookUseCase.execute(currentBookId, singleProposal)
                 
                 // Fetch the default start page of the new book from database directly to load it immediately

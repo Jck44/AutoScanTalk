@@ -2,6 +2,7 @@
 package com.andreas_kratzer.ghosttalk.ui.pages
 
 
+import android.content.ClipData
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -35,6 +36,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -44,11 +46,8 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.ClipEntry
-import android.content.ClipData
-import androidx.compose.runtime.rememberCoroutineScope
-import kotlinx.coroutines.launch
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -56,6 +55,7 @@ import androidx.compose.ui.zIndex
 import com.andreas_kratzer.ghosttalk.core.ai.domain.SplitPageUseCase.CategoryProposal
 import com.andreas_kratzer.ghosttalk.core.ai.domain.SplitPageUseCase.PageSplitProposal
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 /**

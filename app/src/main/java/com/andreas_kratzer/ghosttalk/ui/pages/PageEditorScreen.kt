@@ -2,22 +2,22 @@ package com.andreas_kratzer.ghosttalk.ui.pages
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -146,9 +146,9 @@ fun PageEditorScreen(
                             imageVector = if (isEditPreviewActive) GhostTalkIcons.Visibility else GhostTalkIcons.VisibilityOff,
                             contentDescription = stringResource(R.string.page_editor_preview_toggle),
                             tint = if (isEditPreviewActive) {
-                                androidx.compose.material3.MaterialTheme.colorScheme.primary
+                                MaterialTheme.colorScheme.primary
                             } else {
-                                androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
+                                MaterialTheme.colorScheme.onSurfaceVariant
                             }
                         )
                     }
@@ -162,9 +162,9 @@ fun PageEditorScreen(
                             imageVector = GhostTalkIcons.BarChart,
                             contentDescription = stringResource(R.string.page_editor_analytics_toggle),
                             tint = if (isAnalyticsEnabled) {
-                                androidx.compose.material3.MaterialTheme.colorScheme.primary
+                                MaterialTheme.colorScheme.primary
                             } else {
-                                androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
+                                MaterialTheme.colorScheme.onSurfaceVariant
                             }
                         )
                     }
@@ -177,7 +177,7 @@ fun PageEditorScreen(
                         Icon(
                             imageVector = GhostTalkIcons.AutoAwesome,
                             contentDescription = "Layout- & Struktur-Assistent",
-                            tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
 
@@ -189,7 +189,7 @@ fun PageEditorScreen(
                             Icon(
                                 imageVector = Icons.Default.Close,
                                 contentDescription = "Editor beenden",
-                                tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }

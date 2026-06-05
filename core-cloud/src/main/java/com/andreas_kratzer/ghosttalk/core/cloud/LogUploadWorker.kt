@@ -29,8 +29,7 @@ class LogUploadWorker @AssistedInject constructor(
 
         try {
             Log.d("LogUploadWorker", "Starting background log upload...")
-            val result = exportLogsUseCase.performAutoUpload()
-            when (result) {
+            when (val result = exportLogsUseCase.performAutoUpload()) {
                 is LogUploadResult.Success -> {
                     Log.d("LogUploadWorker", "Background log upload succeeded.")
                     Result.success()

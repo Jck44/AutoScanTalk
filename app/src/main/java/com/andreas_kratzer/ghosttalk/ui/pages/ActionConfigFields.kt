@@ -2,7 +2,14 @@ package com.andreas_kratzer.ghosttalk.ui.pages
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.cloud.HomeDevice
@@ -13,13 +20,6 @@ import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.core.model.PredictionType
 import com.andreas_kratzer.ghosttalk.core.model.SmartHomeProvider
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.ui.Modifier
-import androidx.compose.material3.Text
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
 import com.andreas_kratzer.ghosttalk.ui.pages.actions.DeviceActionFields
 import com.andreas_kratzer.ghosttalk.ui.pages.actions.GeminiActionFields
 import com.andreas_kratzer.ghosttalk.ui.pages.actions.GeminiVisionActionFields

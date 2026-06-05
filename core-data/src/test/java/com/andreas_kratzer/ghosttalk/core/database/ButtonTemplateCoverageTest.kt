@@ -4,9 +4,9 @@ import com.andreas_kratzer.ghosttalk.core.data.impl.ButtonTemplateRepositoryImpl
 import com.andreas_kratzer.ghosttalk.core.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.ControlDeviceButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.DeviceActionType
-import io.mockk.mockk
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertTrue

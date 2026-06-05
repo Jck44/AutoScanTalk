@@ -5,9 +5,9 @@ import android.content.Intent
 import android.os.Build
 import android.provider.Settings
 import androidx.core.content.FileProvider
+import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
 import com.andreas_kratzer.ghosttalk.core.data.BookRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
 import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.gson.GsonFactory
 import com.google.api.services.drive.Drive

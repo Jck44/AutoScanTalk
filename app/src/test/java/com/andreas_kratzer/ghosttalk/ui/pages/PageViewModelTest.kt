@@ -10,12 +10,12 @@ import com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase
 import com.andreas_kratzer.ghosttalk.core.ai.domain.UpdateSmartPredictionsUseCase
 import com.andreas_kratzer.ghosttalk.core.cloud.PhilipsHueManager
 import com.andreas_kratzer.ghosttalk.core.data.BookRepository
+import com.andreas_kratzer.ghosttalk.core.data.ButtonTemplateRepository
 import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.core.data.GetPagesUseCase
 import com.andreas_kratzer.ghosttalk.core.data.PageRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.data.TemplateRepository
-import com.andreas_kratzer.ghosttalk.core.data.ButtonTemplateRepository
 import com.andreas_kratzer.ghosttalk.core.data.impl.PageImportExportManager
 import com.andreas_kratzer.ghosttalk.core.domain.actions.ActionLogUseCase
 import com.andreas_kratzer.ghosttalk.core.domain.pages.CreatePageUseCase
@@ -55,8 +55,8 @@ import io.mockk.mockkStatic
 import io.mockk.unmockkAll
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest

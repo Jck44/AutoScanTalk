@@ -3,14 +3,14 @@ package com.andreas_kratzer.ghosttalk.core.data.impl.analytics
 import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository.ButtonUsageEvent
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.Page
+import io.mockk.every
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import io.mockk.mockkStatic
-import io.mockk.unmockkStatic
-import io.mockk.every
 
 class PathAnalyzerTest {
 

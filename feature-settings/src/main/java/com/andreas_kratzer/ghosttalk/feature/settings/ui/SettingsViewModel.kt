@@ -13,6 +13,9 @@ import com.andreas_kratzer.ghosttalk.core.actions.CallActionProxy
 import com.andreas_kratzer.ghosttalk.core.cloud.PhilipsHueManager
 import com.andreas_kratzer.ghosttalk.core.cloud.SpotifyManager
 import com.andreas_kratzer.ghosttalk.core.cloud.SpotifyPlaylist
+import com.andreas_kratzer.ghosttalk.core.cloud.domain.ExportLogsUseCase
+import com.andreas_kratzer.ghosttalk.core.cloud.domain.LogUploadResult
+import com.andreas_kratzer.ghosttalk.core.cloud.domain.RescheduleLogUploadUseCase
 import com.andreas_kratzer.ghosttalk.core.data.BookRepository
 import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.core.data.GetPagesUseCase
@@ -32,9 +35,6 @@ import com.andreas_kratzer.ghosttalk.feature.settings.domain.UpdateActionLogLimi
 import com.andreas_kratzer.ghosttalk.feature.settings.domain.UpdateActiveBookNameUseCase
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.BackupSettingsDelegate
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.CloudSyncSettingsDelegate
-import com.andreas_kratzer.ghosttalk.core.cloud.domain.ExportLogsUseCase
-import com.andreas_kratzer.ghosttalk.core.cloud.domain.RescheduleLogUploadUseCase
-import com.andreas_kratzer.ghosttalk.core.cloud.domain.LogUploadResult
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.ExperimentalSettingsDelegate
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.GenAiSettingsDelegate
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.HueSettingsDelegate
@@ -1151,8 +1151,7 @@ class SettingsViewModel @Inject constructor(
     fun uploadLogsNow() {
         viewModelScope.launch {
             Toast.makeText(application, "Fehlerbericht wird hochgeladen...", Toast.LENGTH_SHORT).show()
-            val result = exportLogsUseCase.performAutoUpload(force = true)
-            when (result) {
+            when (val result = exportLogsUseCase.performAutoUpload(force = true)) {
                 is LogUploadResult.Success -> {
                     Toast.makeText(application, R.string.settings_logs_upload_success, Toast.LENGTH_LONG).show()
                 }

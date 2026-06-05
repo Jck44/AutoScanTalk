@@ -12,17 +12,20 @@ import com.andreas_kratzer.ghosttalk.core.actions.ControlDeviceTtsProxy
 import com.andreas_kratzer.ghosttalk.core.actions.ScannerController
 import com.andreas_kratzer.ghosttalk.core.data.AppStateRepository
 import com.andreas_kratzer.ghosttalk.core.settings.AutoReadMode
-import io.mockk.*
+import io.mockk.Runs
+import io.mockk.every
+import io.mockk.just
+import io.mockk.mockk
+import io.mockk.unmockkAll
+import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import kotlinx.coroutines.test.resetMain
 import org.junit.After
-import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 

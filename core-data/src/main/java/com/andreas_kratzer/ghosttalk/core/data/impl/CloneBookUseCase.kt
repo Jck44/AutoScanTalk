@@ -7,13 +7,9 @@ import com.andreas_kratzer.ghosttalk.core.data.BookRepository
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants
 import com.andreas_kratzer.ghosttalk.core.database.AppDatabase
 import com.andreas_kratzer.ghosttalk.core.database.ButtonEntity
-import com.andreas_kratzer.ghosttalk.core.database.ButtonUsageHistoryEntity
 import com.andreas_kratzer.ghosttalk.core.database.UserModeSessionEntity
 import com.andreas_kratzer.ghosttalk.core.model.AuditoryCue
-import com.andreas_kratzer.ghosttalk.core.model.Book
 import com.andreas_kratzer.ghosttalk.core.model.BookRestructureProposal
-import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.core.model.ButtonUsageStat
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import dagger.hilt.android.qualifiers.ApplicationContext

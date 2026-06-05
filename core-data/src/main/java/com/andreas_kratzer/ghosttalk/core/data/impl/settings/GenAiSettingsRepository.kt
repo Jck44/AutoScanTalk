@@ -5,9 +5,9 @@ import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.K
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_GEMINI_ENABLED
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_GEMINI_REDO_PREDICTION
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_GEMINI_TIMEOUT
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_HAS_ACCEPTED_PAGE_SPLIT_OPT_IN
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_USE_GEMINI_API_KEY
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_USE_LOCAL_GENERATIVE_AI
-import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_HAS_ACCEPTED_PAGE_SPLIT_OPT_IN
 import kotlinx.coroutines.flow.StateFlow
 
 class GenAiSettingsRepository(

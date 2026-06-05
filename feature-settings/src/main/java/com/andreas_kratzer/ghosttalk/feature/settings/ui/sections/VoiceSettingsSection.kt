@@ -218,7 +218,8 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                     label = stringResource(R.string.settings_tts_playback_speed),
                     value = (playbackSpeed - 0.5f) / 2.5f,
                     onValueChange = { viewModel.setTtsPlaybackSpeed(0.5f + it * 2.5f) },
-                    description = stringResource(R.string.settings_tts_playback_speed_desc) + " (${String.format(java.util.Locale.US, "%.2f", playbackSpeed)}x)"
+                    description = stringResource(R.string.settings_tts_playback_speed_desc) + " (${String.format(
+                        Locale.US, "%.2f", playbackSpeed)}x)"
                 )
 
                 Spacer(modifier = Modifier.height(dimensions.paddingSmall))

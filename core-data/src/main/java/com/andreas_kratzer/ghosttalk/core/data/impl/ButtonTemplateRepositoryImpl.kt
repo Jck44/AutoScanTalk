@@ -13,6 +13,7 @@ import com.andreas_kratzer.ghosttalk.core.model.GeminiButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiNanoButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiSearchButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.MarkAccidentalButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.MediaProvider
 import com.andreas_kratzer.ghosttalk.core.model.NavigateBackButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
@@ -23,7 +24,6 @@ import com.andreas_kratzer.ghosttalk.core.model.SmartHomeButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.WeatherButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.MarkAccidentalButtonAction
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.util.UUID

@@ -90,10 +90,10 @@ import com.andreas_kratzer.ghosttalk.core.model.NavigateToStartPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.core.model.PlayMediaButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.PredictionType
 import com.andreas_kratzer.ghosttalk.core.model.PreviousActionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SmartHomeButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SmartHomeProvider
-import com.andreas_kratzer.ghosttalk.core.model.PredictionType
 import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SpokenTextMode
@@ -1736,8 +1736,7 @@ private fun getLocalLabelSuggestion(
     pages: List<Page>,
     context: Context
 ): String {
-    val action = config.buttonAction
-    return when (action) {
+    return when (val action = config.buttonAction) {
         is SpeakTextButtonAction -> {
             val text = config.spokenText ?: ""
             if (text.isNotBlank()) {

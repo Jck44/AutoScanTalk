@@ -7,6 +7,8 @@ import com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.data.SyncLogProvider
 import com.andreas_kratzer.ghosttalk.core.data.impl.PageImportExportManager
+import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportExportData
+import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportPage
 import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.google.api.services.drive.Drive
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -15,10 +17,6 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import javax.inject.Inject
-import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportExportData
-import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportPage
-import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportButton
-import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportButtonTemplate
 
 enum class SyncMode {
     TWO_WAY,
@@ -1024,7 +1022,7 @@ class CloudSyncUseCase @Inject constructor(
     }
 
     suspend fun uploadLogFile(
-        drive: com.google.api.services.drive.Drive?,
+        drive: Drive?,
         logFile: File
     ): Boolean = withContext(Dispatchers.IO) {
         try {

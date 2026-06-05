@@ -5,22 +5,50 @@ import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,13 +58,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.andreas_kratzer.ghosttalk.core.model.VocalProfile
-import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
-import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
+import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.VocalProfile
 import com.andreas_kratzer.ghosttalk.core.ui.components.PreferenceCategory
-import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsEditTextItem
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsDropdownItem
+import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsEditTextItem
+import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -326,20 +354,7 @@ fun TrainingSlot(
 ) {
     val dimensions = LocalDimensions.current
 
-    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
-    val pulseScale by if (isActive && status == VocalTrainingViewModel.SlotStatus.RECORDING) {
-        infiniteTransition.animateFloat(
-            initialValue = 1f,
-            targetValue = 1.25f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(800),
-                repeatMode = RepeatMode.Reverse
-            ),
-            label = "scale"
-        )
-    } else {
-        remember { mutableStateOf(1f) }
-    }
+    rememberInfiniteTransition(label = "pulse")
 
     val backgroundColor by animateColorAsState(
         targetValue = when (status) {
@@ -447,7 +462,6 @@ fun VocalSwitchTestDashboard(
     onRegisterFalsePositive: (VocalProfile, List<Float>) -> Unit
 ) {
     val dimensions = LocalDimensions.current
-    var selectedProfileForFalsePositive by remember { mutableStateOf<VocalProfile?>(null) }
     var showFPMenu by remember { mutableStateOf(false) }
 
     Column(

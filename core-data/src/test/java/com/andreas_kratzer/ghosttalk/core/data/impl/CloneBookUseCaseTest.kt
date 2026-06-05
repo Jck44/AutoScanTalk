@@ -15,15 +15,13 @@ import com.andreas_kratzer.ghosttalk.core.database.PageDao
 import com.andreas_kratzer.ghosttalk.core.database.PageWithButtons
 import com.andreas_kratzer.ghosttalk.core.database.UserModeSessionDao
 import com.andreas_kratzer.ghosttalk.core.database.UserModeSessionEntity
-import com.andreas_kratzer.ghosttalk.core.model.AuditoryCue
 import com.andreas_kratzer.ghosttalk.core.model.Book
 import com.andreas_kratzer.ghosttalk.core.model.BookRestructureProposal
-import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.ButtonUsageStat
+import com.andreas_kratzer.ghosttalk.core.model.CategoryInfo
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.RestructureAction
-import com.andreas_kratzer.ghosttalk.core.model.CategoryInfo
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -41,7 +39,6 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import java.util.UUID
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class CloneBookUseCaseTest {
@@ -294,7 +291,7 @@ class CloneBookUseCaseTest {
             )
         )
 
-        val targetBookId = cloneBookUseCase.execute(sourceBookId, proposal)
+        cloneBookUseCase.execute(sourceBookId, proposal)
 
         val pageSlots = mutableListOf<Page>()
         coVerify(exactly = 2) { mockPageDao.insertPageEntity(capture(pageSlots)) }
@@ -349,7 +346,7 @@ class CloneBookUseCaseTest {
             )
         )
 
-        val targetBookId = cloneBookUseCase.execute(sourceBookId, proposal)
+        cloneBookUseCase.execute(sourceBookId, proposal)
 
         val buttonSlots = mutableListOf<List<ButtonEntity>>()
         coVerify(exactly = 1) { mockButtonDao.insertButtons(capture(buttonSlots)) }
@@ -395,7 +392,7 @@ class CloneBookUseCaseTest {
             )
         )
 
-        val targetBookId = cloneBookUseCase.execute(sourceBookId, proposal)
+        cloneBookUseCase.execute(sourceBookId, proposal)
 
         // Verify pages inserted: Hauptseite and the new Food subpage
         val pageSlots = mutableListOf<Page>()
@@ -486,7 +483,7 @@ class CloneBookUseCaseTest {
             )
         )
 
-        val targetBookId = cloneBookUseCase.execute(sourceBookId, proposal)
+        cloneBookUseCase.execute(sourceBookId, proposal)
 
         val buttonSlots = mutableListOf<List<ButtonEntity>>()
         coVerify { mockButtonDao.insertButtons(capture(buttonSlots)) }

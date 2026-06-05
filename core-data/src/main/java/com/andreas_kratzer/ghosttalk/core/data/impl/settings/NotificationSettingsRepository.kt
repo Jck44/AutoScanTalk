@@ -1,11 +1,11 @@
 package com.andreas_kratzer.ghosttalk.core.data.impl.settings
 
 import android.content.SharedPreferences
-import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_MONITORED_NOTIFICATION_APPS
-import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_NOTIFICATION_READING_ENABLED
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_AUTO_READ_IN_STANDBY
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_AUTO_READ_MODE
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_AUTO_READ_ONLY_IN_USER_MODE
-import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_AUTO_READ_IN_STANDBY
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_MONITORED_NOTIFICATION_APPS
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_NOTIFICATION_READING_ENABLED
 import com.andreas_kratzer.ghosttalk.core.settings.AutoReadMode
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

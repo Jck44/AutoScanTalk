@@ -64,10 +64,10 @@ import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.GeneralSetting
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.MaintenanceSection
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.PermissionsSettingsSection
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.ScanningSettingsSection
-import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.VocalSwitchSettingsSection
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.SecuritySettingsSection
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.SmartHomeSettingsSection
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.TestSettingsSection
+import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.VocalSwitchSettingsSection
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.VoiceSettingsSection
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

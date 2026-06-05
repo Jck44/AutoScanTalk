@@ -7,9 +7,9 @@ import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.K
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SECURITY_PIN_HASH
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SECURITY_PIN_SALT
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SECURITY_PIN_TIMEOUT_MINUTES
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SECURITY_REQUIRED_FOR_ANALYTICS
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SECURITY_REQUIRED_FOR_EDIT
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SECURITY_REQUIRED_FOR_SETTINGS
-import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SECURITY_REQUIRED_FOR_ANALYTICS
 import kotlinx.coroutines.flow.StateFlow
 
 class SecuritySettingsRepository(

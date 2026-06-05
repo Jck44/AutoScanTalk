@@ -3,8 +3,8 @@ package com.andreas_kratzer.ghosttalk.core.services
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
-import dagger.hilt.android.EntryPointAccessors
 import com.andreas_kratzer.ghosttalk.core.di.NotificationServiceEntryPoint
+import dagger.hilt.android.EntryPointAccessors
 
 class NotificationReaderService : NotificationListenerService() {
     companion object {

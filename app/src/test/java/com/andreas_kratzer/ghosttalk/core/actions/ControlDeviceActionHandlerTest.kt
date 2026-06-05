@@ -2,12 +2,12 @@ package com.andreas_kratzer.ghosttalk.core.actions
 
 import android.content.Context
 import android.media.AudioManager
+import android.telephony.SmsManager
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.UpdateManager
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.ControlDeviceButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.DeviceActionType
-import android.telephony.SmsManager
 import com.andreas_kratzer.ghosttalk.core.services.NotificationReaderService
 import io.mockk.Runs
 import io.mockk.every

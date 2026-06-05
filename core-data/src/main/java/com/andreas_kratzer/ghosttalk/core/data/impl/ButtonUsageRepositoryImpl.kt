@@ -3,6 +3,11 @@ package com.andreas_kratzer.ghosttalk.core.data.impl
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.net.NetworkRequest
+import android.net.wifi.WifiInfo
 import androidx.core.content.ContextCompat
 import androidx.room.withTransaction
 import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository
@@ -15,19 +20,14 @@ import com.andreas_kratzer.ghosttalk.core.model.GroupedButtonUsageStat
 import com.google.android.gms.location.LocationServices
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
-import android.net.ConnectivityManager
-import android.net.Network
-import android.net.NetworkCapabilities
-import android.net.NetworkRequest
-import android.net.wifi.WifiInfo
 
 /**
  * Repository for tracking button usage statistics per book.

@@ -1,6 +1,5 @@
 package com.andreas_kratzer.ghosttalk.core.ai.domain
 
-import com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase
 import com.andreas_kratzer.ghosttalk.core.model.BookRestructureProposal
 import com.andreas_kratzer.ghosttalk.core.model.CategoryInfo
 import com.andreas_kratzer.ghosttalk.core.model.RestructureAction
