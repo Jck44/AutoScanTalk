@@ -382,4 +382,102 @@ class VocalTrainingViewModel @Inject constructor(
             Log.d(TAG, "Added sample as false-positive for profile: ${profile.name}")
         }
     }
+
+    private val _isRecordingBackgroundNoise = MutableStateFlow(false)
+    val isRecordingBackgroundNoise: StateFlow<Boolean> = _isRecordingBackgroundNoise.asStateFlow()
+
+    private val _backgroundNoiseStatus = MutableStateFlow<String?>(null)
+    val backgroundNoiseStatus: StateFlow<String?> = _backgroundNoiseStatus.asStateFlow()
+
+    @SuppressLint("MissingPermission")
+    fun recordGlobalBackgroundNoise() {
+        if (_isRecording.value || _isRecordingBackgroundNoise.value) return
+        _isRecordingBackgroundNoise.value = true
+        _backgroundNoiseStatus.value = "Aufnahme läuft..."
+
+        viewModelScope.launch(Dispatchers.IO) {
+            val format = audioEmbedderWrapper.getRequiredAudioFormat()
+            val sampleRate = format.sampleRate
+            val channelConfig = AudioFormat.CHANNEL_IN_MONO
+            val audioEncoding = AudioFormat.ENCODING_PCM_16BIT
+            val windowSamples = 15600
+            val minBufferSize = AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioEncoding)
+            val bufferSize = maxOf(minBufferSize, windowSamples * 2)
+
+            var recorder: AudioRecord? = null
+            try {
+                recorder = AudioRecord(
+                    MediaRecorder.AudioSource.MIC,
+                    sampleRate,
+                    channelConfig,
+                    audioEncoding,
+                    bufferSize
+                )
+
+                if (recorder.state != AudioRecord.STATE_INITIALIZED) {
+                    throw IllegalStateException("AudioRecord not initialized")
+                }
+
+                recorder.startRecording()
+                Log.d(TAG, "Global background noise recording started")
+
+                val shortBuffer = ShortArray(windowSamples)
+                var totalRead = 0
+                while (totalRead < windowSamples && _isRecordingBackgroundNoise.value) {
+                    val read = recorder.read(shortBuffer, totalRead, windowSamples - totalRead)
+                    if (read > 0) {
+                        totalRead += read
+                    } else if (read < 0) {
+                        throw IllegalStateException("AudioRecord read error: $read")
+                    }
+                }
+
+                withContext(Dispatchers.Main) {
+                    _backgroundNoiseStatus.value = "Verarbeitung..."
+                }
+
+                val floatAudioData = FloatArray(windowSamples)
+                for (i in 0 until windowSamples) {
+                    floatAudioData[i] = shortBuffer[i] / 32768.0f
+                }
+
+                val embedding = audioEmbedderWrapper.getEmbedding(floatAudioData)
+                if (embedding != null) {
+                    addGlobalBackgroundNoise(embedding)
+                    withContext(Dispatchers.Main) {
+                        _backgroundNoiseStatus.value = "Erfolgreich hinzugefügt!"
+                    }
+                    Log.d(TAG, "Successfully recorded and added global background noise")
+                } else {
+                    withContext(Dispatchers.Main) {
+                        _backgroundNoiseStatus.value = "Fehler bei der Audio-Klassifizierung"
+                    }
+                }
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Global background noise recording failed", e)
+                withContext(Dispatchers.Main) {
+                    _backgroundNoiseStatus.value = "Fehler: ${e.localizedMessage}"
+                }
+            } finally {
+                try {
+                    recorder?.stop()
+                    recorder?.release()
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to release recorder for global background noise", e)
+                }
+                _isRecordingBackgroundNoise.value = false
+            }
+        }
+    }
+
+    suspend fun addGlobalBackgroundNoise(features: List<Float>) {
+        val activeProfiles = allProfiles.value
+        for (profile in activeProfiles) {
+            val updatedNegatives = profile.negativeTemplates.toMutableList()
+            updatedNegatives.add(features)
+            val updatedProfile = profile.copy(negativeTemplates = updatedNegatives)
+            vocalProfileRepository.updateProfile(updatedProfile)
+        }
+    }
 }

@@ -61,7 +61,7 @@ class InteractionDelegate @Inject constructor(
         onGoBackRequested: () -> Unit,
         smartPredictions: MutableStateFlow<List<String>?>,
         currentBookIdFlow: StateFlow<String?>,
-        onVocalSwitchTriggered: (com.andreas_kratzer.ghosttalk.core.model.ButtonAction?, String?) -> Unit
+        onVocalSwitchTriggered: (com.andreas_kratzer.ghosttalk.core.model.ButtonAction?, String?, Float, Float, Float) -> Unit
     ) {
         this.scope = scope
         this.actionExecutor = actionExecutor
@@ -83,7 +83,7 @@ class InteractionDelegate @Inject constructor(
         scope.launch {
             actionExecutor.events.collect { event ->
                 if (event is com.andreas_kratzer.ghosttalk.core.actions.ActionExecutionEvent.VocalSwitchTriggered) {
-                    onVocalSwitchTriggered(event.action, event.label)
+                    onVocalSwitchTriggered(event.action, event.label, event.positiveConfidence, event.negativeConfidence, event.threshold)
                     return@collect
                 }
                 val effect = handleActionExecutionEventUseCase.execute(event) ?: return@collect

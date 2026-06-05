@@ -13,12 +13,15 @@ import com.andreas_kratzer.ghosttalk.core.actions.ScannerController
 import com.andreas_kratzer.ghosttalk.core.data.AppStateRepository
 import com.andreas_kratzer.ghosttalk.core.settings.AutoReadMode
 import io.mockk.*
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.test.resetMain
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
@@ -44,10 +47,7 @@ class PassiveNotificationReaderTest {
 
     @Before
     fun setUp() {
-        mockkStatic(Character::class)
-        every { Character.getType(any<Int>()) } returns Character.OTHER_SYMBOL.toInt()
-        every { Character.charCount(any()) } returns 1
-
+        Dispatchers.setMain(testDispatcher)
         every { context.getSystemService(Context.POWER_SERVICE) } returns powerManager
         every { context.packageManager } returns packageManager
         every { appStateRepository.isUserModeActive } returns isUserModeActiveFlow
@@ -72,11 +72,17 @@ class PassiveNotificationReaderTest {
             notificationService = notificationService,
             context = context
         )
+        
+        // Cancel the interval scheduler to prevent infinite virtual-time loops during tests
+        val intervalJobField = PassiveNotificationReader::class.java.getDeclaredField("intervalJob")
+        intervalJobField.isAccessible = true
+        (intervalJobField.get(reader) as? kotlinx.coroutines.Job)?.cancel()
     }
 
     @After
     fun tearDown() {
         reader.destroy()
+        Dispatchers.resetMain()
         unmockkAll()
     }
 
@@ -88,14 +94,22 @@ class PassiveNotificationReaderTest {
         isGroupSummary: Boolean = false
     ): StatusBarNotification {
         val sbn = mockk<StatusBarNotification>()
-        val mockNotification = mockk<Notification>()
+        
+        // Use Unsafe to allocate Notification without triggering the Stub! constructor
+        val unsafeField = sun.misc.Unsafe::class.java.getDeclaredField("theUnsafe")
+        unsafeField.isAccessible = true
+        val unsafe = unsafeField.get(null) as sun.misc.Unsafe
+        val realNotification = unsafe.allocateInstance(Notification::class.java) as Notification
+        
         val extras = mockk<Bundle>()
 
         every { sbn.packageName } returns packageName
         every { sbn.key } returns key
-        every { sbn.notification } returns mockNotification
-        every { mockNotification.flags } returns if (isGroupSummary) Notification.FLAG_GROUP_SUMMARY else 0
-        every { mockNotification.extras } returns extras
+        every { sbn.notification } returns realNotification
+        
+        realNotification.flags = if (isGroupSummary) Notification.FLAG_GROUP_SUMMARY else 0
+        realNotification.extras = extras
+        
         every { extras.getString(Notification.EXTRA_TITLE) } returns title
         every { extras.getCharSequence(Notification.EXTRA_TEXT) } returns text
 

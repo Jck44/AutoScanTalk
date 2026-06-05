@@ -44,6 +44,7 @@ class SettingsRoundTripTest {
         every { buttonTemplateRepository.getTemplates() } returns kotlinx.coroutines.flow.flowOf(emptyList())
         val buttonUsageDao = mockk<com.andreas_kratzer.ghosttalk.core.database.ButtonUsageDao>(relaxed = true)
         val userModeSessionRepository = mockk<UserModeSessionRepository>(relaxed = true)
+        val vocalProfileRepository = mockk<com.andreas_kratzer.ghosttalk.core.data.VocalProfileRepository>(relaxed = true)
         val manager = PageImportExportManager(
             context = context,
             pageRepository = pageRepository,
@@ -54,6 +55,7 @@ class SettingsRoundTripTest {
             buttonTemplateRepository = buttonTemplateRepository,
             buttonUsageDao = buttonUsageDao,
             userModeSessionRepository = userModeSessionRepository,
+            vocalProfileRepository = vocalProfileRepository,
             logger = logger
         )
 

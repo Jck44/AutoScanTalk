@@ -469,7 +469,7 @@ class PageViewModel @Inject constructor(
             onGoBackRequested = ::navigateBack,
             smartPredictions = _smartPredictions,
             currentBookIdFlow = activeBookId,
-            onVocalSwitchTriggered = { action, label ->
+            onVocalSwitchTriggered = { action, label, positiveConfidence, negativeConfidence, threshold ->
                 if (action != null) {
                     val config = com.andreas_kratzer.ghosttalk.core.model.ButtonConfig(
                         id = java.util.UUID.randomUUID().toString(),
@@ -481,7 +481,27 @@ class PageViewModel @Inject constructor(
                         actionExecutor.executeButtonAction(config)
                     }
                 } else {
-                    activateFocusedButton()
+                    val focusedIndex = scanCoordinator.focusedButtonIndex.value
+                    val focusedButtonConfig = focusedIndex?.let { resolvedPage.value?.buttonConfigs?.getOrNull(it) }
+                    
+                    val urgentKeywords = listOf("Schmerz", "Hilfe", "Notfall", "Aua", "Ja", "Nein", "Wasser")
+                    val isUrgent = focusedButtonConfig?.label?.let { btnLabel ->
+                        urgentKeywords.any { keyword -> btnLabel.contains(keyword, ignoreCase = true) }
+                    } ?: false
+                    
+                    val cycleCount = scanCoordinator.currentCycleCount.value
+                    
+                    val requiredThreshold = if (isUrgent || cycleCount >= 2) {
+                        0.70f
+                    } else {
+                        threshold
+                    }
+                    
+                    if (positiveConfidence >= requiredThreshold) {
+                        activateFocusedButton()
+                    } else {
+                        Log.d("PageViewModel", "Vocal Switch click blocked: positiveConfidence=$positiveConfidence, required=$requiredThreshold (isUrgent=$isUrgent, cycleCount=$cycleCount)")
+                    }
                 }
             }
         )

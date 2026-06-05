@@ -9,7 +9,13 @@ interface ActionEventEmitter {
 sealed class ActionEvent {
     data class NavigateToPage(val pageId: String, val action: ButtonAction? = null, val label: String? = null) : ActionEvent()
     data class NavigateBack(val action: ButtonAction? = null, val label: String? = null) : ActionEvent()
-    data class VocalSwitchTriggered(val action: ButtonAction? = null, val label: String? = null) : ActionEvent()
+    data class VocalSwitchTriggered(
+        val action: ButtonAction? = null,
+        val label: String? = null,
+        val positiveConfidence: Float = 0f,
+        val negativeConfidence: Float = 0f,
+        val threshold: Float = 0.82f
+    ) : ActionEvent()
     data class RecoverableAuthError(val intent: android.content.Intent) : ActionEvent()
     data class RequestPermissions(val permissions: Array<String>) : ActionEvent() {
         override fun equals(other: Any?): Boolean {

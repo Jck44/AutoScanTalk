@@ -86,12 +86,14 @@ class SettingsMapper @Inject constructor(
             securityPinSalt = settingsRepository.securityPinSalt,
             appLanguage = settingsRepository.appLanguage,
             isNotificationReadingEnabled = settingsRepository.isNotificationReadingEnabled,
+            isVocalSwitchEnabled = settingsRepository.isVocalSwitchEnabled,
             monitoredNotificationApps = settingsRepository.monitoredNotificationApps.toList(),
             autoReadMode = settingsRepository.autoReadMode.name,
             autoReadOnlyInUserMode = settingsRepository.autoReadOnlyInUserMode,
             autoReadInStandby = settingsRepository.autoReadInStandby,
             showPageIdInLog = settingsRepository.showPageIdInLog,
             bluetoothDelay = settingsRepository.bluetoothDelay,
+            lateClickThresholdMillis = settingsRepository.lateClickThresholdMillis,
             ttsEngine = settingsRepository.ttsEngine,
             elevenLabsModel = settingsRepository.elevenLabsModel,
             elevenLabsApiKey = encryptedKey,
@@ -161,6 +163,7 @@ class SettingsMapper @Inject constructor(
         data.securityPinSalt?.let { settingsRepository.securityPinSalt = it }
         data.appLanguage?.let { settingsRepository.appLanguage = it }
         data.isNotificationReadingEnabled?.let { settingsRepository.isNotificationReadingEnabled = it }
+        data.isVocalSwitchEnabled?.let { settingsRepository.isVocalSwitchEnabled = it }
         data.monitoredNotificationApps?.let { settingsRepository.monitoredNotificationApps = it.toSet() }
         data.autoReadMode?.let {
             try {
@@ -171,6 +174,7 @@ class SettingsMapper @Inject constructor(
         data.autoReadInStandby?.let { settingsRepository.autoReadInStandby = it }
         data.showPageIdInLog?.let { settingsRepository.showPageIdInLog = it }
         data.bluetoothDelay?.let { settingsRepository.bluetoothDelay = it }
+        data.lateClickThresholdMillis?.let { settingsRepository.lateClickThresholdMillis = it }
         data.ttsEngine?.let { settingsRepository.ttsEngine = it }
         data.elevenLabsModel?.let { settingsRepository.elevenLabsModel = it }
         data.googleTtsLanguage?.let { settingsRepository.googleTtsLanguage = it }

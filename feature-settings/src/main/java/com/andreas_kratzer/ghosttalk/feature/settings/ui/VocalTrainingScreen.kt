@@ -50,6 +50,8 @@ fun VocalTrainingScreen(
     val slotStatusList by viewModel.recordingSlotStatus.collectAsState()
     val isRecording by viewModel.isRecording.collectAsState()
     val activeSlot by viewModel.activeRecordingSlot.collectAsState()
+    val isRecordingBackgroundNoise by viewModel.isRecordingBackgroundNoise.collectAsState()
+    val backgroundNoiseStatus by viewModel.backgroundNoiseStatus.collectAsState()
 
     val profileName by viewModel.profileName.collectAsState()
     val actionType by viewModel.actionType.collectAsState()
@@ -206,12 +208,24 @@ fun VocalTrainingScreen(
                     VocalSwitchTestDashboard(
                         testState = testState,
                         allProfiles = allProfiles,
+                        isRecordingBackgroundNoise = isRecordingBackgroundNoise,
+                        backgroundNoiseStatus = backgroundNoiseStatus,
                         onStartTest = {
                             val hasPermission = ContextCompat.checkSelfPermission(
                                 context, Manifest.permission.RECORD_AUDIO
                             ) == PackageManager.PERMISSION_GRANTED
                             if (hasPermission) {
                                 viewModel.startLiveTest()
+                            } else {
+                                audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                            }
+                        },
+                        onRecordBackgroundNoise = {
+                            val hasPermission = ContextCompat.checkSelfPermission(
+                                context, Manifest.permission.RECORD_AUDIO
+                            ) == PackageManager.PERMISSION_GRANTED
+                            if (hasPermission) {
+                                viewModel.recordGlobalBackgroundNoise()
                             } else {
                                 audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                             }
@@ -426,7 +440,10 @@ fun ProfileRow(
 fun VocalSwitchTestDashboard(
     testState: VocalTrainingViewModel.TestScreenState,
     allProfiles: List<VocalProfile>,
+    isRecordingBackgroundNoise: Boolean,
+    backgroundNoiseStatus: String?,
     onStartTest: () -> Unit,
+    onRecordBackgroundNoise: () -> Unit,
     onRegisterFalsePositive: (VocalProfile, List<Float>) -> Unit
 ) {
     val dimensions = LocalDimensions.current
@@ -441,7 +458,7 @@ fun VocalSwitchTestDashboard(
     ) {
         Button(
             onClick = onStartTest,
-            enabled = testState !is VocalTrainingViewModel.TestScreenState.Listening,
+            enabled = testState !is VocalTrainingViewModel.TestScreenState.Listening && !isRecordingBackgroundNoise,
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
@@ -449,6 +466,26 @@ fun VocalSwitchTestDashboard(
                     is VocalTrainingViewModel.TestScreenState.Listening -> "Höre zu..."
                     else -> "Live-Test starten (1 Sekunde)"
                 }
+            )
+        }
+
+        Button(
+            onClick = onRecordBackgroundNoise,
+            enabled = testState !is VocalTrainingViewModel.TestScreenState.Listening && !isRecordingBackgroundNoise,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = if (isRecordingBackgroundNoise) "Aufnahme..." else "Hintergrundgeräusch aufnehmen"
+            )
+        }
+
+        backgroundNoiseStatus?.let { status ->
+            Text(
+                text = status,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
             )
         }
 

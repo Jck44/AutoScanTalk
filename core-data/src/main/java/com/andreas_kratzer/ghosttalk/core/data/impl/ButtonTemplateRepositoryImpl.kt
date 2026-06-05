@@ -22,6 +22,7 @@ import com.andreas_kratzer.ghosttalk.core.model.SmartHomeButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.WeatherButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.MarkAccidentalButtonAction
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.util.UUID
@@ -257,6 +258,18 @@ class ButtonTemplateRepositoryImpl @Inject constructor(
                         contentName = "",
                         returnToAppDelayMs = 2000L
                     )
+                )
+            )
+        )
+        list.add(
+            ButtonTemplate(
+                id = "builtin_mark_accidental",
+                name = "Fehlklick melden",
+                isBuiltIn = true,
+                buttonConfig = ButtonConfig(
+                    id = UUID.randomUUID().toString(),
+                    label = "Ups",
+                    buttonAction = MarkAccidentalButtonAction()
                 )
             )
         )

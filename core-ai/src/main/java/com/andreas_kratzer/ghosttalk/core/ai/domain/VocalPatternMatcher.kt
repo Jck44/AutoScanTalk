@@ -34,20 +34,57 @@ class VocalPatternMatcher @Inject constructor() {
     )
 
     /**
+     * Calculates an adaptive threshold based on positive templates.
+     * minIntraSim is the minimum similarity among pairs of templates.
+     * Formula: max(0.65f, min(0.88f, minIntraSim - 0.05f))
+     */
+    fun calculateAdaptiveThreshold(
+        positives: List<FloatArray>,
+        fallbackThreshold: Float = 0.82f
+    ): Float {
+        if (positives.size < 2) return fallbackThreshold
+        var minIntraSim = Float.MAX_VALUE
+        var count = 0
+        for (i in positives.indices) {
+            for (j in i + 1 until positives.size) {
+                val sim = cosineSimilarity(positives[i], positives[j])
+                if (sim < minIntraSim) {
+                    minIntraSim = sim
+                }
+                count++
+            }
+        }
+        if (count == 0) return fallbackThreshold
+        return maxOf(0.65f, minOf(0.88f, minIntraSim - 0.05f))
+    }
+
+    /**
+     * Calculates an adaptive threshold from a list of list of floats.
+     */
+    fun calculateAdaptiveThresholdFromList(
+        positives: List<List<Float>>,
+        fallbackThreshold: Float = 0.82f
+    ): Float {
+        return calculateAdaptiveThreshold(positives.map { it.toFloatArray() }, fallbackThreshold)
+    }
+
+    /**
      * Evaluates [inputVector] against [positives] and [negatives].
      *
      * @param inputVector  521-dim YAMNet score vector of the current audio window.
      * @param positives    Training vectors of the desired sound (typically 5 samples).
      * @param negatives    Vectors of known false-positive sounds (may be empty).
-     * @param threshold    Minimum positive cosine similarity to pass the positive gate (default 0.82).
+     * @param threshold    Minimum positive cosine similarity to pass the positive gate. If null, uses the adaptive threshold.
      */
     fun evaluate(
         inputVector: FloatArray,
         positives: List<FloatArray>,
         negatives: List<FloatArray>,
-        threshold: Float = 0.82f
+        threshold: Float? = null
     ): MatchResult {
         if (positives.isEmpty()) return MatchResult(false, 0f, 0f)
+
+        val resolvedThreshold = threshold ?: calculateAdaptiveThreshold(positives)
 
         val maxPositiveSim = positives
             .map { cosineSimilarity(inputVector, it) }
@@ -59,7 +96,7 @@ class VocalPatternMatcher @Inject constructor() {
             0f
         }
 
-        val meetsThreshold = maxPositiveSim >= threshold
+        val meetsThreshold = maxPositiveSim >= resolvedThreshold
         val closerToPositive = maxPositiveSim > maxNegativeSim
 
         return MatchResult(
@@ -76,7 +113,7 @@ class VocalPatternMatcher @Inject constructor() {
         inputVector: List<Float>,
         positives: List<List<Float>>,
         negatives: List<List<Float>>,
-        threshold: Float = 0.82f
+        threshold: Float? = null
     ): MatchResult = evaluate(
         inputVector = inputVector.toFloatArray(),
         positives = positives.map { it.toFloatArray() },

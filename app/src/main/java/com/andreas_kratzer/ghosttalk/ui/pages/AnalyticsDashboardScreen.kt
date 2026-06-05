@@ -18,11 +18,18 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import com.andreas_kratzer.ghosttalk.core.domain.pages.UsageLocation
+import com.andreas_kratzer.ghosttalk.core.model.Page
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -64,7 +71,8 @@ import java.util.Date
 @Composable
 fun AnalyticsDashboardScreen(
     pageViewModel: PageViewModel,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onEditPage: (String) -> Unit
 ) {
     val context = LocalContext.current
     val dimensions = LocalDimensions.current
@@ -239,6 +247,90 @@ fun AnalyticsDashboardScreen(
     val unusedPages = remember(historyEvents, unfilteredPages) {
         val usedPageIds = historyEvents.mapNotNull { it.pageId }.toSet()
         unfilteredPages.filter { !usedPageIds.contains(it.id) }
+    }
+
+    val pageToDelete = remember { mutableStateOf<Page?>(null) }
+    val usagesToDelete = remember { mutableStateOf<List<UsageLocation>>(emptyList()) }
+    val coroutineScope = rememberCoroutineScope()
+
+    val page = pageToDelete.value
+    if (page != null) {
+        val usages = usagesToDelete.value
+        AlertDialog(
+            onDismissRequest = { 
+                pageToDelete.value = null
+                usagesToDelete.value = emptyList()
+            },
+            title = { Text(if (usages.isEmpty()) stringResource(R.string.page_dialog_delete_title) else "Seite wird verwendet") },
+            text = { 
+                Column {
+                    if (usages.isEmpty()) {
+                        Text(stringResource(R.string.page_dialog_delete_confirm, page.name))
+                    } else {
+                        Text("Die Seite \"${page.name}\" wird an folgenden Stellen zur Navigation verwendet:")
+                        
+                        val scrollState = rememberScrollState()
+                        Box(
+                            modifier = Modifier
+                                .padding(vertical = 8.dp)
+                                .heightIn(max = 280.dp)
+                                .verticalScroll(scrollState)
+                        ) {
+                            Column {
+                                for (usage in usages) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        val typePrefix = if (usage is UsageLocation.PageUsage) "Seite" else "Vorlage"
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text("• $typePrefix: ${usage.name}", style = MaterialTheme.typography.bodyMedium)
+                                            if (usage.buttonLabel.isNotEmpty()) {
+                                                Text(
+                                                    text = "  Button: \"${usage.buttonLabel}\"",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        Text("Beim Löschen werden auch alle Buttons entfernt, die auf diese Seite verweisen.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        pageViewModel.deletePage(page, deleteUsages = usages.isNotEmpty())
+                        pageToDelete.value = null
+                        usagesToDelete.value = emptyList()
+                    },
+                    shape = MaterialTheme.shapes.medium,
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text(if (usages.isEmpty()) stringResource(CoreR.string.action_delete) else "Alles Löschen")
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = { 
+                        pageToDelete.value = null
+                        usagesToDelete.value = emptyList()
+                    },
+                    shape = MaterialTheme.shapes.medium,
+                    colors = ButtonDefaults.textButtonColors()
+                ) {
+                    Text(stringResource(CoreR.string.action_cancel))
+                }
+            }
+        )
     }
 
     Scaffold(
@@ -1642,17 +1734,44 @@ fun AnalyticsDashboardScreen(
                                             val visibleUnusedPages = if (showAllUnusedPages) unusedPages else unusedPages.take(4)
                                             visibleUnusedPages.forEach { page ->
                                                 Row(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .padding(start = 4.dp, top = 2.dp, bottom = 2.dp),
                                                     verticalAlignment = Alignment.CenterVertically,
-                                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                                    modifier = Modifier.padding(start = 4.dp)
+                                                    horizontalArrangement = Arrangement.SpaceBetween
                                                 ) {
-                                                    Text("•", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
-                                                    Text(
-                                                        text = page.name,
-                                                        style = MaterialTheme.typography.bodySmall,
-                                                        fontWeight = FontWeight.SemiBold,
-                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                    )
+                                                    Row(
+                                                        verticalAlignment = Alignment.CenterVertically,
+                                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                                        modifier = Modifier
+                                                            .weight(1f)
+                                                            .clickable { onEditPage(page.id) }
+                                                    ) {
+                                                        Text("•", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
+                                                        Text(
+                                                            text = page.name,
+                                                            style = MaterialTheme.typography.bodySmall,
+                                                            fontWeight = FontWeight.SemiBold,
+                                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                        )
+                                                    }
+                                                    IconButton(
+                                                        onClick = {
+                                                            coroutineScope.launch {
+                                                                val usages = pageViewModel.getPageUsages(page.id)
+                                                                usagesToDelete.value = usages
+                                                                pageToDelete.value = page
+                                                            }
+                                                        },
+                                                        modifier = Modifier.size(32.dp)
+                                                    ) {
+                                                        Icon(
+                                                            imageVector = Icons.Default.Delete,
+                                                            contentDescription = stringResource(CoreR.string.action_delete),
+                                                            tint = MaterialTheme.colorScheme.error,
+                                                            modifier = Modifier.size(18.dp)
+                                                        )
+                                                    }
                                                 }
                                             }
 

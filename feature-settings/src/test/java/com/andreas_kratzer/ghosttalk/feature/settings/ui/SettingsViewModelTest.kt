@@ -163,7 +163,9 @@ class SettingsViewModelTest {
             audioCacheRepository = audioCacheRepository,
             pageRepository = mockk(relaxed = true),
             syncLogProvider = mockk(relaxed = true),
-            callActionProxy = { mockk(relaxed = true) }
+            callActionProxy = { mockk(relaxed = true) },
+            exportLogsUseCase = mockk(relaxed = true),
+            rescheduleLogUploadUseCase = mockk(relaxed = true)
         )
 
         mockkStatic(Toast::class)

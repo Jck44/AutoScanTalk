@@ -212,31 +212,45 @@ class VocalSwitchService : Service() {
         now: Long,
         onTriggered: () -> Unit
     ) {
-        var bestSimilarity = 0.0f
+        var bestMatchResult: VocalPatternMatcher.MatchResult? = null
         var bestMatchProfile: VocalProfile? = null
+        var bestAdaptiveThreshold = 0.82f
 
         for (profile in activeProfiles) {
+            val adaptiveThreshold = vocalPatternMatcher.calculateAdaptiveThresholdFromList(profile.positiveTemplates)
+            val evaluationThreshold = if (profile.buttonAction == null) 0.70f else adaptiveThreshold
+            
             val result = vocalPatternMatcher.evaluate(
                 inputVector = liveEmbedding,
                 positives = profile.positiveTemplates,
                 negatives = profile.negativeTemplates,
-                threshold = SIMILARITY_THRESHOLD
+                threshold = evaluationThreshold
             )
-            if (result.isMatch && result.positiveConfidence > bestSimilarity) {
-                bestSimilarity = result.positiveConfidence
-                bestMatchProfile = profile
+            
+            if (result.isMatch) {
+                if (bestMatchResult == null || result.positiveConfidence > bestMatchResult.positiveConfidence) {
+                    bestMatchResult = result
+                    bestMatchProfile = profile
+                    bestAdaptiveThreshold = adaptiveThreshold
+                }
             }
         }
 
-        if (bestSimilarity >= SIMILARITY_THRESHOLD && bestMatchProfile != null) {
-            Log.i(TAG, "Match found! Profile: ${bestMatchProfile.name}, Similarity: $bestSimilarity")
+        if (bestMatchResult != null && bestMatchProfile != null) {
+            Log.i(TAG, "Match found! Profile: ${bestMatchProfile.name}, Similarity: ${bestMatchResult.positiveConfidence}, Adaptive Threshold: $bestAdaptiveThreshold")
             onTriggered()
             
+            val finalResult = bestMatchResult
+            val finalProfile = bestMatchProfile
+            val finalThreshold = bestAdaptiveThreshold
             serviceScope.launch {
                 actionEventEmitter.emitEvent(
                     ActionEvent.VocalSwitchTriggered(
-                        action = bestMatchProfile.buttonAction,
-                        label = bestMatchProfile.spokenText ?: bestMatchProfile.name
+                        action = finalProfile.buttonAction,
+                        label = finalProfile.spokenText ?: finalProfile.name,
+                        positiveConfidence = finalResult.positiveConfidence,
+                        negativeConfidence = finalResult.negativeConfidence,
+                        threshold = finalThreshold
                     )
                 )
             }

@@ -255,7 +255,10 @@ fun GhostTalkNavHost(
         composable("analytics_dashboard") {
             AnalyticsDashboardScreen(
                 pageViewModel = pageViewModel,
-                onNavigateBack = { navController.safePopBackStack() }
+                onNavigateBack = { navController.safePopBackStack() },
+                onEditPage = { pageId ->
+                    navController.safeNavigate("page_editor/$pageId")
+                }
             )
         }
         composable("main") {

@@ -105,7 +105,7 @@ class AudioEmbedderWrapper @Inject constructor(
                     for (category in classifications.categories()) {
                         val idx = category.index()
                         if (idx in 0 until NUM_CLASSES) {
-                            accumulator[idx] += category.score()
+                            accumulator[idx] = maxOf(accumulator[idx], category.score())
                         }
                     }
                     frameCount++
@@ -117,8 +117,7 @@ class AudioEmbedderWrapper @Inject constructor(
                 return null
             }
 
-            // Average across frames
-            FloatArray(NUM_CLASSES) { i -> accumulator[i] / frameCount }.toList()
+            accumulator.toList()
         } catch (e: Exception) {
             Log.e(TAG, "AudioClassifier inference failed", e)
             null

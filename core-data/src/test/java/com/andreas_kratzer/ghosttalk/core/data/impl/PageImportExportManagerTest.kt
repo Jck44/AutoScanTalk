@@ -19,6 +19,7 @@ import com.andreas_kratzer.ghosttalk.core.model.GeminiSearchButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
+import com.andreas_kratzer.ghosttalk.core.data.VocalProfileRepository
 import com.andreas_kratzer.ghosttalk.core.model.UserModeSession
 import com.andreas_kratzer.ghosttalk.core.model.WeatherButtonAction
 import io.mockk.coEvery
@@ -51,6 +52,7 @@ class PageImportExportManagerTest {
     private val actionMapper = ActionMapper()
     private val buttonTemplateRepository: com.andreas_kratzer.ghosttalk.core.data.ButtonTemplateRepository = mockk(relaxed = true)
     private val userModeSessionRepository: UserModeSessionRepository = mockk(relaxed = true)
+    private val vocalProfileRepository: VocalProfileRepository = mockk(relaxed = true)
     private val manager = PageImportExportManager(
         context = context,
         pageRepository = pageRepository,
@@ -61,6 +63,7 @@ class PageImportExportManagerTest {
         buttonTemplateRepository = buttonTemplateRepository,
         buttonUsageDao = mockk(relaxed = true),
         userModeSessionRepository = userModeSessionRepository,
+        vocalProfileRepository = vocalProfileRepository,
         logger = mockk(relaxed = true)
     )
 
@@ -988,6 +991,7 @@ class PageImportExportManagerTest {
             buttonTemplateRepository = buttonTemplateRepository,
             buttonUsageDao = buttonUsageDao,
             userModeSessionRepository = userModeSessionRepository,
+            vocalProfileRepository = vocalProfileRepository,
             logger = mockk(relaxed = true)
         )
 
@@ -1076,6 +1080,7 @@ class PageImportExportManagerTest {
             buttonTemplateRepository = buttonTemplateRepository,
             buttonUsageDao = buttonUsageDao,
             userModeSessionRepository = userModeSessionRepository,
+            vocalProfileRepository = vocalProfileRepository,
             logger = mockk(relaxed = true)
         )
 
@@ -1120,6 +1125,7 @@ class PageImportExportManagerTest {
             buttonTemplateRepository = buttonTemplateRepository,
             buttonUsageDao = buttonUsageDao,
             userModeSessionRepository = userModeSessionRepository,
+            vocalProfileRepository = vocalProfileRepository,
             logger = mockk(relaxed = true)
         )
 
@@ -1164,6 +1170,7 @@ class PageImportExportManagerTest {
             buttonTemplateRepository = buttonTemplateRepository,
             buttonUsageDao = buttonUsageDao,
             userModeSessionRepository = mockUserModeSessionRepository,
+            vocalProfileRepository = vocalProfileRepository,
             logger = mockk(relaxed = true)
         )
 
