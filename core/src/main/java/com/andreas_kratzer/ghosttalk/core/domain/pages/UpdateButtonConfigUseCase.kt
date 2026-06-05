@@ -18,7 +18,7 @@ class UpdateButtonConfigUseCase @Inject constructor(
             val now = System.currentTimeMillis()
             val updatedPage = if (newConfig == null && oldConfig != null) {
                 // Button deleted: Set page updatedAt to max(now, oldConfig.updatedAt + 1)
-                val newPageTime = maxOf(now, (oldConfig.updatedAt ?: 0L) + 1L)
+                val newPageTime = maxOf(now, oldConfig.updatedAt + 1L)
                 updatedConfigs[index] = null
                 page.copy(
                     updatedAt = newPageTime,
