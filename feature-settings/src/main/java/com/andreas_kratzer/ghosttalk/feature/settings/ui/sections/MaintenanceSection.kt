@@ -52,6 +52,14 @@ fun MaintenanceSection(
                 Toast.makeText(context, R.string.settings_maintenance_check_update_none, Toast.LENGTH_SHORT).show()
                 viewModel.setUpdateCheckStatus(null)
             }
+            is SettingsViewModel.UpdateCheckStatus.UpdateFound -> {
+                Toast.makeText(context, R.string.settings_maintenance_check_update_found, Toast.LENGTH_LONG).show()
+                viewModel.setUpdateCheckStatus(null)
+            }
+            is SettingsViewModel.UpdateCheckStatus.NotFromPlayStore -> {
+                Toast.makeText(context, R.string.settings_maintenance_check_update_not_play_store, Toast.LENGTH_LONG).show()
+                viewModel.setUpdateCheckStatus(null)
+            }
             is SettingsViewModel.UpdateCheckStatus.Error -> {
                 val message = String.format(updateErrorFormat, status.message)
                 Toast.makeText(context, message, Toast.LENGTH_LONG).show()

@@ -323,6 +323,8 @@
     <string name="settings_maintenance_check_update_desc">Manually checks if a newer version of the app is available in the Google Play Store.</string>
     <string name="settings_maintenance_check_update_started">Checking for updates…</string>
     <string name="settings_maintenance_check_update_none">The app is up to date.</string>
+    <string name="settings_maintenance_check_update_found">Update found! The download has started. The app can be installed once complete.</string>
+    <string name="settings_maintenance_check_update_not_play_store">Update check not possible: The app was not installed via the Google Play Store.</string>
     <string name="settings_maintenance_check_update_error">Error checking for updates: %s</string>
 
     <!-- App Picker Notification Access Strings -->

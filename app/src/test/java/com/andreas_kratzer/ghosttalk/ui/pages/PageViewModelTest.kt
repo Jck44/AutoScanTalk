@@ -956,4 +956,101 @@ class PageViewModelTest {
         assertEquals("btn3", updated.buttonConfigs[1]?.id)
         assertEquals(null, updated.buttonConfigs[2])
     }
+
+    @Test
+    fun `magicCleanup executes all layout optimizations sequentially`() = runTest {
+        val targetPageId = "p1"
+        val btn1 = ButtonConfig(id = "btn1", label = "A", isActive = true)
+        val btn2 = ButtonConfig(id = "btn2", label = "B", isActive = false)
+        val btn3 = ButtonConfig(id = "btn3", label = "C", isActive = true)
+        val btn4 = ButtonConfig(id = "btn4", label = "Startseite", isActive = true, buttonAction = NavigateToStartPageButtonAction())
+        val btn5 = ButtonConfig(id = "btn5", label = "E", isActive = true)
+        val btn6 = ButtonConfig(id = "btn6", label = "F", isActive = true)
+        val btn7 = ButtonConfig(id = "btn7", label = "G", isActive = true)
+        val btn8 = ButtonConfig(id = "btn8", label = "H", isActive = true)
+        
+        val buttonConfigs = MutableList<ButtonConfig?>(49) { null }
+        buttonConfigs[0] = btn1
+        buttonConfigs[1] = btn2
+        buttonConfigs[2] = btn3
+        buttonConfigs[3] = btn4
+        buttonConfigs[4] = btn5
+        buttonConfigs[5] = btn6
+        buttonConfigs[6] = btn7
+        buttonConfigs[7] = btn8
+        
+        val page = Page(id = targetPageId, bookId = "b1", name = "P1", rows = 4, columns = 4, buttonConfigs = buttonConfigs, scanPattern = "linear")
+        coEvery { pageRepository.getPageById(targetPageId) } returns page
+        
+        val mockUsageStat = mockk<com.andreas_kratzer.ghosttalk.core.model.GroupedButtonUsageStat>(relaxed = true)
+        val mockChild1 = mockk<com.andreas_kratzer.ghosttalk.core.model.ButtonUsageStat>(relaxed = true) {
+            every { buttonConfigId } returns "btn1"
+            every { pageId } returns "p1"
+            every { usageCount } returns 5L
+        }
+        val mockChild2 = mockk<com.andreas_kratzer.ghosttalk.core.model.ButtonUsageStat>(relaxed = true) {
+            every { buttonConfigId } returns "btn3"
+            every { pageId } returns "p1"
+            every { usageCount } returns 10L
+        }
+        every { mockUsageStat.children } returns listOf(mockChild1, mockChild2)
+        coEvery { buttonUsageRepository.getGroupedUsageStats("b1") } returns listOf(mockUsageStat)
+        
+        every { settingsRepository.isGeminiEnabled } returns true
+        coEvery { geminiUseCase.generateResponse(any()) } returns "[\"MagicRow\", \"MagicRow\", \"MagicRow\"]"
+        
+        val mockOptimizer = mockk<com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer>()
+        val proposals = listOf(
+            com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer.LayoutOptimizationProposal.ChangeScanPatternProposal(
+                pageId = targetPageId,
+                pageName = "P1",
+                activeButtonsCount = 6,
+                currentAverageScanTimeSec = 7.0,
+                estimatedNewAverageScanTimeSec = 5.0,
+                targetScanPattern = "row_by_row"
+            )
+        )
+        every { mockOptimizer.analyzePages(any(), any(), any(), any(), any()) } returns proposals
+        every { getPagesUseCase.execute(any()) } returns MutableStateFlow(listOf(page))
+        every { settingsRepository.defaultScanPattern } returns "linear"
+        every { settingsRepository.defaultStartPageId } returns "p_start"
+        
+        viewModel = createViewModel(optimizer = mockOptimizer)
+        viewModel.setActiveBookId("b1")
+        
+        val collectionJob = launch {
+            viewModel.layoutOptimizationProposals.collect {}
+        }
+        testScheduler.runCurrent()
+        
+        for (i in 1..40) {
+            if (viewModel.layoutOptimizationProposals.value.isNotEmpty()) break
+            Thread.sleep(25)
+        }
+        
+        val updatedPageSlot = io.mockk.slot<Page>()
+        coEvery { pageRepository.updatePage(capture(updatedPageSlot)) } returns Unit
+        
+        val latch = java.util.concurrent.CountDownLatch(1)
+        viewModel.magicCleanup(targetPageId) {
+            latch.countDown()
+        }
+        latch.await(8, java.util.concurrent.TimeUnit.SECONDS)
+        
+        val updated = updatedPageSlot.captured
+        assertEquals("btn3", updated.buttonConfigs[0]?.id)
+        assertEquals("btn1", updated.buttonConfigs[1]?.id)
+        assertEquals("btn5", updated.buttonConfigs[2]?.id)
+        assertEquals("btn6", updated.buttonConfigs[7]?.id)
+        assertEquals("btn7", updated.buttonConfigs[8]?.id)
+        assertEquals(true, updated.buttonConfigs[9]?.buttonAction is NavigateToStartPageButtonAction)
+        assertEquals("btn8", updated.buttonConfigs[14]?.id)
+        
+        assertEquals(3, updated.rows)
+        assertEquals(3, updated.columns)
+        assertEquals("row_by_row", updated.scanPattern)
+        assertEquals(true, updated.rowNames.contains("MagicRow"))
+        
+        collectionJob.cancel()
+    }
 }

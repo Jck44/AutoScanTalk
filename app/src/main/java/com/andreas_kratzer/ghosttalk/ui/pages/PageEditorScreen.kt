@@ -2,6 +2,7 @@ package com.andreas_kratzer.ghosttalk.ui.pages
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -36,6 +37,7 @@ import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.ui.components.GridEditorContent
 import com.andreas_kratzer.ghosttalk.ui.components.ValidatedTextField
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -89,7 +91,11 @@ fun PageEditorScreen(
         handleNavigateBack()
     }
 
+    val snackbarHostState = remember { androidx.compose.material3.SnackbarHostState() }
+    val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
+
     Scaffold(
+        snackbarHost = { androidx.compose.material3.SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 windowInsets = WindowInsets.statusBars,
@@ -220,6 +226,24 @@ fun PageEditorScreen(
                         showOptInDialog.value = true
                     }
                 },
+                onStartMagicCleanup = {
+                    pageViewModel.magicCleanup(page.id) {
+                        coroutineScope.launch {
+                            val result = snackbarHostState.showSnackbar(
+                                message = "Magische Bereinigung erfolgreich abgeschlossen!",
+                                actionLabel = "Rückgängig",
+                                duration = androidx.compose.material3.SnackbarDuration.Long
+                            )
+                            if (result == androidx.compose.material3.SnackbarResult.ActionPerformed) {
+                                pageViewModel.undo { undoMsg ->
+                                    coroutineScope.launch {
+                                        snackbarHostState.showSnackbar(undoMsg)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
                 onDismiss = { showLayoutAssistantDialog.value = false }
             )
         }
@@ -277,6 +301,47 @@ fun PageEditorScreen(
                     pageViewModel.clearPageSplitProposal()
                 }
             )
+        }
+
+        val magicCleanupProgress by pageViewModel.magicCleanupProgress.collectAsState()
+
+        magicCleanupProgress?.let { progressMessage ->
+            androidx.compose.ui.window.Dialog(
+                onDismissRequest = {},
+                properties = androidx.compose.ui.window.DialogProperties(
+                    dismissOnBackPress = false,
+                    dismissOnClickOutside = false
+                )
+            ) {
+                androidx.compose.material3.Surface(
+                    shape = MaterialTheme.shapes.medium,
+                    color = MaterialTheme.colorScheme.surface,
+                    tonalElevation = 6.dp,
+                    modifier = Modifier.width(280.dp)
+                ) {
+                    androidx.compose.foundation.layout.Column(
+                        modifier = Modifier.padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(16.dp)
+                    ) {
+                        androidx.compose.material3.CircularProgressIndicator(
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = "Magische Bereinigung läuft...",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = progressMessage,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                    }
+                }
+            }
         }
     }
 }

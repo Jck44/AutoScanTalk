@@ -37,14 +37,23 @@ class PageRepositoryImpl(
     }
 
     override suspend fun insertPage(page: Page) {
+        val now = System.currentTimeMillis()
+        val updatedPage = page.copy(
+            updatedAt = now,
+            buttonConfigs = page.buttonConfigs.map { it?.copy(updatedAt = now) }
+        )
         appDatabase.withTransaction {
-            pageDao.insertPageEntity(page)
-            buttonDao.insertButtons(page.toButtonEntities())
+            pageDao.insertPageEntity(updatedPage)
+            buttonDao.insertButtons(updatedPage.toButtonEntities())
         }
     }
 
     override suspend fun updatePage(page: Page) {
-        val updatedPage = page.copy(updatedAt = System.currentTimeMillis())
+        val now = System.currentTimeMillis()
+        val updatedPage = page.copy(
+            updatedAt = now,
+            buttonConfigs = page.buttonConfigs.map { it?.copy(updatedAt = now) }
+        )
         appDatabase.withTransaction {
             pageDao.updatePageEntity(updatedPage)
             // Refresh buttons: delete old and insert new
@@ -77,22 +86,28 @@ class PageRepositoryImpl(
         return appDatabase.withTransaction {
             val original = pageDao.getPageWithButtonsById(pageId) ?: return@withTransaction null
             val newPageId = java.util.UUID.randomUUID().toString()
+            val now = System.currentTimeMillis()
             
             val newPage = original.page.copy(
                 id = newPageId,
                 name = "${original.page.name}${duplicateSuffix}",
-                createdAt = System.currentTimeMillis()
+                createdAt = now,
+                updatedAt = now
             )
             
             val newButtons = original.buttons.map { entity ->
                 entity.copy(
                     id = java.util.UUID.randomUUID().toString(),
-                    pageId = newPageId
+                    pageId = newPageId,
+                    updatedAt = now
                 )
             }
             
             pageDao.insertPageEntity(newPage)
             buttonDao.insertButtons(newButtons)
+            
+            // Update the book's updatedAt timestamp
+            appDatabase.bookDao().updateLastModified(original.page.bookId, now)
             
             newPageId
         }

@@ -324,6 +324,8 @@
     <string name="settings_maintenance_check_update_desc">Prüft manuell, ob eine neuere Version der App im Google Play Store verfügbar ist.</string>
     <string name="settings_maintenance_check_update_started">Suche nach Updates…</string>
     <string name="settings_maintenance_check_update_none">Die App ist auf dem neuesten Stand.</string>
+    <string name="settings_maintenance_check_update_found">Update gefunden! Der Download wurde gestartet. Die App kann nach Abschluss installiert werden.</string>
+    <string name="settings_maintenance_check_update_not_play_store">Update-Prüfung nicht möglich: Die App wurde nicht über den Google Play Store installiert.</string>
     <string name="settings_maintenance_check_update_error">Fehler bei der Update-Prüfung: %s</string>
 
     <!-- App Picker Notification Access Strings -->

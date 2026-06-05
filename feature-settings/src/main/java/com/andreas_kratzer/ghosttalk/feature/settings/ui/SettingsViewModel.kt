@@ -301,6 +301,10 @@ class SettingsViewModel @Inject constructor(
     sealed class UpdateCheckStatus {
         object Checking : UpdateCheckStatus()
         object UpToDate : UpdateCheckStatus()
+        /** Update found and Play Store download dialog was triggered. */
+        object UpdateFound : UpdateCheckStatus()
+        /** App is not installed via Play Store (sideloaded / ADB). */
+        object NotFromPlayStore : UpdateCheckStatus()
         data class Error(val message: String) : UpdateCheckStatus()
     }
     

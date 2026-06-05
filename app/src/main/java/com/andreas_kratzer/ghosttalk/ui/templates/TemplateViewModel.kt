@@ -250,7 +250,7 @@ class TemplateViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
-                val prompt = "Analysiere diese Liste von Begriffen, die sich in einer Zeile auf einer Kommunikations-Tafel für Unterstützte Kommunikation befinden: ${labels.joinToString(", ")}. Schlage einen einzigen, kurzen Begriff (maximal 2 Wörter) vor, der als Name für diese Zeile dienen kann. Antworte NUR mit diesem Begriff, ohne Satzzeichen, Anführungszeichen oder zusätzliche Erklärungen."
+                val prompt = "Analysiere diese Liste von Begriffen, die sich in einer Zeile auf einer Kommunikations-Tafel für Unterstützte Kommunikation befinden: ${labels.joinToString(", ")}. Schlage eine kurze, prägnante Bezeichnung (maximal 2 Wörter, z. B. \"Schnelle Worte\" oder \"Smart Home\") vor, die als Name für diese Zeile dienen kann. Antworte NUR mit dieser Bezeichnung, ohne Satzzeichen, Anführungszeichen oder zusätzliche Erklärungen."
                 val response = geminiUseCase.generateResponse(prompt)
                 val cleaned = response.trim().removeSurrounding("\"").removeSurrounding("'").trim()
                 onResult(cleaned)

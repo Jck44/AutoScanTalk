@@ -53,6 +53,8 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -906,7 +908,7 @@ class PageViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
-                val prompt = "Analysiere diese Liste von Begriffen, die sich in einer Zeile auf einer Kommunikations-Tafel für Unterstützte Kommunikation befinden: ${labels.joinToString(", ")}. Schlage einen einzigen, kurzen Begriff (maximal 2 Wörter) vor, der als Name für diese Zeile dienen kann. Antworte NUR mit diesem Begriff, ohne Satzzeichen, Anführungszeichen oder zusätzliche Erklärungen."
+                val prompt = "Analysiere diese Liste von Begriffen, die sich in einer Zeile auf einer Kommunikations-Tafel für Unterstützte Kommunikation befinden: ${labels.joinToString(", ")}. Schlage eine kurze, prägnante Bezeichnung (maximal 2 Wörter, z. B. \"Schnelle Worte\" oder \"Smart Home\") vor, die als Name für diese Zeile dienen kann. Antworte NUR mit dieser Bezeichnung, ohne Satzzeichen, Anführungszeichen oder zusätzliche Erklärungen."
                 val response = geminiUseCase.generateResponse(prompt)
                 val cleaned = response.trim().removeSurrounding("\"").removeSurrounding("'").trim()
                 onResult(cleaned)
@@ -1677,6 +1679,7 @@ class PageViewModel @Inject constructor(
                 val packed = packButtonsIntoGrid(combinedButtons, page.rows, page.columns)
                 val updatedPage = page.copy(buttonConfigs = packed)
                 pageManagementDelegate.pageRepository.updatePage(updatedPage)
+                bookRepository.updateLastModified(page.bookId)
                 withContext(Dispatchers.Main) {
                     pageManagementDelegate.setCurrentPage(updatedPage)
                     onComplete()
@@ -1730,6 +1733,7 @@ class PageViewModel @Inject constructor(
                     buttonConfigs = packed
                 )
                 pageManagementDelegate.pageRepository.updatePage(updatedPage)
+                bookRepository.updateLastModified(page.bookId)
                 withContext(Dispatchers.Main) {
                     pageManagementDelegate.setCurrentPage(updatedPage)
                     onComplete()
@@ -1755,6 +1759,7 @@ class PageViewModel @Inject constructor(
                     buttonConfigs = packed
                 )
                 pageManagementDelegate.pageRepository.updatePage(updatedPage)
+                bookRepository.updateLastModified(page.bookId)
                 withContext(Dispatchers.Main) {
                     pageManagementDelegate.setCurrentPage(updatedPage)
                     onComplete()
@@ -1774,12 +1779,155 @@ class PageViewModel @Inject constructor(
                 val packed = packButtonsIntoGrid(remainingButtons, page.rows, page.columns)
                 val updatedPage = page.copy(buttonConfigs = packed)
                 pageManagementDelegate.pageRepository.updatePage(updatedPage)
+                bookRepository.updateLastModified(page.bookId)
                 withContext(Dispatchers.Main) {
                     pageManagementDelegate.setCurrentPage(updatedPage)
                     onComplete()
                 }
             } catch (e: Exception) {
                 Log.e("PageViewModel", "Error deleting deactivated buttons", e)
+            }
+        }
+    }
+
+    private val _magicCleanupProgress = MutableStateFlow<String?>(null)
+    val magicCleanupProgress: StateFlow<String?> = _magicCleanupProgress.asStateFlow()
+
+    fun magicCleanup(pageId: String, onComplete: () -> Unit = {}) {
+        val bookId = activeBookId.value ?: return
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                // 1. Delete deactivated buttons
+                _magicCleanupProgress.value = "Lösche deaktivierte Kacheln..."
+                kotlinx.coroutines.delay(600)
+                val page = pageManagementDelegate.getPageById(pageId) ?: run {
+                    _magicCleanupProgress.value = null
+                    return@launch
+                }
+                
+                // Save the undo state before doing any operations
+                withContext(Dispatchers.Main) {
+                    pageManagementDelegate.saveUndoState(page)
+                }
+
+                val activeButtonsOnly = page.buttonConfigs.filterNotNull().filter { it.isActive }
+                
+                // 2. Reorder buttons by usage statistics
+                _magicCleanupProgress.value = "Sortiere nach Klicks..."
+                kotlinx.coroutines.delay(600)
+                val stats = buttonUsageRepository.getGroupedUsageStats(bookId)
+                val clickCounts = stats.flatMap { it.children }
+                    .filter { it.pageId == pageId }
+                    .associate { it.buttonConfigId to it.usageCount }
+                val sortedActive = activeButtonsOnly.sortedByDescending { clickCounts[it.id] ?: 0L }
+                
+                // 3. Insert home navigation every 5 buttons
+                _magicCleanupProgress.value = "Verteile Startseite-Buttons..."
+                kotlinx.coroutines.delay(600)
+                val defaultStartPageId = settingsRepository.defaultStartPageId
+                val cleanedHome = sortedActive.filter { !isHomeButton(it, defaultStartPageId) }
+                val result = mutableListOf<ButtonConfig>()
+                var counter = 0
+                for (btn in cleanedHome) {
+                    if (counter > 0 && counter % 5 == 0) {
+                        val homeButton = ButtonConfig(
+                            id = java.util.UUID.randomUUID().toString(),
+                            label = "Startseite",
+                            spokenText = "Zurück zur Startseite",
+                            buttonAction = NavigateToStartPageButtonAction(),
+                            auditoryCue = AuditoryCue.TextToSpeechCue("Zurück zur Startseite")
+                        )
+                        result.add(homeButton)
+                    }
+                    result.add(btn)
+                    counter++
+                }
+                
+                // 4. Shrink grid to minimum
+                _magicCleanupProgress.value = "Minimiere Rastergröße..."
+                kotlinx.coroutines.delay(600)
+                val (newRows, newCols) = calculateOptimalGridSize(result.size)
+                val packed = packButtonsIntoGrid(result, newRows, newCols)
+                
+                // 5. If a proposal exists, change scan pattern to row_by_row and optionally generate row names
+                _magicCleanupProgress.value = "Optimiere Scan-Muster..."
+                kotlinx.coroutines.delay(600)
+                val proposalsExist = layoutOptimizationProposals.value.any { it.pageId == pageId }
+                
+                val finalScanPattern = if (proposalsExist) "row_by_row" else page.scanPattern
+                val rowNames = mutableListOf<String>()
+                if (proposalsExist && settingsRepository.isGeminiEnabled) {
+                    _magicCleanupProgress.value = "Generiere Zeilennamen via Gemini..."
+                    kotlinx.coroutines.delay(600)
+                    val rowsData = (0 until newRows).map { rowIndex ->
+                        (0 until newCols).mapNotNull { c ->
+                            val globalIndex = rowIndex * com.andreas_kratzer.ghosttalk.core.util.GridUtils.MAX_GRID_SIZE + c
+                            val config = packed.getOrNull(globalIndex)
+                            if (config != null && config.isActive && config.label.isNotBlank()) {
+                                config.label
+                            } else null
+                        }
+                    }
+
+                    if (rowsData.any { it.isNotEmpty() }) {
+                        try {
+                            val promptBuilder = StringBuilder()
+                            promptBuilder.append("Analysiere die folgenden Zeilen einer Kommunikations-Tafel für Unterstützte Kommunikation.\n")
+                            promptBuilder.append("Schlage für jede Zeile eine kurze, prägnante Bezeichnung (maximal 2 Wörter, z. B. \"Schnelle Worte\" oder \"Smart Home\") vor, die als Name für diese Zeile dienen kann.\n")
+                            promptBuilder.append("Antworte ausschließlich mit einer JSON-Liste von Strings, z. B. [\"Name1\", \"Name2\", ...], in der genauen Reihenfolge der Zeilen.\n")
+                            promptBuilder.append("Keine Satzzeichen außerhalb des JSONs, kein Markdown-Format (keine ```json Blöcke), keine zusätzlichen Erklärungen.\n\n")
+
+                            rowsData.forEachIndexed { index, labels ->
+                                promptBuilder.append("Zeile ${index + 1}: ${labels.joinToString(", ")}\n")
+                            }
+
+                            val response = geminiUseCase.generateResponse(promptBuilder.toString()).trim()
+                            val cleanResponse = response.removePrefix("```json").removePrefix("```").removeSuffix("```").trim()
+                            try {
+                                val parsed = com.google.gson.Gson().fromJson(cleanResponse, Array<String>::class.java)
+                                if (parsed != null) {
+                                    for (name in parsed) {
+                                        rowNames.add(name.trim())
+                                    }
+                                }
+                            } catch (gsonEx: Exception) {
+                                val jsonArray = org.json.JSONArray(cleanResponse)
+                                for (i in 0 until jsonArray.length()) {
+                                    rowNames.add(jsonArray.getString(i).trim())
+                                }
+                            }
+                        } catch (e: Exception) {
+                            Log.e("PageViewModel", "Error generating row names batch in magic cleanup", e)
+                        }
+                    }
+
+                    while (rowNames.size < newRows) {
+                        rowNames.add("")
+                    }
+                }
+
+                
+                _magicCleanupProgress.value = "Speichere Layout..."
+                kotlinx.coroutines.delay(500)
+                
+                val updatedPage = page.copy(
+                    rows = newRows,
+                    columns = newCols,
+                    buttonConfigs = packed,
+                    scanPattern = finalScanPattern,
+                    rowNames = if (rowNames.isNotEmpty()) rowNames else page.rowNames
+                )
+                
+                pageManagementDelegate.pageRepository.updatePage(updatedPage)
+                bookRepository.updateLastModified(page.bookId)
+                withContext(Dispatchers.Main) {
+                    pageManagementDelegate.setCurrentPage(updatedPage)
+                    _magicCleanupProgress.value = null
+                    onComplete()
+                }
+            } catch (e: Exception) {
+                Log.e("PageViewModel", "Error in magic cleanup", e)
+                _magicCleanupProgress.value = null
             }
         }
     }

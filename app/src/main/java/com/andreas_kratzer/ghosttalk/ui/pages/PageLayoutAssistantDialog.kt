@@ -51,6 +51,7 @@ fun PageLayoutAssistantDialog(
     page: Page,
     pageViewModel: PageViewModel,
     onStartPageSplit: () -> Unit,
+    onStartMagicCleanup: () -> Unit,
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
@@ -59,7 +60,7 @@ fun PageLayoutAssistantDialog(
         proposals.filter { it.pageId == page.id }
     }
 
-    var homeInterval by remember { mutableFloatStateOf(4f) }
+    var homeInterval by remember { mutableFloatStateOf(5f) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -93,6 +94,59 @@ fun PageLayoutAssistantDialog(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+
+                // MAGIC CLEAN UP CARD
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    ),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = GhostTalkIcons.AutoAwesome,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Text(
+                                text = "Magische Bereinigung",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                        Text(
+                            text = "Führt eine vollautomatische Optimierung durch: Inaktive Buttons löschen, nach Klicks sortieren, Startseite alle 5 Buttons verteilen, Raster minimieren, Scan-Muster optimieren und Zeilennamen generieren.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f)
+                        )
+                        Button(
+                            onClick = {
+                                onStartMagicCleanup()
+                                onDismiss()
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                contentColor = MaterialTheme.colorScheme.primaryContainer
+                            ),
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = MaterialTheme.shapes.small
+                        ) {
+                            Text("Bereinigung starten", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+
+                HorizontalDivider()
 
                 // SECTION 1: STATISTIC RECOMMENDATIONS (IF ANY)
                 if (pageProposals.isNotEmpty()) {

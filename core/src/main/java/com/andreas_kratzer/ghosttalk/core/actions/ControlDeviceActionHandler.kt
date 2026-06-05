@@ -142,36 +142,40 @@ class ControlDeviceActionHandler @Inject constructor(
             }
         }
 
-        when (val state = updateManager.updateState.value) {
-            is com.andreas_kratzer.ghosttalk.core.UpdateState.ReadyToInstall -> {
-                speak("update_installing", "Update wird installiert. Die App startet gleich neu.") {
-                    updateManager.installDownloadedUpdate()
-                    onFinish(executionId)
+        updateManager.triggerInstallAction { result ->
+            when (result) {
+                is com.andreas_kratzer.ghosttalk.core.UpdateActionResult.Installing -> {
+                    speak("update_installing", "Update wird installiert. Die App startet gleich neu.") {
+                        onFinish(executionId)
+                    }
                 }
-            }
-            is com.andreas_kratzer.ghosttalk.core.UpdateState.Downloading -> {
-                speak("update_downloading", "Update wird heruntergeladen, bitte warten.") {
-                    onFinish(executionId)
+                is com.andreas_kratzer.ghosttalk.core.UpdateActionResult.DownloadStarted -> {
+                    speak("update_downloading", "Update wird heruntergeladen, bitte warten.") {
+                        onFinish(executionId)
+                    }
                 }
-            }
-            is com.andreas_kratzer.ghosttalk.core.UpdateState.Checking -> {
-                speak("update_downloading", "Update wird heruntergeladen, bitte warten.") {
-                    onFinish(executionId)
+                is com.andreas_kratzer.ghosttalk.core.UpdateActionResult.AlreadyDownloading -> {
+                    speak("update_downloading", "Update wird heruntergeladen, bitte warten.") {
+                        onFinish(executionId)
+                    }
                 }
-            }
-            is com.andreas_kratzer.ghosttalk.core.UpdateState.Error -> {
-                speak("update_check_error", "Updateprüfung fehlgeschlagen.") {
-                    onFinish(executionId)
+                is com.andreas_kratzer.ghosttalk.core.UpdateActionResult.AlreadyChecking -> {
+                    speak("update_searching", "Suche nach Updates, bitte warten.") {
+                        onFinish(executionId)
+                    }
                 }
-            }
-            else -> {
-                updateManager.checkSilently()
-                if (state is com.andreas_kratzer.ghosttalk.core.UpdateState.NoUpdateAvailable) {
+                is com.andreas_kratzer.ghosttalk.core.UpdateActionResult.NoUpdate -> {
                     speak("update_not_available", "Die App ist auf dem neuesten Stand.") {
                         onFinish(executionId)
                     }
-                } else {
+                }
+                is com.andreas_kratzer.ghosttalk.core.UpdateActionResult.NotFromPlayStore -> {
                     speak("update_not_available", "Die App ist auf dem neuesten Stand.") {
+                        onFinish(executionId)
+                    }
+                }
+                is com.andreas_kratzer.ghosttalk.core.UpdateActionResult.Error -> {
+                    speak("update_check_error", "Updateprüfung fehlgeschlagen.") {
                         onFinish(executionId)
                     }
                 }

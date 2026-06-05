@@ -132,7 +132,11 @@ class MainActivity : AppCompatActivity() {
         
         com.andreas_kratzer.ghosttalk.core.tts.VoiceDebugger(applicationContext).start()
         userModeSessionTracker.start()
-        
+
+        // Register the launcher so the INSTALL_UPDATE action can trigger the Play Store
+        // download dialog even when initiated from within User Mode.
+        updateManager.registerLauncher(updateLauncher)
+
         // Skip automatic update check if the app starts directly in User Mode,
         // because the update dialog takes over the screen and
         // cannot be dismissed by the user easily, making the app unusable.
@@ -238,15 +242,23 @@ class MainActivity : AppCompatActivity() {
         // Observe Manual Update Check
         lifecycleScope.launch {
             settingsViewModel.manualUpdateCheckTrigger.collect {
+                Log.d("MainActivity", "manualUpdateCheckTrigger: received, calling checkManualUpdate")
                 updateManager.checkManualUpdate(
                     updateLauncher = updateLauncher,
                     onUpdateFound = {
-                        settingsViewModel.setUpdateCheckStatus(null) // Reset on success/found
+                        Log.i("MainActivity", "checkManualUpdate: update found – download started")
+                        settingsViewModel.setUpdateCheckStatus(SettingsViewModel.UpdateCheckStatus.UpdateFound)
                     },
                     onUpToDate = {
+                        Log.d("MainActivity", "checkManualUpdate: app is up to date")
                         settingsViewModel.setUpdateCheckStatus(SettingsViewModel.UpdateCheckStatus.UpToDate)
                     },
+                    onNotFromPlayStore = {
+                        Log.d("MainActivity", "checkManualUpdate: app not from Play Store")
+                        settingsViewModel.setUpdateCheckStatus(SettingsViewModel.UpdateCheckStatus.NotFromPlayStore)
+                    },
                     onError = { error ->
+                        Log.e("MainActivity", "checkManualUpdate: error – $error")
                         settingsViewModel.setUpdateCheckStatus(SettingsViewModel.UpdateCheckStatus.Error(error))
                     }
                 )
