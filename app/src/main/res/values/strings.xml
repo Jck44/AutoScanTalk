@@ -495,6 +495,7 @@
     <string name="button_preview_calendar_format">\n\nGesprochener Text:\n\"%1$s\" (Liest %2$d Kalendereinträge vor)</string>
     <string name="button_preview_battery_format">\n\nGesprochener Text:\n\"Batteriestand ist bei 85 Prozent\"</string>
     <string name="button_preview_sms_format">\n\nSendet SMS an %1$s:\n\"%2$s\"</string>
+    <string name="button_preview_sms_last_spoken_format">\n\nSendet SMS an %1$s:\n\"[Letzter gesprochener Text]\"</string>
     <string name="button_preview_call_format">\n\nRuft %1$s an (%2$s)</string>
     <string name="button_preview_device_function">📱 Geräte-Funktion: %1$s%2$s</string>
 
@@ -504,6 +505,7 @@
     <string name="device_action_read_battery">Batteriestand vorlesen</string>
     <string name="device_action_read_calendar">Kalender vorlesen</string>
     <string name="device_action_send_message">SMS senden</string>
+    <string name="device_action_send_last_spoken_sms">Letzten gesprochenen Text per SMS senden</string>
     <string name="device_action_start_call">Anruf starten</string>
     <string name="device_action_volume_media">Medien-Lautstärke ändern</string>
     <string name="device_action_volume_in_app_tts">In-App-Lautstärke: Laut Sprechen ändern</string>
@@ -566,6 +568,7 @@
     <string name="suggest_label_install_update">Update installieren</string>
     <string name="suggest_label_start_sync">Buch synchronisieren</string>
     <string name="suggest_label_send_message">SMS an %s</string>
+    <string name="suggest_label_send_last_spoken_sms">Letzter Text an %s</string>
     <string name="suggest_label_start_call">%s anrufen</string>
     <string name="suggest_label_play_media">%s abspielen</string>
     <string name="suggest_label_sh_on">einschalten</string>

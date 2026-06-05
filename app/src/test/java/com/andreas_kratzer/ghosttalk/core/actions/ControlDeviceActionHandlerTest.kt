@@ -7,6 +7,7 @@ import com.andreas_kratzer.ghosttalk.core.UpdateManager
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.ControlDeviceButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.DeviceActionType
+import android.telephony.SmsManager
 import com.andreas_kratzer.ghosttalk.core.services.NotificationReaderService
 import io.mockk.Runs
 import io.mockk.every
@@ -491,5 +492,52 @@ class ControlDeviceActionHandlerTest {
 
         verify { syncActionProxy.triggerSync() }
         verify { actionLogger.log("Synchronisation starten", action, "Sync") }
+    }
+
+    @Test
+    fun `handle SEND_LAST_SPOKEN_SMS when lastSpokenText is blank warns via TTS`() {
+        val action = ControlDeviceButtonAction(
+            actionType = DeviceActionType.SEND_LAST_SPOKEN_SMS,
+            contactName = "Test Contact",
+            contactPhone = "123456"
+        )
+        val config = ButtonConfig(id = "b1", label = "SMS", buttonAction = action, auditoryCue = null)
+
+        every { actionLogger.lastSpokenText } returns ""
+        every { ttsProxy.isReady } returns true
+
+        val ssmlSlot = slot<String>()
+        val onDoneSlot = slot<() -> Unit>()
+        every { ttsProxy.speakRouted(capture(ssmlSlot), any(), capture(onDoneSlot)) } answers {
+            onDoneSlot.captured.invoke()
+        }
+
+        val onFinish = mockk<(Int) -> Unit>(relaxed = true)
+        handler.handle(config, action, 1, onFinish)
+
+        verify { ttsProxy.speakRouted("Es wurde noch kein Text gesprochen.", any(), any()) }
+        verify { onFinish(1) }
+    }
+
+    @Test
+    fun `handle SEND_LAST_SPOKEN_SMS when lastSpokenText is present sends SMS`() {
+        val action = ControlDeviceButtonAction(
+            actionType = DeviceActionType.SEND_LAST_SPOKEN_SMS,
+            contactName = "Test Contact",
+            contactPhone = "123456"
+        )
+        val config = ButtonConfig(id = "b1", label = "SMS", buttonAction = action, auditoryCue = null)
+
+        every { actionLogger.lastSpokenText } returns "Hello from dynamic SMS"
+
+        val smsManager = mockk<SmsManager>(relaxed = true)
+        every { context.getSystemService(SmsManager::class.java) } returns smsManager
+        every { smsManager.divideMessage("Hello from dynamic SMS") } returns arrayListOf("Hello from dynamic SMS")
+
+        val onFinish = mockk<(Int) -> Unit>(relaxed = true)
+        handler.handle(config, action, 1, onFinish)
+
+        verify { smsManager.sendTextMessage("123456", null, "Hello from dynamic SMS", any(), null) }
+        verify { actionLogger.log("Sende SMS an 123456...", action, "SMS") }
     }
 }

@@ -259,6 +259,7 @@ fun ButtonConfigDialog(
     val actionTypeToggleAutoRead = "Automatisches Vorlesen umschalten"
     val actionTypeClearNotifications = stringResource(R.string.button_action_clear_notifications)
     val actionTypeSendMessage = stringResource(R.string.action_send_message)
+    val actionTypeSendLastSpokenSms = stringResource(R.string.device_action_send_last_spoken_sms)
     val actionTypeStartCall = stringResource(R.string.action_start_call)
 
     // Medien & Musik
@@ -314,6 +315,7 @@ fun ButtonConfigDialog(
                         DeviceActionType.TOGGLE_AUTO_READ_NOTIFICATIONS -> actionTypeToggleAutoRead
                         DeviceActionType.CLEAR_NOTIFICATIONS -> actionTypeClearNotifications
                         DeviceActionType.SEND_MESSAGE -> actionTypeSendMessage
+                        DeviceActionType.SEND_LAST_SPOKEN_SMS -> actionTypeSendLastSpokenSms
                         DeviceActionType.START_CALL -> actionTypeStartCall
                         DeviceActionType.MEDIA_PLAY_PAUSE -> actionTypeMediaPlayPause
                         DeviceActionType.MEDIA_NEXT -> actionTypeMediaNext
@@ -543,6 +545,11 @@ fun ButtonConfigDialog(
                 contactName = contactName,
                 contactPhone = contactPhone,
                 messageText = messageText
+            )
+            actionTypeSendLastSpokenSms -> ControlDeviceButtonAction(
+                actionType = DeviceActionType.SEND_LAST_SPOKEN_SMS,
+                contactName = contactName,
+                contactPhone = contactPhone
             )
             actionTypeStartCall -> ControlDeviceButtonAction(
                 actionType = DeviceActionType.START_CALL,
@@ -842,6 +849,7 @@ fun ButtonConfigDialog(
                                     actionTypeReadNotifications to ControlDeviceButtonAction(DeviceActionType.READ_NOTIFICATIONS),
                                     actionTypeClearNotifications to ControlDeviceButtonAction(DeviceActionType.CLEAR_NOTIFICATIONS),
                                     actionTypeSendMessage to ControlDeviceButtonAction(DeviceActionType.SEND_MESSAGE),
+                                    actionTypeSendLastSpokenSms to ControlDeviceButtonAction(DeviceActionType.SEND_LAST_SPOKEN_SMS),
                                     actionTypeStartCall to ControlDeviceButtonAction(DeviceActionType.START_CALL),
                                     actionTypeToggleAutoRead to ControlDeviceButtonAction(DeviceActionType.TOGGLE_AUTO_READ_NOTIFICATIONS)
                                 ),
@@ -1728,7 +1736,7 @@ private fun getLocalLabelSuggestion(
     pages: List<Page>,
     context: Context
 ): String {
-    val action = config.buttonAction ?: return ""
+    val action = config.buttonAction
     return when (action) {
         is SpeakTextButtonAction -> {
             val text = config.spokenText ?: ""
@@ -1782,6 +1790,12 @@ private fun getLocalLabelSuggestion(
                         context.getString(R.string.suggest_label_send_message, contact)
                     } else ""
                 }
+                DeviceActionType.SEND_LAST_SPOKEN_SMS -> {
+                    val contact = action.contactName ?: ""
+                    if (contact.isNotBlank()) {
+                        context.getString(R.string.suggest_label_send_last_spoken_sms, contact)
+                    } else ""
+                }
                 DeviceActionType.START_CALL -> {
                     val contact = action.contactName ?: ""
                     if (contact.isNotBlank()) {
@@ -1791,14 +1805,14 @@ private fun getLocalLabelSuggestion(
             }
         }
         is PlayMediaButtonAction -> {
-            val content = action.contentName ?: ""
+            val content = action.contentName
             if (content.isNotBlank()) {
                 context.getString(R.string.suggest_label_play_media, content)
             } else ""
         }
         is SmartHomeButtonAction -> {
-            val device = action.deviceName ?: ""
-            val intent = action.intent ?: ""
+            val device = action.deviceName
+            val intent = action.intent
             if (device.isNotBlank() && intent.isNotBlank()) {
                 val localizedIntent = when (intent.lowercase()) {
                     "on", "turnon" -> context.getString(R.string.suggest_label_sh_on)

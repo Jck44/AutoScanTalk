@@ -98,6 +98,7 @@ fun PreviewTabContent(
     val calendarFormat = stringResource(R.string.button_preview_calendar_format)
     val batteryFormat = stringResource(R.string.button_preview_battery_format)
     val smsFormat = stringResource(R.string.button_preview_sms_format)
+    val smsLastSpokenFormat = stringResource(R.string.button_preview_sms_last_spoken_format)
     val callFormat = stringResource(R.string.button_preview_call_format)
     val deviceFunctionFormat = stringResource(R.string.button_preview_device_function)
 
@@ -107,6 +108,7 @@ fun PreviewTabContent(
     val deviceActionReadBattery = stringResource(R.string.device_action_read_battery)
     val deviceActionReadCalendar = stringResource(R.string.device_action_read_calendar)
     val deviceActionSendMessage = stringResource(R.string.device_action_send_message)
+    val deviceActionSendLastSpokenSms = stringResource(R.string.device_action_send_last_spoken_sms)
     val deviceActionStartCall = stringResource(R.string.device_action_start_call)
     val deviceActionVolumeMedia = stringResource(R.string.device_action_volume_media)
     val deviceActionVolumeInAppTts = stringResource(R.string.device_action_volume_in_app_tts)
@@ -136,9 +138,9 @@ fun PreviewTabContent(
         speakCustomFormat, speakFallbackFormat, mediaDelayReturnFormat, mediaDelayStay,
         playMediaFormat, navigateWithFeedbackFormat, navigateOnlyFormat, geminiCloudFormat,
         geminiNanoFormat, geminiVision, weatherAnnounce, smartHomeFormat, dynamicAction,
-        spokenTextFormat, calendarFormat, batteryFormat, smsFormat, callFormat,
+        spokenTextFormat, calendarFormat, batteryFormat, smsFormat, smsLastSpokenFormat, callFormat,
         deviceFunctionFormat, deviceActionReadTime, deviceActionReadDate, deviceActionReadBattery,
-        deviceActionReadCalendar, deviceActionSendMessage, deviceActionStartCall,
+        deviceActionReadCalendar, deviceActionSendMessage, deviceActionSendLastSpokenSms, deviceActionStartCall,
         deviceActionVolumeMedia, deviceActionVolumeInAppTts, deviceActionVolumeInAppCues,
         deviceActionVolumeNotification, deviceActionVolumeAlarm, deviceActionVolumeCall,
         deviceActionStatusSilent, deviceActionStatusVibrate, deviceActionStatusLoud,
@@ -180,6 +182,7 @@ fun PreviewTabContent(
                             DeviceActionType.READ_BATTERY -> deviceActionReadBattery
                             DeviceActionType.READ_CALENDAR_ENTRIES -> deviceActionReadCalendar
                             DeviceActionType.SEND_MESSAGE -> deviceActionSendMessage
+                            DeviceActionType.SEND_LAST_SPOKEN_SMS -> deviceActionSendLastSpokenSms
                             DeviceActionType.START_CALL -> deviceActionStartCall
                             DeviceActionType.VOLUME_MEDIA -> deviceActionVolumeMedia
                             DeviceActionType.VOLUME_IN_APP_TTS -> deviceActionVolumeInAppTts
@@ -230,6 +233,8 @@ fun PreviewTabContent(
                                 batteryFormat
                             } else if (deviceActionType == DeviceActionType.SEND_MESSAGE) {
                                 smsFormat.format(contactName, messageText)
+                            } else if (deviceActionType == DeviceActionType.SEND_LAST_SPOKEN_SMS) {
+                                smsLastSpokenFormat.format(contactName)
                             } else if (deviceActionType == DeviceActionType.START_CALL) {
                                 callFormat.format(contactName, contactPhone)
                             } else {

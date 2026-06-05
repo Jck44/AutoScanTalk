@@ -71,6 +71,7 @@ private fun getDeviceActionIcon(type: DeviceActionType): ImageVector {
         DeviceActionType.STATUS_VIBRATE -> GhostTalkIcons.Vibration
         DeviceActionType.STATUS_LOUD -> GhostTalkIcons.VolumeUp
         DeviceActionType.SEND_MESSAGE -> Icons.AutoMirrored.Filled.Send
+        DeviceActionType.SEND_LAST_SPOKEN_SMS -> Icons.AutoMirrored.Filled.Send
         DeviceActionType.READ_BATTERY -> GhostTalkIcons.BatteryFull
         DeviceActionType.READ_DATE -> GhostTalkIcons.DateRange
         DeviceActionType.READ_TIME -> GhostTalkIcons.AccessTime
@@ -135,6 +136,7 @@ fun DeviceActionFields(
         DeviceActionType.STATUS_VIBRATE to stringResource(R.string.status_vibrate),
         DeviceActionType.STATUS_LOUD to stringResource(R.string.status_loud),
         DeviceActionType.SEND_MESSAGE to stringResource(R.string.action_send_message),
+        DeviceActionType.SEND_LAST_SPOKEN_SMS to stringResource(R.string.device_action_send_last_spoken_sms),
         DeviceActionType.READ_BATTERY to stringResource(R.string.button_device_control_battery),
         DeviceActionType.READ_DATE to stringResource(R.string.button_device_control_date),
         DeviceActionType.READ_TIME to stringResource(R.string.button_device_control_time),
@@ -209,7 +211,7 @@ fun DeviceActionFields(
                                 }
 
                                 // Permission check for Messaging
-                                if (type == DeviceActionType.SEND_MESSAGE) {
+                                if (type == DeviceActionType.SEND_MESSAGE || type == DeviceActionType.SEND_LAST_SPOKEN_SMS) {
                                     permissionLauncher.launch(
                                         arrayOf(Manifest.permission.SEND_SMS, Manifest.permission.READ_CONTACTS)
                                     )
@@ -281,14 +283,15 @@ fun DeviceActionFields(
             }
 
             // Messaging parameters
-            if (selectedType == DeviceActionType.SEND_MESSAGE) {
+            if (selectedType == DeviceActionType.SEND_MESSAGE || selectedType == DeviceActionType.SEND_LAST_SPOKEN_SMS) {
                 MessagingFields(
                     contactName = contactName ?: stringResource(R.string.contact_picker_title),
                     contactPhone = contactPhone ?: "",
                     onContactSelected = onContactSelected,
                     messageText = messageText ?: "",
                     onMessageTextChange = onMessageTextChange,
-                    onAutoSave = onAutoSave
+                    onAutoSave = onAutoSave,
+                    showTextField = selectedType == DeviceActionType.SEND_MESSAGE
                 )
             }
 

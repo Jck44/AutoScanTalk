@@ -50,6 +50,8 @@ class SpeechActionHandler @Inject constructor(
         val textToSpeak = buttonConfig.spokenText?.takeIf { it.isNotBlank() }
             ?: buttonConfig.label
             
+        actionLogger.lastSpokenText = textToSpeak
+
         val tts = ttsProxyLazy.get()
         if (tts.isReady) {
             tts.speakRouted(

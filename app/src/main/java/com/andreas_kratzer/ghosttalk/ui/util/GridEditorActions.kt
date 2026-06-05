@@ -1,22 +1,22 @@
 package com.andreas_kratzer.ghosttalk.ui.util
 
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.core.model.GridSettingsUpdate
-import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.NavigateToStartPageButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.NavigateBackButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.ControlDeviceButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.DeviceActionType
+import com.andreas_kratzer.ghosttalk.core.model.FrequentActionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiSearchButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.WeatherButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.ControlDeviceButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.DeviceActionType
+import com.andreas_kratzer.ghosttalk.core.model.GridSettingsUpdate
+import com.andreas_kratzer.ghosttalk.core.model.NavigateBackButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.NavigateToStartPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.PlayMediaButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.SmartHomeButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.FrequentActionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.PreviousActionButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.SmartHomeButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.WeatherButtonAction
 import kotlinx.coroutines.flow.StateFlow
 
 interface GridEditorActions {
@@ -102,6 +102,7 @@ suspend fun generateSuggestButtonLabelPrompt(config: ButtonConfig, pageNameResol
                 DeviceActionType.TOGGLE_AUTO_READ_NOTIFICATIONS -> details.append("Automatisches Vorlesen der Benachrichtigungen umschalten")
                 DeviceActionType.CLEAR_NOTIFICATIONS -> details.append("Benachrichtigungen löschen")
                 DeviceActionType.SEND_MESSAGE -> details.append("Nachricht per SMS/WhatsApp senden an \"${action.contactName ?: ""}\" (Tel: ${action.contactPhone ?: ""}) mit Text: \"${action.messageText ?: ""}\"")
+                DeviceActionType.SEND_LAST_SPOKEN_SMS -> details.append("Letzten gesprochenen Text per SMS senden an \"${action.contactName ?: ""}\" (Tel: ${action.contactPhone ?: ""})")
                 DeviceActionType.START_CALL -> details.append("Anruf starten zu \"${action.contactName ?: ""}\" (Tel: ${action.contactPhone ?: ""})")
                 DeviceActionType.MEDIA_PLAY_PAUSE -> details.append("Medien Wiedergabe Abspielen/Pause")
                 DeviceActionType.MEDIA_NEXT -> details.append("Nächster Medientitel")
@@ -125,10 +126,10 @@ suspend fun generateSuggestButtonLabelPrompt(config: ButtonConfig, pageNameResol
             }
         }
         is PlayMediaButtonAction -> {
-            details.append("Musik/Medium abspielen von ${action.provider.name}. Name: \"${action.contentName ?: ""}\"")
+            details.append("Musik/Medium abspielen von ${action.provider.name}. Name: \"${action.contentName}\"")
         }
         is SmartHomeButtonAction -> {
-            details.append("Smart Home Gerät steuern von ${action.provider.name}. Gerät: \"${action.deviceName ?: ""}\", Intent: \"${action.intent ?: ""}\", Wert: \"${action.value ?: ""}\"")
+            details.append("Smart Home Gerät steuern von ${action.provider.name}. Gerät: \"${action.deviceName}\", Intent: \"${action.intent}\", Wert: \"${action.value ?: ""}\"")
         }
         is FrequentActionButtonAction -> {
             details.append("Häufigste Aktion (Rang ${action.rank}) anzeigen")

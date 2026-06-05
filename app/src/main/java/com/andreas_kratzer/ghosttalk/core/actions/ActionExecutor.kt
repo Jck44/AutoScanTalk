@@ -226,7 +226,8 @@ class ActionExecutor @Inject constructor(
             is com.andreas_kratzer.ghosttalk.core.model.ControlDeviceButtonAction -> {
                 when (action.actionType) {
                     com.andreas_kratzer.ghosttalk.core.model.DeviceActionType.READ_CALENDAR_ENTRIES -> listOf(android.Manifest.permission.READ_CALENDAR)
-                    com.andreas_kratzer.ghosttalk.core.model.DeviceActionType.SEND_MESSAGE -> listOf(android.Manifest.permission.SEND_SMS)
+                    com.andreas_kratzer.ghosttalk.core.model.DeviceActionType.SEND_MESSAGE,
+                    com.andreas_kratzer.ghosttalk.core.model.DeviceActionType.SEND_LAST_SPOKEN_SMS -> listOf(android.Manifest.permission.SEND_SMS)
                     com.andreas_kratzer.ghosttalk.core.model.DeviceActionType.START_CALL -> {
                         if (settingsRepository.simulateCallsEnabled) emptyList()
                         else listOf(android.Manifest.permission.CALL_PHONE)

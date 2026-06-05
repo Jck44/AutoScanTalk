@@ -119,6 +119,7 @@ fun ActionConfigFields(
     val actionTypeReadNotifications = stringResource(R.string.button_action_notification)
     val actionTypeClearNotifications = stringResource(R.string.button_action_clear_notifications)
     val actionTypeSendMessage = stringResource(R.string.action_send_message)
+    val actionTypeSendLastSpokenSms = stringResource(R.string.device_action_send_last_spoken_sms)
     val actionTypeStartCall = stringResource(R.string.action_start_call)
 
     // Medien & Musik
@@ -255,6 +256,7 @@ fun ActionConfigFields(
             actionTypeReadNotifications,
             actionTypeClearNotifications,
             actionTypeSendMessage,
+            actionTypeSendLastSpokenSms,
             actionTypeStartCall,
             actionTypeMediaPlayPause,
             actionTypeMediaNext,
@@ -279,6 +281,7 @@ fun ActionConfigFields(
                     actionTypeReadNotifications -> DeviceActionType.READ_NOTIFICATIONS
                     actionTypeClearNotifications -> DeviceActionType.CLEAR_NOTIFICATIONS
                     actionTypeSendMessage -> DeviceActionType.SEND_MESSAGE
+                    actionTypeSendLastSpokenSms -> DeviceActionType.SEND_LAST_SPOKEN_SMS
                     actionTypeStartCall -> DeviceActionType.START_CALL
                     actionTypeMediaPlayPause -> DeviceActionType.MEDIA_PLAY_PAUSE
                     actionTypeMediaNext -> DeviceActionType.MEDIA_NEXT

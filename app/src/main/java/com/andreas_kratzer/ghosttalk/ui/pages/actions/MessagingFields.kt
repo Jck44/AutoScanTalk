@@ -30,7 +30,8 @@ fun MessagingFields(
     onContactSelected: (String, String) -> Unit,
     messageText: String,
     onMessageTextChange: (String) -> Unit,
-    onAutoSave: () -> Unit = {}
+    onAutoSave: () -> Unit = {},
+    showTextField: Boolean = true
 ) {
     val dimensions = LocalDimensions.current
     val context = LocalContext.current
@@ -83,23 +84,25 @@ fun MessagingFields(
         )
 
         // Message Text (Filtering Emojis)
-        OutlinedTextField(
-            value = messageText,
-            onValueChange = { newValue ->
-                // Filter out Emojis / Surrogate pairs / Non-BMP characters
-                val filtered = newValue.filter { char ->
-                    char.code <= 0xFFFF && !char.isSurrogate()
+        if (showTextField) {
+            OutlinedTextField(
+                value = messageText,
+                onValueChange = { newValue ->
+                    // Filter out Emojis / Surrogate pairs / Non-BMP characters
+                    val filtered = newValue.filter { char ->
+                        char.code <= 0xFFFF && !char.isSurrogate()
+                    }
+                    onMessageTextChange(filtered)
+                },
+                label = { Text(stringResource(R.string.message_emojis_not_supported)) },
+                shape = MaterialTheme.shapes.large,
+                modifier = Modifier.fillMaxWidth().onFocusChanged {
+                    if (!it.isFocused) onAutoSave()
+                },
+                supportingText = {
+                    Text(stringResource(R.string.message_emojis_hint))
                 }
-                onMessageTextChange(filtered)
-            },
-            label = { Text(stringResource(R.string.message_emojis_not_supported)) },
-            shape = MaterialTheme.shapes.large,
-            modifier = Modifier.fillMaxWidth().onFocusChanged {
-                if (!it.isFocused) onAutoSave()
-            },
-            supportingText = {
-                Text(stringResource(R.string.message_emojis_hint))
-            }
-        )
+            )
+        }
     }
 }

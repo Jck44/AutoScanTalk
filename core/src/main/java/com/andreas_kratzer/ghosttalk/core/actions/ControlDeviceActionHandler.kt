@@ -75,6 +75,7 @@ class ControlDeviceActionHandler @Inject constructor(
             DeviceActionType.STATUS_LOUD -> handleStatus(AudioManager.RINGER_MODE_NORMAL, action, buttonConfig.label, executionId, onFinish)
             
             DeviceActionType.SEND_MESSAGE -> handleSendMessage(deviceAction, buttonConfig.label, executionId, onFinish)
+            DeviceActionType.SEND_LAST_SPOKEN_SMS -> handleSendLastSpokenSms(buttonConfig, deviceAction, executionId, onFinish)
             
             DeviceActionType.READ_BATTERY -> handleReadBattery(buttonConfig, deviceAction, executionId, onFinish)
             DeviceActionType.READ_TIME -> handleReadTime(buttonConfig, deviceAction, executionId, onFinish)
@@ -266,9 +267,45 @@ class ControlDeviceActionHandler @Inject constructor(
     }
 
     private fun handleSendMessage(action: ControlDeviceButtonAction, label: String?, executionId: Int, onFinish: (Int) -> Unit) {
-        val phone = action.contactPhone
-        val message = action.messageText ?: ""
+        sendSmsInternal(action.contactPhone, action.messageText ?: "", action, label, executionId, onFinish)
+    }
 
+    private fun handleSendLastSpokenSms(
+        config: ButtonConfig,
+        action: ControlDeviceButtonAction,
+        executionId: Int,
+        onFinish: (Int) -> Unit
+    ) {
+        val lastSpoken = actionLogger.lastSpokenText
+        if (lastSpoken.isBlank()) {
+            val msg = "Es wurde noch kein Text gesprochen."
+            actionLogger.log(msg, action, config.label)
+            val targetDeviceAddress = if (config.playActionAsAuditoryCue) {
+                settings.cuesAudioDeviceAddress
+            } else {
+                settings.ttsAudioDeviceAddress
+            }
+            val tts = ttsProxyLazy.get()
+            if (tts.isReady) {
+                tts.speakRouted(msg, targetDeviceAddress) {
+                    onFinish(executionId)
+                }
+            } else {
+                onFinish(executionId)
+            }
+            return
+        }
+        sendSmsInternal(action.contactPhone, lastSpoken, action, config.label, executionId, onFinish)
+    }
+
+    private fun sendSmsInternal(
+        phone: String?,
+        message: String,
+        action: ControlDeviceButtonAction,
+        label: String?,
+        executionId: Int,
+        onFinish: (Int) -> Unit
+    ) {
         if (phone.isNullOrBlank()) {
             actionLogger.log("Kein Kontakt ausgewählt.", action, label)
             onFinish(executionId)
@@ -343,6 +380,7 @@ class ControlDeviceActionHandler @Inject constructor(
             timeoutHandler.removeCallbacksAndMessages(null)
             actionLogger.log("SMS-Sendeversuch fehlgeschlagen: ${e.message}", action, label)
             try {
+                context.unregisterReceiver(receiver)
             } catch (_: Exception) {}
             onFinish(executionId)
         }

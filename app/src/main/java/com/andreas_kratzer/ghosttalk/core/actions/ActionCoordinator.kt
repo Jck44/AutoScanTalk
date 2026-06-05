@@ -19,6 +19,8 @@ class ActionCoordinator @Inject constructor(
     private val _events = MutableSharedFlow<ActionExecutionEvent>()
     val events: SharedFlow<ActionExecutionEvent> = _events.asSharedFlow()
 
+    override var lastSpokenText: String = ""
+
     override fun log(message: String, action: com.andreas_kratzer.ghosttalk.core.model.ButtonAction?, label: String?) {
         logger.d("ActionExecutor", "Log: $message")
         scope.launch { _events.emit(ActionExecutionEvent.Log(message, action, label)) }
