@@ -28,6 +28,10 @@ class VocalProfileRepositoryImpl @Inject constructor(
         return vocalProfileDao.getProfileById(id)?.toDomain()
     }
 
+    override suspend fun updateProfile(profile: VocalProfile) {
+        vocalProfileDao.updateProfile(profile.toEntity())
+    }
+
     override suspend fun saveProfile(profile: VocalProfile) {
         vocalProfileDao.insertProfile(profile.toEntity())
     }

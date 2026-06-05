@@ -77,19 +77,82 @@ fun PreviewTabContent(
     val previousActionCueN = stringResource(R.string.button_preview_previous_action_cue_n, rank)
     val smartPredictionCue = stringResource(R.string.button_preview_smart_prediction_cue)
 
+    val speakCustomFormat = stringResource(R.string.button_preview_speak_custom)
+    val speakFallbackFormat = stringResource(R.string.button_preview_speak_fallback)
+    val mediaDelayReturnFormat = stringResource(R.string.button_preview_media_delay_return)
+    val mediaDelayStay = stringResource(R.string.button_preview_media_delay_stay)
+    val playMediaFormat = stringResource(R.string.button_preview_play_media)
+    val navigateWithFeedbackFormat = stringResource(R.string.button_preview_navigate_with_feedback)
+    val navigateOnlyFormat = stringResource(R.string.button_preview_navigate_only)
+    val geminiCloudFormat = stringResource(R.string.button_preview_gemini_cloud)
+    val geminiNanoFormat = stringResource(R.string.button_preview_gemini_nano)
+    val geminiVision = stringResource(R.string.button_preview_gemini_vision)
+    val weatherAnnounce = stringResource(R.string.button_preview_weather)
+    val smartHomeFormat = stringResource(R.string.button_preview_smart_home)
+    val dynamicAction = stringResource(R.string.button_preview_dynamic_action)
+    val cueSpeechFormat = stringResource(R.string.button_preview_cue_speech)
+    val cueAction = stringResource(R.string.button_preview_cue_action)
+    val cueCustomFormat = stringResource(R.string.button_preview_cue_custom)
+    val cueFallbackFormat = stringResource(R.string.button_preview_cue_fallback)
+    val spokenTextFormat = stringResource(R.string.button_preview_spoken_text_format)
+    val calendarFormat = stringResource(R.string.button_preview_calendar_format)
+    val batteryFormat = stringResource(R.string.button_preview_battery_format)
+    val smsFormat = stringResource(R.string.button_preview_sms_format)
+    val callFormat = stringResource(R.string.button_preview_call_format)
+    val deviceFunctionFormat = stringResource(R.string.button_preview_device_function)
+
+    // Device Action type display names
+    val deviceActionReadTime = stringResource(R.string.device_action_read_time)
+    val deviceActionReadDate = stringResource(R.string.device_action_read_date)
+    val deviceActionReadBattery = stringResource(R.string.device_action_read_battery)
+    val deviceActionReadCalendar = stringResource(R.string.device_action_read_calendar)
+    val deviceActionSendMessage = stringResource(R.string.device_action_send_message)
+    val deviceActionStartCall = stringResource(R.string.device_action_start_call)
+    val deviceActionVolumeMedia = stringResource(R.string.device_action_volume_media)
+    val deviceActionVolumeInAppTts = stringResource(R.string.device_action_volume_in_app_tts)
+    val deviceActionVolumeInAppCues = stringResource(R.string.device_action_volume_in_app_cues)
+    val deviceActionVolumeNotification = stringResource(R.string.device_action_volume_notification)
+    val deviceActionVolumeAlarm = stringResource(R.string.device_action_volume_alarm)
+    val deviceActionVolumeCall = stringResource(R.string.device_action_volume_call)
+    val deviceActionStatusSilent = stringResource(R.string.device_action_status_silent)
+    val deviceActionStatusVibrate = stringResource(R.string.device_action_status_vibrate)
+    val deviceActionStatusLoud = stringResource(R.string.device_action_status_loud)
+    val deviceActionMediaPlayPause = stringResource(R.string.device_action_media_play_pause)
+    val deviceActionMediaNext = stringResource(R.string.device_action_media_next)
+    val deviceActionMediaPrevious = stringResource(R.string.device_action_media_previous)
+    val deviceActionToggleScanning = stringResource(R.string.device_action_toggle_scanning)
+    val deviceActionInstallUpdate = stringResource(R.string.device_action_install_update)
+    val deviceActionStartSync = stringResource(R.string.device_action_start_sync)
+    val deviceActionReadNotifications = stringResource(R.string.device_action_read_notifications)
+    val deviceActionClearNotifications = stringResource(R.string.device_action_clear_notifications)
+    val deviceActionToggleAutoReadNotifications = stringResource(R.string.device_action_toggle_auto_read_notifications)
+
     val speakDescription = remember(
         selectedActionType, spokenText, label, geminiPrompt, targetPageId,
         deviceActionType, includeWeekday, offsetValue, prefixText, suffixText,
         contactName, contactPhone, messageText, smartHomeDeviceName,
         mediaProvider, mediaContentName, mediaReturnToAppDelaySec,
-        frequentActionSpeak, previousActionSpeak, smartPredictionSpeak
+        frequentActionSpeak, previousActionSpeak, smartPredictionSpeak,
+        speakCustomFormat, speakFallbackFormat, mediaDelayReturnFormat, mediaDelayStay,
+        playMediaFormat, navigateWithFeedbackFormat, navigateOnlyFormat, geminiCloudFormat,
+        geminiNanoFormat, geminiVision, weatherAnnounce, smartHomeFormat, dynamicAction,
+        spokenTextFormat, calendarFormat, batteryFormat, smsFormat, callFormat,
+        deviceFunctionFormat, deviceActionReadTime, deviceActionReadDate, deviceActionReadBattery,
+        deviceActionReadCalendar, deviceActionSendMessage, deviceActionStartCall,
+        deviceActionVolumeMedia, deviceActionVolumeInAppTts, deviceActionVolumeInAppCues,
+        deviceActionVolumeNotification, deviceActionVolumeAlarm, deviceActionVolumeCall,
+        deviceActionStatusSilent, deviceActionStatusVibrate, deviceActionStatusLoud,
+        deviceActionMediaPlayPause, deviceActionMediaNext, deviceActionMediaPrevious,
+        deviceActionToggleScanning, deviceActionInstallUpdate, deviceActionStartSync,
+        deviceActionReadNotifications, deviceActionClearNotifications,
+        deviceActionToggleAutoReadNotifications
     ) {
         when {
             isSpeech -> {
                 if (spokenText.isNotBlank()) {
-                    "🗣️ Text vorlesen:\n\"$spokenText\"\n\n(Eigener Sprechtext wird verwendet)"
+                    speakCustomFormat.format(spokenText)
                 } else {
-                    "🗣️ Text vorlesen (Fallback auf Label):\n\"$label\"\n\n(Da der Sprechtext leer ist, wird die Kachel-Beschriftung gesprochen)"
+                    speakFallbackFormat.format(label)
                 }
             }
             else -> {
@@ -97,45 +160,45 @@ fun PreviewTabContent(
                     actionTypePlayMedia -> {
                         val nameStr = mediaContentName.ifBlank { mediaProvider.displayName }
                         val delayVal = mediaReturnToAppDelaySec.toIntOrNull() ?: 2
-                        val delayDesc = if (delayVal > 0) "Kehrt nach $delayVal Sekunden automatisch zu GhostTalk zurück." else "Bleibt in der Medien-App."
-                        "🎵 Medien abspielen (${mediaProvider.displayName}):\nSpielt $nameStr ab. $delayDesc"
+                        val delayDesc = if (delayVal > 0) mediaDelayReturnFormat.format(delayVal) else mediaDelayStay
+                        playMediaFormat.format(mediaProvider.displayName, nameStr, delayDesc)
                     }
                     actionTypeNavigate -> {
                         if (spokenText.isNotBlank()) {
-                            "🗣️ Feedback vorlesen:\n\"$spokenText\"\n\n➡️ Navigation:\nÖffnet danach die Seite \"$targetPageId\""
+                            navigateWithFeedbackFormat.format(spokenText, targetPageId)
                         } else {
-                            "➡️ Navigation:\nÖffnet die Seite \"$targetPageId\""
+                            navigateOnlyFormat.format(targetPageId)
                         }
                     }
-                    actionTypeGemini -> "✨ KI (Gemini Cloud):\nSendet Prompt \"$geminiPrompt\" an Gemini und liest die Antwort vor."
-                    actionTypeGeminiNano -> "📱 KI Nano (Offline):\nVerarbeitet Intent \"$geminiPrompt\" lokal auf dem Gerät."
-                    actionTypeGeminiVision -> "📷 KI Vision (Auge):\nAnalysiert Kamerabild und liest die Beschreibung vor."
+                    actionTypeGemini -> geminiCloudFormat.format(geminiPrompt)
+                    actionTypeGeminiNano -> geminiNanoFormat.format(geminiPrompt)
+                    actionTypeGeminiVision -> geminiVision
                     actionTypeDevice -> {
                         val actionName = when (deviceActionType) {
-                            DeviceActionType.READ_TIME -> "Uhrzeit vorlesen"
-                            DeviceActionType.READ_DATE -> "Datum vorlesen"
-                            DeviceActionType.READ_BATTERY -> "Batteriestand vorlesen"
-                            DeviceActionType.READ_CALENDAR_ENTRIES -> "Kalender vorlesen"
-                            DeviceActionType.SEND_MESSAGE -> "SMS senden"
-                            DeviceActionType.START_CALL -> "Anruf starten"
-                            DeviceActionType.VOLUME_MEDIA -> "Medien-Lautstärke ändern"
-                            DeviceActionType.VOLUME_IN_APP_TTS -> "In-App-Lautstärke: Laut Sprechen ändern"
-                            DeviceActionType.VOLUME_IN_APP_CUES -> "In-App-Lautstärke: Audio-Hinweis ändern"
-                            DeviceActionType.VOLUME_NOTIFICATION -> "Benachrichtigungs-Lautstärke ändern"
-                            DeviceActionType.VOLUME_ALARM -> "Wecker-Lautstärke ändern"
-                            DeviceActionType.VOLUME_CALL -> "Anruf-Lautstärke ändern"
-                            DeviceActionType.STATUS_SILENT -> "Modus: Lautlos"
-                            DeviceActionType.STATUS_VIBRATE -> "Modus: Vibration"
-                            DeviceActionType.STATUS_LOUD -> "Modus: Laut"
-                            DeviceActionType.MEDIA_PLAY_PAUSE -> "Musik abspielen/pausieren"
-                            DeviceActionType.MEDIA_NEXT -> "Nächstes Lied abspielen"
-                            DeviceActionType.MEDIA_PREVIOUS -> "Vorheriges Lied abspielen"
-                            DeviceActionType.TOGGLE_SCANNING -> "Scannen pausieren/fortsetzen"
-                            DeviceActionType.INSTALL_UPDATE -> "App aktualisieren"
-                            DeviceActionType.START_SYNC -> "Synchronisation starten"
-                            DeviceActionType.READ_NOTIFICATIONS -> "Benachrichtigungen vorlesen"
-                            DeviceActionType.CLEAR_NOTIFICATIONS -> "Benachrichtigungen löschen"
-                            DeviceActionType.TOGGLE_AUTO_READ_NOTIFICATIONS -> "Automatisches Vorlesen umschalten"
+                            DeviceActionType.READ_TIME -> deviceActionReadTime
+                            DeviceActionType.READ_DATE -> deviceActionReadDate
+                            DeviceActionType.READ_BATTERY -> deviceActionReadBattery
+                            DeviceActionType.READ_CALENDAR_ENTRIES -> deviceActionReadCalendar
+                            DeviceActionType.SEND_MESSAGE -> deviceActionSendMessage
+                            DeviceActionType.START_CALL -> deviceActionStartCall
+                            DeviceActionType.VOLUME_MEDIA -> deviceActionVolumeMedia
+                            DeviceActionType.VOLUME_IN_APP_TTS -> deviceActionVolumeInAppTts
+                            DeviceActionType.VOLUME_IN_APP_CUES -> deviceActionVolumeInAppCues
+                            DeviceActionType.VOLUME_NOTIFICATION -> deviceActionVolumeNotification
+                            DeviceActionType.VOLUME_ALARM -> deviceActionVolumeAlarm
+                            DeviceActionType.VOLUME_CALL -> deviceActionVolumeCall
+                            DeviceActionType.STATUS_SILENT -> deviceActionStatusSilent
+                            DeviceActionType.STATUS_VIBRATE -> deviceActionStatusVibrate
+                            DeviceActionType.STATUS_LOUD -> deviceActionStatusLoud
+                            DeviceActionType.MEDIA_PLAY_PAUSE -> deviceActionMediaPlayPause
+                            DeviceActionType.MEDIA_NEXT -> deviceActionMediaNext
+                            DeviceActionType.MEDIA_PREVIOUS -> deviceActionMediaPrevious
+                            DeviceActionType.TOGGLE_SCANNING -> deviceActionToggleScanning
+                            DeviceActionType.INSTALL_UPDATE -> deviceActionInstallUpdate
+                            DeviceActionType.START_SYNC -> deviceActionStartSync
+                            DeviceActionType.READ_NOTIFICATIONS -> deviceActionReadNotifications
+                            DeviceActionType.CLEAR_NOTIFICATIONS -> deviceActionClearNotifications
+                            DeviceActionType.TOGGLE_AUTO_READ_NOTIFICATIONS -> deviceActionToggleAutoReadNotifications
                         }
                         val specificText = try {
                             val calendar = java.util.Calendar.getInstance()
@@ -148,7 +211,7 @@ fun PreviewTabContent(
                                 val timeString = sdf.format(calendar.time)
                                 val prefix = prefixText.takeIf { it.isNotBlank() }?.let { if (it.endsWith(" ")) it else "$it " } ?: ""
                                 val suffix = suffixText.takeIf { it.isNotBlank() }?.let { if (it.startsWith(" ")) it else " $it" } ?: ""
-                                "\n\nGesprochener Text:\n\"$prefix$timeString$suffix\""
+                                spokenTextFormat.format("$prefix$timeString$suffix")
                             } else if (deviceActionType == DeviceActionType.READ_DATE) {
                                 if (offsetInt != 0) {
                                     calendar.add(java.util.Calendar.DAY_OF_YEAR, offsetInt)
@@ -158,31 +221,31 @@ fun PreviewTabContent(
                                 val dateString = sdf.format(calendar.time)
                                 val prefix = prefixText.takeIf { it.isNotBlank() }?.let { if (it.endsWith(" ")) it else "$it " } ?: ""
                                 val suffix = suffixText.takeIf { it.isNotBlank() }?.let { if (it.startsWith(" ")) it else " $it" } ?: ""
-                                "\n\nGesprochener Text:\n\"$prefix$dateString$suffix\""
+                                spokenTextFormat.format("$prefix$dateString$suffix")
                             } else if (deviceActionType == DeviceActionType.READ_CALENDAR_ENTRIES) {
                                 val prefix = prefixText.takeIf { it.isNotBlank() }?.let { if (it.endsWith(" ")) it else "$it " } ?: ""
                                 val suffix = suffixText.takeIf { it.isNotBlank() }?.let { if (it.startsWith(" ")) it else " $it" } ?: ""
-                                "\n\nGesprochener Text:\n\"${prefix}[Termine]${suffix}\" (Liest $offsetInt Kalendereinträge vor)"
+                                calendarFormat.format("${prefix}[Termine]${suffix}", offsetInt)
                             } else if (deviceActionType == DeviceActionType.READ_BATTERY) {
-                                "\n\nGesprochener Text:\n\"Batteriestand ist bei 85 Prozent\""
+                                batteryFormat
                             } else if (deviceActionType == DeviceActionType.SEND_MESSAGE) {
-                                "\n\nSendet SMS an $contactName:\n\"$messageText\""
+                                smsFormat.format(contactName, messageText)
                             } else if (deviceActionType == DeviceActionType.START_CALL) {
-                                "\n\nRuft $contactName an ($contactPhone)"
+                                callFormat.format(contactName, contactPhone)
                             } else {
                                 ""
                             }
                         } catch (_: Exception) {
                             ""
                         }
-                        "📱 Geräte-Funktion: $actionName$specificText"
+                        deviceFunctionFormat.format(actionName, specificText)
                     }
-                    actionTypeWeather -> "🌤️ Wetteransage:\nRuft aktuellen Wetterbericht ab und spricht ihn laut vor."
-                    actionTypeSmartHome -> "🏠 Smart Home:\nSchaltet Gerät \"$smartHomeDeviceName\"."
+                    actionTypeWeather -> weatherAnnounce
+                    actionTypeSmartHome -> smartHomeFormat.format(smartHomeDeviceName)
                     actionTypeFrequent -> frequentActionSpeak
                     actionTypePrevious -> previousActionSpeak
                     actionTypeSmart -> smartPredictionSpeak
-                    else -> "🔄 Führt dynamische Aktion aus."
+                    else -> dynamicAction
                 }
             }
         }
@@ -190,18 +253,19 @@ fun PreviewTabContent(
 
     val cueDescription = remember(
         playActionAsAuditoryCue, isSpeech, speakTextToUse, auditoryCueText, label, selectedActionType,
-        frequentActionCue1, frequentActionCueN, previousActionCue1, previousActionCueN, smartPredictionCue
+        frequentActionCue1, frequentActionCueN, previousActionCue1, previousActionCueN, smartPredictionCue,
+        cueSpeechFormat, cueAction, cueCustomFormat, cueFallbackFormat
     ) {
         when {
             playActionAsAuditoryCue -> {
                 if (isSpeech) {
-                    "🔊 Spielt Aktionstext leise vor (Cue):\n\"$speakTextToUse\"\n\n(Option \"Aktionstext direkt vorlesen\" ist aktiv. Spricht denselben Text wie beim Tippen, aber leise im Scanning-Kanal)"
+                    cueSpeechFormat.format(speakTextToUse)
                 } else {
-                    "🔊 Spielt Aktion leise vor (Cue):\nFührt die Aktion (z.B. Navigations-Beschreibung) leise im Scanning-Kanal aus."
+                    cueAction
                 }
             }
             auditoryCueText.isNotBlank() -> {
-                "🔊 Spricht leise (Benutzerdefinierter Cue):\n\"$auditoryCueText\"\n\n(Eigener Hinweistext wird verwendet)"
+                cueCustomFormat.format(auditoryCueText)
             }
             else -> {
                 when (selectedActionType) {
@@ -223,7 +287,7 @@ fun PreviewTabContent(
                         "🔊 $smartPredictionCue"
                     }
                     else -> {
-                        "🔊 Spricht leise (Fallback auf Label):\n\"$label\"\n\n(Da der Hinweistext leer ist, wird die Kachel-Beschriftung als Scanning-Cue verwendet)"
+                        cueFallbackFormat.format(label)
                     }
                 }
             }
@@ -238,7 +302,7 @@ fun PreviewTabContent(
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
-                text = "📢 Laut sprechen / Aktion ausführen",
+                text = stringResource(R.string.button_preview_header_speak),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary
             )
@@ -257,7 +321,7 @@ fun PreviewTabContent(
 
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
-                text = "🎧 Flüsterton / Scanning-Hinweis",
+                text = stringResource(R.string.button_preview_header_cue),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.secondary
             )

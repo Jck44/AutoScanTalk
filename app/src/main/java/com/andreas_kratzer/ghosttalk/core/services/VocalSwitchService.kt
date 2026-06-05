@@ -39,6 +39,9 @@ class VocalSwitchService : Service() {
     @Inject
     lateinit var actionEventEmitter: ActionEventEmitter
 
+    @Inject
+    lateinit var vocalPatternMatcher: VocalPatternMatcher
+
     private val serviceJob = SupervisorJob()
     private val serviceScope = CoroutineScope(Dispatchers.IO + serviceJob)
 
@@ -213,12 +216,14 @@ class VocalSwitchService : Service() {
         var bestMatchProfile: VocalProfile? = null
 
         for (profile in activeProfiles) {
-            val similarity = VocalPatternMatcher.calculateCosineSimilarity(
-                profile.referenceEmbedding,
-                liveEmbedding
+            val result = vocalPatternMatcher.evaluate(
+                inputVector = liveEmbedding,
+                positives = profile.positiveTemplates,
+                negatives = profile.negativeTemplates,
+                threshold = SIMILARITY_THRESHOLD
             )
-            if (similarity > bestSimilarity) {
-                bestSimilarity = similarity
+            if (result.isMatch && result.positiveConfidence > bestSimilarity) {
+                bestSimilarity = result.positiveConfidence
                 bestMatchProfile = profile
             }
         }

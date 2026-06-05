@@ -7,6 +7,7 @@ interface VocalProfileRepository {
     fun getAllProfilesFlow(): Flow<List<VocalProfile>>
     fun getActiveProfilesFlow(): Flow<List<VocalProfile>>
     suspend fun getProfileById(id: String): VocalProfile?
+    suspend fun updateProfile(profile: VocalProfile)
     suspend fun saveProfile(profile: VocalProfile)
     suspend fun deleteProfile(profile: VocalProfile)
     suspend fun deleteProfileById(id: String)

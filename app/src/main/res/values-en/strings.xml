@@ -466,5 +466,58 @@
     <string name="button_preview_smart_prediction_cue">Auditory Cue (Smart Prediction):\nUses the default auditory cue of the predicted button/page (without any additional prefix).</string>
     <string name="page_editor_preview_toggle">Toggle dynamic resolution preview</string>
     <string name="page_editor_preview_active_banner">Preview Mode Active (Editing Disabled)</string>
+
+    <!-- Preview Tab Localization -->
+    <string name="button_preview_header_speak">📢 Speak Out Loud / Execute Action</string>
+    <string name="button_preview_header_cue">🎧 Auditory Cue / Scanning Hint</string>
+    <string name="button_preview_speak_custom">🗣️ Speak text:\n\"%1$s\"\n\n(Custom spoken text is used)</string>
+    <string name="button_preview_speak_fallback">🗣️ Speak text (fallback to label):\n\"%1$s\"\n\n(Since the spoken text is empty, the tile label is spoken)</string>
+    <string name="button_preview_media_delay_return">Automatically returns to GhostTalk after %1$d seconds.</string>
+    <string name="button_preview_media_delay_stay">Stays in the media app.</string>
+    <string name="button_preview_play_media">🎵 Play media (%1$s):\nPlays %2$s. %3$s</string>
+    <string name="button_preview_navigate_with_feedback">🗣️ Read feedback out loud:\n\"%1$s\"\n\n➡️ Navigation:\nThen opens page \"%2$s\"</string>
+    <string name="button_preview_navigate_only">➡️ Navigation:\nOpens page \"%1$s\"</string>
+    <string name="button_preview_gemini_cloud">✨ AI (Gemini Cloud):\nSends prompt \"%1$s\" to Gemini and reads the response out loud.</string>
+    <string name="button_preview_gemini_nano">📱 AI Nano (Offline):\nProcesses intent \"%1$s\" locally on the device.</string>
+    <string name="button_preview_gemini_vision">📷 AI Vision (Eye):\nAnalyzes camera image and reads description out loud.</string>
+    <string name="button_preview_weather">🌤️ Weather announcement:\nFetches current weather report and reads it out loud.</string>
+    <string name="button_preview_smart_home">🏠 Smart Home:\nSwitches device \"%1$s\".</string>
+    <string name="button_preview_dynamic_action">🔄 Executes dynamic action.</string>
+    <string name="button_preview_cue_speech">🔊 Plays action text quietly (Cue):\n\"%1$s\"\n\n(Option \"Read action text directly\" is active. Speaks the same text as when tapping, but quietly in the scanning channel)</string>
+    <string name="button_preview_cue_action">🔊 Plays action quietly (Cue):\nExecutes the action (e.g., navigation description) quietly in the scanning channel.</string>
+    <string name="button_preview_cue_custom">🔊 Speaks quietly (Custom Cue):\n\"%1$s\"\n\n(Custom hint text is used)</string>
+    <string name="button_preview_cue_fallback">🔊 Speaks quietly (fallback to label):\n\"%1$s\"\n\n(Since the hint text is empty, the tile label is used as a scanning cue)</string>
+    <string name="button_preview_spoken_text_format">\n\nSpoken text:\n\"%1$s\"</string>
+    <string name="button_preview_calendar_format">\n\nSpoken text:\n\"%1$s\" (Reads %2$d calendar entries)</string>
+    <string name="button_preview_battery_format">\n\nSpoken text:\n\"Battery level is at 85 percent\"</string>
+    <string name="button_preview_sms_format">\n\nSends SMS to %1$s:\n\"%2$s\"</string>
+    <string name="button_preview_call_format">\n\nCalls %1$s (%2$s)</string>
+    <string name="button_preview_device_function">📱 Device function: %1$s%2$s</string>
+
+    <!-- Device Action Names -->
+    <string name="device_action_read_time">Read time</string>
+    <string name="device_action_read_date">Read date</string>
+    <string name="device_action_read_battery">Read battery level</string>
+    <string name="device_action_read_calendar">Read calendar</string>
+    <string name="device_action_send_message">Send SMS</string>
+    <string name="device_action_start_call">Start call</string>
+    <string name="device_action_volume_media">Change media volume</string>
+    <string name="device_action_volume_in_app_tts">Change In-App Volume: Speak Out Loud</string>
+    <string name="device_action_volume_in_app_cues">Change In-App Volume: Auditory Cue</string>
+    <string name="device_action_volume_notification">Change notification volume</string>
+    <string name="device_action_volume_alarm">Change alarm volume</string>
+    <string name="device_action_volume_call">Change call volume</string>
+    <string name="device_action_status_silent">Mode: Silent</string>
+    <string name="device_action_status_vibrate">Mode: Vibrate</string>
+    <string name="device_action_status_loud">Mode: Loud</string>
+    <string name="device_action_media_play_pause">Play/pause music</string>
+    <string name="device_action_media_next">Play next song</string>
+    <string name="device_action_media_previous">Play previous song</string>
+    <string name="device_action_toggle_scanning">Pause/resume scanning</string>
+    <string name="device_action_install_update">Update app</string>
+    <string name="device_action_start_sync">Start synchronization</string>
+    <string name="device_action_read_notifications">Read notifications</string>
+    <string name="device_action_clear_notifications">Clear notifications</string>
+    <string name="device_action_toggle_auto_read_notifications">Toggle automatic reading</string>
 </resources>
 

@@ -34,7 +34,7 @@ import java.util.UUID
         ButtonEntity::class, ButtonUsageHistoryEntity::class, ButtonTemplateEntity::class,
         UserModeSessionEntity::class, VocalProfileEntity::class
     ],
-    version = 29,
+    version = 30,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -52,6 +52,16 @@ abstract class AppDatabase : RoomDatabase() {
     companion object {
         @Volatile
         private var INSTANCE: AppDatabase? = null
+
+        val MIGRATION_29_30: Migration = object : Migration(29, 30) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Add positive/negative template columns for V2 false-positive training.
+                db.execSQL("ALTER TABLE `vocal_profiles` ADD COLUMN `positiveTemplatesJson` TEXT NOT NULL DEFAULT '[]'")
+                db.execSQL("ALTER TABLE `vocal_profiles` ADD COLUMN `negativeTemplatesJson` TEXT NOT NULL DEFAULT '[]'")
+                // Rename the old referenceEmbedding column is not supported by SQLite ALTER TABLE;
+                // we keep the old column as-is (it maps to referenceEmbeddingJson with ColumnInfo).
+            }
+        }
 
         val MIGRATION_28_29: Migration = object : Migration(28, 29) {
             override fun migrate(db: SupportSQLiteDatabase) {
@@ -527,7 +537,8 @@ abstract class AppDatabase : RoomDatabase() {
                     MIGRATION_25_26,
                     MIGRATION_26_27,
                     MIGRATION_27_28,
-                    MIGRATION_28_29
+                    MIGRATION_28_29,
+                    MIGRATION_29_30
                 )
                 .build()
                 INSTANCE = instance

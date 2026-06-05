@@ -201,6 +201,29 @@ fun VocalTrainingScreen(
             }
 
             item {
+                val testState by viewModel.testState.collectAsState()
+                PreferenceCategory("Live-Test & Kalibrierung") {
+                    VocalSwitchTestDashboard(
+                        testState = testState,
+                        allProfiles = allProfiles,
+                        onStartTest = {
+                            val hasPermission = ContextCompat.checkSelfPermission(
+                                context, Manifest.permission.RECORD_AUDIO
+                            ) == PackageManager.PERMISSION_GRANTED
+                            if (hasPermission) {
+                                viewModel.startLiveTest()
+                            } else {
+                                audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                            }
+                        },
+                        onRegisterFalsePositive = { profile, features ->
+                            viewModel.addLastSampleAsFalsePositive(profile, features)
+                        }
+                    )
+                }
+            }
+
+            item {
                 PreferenceCategory("Trainierte Vocal-Profile") {
                     if (allProfiles.isEmpty()) {
                         Text(
@@ -398,3 +421,126 @@ fun ProfileRow(
         }
     }
 }
+
+@Composable
+fun VocalSwitchTestDashboard(
+    testState: VocalTrainingViewModel.TestScreenState,
+    allProfiles: List<VocalProfile>,
+    onStartTest: () -> Unit,
+    onRegisterFalsePositive: (VocalProfile, List<Float>) -> Unit
+) {
+    val dimensions = LocalDimensions.current
+    var selectedProfileForFalsePositive by remember { mutableStateOf<VocalProfile?>(null) }
+    var showFPMenu by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = dimensions.paddingSmall),
+        verticalArrangement = Arrangement.spacedBy(dimensions.paddingMedium)
+    ) {
+        Button(
+            onClick = onStartTest,
+            enabled = testState !is VocalTrainingViewModel.TestScreenState.Listening,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = when (testState) {
+                    is VocalTrainingViewModel.TestScreenState.Listening -> "Höre zu..."
+                    else -> "Live-Test starten (1 Sekunde)"
+                }
+            )
+        }
+
+        when (testState) {
+            VocalTrainingViewModel.TestScreenState.Idle -> {
+                Text(
+                    text = "Bereit für Test. Klicke auf den Button oben und mache das Geräusch.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            VocalTrainingViewModel.TestScreenState.Listening -> {
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                Text(
+                    text = "Bitte jetzt Laut machen...",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            is VocalTrainingViewModel.TestScreenState.Evaluated -> {
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (testState.isMatch) {
+                            MaterialTheme.colorScheme.primaryContainer
+                        } else {
+                            MaterialTheme.colorScheme.surfaceVariant
+                        }
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(dimensions.paddingMedium),
+                        verticalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)
+                    ) {
+                        Text(
+                            text = if (testState.isMatch) "Erkannt!" else "Nicht erkannt / Blockiert",
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = if (testState.isMatch) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                        )
+                        if (testState.isMatch && testState.matchedProfileName != null) {
+                            Text(
+                                text = "Profil: ${testState.matchedProfileName}",
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        }
+                        Text(
+                            text = "Ziel-Konfidenz: ${(testState.positiveConfidence * 100).toInt()}% | Noise-Konfidenz: ${(testState.negativeConfidence * 100).toInt()}%",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+
+                        // If not matched or matches a wrong profile, allow user to register this as false-positive (noise) for a profile
+                        if (allProfiles.isNotEmpty()) {
+                            HorizontalDivider(modifier = Modifier.padding(vertical = dimensions.paddingSmall))
+                            Text(
+                                text = "War das ein Fehlalarm?",
+                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Text(
+                                text = "Registriere dieses Geräusch als Fehlalarm für ein Profil, damit es künftig blockiert wird.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            
+                            Box(modifier = Modifier.padding(top = dimensions.paddingSmall)) {
+                                Button(
+                                    onClick = { showFPMenu = true },
+                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                                ) {
+                                    Text("Fehlalarm registrieren...")
+                                }
+                                DropdownMenu(
+                                    expanded = showFPMenu,
+                                    onDismissRequest = { showFPMenu = false }
+                                ) {
+                                    allProfiles.forEach { profile ->
+                                        DropdownMenuItem(
+                                            text = { Text(profile.name) },
+                                            onClick = {
+                                                onRegisterFalsePositive(profile, testState.rawFeatures)
+                                                showFPMenu = false
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+

@@ -1,5 +1,6 @@
 package com.andreas_kratzer.ghosttalk.core.database
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.andreas_kratzer.ghosttalk.core.model.ButtonAction
@@ -9,26 +10,48 @@ import com.andreas_kratzer.ghosttalk.core.model.VocalProfile
 data class VocalProfileEntity(
     @PrimaryKey val id: String,
     val name: String,
-    val referenceEmbedding: List<Float>,
+    /** V2: JSON of List<List<Float>> – all 5 raw training vectors. */
+    val positiveTemplatesJson: String = "[]",
+    /** V2: JSON of List<List<Float>> – learned false-positive vectors to block. */
+    val negativeTemplatesJson: String = "[]",
     val buttonAction: ButtonAction? = null,
     val spokenText: String? = null,
-    val isActive: Boolean = true
+    val isActive: Boolean = true,
+    /** Legacy column, kept for non-destructive migration. */
+    @ColumnInfo(name = "referenceEmbedding", defaultValue = "[]")
+    val referenceEmbeddingJson: String = "[]"
 ) {
+    @Suppress("DEPRECATION")
     fun toDomain(): VocalProfile = VocalProfile(
         id = id,
         name = name,
-        referenceEmbedding = referenceEmbedding,
+        positiveTemplates = parseFloatMatrix(positiveTemplatesJson),
+        negativeTemplates = parseFloatMatrix(negativeTemplatesJson),
+        buttonAction = buttonAction,
+        spokenText = spokenText,
+        isActive = isActive
+    )
+
+    private fun parseFloatMatrix(json: String): List<List<Float>> {
+        if (json.isBlank() || json == "[]") return emptyList()
+        return try {
+            kotlinx.serialization.json.Json.decodeFromString<List<List<Float>>>(json)
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+}
+
+@Suppress("DEPRECATION")
+fun VocalProfile.toEntity(): VocalProfileEntity {
+    val jsonEncoder = kotlinx.serialization.json.Json
+    return VocalProfileEntity(
+        id = id,
+        name = name,
+        positiveTemplatesJson = jsonEncoder.encodeToString<List<List<Float>>>(positiveTemplates),
+        negativeTemplatesJson = jsonEncoder.encodeToString<List<List<Float>>>(negativeTemplates),
         buttonAction = buttonAction,
         spokenText = spokenText,
         isActive = isActive
     )
 }
-
-fun VocalProfile.toEntity(): VocalProfileEntity = VocalProfileEntity(
-    id = id,
-    name = name,
-    referenceEmbedding = referenceEmbedding,
-    buttonAction = buttonAction,
-    spokenText = spokenText,
-    isActive = isActive
-)

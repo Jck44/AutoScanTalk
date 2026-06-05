@@ -9,6 +9,7 @@ import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.andreas_kratzer.ghosttalk.core.ai.domain.AudioEmbedderWrapper
+import com.andreas_kratzer.ghosttalk.core.ai.domain.VocalPatternMatcher
 import com.andreas_kratzer.ghosttalk.core.data.VocalProfileRepository
 import com.andreas_kratzer.ghosttalk.core.data.PageRepository
 import com.andreas_kratzer.ghosttalk.core.model.ButtonAction
@@ -33,7 +34,8 @@ class VocalTrainingViewModel @Inject constructor(
     private val application: Application,
     private val vocalProfileRepository: VocalProfileRepository,
     private val pageRepository: PageRepository,
-    private val audioEmbedderWrapper: AudioEmbedderWrapper
+    private val audioEmbedderWrapper: AudioEmbedderWrapper,
+    private val vocalPatternMatcher: VocalPatternMatcher
 ) : AndroidViewModel(application) {
 
     private val TAG = "VocalTrainingViewModel"
@@ -211,10 +213,12 @@ class VocalTrainingViewModel @Inject constructor(
         val newProfile = VocalProfile(
             id = UUID.randomUUID().toString(),
             name = name,
-            referenceEmbedding = averageVector.toList(),
+            positiveTemplates = recordedEmbeddings.toList(),
+            negativeTemplates = emptyList(),
             buttonAction = action,
             spokenText = textToSpeak,
-            isActive = true
+            isActive = true,
+            referenceEmbedding = averageVector.toList()
         )
 
         viewModelScope.launch {
@@ -244,5 +248,138 @@ class VocalTrainingViewModel @Inject constructor(
             vocalProfileRepository.clearAllProfiles()
         }
         resetTrainingState()
+    }
+
+    // --- Live Test & Calibration V2 ---
+    sealed interface TestScreenState {
+        object Idle : TestScreenState
+        object Listening : TestScreenState
+        data class Evaluated(
+            val isMatch: Boolean,
+            val positiveConfidence: Float,
+            val negativeConfidence: Float,
+            val matchedProfileName: String?,
+            val rawFeatures: List<Float>
+        ) : TestScreenState
+    }
+
+    private val _testState = MutableStateFlow<TestScreenState>(TestScreenState.Idle)
+    val testState: StateFlow<TestScreenState> = _testState.asStateFlow()
+
+    @SuppressLint("MissingPermission")
+    fun startLiveTest() {
+        if (_isRecording.value) return
+        _isRecording.value = true
+        _testState.value = TestScreenState.Listening
+
+        viewModelScope.launch(Dispatchers.IO) {
+            val format = audioEmbedderWrapper.getRequiredAudioFormat()
+            val sampleRate = format.sampleRate
+            val channelConfig = AudioFormat.CHANNEL_IN_MONO
+            val audioEncoding = AudioFormat.ENCODING_PCM_16BIT
+            val windowSamples = 15600
+            val minBufferSize = AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioEncoding)
+            val bufferSize = maxOf(minBufferSize, windowSamples * 2)
+
+            var recorder: AudioRecord? = null
+            try {
+                recorder = AudioRecord(
+                    MediaRecorder.AudioSource.MIC,
+                    sampleRate,
+                    channelConfig,
+                    audioEncoding,
+                    bufferSize
+                )
+
+                if (recorder.state != AudioRecord.STATE_INITIALIZED) {
+                    throw IllegalStateException("AudioRecord not initialized")
+                }
+
+                recorder.startRecording()
+                Log.d(TAG, "Live test recording started")
+
+                val shortBuffer = ShortArray(windowSamples)
+                var totalRead = 0
+                while (totalRead < windowSamples && _isRecording.value) {
+                    val read = recorder.read(shortBuffer, totalRead, windowSamples - totalRead)
+                    if (read > 0) {
+                        totalRead += read
+                    } else if (read < 0) {
+                        throw IllegalStateException("AudioRecord read error: $read")
+                    }
+                }
+
+                val floatAudioData = FloatArray(windowSamples)
+                for (i in 0 until windowSamples) {
+                    floatAudioData[i] = shortBuffer[i] / 32768.0f
+                }
+
+                val embedding = audioEmbedderWrapper.getEmbedding(floatAudioData)
+                withContext(Dispatchers.Main) {
+                    if (embedding != null) {
+                        // Evaluate against all active profiles
+                        val profiles = allProfiles.value
+                        var bestMatchResult: VocalPatternMatcher.MatchResult? = null
+                        var bestMatchProfile: VocalProfile? = null
+
+                        for (profile in profiles) {
+                            val result = vocalPatternMatcher.evaluate(
+                                inputVector = embedding,
+                                positives = profile.positiveTemplates,
+                                negatives = profile.negativeTemplates
+                            )
+                            if (bestMatchResult == null || result.positiveConfidence > bestMatchResult.positiveConfidence) {
+                                bestMatchResult = result
+                                bestMatchProfile = profile
+                            }
+                        }
+
+                        if (bestMatchResult != null) {
+                            _testState.value = TestScreenState.Evaluated(
+                                isMatch = bestMatchResult.isMatch,
+                                positiveConfidence = bestMatchResult.positiveConfidence,
+                                negativeConfidence = bestMatchResult.negativeConfidence,
+                                matchedProfileName = if (bestMatchResult.isMatch) bestMatchProfile?.name else null,
+                                rawFeatures = embedding
+                            )
+                        } else {
+                            _testState.value = TestScreenState.Evaluated(
+                                isMatch = false,
+                                positiveConfidence = 0f,
+                                negativeConfidence = 0f,
+                                matchedProfileName = null,
+                                rawFeatures = embedding
+                            )
+                        }
+                        Log.d(TAG, "Live test successfully evaluated")
+                    } else {
+                        _testState.value = TestScreenState.Idle
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Live test failed", e)
+                withContext(Dispatchers.Main) {
+                    _testState.value = TestScreenState.Idle
+                }
+            } finally {
+                try {
+                    recorder?.stop()
+                    recorder?.release()
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to release recorder during live test", e)
+                }
+                _isRecording.value = false
+            }
+        }
+    }
+
+    fun addLastSampleAsFalsePositive(profile: VocalProfile, features: List<Float>) {
+        viewModelScope.launch {
+            val updatedNegatives = profile.negativeTemplates.toMutableList()
+            updatedNegatives.add(features)
+            val updatedProfile = profile.copy(negativeTemplates = updatedNegatives)
+            vocalProfileRepository.updateProfile(updatedProfile)
+            Log.d(TAG, "Added sample as false-positive for profile: ${profile.name}")
+        }
     }
 }

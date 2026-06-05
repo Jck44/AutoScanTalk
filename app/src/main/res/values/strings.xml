@@ -470,5 +470,58 @@
     <string name="button_preview_smart_prediction_cue">Flüsterton (Smarte Vorhersage):\nVerwendet den Standard-Auditory-Cue des vorhergesagten Knopfs/Seite (ohne zusätzliches Präfix).</string>
     <string name="page_editor_preview_toggle">Auflösungsvorschau umschalten</string>
     <string name="page_editor_preview_active_banner">Vorschaumodus aktiv (Bearbeiten deaktiviert)</string>
+
+    <!-- Preview Tab Localization -->
+    <string name="button_preview_header_speak">📢 Laut sprechen / Aktion ausführen</string>
+    <string name="button_preview_header_cue">🎧 Flüsterton / Scanning-Hinweis</string>
+    <string name="button_preview_speak_custom">🗣️ Text vorlesen:\n\"%1$s\"\n\n(Eigener Sprechtext wird verwendet)</string>
+    <string name="button_preview_speak_fallback">🗣️ Text vorlesen (Fallback auf Label):\n\"%1$s\"\n\n(Da der Sprechtext leer ist, wird die Kachel-Beschriftung gesprochen)</string>
+    <string name="button_preview_media_delay_return">Kehrt nach %1$d Sekunden automatisch zu GhostTalk zurück.</string>
+    <string name="button_preview_media_delay_stay">Bleibt in der Medien-App.</string>
+    <string name="button_preview_play_media">🎵 Medien abspielen (%1$s):\nSpielt %2$s ab. %3$s</string>
+    <string name="button_preview_navigate_with_feedback">🗣️ Feedback vorlesen:\n\"%1$s\"\n\n➡️ Navigation:\nÖffnet danach die Seite „%2$s“</string>
+    <string name="button_preview_navigate_only">➡️ Navigation:\nÖffnet die Seite „%1$s“</string>
+    <string name="button_preview_gemini_cloud">✨ KI (Gemini Cloud):\nSendet Prompt „%1$s“ an Gemini und liest die Antwort vor.</string>
+    <string name="button_preview_gemini_nano">📱 KI Nano (Offline):\nVerarbeitet Intent „%1$s“ lokal auf dem Gerät.</string>
+    <string name="button_preview_gemini_vision">📷 KI Vision (Auge):\nAnalysiert Kamerabild und liest die Beschreibung vor.</string>
+    <string name="button_preview_weather">🌤️ Wetteransage:\nRuft aktuellen Wetterbericht ab und spricht ihn laut vor.</string>
+    <string name="button_preview_smart_home">🏠 Smart Home:\nSchaltet Gerät „%1$s“.</string>
+    <string name="button_preview_dynamic_action">🔄 Führt dynamische Aktion aus.</string>
+    <string name="button_preview_cue_speech">🔊 Spielt Aktionstext leise vor (Cue):\n\"%1$s\"\n\n(Option \"Aktionstext direkt vorlesen\" ist aktiv. Spricht denselben Text wie beim Tippen, aber leise im Scanning-Kanal)</string>
+    <string name="button_preview_cue_action">🔊 Spielt Aktion leise vor (Cue):\nFührt die Aktion (z.B. Navigations-Beschreibung) leise im Scanning-Kanal aus.</string>
+    <string name="button_preview_cue_custom">🔊 Spricht leise (Benutzerdefinierter Cue):\n\"%1$s\"\n\n(Eigener Hinweistext wird verwendet)</string>
+    <string name="button_preview_cue_fallback">🔊 Spricht leise (Fallback auf Label):\n\"%1$s\"\n\n(Da der Hinweistext leer ist, wird die Kachel-Beschriftung als Scanning-Cue verwendet)</string>
+    <string name="button_preview_spoken_text_format">\n\nGesprochener Text:\n\"%1$s\"</string>
+    <string name="button_preview_calendar_format">\n\nGesprochener Text:\n\"%1$s\" (Liest %2$d Kalendereinträge vor)</string>
+    <string name="button_preview_battery_format">\n\nGesprochener Text:\n\"Batteriestand ist bei 85 Prozent\"</string>
+    <string name="button_preview_sms_format">\n\nSendet SMS an %1$s:\n\"%2$s\"</string>
+    <string name="button_preview_call_format">\n\nRuft %1$s an (%2$s)</string>
+    <string name="button_preview_device_function">📱 Geräte-Funktion: %1$s%2$s</string>
+
+    <!-- Device Action Names -->
+    <string name="device_action_read_time">Uhrzeit vorlesen</string>
+    <string name="device_action_read_date">Datum vorlesen</string>
+    <string name="device_action_read_battery">Batteriestand vorlesen</string>
+    <string name="device_action_read_calendar">Kalender vorlesen</string>
+    <string name="device_action_send_message">SMS senden</string>
+    <string name="device_action_start_call">Anruf starten</string>
+    <string name="device_action_volume_media">Medien-Lautstärke ändern</string>
+    <string name="device_action_volume_in_app_tts">In-App-Lautstärke: Laut Sprechen ändern</string>
+    <string name="device_action_volume_in_app_cues">In-App-Lautstärke: Audio-Hinweis ändern</string>
+    <string name="device_action_volume_notification">Benachrichtigungs-Lautstärke ändern</string>
+    <string name="device_action_volume_alarm">Wecker-Lautstärke ändern</string>
+    <string name="device_action_volume_call">Anruf-Lautstärke ändern</string>
+    <string name="device_action_status_silent">Modus: Lautlos</string>
+    <string name="device_action_status_vibrate">Modus: Vibration</string>
+    <string name="device_action_status_loud">Modus: Laut</string>
+    <string name="device_action_media_play_pause">Musik abspielen/pausieren</string>
+    <string name="device_action_media_next">Nächstes Lied abspielen</string>
+    <string name="device_action_media_previous">Vorheriges Lied abspielen</string>
+    <string name="device_action_toggle_scanning">Scannen pausieren/fortsetzen</string>
+    <string name="device_action_install_update">App aktualisieren</string>
+    <string name="device_action_start_sync">Synchronisation starten</string>
+    <string name="device_action_read_notifications">Benachrichtigungen vorlesen</string>
+    <string name="device_action_clear_notifications">Benachrichtigungen löschen</string>
+    <string name="device_action_toggle_auto_read_notifications">Automatisches Vorlesen umschalten</string>
 </resources>
 
