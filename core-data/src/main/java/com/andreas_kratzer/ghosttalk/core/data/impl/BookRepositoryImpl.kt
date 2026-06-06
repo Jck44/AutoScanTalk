@@ -13,5 +13,11 @@ class BookRepositoryImpl(private val bookDao: BookDao) : BookRepository {
     override suspend fun insertBook(book: Book) = bookDao.insertBook(book)
     override suspend fun updateBook(book: Book) = bookDao.updateBook(book)
     override suspend fun deleteBook(book: Book) = bookDao.deleteBook(book)
-    override suspend fun updateLastModified(bookId: String, timestamp: Long) = bookDao.updateLastModified(bookId, timestamp)
+    override suspend fun updateLastModified(bookId: String, timestamp: Long, incrementSequence: Boolean) {
+        if (incrementSequence) {
+            bookDao.incrementVersionSequence(bookId, timestamp)
+        } else {
+            bookDao.updateLastModified(bookId, timestamp)
+        }
+    }
 }

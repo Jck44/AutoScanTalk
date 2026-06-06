@@ -4,6 +4,9 @@ package com.andreas_kratzer.ghosttalk.core.cloud.domain
 import android.content.Context
 import android.net.Uri
 import com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper
+import com.andreas_kratzer.ghosttalk.core.cloud.SyncConcurrencyGuard
+import com.andreas_kratzer.ghosttalk.core.cloud.CloudSyncOptimizer
+import com.andreas_kratzer.ghosttalk.core.cloud.SyncAction
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.data.SyncLogProvider
 import com.andreas_kratzer.ghosttalk.core.data.impl.PageImportExportManager
@@ -49,18 +52,11 @@ class CloudSyncUseCase @Inject constructor(
         if (drive == null && folderId?.startsWith("content://") == true) {
             return DocumentFolderSyncStorageProvider(context, folderId)
         }
-        val targetType = settingsRepository.syncTargetType
-        if (targetType == "LOCAL_FOLDER_SAF" || drive == null) {
-            val uri = settingsRepository.localFolderSafUri ?: folderId
-            if (!uri.isNullOrEmpty()) {
-                return DocumentFolderSyncStorageProvider(context, uri)
-            }
-            throw IllegalStateException("SAF mode enabled but no folder URI configured.")
-        }
+        val actualDrive = drive ?: throw IllegalStateException("Drive API client not available.")
         val actualFolderId = folderId ?: settingsRepository.googleDriveFolderId ?: DriveServiceHelper(
-            drive
+            actualDrive
         ).findFolder(FOLDER_NAME) ?: throw IllegalStateException("No valid folder ID found for Drive API.")
-        return DriveApiSyncStorageProvider(drive, actualFolderId)
+        return DriveApiSyncStorageProvider(actualDrive, actualFolderId)
     }
 
     suspend fun syncBook(
@@ -68,53 +64,21 @@ class CloudSyncUseCase @Inject constructor(
         bookId: String,
         syncMode: SyncMode,
         onProgress: (Float, String) -> Unit = { _, _ -> }
-    ): Boolean = withContext(Dispatchers.IO) {
-        if (!syncMutex.tryLock()) {
-            logger.d(TAG, "Sync already in progress. Skipping execution to avoid race conditions.")
-            return@withContext false
-        }
-        try {
-            val zipFileName = "book_$bookId.zip"
-            val jsonFileName = "book_$bookId.json"
-            
+    ): Boolean = SyncConcurrencyGuard.runExclusive {
+        withContext(Dispatchers.IO) {
             logger.d(TAG, "Syncing book $bookId (mode: $syncMode)")
-            
+
             val book = bookRepository.getBookById(bookId)
             if (book == null) {
                 logger.e(TAG, "Book $bookId not found in database. Sync aborted.")
                 return@withContext false
             }
 
-        var remoteSyncError: Exception? = null
-        var success = false
+            var remoteSyncError: Exception? = null
+            var success = false
 
-        try {
-            val storageProvider = getStorageProvider(drive)
-            val remoteZipFile: RemoteSyncFile? = try {
-                storageProvider.listFiles().find { it.name == zipFileName }
-            } catch (e: Exception) {
-                logger.e(TAG, "Exception during remote ZIP file location", e)
-                null
-            }
-
-            val remoteJsonFile: RemoteSyncFile? = if (remoteZipFile == null) try {
-                storageProvider.listFiles().find { it.name == jsonFileName }
-            } catch (e: Exception) {
-                logger.e(TAG, "Exception during remote JSON file location", e)
-                null
-            } else null
-            
-            val remoteFile = remoteZipFile ?: remoteJsonFile
-            val currentFileName = remoteZipFile?.name ?: zipFileName // Use ZIP for new uploads
-            val mimeType = if (remoteZipFile != null || remoteJsonFile == null) "application/zip" else "application/json"
-
-            logger.d(TAG, "Remote file found: ${remoteFile != null} (id: ${remoteFile?.id}, name: ${remoteFile?.name})")
-
-            val remoteLastModified = remoteFile?.modifiedTime ?: 0L
-            logger.d(TAG, "Remote modifiedTime: $remoteLastModified")
-
-            val localLastModified = book.updatedAt // Use database timestamp, not file system
-            logger.d(TAG, "Local updatedAt: $localLastModified")
+            val zipFileName = "book_$bookId.zip"
+            val jsonFileName = "book_$bookId.json"
 
             // Resolve component-specific sync mode for book
             val bookModeStr = settingsRepository.syncModeBook
@@ -130,370 +94,446 @@ class CloudSyncUseCase @Inject constructor(
                 if (bookModeStr == "OFF") null else syncMode
             }
 
-            val needsExport = if (resolvedBookMode == null) false else (remoteFile == null || when (resolvedBookMode) {
-                SyncMode.RESTORE_ONLY -> false
-                SyncMode.BACKUP_ONLY -> localLastModified > remoteLastModified + 2000
-                SyncMode.TWO_WAY -> localLastModified > remoteLastModified + 2000
-            })
-
-            // Local Export (only needed for comparison or upload)
-            val tempFile = File(context.cacheDir, currentFileName)
-            if (needsExport) {
-                logger.d(TAG, "Step 3: Exporting local book data...")
-                if (mimeType == "application/zip") {
+            // Local Export (needed for comparison and backup)
+            val tempFile = File(context.cacheDir, zipFileName)
+            if (resolvedBookMode != null) {
+                try {
                     tempFile.outputStream().use { os ->
-                        importExportManager.exportBookToZip(bookId, os, includeTtsCache = false) { p, s -> 
-                            onProgress(p * 0.3f, s) // ZIP export is 0-30%
+                        importExportManager.exportBookToZip(bookId, os, includeTtsCache = false) { p, s ->
+                            onProgress(p * 0.2f, "Lokaler Export...") // 0-20% Progress
                         }
                     }
-                } else {
-                    val localJson = importExportManager.exportBookToJson(bookId)
-                    tempFile.writeText(localJson)
+                    saveToLocalBackupFolder(zipFileName, tempFile)
+                } catch (e: Exception) {
+                    logger.e(TAG, "Failed to export local book for sync", e)
+                    syncLogProvider.addLogEntry("Lokaler Export fehlgeschlagen", bookId, book.name, isError = true)
+                    return@withContext false
                 }
-                
-                // Copy to local backup folder on internal storage
-                saveToLocalBackupFolder(currentFileName, tempFile)
-            } else {
-                logger.d(TAG, "Step 3: Skipping local export (not needed).")
             }
 
-            if (resolvedBookMode == null) {
-                logger.d(TAG, "Book sync is OFF. Skipping book synchronization.")
-                success = true
-            } else if (remoteFile == null) {
-                logger.d(TAG, "Step 4a: Remote file does not exist.")
-                if (resolvedBookMode == SyncMode.RESTORE_ONLY) {
-                    logger.w(TAG, "RESTORE_ONLY mode but no remote file found. Cannot restore.")
-                    success = false
+            try {
+                val storageProvider = getStorageProvider(drive)
+                
+                if (resolvedBookMode == null) {
+                    logger.d(TAG, "Book sync is OFF. Skipping book synchronization.")
+                    success = true
                 } else {
-                    logger.d(TAG, "Uploading for the first time...")
-                    val newFileId = storageProvider.uploadFile(tempFile, mimeType, book.name) { p ->
-                        onProgress(0.3f + p * 0.7f, "Uploading to Drive...") // Upload is 30-100%
+                    // Fetch list of remote files matching this book
+                    val remoteFiles = storageProvider.listFiles()
+                    val remoteMasterFile = remoteFiles.find { it.name == zipFileName || it.name == jsonFileName }
+                    val remoteConflictFiles = remoteFiles.filter {
+                        it.name.startsWith("merged_") && (it.name.contains(zipFileName) || it.name.contains(jsonFileName))
                     }
-                    if (newFileId != null) {
-                        syncLogProvider.addLogEntry("Erster Upload in die Cloud (ZIP)", bookId, book.name, isError = false)
-                        val metadata = storageProvider.getFileMetadata(newFileId)
-                        val driveTime = metadata?.modifiedTime
-                        if (driveTime != null) {
-                            bookRepository.updateLastModified(bookId, driveTime)
+
+                    val localSeq = book.versionSequence
+                    val localMd5 = CloudSyncOptimizer().calculateMD5(tempFile)
+
+                    // 1. Initial Upload if no remote files exist at all
+                    if (remoteMasterFile == null && remoteConflictFiles.isEmpty()) {
+                        logger.d(TAG, "No remote file found. Uploading local book as master...")
+                        val newFileId = storageProvider.uploadFile(tempFile, "application/zip", book.name) { p ->
+                            onProgress(0.2f + p * 0.8f, "Uploading to Drive...")
                         }
-                        success = true
+                        if (newFileId != null) {
+                            syncLogProvider.addLogEntry("Erster Upload in die Cloud (ZIP)", bookId, book.name)
+                            val metadata = storageProvider.getFileMetadata(newFileId)
+                            val driveTime = metadata?.modifiedTime ?: 0L
+                            if (driveTime > 0L) {
+                                bookRepository.updateLastModified(bookId, driveTime, incrementSequence = false)
+                            }
+                            success = true
+                        } else {
+                            syncLogProvider.addLogEntry("Upload fehlgeschlagen", bookId, book.name, isError = true)
+                            success = false
+                        }
                     } else {
-                        syncLogProvider.addLogEntry("Upload fehlgeschlagen", bookId, book.name, isError = true)
-                        success = false
-                        // If SAF write failed, make sure we still have local backup
-                        if (tempFile.exists()) {
-                            saveToLocalBackupFolder(currentFileName, tempFile)
-                        }
-                    }
-                }
-            } else {
-                logger.d(TAG, "Step 4b: Remote file exists. Comparing timestamps...")
-                when (syncMode) {
-                    SyncMode.BACKUP_ONLY -> {
-                        if (localLastModified <= remoteLastModified + 2000) {
-                            logger.d(TAG, "BACKUP_ONLY: Remote version is already up-to-date. Skipping backup.")
-                            syncLogProvider.addLogEntry("BACKUP_ONLY: Keine lokalen Änderungen vorhanden", bookId, book.name)
+                        // 2. We have remote master or conflict files. Determine what action to take.
+                        var remoteData: ImportExportData? = null
+                        var remoteSeq = 0L
+
+                        val isIdentical = remoteMasterFile != null && remoteConflictFiles.isEmpty() && localMd5 == remoteMasterFile.md5Checksum
+                        if (isIdentical) {
+                            logger.d(TAG, "NO_OP: Local and remote files are identical (MD5 match). Skipping evaluation download.")
+                            syncLogProvider.addLogEntry("Inhalte sind identisch (NO_OP)", bookId, book.name)
+                            if (remoteMasterFile != null) {
+                                bookRepository.updateLastModified(bookId, remoteMasterFile.modifiedTime, incrementSequence = false)
+                            }
                             success = true
                         } else {
-                            if (remoteZipFile != null) {
-                                syncLogProvider.addLogEntry("BACKUP_ONLY: Cloud-Sicherung aktualisiert", bookId, book.name)
-                            } else {
-                                syncLogProvider.addLogEntry("BACKUP_ONLY: Cloud-Sicherung neu erstellt", bookId, book.name)
-                            }
-                            val uploadedFileId: String?
-                            val updateSuccess = if (remoteZipFile != null) {
-                                uploadedFileId = remoteZipFile.id
-                                storageProvider.updateFile(remoteZipFile.id, tempFile, "application/zip", book.name) { p ->
-                                    onProgress(0.3f + p * 0.7f, "Uploading to Drive...")
-                                }
-                            } else {
-                                val newId = storageProvider.uploadFile(tempFile, "application/zip", book.name) { p ->
-                                    onProgress(0.3f + p * 0.7f, "Uploading to Drive...")
-                                }
-                                uploadedFileId = newId
-                                newId != null
-                            }
-                            logger.d(TAG, "Update/Migration result: $updateSuccess")
-                            if (updateSuccess) {
-                                if (uploadedFileId != null) {
-                                    val metadata = storageProvider.getFileMetadata(uploadedFileId)
-                                    val driveTime = metadata?.modifiedTime ?: 0L
-                                    if (driveTime > 0L) {
-                                        bookRepository.updateLastModified(bookId, driveTime)
+                            if (remoteMasterFile != null) {
+                                val downloadFile = File(context.cacheDir, "download_${remoteMasterFile.name}")
+                                try {
+                                    val downloadSuccess = storageProvider.downloadFile(remoteMasterFile.id, downloadFile) { _ -> }
+                                    if (downloadSuccess) {
+                                        val remoteJson = readJsonFromFile(downloadFile)
+                                        val jsonParser = kotlinx.serialization.json.Json { ignoreUnknownKeys = true; encodeDefaults = true }
+                                        remoteData = jsonParser.decodeFromString<ImportExportData>(remoteJson)
+                                        remoteSeq = remoteData.versionSequence ?: 0L
+                                    } else {
+                                        logger.e(TAG, "Failed to download remote master file for evaluation.")
+                                        syncLogProvider.addLogEntry("Download der remote Master-Datei fehlgeschlagen", bookId, book.name, isError = true)
+                                        return@withContext false
                                     }
+                                } catch (e: Exception) {
+                                    logger.e(TAG, "Error downloading or parsing remote master file", e)
                                 }
+                            }
+
+                            // Determine sync action using CloudSyncOptimizer and resolvedBookMode constraints
+                            var action = if (remoteConflictFiles.isNotEmpty() && resolvedBookMode == SyncMode.TWO_WAY) {
+                                SyncAction.MERGE_CONFLICT
                             } else {
-                                syncLogProvider.addLogEntry("BACKUP_ONLY: Sicherung fehlgeschlagen", bookId, book.name, isError = true)
-                                if (tempFile.exists()) {
-                                    saveToLocalBackupFolder(currentFileName, tempFile)
+                                val localLastModified = book.updatedAt
+                                val remoteLastModified = remoteMasterFile?.modifiedTime ?: 0L
+
+                                if (localSeq == 0L || remoteSeq == 0L) {
+                                    // Legacy fallback based on timestamps
+                                    if (CloudSyncOptimizer().calculateMD5(tempFile) == remoteMasterFile?.md5Checksum) {
+                                        SyncAction.NO_OP
+                                    } else {
+                                        when (resolvedBookMode) {
+                                            SyncMode.BACKUP_ONLY -> {
+                                                if (localLastModified > remoteLastModified + 2000) SyncAction.UPLOAD else SyncAction.NO_OP
+                                            }
+                                            SyncMode.RESTORE_ONLY -> {
+                                                SyncAction.DOWNLOAD
+                                            }
+                                            SyncMode.TWO_WAY -> {
+                                                SyncAction.MERGE_CONFLICT
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    CloudSyncOptimizer().evaluateSync(tempFile, remoteMasterFile?.md5Checksum, localSeq, remoteSeq)
                                 }
                             }
-                            success = updateSuccess
-                        }
-                    }
-                    SyncMode.RESTORE_ONLY -> {
-                        val inSync = Math.abs(localLastModified - remoteLastModified) <= 2000
-                        if (inSync) {
-                            logger.d(TAG, "RESTORE_ONLY: Local and remote versions are synchronized. Skipping restore download.")
-                            syncLogProvider.addLogEntry("RESTORE_ONLY: Lokal bereits aktuell", bookId, book.name)
-                            success = true
-                        } else {
-                            logger.d(TAG, "RESTORE_ONLY mode. Downloading and importing...")
-                            success = downloadAndImport(storageProvider, remoteFile.id, remoteFile.name, book, remoteLastModified, onProgress)
-                            if (!success) {
-                                syncLogProvider.addLogEntry("RESTORE_ONLY: Wiederherstellung fehlgeschlagen", bookId, book.name, isError = true)
+
+                            // Translate action based on resolvedBookMode (only for modern clients)
+                            if (localSeq > 0L && remoteSeq > 0L) {
+                                action = when (resolvedBookMode) {
+                                    SyncMode.BACKUP_ONLY -> {
+                                        if (action == SyncAction.UPLOAD) SyncAction.UPLOAD else SyncAction.NO_OP
+                                    }
+                                    SyncMode.RESTORE_ONLY -> {
+                                        if (action != SyncAction.NO_OP) SyncAction.DOWNLOAD else SyncAction.NO_OP
+                                    }
+                                    SyncMode.TWO_WAY -> action
+                                }
                             }
-                        }
-                    }
-                    SyncMode.TWO_WAY -> {
-                        logger.d(TAG, "TWO_WAY sync: Starting granular merge...")
-                        val downloadFile = File(context.cacheDir, "download_$currentFileName")
-                        val downloadSuccess = storageProvider.downloadFile(remoteFile.id, downloadFile) { _ -> }
-                        if (!downloadSuccess) {
-                            logger.e(TAG, "Failed to download remote file for merge.")
+
+                            logger.d(TAG, "Resolved sync action: $action for mode $resolvedBookMode (localSeq: $localSeq, remoteSeq: $remoteSeq)")
+
+                            if (action == SyncAction.NO_OP) {
+                                logger.d(TAG, "NO_OP: Skipping sync action.")
+                                val isIdenticalCheck = CloudSyncOptimizer().calculateMD5(tempFile) == remoteMasterFile?.md5Checksum
+                                if (isIdenticalCheck) {
+                                    syncLogProvider.addLogEntry("Inhalte sind identisch (NO_OP)", bookId, book.name)
+                                } else if (resolvedBookMode == SyncMode.BACKUP_ONLY) {
+                                    syncLogProvider.addLogEntry("BACKUP_ONLY: Sicherung übersprungen (Cloud-Version ist aktueller)", bookId, book.name)
+                                } else {
+                                    syncLogProvider.addLogEntry("RESTORE_ONLY: Wiederherstellung übersprungen (Bereits synchron)", bookId, book.name)
+                                }
+                                if (remoteMasterFile != null) {
+                                    bookRepository.updateLastModified(bookId, remoteMasterFile.modifiedTime, incrementSequence = false)
+                                }
+                                success = true
+                            } else if (action == SyncAction.UPLOAD) {
+                        if (remoteMasterFile == null) {
                             success = false
                         } else {
+                            val expectedVersion = remoteMasterFile.version ?: 0L
+                            val driveHelper = if (storageProvider is DriveApiSyncStorageProvider) {
+                                DriveServiceHelper(drive!!)
+                            } else null
+
+                            val uploadSuccess = if (driveHelper != null) {
+                                driveHelper.uploadWithOptimisticLock(remoteMasterFile.id, tempFile, "application/zip", expectedVersion)
+                            } else {
+                                storageProvider.updateFile(remoteMasterFile.id, tempFile, "application/zip", book.name) { _ -> }
+                            }
+
+                            if (uploadSuccess) {
+                                syncLogProvider.addLogEntry("Sicherung in der Cloud aktualisiert (Sequence: $localSeq)", bookId, book.name)
+                                val metadata = storageProvider.getFileMetadata(remoteMasterFile.id)
+                                val driveTime = metadata?.modifiedTime ?: 0L
+                                if (driveTime > 0L) {
+                                    bookRepository.updateLastModified(bookId, driveTime, incrementSequence = false)
+                                }
+                                success = true
+                            } else {
+                                logger.w(TAG, "Optimistic lock failed during UPLOAD. Falling back to MERGE.")
+                                action = SyncAction.MERGE_CONFLICT
+                            }
+                        }
+                    }
+
+                    if (action == SyncAction.DOWNLOAD) {
+                        if (remoteMasterFile == null) {
+                            success = false
+                        } else {
+                            success = downloadAndImport(
+                                storageProvider = storageProvider,
+                                remoteFileId = remoteMasterFile.id,
+                                fileName = remoteMasterFile.name,
+                                book = book,
+                                remoteLastModified = remoteMasterFile.modifiedTime,
+                                onProgress = onProgress
+                            )
+                        }
+                    } else if (action == SyncAction.MERGE_CONFLICT) {
+                        logger.d(TAG, "SyncAction: MERGE_CONFLICT. Performing granular merge of all versions...")
+                        val localJson = importExportManager.exportBookToJson(bookId)
+                        val jsonParser = kotlinx.serialization.json.Json { ignoreUnknownKeys = true; encodeDefaults = true }
+                        val localData = jsonParser.decodeFromString<ImportExportData>(localJson)
+
+                        val filesToMerge = mutableListOf<RemoteSyncFile>()
+                        if (remoteMasterFile != null) {
+                            filesToMerge.add(remoteMasterFile)
+                        }
+                        filesToMerge.addAll(remoteConflictFiles)
+
+                        val remoteDataList = mutableListOf<ImportExportData>()
+                        for (remoteFile in filesToMerge) {
+                            val downloadFile = File(context.cacheDir, "merge_download_${remoteFile.name}")
                             try {
-                                if (remoteFile.name.endsWith(".zip")) {
-                                    downloadFile.inputStream().use { inputStream ->
-                                        java.util.zip.ZipInputStream(inputStream).use { zipIn ->
-                                            val audioDir = File(context.filesDir, "audio_recordings")
-                                            if (!audioDir.exists()) audioDir.mkdirs()
-                                            var entry = zipIn.nextEntry
-                                            while (entry != null) {
-                                                if (entry.name.startsWith("audio_recordings/")) {
-                                                    val fileName = entry.name.substringAfter("audio_recordings/")
-                                                    if (fileName.isNotEmpty()) {
-                                                        val targetFile = File(audioDir, fileName)
-                                                        val shouldExtract = !targetFile.exists() || (entry.time > targetFile.lastModified())
-                                                        if (shouldExtract) {
-                                                            FileOutputStream(targetFile).use { out -> zipIn.copyTo(out) }
-                                                            if (entry.time != -1L) {
-                                                                targetFile.setLastModified(entry.time)
+                                val downloadSuccess = storageProvider.downloadFile(remoteFile.id, downloadFile) { _ -> }
+                                if (downloadSuccess) {
+                                    // Extract audio files from ZIP
+                                    if (remoteFile.name.endsWith(".zip")) {
+                                        try {
+                                            downloadFile.inputStream().use { inputStream ->
+                                                java.util.zip.ZipInputStream(inputStream).use { zipIn ->
+                                                    val audioDir = File(context.filesDir, "audio_recordings")
+                                                    if (!audioDir.exists()) audioDir.mkdirs()
+                                                    var entry = zipIn.nextEntry
+                                                    while (entry != null) {
+                                                        if (entry.name.startsWith("audio_recordings/")) {
+                                                            val fileName = entry.name.substringAfter("audio_recordings/")
+                                                            if (fileName.isNotEmpty()) {
+                                                                val targetFile = File(audioDir, fileName)
+                                                                val shouldExtract = !targetFile.exists() || (entry.time > targetFile.lastModified())
+                                                                if (shouldExtract) {
+                                                                    FileOutputStream(targetFile).use { out -> zipIn.copyTo(out) }
+                                                                    if (entry.time != -1L) {
+                                                                        targetFile.setLastModified(entry.time)
+                                                                    }
+                                                                }
                                                             }
                                                         }
+                                                        zipIn.closeEntry()
+                                                        entry = zipIn.nextEntry
                                                     }
                                                 }
-                                                zipIn.closeEntry()
-                                                entry = zipIn.nextEntry
                                             }
+                                        } catch (e: Exception) {
+                                            logger.e(TAG, "Failed to extract audio recordings from ${remoteFile.name}", e)
                                         }
                                     }
-                                }
-
-                                val remoteJson = readJsonFromFile(downloadFile)
-                                val localJson = importExportManager.exportBookToJson(bookId)
-
-                                val jsonParser = kotlinx.serialization.json.Json { ignoreUnknownKeys = true; encodeDefaults = true }
-                                val remoteData = jsonParser.decodeFromString<ImportExportData>(remoteJson)
-                                val localData = jsonParser.decodeFromString<ImportExportData>(localJson)
-
-                                val mergedData = mergeBooks(localData, remoteData)
-                                val mergedJson = jsonParser.encodeToString(mergedData)
-
-                                val localNeedsUpdate = localJson != mergedJson
-                                val remoteNeedsUpdate = remoteJson != mergedJson
-
-                                var localUpdateSuccess = true
-                                if (localNeedsUpdate) {
-                                    logger.d(TAG, "Merged data differs from local database. Writing merged data...")
-                                    val importResult = importExportManager.importFromJson(mergedJson, bookId, restoreSyncSettings = false)
-                                    localUpdateSuccess = importResult.isSuccess
-                                    if (!localUpdateSuccess) {
-                                        logger.e(TAG, "Failed to import merged data locally: ${importResult.exceptionOrNull()?.message}")
-                                    }
-                                }
-
-                                var remoteUpdateSuccess = true
-                                var uploadedFileId = remoteZipFile?.id ?: remoteFile.id
-                                if (remoteNeedsUpdate && localUpdateSuccess) {
-                                    logger.d(TAG, "Merged data differs from remote file. Uploading merged data...")
-                                    val mergedTempFile = File(context.cacheDir, "merged_$currentFileName")
-                                    mergedTempFile.outputStream().use { os ->
-                                        java.util.zip.ZipOutputStream(os).use { zip ->
-                                            zip.putNextEntry(java.util.zip.ZipEntry("backup.json"))
-                                            zip.write(mergedJson.toByteArray(Charsets.UTF_8))
-                                            zip.closeEntry()
-
-                                            val audioDir = File(context.filesDir, "audio_recordings")
-                                            if (audioDir.exists() && audioDir.isDirectory) {
-                                                audioDir.listFiles()?.filter { it.isFile && it.name.endsWith(".ogg") }?.forEach { file ->
-                                                    zip.putNextEntry(java.util.zip.ZipEntry("audio_recordings/${file.name}"))
-                                                    file.inputStream().use { input -> input.copyTo(zip) }
-                                                    zip.closeEntry()
-                                                }
-                                            }
-                                        }
-                                    }
-                                     val uploadDir = File(context.cacheDir, "upload_temp")
-                                     if (!uploadDir.exists()) uploadDir.mkdirs()
-                                     val finalUploadFile = File(uploadDir, currentFileName)
-                                     if (finalUploadFile.exists()) finalUploadFile.delete()
-                                     mergedTempFile.renameTo(finalUploadFile)
-
-                                     remoteUpdateSuccess = if (remoteZipFile != null) {
-                                         storageProvider.updateFile(remoteZipFile.id, finalUploadFile, "application/zip", book.name) { _ -> }
-                                     } else {
-                                         val newId = storageProvider.uploadFile(finalUploadFile, "application/zip", book.name) { _ -> }
-                                         if (newId != null) {
-                                             uploadedFileId = newId
-                                             true
-                                         } else {
-                                             false
-                                         }
-                                     }
-                                     finalUploadFile.delete()
-                                     uploadDir.delete()
-                                 }
-
-                                if (localUpdateSuccess && remoteUpdateSuccess) {
-                                    val metadata = storageProvider.getFileMetadata(uploadedFileId)
-                                    val driveTime = metadata?.modifiedTime ?: 0L
-                                    if (driveTime > 0L) {
-                                        bookRepository.updateLastModified(bookId, driveTime)
-                                    }
-                                    syncLogProvider.addLogEntry("Zwei-Wege-Merge erfolgreich abgeschlossen", bookId, book.name)
-                                    success = true
-                                } else {
-                                    success = false
+                                    val remoteJson = readJsonFromFile(downloadFile)
+                                    val parsedData = jsonParser.decodeFromString<ImportExportData>(remoteJson)
+                                    remoteDataList.add(parsedData)
                                 }
                             } catch (e: Exception) {
-                                logger.e(TAG, "Error during TWO_WAY merge sync", e)
-                                success = false
+                                logger.e(TAG, "Error downloading or parsing remote file during merge", e)
                             } finally {
                                 downloadFile.delete()
                             }
                         }
+
+                        // Perform sequential merge on detail level
+                        var merged = localData
+                        for (remoteItem in remoteDataList) {
+                            merged = mergeBooks(merged, remoteItem)
+                        }
+
+                        // Determine new sequence sequence
+                        val maxRemoteSeq = remoteDataList.mapNotNull { it.versionSequence }.maxOrNull() ?: 0L
+                        val newSeq = maxOf(localSeq, maxRemoteSeq) + 1
+                        merged = merged.copy(versionSequence = newSeq)
+
+                        val mergedJson = jsonParser.encodeToString(merged)
+                        
+                        // Import merged data locally
+                        val importResult = importExportManager.importFromJson(mergedJson, bookId, restoreSyncSettings = false)
+                        if (importResult.isSuccess) {
+                            // Create merged zip file
+                            val mergedTempFile = File(context.cacheDir, "merged_upload_book_$bookId.zip")
+                            try {
+                                mergedTempFile.outputStream().use { os ->
+                                    java.util.zip.ZipOutputStream(os).use { zip ->
+                                        zip.putNextEntry(java.util.zip.ZipEntry("backup.json"))
+                                        zip.write(mergedJson.toByteArray(Charsets.UTF_8))
+                                        zip.closeEntry()
+
+                                        val audioDir = File(context.filesDir, "audio_recordings")
+                                        if (audioDir.exists() && audioDir.isDirectory) {
+                                            audioDir.listFiles()?.filter { it.isFile && it.name.endsWith(".ogg") }?.forEach { file ->
+                                                zip.putNextEntry(java.util.zip.ZipEntry("audio_recordings/${file.name}"))
+                                                file.inputStream().use { input -> input.copyTo(zip) }
+                                                zip.closeEntry()
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // Upload consolidated master
+                                val uploadSuccess = if (remoteMasterFile != null) {
+                                    val driveHelper = if (storageProvider is DriveApiSyncStorageProvider) {
+                                        DriveServiceHelper(drive!!)
+                                    } else null
+
+                                    if (driveHelper != null) {
+                                        driveHelper.uploadWithOptimisticLock(
+                                            fileId = remoteMasterFile.id,
+                                            localFile = mergedTempFile,
+                                            mimeType = "application/zip",
+                                            expectedVersion = remoteMasterFile.version ?: 0L
+                                        )
+                                    } else {
+                                        storageProvider.updateFile(remoteMasterFile.id, mergedTempFile, "application/zip", book.name) { _ -> }
+                                    }
+                                } else {
+                                    storageProvider.uploadFile(mergedTempFile, "application/zip", book.name) != null
+                                }
+
+                                if (uploadSuccess) {
+                                    syncLogProvider.addLogEntry("Zwei-Wege-Merge erfolgreich abgeschlossen (Sequence: $newSeq)", bookId, book.name)
+                                    val finalMasterFile = storageProvider.listFiles().find { it.name == zipFileName || it.name == jsonFileName }
+                                    val driveTime = finalMasterFile?.modifiedTime ?: 0L
+                                    if (driveTime > 0L) {
+                                        bookRepository.updateLastModified(bookId, driveTime, incrementSequence = false)
+                                    }
+
+                                    // Cleanup: Delete consolidated conflict files from Drive
+                                    for (conflictFile in remoteConflictFiles) {
+                                        try {
+                                            storageProvider.deleteFile(conflictFile.id)
+                                            logger.d(TAG, "Deleted consolidated conflict file: ${conflictFile.name}")
+                                        } catch (ex: Exception) {
+                                            logger.e(TAG, "Failed to delete conflict file ${conflictFile.name}", ex)
+                                        }
+                                    }
+
+                                    if (storageProvider is DriveApiSyncStorageProvider) {
+                                        val folderId = settingsRepository.googleDriveFolderId ?: DriveServiceHelper(drive!!).findFolder(FOLDER_NAME)
+                                        if (folderId != null) {
+                                            DriveServiceHelper(drive!!).cleanOldConflictFiles(folderId)
+                                        }
+                                    }
+                                    success = true
+                                } else {
+                                    logger.e(TAG, "Optimistic lock failed during conflict upload.")
+                                    syncLogProvider.addLogEntry("Zusammenführung fehlgeschlagen (Kollisionsfehler)", bookId, book.name, isError = true)
+                                    success = false
+                                }
+                            } finally {
+                                mergedTempFile.delete()
+                            }
+                        } else {
+                            logger.e(TAG, "Failed to import merged data locally: ${importResult.exceptionOrNull()?.message}")
+                            syncLogProvider.addLogEntry("Zusammenführung fehlgeschlagen: Lokaler Import fehlgeschlagen", bookId, book.name, isError = true)
+                            success = false
+                        }
                     }
                 }
             }
-
-            if (tempFile.exists()) {
-                tempFile.delete()
-            }
-
-            // Sync TTS cache separately after book sync if enabled
-            val ttsModeStr = settingsRepository.syncModeTts
-            if (success && ttsModeStr != "OFF") {
-                val ttsMode = if (syncMode == SyncMode.TWO_WAY) {
-                    try {
-                        SyncMode.valueOf(ttsModeStr)
-                    } catch (_: Exception) {
-                        SyncMode.TWO_WAY
-                    }
-                } else {
-                    syncMode
-                }
-                try {
-                    syncTtsCache(storageProvider, ttsMode)
-                } catch (e: Exception) {
-                    logger.e(TAG, "TTS cache sync failed (non-fatal)", e)
-                }
-            } else if (ttsModeStr == "OFF") {
-                logger.d(TAG, "TTS cache sync mode is OFF. Skipping TTS cache sync.")
-            }
-
-            // Sync statistics separately after book sync if enabled
-            val statsModeStr = settingsRepository.syncModeStats
-            logger.w(TAG, "[STATS-DEBUG] Gate check: success=$success, statsModeStr='$statsModeStr', bookId='$bookId'")
-            if (success && statsModeStr != "OFF") {
-                val statsMode = if (syncMode == SyncMode.TWO_WAY) {
-                    try {
-                        SyncMode.valueOf(statsModeStr)
-                    } catch (_: Exception) {
-                        SyncMode.BACKUP_ONLY
-                    }
-                } else {
-                    syncMode
-                }
-                logger.w(TAG, "[STATS-DEBUG] Resolved statsMode=$statsMode (from statsModeStr='$statsModeStr', syncMode=$syncMode)")
-                try {
-                    syncStatistics(storageProvider, statsMode, bookId, book.name)
-                } catch (e: Exception) {
-                    logger.e(TAG, "Statistics sync failed (non-fatal)", e)
-                }
-            } else if (statsModeStr == "OFF") {
-                logger.d(TAG, "Statistics sync mode is OFF. Skipping statistics sync.")
-            } else if (!success) {
-                logger.w(TAG, "[STATS-DEBUG] Book sync failed (success=false), skipping statistics sync!")
-            }
-
-        } catch (e: Exception) {
-            logger.e(TAG, "Sync to remote storage provider failed. Performing local fallback...", e)
-            remoteSyncError = e
         }
 
-        // FALLBACK: If remote sync failed (e.g. SAF permission lost, network down),
-        // we still export and update the local backup files in internal storage!
-        if (remoteSyncError != null) {
-            try {
-                logger.d(TAG, "Running local fallback backup for book $bookId...")
-                val fallbackTemp = File(context.cacheDir, zipFileName)
-                fallbackTemp.outputStream().use { os ->
-                    importExportManager.exportBookToZip(bookId, os, includeTtsCache = false) { _, _ -> }
-                }
-                saveToLocalBackupFolder(zipFileName, fallbackTemp)
-                if (fallbackTemp.exists()) {
-                    fallbackTemp.delete()
-                }
-
-                // Fallback for statistics if enabled
-                val statsModeStr = settingsRepository.syncModeStats
-                if (statsModeStr != "OFF") {
-                    val statsFileName = "statistics_$bookId.zip"
-                    val statsTemp = File(context.cacheDir, statsFileName)
-                    try {
-                        statsTemp.outputStream().use { os ->
-                            importExportManager.exportStatisticsToZip(bookId, os)
-                        }
-                        saveToLocalBackupFolder(statsFileName, statsTemp)
-                    } catch (ex: Exception) {
-                        logger.e(TAG, "Fallback statistics export failed", ex)
-                    } finally {
-                        if (statsTemp.exists()) statsTemp.delete()
-                    }
-                }
-
-                // Fallback for TTS cache if enabled
+                // Sync TTS cache and statistics separately after successful book sync
                 val ttsModeStr = settingsRepository.syncModeTts
-                if (ttsModeStr != "OFF") {
-                    val ttsTemp = File(context.cacheDir, TTS_CACHE_FILE_NAME)
+                if (success && ttsModeStr != "OFF") {
+                    val ttsMode = if (syncMode == SyncMode.TWO_WAY) {
+                        try { SyncMode.valueOf(ttsModeStr) } catch (_: Exception) { SyncMode.TWO_WAY }
+                    } else syncMode
                     try {
-                        ttsTemp.outputStream().use { os ->
-                            importExportManager.exportTtsCacheToZip(os) { _, _ -> }
-                        }
-                        saveToLocalBackupFolder(TTS_CACHE_FILE_NAME, ttsTemp)
-                    } catch (ex: Exception) {
-                        logger.e(TAG, "Fallback TTS cache export failed", ex)
-                    } finally {
-                        if (ttsTemp.exists()) ttsTemp.delete()
+                        syncTtsCache(storageProvider, ttsMode)
+                    } catch (e: Exception) {
+                        logger.e(TAG, "TTS cache sync failed (non-fatal)", e)
                     }
                 }
 
-                syncLogProvider.addLogEntry(
-                    "Cloud-Sync fehlgeschlagen (${remoteSyncError.message}). Lokales Backup erfolgreich aktualisiert.",
-                    bookId,
-                    book.name,
-                    isError = true
-                )
-            } catch (fallbackEx: Exception) {
-                logger.e(TAG, "Local fallback backup failed as well", fallbackEx)
-                syncLogProvider.addLogEntry(
-                    "Sync & Backup komplett fehlgeschlagen: ${fallbackEx.message}",
-                    bookId,
-                    book.name,
-                    isError = true
-                )
-            }
-        }
+                val statsModeStr = settingsRepository.syncModeStats
+                if (success && statsModeStr != "OFF") {
+                    val statsMode = if (syncMode == SyncMode.TWO_WAY) {
+                        try { SyncMode.valueOf(statsModeStr) } catch (_: Exception) { SyncMode.BACKUP_ONLY }
+                    } else syncMode
+                    try {
+                        syncStatistics(storageProvider, statsMode, bookId, book.name)
+                    } catch (e: Exception) {
+                        logger.e(TAG, "Statistics sync failed (non-fatal)", e)
+                    }
+                }
 
-        logger.d(TAG, "Sync process finished with status: ${remoteSyncError == null && success}")
-        remoteSyncError == null && success
-        } finally {
-            syncMutex.unlock()
+            } catch (e: Exception) {
+                logger.e(TAG, "Sync to remote storage provider failed. Performing local fallback...", e)
+                remoteSyncError = e
+            } finally {
+                if (tempFile.exists()) {
+                    tempFile.delete()
+                }
+                val downloadFileZip = File(context.cacheDir, "download_$zipFileName")
+                if (downloadFileZip.exists()) downloadFileZip.delete()
+                val downloadFileJson = File(context.cacheDir, "download_$jsonFileName")
+                if (downloadFileJson.exists()) downloadFileJson.delete()
+            }
+
+            // Local fallback logic
+            if (remoteSyncError != null) {
+                try {
+                    logger.d(TAG, "Running local fallback backup for book $bookId (already exported at start)...")
+
+                    val statsModeStr = settingsRepository.syncModeStats
+                    if (statsModeStr != "OFF") {
+                        val statsFileName = "statistics_$bookId.zip"
+                        val statsTemp = File(context.cacheDir, statsFileName)
+                        try {
+                            statsTemp.outputStream().use { os ->
+                                importExportManager.exportStatisticsToZip(bookId, os)
+                            }
+                            saveToLocalBackupFolder(statsFileName, statsTemp)
+                        } catch (ex: Exception) {
+                            logger.e(TAG, "Fallback statistics export failed", ex)
+                        } finally {
+                            if (statsTemp.exists()) statsTemp.delete()
+                        }
+                    }
+
+                    val ttsModeStr = settingsRepository.syncModeTts
+                    if (ttsModeStr != "OFF") {
+                        val ttsTemp = File(context.cacheDir, TTS_CACHE_FILE_NAME)
+                        try {
+                            ttsTemp.outputStream().use { os ->
+                                importExportManager.exportTtsCacheToZip(os) { _, _ -> }
+                            }
+                            saveToLocalBackupFolder(TTS_CACHE_FILE_NAME, ttsTemp)
+                        } catch (ex: Exception) {
+                            logger.e(TAG, "Fallback TTS cache export failed", ex)
+                        } finally {
+                            if (ttsTemp.exists()) ttsTemp.delete()
+                        }
+                    }
+
+                    syncLogProvider.addLogEntry(
+                        "Cloud-Sync fehlgeschlagen (${remoteSyncError.message}). Lokales Backup erfolgreich aktualisiert.",
+                        bookId,
+                        book.name,
+                        isError = true
+                    )
+                } catch (fallbackEx: Exception) {
+                    logger.e(TAG, "Local fallback backup failed as well", fallbackEx)
+                    syncLogProvider.addLogEntry(
+                        "Sync & Backup komplett fehlgeschlagen: ${fallbackEx.message}",
+                        bookId,
+                        book.name,
+                        isError = true
+                    )
+                }
+            }
+
+            logger.d(TAG, "Sync process finished with status: ${remoteSyncError == null && success}")
+            remoteSyncError == null && success
         }
-    }
+    } ?: false
 
     suspend fun getAvailableBackups(drive: Drive?, folderId: String? = null): List<RemoteBackupInfo> = withContext(Dispatchers.IO) {
         logger.d(TAG, "Fetching available backups (folderId: $folderId)...")
@@ -545,11 +585,17 @@ class CloudSyncUseCase @Inject constructor(
         remoteLastModified: Long,
         onProgress: (Float, String) -> Unit
     ): Boolean {
-        logger.d(TAG, "downloadAndImport: Starting for $remoteFileId ($fileName)")
         val downloadFile = File(context.cacheDir, "download_$fileName")
-        return if (storageProvider.downloadFile(remoteFileId, downloadFile) { p -> 
-            onProgress(p * 0.7f, "Downloading from Drive...") // Download is 0-70%
-        }) {
+        logger.d(TAG, "downloadAndImport: Starting for $remoteFileId ($fileName)")
+        val downloadSuccess = if (downloadFile.exists()) {
+            logger.d(TAG, "Reusing already downloaded remote master file: ${downloadFile.absolutePath}")
+            true
+        } else {
+            storageProvider.downloadFile(remoteFileId, downloadFile) { p -> 
+                onProgress(p * 0.7f, "Downloading from Drive...") // Download is 0-70%
+            }
+        }
+        return if (downloadSuccess) {
             logger.d(TAG, "Download successful. File size: ${downloadFile.length()}.")
             
             val result = if (fileName.endsWith(".zip")) {
@@ -568,22 +614,23 @@ class CloudSyncUseCase @Inject constructor(
                     downloadFile.readText()
                 } catch (e: Exception) {
                     logger.e(TAG, "Failed to read downloaded JSON file", e)
+                    downloadFile.delete()
                     return false
                 }
                 importExportManager.importFromJson(remoteJson, book.id, restoreSyncSettings = false)
             }
             
-            downloadFile.delete()
-
             if (result.isSuccess) {
                 logger.d(TAG, "Import successful. Updating local timestamp to $remoteLastModified")
                 syncLogProvider.addLogEntry("Cloud-Version war neuer -> Lokal aktualisiert (${if (fileName.endsWith(".zip")) "ZIP" else "JSON"})", book.id, book.name)
                 bookRepository.updateLastModified(book.id, remoteLastModified)
                 saveToLocalBackupFolder(fileName, downloadFile)
+                downloadFile.delete()
                 true
             } else {
                 logger.e(TAG, "Import failed: ${result.exceptionOrNull()?.message}")
                 syncLogProvider.addLogEntry("Import der Cloud-Datei fehlgeschlagen: ${result.exceptionOrNull()?.message}", book.id, book.name, isError = true)
+                downloadFile.delete()
                 false
             }
         } else {

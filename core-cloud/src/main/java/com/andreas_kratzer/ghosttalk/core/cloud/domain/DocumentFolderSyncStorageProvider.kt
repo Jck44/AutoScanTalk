@@ -202,4 +202,18 @@ class DocumentFolderSyncStorageProvider(
             modifiedTime = doc.lastModified()
         )
     }
+
+    override suspend fun deleteFile(fileId: String): Boolean {
+        return try {
+            DocumentsContract.deleteDocument(context.contentResolver, fileId.toUri())
+            true
+        } catch (e: Exception) {
+            try {
+                val doc = DocumentFile.fromSingleUri(context, fileId.toUri())
+                doc?.delete() ?: false
+            } catch (e2: Exception) {
+                false
+            }
+        }
+    }
 }

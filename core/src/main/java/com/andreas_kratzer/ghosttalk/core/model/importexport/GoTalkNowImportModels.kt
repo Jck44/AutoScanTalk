@@ -93,7 +93,8 @@ data class ImportExportData(
     val buttonTemplates: List<ImportButtonTemplate>? = null,
     val pages: List<ImportPage> = emptyList(),
     val logicalVersion: Int? = null,
-    val deletedEntities: List<ExportedTombstone>? = null
+    val deletedEntities: List<ExportedTombstone>? = null,
+    val versionSequence: Long? = null
 )
 
 @Serializable

@@ -1,19 +1,23 @@
 package com.andreas_kratzer.ghosttalk.core.cloud.domain
 
+import android.content.Context
 import android.content.Intent
 import android.util.Log
 import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
+import com.andreas_kratzer.ghosttalk.core.cloud.GoogleWebAuthManager
+import com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper
 import com.andreas_kratzer.ghosttalk.core.settings.CloudSettings
-import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
-import com.google.api.client.http.javanet.NetHttpTransport
-import com.google.api.client.json.gson.GsonFactory
 import com.google.api.services.drive.Drive
+import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 class PerformManualSyncUseCase @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val googleAuthManager: GoogleAuthManager,
+    private val googleWebAuthManager: GoogleWebAuthManager,
     private val cloudSyncUseCase: CloudSyncUseCase,
     private val settingsRepository: CloudSettings
 ) {
@@ -35,19 +39,12 @@ class PerformManualSyncUseCase @Inject constructor(
         val drive = if (isSaf) {
             null
         } else {
-            val credential = googleAuthManager.getGoogleCredential()
-            if (credential == null) {
-                Log.e(TAG, "No Google credentials found.")
-                return@withContext Result.Error("Keine Google-Anmeldedaten gefunden.")
-            }
-            Drive.Builder(
-                NetHttpTransport(), 
-                GsonFactory.getDefaultInstance()
-            ) { request ->
-                credential.initialize(request)
-                request.connectTimeout = 3 * 60 * 1000 // 3 minutes
-                request.readTimeout = 3 * 60 * 1000    // 3 minutes
-            }.setApplicationName("GhosTTalk").build()
+            DriveServiceHelper.buildDriveClient(
+                context = context,
+                authType = settingsRepository.googleAuthType,
+                googleAuthManager = googleAuthManager,
+                googleWebAuthManager = googleWebAuthManager
+            ) ?: return@withContext Result.Error("Keine Google-Anmeldedaten oder Verbindung fehlgeschlagen.")
         }
 
         return@withContext try {

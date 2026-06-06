@@ -25,6 +25,7 @@ import com.andreas_kratzer.ghosttalk.core.data.SyncLogProvider
 import com.andreas_kratzer.ghosttalk.core.data.UserModeSessionRepository
 import com.andreas_kratzer.ghosttalk.core.data.export.PageImportExportProvider
 import com.andreas_kratzer.ghosttalk.core.model.Book
+import com.andreas_kratzer.ghosttalk.core.model.CloudAuthType
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.tts.AudioCacheRepository
 import com.andreas_kratzer.ghosttalk.core.tts.CachedAudioItem
@@ -145,6 +146,7 @@ class SettingsViewModel @Inject constructor(
     val googleDriveFolderId = settingsRepository.googleDriveFolderIdFlow
     val googleDriveFolderName = settingsRepository.googleDriveFolderNameFlow
     val syncTargetType = settingsRepository.syncTargetTypeFlow
+    val googleAuthType = settingsRepository.googleAuthTypeFlow
     val localFolderSafUri = settingsRepository.localFolderSafUriFlow
     val localFolderSafName = settingsRepository.localFolderSafNameFlow
     val hueBridgeIp = settingsRepository.hueBridgeIpFlow
@@ -436,6 +438,9 @@ class SettingsViewModel @Inject constructor(
     fun setSyncModeBook(m: String) { settingsRepository.syncModeBook = m }
     fun setSyncModeTts(m: String) { settingsRepository.syncModeTts = m }
     fun setSyncModeStats(m: String) { settingsRepository.syncModeStats = m }
+    fun setGoogleAuthType(type: CloudAuthType) {
+        settingsRepository.googleAuthType = type
+    }
     fun setSyncIntervalMinutes(minutes: Long) {
         settingsRepository.syncIntervalMinutes = minutes
         cloudSyncDelegate.reschedule()

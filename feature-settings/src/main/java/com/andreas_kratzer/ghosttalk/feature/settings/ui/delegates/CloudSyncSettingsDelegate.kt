@@ -8,6 +8,8 @@ import android.content.Intent
 import android.util.Log
 import android.widget.Toast
 import com.andreas_kratzer.ghosttalk.core.cloud.AuthManager
+import com.andreas_kratzer.ghosttalk.core.cloud.GoogleWebAuthManager
+import com.andreas_kratzer.ghosttalk.core.model.CloudAuthType
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.CloudSyncUseCase
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.GetDriveFoldersUseCase
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.PerformManualSyncUseCase
@@ -28,6 +30,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -37,6 +41,7 @@ import javax.inject.Singleton
 class CloudSyncSettingsDelegate @Inject constructor(
     private val application: Application,
     private val authManager: AuthManager,
+    private val googleWebAuthManager: GoogleWebAuthManager,
     private val settingsRepository: SettingsRepository,
     private val setCloudSyncEnabledUseCase: SetCloudSyncEnabledUseCase,
     private val performManualSyncUseCase: PerformManualSyncUseCase,
@@ -46,6 +51,8 @@ class CloudSyncSettingsDelegate @Inject constructor(
     private val signOutUseCase: SignOutUseCase,
     private val syncLogProvider: SyncLogProvider
 ) {
+    private val delegateScope = CoroutineScope(Dispatchers.Main.immediate + kotlinx.coroutines.SupervisorJob())
+
     private val _isSyncing = MutableStateFlow(false)
     val isSyncing: StateFlow<Boolean> = _isSyncing.asStateFlow()
 
@@ -86,33 +93,59 @@ class CloudSyncSettingsDelegate @Inject constructor(
         }
     }
 
-    val userEmail = authManager.userEmail
+    val userEmail: StateFlow<String?> = kotlinx.coroutines.flow.combine(
+        settingsRepository.googleAuthTypeFlow,
+        authManager.userEmail,
+        settingsRepository.googleUserEmailFlow
+    ) { authType, systemEmail, webEmail ->
+        if (authType == CloudAuthType.SYSTEM) {
+            systemEmail
+        } else {
+            webEmail
+        }
+    }.stateIn(delegateScope, SharingStarted.Eagerly, null)
 
     fun signIn(context: Context, scope: CoroutineScope) {
-        val activity = findActivity(context) ?: return
-        scope.launch {
-            _signInErrorMessage.value = null
-            val result = signInUseCase.execute(activity)
-            if (!result) {
-                _signInErrorMessage.value = "Anmeldung fehlgeschlagen. SHA-1 korrekt?"
+        val authType = settingsRepository.googleAuthType
+        if (authType == CloudAuthType.WEB_FLOW) {
+            googleWebAuthManager.startWebAuthFlow(context)
+        } else {
+            val activity = findActivity(context) ?: return
+            scope.launch {
+                _signInErrorMessage.value = null
+                val result = signInUseCase.execute(activity)
+                if (!result) {
+                    _signInErrorMessage.value = "Anmeldung fehlgeschlagen. SHA-1 korrekt?"
+                }
             }
         }
     }
 
     fun signOut(scope: CoroutineScope) {
         scope.launch {
-            signOutUseCase.execute()
+            val authType = settingsRepository.googleAuthType
+            if (authType == CloudAuthType.WEB_FLOW) {
+                googleWebAuthManager.disconnect()
+            } else {
+                signOutUseCase.execute()
+            }
         }
     }
 
     fun switchAccount(context: Context, scope: CoroutineScope) {
-        val activity = findActivity(context) ?: return
-        scope.launch {
-            signOutUseCase.execute()
-            _signInErrorMessage.value = null
-            val result = signInUseCase.execute(activity)
-            if (!result) {
-                _signInErrorMessage.value = "Konto wechseln fehlgeschlagen."
+        val authType = settingsRepository.googleAuthType
+        if (authType == CloudAuthType.WEB_FLOW) {
+            googleWebAuthManager.disconnect()
+            googleWebAuthManager.startWebAuthFlow(context)
+        } else {
+            val activity = findActivity(context) ?: return
+            scope.launch {
+                signOutUseCase.execute()
+                _signInErrorMessage.value = null
+                val result = signInUseCase.execute(activity)
+                if (!result) {
+                    _signInErrorMessage.value = "Konto wechseln fehlgeschlagen."
+                }
             }
         }
     }

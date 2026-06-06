@@ -23,6 +23,7 @@ class CloudSyncWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted workerParams: WorkerParameters,
     private val googleAuthManager: GoogleAuthManager,
+    private val googleWebAuthManager: GoogleWebAuthManager,
     private val settingsRepository: SettingsRepository,
     private val buttonUsageRepository: ButtonUsageRepository,
     private val cloudSyncUseCase: CloudSyncUseCase
@@ -48,19 +49,17 @@ class CloudSyncWorker @AssistedInject constructor(
         val drive = if (isSaf) {
             null
         } else {
-            val credential = googleAuthManager.getGoogleCredential()
-            if (credential == null) {
-                Log.w("CloudSyncWorker", "No credential available. Failing sync.")
+            val client = DriveServiceHelper.buildDriveClient(
+                context = applicationContext,
+                authType = settingsRepository.googleAuthType,
+                googleAuthManager = googleAuthManager,
+                googleWebAuthManager = googleWebAuthManager
+            )
+            if (client == null) {
+                Log.w("CloudSyncWorker", "No credential available or failed to build Drive client. Failing sync.")
                 return@withContext Result.failure()
             }
-            Drive.Builder(
-                NetHttpTransport(),
-                GsonFactory.getDefaultInstance()
-            ) { request ->
-                credential.initialize(request)
-                request.connectTimeout = 3 * 60 * 1000 // 3 minutes
-                request.readTimeout = 3 * 60 * 1000    // 3 minutes
-            }.setApplicationName("GhosTTalk").build()
+            client
         }
 
         val bookId = settingsRepository.activeBookId

@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.andreas_kratzer.ghosttalk.core.data.BookRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.model.CloudAuthType
 import com.andreas_kratzer.ghosttalk.core.di.ApplicationScope
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
@@ -189,6 +190,12 @@ class SettingsRepositoryImpl @Inject constructor(
     override val syncTargetTypeFlow: StateFlow<String> get() = cloudSettings.syncTargetTypeFlow
     override val localFolderSafUriFlow: StateFlow<String?> get() = cloudSettings.localFolderSafUriFlow
     override val localFolderSafNameFlow: StateFlow<String?> get() = cloudSettings.localFolderSafNameFlow
+
+    override val googleAuthTypeFlow: StateFlow<CloudAuthType> get() = cloudSettings.googleAuthTypeFlow
+    override val googleAccessTokenFlow: StateFlow<String?> get() = cloudSettings.googleAccessTokenFlow
+    override val googleRefreshTokenFlow: StateFlow<String?> get() = cloudSettings.googleRefreshTokenFlow
+    override val googleTokenExpiresAtFlow: StateFlow<Long> get() = cloudSettings.googleTokenExpiresAtFlow
+    override val googleUserEmailFlow: StateFlow<String?> get() = cloudSettings.googleUserEmailFlow
     override val ttsEngineFlow: StateFlow<String?> get() = voiceSettings.ttsEngineFlow
     override val googleTtsLanguageFlow: StateFlow<String?> get() = voiceSettings.googleTtsLanguageFlow
     override val googleTtsVoiceNameFlow: StateFlow<String?> get() = voiceSettings.googleTtsVoiceNameFlow
@@ -621,6 +628,26 @@ class SettingsRepositoryImpl @Inject constructor(
     override var localFolderSafName: String?
         get() = cloudSettings.localFolderSafName
         set(value) { cloudSettings.localFolderSafName = value }
+
+    override var googleAuthType: CloudAuthType
+        get() = cloudSettings.googleAuthType
+        set(value) { cloudSettings.googleAuthType = value }
+
+    override var googleAccessToken: String?
+        get() = cloudSettings.googleAccessToken
+        set(value) { cloudSettings.googleAccessToken = value }
+
+    override var googleRefreshToken: String?
+        get() = cloudSettings.googleRefreshToken
+        set(value) { cloudSettings.googleRefreshToken = value }
+
+    override var googleTokenExpiresAt: Long
+        get() = cloudSettings.googleTokenExpiresAt
+        set(value) { cloudSettings.googleTokenExpiresAt = value }
+
+    override var googleUserEmail: String?
+        get() = cloudSettings.googleUserEmail
+        set(value) { cloudSettings.googleUserEmail = value }
 
 
     override var ttsEngine: String?

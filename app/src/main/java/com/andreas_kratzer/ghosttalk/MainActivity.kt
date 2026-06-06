@@ -44,6 +44,7 @@ import com.andreas_kratzer.ghosttalk.core.KeyEventCoordinator
 import com.andreas_kratzer.ghosttalk.core.SecurityManager
 import com.andreas_kratzer.ghosttalk.core.UpdateManager
 import com.andreas_kratzer.ghosttalk.core.cloud.SpotifyManager
+import com.andreas_kratzer.ghosttalk.core.cloud.GoogleWebAuthManager
 import com.andreas_kratzer.ghosttalk.core.data.PageRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.data.export.PageImportExportProvider
@@ -77,6 +78,7 @@ class MainActivity : AppCompatActivity() {
     @Inject lateinit var securityManager: SecurityManager
     @Inject lateinit var userModeSessionTracker: UserModeSessionTracker
     @Inject lateinit var spotifyManager: SpotifyManager
+    @Inject lateinit var googleWebAuthManager: GoogleWebAuthManager
     @Inject lateinit var backgroundScheduler: com.andreas_kratzer.ghosttalk.core.domain.BackgroundScheduler
     @Inject lateinit var importExportManager: PageImportExportProvider
 
@@ -530,6 +532,15 @@ class MainActivity : AppCompatActivity() {
                     settingsViewModel.loadSpotifyPlaylists()
                 } else {
                     Log.e("MainActivity", "Spotify OAuth callback processing failed.")
+                }
+            }
+        } else if (data.scheme == "ghosttalk" && data.host == "oauth2redirect") {
+            lifecycleScope.launch {
+                val success = googleWebAuthManager.handleAuthRedirect(data)
+                if (success) {
+                    Log.i("MainActivity", "Google OAuth Web Flow success callback processed.")
+                } else {
+                    Log.e("MainActivity", "Google OAuth Web Flow callback processing failed.")
                 }
             }
         }

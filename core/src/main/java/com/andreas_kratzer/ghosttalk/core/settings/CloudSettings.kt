@@ -1,6 +1,7 @@
 package com.andreas_kratzer.ghosttalk.core.settings
 
 import kotlinx.coroutines.flow.StateFlow
+import com.andreas_kratzer.ghosttalk.core.model.CloudAuthType
 
 interface CloudSettings {
     var isCloudSyncEnabled: Boolean
@@ -69,6 +70,21 @@ interface CloudSettings {
 
     var lastUploadedLogHash: String?
     val lastUploadedLogHashFlow: StateFlow<String?>
+
+    var googleAuthType: CloudAuthType
+    val googleAuthTypeFlow: StateFlow<CloudAuthType>
+
+    var googleAccessToken: String?
+    val googleAccessTokenFlow: StateFlow<String?>
+
+    var googleRefreshToken: String?
+    val googleRefreshTokenFlow: StateFlow<String?>
+
+    var googleTokenExpiresAt: Long
+    val googleTokenExpiresAtFlow: StateFlow<Long>
+
+    var googleUserEmail: String?
+    val googleUserEmailFlow: StateFlow<String?>
 }
 
 

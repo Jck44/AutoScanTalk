@@ -18,7 +18,9 @@ class DriveApiSyncStorageProvider(
                 id = file.id,
                 name = file.name,
                 description = file.description,
-                modifiedTime = file.modifiedTime?.value ?: 0L
+                modifiedTime = file.modifiedTime?.value ?: 0L,
+                md5Checksum = file.md5Checksum,
+                version = file.version
             )
         }
     }
@@ -56,7 +58,13 @@ class DriveApiSyncStorageProvider(
             id = file.id,
             name = file.name,
             description = file.description,
-            modifiedTime = file.modifiedTime?.value ?: 0L
+            modifiedTime = file.modifiedTime?.value ?: 0L,
+            md5Checksum = file.md5Checksum,
+            version = file.version
         )
+    }
+
+    override suspend fun deleteFile(fileId: String): Boolean {
+        return helper.deleteFile(fileId)
     }
 }

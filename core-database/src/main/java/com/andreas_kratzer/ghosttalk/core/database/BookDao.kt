@@ -34,4 +34,7 @@ interface BookDao {
 
     @Query("UPDATE books SET updatedAt = :timestamp WHERE id = :bookId")
     suspend fun updateLastModified(bookId: String, timestamp: Long = System.currentTimeMillis())
+
+    @Query("UPDATE books SET versionSequence = versionSequence + 1, updatedAt = :timestamp WHERE id = :bookId")
+    suspend fun incrementVersionSequence(bookId: String, timestamp: Long = System.currentTimeMillis())
 }

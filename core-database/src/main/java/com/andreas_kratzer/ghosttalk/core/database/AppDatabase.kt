@@ -34,7 +34,7 @@ import java.util.UUID
         ButtonEntity::class, ButtonUsageHistoryEntity::class, ButtonTemplateEntity::class,
         UserModeSessionEntity::class, VocalProfileEntity::class, DeletedEntity::class
     ],
-    version = 31,
+    version = 32,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -61,6 +61,12 @@ abstract class AppDatabase : RoomDatabase() {
                 db.execSQL("ALTER TABLE `vocal_profiles` ADD COLUMN `negativeTemplatesJson` TEXT NOT NULL DEFAULT '[]'")
                 // Rename the old referenceEmbedding column is not supported by SQLite ALTER TABLE;
                 // we keep the old column as-is (it maps to referenceEmbeddingJson with ColumnInfo).
+            }
+        }
+
+        val MIGRATION_31_32: Migration = object : Migration(31, 32) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `books` ADD COLUMN `versionSequence` INTEGER NOT NULL DEFAULT 0")
             }
         }
 
@@ -555,7 +561,8 @@ abstract class AppDatabase : RoomDatabase() {
                     MIGRATION_27_28,
                     MIGRATION_28_29,
                     MIGRATION_29_30,
-                    MIGRATION_30_31
+                    MIGRATION_30_31,
+                    MIGRATION_31_32
                 )
                 .build()
                 INSTANCE = instance

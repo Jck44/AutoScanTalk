@@ -67,6 +67,7 @@ dependencies {
     implementation(libs.googleid)
     implementation(libs.gms.play.services.auth)
     implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.browser)
 
     implementation(libs.gson)
     implementation(libs.kotlinx.serialization.json)

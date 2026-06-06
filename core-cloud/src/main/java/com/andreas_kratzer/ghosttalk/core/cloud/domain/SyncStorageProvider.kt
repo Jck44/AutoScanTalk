@@ -8,11 +8,14 @@ interface SyncStorageProvider {
     suspend fun updateFile(fileId: String, tempFile: File, mimeType: String, description: String?, onProgress: (Float) -> Unit = {}): Boolean
     suspend fun downloadFile(fileId: String, destFile: File, onProgress: (Float) -> Unit = {}): Boolean
     suspend fun getFileMetadata(fileId: String): RemoteSyncFile?
+    suspend fun deleteFile(fileId: String): Boolean
 }
 
 data class RemoteSyncFile(
     val id: String,
     val name: String,
     val description: String?,
-    val modifiedTime: Long
+    val modifiedTime: Long,
+    val md5Checksum: String? = null,
+    val version: Long? = null
 )

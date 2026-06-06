@@ -13,5 +13,6 @@ data class Book(
     val limitScanCycles: Boolean = false,
     val scanCycleLimit: Int = 2,
     val logIgnoredActions: Boolean = true,
-    val logStopActions: Boolean = true
+    val logStopActions: Boolean = true,
+    val versionSequence: Long = 0
 )

@@ -151,6 +151,7 @@ class PageImportExportManager @Inject constructor(
             bookName = book.name,
             bookCreatedAt = book.createdAt,
             bookUpdatedAt = book.updatedAt,
+            versionSequence = book.versionSequence,
             sourceDevice = "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}",
             buttonTemplates = mappedButtonTemplates,
             pages = pages.map { page ->
@@ -234,14 +235,15 @@ class PageImportExportManager @Inject constructor(
                         limitScanCycles = importData.limitScanCycles ?: book.limitScanCycles,
                         scanCycleLimit = importData.scanCycleLimit ?: book.scanCycleLimit,
                         logIgnoredActions = importData.logIgnoredActions ?: book.logIgnoredActions,
-                        logStopActions = importData.logStopActions ?: book.logStopActions
+                        logStopActions = importData.logStopActions ?: book.logStopActions,
+                        versionSequence = importData.versionSequence ?: book.versionSequence
                     ))
                 }
             }
             
             // 1.1 Update book updated timestamp if provided from import data (e.g. from cloud)
             importData.bookUpdatedAt?.let { timestamp ->
-                bookRepository.updateLastModified(bookId, timestamp)
+                bookRepository.updateLastModified(bookId, timestamp, incrementSequence = false)
             }
 
             val idMap = mutableMapOf<String, String>()
@@ -507,7 +509,8 @@ class PageImportExportManager @Inject constructor(
                 id = targetBookId,
                 name = importData.bookName ?: "Importiertes Buch",
                 createdAt = importData.bookCreatedAt ?: System.currentTimeMillis(),
-                updatedAt = importData.bookUpdatedAt ?: importData.bookCreatedAt ?: System.currentTimeMillis()
+                updatedAt = importData.bookUpdatedAt ?: importData.bookCreatedAt ?: System.currentTimeMillis(),
+                versionSequence = importData.versionSequence ?: 0L
             )
             bookRepository.insertBook(newBook)
 

@@ -67,6 +67,7 @@ fun CloudSettingsSection(
     val googleDriveFolderId by viewModel.googleDriveFolderId.collectAsState()
     val googleDriveFolderName by viewModel.googleDriveFolderName.collectAsState()
     val syncTargetType by viewModel.syncTargetType.collectAsState()
+    val googleAuthType by viewModel.googleAuthType.collectAsState()
     val localFolderSafUri by viewModel.localFolderSafUri.collectAsState()
     val localFolderSafName by viewModel.localFolderSafName.collectAsState()
     val driveFolders by viewModel.driveFolders.collectAsState()
@@ -105,6 +106,23 @@ fun CloudSettingsSection(
         val elevenLabsApiKey by viewModel.elevenLabsApiKey.collectAsState("")
 
         PreferenceCategory(stringResource(R.string.settings_category_cloud_account)) {
+            val authTypeLabel = if (googleAuthType == com.andreas_kratzer.ghosttalk.core.model.CloudAuthType.SYSTEM) {
+                "Systemweiter Google Account"
+            } else {
+                "In-App Google Web-Login"
+            }
+
+            SettingsDropdownItem(
+                label = "Google Anmeldeverfahren",
+                selectedOption = authTypeLabel,
+                options = listOf(
+                    "Systemweiter Google Account" to { viewModel.setGoogleAuthType(com.andreas_kratzer.ghosttalk.core.model.CloudAuthType.SYSTEM) },
+                    "In-App Google Web-Login" to { viewModel.setGoogleAuthType(com.andreas_kratzer.ghosttalk.core.model.CloudAuthType.WEB_FLOW) }
+                )
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
             if (userEmail != null) {
                 Text(
                     text = stringResource(R.string.settings_cloud_signed_in_as, userEmail!!),
@@ -274,80 +292,36 @@ fun CloudSettingsSection(
         } else {
             // Book-Scoped Mode: Show Sync Settings and manual buttons
             PreferenceCategory(stringResource(R.string.settings_sync_target_category)) {
-                val targetLabel = if (syncTargetType == "LOCAL_FOLDER_SAF") {
-                    stringResource(R.string.settings_sync_target_saf)
-                } else {
-                    stringResource(R.string.settings_sync_target_drive_api)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.settings_sync_drive_location),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Text(
+                            text = googleDriveFolderName ?: stringResource(R.string.settings_sync_drive_default_folder),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    TextButton(onClick = { showFolderPicker.value = true }, enabled = userEmail != null) {
+                        Text(stringResource(R.string.settings_sync_change))
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    TextButton(onClick = { showManualUrlDialog.value = true }, enabled = userEmail != null) {
+                        Text(stringResource(R.string.settings_sync_enter_link))
+                    }
                 }
-                SettingsDropdownItem(
-                    label = stringResource(R.string.settings_sync_target_type),
-                    selectedOption = targetLabel,
-                    options = listOf(
-                        stringResource(R.string.settings_sync_target_drive_api) to { viewModel.setSyncTargetType("DRIVE_API") },
-                        stringResource(R.string.settings_sync_target_saf) to { viewModel.setSyncTargetType("LOCAL_FOLDER_SAF") }
-                    )
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                if (syncTargetType == "DRIVE_API") {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                if (googleDriveFolderId != null) {
+                    TextButton(
+                        onClick = { viewModel.selectDriveFolder(null, null) },
+                        modifier = Modifier.padding(top = 4.dp)
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = stringResource(R.string.settings_sync_drive_location),
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            Text(
-                                text = googleDriveFolderName ?: stringResource(R.string.settings_sync_drive_default_folder),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                        TextButton(onClick = { showFolderPicker.value = true }, enabled = userEmail != null) {
-                            Text(stringResource(R.string.settings_sync_change))
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        TextButton(onClick = { showManualUrlDialog.value = true }, enabled = userEmail != null) {
-                            Text(stringResource(R.string.settings_sync_enter_link))
-                        }
+                        Text(stringResource(R.string.settings_sync_reset_default), style = MaterialTheme.typography.labelSmall)
                     }
-                    if (googleDriveFolderId != null) {
-                        TextButton(
-                            onClick = { viewModel.selectDriveFolder(null, null) },
-                            modifier = Modifier.padding(top = 4.dp)
-                        ) {
-                            Text(stringResource(R.string.settings_sync_reset_default), style = MaterialTheme.typography.labelSmall)
-                        }
-                    }
-                } else {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = stringResource(R.string.settings_sync_selected_saf_folder),
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            Text(
-                                text = localFolderSafName ?: stringResource(R.string.settings_sync_no_folder_selected),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = if (localFolderSafUri != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
-                            )
-                        }
-                        Button(onClick = onSelectSafFolder) {
-                            Text(stringResource(R.string.settings_sync_select_button))
-                        }
-                    }
-                    Text(
-                        text = stringResource(R.string.settings_sync_saf_description),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 8.dp)
-                    )
                 }
             }
 

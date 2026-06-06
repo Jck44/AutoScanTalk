@@ -8,6 +8,7 @@ import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.K
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_LAST_SYNC_TIME
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SYNC_INTERVAL_MINUTES
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SYNC_MODE
+import com.andreas_kratzer.ghosttalk.core.model.CloudAuthType
 import com.andreas_kratzer.ghosttalk.core.settings.CloudSettings
 import kotlinx.coroutines.flow.StateFlow
 
@@ -45,6 +46,24 @@ class CloudSettingsRepository(
     private val _syncLogsIntervalHours = LongSetting(SettingsConstants.KEY_SYNC_LOGS_INTERVAL_HOURS, 12L)
     private val _lastLogsSyncTime = LongSetting(SettingsConstants.KEY_LAST_LOGS_SYNC_TIME, 0L)
     private val _lastUploadedLogHash = StringSetting(SettingsConstants.KEY_LAST_UPLOADED_LOG_HASH)
+
+    private val _googleAuthType = NonNullStringSetting("google_auth_type", "SYSTEM", isScoped = false)
+    private val _googleAuthTypeEnumFlow = kotlinx.coroutines.flow.MutableStateFlow(
+        try { CloudAuthType.valueOf(_googleAuthType.value) } catch(_: Exception) { CloudAuthType.SYSTEM }
+    )
+    override val googleAuthTypeFlow: StateFlow<CloudAuthType> = _googleAuthTypeEnumFlow
+
+    private val _googleAccessToken = StringSetting("google_oauth_access_token", null, isScoped = false)
+    override val googleAccessTokenFlow = _googleAccessToken.flow
+
+    private val _googleRefreshToken = StringSetting("google_oauth_refresh_token", null, isScoped = false)
+    override val googleRefreshTokenFlow = _googleRefreshToken.flow
+
+    private val _googleTokenExpiresAt = LongSetting("google_oauth_token_expires_at", 0L, isScoped = false)
+    override val googleTokenExpiresAtFlow = _googleTokenExpiresAt.flow
+
+    private val _googleUserEmail = StringSetting("google_oauth_user_email", null, isScoped = false)
+    override val googleUserEmailFlow = _googleUserEmail.flow
 
     init {
         migrateOldSyncMode()
@@ -101,6 +120,18 @@ class CloudSettingsRepository(
     override var lastLogsSyncTime: Long by _lastLogsSyncTime
     override var lastUploadedLogHash: String? by _lastUploadedLogHash
 
+    override var googleAuthType: CloudAuthType
+        get() = try { CloudAuthType.valueOf(_googleAuthType.value) } catch(_: Exception) { CloudAuthType.SYSTEM }
+        set(value) {
+            _googleAuthType.value = value.name
+            _googleAuthTypeEnumFlow.value = value
+        }
+
+    override var googleAccessToken: String? by _googleAccessToken
+    override var googleRefreshToken: String? by _googleRefreshToken
+    override var googleTokenExpiresAt: Long by _googleTokenExpiresAt
+    override var googleUserEmail: String? by _googleUserEmail
+
 
     override fun refresh() {
         migrateOldSyncMode()
@@ -128,6 +159,13 @@ class CloudSettingsRepository(
         _syncLogsIntervalHours.refresh()
         _lastLogsSyncTime.refresh()
         _lastUploadedLogHash.refresh()
+
+        _googleAuthType.refresh()
+        _googleAuthTypeEnumFlow.value = googleAuthType
+        _googleAccessToken.refresh()
+        _googleRefreshToken.refresh()
+        _googleTokenExpiresAt.refresh()
+        _googleUserEmail.refresh()
     }
 
     private fun migrateOldSyncMode() {

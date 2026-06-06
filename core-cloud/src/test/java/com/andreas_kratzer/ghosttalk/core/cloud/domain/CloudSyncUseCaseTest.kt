@@ -70,57 +70,81 @@ class CloudSyncUseCaseTest {
 
     @Test
     fun `syncBook with BACKUP_ONLY mode uploads and overwrites remote if local is newer`() = runTest {
-        // Prepare mocks for a scenario where local is newer, so BACKUP_ONLY should upload
         val bookId = "test-book"
-        mockk<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>(relaxed = true)
+        val now = System.currentTimeMillis()
+        
+        val mockBook = Book(id = bookId, name = "Test", updatedAt = now, versionSequence = 2L)
+        coEvery { mockBookRepository.getBookById(bookId) } returns mockBook
         
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder(any()) } returns "folder_1"
         
         val remoteFile = com.google.api.services.drive.model.File().apply {
             id = "file_1"
             name = "book_$bookId.zip"
-            modifiedTime = com.google.api.client.util.DateTime(System.currentTimeMillis() - 100000L) // Remote is older
+            modifiedTime = com.google.api.client.util.DateTime(now - 100000L) // Remote is older
+            version = 1L
         }
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("folder_1") } returns listOf(remoteFile)
         
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile(any(), any(), any()) } answers {
+            val file = args[1] as File
+            java.util.zip.ZipOutputStream(file.outputStream()).use { zos ->
+                zos.putNextEntry(java.util.zip.ZipEntry("backup.json"))
+                zos.write("{\"versionSequence\": 1, \"bookUpdatedAt\": ${now - 100000L}}".toByteArray())
+                zos.closeEntry()
+            }
+            true
+        }
+        
         coEvery { mockImportExportManager.exportBookToZip(bookId, any(), any()) } returns Unit
-        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().updateFile(any(), any(), any(), any(), any()) } returns true
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock(any(), any(), any(), any()) } returns true
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().getFileMetadata(any()) } returns remoteFile
 
         useCase.syncBook(mockDrive, bookId, SyncMode.BACKUP_ONLY)
         advanceUntilIdle()
 
-        // Verify that updateFile was called (overwriting remote) and downloadFile was NOT called
-        coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().updateFile("file_1", any(), any(), any(), any()) }
-        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile(any(), any(), any()) }
+        // Verify that uploadWithOptimisticLock was called and downloadFile was called exactly once for sequence check
+        coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock("file_1", any(), "application/zip", 1L) }
+        coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile("file_1", any(), any()) }
     }
 
     @Test
     fun `syncBook with BACKUP_ONLY mode skips upload if remote is up-to-date`() = runTest {
-        // Prepare mocks for a scenario where remote is newer, so BACKUP_ONLY should skip upload
         val bookId = "test-book"
-        mockk<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>(relaxed = true)
+        val now = System.currentTimeMillis()
+        
+        val mockBook = Book(id = bookId, name = "Test", updatedAt = now, versionSequence = 1L)
+        coEvery { mockBookRepository.getBookById(bookId) } returns mockBook
         
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder(any()) } returns "folder_1"
         
         val remoteFile = com.google.api.services.drive.model.File().apply {
             id = "file_1"
             name = "book_$bookId.zip"
-            modifiedTime = com.google.api.client.util.DateTime(System.currentTimeMillis() + 100000L) // Remote is newer
+            modifiedTime = com.google.api.client.util.DateTime(now + 100000L) // Remote is newer
         }
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("folder_1") } returns listOf(remoteFile)
+
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile(any(), any(), any()) } answers {
+            val file = args[1] as File
+            java.util.zip.ZipOutputStream(file.outputStream()).use { zos ->
+                zos.putNextEntry(java.util.zip.ZipEntry("backup.json"))
+                zos.write("{\"versionSequence\": 2, \"bookUpdatedAt\": ${now + 100000L}}".toByteArray())
+                zos.closeEntry()
+            }
+            true
+        }
 
         useCase.syncBook(mockDrive, bookId, SyncMode.BACKUP_ONLY)
         advanceUntilIdle()
 
-        // Verify that updateFile and downloadFile were NOT called
-        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().updateFile(any(), any(), any(), any(), any()) }
-        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile(any(), any(), any()) }
+        // Verify that uploadWithOptimisticLock was NOT called, and downloadFile was called exactly once
+        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock(any(), any(), any(), any()) }
+        coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile("file_1", any(), any()) }
     }
 
     @Test
     fun `syncBook with RESTORE_ONLY mode downloads and overwrites local if remote is newer`() = runTest {
-        // Prepare mocks for a scenario where remote is newer, so RESTORE_ONLY should download
         val bookId = "test-book"
         
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder(any()) } returns "folder_1"
@@ -133,45 +157,42 @@ class CloudSyncUseCaseTest {
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("folder_1") } returns listOf(remoteFile)
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile(any(), any(), any()) } answers {
             val file = args[1] as File
-            file.writeText("{\"restored\": true}")
+            file.writeText("{\"versionSequence\": 2, \"bookUpdatedAt\": ${System.currentTimeMillis() + 100000L}}")
             true
         }
 
         useCase.syncBook(mockDrive, bookId, SyncMode.RESTORE_ONLY)
         advanceUntilIdle()
 
-        // Verify that downloadFile was called (overwriting local) and updateFile was NOT called
         coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile("file_1", any(), any()) }
-        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().updateFile(any(), any(), any(), any(), any()) }
-        // Verify import was called with restoreSyncSettings = false
+        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock(any(), any(), any(), any()) }
         coVerify(exactly = 1) { mockImportExportManager.importFromJson(any(), bookId, restoreSyncSettings = false) }
     }
 
     @Test
     fun `syncBook with RESTORE_ONLY mode skips download if remote is in sync`() = runTest {
-        // Prepare mocks for a scenario where remote is in sync, so RESTORE_ONLY should skip download
         val bookId = "test-book"
+        val now = System.currentTimeMillis()
         
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder(any()) } returns "folder_1"
         
         val remoteFile = com.google.api.services.drive.model.File().apply {
             id = "file_1"
-            name = "book_$bookId.json"
-            modifiedTime = com.google.api.client.util.DateTime(System.currentTimeMillis()) // Remote is exactly in sync
+            name = "book_$bookId.zip"
+            modifiedTime = com.google.api.client.util.DateTime(now)
+            md5Checksum = "d41d8cd98f00b204e9800998ecf8427e" // Matches local empty file MD5
         }
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("folder_1") } returns listOf(remoteFile)
 
         useCase.syncBook(mockDrive, bookId, SyncMode.RESTORE_ONLY)
         advanceUntilIdle()
 
-        // Verify that downloadFile and updateFile were NOT called
         coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile(any(), any(), any()) }
-        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().updateFile(any(), any(), any(), any(), any()) }
+        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock(any(), any(), any(), any()) }
     }
 
     @Test
     fun `syncBook with RESTORE_ONLY mode downloads and overwrites local if remote is older but not in sync`() = runTest {
-        // Prepare mocks for a scenario where remote is older, so RESTORE_ONLY should still download to revert local modifications
         val bookId = "test-book"
         
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder(any()) } returns "folder_1"
@@ -184,17 +205,15 @@ class CloudSyncUseCaseTest {
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("folder_1") } returns listOf(remoteFile)
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile(any(), any(), any()) } answers {
             val file = args[1] as File
-            file.writeText("{\"restored\": true}")
+            file.writeText("{\"versionSequence\": 2, \"bookUpdatedAt\": ${System.currentTimeMillis() - 100000L}}")
             true
         }
 
         useCase.syncBook(mockDrive, bookId, SyncMode.RESTORE_ONLY)
         advanceUntilIdle()
 
-        // Verify that downloadFile was called to revert local changes, and updateFile was NOT called
         coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile("file_1", any(), any()) }
-        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().updateFile(any(), any(), any(), any(), any()) }
-        // Verify import was called with restoreSyncSettings = false
+        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock(any(), any(), any(), any()) }
         coVerify(exactly = 1) { mockImportExportManager.importFromJson(any(), bookId, restoreSyncSettings = false) }
     }
 
@@ -209,6 +228,7 @@ class CloudSyncUseCaseTest {
             id = "file_1"
             name = "book_$bookId.zip"
             modifiedTime = com.google.api.client.util.DateTime(now - 100000L) // Remote is older
+            version = 1L
         }
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("folder_1") } returns listOf(remoteFile)
         
@@ -216,20 +236,24 @@ class CloudSyncUseCaseTest {
             val file = args[1] as File
             java.util.zip.ZipOutputStream(file.outputStream()).use { zos ->
                 zos.putNextEntry(java.util.zip.ZipEntry("backup.json"))
-                zos.write("{\"bookUpdatedAt\": 0}".toByteArray())
+                zos.write("{\"versionSequence\": 1, \"bookUpdatedAt\": ${now - 100000L}}".toByteArray())
                 zos.closeEntry()
             }
             true
         }
         
-        coEvery { mockImportExportManager.exportBookToJson(bookId) } returns "{\"bookUpdatedAt\": $now}"
+        val mockBook = Book(id = bookId, name = "Test", updatedAt = now, versionSequence = 2L)
+        coEvery { mockBookRepository.getBookById(bookId) } returns mockBook
+
+        coEvery { mockImportExportManager.exportBookToJson(bookId) } returns "{\"versionSequence\": 2, \"bookUpdatedAt\": $now}"
         coEvery { mockImportExportManager.exportBookToZip(bookId, any(), any()) } returns Unit
-        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().updateFile(any(), any(), any(), any(), any()) } returns true
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock(any(), any(), any(), any()) } returns true
 
         useCase.syncBook(mockDrive, bookId, SyncMode.TWO_WAY)
         advanceUntilIdle()
 
-        coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().updateFile("file_1", any(), any(), any(), any()) }
+        coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock("file_1", any(), "application/zip", 1L) }
+        coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile("file_1", any(), any()) }
     }
 
     @Test
@@ -249,23 +273,27 @@ class CloudSyncUseCaseTest {
             val file = args[1] as File
             java.util.zip.ZipOutputStream(file.outputStream()).use { zos ->
                 zos.putNextEntry(java.util.zip.ZipEntry("backup.json"))
-                zos.write("{\"bookUpdatedAt\": ${now + 100000L}}".toByteArray())
+                zos.write("{\"versionSequence\": 2, \"bookUpdatedAt\": ${now + 100000L}}".toByteArray())
                 zos.closeEntry()
             }
             true
         }
-        coEvery { mockImportExportManager.exportBookToJson(bookId) } returns "{\"bookUpdatedAt\": 0}"
-        coEvery { mockImportExportManager.importFromJson(any(), any(), any()) } returns Result.success(5)
+        
+        val mockBook = Book(id = bookId, name = "Test", updatedAt = now, versionSequence = 1L)
+        coEvery { mockBookRepository.getBookById(bookId) } returns mockBook
+
+        coEvery { mockImportExportManager.exportBookToJson(bookId) } returns "{\"versionSequence\": 1, \"bookUpdatedAt\": $now}"
+        coEvery { mockImportExportManager.importFromZip(any(), any(), any(), any(), any()) } returns Result.success(5)
 
         useCase.syncBook(mockDrive, bookId, SyncMode.TWO_WAY)
         advanceUntilIdle()
 
         coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile("file_1", any(), any()) }
-        coVerify(exactly = 1) { mockImportExportManager.importFromJson(any(), bookId, any()) }
+        coVerify(exactly = 1) { mockImportExportManager.importFromZip(any(), eq(bookId), any(), any(), any()) }
     }
 
     @Test
-    fun `syncBook with TWO_WAY mode does nothing if synchronized within grace period`() = runTest {
+    fun `syncBook with TWO_WAY mode does nothing if remote is in sync`() = runTest {
         val bookId = "test-book"
         val now = System.currentTimeMillis()
 
@@ -274,33 +302,17 @@ class CloudSyncUseCaseTest {
         val remoteFile = com.google.api.services.drive.model.File().apply {
             id = "file_1"
             name = "book_$bookId.zip"
-            modifiedTime = com.google.api.client.util.DateTime(now + 500L) // Remote is only 0.5s newer
+            modifiedTime = com.google.api.client.util.DateTime(now)
+            md5Checksum = "d41d8cd98f00b204e9800998ecf8427e" // Matches local empty file MD5
         }
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("folder_1") } returns listOf(remoteFile)
-        val jsonParser = kotlinx.serialization.json.Json { ignoreUnknownKeys = true; encodeDefaults = true }
-        val testData = com.andreas_kratzer.ghosttalk.core.model.importexport.ImportExportData(
-            bookUpdatedAt = now,
-            buttonTemplates = emptyList()
-        )
-        val testJson = jsonParser.encodeToString(testData)
-
-        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile(any(), any(), any()) } answers {
-            val file = args[1] as File
-            java.util.zip.ZipOutputStream(file.outputStream()).use { zos ->
-                zos.putNextEntry(java.util.zip.ZipEntry("backup.json"))
-                zos.write(testJson.toByteArray())
-                zos.closeEntry()
-            }
-            true
-        }
-        coEvery { mockImportExportManager.exportBookToJson(bookId) } returns testJson
 
         useCase.syncBook(mockDrive, bookId, SyncMode.TWO_WAY)
         advanceUntilIdle()
 
-        coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile("file_1", any(), any()) }
-        coVerify(exactly = 0) { mockImportExportManager.importFromJson(any(), any(), any()) }
-        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().updateFile(any(), any(), any(), any(), any()) }
+        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile(any(), any(), any()) }
+        coVerify(exactly = 0) { mockImportExportManager.importFromZip(any(), any(), any(), any(), any()) }
+        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock(any(), any(), any(), any()) }
     }
 
     @Test
@@ -379,7 +391,7 @@ class CloudSyncUseCaseTest {
 
         // Verify that downloadFile was called (overwriting local) because resolvedBookMode is RESTORE_ONLY
         coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile("file_1", any(), any()) }
-        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().updateFile(any(), any(), any(), any(), any()) }
+        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock(any(), any(), any(), any()) }
     }
 
     @Test
@@ -404,7 +416,7 @@ class CloudSyncUseCaseTest {
         // Verify success is returned, but no downloading/importing/exporting or uploading took place
         assert(result)
         coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile(any(), any(), any()) }
-        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().updateFile(any(), any(), any(), any(), any()) }
+        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock(any(), any(), any(), any()) }
     }
 
     @Test

@@ -1,5 +1,6 @@
 package com.andreas_kratzer.ghosttalk.core.cloud
 
+import android.content.Context
 import android.util.Log
 import com.google.api.client.googleapis.json.GoogleJsonResponseException
 import com.google.api.client.http.FileContent
@@ -289,6 +290,9 @@ class DriveServiceHelper(private val driveService: Drive) {
     /**
      * Fetches metadata for a specific file.
      */
+    /**
+     * Fetches metadata for a specific file.
+     */
     suspend fun getFileMetadata(fileId: String): File? = withContext(Dispatchers.IO) {
         try {
             Log.d(TAG, "Fetching metadata for file: $fileId")
@@ -298,6 +302,114 @@ class DriveServiceHelper(private val driveService: Drive) {
         } catch (e: Exception) {
             Log.e(TAG, "Failed to get file metadata for $fileId: ${e.message}", e)
             null
+        }
+    }
+
+    /**
+     * Uploads file content with optimistic locking based on expected file version.
+     */
+    suspend fun uploadWithOptimisticLock(
+        fileId: String,
+        localFile: java.io.File,
+        mimeType: String,
+        expectedVersion: Long
+    ): Boolean = withContext(Dispatchers.IO) {
+        try {
+            // 1. Get current version directly before writing
+            val meta = driveService.files().get(fileId).setFields("version").execute()
+            
+            // 2. Has another device updated the file?
+            if (meta.version != expectedVersion) {
+                Log.w(TAG, "Cloud-Mutex violated! Another device has written. meta.version=${meta.version}, expectedVersion=$expectedVersion")
+                return@withContext false
+            }
+            
+            // 3. Update the file content
+            val content = FileContent(mimeType, localFile)
+            driveService.files().update(fileId, null, content).execute()
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "Exception in uploadWithOptimisticLock", e)
+            false
+        }
+    }
+
+    /**
+     * Deletes a file in Google Drive by its file ID.
+     */
+    suspend fun deleteFile(fileId: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            Log.d(TAG, "Deleting file: $fileId")
+            driveService.files().delete(fileId).execute()
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to delete file $fileId", e)
+            false
+        }
+    }
+
+    /**
+     * Deletes old conflict files (merged_*) in Drive, keeping only the 2 most recent.
+     */
+    suspend fun cleanOldConflictFiles(folderId: String) = withContext(Dispatchers.IO) {
+        try {
+            val result = driveService.files().list()
+                .setQ("'$folderId' in parents and name contains 'merged_' and trashed = false")
+                .setFields("files(id, name, createdTime)")
+                .execute()
+
+            val files = result.files ?: return@withContext
+            if (files.size > 2) {
+                val sortedFiles = files.sortedBy { it.createdTime?.value ?: 0L }
+                for (i in 0 until sortedFiles.size - 2) {
+                    try {
+                        driveService.files().delete(sortedFiles[i].id).execute()
+                        Log.i(TAG, "Deleted old conflict file: ${sortedFiles[i].name}")
+                    } catch (ex: Exception) {
+                        Log.e(TAG, "Failed to delete old conflict file ${sortedFiles[i].name}", ex)
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error during cloud conflict files cleanup", e)
+        }
+    }
+
+    companion object {
+        private const val BUILDER_TAG = "DriveClientBuilder"
+
+        suspend fun buildDriveClient(
+            context: Context,
+            authType: com.andreas_kratzer.ghosttalk.core.model.CloudAuthType,
+            googleAuthManager: GoogleAuthManager,
+            googleWebAuthManager: GoogleWebAuthManager
+        ): Drive? {
+            return when (authType) {
+                com.andreas_kratzer.ghosttalk.core.model.CloudAuthType.SYSTEM -> {
+                    val credential = googleAuthManager.getGoogleCredential() ?: return null
+                    Drive.Builder(
+                        com.google.api.client.http.javanet.NetHttpTransport(),
+                        com.google.api.client.json.gson.GsonFactory.getDefaultInstance()
+                    ) { request ->
+                        credential.initialize(request)
+                        request.connectTimeout = 3 * 60 * 1000 // 3 minutes
+                        request.readTimeout = 3 * 60 * 1000    // 3 minutes
+                    }.setApplicationName("GhosTTalk").build()
+                }
+                com.andreas_kratzer.ghosttalk.core.model.CloudAuthType.WEB_FLOW -> {
+                    val token = googleWebAuthManager.getOrRefreshToken() ?: return null
+                    val initializer = com.google.api.client.http.HttpRequestInitializer { req ->
+                        req.headers.authorization = "Bearer $token"
+                        req.connectTimeout = 3 * 60 * 1000 // 3 minutes
+                        req.readTimeout = 3 * 60 * 1000    // 3 minutes
+                    }
+                    Drive.Builder(
+                        com.google.api.client.http.javanet.NetHttpTransport(),
+                        com.google.api.client.json.gson.GsonFactory.getDefaultInstance(),
+                        initializer
+                    ).setApplicationName("GhosTTalk").build()
+                }
+            }
         }
     }
 }
