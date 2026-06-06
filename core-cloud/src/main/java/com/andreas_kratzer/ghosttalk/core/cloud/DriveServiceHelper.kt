@@ -314,22 +314,31 @@ class DriveServiceHelper(private val driveService: Drive) {
         mimeType: String,
         expectedVersion: Long
     ): Boolean = withContext(Dispatchers.IO) {
+        val logTag = "DriveLockHandshake"
         try {
-            // 1. Get current version directly before writing
-            val meta = driveService.files().get(fileId).setFields("version").execute()
+            Log.d(logTag, "[1/3] Starte API-Abfrage für File-ID: $fileId. Erwartete Version (Client-Stand): $expectedVersion")
             
-            // 2. Has another device updated the file?
-            if (meta.version != expectedVersion) {
-                Log.w(TAG, "Cloud-Mutex violated! Another device has written. meta.version=${meta.version}, expectedVersion=$expectedVersion")
+            // Erzwinge frische Daten vom Server (Cache-Bypass)
+            val getRequest = driveService.files().get(fileId).setFields("version")
+            getRequest.requestHeaders.cacheControl = "no-cache"
+            val meta = getRequest.execute()
+            
+            val currentServerVersion = meta.version ?: 0L
+            Log.d(logTag, "[2/3] Google-Drive Antwort erhalten. Aktuelle Server-Version: $currentServerVersion (Erwartet vom Client: $expectedVersion)")
+            
+            if (expectedVersion != 0L && currentServerVersion != expectedVersion) {
+                Log.w(logTag, "[MUTEX-CONFLICT] Sperre verletzt! Abbruch des Uploads. Server hat sich seit Sync-Beginn verändert. (Server: $currentServerVersion, Client-Erwartung: $expectedVersion)")
                 return@withContext false
             }
             
-            // 3. Update the file content
+            Log.d(logTag, "[3/3] Sperren-Check erfolgreich (oder Legacy-Bypass). Starte physischen Datei-Upload auf Google Drive...")
             val content = FileContent(mimeType, localFile)
-            driveService.files().update(fileId, null, content).execute()
+            val updateResponse = driveService.files().update(fileId, null, content).execute()
+            
+            Log.i(logTag, "[SUCCESS] Datei erfolgreich auf Google Drive überschrieben. Neue Server-Revision ist: ${updateResponse.version}")
             true
         } catch (e: Exception) {
-            Log.e(TAG, "Exception in uploadWithOptimisticLock", e)
+            Log.e(logTag, "[ERROR] Ausnahme während des Optimistic-Lock Uploads", e)
             false
         }
     }

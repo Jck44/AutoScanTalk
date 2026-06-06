@@ -3,16 +3,16 @@ package com.andreas_kratzer.ghosttalk.core.cloud.domain
 
 import android.content.Context
 import android.net.Uri
-import com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper
-import com.andreas_kratzer.ghosttalk.core.cloud.SyncConcurrencyGuard
+import android.util.Log
 import com.andreas_kratzer.ghosttalk.core.cloud.CloudSyncOptimizer
+import com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper
 import com.andreas_kratzer.ghosttalk.core.cloud.SyncAction
+import com.andreas_kratzer.ghosttalk.core.cloud.SyncConcurrencyGuard
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.data.SyncLogProvider
 import com.andreas_kratzer.ghosttalk.core.data.impl.PageImportExportManager
 import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportExportData
 import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportPage
-import com.andreas_kratzer.ghosttalk.core.model.importexport.ExportedTombstone
 import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.google.api.services.drive.Drive
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -298,7 +298,6 @@ class CloudSyncUseCase @Inject constructor(
                             try {
                                 val downloadSuccess = storageProvider.downloadFile(remoteFile.id, downloadFile) { _ -> }
                                 if (downloadSuccess) {
-                                    // Extract audio files from ZIP
                                     if (remoteFile.name.endsWith(".zip")) {
                                         try {
                                             downloadFile.inputStream().use { inputStream ->
@@ -340,63 +339,69 @@ class CloudSyncUseCase @Inject constructor(
                             }
                         }
 
-                        // Perform sequential merge on detail level
+                        // 1. Sequentiellen Merge rein im Arbeitsspeicher (RAM) durchführen
                         var merged = localData
                         for (remoteItem in remoteDataList) {
                             merged = mergeBooks(merged, remoteItem)
                         }
 
-                        // Determine new sequence sequence
+                        // 2. Berechne die neue Ziel-Sequenznummer für das vereinte Buch
                         val maxRemoteSeq = remoteDataList.mapNotNull { it.versionSequence }.maxOrNull() ?: 0L
                         val newSeq = maxOf(localSeq, maxRemoteSeq) + 1
-                        merged = merged.copy(versionSequence = newSeq)
+                        val mergedWithNewSeq = merged.copy(versionSequence = newSeq)
 
-                        val mergedJson = jsonParser.encodeToString(merged)
+                        val mergedJson = jsonParser.encodeToString(mergedWithNewSeq)
                         
-                        // Import merged data locally
-                        val importResult = importExportManager.importFromJson(mergedJson, bookId, restoreSyncSettings = false)
-                        if (importResult.isSuccess) {
-                            // Create merged zip file
-                            val mergedTempFile = File(context.cacheDir, "merged_upload_book_$bookId.zip")
-                            try {
-                                mergedTempFile.outputStream().use { os ->
-                                    java.util.zip.ZipOutputStream(os).use { zip ->
-                                        zip.putNextEntry(java.util.zip.ZipEntry("backup.json"))
-                                        zip.write(mergedJson.toByteArray(Charsets.UTF_8))
-                                        zip.closeEntry()
+                        // 3. Erstelle das komprimierte Merge-ZIP für den Upload
+                        val mergedTempFile = File(context.cacheDir, "merged_upload_book_$bookId.zip")
+                        try {
+                            mergedTempFile.outputStream().use { os ->
+                                java.util.zip.ZipOutputStream(os).use { zip ->
+                                    zip.putNextEntry(java.util.zip.ZipEntry("backup.json"))
+                                    zip.write(mergedJson.toByteArray(Charsets.UTF_8))
+                                    zip.closeEntry()
 
-                                        val audioDir = File(context.filesDir, "audio_recordings")
-                                        if (audioDir.exists() && audioDir.isDirectory) {
-                                            audioDir.listFiles()?.filter { it.isFile && it.name.endsWith(".ogg") }?.forEach { file ->
-                                                zip.putNextEntry(java.util.zip.ZipEntry("audio_recordings/${file.name}"))
-                                                file.inputStream().use { input -> input.copyTo(zip) }
-                                                zip.closeEntry()
-                                            }
+                                    val audioDir = File(context.filesDir, "audio_recordings")
+                                    if (audioDir.exists() && audioDir.isDirectory) {
+                                        audioDir.listFiles()?.filter { it.isFile && it.name.endsWith(".ogg") }?.forEach { file ->
+                                            zip.putNextEntry(java.util.zip.ZipEntry("audio_recordings/${file.name}"))
+                                            file.inputStream().use { input -> input.copyTo(zip) }
+                                            zip.closeEntry()
                                         }
                                     }
                                 }
+                            }
 
-                                // Upload consolidated master
-                                val uploadSuccess = if (remoteMasterFile != null) {
-                                    val driveHelper = if (storageProvider is DriveApiSyncStorageProvider) {
-                                        DriveServiceHelper(drive!!)
-                                    } else null
+                            // 4. VOR DEM UPLOAD: Frische expectedVersion holen, um Cache-Inkonsistenzen zu vermeiden
+                            val expectedVersion = remoteMasterFile?.version ?: 0L
+                            val driveHelper = if (storageProvider is DriveApiSyncStorageProvider) {
+                                DriveServiceHelper(drive!!)
+                            } else null
 
-                                    if (driveHelper != null) {
-                                        driveHelper.uploadWithOptimisticLock(
-                                            fileId = remoteMasterFile.id,
-                                            localFile = mergedTempFile,
-                                            mimeType = "application/zip",
-                                            expectedVersion = remoteMasterFile.version ?: 0L
-                                        )
-                                    } else {
-                                        storageProvider.updateFile(remoteMasterFile.id, mergedTempFile, "application/zip", book.name) { _ -> }
-                                    }
-                                } else {
-                                    storageProvider.uploadFile(mergedTempFile, "application/zip", book.name) != null
-                                }
+                            Log.d(TAG, "[COMMIT-SEQ] Phase 1: Bereite Upload vor. Lokale Sequenz vor Merge: $localSeq, berechnete neue Sequenz nach Merge: $newSeq. Sende an uploadWithOptimisticLock mit expectedVersion: $expectedVersion")
 
-                                if (uploadSuccess) {
+                            // 5. Versuche den Upload mit Optimistic Locking
+                            val uploadSuccess = if (driveHelper != null && remoteMasterFile != null) {
+                                driveHelper.uploadWithOptimisticLock(
+                                    fileId = remoteMasterFile.id,
+                                    localFile = mergedTempFile,
+                                    mimeType = "application/zip",
+                                    expectedVersion = expectedVersion
+                                )
+                            } else if (remoteMasterFile != null) {
+                                storageProvider.updateFile(remoteMasterFile.id, mergedTempFile, "application/zip", book.name) { _ -> }
+                            } else {
+                                storageProvider.uploadFile(mergedTempFile, "application/zip", book.name) != null
+                            }
+
+                            // 6. AUSWERTUNG: Nur bei verifiziertem Cloud-Erfolg lokal abspeichern!
+                            if (uploadSuccess) {
+                                Log.d(TAG, "[COMMIT-SEQ] Phase 2: Cloud-Upload wurde vom Server BESTÄTIGT. Starte jetzt den lokalen Datenbank-Commit via importFromJson...")
+                                
+                                val importResult = importExportManager.importFromJson(mergedJson, bookId, restoreSyncSettings = false)
+                                
+                                if (importResult.isSuccess) {
+                                    Log.i(TAG, "[COMMIT-SEQ] Phase 3: Lokaler Datenbank-Commit ERFOLGREICH. Die versionSequence in der DB steht jetzt final auf: $newSeq. Schließe Sync-Lauf ab.")
                                     syncLogProvider.addLogEntry("Zwei-Wege-Merge erfolgreich abgeschlossen (Sequence: $newSeq)", bookId, book.name)
                                     val finalMasterFile = storageProvider.listFiles().find { it.name == zipFileName || it.name == jsonFileName }
                                     val driveTime = finalMasterFile?.modifiedTime ?: 0L
@@ -404,11 +409,10 @@ class CloudSyncUseCase @Inject constructor(
                                         bookRepository.updateLastModified(bookId, driveTime, incrementSequence = false)
                                     }
 
-                                    // Cleanup: Delete consolidated conflict files from Drive
+                                    // Bereinige konsolidierte Konfliktdateien
                                     for (conflictFile in remoteConflictFiles) {
                                         try {
                                             storageProvider.deleteFile(conflictFile.id)
-                                            logger.d(TAG, "Deleted consolidated conflict file: ${conflictFile.name}")
                                         } catch (ex: Exception) {
                                             logger.e(TAG, "Failed to delete conflict file ${conflictFile.name}", ex)
                                         }
@@ -422,17 +426,18 @@ class CloudSyncUseCase @Inject constructor(
                                     }
                                     success = true
                                 } else {
-                                    logger.e(TAG, "Optimistic lock failed during conflict upload.")
-                                    syncLogProvider.addLogEntry("Zusammenführung fehlgeschlagen (Kollisionsfehler)", bookId, book.name, isError = true)
+                                    Log.e(TAG, "[COMMIT-SEQ] KRITISCHER FEHLER: Phase 2 erfolgreich (Cloud hat Daten), aber Phase 3 FEHLGESCHLAGEN (Lokaler DB-Import abgebrochen): ${importResult.exceptionOrNull()?.message}")
+                                    syncLogProvider.addLogEntry("Zusammenführung Cloud erfolgreich, lokaler Import fehlgeschlagen", bookId, book.name, isError = true)
                                     success = false
                                 }
-                            } finally {
-                                mergedTempFile.delete()
+                            } else {
+                                // HIER GEHT DER SICHERHEITSGURT ZU: Bei Lock-Fehlstellung bleibt die DB unverändert
+                                Log.w(TAG, "[COMMIT-SEQ] Cloud-Upload ABGEWIESEN (Sperrenfehler). Lokaler Datenbank-Commit wird übersprungen! Lokale versionSequence bleibt unverändert bei: $localSeq")
+                                syncLogProvider.addLogEntry("Zusammenführung blockiert (Lock-Konflikt). Sequenz bleibt unverändert bei $localSeq.", bookId, book.name, isError = true)
+                                success = false
                             }
-                        } else {
-                            logger.e(TAG, "Failed to import merged data locally: ${importResult.exceptionOrNull()?.message}")
-                            syncLogProvider.addLogEntry("Zusammenführung fehlgeschlagen: Lokaler Import fehlgeschlagen", bookId, book.name, isError = true)
-                            success = false
+                        } finally {
+                            mergedTempFile.delete()
                         }
                     }
                 }

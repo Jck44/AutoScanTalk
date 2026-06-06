@@ -20,9 +20,12 @@ import io.mockk.unmockkStatic
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.test.resetMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -36,6 +39,7 @@ class CloudSyncSettingsDelegateTest {
 
     private lateinit var application: Application
     private lateinit var googleAuthManager: GoogleAuthManager
+    private lateinit var googleWebAuthManager: com.andreas_kratzer.ghosttalk.core.cloud.GoogleWebAuthManager
     private lateinit var settingsRepository: com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
     private lateinit var setCloudSyncEnabledUseCase: SetCloudSyncEnabledUseCase
     private lateinit var performManualSyncUseCase: PerformManualSyncUseCase
@@ -50,12 +54,14 @@ class CloudSyncSettingsDelegateTest {
 
     @Before
     fun setup() {
+        kotlinx.coroutines.Dispatchers.setMain(testDispatcher)
         mockkStatic(Toast::class)
         every { Toast.makeText(any(), any<Int>(), any()) } returns mockk(relaxed = true)
         every { Toast.makeText(any(), any<String>(), any()) } returns mockk(relaxed = true)
 
         application = mockk(relaxed = true)
         googleAuthManager = mockk(relaxed = true)
+        googleWebAuthManager = mockk(relaxed = true)
         settingsRepository = mockk(relaxed = true)
         setCloudSyncEnabledUseCase = mockk(relaxed = true)
         performManualSyncUseCase = mockk(relaxed = true)
@@ -66,10 +72,13 @@ class CloudSyncSettingsDelegateTest {
         syncLogProvider = mockk(relaxed = true)
         
         every { googleAuthManager.userEmail } returns userEmailFlow
+        every { settingsRepository.googleAuthTypeFlow } returns MutableStateFlow(com.andreas_kratzer.ghosttalk.core.model.CloudAuthType.SYSTEM)
+        every { settingsRepository.googleUserEmailFlow } returns MutableStateFlow(null)
 
         delegate = CloudSyncSettingsDelegate(
             application = application,
             authManager = googleAuthManager,
+            googleWebAuthManager = googleWebAuthManager,
             settingsRepository = settingsRepository,
             setCloudSyncEnabledUseCase = setCloudSyncEnabledUseCase,
             performManualSyncUseCase = performManualSyncUseCase,
@@ -83,12 +92,14 @@ class CloudSyncSettingsDelegateTest {
 
     @After
     fun tearDown() {
+        kotlinx.coroutines.Dispatchers.resetMain()
         unmockkStatic(Toast::class)
     }
 
     @Test
     fun `setCloudSyncEnabled calls use case when logged in`() {
         userEmailFlow.value = "test@example.com"
+        testDispatcher.scheduler.advanceUntilIdle()
         val context = mockk<Activity>(relaxed = true)
 
         delegate.setCloudSyncEnabled(context, true, testScope)

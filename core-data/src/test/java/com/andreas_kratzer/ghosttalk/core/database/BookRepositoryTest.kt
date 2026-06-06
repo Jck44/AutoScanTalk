@@ -75,8 +75,14 @@ class BookRepositoryTest {
     }
 
     @Test
-    fun `updateLastModified calls dao updateLastModified`() = runTest {
-        bookRepository.updateLastModified("1")
+    fun `updateLastModified calls dao updateLastModified when incrementSequence is false`() = runTest {
+        bookRepository.updateLastModified("1", incrementSequence = false)
         coVerify { mockBookDao.updateLastModified("1", any()) }
+    }
+
+    @Test
+    fun `updateLastModified calls dao incrementVersionSequence when incrementSequence is true`() = runTest {
+        bookRepository.updateLastModified("1", incrementSequence = true)
+        coVerify { mockBookDao.incrementVersionSequence("1", any()) }
     }
 }

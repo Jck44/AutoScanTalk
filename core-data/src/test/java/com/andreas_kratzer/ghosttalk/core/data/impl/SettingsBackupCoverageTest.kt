@@ -68,6 +68,11 @@ class SettingsBackupCoverageTest {
         "syncTargetType",           // Device-specific sync setting (Drive vs SAF)
         "localFolderSafUri",        // Device-specific SAF folder target URI
         "localFolderSafName",       // Device-specific SAF folder target name
+        "googleAuthType",           // Local session / Auth configuration
+        "googleAccessToken",        // Security / Credential / Session Token
+        "googleRefreshToken",       // Security / Credential / Session Token
+        "googleTokenExpiresAt",     // Local session expiration state
+        "googleUserEmail",          // Local session user identifier
         "blockVolumeKeys",          // Hardware block setting (local)
         "blockVolumeKeysFlow",
         "speakerVolume",            // Audio volume scaling (local)
