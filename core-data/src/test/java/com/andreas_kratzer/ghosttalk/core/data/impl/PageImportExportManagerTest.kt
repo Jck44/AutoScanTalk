@@ -18,6 +18,7 @@ import com.andreas_kratzer.ghosttalk.core.model.GeminiButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiNanoButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiSearchButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.Page
+import com.andreas_kratzer.ghosttalk.core.model.NavigateToStartPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.UserModeSession
@@ -343,25 +344,26 @@ class PageImportExportManagerTest {
             }
         """.trimIndent()
 
-        val pageSlot = slot<Page>()
-        coEvery { pageRepository.insertPage(capture(pageSlot)) } returns Unit
+        val capturedPages = mutableListOf<Page>()
+        coEvery { pageRepository.insertPage(capture(capturedPages)) } returns Unit
 
         // First import
         manager.importFromJson(jsonString, "book1")
-        val firstPage = pageSlot.captured
-        assertEquals(pageId, firstPage.id)
+        val firstPage = capturedPages.find { it.id == pageId }
+        assertNotNull(firstPage)
+        assertEquals(pageId, firstPage!!.id)
         assertEquals(buttonId, firstPage.buttonConfigs[0]?.id)
 
         // Second import of the same data
+        capturedPages.clear()
         manager.importFromJson(jsonString, "book1")
-        val secondPage = pageSlot.captured
-        
-        // The ID should be the same as before, not a new one
-        assertEquals(pageId, secondPage.id)
+        val secondPage = capturedPages.find { it.id == pageId }
+        assertNotNull(secondPage)
+        assertEquals(pageId, secondPage!!.id)
         assertEquals(buttonId, secondPage.buttonConfigs[0]?.id)
         
-        // Verify insertPage was called twice (Room REPLACE handles the deduplication at DB level)
-        coVerify(exactly = 2) { pageRepository.insertPage(any()) }
+        // Verify insertPage was called 4 times (2 pages per import: P1 and repaired static row)
+        coVerify(exactly = 4) { pageRepository.insertPage(any()) }
     }
 
     @Test
@@ -615,8 +617,7 @@ class PageImportExportManagerTest {
         val result = manager.importFromJson(jsonString, bookId, regenerateIds = false)
 
         assertTrue(result.isSuccess)
-        assertEquals(1, pageSlot.size)
-        val importedPage = pageSlot[0]
+        val importedPage = pageSlot.find { it.id == "p1" }!!
 
         // Verify actions
         val b1 = importedPage.buttonConfigs[0]?.buttonAction as GeminiButtonAction
@@ -1238,4 +1239,83 @@ class PageImportExportManagerTest {
         assertTrue(result.isFailure)
         assertEquals("Keine backup.json im ZIP gefunden.", result.exceptionOrNull()?.message)
     }
+
+    @Test
+    fun `importFromJson automatically repairs missing static row`() = runTest {
+        val bookId = "book1"
+        val jsonString = """
+            {
+                "pages": [
+                    { "importId": "p1", "name": "Page 1", "rows": 4, "columns": 4, "buttons": [] }
+                ]
+            }
+        """.trimIndent()
+
+        val capturedPages = mutableListOf<Page>()
+        coEvery { pageRepository.insertPage(capture(capturedPages)) } returns Unit
+        
+        // Mock that static row doesn't exist
+        coEvery { pageRepository.getPageById("static_row_$bookId") } returns null
+
+        val result = manager.importFromJson(jsonString, bookId)
+
+        assertTrue(result.isSuccess)
+        // Two pages should have been inserted: the imported Page 1, and the repaired Static Row page
+        assertEquals(2, capturedPages.size)
+        
+        val staticRow = capturedPages.find { it.id == "static_row_$bookId" }
+        assertNotNull(staticRow)
+        assertEquals("Statische Zeile", staticRow!!.name)
+        assertEquals(1, staticRow.rows)
+        assertEquals(4, staticRow.columns)
+        assertEquals("linear", staticRow.scanPattern)
+    }
+
+    @Test
+    fun `importFromJson maps navigation to start page to NavigateToStartPageButtonAction`() = runTest {
+        val bookId = "book1"
+        val startPageId = "page-start"
+        val otherPageId = "page-other"
+        val jsonString = """
+            {
+                "bookId": "$bookId",
+                "defaultStartPageId": "$startPageId",
+                "pages": [
+                    {
+                        "importId": "$startPageId",
+                        "name": "Start Page",
+                        "buttons": []
+                    },
+                    {
+                        "importId": "$otherPageId",
+                        "name": "Other Page",
+                        "buttons": [
+                            {
+                                "index": 0,
+                                "label": "Go Home",
+                                "action": {
+                                    "type": "NAVIGATE",
+                                    "targetPageId": "$startPageId"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+        """.trimIndent()
+
+        val capturedPages = mutableListOf<Page>()
+        coEvery { pageRepository.insertPage(capture(capturedPages)) } returns Unit
+        coEvery { pageRepository.getPageById(any()) } returns null
+
+        val result = manager.importFromJson(jsonString, bookId, regenerateIds = false)
+
+        assertTrue(result.isSuccess)
+        val otherPage = capturedPages.find { it.id == otherPageId }
+        assertNotNull(otherPage)
+        val button = otherPage!!.buttonConfigs[0]
+        assertNotNull(button)
+        assertTrue(button!!.buttonAction is NavigateToStartPageButtonAction)
+    }
 }
+

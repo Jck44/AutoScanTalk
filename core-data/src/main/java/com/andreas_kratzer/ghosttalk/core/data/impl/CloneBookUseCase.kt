@@ -52,7 +52,15 @@ class CloneBookUseCase @Inject constructor(
         val oldPagesWithButtons = appDatabase.pageDao().getPagesForBookWithButtons(sourceBookId)
 
         // Generate mapping of oldPageId to newPageId
-        val pageIdMap = oldPagesWithButtons.associate { it.page.id to UUID.randomUUID().toString() }
+        val pageIdMap = oldPagesWithButtons.associate { oldP ->
+            val oldId = oldP.page.id
+            val newId = if (oldId.startsWith("static_row_")) {
+                "static_row_$targetBookId"
+            } else {
+                UUID.randomUUID().toString()
+            }
+            oldId to newId
+        }
         val buttonIdMap = mutableMapOf<String, String>()
 
         // 1. Initial deep copy in memory, keeping layout structure
@@ -583,7 +591,7 @@ class CloneBookUseCase @Inject constructor(
         newPages.addAll(extraPages)
 
         // Archive unplaced buttons from selected pages
-        val selectedSourcePageIds = oldPagesWithButtons.map { it.page.id }.toSet()
+        val selectedSourcePageIds = oldPagesWithButtons.map { it.page.id }.filter { !it.startsWith("static_row_") }.toSet()
         val unplacedButtons = allOriginalButtons.filter { btn ->
             selectedSourcePageIds.contains(btn.pageId) && !placedOriginalButtonIds.contains(btn.id) && btn.isActive
         }
@@ -686,6 +694,37 @@ class CloneBookUseCase @Inject constructor(
         }
         
         newPages.addAll(archivPages)
+
+        // 3.9 Copy the static row page if it exists in the source book
+        val originalStaticRow = oldPagesWithButtons.find { it.page.id.startsWith("static_row_") }
+        if (originalStaticRow != null) {
+            val newStaticRowId = "static_row_$targetBookId"
+            val newStaticRow = originalStaticRow.page.copy(
+                id = newStaticRowId,
+                bookId = targetBookId,
+                createdAt = System.currentTimeMillis()
+            )
+            val newButtons = originalStaticRow.buttons.map { oldB ->
+                val newBtnId = UUID.randomUUID().toString()
+                buttonIdMap[oldB.id] = newBtnId
+                
+                val mappedAction = when (val btnAct = oldB.buttonAction) {
+                    is NavigateToPageButtonAction -> {
+                        val targetPageName = oldPagesWithButtons.find { it.page.id == btnAct.pageId }?.page?.name
+                        val mappedTargetId = if (targetPageName != null) pageIdMap[targetPageName] else null
+                        if (mappedTargetId != null) NavigateToPageButtonAction(mappedTargetId) else btnAct
+                    }
+                    else -> btnAct
+                }
+                
+                oldB.copy(
+                    id = newBtnId,
+                    pageId = newStaticRowId,
+                    buttonAction = mappedAction
+                )
+            }
+            newPages.add(MutablePageWithButtons(newStaticRow, newButtons.toMutableList()))
+        }
 
         // Database inserts
         bookRepository.insertBook(targetBook)

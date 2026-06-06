@@ -294,6 +294,10 @@ class PageImportExportManager @Inject constructor(
                 }
             }
 
+            val restoredStartPageId = importData.defaultStartPageId?.let { oldId ->
+                idMap[oldId] ?: oldId
+            } ?: settingsRepository.getDefaultStartPageIdForBook(bookId)
+
             importData.pages.forEach { importPage ->
                 val newPageId = idMap[importPage.importId]!!
                 
@@ -301,7 +305,7 @@ class PageImportExportManager @Inject constructor(
                 val buttons = MutableList<ButtonConfig?>(49) { null }
                 
                 importPage.buttons.forEach { importButton ->
-                    val action = importButton.action?.let { actionMapper.importAction(it, idMap) }
+                    val action = importButton.action?.let { actionMapper.importAction(it, idMap, restoredStartPageId) }
                     
                     if (importButton.label.isEmpty() && action == null && importButton.auditoryCueText == null && importButton.audioFileName == null) {
                         return@forEach
@@ -383,7 +387,7 @@ class PageImportExportManager @Inject constructor(
                 importButtonTemplates.forEach { importTemplate ->
                     val button = importTemplate.button
                     if (button != null) {
-                        val action = button.action?.let { actionMapper.importAction(it, idMap) } ?: SpeakTextButtonAction()
+                        val action = button.action?.let { actionMapper.importAction(it, idMap, restoredStartPageId) } ?: SpeakTextButtonAction()
                         
                         val modeString = button.spokenTextMode
                         val spokenTextMode = if (modeString != null) {
@@ -418,6 +422,30 @@ class PageImportExportManager @Inject constructor(
                     }
                 }
             }
+            
+            // 3.1 Automatic repair: Ensure the static row page exists in the database
+            val staticRowId = "static_row_$bookId"
+            if (pageRepository.getPageById(staticRowId) == null) {
+                logger.d(TAG, "Static row page missing after import, performing automatic repair for book $bookId")
+                val defaultStaticRowPage = Page(
+                    id = staticRowId,
+                    bookId = bookId,
+                    name = "Statische Zeile",
+                    templateId = null,
+                    rows = 1,
+                    columns = 4,
+                    scanPattern = "linear",
+                    rowNames = emptyList(),
+                    buttonConfigs = emptyList(),
+                    orderIndex = -1,
+                    createdAt = System.currentTimeMillis(),
+                    updatedAt = System.currentTimeMillis()
+                )
+                pageRepository.insertPage(defaultStaticRowPage)
+            }
+            
+            // Sanitize imported layout by purging any INSTALL_UPDATE actions
+            pageRepository.purgeInstallUpdateButtons()
             
             // 4. Force refresh of settings flows to ensure UI is updated
             settingsRepository.refresh()

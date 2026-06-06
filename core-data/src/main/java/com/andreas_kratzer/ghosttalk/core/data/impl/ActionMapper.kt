@@ -91,14 +91,14 @@ class ActionMapper @Inject constructor() {
      * Converts an [ImportAction] to a [ButtonAction] during import.
      * Uses [idMap] to resolve target page IDs for navigation actions.
      */
-    fun importAction(importAction: ImportAction, idMap: Map<String, String>): ButtonAction? {
+    fun importAction(importAction: ImportAction, idMap: Map<String, String>, defaultStartPageId: String? = null): ButtonAction? {
         val type = importAction.type.uppercase()
         return when (type) {
             "SPEAK", "SPEAKTEXT" -> SpeakTextButtonAction()
             "NAVIGATE", "NAVIGATETOPAGE" -> {
                 val oldId = importAction.targetPageId ?: importAction.targetPageImportId ?: ""
                 val resolvedId = idMap[oldId] ?: oldId
-                if (resolvedId.isEmpty()) {
+                if (resolvedId.isEmpty() || resolvedId == defaultStartPageId) {
                     NavigateToStartPageButtonAction()
                 } else {
                     NavigateToPageButtonAction(resolvedId)

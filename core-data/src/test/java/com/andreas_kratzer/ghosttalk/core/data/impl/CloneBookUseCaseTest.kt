@@ -20,6 +20,7 @@ import com.andreas_kratzer.ghosttalk.core.model.BookRestructureProposal
 import com.andreas_kratzer.ghosttalk.core.model.ButtonUsageStat
 import com.andreas_kratzer.ghosttalk.core.model.CategoryInfo
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.RestructureAction
 import io.mockk.coEvery
@@ -672,5 +673,106 @@ class CloneBookUseCaseTest {
         assertNotNull(navLink)
         assertTrue(navLink!!.buttonAction is NavigateToPageButtonAction)
         assertEquals(archivPage2?.id, (navLink.buttonAction as NavigateToPageButtonAction).pageId)
+    }
+
+    @Test
+    fun `cloning book with execute preserves static row page and its buttons`() = runTest {
+        val sourceBookId = "srcBookId"
+        val sourceBook = Book(id = sourceBookId, name = "My Book")
+        
+        val staticRowId = "static_row_$sourceBookId"
+        val staticRowPage = Page(id = staticRowId, bookId = sourceBookId, name = "Statische Zeile", rows = 1, columns = 4)
+        val staticButton = ButtonEntity(
+            id = "static_btn",
+            pageId = staticRowId,
+            globalIndex = 0,
+            label = "Static Action",
+            buttonAction = SpeakTextButtonAction(),
+            isActive = true
+        )
+        
+        val oldPagesWithButtons = listOf(
+            PageWithButtons(page = staticRowPage, buttons = listOf(staticButton))
+        )
+        
+        coEvery { mockBookRepository.getBookById(sourceBookId) } returns sourceBook
+        coEvery { mockPageDao.getPagesForBookWithButtons(sourceBookId) } returns oldPagesWithButtons
+        
+        val targetBookId = cloneBookUseCase.execute(sourceBookId, proposal = null)
+        
+        val pageSlots = mutableListOf<Page>()
+        coVerify { mockPageDao.insertPageEntity(capture(pageSlots)) }
+        val newStaticRow = pageSlots.find { it.name == "Statische Zeile" }
+        assertNotNull(newStaticRow)
+        assertEquals("static_row_$targetBookId", newStaticRow!!.id)
+        assertEquals(targetBookId, newStaticRow.bookId)
+        
+        val buttonSlots = mutableListOf<List<ButtonEntity>>()
+        coVerify { mockButtonDao.insertButtons(capture(buttonSlots)) }
+        val allButtons = buttonSlots.flatten()
+        val clonedStaticBtn = allButtons.find { it.label == "Static Action" }
+        assertNotNull(clonedStaticBtn)
+        assertEquals(newStaticRow.id, clonedStaticBtn!!.pageId)
+        assertNotEquals("static_btn", clonedStaticBtn.id)
+    }
+
+    @Test
+    fun `cloning book with applyHierarchyRestructure copies static row page and its buttons`() = runTest {
+        val sourceBookId = "srcBookId"
+        val sourceBook = Book(id = sourceBookId, name = "My Book")
+        
+        val staticRowId = "static_row_$sourceBookId"
+        val staticRowPage = Page(id = staticRowId, bookId = sourceBookId, name = "Statische Zeile", rows = 1, columns = 4)
+        val staticButton = ButtonEntity(
+            id = "static_btn",
+            pageId = staticRowId,
+            globalIndex = 0,
+            label = "Static Action",
+            buttonAction = SpeakTextButtonAction(),
+            isActive = true
+        )
+        
+        val page1Id = "p1"
+        val page1 = Page(id = page1Id, bookId = sourceBookId, name = "Hauptseite", rows = 3, columns = 3)
+        
+        val oldPagesWithButtons = listOf(
+            PageWithButtons(page = page1, buttons = emptyList()),
+            PageWithButtons(page = staticRowPage, buttons = listOf(staticButton))
+        )
+        
+        coEvery { mockBookRepository.getBookById(sourceBookId) } returns sourceBook
+        coEvery { mockPageDao.getPagesForBookWithButtons(sourceBookId) } returns oldPagesWithButtons
+        
+        val proposal = com.andreas_kratzer.ghosttalk.core.model.BookHierarchyProposal(
+            pages = listOf(
+                com.andreas_kratzer.ghosttalk.core.model.HierarchyPageNode(
+                    name = "Hauptseite",
+                    description = "Startseite",
+                    subpages = emptyList()
+                )
+            )
+        )
+        
+        val layouts = mapOf(
+            "Hauptseite" to com.andreas_kratzer.ghosttalk.core.model.PageLayoutProposal(
+                pageName = "Hauptseite",
+                actions = emptyList()
+            )
+        )
+        
+        val targetBookId = cloneBookUseCase.applyHierarchyRestructure(sourceBookId, proposal, layouts)
+        
+        val pageSlots = mutableListOf<Page>()
+        coVerify { mockPageDao.insertPageEntity(capture(pageSlots)) }
+        val newStaticRow = pageSlots.find { it.name == "Statische Zeile" }
+        assertNotNull(newStaticRow)
+        assertEquals("static_row_$targetBookId", newStaticRow!!.id)
+        
+        val buttonSlots = mutableListOf<List<ButtonEntity>>()
+        coVerify { mockButtonDao.insertButtons(capture(buttonSlots)) }
+        val allButtons = buttonSlots.flatten()
+        val clonedStaticBtn = allButtons.find { it.label == "Static Action" }
+        assertNotNull(clonedStaticBtn)
+        assertEquals(newStaticRow.id, clonedStaticBtn!!.pageId)
     }
 }
