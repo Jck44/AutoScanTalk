@@ -80,7 +80,7 @@ class CloudSyncUseCaseTest {
         
         val remoteFile = com.google.api.services.drive.model.File().apply {
             id = "file_1"
-            name = "book_$bookId.zip"
+            name = "book_$bookId.json"
             modifiedTime = com.google.api.client.util.DateTime(now - 100000L) // Remote is older
             version = 1L
         }
@@ -88,15 +88,11 @@ class CloudSyncUseCaseTest {
         
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile(any(), any(), any()) } answers {
             val file = args[1] as File
-            java.util.zip.ZipOutputStream(file.outputStream()).use { zos ->
-                zos.putNextEntry(java.util.zip.ZipEntry("backup.json"))
-                zos.write("{\"versionSequence\": 1, \"bookUpdatedAt\": ${now - 100000L}}".toByteArray())
-                zos.closeEntry()
-            }
+            file.writeText("{\"versionSequence\": 1, \"bookUpdatedAt\": ${now - 100000L}}")
             true
         }
         
-        coEvery { mockImportExportManager.exportBookToZip(bookId, any(), any()) } returns Unit
+        coEvery { mockImportExportManager.exportBookToJson(bookId) } returns "{\"versionSequence\": 2, \"bookUpdatedAt\": $now}"
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock(any(), any(), any(), any()) } returns true
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().getFileMetadata(any()) } returns remoteFile
 
@@ -104,7 +100,7 @@ class CloudSyncUseCaseTest {
         advanceUntilIdle()
 
         // Verify that uploadWithOptimisticLock was called and downloadFile was called exactly once for sequence check
-        coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock("file_1", any(), "application/zip", 1L) }
+        coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock("file_1", any(), "application/json", 1L) }
         coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile("file_1", any(), any()) }
     }
 
@@ -120,18 +116,14 @@ class CloudSyncUseCaseTest {
         
         val remoteFile = com.google.api.services.drive.model.File().apply {
             id = "file_1"
-            name = "book_$bookId.zip"
+            name = "book_$bookId.json"
             modifiedTime = com.google.api.client.util.DateTime(now + 100000L) // Remote is newer
         }
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("folder_1") } returns listOf(remoteFile)
 
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile(any(), any(), any()) } answers {
             val file = args[1] as File
-            java.util.zip.ZipOutputStream(file.outputStream()).use { zos ->
-                zos.putNextEntry(java.util.zip.ZipEntry("backup.json"))
-                zos.write("{\"versionSequence\": 2, \"bookUpdatedAt\": ${now + 100000L}}".toByteArray())
-                zos.closeEntry()
-            }
+            file.writeText("{\"versionSequence\": 2, \"bookUpdatedAt\": ${now + 100000L}}")
             true
         }
 
@@ -178,7 +170,7 @@ class CloudSyncUseCaseTest {
         
         val remoteFile = com.google.api.services.drive.model.File().apply {
             id = "file_1"
-            name = "book_$bookId.zip"
+            name = "book_$bookId.json"
             modifiedTime = com.google.api.client.util.DateTime(now)
             md5Checksum = "d41d8cd98f00b204e9800998ecf8427e" // Matches local empty file MD5
         }
@@ -226,7 +218,7 @@ class CloudSyncUseCaseTest {
         
         val remoteFile = com.google.api.services.drive.model.File().apply {
             id = "file_1"
-            name = "book_$bookId.zip"
+            name = "book_$bookId.json"
             modifiedTime = com.google.api.client.util.DateTime(now - 100000L) // Remote is older
             version = 1L
         }
@@ -234,11 +226,7 @@ class CloudSyncUseCaseTest {
         
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile(any(), any(), any()) } answers {
             val file = args[1] as File
-            java.util.zip.ZipOutputStream(file.outputStream()).use { zos ->
-                zos.putNextEntry(java.util.zip.ZipEntry("backup.json"))
-                zos.write("{\"versionSequence\": 1, \"bookUpdatedAt\": ${now - 100000L}}".toByteArray())
-                zos.closeEntry()
-            }
+            file.writeText("{\"versionSequence\": 1, \"bookUpdatedAt\": ${now - 100000L}}")
             true
         }
         
@@ -246,13 +234,12 @@ class CloudSyncUseCaseTest {
         coEvery { mockBookRepository.getBookById(bookId) } returns mockBook
 
         coEvery { mockImportExportManager.exportBookToJson(bookId) } returns "{\"versionSequence\": 2, \"bookUpdatedAt\": $now}"
-        coEvery { mockImportExportManager.exportBookToZip(bookId, any(), any()) } returns Unit
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock(any(), any(), any(), any()) } returns true
 
         useCase.syncBook(mockDrive, bookId, SyncMode.TWO_WAY)
         advanceUntilIdle()
 
-        coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock("file_1", any(), "application/zip", 1L) }
+        coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock("file_1", any(), "application/json", 1L) }
         coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile("file_1", any(), any()) }
     }
 
@@ -265,17 +252,13 @@ class CloudSyncUseCaseTest {
 
         val remoteFile = com.google.api.services.drive.model.File().apply {
             id = "file_1"
-            name = "book_$bookId.zip"
+            name = "book_$bookId.json"
             modifiedTime = com.google.api.client.util.DateTime(now + 100000L) // Remote is newer
         }
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("folder_1") } returns listOf(remoteFile)
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile(any(), any(), any()) } answers {
             val file = args[1] as File
-            java.util.zip.ZipOutputStream(file.outputStream()).use { zos ->
-                zos.putNextEntry(java.util.zip.ZipEntry("backup.json"))
-                zos.write("{\"versionSequence\": 2, \"bookUpdatedAt\": ${now + 100000L}}".toByteArray())
-                zos.closeEntry()
-            }
+            file.writeText("{\"versionSequence\": 2, \"bookUpdatedAt\": ${now + 100000L}}")
             true
         }
         
@@ -283,13 +266,13 @@ class CloudSyncUseCaseTest {
         coEvery { mockBookRepository.getBookById(bookId) } returns mockBook
 
         coEvery { mockImportExportManager.exportBookToJson(bookId) } returns "{\"versionSequence\": 1, \"bookUpdatedAt\": $now}"
-        coEvery { mockImportExportManager.importFromZip(any(), any(), any(), any(), any()) } returns Result.success(5)
+        coEvery { mockImportExportManager.importFromJson(any(), any(), any()) } returns Result.success("test-book")
 
         useCase.syncBook(mockDrive, bookId, SyncMode.TWO_WAY)
         advanceUntilIdle()
 
         coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile("file_1", any(), any()) }
-        coVerify(exactly = 1) { mockImportExportManager.importFromZip(any(), eq(bookId), any(), any(), any()) }
+        coVerify(exactly = 1) { mockImportExportManager.importFromJson(any(), eq(bookId), any()) }
     }
 
     @Test
@@ -301,7 +284,7 @@ class CloudSyncUseCaseTest {
 
         val remoteFile = com.google.api.services.drive.model.File().apply {
             id = "file_1"
-            name = "book_$bookId.zip"
+            name = "book_$bookId.json"
             modifiedTime = com.google.api.client.util.DateTime(now)
             md5Checksum = "d41d8cd98f00b204e9800998ecf8427e" // Matches local empty file MD5
         }
@@ -311,7 +294,7 @@ class CloudSyncUseCaseTest {
         advanceUntilIdle()
 
         coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile(any(), any(), any()) }
-        coVerify(exactly = 0) { mockImportExportManager.importFromZip(any(), any(), any(), any(), any()) }
+        coVerify(exactly = 0) { mockImportExportManager.importFromJson(any(), any(), any()) }
         coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock(any(), any(), any(), any()) }
     }
 
