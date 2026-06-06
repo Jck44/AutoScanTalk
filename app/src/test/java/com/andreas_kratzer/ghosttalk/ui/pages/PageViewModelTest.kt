@@ -295,6 +295,26 @@ class PageViewModelTest {
             every { isSimulatedFlow } returns MutableStateFlow(false)
         }
 
+        val callManagementDelegate = com.andreas_kratzer.ghosttalk.ui.pages.delegates.CallManagementDelegate(
+            application = application,
+            systemCallManager = systemCallManager,
+            settingsRepository = settingsRepository,
+            ttsHelper = ttsHelper,
+            actionExecutor = actionExecutor,
+            scanCoordinator = scanCoordinator
+        )
+
+        val aiRestructureDelegate = com.andreas_kratzer.ghosttalk.ui.pages.delegates.AiRestructureDelegate(
+            application = application,
+            bookRepository = bookRepository,
+            buttonUsageRepository = buttonUsageRepository,
+            settingsRepository = settingsRepository,
+            cloneBookUseCase = mockk(relaxed = true),
+            bookRestructureProposalUseCase = mockk(relaxed = true),
+            bookHierarchyProposalUseCase = mockk(relaxed = true),
+            pageLayoutProposalUseCase = mockk(relaxed = true)
+        )
+
         return PageViewModel(
             application = application,
             savedStateHandle = SavedStateHandle(),
@@ -306,6 +326,8 @@ class PageViewModelTest {
             interactionDelegate = interactionDelegate,
             screenManagementDelegate = screenManagementDelegate,
             smartPredictionDelegate = smartPredictionDelegate,
+            callManagementDelegate = callManagementDelegate,
+            aiRestructureDelegate = aiRestructureDelegate,
             resolveDynamicButtonsUseCase = resolveDynamicButtonsUseCase,
             updateSmartPredictionsUseCase = updateSmartPredictionsUseCase,
             actionExecutor = actionExecutor,

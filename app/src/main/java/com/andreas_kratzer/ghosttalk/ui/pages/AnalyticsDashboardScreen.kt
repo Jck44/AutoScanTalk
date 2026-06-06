@@ -2,40 +2,24 @@ package com.andreas_kratzer.ghosttalk.ui.pages
 
 import android.annotation.SuppressLint
 import android.widget.Toast
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -44,7 +28,6 @@ import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -65,11 +48,14 @@ import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.domain.pages.UsageLocation
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
+import com.andreas_kratzer.ghosttalk.ui.pages.analytics.*
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
-import com.andreas_kratzer.ghosttalk.feature.settings.R as SettingsR
+
+internal data class TransitionFlow(val from: String, val to: String, val count: Int)
+internal data class PageUsage(val pageId: String, val name: String, val count: Int, val percentage: Float)
 
 @SuppressLint("LocalContextGetResourceValueCall")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -93,24 +79,20 @@ fun AnalyticsDashboardScreen(
     val currentSort by pageViewModel.currentProposalSort.collectAsState()
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
-    var showAllRecommendations by remember { mutableStateOf(false) }
-    var showAllLayoutProposals by remember { mutableStateOf(false) }
-    var showAllAiActions by remember { mutableStateOf(false) }
-    var showAllUnusedPages by remember { mutableStateOf(false) }
 
     val isGeminiEnabled = pageViewModel.settingsRepository.isGeminiEnabled
     val aiProposal by pageViewModel.aiRestructureProposal.collectAsState()
-    val aiHierarchy by pageViewModel.aiHierarchyProposal.collectAsState()
-    val aiPageLayouts by pageViewModel.aiPageLayoutProposals.collectAsState()
-    val isAiHierarchyLoading by pageViewModel.isAiHierarchyLoading.collectAsState()
-    val isLoadingPageLayout by pageViewModel.isLoadingPageLayout.collectAsState()
     val isAiLoading by pageViewModel.isAiRestructureLoading.collectAsState()
     val aiToastApplied = stringResource(R.string.analytics_ai_toast_applied)
     val selectedPageIds by pageViewModel.selectedPageIds.collectAsState()
     val activeTargetPageIds by pageViewModel.activeTargetPageIds.collectAsState()
     val aiRestructureScope by pageViewModel.aiRestructureScope.collectAsState()
     val aiRestructureError by pageViewModel.aiRestructureError.collectAsState()
-    var showTokenWarningDialog by remember { mutableStateOf(false) }
+
+    val aiHierarchy by pageViewModel.aiHierarchyProposal.collectAsState()
+    val isAiHierarchyLoading by pageViewModel.isAiHierarchyLoading.collectAsState()
+    val aiPageLayouts by pageViewModel.aiPageLayoutProposals.collectAsState()
+    val isLoadingPageLayout by pageViewModel.isLoadingPageLayout.collectAsState()
 
     val statisticsTimeframeText = remember(historyEvents, userModeSessions, locale) {
         val minEvent = historyEvents.minOfOrNull { it.timestamp } ?: Long.MAX_VALUE
@@ -129,7 +111,7 @@ fun AnalyticsDashboardScreen(
         }
     }
 
-    // Aggregations & Trend calculations (Prio 2 & 4)
+    // Aggregations & Trend calculations
     val now = System.currentTimeMillis()
     val oneWeekMs = 7L * 24L * 60L * 60L * 1000L
     val twoWeeksMs = 14L * 24L * 60L * 60L * 1000L
@@ -213,8 +195,7 @@ fun AnalyticsDashboardScreen(
     val previousUsageMinutes = previousUsageMs / (1000.0 * 60.0)
     val previousCommRate = if (previousUsageMinutes > 0.0) previousClicks / previousUsageMinutes else 0.0
     
-    // Transition flows: Page A -> Page B
-    data class TransitionFlow(val from: String, val to: String, val count: Int)
+    // Transition flows
     val commonTransitions = remember(historyEvents, unfilteredPages) {
         if (historyEvents.size < 2) emptyList<TransitionFlow>()
         else {
@@ -235,8 +216,7 @@ fun AnalyticsDashboardScreen(
         }
     }
 
-    // Page-Level Analytics Calculations (Option B)
-    data class PageUsage(val pageId: String, val name: String, val count: Int, val percentage: Float)
+    // Page-Level Analytics Calculations
     val topUsedPages = remember(historyEvents, unfilteredPages) {
         val totalPagesClicks = historyEvents.filter { it.pageId != null }.size
         if (totalPagesClicks == 0) emptyList<PageUsage>()
@@ -279,7 +259,7 @@ fun AnalyticsDashboardScreen(
                         Text("Die Seite \"${page.name}\" wird an folgenden Stellen zur Navigation verwendet:")
                         
                         val scrollState = rememberScrollState()
-                        Box(
+                        androidx.compose.foundation.layout.Box(
                             modifier = Modifier
                                 .padding(vertical = 8.dp)
                                 .heightIn(max = 280.dp)
@@ -397,1555 +377,89 @@ fun AnalyticsDashboardScreen(
             ) {
                 when (selectedTabIndex) {
                     0 -> {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Text("📅", style = MaterialTheme.typography.titleMedium)
-                            Text(
-                                text = statisticsTimeframeText,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-
-                        // --- KPI OVERVIEW CARDS (2x2 Symmetrical Grid) ---
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                // Click count card
-                                Card(
-                                    modifier = Modifier.weight(1f).height(105.dp),
-                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f))
-                                ) {
-                                    Column(
-                                        modifier = Modifier.fillMaxSize().padding(12.dp),
-                                        verticalArrangement = Arrangement.SpaceBetween
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Text("Gesamtaufrufe", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f))
-                                            TrendBadge(current = currentClicks, previous = previousClicks)
-                                        }
-                                        Text("$totalClicks", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
-                                    }
-                                }
-
-                                // Active Vocab card
-                                Card(
-                                    modifier = Modifier.weight(1f).height(105.dp),
-                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f))
-                                ) {
-                                    Column(
-                                        modifier = Modifier.fillMaxSize().padding(12.dp),
-                                        verticalArrangement = Arrangement.SpaceBetween
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Text("Aktiver Wortschatz", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f))
-                                            TrendBadge(current = currentVocab.toDouble(), previous = previousVocab.toDouble())
-                                        }
-                                        Text("$activeVocabCount Wörter", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                                    }
-                                }
-                            }
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                // Total Usage Time Card
-                                Card(
-                                    modifier = Modifier.weight(1f).height(105.dp),
-                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.35f))
-                                ) {
-                                    Column(
-                                        modifier = Modifier.fillMaxSize().padding(12.dp),
-                                        verticalArrangement = Arrangement.SpaceBetween
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Text(stringResource(R.string.analytics_kpi_usage_time), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f))
-                                            TrendBadge(current = currentUsageMs, previous = previousUsageMs)
-                                        }
-                                        Column {
-                                            Text(
-                                                text = stringResource(R.string.analytics_kpi_usage_time_format, totalHours, totalMinutes),
-                                                style = MaterialTheme.typography.titleLarge,
-                                                fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.onTertiaryContainer
-                                            )
-                                            Text(
-                                                text = avgDailyUsageText,
-                                                style = MaterialTheme.typography.bodySmall,
-                                                fontWeight = FontWeight.Medium,
-                                                color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.7f)
-                                            )
-                                        }
-                                    }
-                                }
-
-                                // Communication Rate Card (Prio 4)
-                                Card(
-                                    modifier = Modifier.weight(1f).height(105.dp),
-                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                                ) {
-                                    Column(
-                                        modifier = Modifier.fillMaxSize().padding(12.dp),
-                                        verticalArrangement = Arrangement.SpaceBetween
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Text("Kommunikationsrate", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f))
-                                            TrendBadge(current = currentCommRate, previous = previousCommRate)
-                                        }
-                                        val displayRate = String.format(java.util.Locale.US, "%.1f", currentCommRate)
-                                        Text(
-                                            text = "$displayRate Klicks/Min",
-                                            style = MaterialTheme.typography.titleLarge,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
-                        // --- USAGE CHART & DETAILS ---
-                        UsageDurationBarChart(sessions = userModeSessions)
-
-                        ReactionTimeFatigueChart(
-                            sessions = userModeSessions,
-                            historyEvents = historyEvents
-                        )
-
-                        SessionErrorRateChart(
-                            sessions = userModeSessions,
-                            historyEvents = historyEvents
-                        )
-
-                        // Info Card
-                        Surface(
-                            modifier = Modifier.fillMaxWidth(),
-                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                            shape = MaterialTheme.shapes.small
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(12.dp),
-                                verticalAlignment = Alignment.Top,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Info,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Text(
-                                    text = stringResource(R.string.analytics_dashboard_info),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
-
-                    1 -> {
-                        // --- SECTION 1: SHORTCUT WIZARD ---
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "🪄 Der Abkürzungs-Assistent",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                            if (isCalculatingRecommendations && recommendations.isNotEmpty()) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(20.dp),
-                                    strokeWidth = 2.dp,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        if (recommendations.isEmpty()) {
-                            Surface(
-                                modifier = Modifier.fillMaxWidth().height(120.dp),
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f),
-                                shape = MaterialTheme.shapes.small
-                            ) {
-                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                    if (isCalculatingRecommendations) {
-                                        Column(
-                                            horizontalAlignment = Alignment.CenterHorizontally,
-                                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                                        ) {
-                                            CircularProgressIndicator(
-                                                modifier = Modifier.size(30.dp),
-                                                strokeWidth = 3.dp,
-                                                color = MaterialTheme.colorScheme.primary
-                                            )
-                                            Text(
-                                                text = "Berechne Abkürzungen...",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        }
-                                    } else {
-                                        Text(
-                                            text = "Aktuell gibt es keine empfohlenen Abkürzungen.\nSammle mehr Klicks, damit das System Muster erkennen kann.",
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                            modifier = Modifier.padding(16.dp),
-                                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                                        )
-                                    }
-                                }
-                            }
-                        } else {
-                            Column(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                val visibleRecommendations = if (showAllRecommendations) recommendations else recommendations.take(3)
-                                visibleRecommendations.forEach { recommendation ->
-                                    Card(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.4f)),
-                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.tertiary.copy(alpha = 0.2f))
-                                    ) {
-                                        Column(
-                                            modifier = Modifier.padding(16.dp),
-                                            verticalArrangement = Arrangement.spacedBy(10.dp)
-                                        ) {
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.SpaceBetween,
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Text(
-                                                    text = stringResource(R.string.analytics_recommendation_tip_title, recommendation.targetButtonConfig.label),
-                                                    style = MaterialTheme.typography.titleSmall,
-                                                    fontWeight = FontWeight.Bold,
-                                                    color = MaterialTheme.colorScheme.onTertiaryContainer
-                                                )
-                                                Surface(
-                                                    color = MaterialTheme.colorScheme.tertiary,
-                                                    shape = MaterialTheme.shapes.extraSmall
-                                                ) {
-                                                    Text(
-                                                        text = stringResource(R.string.analytics_recommendation_savings, recommendation.estimatedTimeSavedSec),
-                                                        style = MaterialTheme.typography.labelSmall,
-                                                        color = MaterialTheme.colorScheme.onTertiary,
-                                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                                        fontWeight = FontWeight.Bold
-                                                    )
-                                                }
-                                            }
-
-                                            Text(
-                                                text = stringResource(R.string.analytics_recommendation_shortcut_desc, recommendation.sourcePageName, recommendation.targetButtonConfig.label),
-                                                style = MaterialTheme.typography.bodyMedium,
-                                                color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.85f)
-                                            )
-
-                                            Button(
-                                                onClick = {
-                                                    pageViewModel.applyShortcutRecommendation(recommendation) { _, msg ->
-                                                        Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
-                                                    }
-                                                },
-                                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary),
-                                                modifier = Modifier.align(Alignment.End),
-                                                shape = MaterialTheme.shapes.small
-                                            ) {
-                                                Text(
-                                                    text = stringResource(R.string.analytics_recommendation_btn_create, recommendation.sourcePageName),
-                                                    style = MaterialTheme.typography.labelMedium,
-                                                    fontWeight = FontWeight.Bold
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-
-                                if (recommendations.size > 3) {
-                                    TextButton(
-                                        onClick = { showAllRecommendations = !showAllRecommendations },
-                                        modifier = Modifier.align(Alignment.CenterHorizontally)
-                                    ) {
-                                        Text(
-                                            text = if (showAllRecommendations) {
-                                                stringResource(R.string.analytics_show_less)
-                                            } else {
-                                                stringResource(R.string.analytics_show_more) + " (${recommendations.size - 3})"
-                                            }
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
-                        HorizontalDivider()
-
-                        // --- SECTION: LAYOUT OPTIMIZATION ---
-                        if (layoutProposals.isNotEmpty() || currentFilter != ProposalFilter.ALL) {
-                            Text(
-                                text = "⚙️ Layout-Optimierung & Struktur-Tipps",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-
-                            // Filter & Sort Controls Row
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                // Filter Selector
-                                var filterExpanded by remember { mutableStateOf(false) }
-                                Box {
-                                    androidx.compose.material3.AssistChip(
-                                        onClick = { filterExpanded = true },
-                                        label = {
-                                            Text(
-                                                when (currentFilter) {
-                                                    ProposalFilter.ALL -> "Filter: Alle"
-                                                    ProposalFilter.SPLIT_ONLY -> "Filter: Aufteilungen"
-                                                    ProposalFilter.PATTERN_ONLY -> "Filter: Muster-Wechsel"
-                                                    ProposalFilter.START_PAGE_ONLY -> "Filter: Nur Startseite"
-                                                    ProposalFilter.CRITICAL_ONLY -> "Filter: Nur Kritische (>8s)"
-                                                }
-                                            )
-                                        },
-                                        trailingIcon = { Text("▼") }
-                                    )
-                                    androidx.compose.material3.DropdownMenu(
-                                        expanded = filterExpanded,
-                                        onDismissRequest = { filterExpanded = false }
-                                    ) {
-                                        androidx.compose.material3.DropdownMenuItem(
-                                            text = { Text("Alle Vorschläge") },
-                                            onClick = {
-                                                pageViewModel.setProposalFilter(ProposalFilter.ALL)
-                                                filterExpanded = false
-                                            }
-                                        )
-                                        androidx.compose.material3.DropdownMenuItem(
-                                            text = { Text("Nur Aufteilungen") },
-                                            onClick = {
-                                                pageViewModel.setProposalFilter(ProposalFilter.SPLIT_ONLY)
-                                                filterExpanded = false
-                                            }
-                                        )
-                                        androidx.compose.material3.DropdownMenuItem(
-                                            text = { Text("Nur Muster-Wechsel") },
-                                            onClick = {
-                                                pageViewModel.setProposalFilter(ProposalFilter.PATTERN_ONLY)
-                                                filterExpanded = false
-                                            }
-                                        )
-                                        androidx.compose.material3.DropdownMenuItem(
-                                            text = { Text("Nur Startseite") },
-                                            onClick = {
-                                                pageViewModel.setProposalFilter(ProposalFilter.START_PAGE_ONLY)
-                                                filterExpanded = false
-                                            }
-                                        )
-                                        androidx.compose.material3.DropdownMenuItem(
-                                            text = { Text("Nur Kritische (>8s)") },
-                                            onClick = {
-                                                pageViewModel.setProposalFilter(ProposalFilter.CRITICAL_ONLY)
-                                                filterExpanded = false
-                                            }
-                                        )
-                                    }
-                                }
-
-                                // Sort Selector
-                                var sortExpanded by remember { mutableStateOf(false) }
-                                Box {
-                                    androidx.compose.material3.AssistChip(
-                                        onClick = { sortExpanded = true },
-                                        label = {
-                                            Text(
-                                                when (currentSort) {
-                                                    ProposalSort.TIME_SAVED_DESC -> "Sortiert: Zeitgewinn"
-                                                    ProposalSort.PAGE_NAME_ASC -> "Sortiert: Name A-Z"
-                                                    ProposalSort.BUTTONS_COUNT_DESC -> "Sortiert: Kacheln"
-                                                    ProposalSort.CURRENT_TIME_DESC -> "Sortiert: Langsamste zuerst"
-                                                }
-                                            )
-                                        },
-                                        trailingIcon = { Text("▼") }
-                                    )
-                                    androidx.compose.material3.DropdownMenu(
-                                        expanded = sortExpanded,
-                                        onDismissRequest = { sortExpanded = false }
-                                    ) {
-                                        androidx.compose.material3.DropdownMenuItem(
-                                            text = { Text("Zeitlicher Gewinn") },
-                                            onClick = {
-                                                pageViewModel.setProposalSort(ProposalSort.TIME_SAVED_DESC)
-                                                sortExpanded = false
-                                            }
-                                        )
-                                        androidx.compose.material3.DropdownMenuItem(
-                                            text = { Text("Seitenname (A-Z)") },
-                                            onClick = {
-                                                pageViewModel.setProposalSort(ProposalSort.PAGE_NAME_ASC)
-                                                sortExpanded = false
-                                            }
-                                        )
-                                        androidx.compose.material3.DropdownMenuItem(
-                                            text = { Text("Kachel-Anzahl") },
-                                            onClick = {
-                                                pageViewModel.setProposalSort(ProposalSort.BUTTONS_COUNT_DESC)
-                                                sortExpanded = false
-                                            }
-                                        )
-                                        androidx.compose.material3.DropdownMenuItem(
-                                            text = { Text("Aktuelle Scanzeit") },
-                                            onClick = {
-                                                pageViewModel.setProposalSort(ProposalSort.CURRENT_TIME_DESC)
-                                                sortExpanded = false
-                                            }
-                                        )
-                                    }
-                                }
-                            }
-
-                            if (layoutProposals.isEmpty()) {
-                                Surface(
-                                    modifier = Modifier.fillMaxWidth().height(100.dp),
-                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f),
-                                    shape = MaterialTheme.shapes.small
-                                ) {
-                                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                        Text(
-                                            text = "Keine Vorschläge entsprechen dem aktuellen Filter.",
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                                        )
-                                    }
-                                }
-                            }
-
-                            Column(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                val visibleProposals = if (showAllLayoutProposals) layoutProposals else layoutProposals.take(3)
-                                visibleProposals.forEach { proposal ->
-                                    Card(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
-                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
-                                    ) {
-                                        Column(
-                                            modifier = Modifier.padding(16.dp),
-                                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                                        ) {
-                                            when (proposal) {
-                                                is com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer.LayoutOptimizationProposal.SplitPageProposal -> {
-                                                    Text(
-                                                        text = "Seite '${proposal.pageName}' ist sehr groß",
-                                                        style = MaterialTheme.typography.titleSmall,
-                                                        fontWeight = FontWeight.Bold,
-                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                    )
-                                                    val curTime = String.format(java.util.Locale.US, "%.1f", proposal.currentAverageScanTimeSec)
-                                                    val newTime = String.format(java.util.Locale.US, "%.1f", proposal.estimatedNewAverageScanTimeSec)
-                                                    Text(
-                                                        text = "Diese Seite enthält ${proposal.activeButtonsCount} aktive Kacheln. Das Scannen dauert im Durchschnitt ${curTime}s. Eine Aufteilung in Unterseiten würde die mittlere Scanzeit voraussichtlich auf ${newTime}s verringern.",
-                                                        style = MaterialTheme.typography.bodyMedium,
-                                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f)
-                                                    )
-                                                    Button(
-                                                        onClick = {
-                                                            pageViewModel.generatePageSplitProposal(proposal.pageId)
-                                                            Toast.makeText(context, "Aufteilungs-Vorschlag generiert! Öffne den Assistenten im Editor.", Toast.LENGTH_LONG).show()
-                                                        },
-                                                        modifier = Modifier.align(Alignment.End),
-                                                        shape = MaterialTheme.shapes.small
-                                                    ) {
-                                                        Text(
-                                                            text = "Aufteilungs-Assistent starten",
-                                                            style = MaterialTheme.typography.labelMedium,
-                                                            fontWeight = FontWeight.Bold
-                                                        )
-                                                    }
-                                                }
-                                                is com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer.LayoutOptimizationProposal.ChangeScanPatternProposal -> {
-                                                    Text(
-                                                        text = "Scan-Muster optimieren für '${proposal.pageName}'",
-                                                        style = MaterialTheme.typography.titleSmall,
-                                                        fontWeight = FontWeight.Bold,
-                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                    )
-                                                    val curTime = String.format(java.util.Locale.US, "%.1f", proposal.currentAverageScanTimeSec)
-                                                    val newTime = String.format(java.util.Locale.US, "%.1f", proposal.estimatedNewAverageScanTimeSec)
-                                                    Text(
-                                                        text = "Diese Seite hat ${proposal.activeButtonsCount} Kacheln und scannt linear (durchschnittlich ${curTime}s). Durch die Umstellung auf zeilenweises Scannen verringert sich die Wartezeit auf ${newTime}s.",
-                                                        style = MaterialTheme.typography.bodyMedium,
-                                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f)
-                                                    )
-                                                    Button(
-                                                        onClick = {
-                                                            pageViewModel.changePageScanPattern(proposal.pageId, "row_by_row")
-                                                            Toast.makeText(context, "Scan-Muster für '${proposal.pageName}' erfolgreich auf zeilenweise geändert.", Toast.LENGTH_SHORT).show()
-                                                        },
-                                                        modifier = Modifier.align(Alignment.End),
-                                                        shape = MaterialTheme.shapes.small
-                                                    ) {
-                                                        Text(
-                                                            text = "Auf zeilenweise umstellen",
-                                                            style = MaterialTheme.typography.labelMedium,
-                                                            fontWeight = FontWeight.Bold
-                                                        )
-                                                    }
-                                                }
-                                                is com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer.LayoutOptimizationProposal.ChangeScanDelayProposal -> {
-                                                    val isSlowingDown = proposal.suggestedScanDelayMs > proposal.currentScanDelayMs
-                                                    val title = if (isSlowingDown) {
-                                                        stringResource(SettingsR.string.settings_scan_delay_proposal_slowing_title)
-                                                    } else {
-                                                        stringResource(SettingsR.string.settings_scan_delay_proposal_speeding_title)
-                                                    }
-                                                    val ratePct = (proposal.lateClickRate * 100).toInt()
-                                                    val detailText = if (isSlowingDown) {
-                                                        stringResource(SettingsR.string.settings_scan_delay_proposal_slowing_desc, proposal.pageName, ratePct, proposal.currentScanDelayMs, proposal.suggestedScanDelayMs)
-                                                    } else {
-                                                        stringResource(SettingsR.string.settings_scan_delay_proposal_speeding_desc, proposal.pageName, proposal.currentScanDelayMs, proposal.suggestedScanDelayMs)
-                                                    }
-                                                    val btnText = if (isSlowingDown) {
-                                                        stringResource(SettingsR.string.settings_scan_delay_proposal_slowing_btn)
-                                                    } else {
-                                                        stringResource(SettingsR.string.settings_scan_delay_proposal_speeding_btn)
-                                                    }
-                                                    Text(
-                                                        text = title,
-                                                        style = MaterialTheme.typography.titleSmall,
-                                                        fontWeight = FontWeight.Bold,
-                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                    )
-                                                    Text(
-                                                        text = detailText,
-                                                        style = MaterialTheme.typography.bodyMedium,
-                                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f)
-                                                    )
-                                                    Button(
-                                                        onClick = {
-                                                            pageViewModel.changeScanDelay(proposal.suggestedScanDelayMs)
-                                                            Toast.makeText(context, context.getString(SettingsR.string.settings_scan_delay_proposal_toast, proposal.suggestedScanDelayMs), Toast.LENGTH_SHORT).show()
-                                                        },
-                                                        modifier = Modifier.align(Alignment.End),
-                                                        shape = MaterialTheme.shapes.small
-                                                    ) {
-                                                        Text(
-                                                            text = btnText,
-                                                            style = MaterialTheme.typography.labelMedium,
-                                                            fontWeight = FontWeight.Bold
-                                                        )
-                                                    }
-                                                }
-                                                is com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer.LayoutOptimizationProposal.SpacerRelocateProposal -> {
-                                                    Text(
-                                                        text = "Tausch-Optimierung für '${proposal.pageName}'",
-                                                        style = MaterialTheme.typography.titleSmall,
-                                                        fontWeight = FontWeight.Bold,
-                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                    )
-                                                    Text(
-                                                        text = "Der Benutzer klickt häufig unabsichtlich auf '${proposal.buttonLabel}' (${proposal.accidentalClickCount} Mal) statt '${proposal.intendedButtonLabel}'. Ein Tausch der Positionen beider Kacheln verringert Fehlklicks.",
-                                                        style = MaterialTheme.typography.bodyMedium,
-                                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f)
-                                                    )
-                                                    Button(
-                                                        onClick = {
-                                                            pageViewModel.applySpacerRelocate(proposal.pageId, proposal.buttonId, proposal.intendedButtonId)
-                                                            Toast.makeText(context, "Kacheln '${proposal.buttonLabel}' und '${proposal.intendedButtonLabel}' erfolgreich getauscht!", Toast.LENGTH_SHORT).show()
-                                                        },
-                                                        modifier = Modifier.align(Alignment.End),
-                                                        shape = MaterialTheme.shapes.small
-                                                    ) {
-                                                        Text(
-                                                            text = "Kacheln tauschen",
-                                                            style = MaterialTheme.typography.labelMedium,
-                                                            fontWeight = FontWeight.Bold
-                                                        )
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-
-                                if (layoutProposals.size > 3) {
-                                    TextButton(
-                                        onClick = { showAllLayoutProposals = !showAllLayoutProposals },
-                                        modifier = Modifier.align(Alignment.CenterHorizontally)
-                                    ) {
-                                        Text(
-                                            text = if (showAllLayoutProposals) {
-                                                stringResource(R.string.analytics_show_less)
-                                            } else {
-                                                stringResource(R.string.analytics_show_more) + " (${layoutProposals.size - 3})"
-                                            }
-                                        )
-                                    }
-                                }
-                            }
-                            HorizontalDivider()
-                        }
-
-                        // --- SECTION: AI BOOK RESTRUCTURING (Gemini) ---
-
-                        var showPageSelectionDialog by remember { mutableStateOf(false) }
-                        var editingNode by remember { mutableStateOf<com.andreas_kratzer.ghosttalk.core.model.HierarchyPageNode?>(null) }
-                        var editingNodeNewName by remember { mutableStateOf("") }
-                        var editingNodeNewDesc by remember { mutableStateOf("") }
-                        var editingNodeNewSubpages by remember { mutableStateOf<Set<String>>(emptySet()) }
-
-                        if (showPageSelectionDialog) {
-                            AlertDialog(
-                                onDismissRequest = { showPageSelectionDialog = false },
-                                title = {
-                                    Text(
-                                        text = stringResource(R.string.analytics_ai_page_selection_title),
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                },
-                                text = {
-                                    Column(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                        ) {
-                                            TextButton(
-                                                onClick = { pageViewModel.selectActivePagesOnly() },
-                                                modifier = Modifier.weight(1f)
-                                            ) {
-                                                Text(stringResource(R.string.analytics_ai_only_active_pages))
-                                            }
-                                            TextButton(
-                                                onClick = { pageViewModel.selectAllPages() },
-                                                modifier = Modifier.weight(1f)
-                                            ) {
-                                                Text(stringResource(R.string.analytics_ai_all_pages))
-                                            }
-                                        }
-
-                                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-
-                                        Column(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .height(260.dp)
-                                                .verticalScroll(rememberScrollState()),
-                                            verticalArrangement = Arrangement.spacedBy(6.dp)
-                                        ) {
-                                            unfilteredPages.forEach { page ->
-                                                val isSelected = selectedPageIds.contains(page.id)
-                                                val isActive = activeTargetPageIds.contains(page.id)
-                                                Row(
-                                                    modifier = Modifier
-                                                        .fillMaxWidth()
-                                                        .clickable { pageViewModel.togglePageSelection(page.id) }
-                                                        .padding(vertical = 6.dp),
-                                                    verticalAlignment = Alignment.CenterVertically,
-                                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                                                ) {
-                                                    androidx.compose.material3.Checkbox(
-                                                        checked = isSelected,
-                                                        onCheckedChange = { pageViewModel.togglePageSelection(page.id) }
-                                                    )
-                                                    Column(modifier = Modifier.weight(1f)) {
-                                                        Text(
-                                                            text = page.name,
-                                                            style = MaterialTheme.typography.bodyLarge,
-                                                            fontWeight = FontWeight.Medium
-                                                        )
-                                                        val badgeText = if (isActive) {
-                                                            stringResource(R.string.analytics_ai_active_badge)
-                                                        } else {
-                                                            stringResource(R.string.analytics_ai_inactive_badge)
-                                                        }
-                                                        val badgeColor = if (isActive) {
-                                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
-                                                        } else {
-                                                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                                                        }
-                                                        Text(
-                                                            text = badgeText,
-                                                            style = MaterialTheme.typography.labelSmall,
-                                                            color = badgeColor,
-                                                            fontWeight = FontWeight.Bold
-                                                        )
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                },
-                                confirmButton = {
-                                    TextButton(onClick = { showPageSelectionDialog = false }) {
-                                        Text("OK")
-                                    }
-                                }
-                            )
-                        }
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = stringResource(R.string.analytics_ai_title),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                            if (aiProposal != null && !isAiLoading) {
-                                TextButton(onClick = { pageViewModel.clearAiRestructureProposal() }) {
-                                    Text(stringResource(R.string.analytics_ai_reset))
-                                }
-                            }
-                        }
-
-                        if (isGeminiEnabled) {
-                            if (aiRestructureError != null) {
-                                Card(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.9f)),
-                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.error)
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(12.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Info,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.error
-                                        )
-                                        Text(
-                                            text = aiRestructureError ?: stringResource(R.string.analytics_ai_quota_error),
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onErrorContainer,
-                                            modifier = Modifier.weight(1f)
-                                        )
-                                        IconButton(
-                                            onClick = { pageViewModel.clearAiRestructureError() },
-                                            modifier = Modifier.size(24.dp)
-                                        ) {
-                                            Text("✕", color = MaterialTheme.colorScheme.onErrorContainer, fontWeight = FontWeight.Bold)
-                                        }
-                                    }
-                                }
-                            }
-
-                            if (showTokenWarningDialog) {
-                                AlertDialog(
-                                    onDismissRequest = { showTokenWarningDialog = false },
-                                    title = {
-                                        Text(
-                                            text = stringResource(R.string.analytics_ai_token_warning_title),
-                                            style = MaterialTheme.typography.titleMedium,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    },
-                                    text = {
-                                        Text(
-                                            text = stringResource(R.string.analytics_ai_token_warning_desc),
-                                            style = MaterialTheme.typography.bodyMedium
-                                        )
-                                    },
-                                    confirmButton = {
-                                        TextButton(
-                                            onClick = {
-                                                pageViewModel.setAiRestructureScope("full")
-                                                showTokenWarningDialog = false
-                                            }
-                                        ) {
-                                            Text(stringResource(android.R.string.ok))
-                                        }
-                                    },
-                                    dismissButton = {
-                                        TextButton(
-                                            onClick = {
-                                                showTokenWarningDialog = false
-                                            }
-                                        ) {
-                                            Text(stringResource(android.R.string.cancel))
-                                        }
-                                    }
-                                )
-                            }
-
-                            Column(
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.analytics_ai_scope_title),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    val scopes = listOf(
-                                        "quick" to R.string.analytics_ai_scope_quick,
-                                        "detailed" to R.string.analytics_ai_scope_detailed,
-                                        "full" to R.string.analytics_ai_scope_full
-                                    )
-                                    scopes.forEach { (scopeKey, labelRes) ->
-                                        val isSelected = aiRestructureScope == scopeKey
-                                        val containerColor = if (isSelected) {
-                                            MaterialTheme.colorScheme.primaryContainer
-                                        } else {
-                                            MaterialTheme.colorScheme.surface
-                                        }
-                                        val contentColor = if (isSelected) {
-                                            MaterialTheme.colorScheme.onPrimaryContainer
-                                        } else {
-                                            MaterialTheme.colorScheme.onSurface
-                                        }
-                                        val borderColor = if (isSelected) {
-                                            MaterialTheme.colorScheme.primary
-                                        } else {
-                                            MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-                                        }
-                                        Surface(
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .clickable {
-                                                    if (scopeKey == "full") {
-                                                        showTokenWarningDialog = true
-                                                    } else {
-                                                        pageViewModel.setAiRestructureScope(scopeKey)
-                                                    }
-                                                },
-                                            shape = MaterialTheme.shapes.medium,
-                                            color = containerColor,
-                                            contentColor = contentColor,
-                                            border = BorderStroke(1.dp, borderColor)
-                                        ) {
-                                            Box(
-                                                modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                Text(
-                                                    text = stringResource(labelRes),
-                                                    style = MaterialTheme.typography.labelSmall,
-                                                    fontWeight = FontWeight.Bold,
-                                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-
-                            val selectedPageCount = selectedPageIds.size
-                            val totalPageCount = unfilteredPages.size
-                            
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
-                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Column {
-                                        Text(
-                                            text = stringResource(R.string.analytics_ai_page_selection_title),
-                                            style = MaterialTheme.typography.labelMedium,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                        Text(
-                                            text = stringResource(R.string.analytics_ai_btn_select_pages, selectedPageCount, totalPageCount),
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
-                                        )
-                                    }
-                                    Button(
-                                        onClick = { showPageSelectionDialog = true },
-                                        shape = MaterialTheme.shapes.small,
-                                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
-                                    ) {
-                                        Text("Auswählen")
-                                    }
-                                }
-                            }
-                                                         Spacer(modifier = Modifier.height(12.dp))
-
-                                val hierarchy = aiHierarchy
-                                if (hierarchy == null) {
-                                    Button(
-                                        onClick = { pageViewModel.generateAiHierarchyProposal() },
-                                        modifier = Modifier.fillMaxWidth(),
-                                        enabled = !isAiHierarchyLoading
-                                    ) {
-                                        if (isAiHierarchyLoading) {
-                                            CircularProgressIndicator(
-                                                modifier = Modifier.size(20.dp),
-                                                strokeWidth = 2.dp,
-                                                color = MaterialTheme.colorScheme.onPrimary
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Text("Berechne Struktur...")
-                                        } else {
-                                            Text("Gesamtkonzept erstellen")
-                                        }
-                                    }
-                                } else {
-                                    if (editingNode != null) {
-                                        val node = editingNode!!
-                                        AlertDialog(
-                                            onDismissRequest = { editingNode = null },
-                                            title = { Text("Seite bearbeiten") },
-                                            text = {
-                                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                                    OutlinedTextField(
-                                                        value = editingNodeNewName,
-                                                        onValueChange = { editingNodeNewName = it },
-                                                        label = { Text("Name") },
-                                                        singleLine = true,
-                                                        modifier = Modifier.fillMaxWidth()
-                                                    )
-                                                    OutlinedTextField(
-                                                        value = editingNodeNewDesc,
-                                                        onValueChange = { editingNodeNewDesc = it },
-                                                        label = { Text("Beschreibung / Begründung") },
-                                                        modifier = Modifier.fillMaxWidth()
-                                                    )
-                                                    
-                                                    Text("Unterseiten verknüpfen:", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-                                                    val otherPages = hierarchy.pages.filter { it.name != node.name && it.name != "Hauptseite" }
-                                                    Column(
-                                                        modifier = Modifier.height(150.dp).verticalScroll(rememberScrollState()),
-                                                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                                                    ) {
-                                                        otherPages.forEach { other ->
-                                                            val isLinked = editingNodeNewSubpages.contains(other.name)
-                                                            Row(
-                                                                modifier = Modifier.fillMaxWidth().clickable {
-                                                                    editingNodeNewSubpages = if (isLinked) {
-                                                                        editingNodeNewSubpages - other.name
-                                                                    } else {
-                                                                        editingNodeNewSubpages + other.name
-                                                                    }
-                                                                },
-                                                                verticalAlignment = Alignment.CenterVertically
-                                                            ) {
-                                                                Checkbox(
-                                                                    checked = isLinked,
-                                                                    onCheckedChange = {
-                                                                        editingNodeNewSubpages = if (isLinked) {
-                                                                            editingNodeNewSubpages - other.name
-                                                                        } else {
-                                                                            editingNodeNewSubpages + other.name
-                                                                        }
-                                                                    }
-                                                                )
-                                                                Text(other.name)
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            },
-                                            confirmButton = {
-                                                TextButton(
-                                                    onClick = {
-                                                        val updatedPages = hierarchy.pages.map { page ->
-                                                            if (page.name == node.name) {
-                                                                page.copy(
-                                                                    name = editingNodeNewName,
-                                                                    description = editingNodeNewDesc,
-                                                                    subpages = editingNodeNewSubpages.toList()
-                                                                )
-                                                            } else {
-                                                                val newSubpages = page.subpages.map { subName ->
-                                                                    if (subName == node.name) editingNodeNewName else subName
-                                                                }
-                                                                page.copy(subpages = newSubpages)
-                                                            }
-                                                        }
-                                                        pageViewModel.updateHierarchyManualEdit(com.andreas_kratzer.ghosttalk.core.model.BookHierarchyProposal(updatedPages))
-                                                        editingNode = null
-                                                    }
-                                                ) {
-                                                    Text("Speichern")
-                                                }
-                                            },
-                                            dismissButton = {
-                                                TextButton(onClick = { editingNode = null }) {
-                                                    Text("Abbrechen")
-                                                }
-                                            }
-                                        )
-                                    }
-
-                                    Column(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                                    ) {
-                                        hierarchy.pages.forEach { node ->
-                                            val isPageLoading = isLoadingPageLayout[node.name] == true
-                                            val layoutProposal = aiPageLayouts[node.name]
-                                            
-                                            Card(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f)),
-                                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                                            ) {
-                                                Column(
-                                                    modifier = Modifier.padding(14.dp),
-                                                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                                                ) {
-                                                    Row(
-                                                        modifier = Modifier.fillMaxWidth(),
-                                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                                        verticalAlignment = Alignment.CenterVertically
-                                                    ) {
-                                                        Column(modifier = Modifier.weight(1f)) {
-                                                            Text(
-                                                                text = node.name,
-                                                                style = MaterialTheme.typography.titleSmall,
-                                                                fontWeight = FontWeight.Bold,
-                                                                color = MaterialTheme.colorScheme.primary
-                                                            )
-                                                            if (!node.sourcePageName.isNullOrBlank()) {
-                                                                Text(
-                                                                    text = "(Original: ${node.sourcePageName})",
-                                                                    style = MaterialTheme.typography.labelSmall,
-                                                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                                                                )
-                                                            }
-                                                        }
-                                                        
-                                                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                                            IconButton(
-                                                                onClick = {
-                                                                    editingNode = node
-                                                                    editingNodeNewName = node.name
-                                                                    editingNodeNewDesc = node.description
-                                                                    editingNodeNewSubpages = node.subpages.toSet()
-                                                                },
-                                                                modifier = Modifier.size(28.dp)
-                                                            ) {
-                                                                Icon(
-                                                                    imageVector = Icons.Default.Edit,
-                                                                    contentDescription = "Bearbeiten",
-                                                                    modifier = Modifier.size(16.dp),
-                                                                    tint = MaterialTheme.colorScheme.primary
-                                                                )
-                                                            }
-                                                            
-                                                            if (node.name != "Hauptseite") {
-                                                                IconButton(
-                                                                    onClick = {
-                                                                        val updatedList = hierarchy.pages.filter { it.name != node.name }
-                                                                            .map { page ->
-                                                                                page.copy(subpages = page.subpages.filter { it != node.name })
-                                                                            }
-                                                                        pageViewModel.updateHierarchyManualEdit(com.andreas_kratzer.ghosttalk.core.model.BookHierarchyProposal(updatedList))
-                                                                    },
-                                                                    modifier = Modifier.size(28.dp)
-                                                                ) {
-                                                                    Icon(
-                                                                        imageVector = Icons.Default.Delete,
-                                                                        contentDescription = "Löschen",
-                                                                        modifier = Modifier.size(16.dp),
-                                                                        tint = MaterialTheme.colorScheme.error
-                                                                    )
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                    
-                                                    Text(
-                                                        text = node.description,
-                                                        style = MaterialTheme.typography.bodyMedium,
-                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                    )
-                                                    
-                                                    if (node.subpages.isNotEmpty()) {
-                                                        Row(
-                                                            modifier = Modifier.fillMaxWidth(),
-                                                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                                            verticalAlignment = Alignment.CenterVertically
-                                                        ) {
-                                                            Text(
-                                                                text = "Unterseiten:",
-                                                                style = MaterialTheme.typography.labelSmall,
-                                                                fontWeight = FontWeight.Bold,
-                                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                            )
-                                                            node.subpages.forEach { sub ->
-                                                                SuggestionChip(
-                                                                    onClick = {},
-                                                                    label = { Text(sub, style = MaterialTheme.typography.labelSmall) }
-                                                                )
-                                                            }
-                                                        }
-                                                    }
-                                                    
-                                                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                                                    
-                                                    if (isPageLoading) {
-                                                        Row(
-                                                            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                                                            horizontalArrangement = Arrangement.Center,
-                                                            verticalAlignment = Alignment.CenterVertically
-                                                        ) {
-                                                            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                                                            Spacer(modifier = Modifier.width(8.dp))
-                                                            Text("Lade Knopflayout...", style = MaterialTheme.typography.bodySmall)
-                                                        }
-                                                    } else if (layoutProposal != null) {
-                                                        Column(
-                                                            modifier = Modifier.fillMaxWidth(),
-                                                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                                                        ) {
-                                                            Text(
-                                                                text = stringResource(R.string.analytics_ai_layout_loaded, layoutProposal.actions.size),
-                                                                style = MaterialTheme.typography.labelSmall,
-                                                                fontWeight = FontWeight.Bold,
-                                                                color = MaterialTheme.colorScheme.secondary
-                                                            )
-                                                            
-                                                            layoutProposal.actions.take(4).forEach { action ->
-                                                                val icon = when (action.type) {
-                                                                    "MOVE_BUTTON" -> "📦"
-                                                                    "CREATE_NAV_BUTTON" -> "➡️"
-                                                                    else -> "⚙️"
-                                                                }
-                                                                Row(
-                                                                    modifier = Modifier.fillMaxWidth(),
-                                                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                                                    verticalAlignment = Alignment.CenterVertically
-                                                                ) {
-                                                                    Text(icon, style = MaterialTheme.typography.bodySmall)
-                                                                    Text(
-                                                                        text = if (action.type == "MOVE_BUTTON") {
-                                                                            "Verschiebe „${action.buttonLabel}“ von „${action.sourcePageName ?: "Unbekannt"}“"
-                                                                        } else {
-                                                                            "Navigationsknopf „${action.buttonLabel}“ zu „${action.targetPageName}“ erstellen"
-                                                                        },
-                                                                        style = MaterialTheme.typography.bodySmall,
-                                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                                    )
-                                                                }
-                                                            }
-                                                        }
-                                                    } else {
-                                                        Row(
-                                                            modifier = Modifier.fillMaxWidth(),
-                                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                                            verticalAlignment = Alignment.CenterVertically
-                                                        ) {
-                                                            Text(
-                                                                text = "Knopf-Belegung ausstehend",
-                                                                style = MaterialTheme.typography.labelSmall,
-                                                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                                                            )
-                                                            Button(
-                                                                onClick = { pageViewModel.loadPageLayoutProposal(node.name) },
-                                                                shape = MaterialTheme.shapes.small,
-                                                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
-                                                            ) {
-                                                                Text(stringResource(R.string.analytics_ai_load_layout))
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        
-                                        Spacer(modifier = Modifier.height(8.dp))
-                                        
-                                        val allLayoutsLoaded = hierarchy.pages.all { aiPageLayouts.containsKey(it.name) }
-                                        
-                                        if (!allLayoutsLoaded) {
-                                            Button(
-                                                onClick = { pageViewModel.loadAllPageLayoutProposals {} },
-                                                modifier = Modifier.fillMaxWidth(),
-                                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
-                                                enabled = !isAiHierarchyLoading && isLoadingPageLayout.isEmpty()
-                                            ) {
-                                                Text(stringResource(R.string.analytics_ai_load_all_layouts))
-                                            }
-                                        }
-                                        
-                                        Spacer(modifier = Modifier.height(8.dp))
-
-                                        var feedbackText by remember { mutableStateOf("") }
-                                        Card(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)),
-                                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-                                        ) {
-                                            Column(
-                                                modifier = Modifier.padding(14.dp),
-                                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                                            ) {
-                                                Text("AI-Konzept verfeinern (Feedback)", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                                                OutlinedTextField(
-                                                    value = feedbackText,
-                                                    onValueChange = { feedbackText = it },
-                                                    placeholder = { Text("Z.B.: 'Ernährung in Essen und Trinken aufteilen'") },
-                                                    modifier = Modifier.fillMaxWidth(),
-                                                    maxLines = 2
-                                                )
-                                                Button(
-                                                    onClick = {
-                                                        pageViewModel.generateAiHierarchyProposal(feedbackText)
-                                                        feedbackText = ""
-                                                    },
-                                                    enabled = feedbackText.isNotBlank() && !isAiHierarchyLoading,
-                                                    modifier = Modifier.align(Alignment.End)
-                                                ) {
-                                                    Text("Neu berechnen mit Feedback")
-                                                }
-                                            }
-                                        }
-                                        
-                                        var isSavingAndLoadingLayouts by remember { mutableStateOf(false) }
-                                        var savingProgressText by remember { mutableStateOf("") }
-                                        
-                                        if (isSavingAndLoadingLayouts) {
-                                            AlertDialog(
-                                                onDismissRequest = {},
-                                                confirmButton = {},
-                                                title = { Text("Struktur anwenden...") },
-                                                text = {
-                                                    Row(
-                                                        modifier = Modifier.fillMaxWidth(),
-                                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                                        verticalAlignment = Alignment.CenterVertically
-                                                    ) {
-                                                        CircularProgressIndicator()
-                                                        Text(savingProgressText)
-                                                    }
-                                                }
-                                            )
-                                        }
-                                        
-                                        Button(
-                                            onClick = {
-                                                val missingNodes = hierarchy.pages.filter { !aiPageLayouts.containsKey(it.name) }
-                                                if (missingNodes.isNotEmpty()) {
-                                                    isSavingAndLoadingLayouts = true
-                                                    coroutineScope.launch {
-                                                        pageViewModel.applyHierarchyProposal { _ ->
-                                                            isSavingAndLoadingLayouts = false
-                                                            Toast.makeText(context, aiToastApplied, Toast.LENGTH_LONG).show()
-                                                            onNavigateBack()
-                                                        }
-                                                    }
-                                                } else {
-                                                    pageViewModel.applyHierarchyProposal { _ ->
-                                                        Toast.makeText(context, aiToastApplied, Toast.LENGTH_LONG).show()
-                                                        onNavigateBack()
-                                                    }
-                                                }
-                                            },
-                                            modifier = Modifier.fillMaxWidth(),
-                                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                                            enabled = !isAiHierarchyLoading && !isAiLoading
-                                        ) {
-                                            Text(stringResource(R.string.analytics_ai_btn_save_test))
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                    2 -> {
-                        // --- SECTION 2: TRANSITIONS TIMELINE ---
-                        Text(
-                            text = "🔄 Häufige Navigations-Wege",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-
-                        if (commonTransitions.isEmpty()) {
-                            Surface(
-                                modifier = Modifier.fillMaxWidth().height(100.dp),
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f),
-                                shape = MaterialTheme.shapes.small
-                            ) {
-                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                    Text(
-                                        text = "Noch nicht genügend Navigationsdaten vorhanden.",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                                    )
-                                }
-                            }
-                        } else {
-                            Column(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                commonTransitions.forEach { flow ->
-                                    Surface(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
-                                        shape = MaterialTheme.shapes.small
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.padding(14.dp),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Row(
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                            ) {
-                                                Text(
-                                                    text = flow.from,
-                                                    fontWeight = FontWeight.Bold,
-                                                    style = MaterialTheme.typography.bodyMedium
-                                                )
-                                                Text(
-                                                    text = "➡️",
-                                                    style = MaterialTheme.typography.bodyMedium
-                                                )
-                                                Text(
-                                                    text = flow.to,
-                                                    fontWeight = FontWeight.Bold,
-                                                    style = MaterialTheme.typography.bodyMedium
-                                                )
-                                            }
-                                            Surface(
-                                                color = MaterialTheme.colorScheme.secondaryContainer,
-                                                shape = MaterialTheme.shapes.extraSmall
-                                            ) {
-                                                Text(
-                                                    text = "${flow.count} Übergänge",
-                                                    style = MaterialTheme.typography.labelSmall,
-                                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                                    fontWeight = FontWeight.Medium
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        HorizontalDivider()
-
-                        // --- SECTION 3: PAGE-LEVEL ANALYTICS & CLEANUP ASSISTANT (Option B) ---
-                        Text(
-                            text = "📄 Seiten-Analyse & Aufräum-Assistent",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(16.dp)
-                            ) {
-                                // Top Used Pages
-                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Text(
-                                        text = "📊 Meistgenutzte Seiten",
-                                        style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    if (topUsedPages.isEmpty()) {
-                                        Text(
-                                            text = "Keine Klickdaten für Seiten vorhanden.",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                                        )
-                                    } else {
-                                        topUsedPages.forEach { pageUsage ->
-                                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                                Row(
-                                                    modifier = Modifier.fillMaxWidth(),
-                                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                                    verticalAlignment = Alignment.CenterVertically
-                                                ) {
-                                                    Text(
-                                                        text = pageUsage.name,
-                                                        style = MaterialTheme.typography.bodyMedium,
-                                                        fontWeight = FontWeight.Medium
-                                                    )
-                                                    Text(
-                                                        text = "${pageUsage.count} Klicks (${(pageUsage.percentage * 100).toInt()}%)",
-                                                        style = MaterialTheme.typography.labelSmall,
-                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                    )
-                                                }
-                                                androidx.compose.material3.LinearProgressIndicator(
-                                                    progress = { pageUsage.percentage },
-                                                    modifier = Modifier.fillMaxWidth().height(8.dp),
-                                                    color = MaterialTheme.colorScheme.primary,
-                                                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                                                    strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-
-                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-
-                                // Cleanup helper
-                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Text(
-                                        text = "⚠️ Aufräum-Empfehlungen",
-                                        style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    if (unusedPages.isEmpty()) {
-                                        Surface(
-                                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f),
-                                            shape = MaterialTheme.shapes.small,
-                                            modifier = Modifier.fillMaxWidth()
-                                        ) {
-                                            Text(
-                                                text = "✅ Hervorragend! Alle Seiten in diesem Buch werden aktiv verwendet. Es gibt keine ungenutzten Seiten.",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                                modifier = Modifier.padding(10.dp)
-                                            )
-                                        }
-                                    } else {
-                                        Column(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            verticalArrangement = Arrangement.spacedBy(6.dp)
-                                        ) {
-                                            Text(
-                                                text = stringResource(R.string.analytics_cleanup_recommendation_desc),
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                            val visibleUnusedPages = if (showAllUnusedPages) unusedPages else unusedPages.take(4)
-                                            visibleUnusedPages.forEach { page ->
-                                                Row(
-                                                    modifier = Modifier
-                                                        .fillMaxWidth()
-                                                        .padding(start = 4.dp, top = 2.dp, bottom = 2.dp),
-                                                    verticalAlignment = Alignment.CenterVertically,
-                                                    horizontalArrangement = Arrangement.SpaceBetween
-                                                ) {
-                                                    Row(
-                                                        verticalAlignment = Alignment.CenterVertically,
-                                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                                        modifier = Modifier
-                                                            .weight(1f)
-                                                            .clickable { onEditPage(page.id) }
-                                                    ) {
-                                                        Text("•", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
-                                                        Text(
-                                                            text = page.name,
-                                                            style = MaterialTheme.typography.bodySmall,
-                                                            fontWeight = FontWeight.SemiBold,
-                                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                        )
-                                                    }
-                                                    IconButton(
-                                                        onClick = {
-                                                            coroutineScope.launch {
-                                                                val usages = pageViewModel.getPageUsages(page.id)
-                                                                usagesToDelete.value = usages
-                                                                pageToDelete.value = page
-                                                            }
-                                                        },
-                                                        modifier = Modifier.size(32.dp)
-                                                    ) {
-                                                        Icon(
-                                                            imageVector = Icons.Default.Delete,
-                                                            contentDescription = stringResource(CoreR.string.action_delete),
-                                                            tint = MaterialTheme.colorScheme.error,
-                                                            modifier = Modifier.size(18.dp)
-                                                        )
-                                                    }
-                                                }
-                                            }
-
-                                            if (unusedPages.size > 4) {
-                                                TextButton(
-                                                    onClick = { showAllUnusedPages = !showAllUnusedPages },
-                                                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                                                ) {
-                                                    Text(
-                                                        text = if (showAllUnusedPages) {
-                                                            stringResource(R.string.analytics_show_less)
-                                                        } else {
-                                                            stringResource(R.string.analytics_show_more) + " (${unusedPages.size - 4})"
-                                                        }
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        HorizontalDivider()
-
-                        UserModeSessionsSection(
-                            sessions = userModeSessions,
+                        AnalyticsOverviewTab(
+                            statisticsTimeframeText = statisticsTimeframeText,
+                            totalClicks = totalClicks,
+                            currentClicks = currentClicks,
+                            previousClicks = previousClicks,
+                            activeVocabCount = activeVocabCount,
+                            currentVocab = currentVocab,
+                            previousVocab = previousVocab,
+                            totalHours = totalHours,
+                            totalMinutes = totalMinutes,
+                            currentUsageMs = currentUsageMs,
+                            previousUsageMs = previousUsageMs,
+                            avgDailyUsageText = avgDailyUsageText,
+                            currentCommRate = currentCommRate,
+                            previousCommRate = previousCommRate,
+                            userModeSessions = userModeSessions,
                             historyEvents = historyEvents,
-                            onClearSessions = { pageViewModel.clearUserModeSessions() }
+                            trendBadge = { current, previous, modifier ->
+                                TrendBadge(current, previous, modifier)
+                            }
+                        )
+                    }
+                    1 -> {
+                        AnalyticsRecommendationsTab(
+                            context = context,
+                            coroutineScope = coroutineScope,
+                            isCalculatingRecommendations = isCalculatingRecommendations,
+                            recommendations = recommendations,
+                            layoutProposals = layoutProposals,
+                            currentFilter = currentFilter,
+                            currentSort = currentSort,
+                            aiProposal = aiProposal,
+                            isAiLoading = isAiLoading,
+                            aiHierarchy = aiHierarchy,
+                            isAiHierarchyLoading = isAiHierarchyLoading,
+                            aiPageLayouts = aiPageLayouts,
+                            isLoadingPageLayout = isLoadingPageLayout,
+                            unfilteredPages = unfilteredPages,
+                            selectedPageIds = selectedPageIds,
+                            activeTargetPageIds = activeTargetPageIds,
+                            aiRestructureScope = aiRestructureScope,
+                            aiRestructureError = aiRestructureError,
+                            isGeminiEnabled = isGeminiEnabled,
+                            aiToastApplied = aiToastApplied,
+                            onNavigateBack = onNavigateBack,
+                            onApplyShortcutRecommendation = { rec, onRes ->
+                                pageViewModel.applyShortcutRecommendation(rec, onRes)
+                            },
+                            onSetProposalFilter = { pageViewModel.setProposalFilter(it) },
+                            onSetProposalSort = { pageViewModel.setProposalSort(it) },
+                            onGeneratePageSplitProposal = { pageViewModel.generatePageSplitProposal(it) },
+                            onChangePageScanPattern = { id, pat -> pageViewModel.changePageScanPattern(id, pat) },
+                            onChangeScanDelay = { pageViewModel.changeScanDelay(it) },
+                            onApplySpacerRelocate = { pageId, b1, b2 -> pageViewModel.applySpacerRelocate(pageId, b1, b2) },
+                            onSelectActivePagesOnly = { pageViewModel.selectActivePagesOnly() },
+                            onSelectAllPages = { pageViewModel.selectAllPages() },
+                            onTogglePageSelection = { pageViewModel.togglePageSelection(it) },
+                            onSetAiRestructureScope = { pageViewModel.setAiRestructureScope(it) },
+                            onClearAiRestructureError = { pageViewModel.clearAiRestructureError() },
+                            onClearAiRestructureProposal = { pageViewModel.clearAiRestructureProposal() },
+                            onGenerateAiHierarchyProposal = { pageViewModel.generateAiHierarchyProposal(it) },
+                            onUpdateHierarchyManualEdit = { pageViewModel.updateHierarchyManualEdit(it) },
+                            onLoadPageLayoutProposal = { pageViewModel.loadPageLayoutProposal(it) },
+                            onLoadAllPageLayoutProposals = { pageViewModel.loadAllPageLayoutProposals(it) },
+                            onApplyHierarchyProposal = { pageViewModel.applyHierarchyProposal(it) }
+                        )
+                    }
+                    2 -> {
+                        AnalyticsDetailsTab(
+                            commonTransitions = commonTransitions,
+                            topUsedPages = topUsedPages,
+                            unusedPages = unusedPages,
+                            userModeSessions = userModeSessions,
+                            historyEvents = historyEvents,
+                            onClearSessions = { pageViewModel.clearUserModeSessions() },
+                            onEditPage = onEditPage,
+                            onDeletePageRequested = { unusedPage ->
+                                coroutineScope.launch {
+                                    val usages = pageViewModel.getPageUsages(unusedPage.id)
+                                    usagesToDelete.value = usages
+                                    pageToDelete.value = unusedPage
+                                }
+                            }
                         )
                     }
                 }
@@ -1954,9 +468,8 @@ fun AnalyticsDashboardScreen(
     }
 }
 
-
 @Composable
-private fun TrendBadge(
+internal fun TrendBadge(
     current: Double,
     previous: Double,
     modifier: Modifier = Modifier
@@ -2000,4 +513,3 @@ private fun TrendBadge(
         )
     }
 }
-

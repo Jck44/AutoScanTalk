@@ -40,6 +40,7 @@ import com.andreas_kratzer.ghosttalk.ui.pages.delegates.InteractionDelegate
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.PageManagementDelegate
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.ScreenManagementDelegate
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.SmartPredictionDelegate
+import com.andreas_kratzer.ghosttalk.core.call.CallState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -70,6 +71,8 @@ class PageViewModel @Inject constructor(
     val interactionDelegate: InteractionDelegate,
     val screenManagementDelegate: ScreenManagementDelegate,
     smartPredictionDelegate: SmartPredictionDelegate,
+    val callManagementDelegate: com.andreas_kratzer.ghosttalk.ui.pages.delegates.CallManagementDelegate,
+    val aiRestructureDelegate: com.andreas_kratzer.ghosttalk.ui.pages.delegates.AiRestructureDelegate,
     private val resolveDynamicButtonsUseCase: ResolveDynamicButtonsUseCase,
     updateSmartPredictionsUseCase: UpdateSmartPredictionsUseCase,
     val actionExecutor: ActionExecutor,
@@ -376,55 +379,26 @@ class PageViewModel @Inject constructor(
     val isScanning = scanCoordinator.isScanning
 
     // --- Telephony Call States ---
-    val callState = systemCallManager.callState
-    val callerName = systemCallManager.callerName
-    val callerPhone = systemCallManager.callerPhone
-    val callDurationSeconds = systemCallManager.callDurationSeconds
-    val isOutgoing = systemCallManager.isOutgoing
-    val isSimulatedCall = systemCallManager.isSimulatedFlow
-    val isHangUpButtonFocused = MutableStateFlow(false)
-    val hangUpPressCount = MutableStateFlow(0)
-    val focusedCallScreenButton = MutableStateFlow("ANNEHMEN") // "ANNEHMEN" or "ABLEHNEN"
-    private var callScanJob: kotlinx.coroutines.Job? = null
+    val callState = callManagementDelegate.callState
+    val callerName = callManagementDelegate.callerName
+    val callerPhone = callManagementDelegate.callerPhone
+    val callDurationSeconds = callManagementDelegate.callDurationSeconds
+    val isOutgoing = callManagementDelegate.isOutgoing
+    val isSimulatedCall = callManagementDelegate.isSimulatedCall
+    val isHangUpButtonFocused = callManagementDelegate.isHangUpButtonFocused
+    val hangUpPressCount = callManagementDelegate.hangUpPressCount
+    val focusedCallScreenButton = callManagementDelegate.focusedCallScreenButton
 
-    private fun speakCallScreenButton(button: String, isInitial: Boolean) {
-        val textRes = if (button == "ANNEHMEN") {
-            com.andreas_kratzer.ghosttalk.R.string.call_answer
-        } else {
-            com.andreas_kratzer.ghosttalk.R.string.call_reject
-        }
-        val text = getApplication<Application>().getString(textRes)
-        val cueDevice = settingsRepository.cuesAudioDeviceAddress
-        val queueMode = if (isInitial) {
-            android.speech.tts.TextToSpeech.QUEUE_ADD
-        } else {
-            android.speech.tts.TextToSpeech.QUEUE_FLUSH
-        }
-        ttsHelper.speakRouted(text, cueDevice, queueMode = queueMode, isForCues = true)
+    fun speakCallScreenButton(button: String, isInitial: Boolean) {
+        callManagementDelegate.speakCallScreenButton(button, isInitial)
     }
 
-    private fun startCallScanning() {
-        callScanJob?.cancel()
-        focusedCallScreenButton.value = "ANNEHMEN"
-        speakCallScreenButton("ANNEHMEN", isInitial = true)
-        val scanDelay = settingsRepository.scanDelayMillis
-        callScanJob = viewModelScope.launch {
-            while (true) {
-                kotlinx.coroutines.delay(scanDelay)
-                if (focusedCallScreenButton.value == "ANNEHMEN") {
-                    focusedCallScreenButton.value = "ABLEHNEN"
-                } else {
-                    focusedCallScreenButton.value = "ANNEHMEN"
-                    systemCallManager.incrementScanCycle()
-                }
-                speakCallScreenButton(focusedCallScreenButton.value, isInitial = false)
-            }
-        }
+    fun startCallScanning() {
+        callManagementDelegate.startCallScanning(viewModelScope)
     }
 
-    private fun stopCallScanning() {
-        callScanJob?.cancel()
-        callScanJob = null
+    fun stopCallScanning() {
+        callManagementDelegate.stopCallScanning()
     }
 
     fun loadStartPage() {
@@ -440,33 +414,20 @@ class PageViewModel @Inject constructor(
     private val _selectedPageIds = MutableStateFlow<Set<String>>(emptySet())
     val selectedPageIds: StateFlow<Set<String>> = _selectedPageIds.asStateFlow()
 
-    private val _aiRestructureProposal = MutableStateFlow<BookRestructureProposal?>(null)
-    val aiRestructureProposal: StateFlow<BookRestructureProposal?> = _aiRestructureProposal.asStateFlow()
-
-    private val _aiHierarchyProposal = MutableStateFlow<com.andreas_kratzer.ghosttalk.core.model.BookHierarchyProposal?>(null)
-    val aiHierarchyProposal: StateFlow<com.andreas_kratzer.ghosttalk.core.model.BookHierarchyProposal?> = _aiHierarchyProposal.asStateFlow()
-
-    private val _aiPageLayoutProposals = MutableStateFlow<Map<String, com.andreas_kratzer.ghosttalk.core.model.PageLayoutProposal>>(emptyMap())
-    val aiPageLayoutProposals: StateFlow<Map<String, com.andreas_kratzer.ghosttalk.core.model.PageLayoutProposal>> = _aiPageLayoutProposals.asStateFlow()
-
-    private val _isAiHierarchyLoading = MutableStateFlow(false)
-    val isAiHierarchyLoading: StateFlow<Boolean> = _isAiHierarchyLoading.asStateFlow()
-
-    private val _isLoadingPageLayout = MutableStateFlow<Map<String, Boolean>>(emptyMap())
-    val isLoadingPageLayout: StateFlow<Map<String, Boolean>> = _isLoadingPageLayout.asStateFlow()
-
-    private val _aiRestructureScope = MutableStateFlow("detailed")
-    val aiRestructureScope: StateFlow<String> = _aiRestructureScope.asStateFlow()
+    val aiRestructureProposal: StateFlow<BookRestructureProposal?> = aiRestructureDelegate.aiRestructureProposal
+    val aiHierarchyProposal: StateFlow<com.andreas_kratzer.ghosttalk.core.model.BookHierarchyProposal?> = aiRestructureDelegate.aiHierarchyProposal
+    val aiPageLayoutProposals: StateFlow<Map<String, com.andreas_kratzer.ghosttalk.core.model.PageLayoutProposal>> = aiRestructureDelegate.aiPageLayoutProposals
+    val isAiHierarchyLoading: StateFlow<Boolean> = aiRestructureDelegate.isAiHierarchyLoading
+    val isLoadingPageLayout: StateFlow<Map<String, Boolean>> = aiRestructureDelegate.isLoadingPageLayout
+    val aiRestructureScope: StateFlow<String> = aiRestructureDelegate.aiRestructureScope
+    val aiRestructureError: StateFlow<String?> = aiRestructureDelegate.aiRestructureError
 
     fun setAiRestructureScope(scope: String) {
-        _aiRestructureScope.value = scope
+        aiRestructureDelegate.setAiRestructureScope(scope)
     }
 
-    private val _aiRestructureError = MutableStateFlow<String?>(null)
-    val aiRestructureError: StateFlow<String?> = _aiRestructureError.asStateFlow()
-
     fun clearAiRestructureError() {
-        _aiRestructureError.value = null
+        aiRestructureDelegate.clearAiRestructureError()
     }
 
     val activeBook: StateFlow<Book?> = activeBookId.flatMapLatest { id ->
@@ -556,27 +517,27 @@ class PageViewModel @Inject constructor(
 
         // Observe Call State for scanning and page reset
         viewModelScope.launch {
-            systemCallManager.callState.collect { state ->
+            callManagementDelegate.callState.collect { state ->
                 when (state) {
-                    com.andreas_kratzer.ghosttalk.core.call.CallState.RINGING -> {
+                    CallState.RINGING -> {
                         scanCoordinator.stopScanning()
                         ttsHelper.stopAll()
                         actionExecutor.stopActions()
                         startCallScanning()
                     }
-                    com.andreas_kratzer.ghosttalk.core.call.CallState.DIALING,
-                    com.andreas_kratzer.ghosttalk.core.call.CallState.ACTIVE -> {
+                    CallState.DIALING,
+                    CallState.ACTIVE -> {
                         scanCoordinator.stopScanning()
                         ttsHelper.stopAll()
                         actionExecutor.stopActions()
                         stopCallScanning()
-                        isHangUpButtonFocused.value = false
-                        hangUpPressCount.value = 0
+                        callManagementDelegate.isHangUpButtonFocused.value = false
+                        callManagementDelegate.hangUpPressCount.value = 0
                     }
-                    com.andreas_kratzer.ghosttalk.core.call.CallState.NONE -> {
+                    CallState.NONE -> {
                         stopCallScanning()
-                        isHangUpButtonFocused.value = false
-                        hangUpPressCount.value = 0
+                        callManagementDelegate.isHangUpButtonFocused.value = false
+                        callManagementDelegate.hangUpPressCount.value = 0
                         if (isUserModeActive.value) {
                             loadStartPage()
                             scanCoordinator.restartScanning()
@@ -621,9 +582,9 @@ class PageViewModel @Inject constructor(
             val flow = activeBookId
             flow.collect { bookId ->
                 if (bookId != null) {
-                    _aiRestructureProposal.value = loadProposalFromCache(bookId)
+                    aiRestructureDelegate.setAiRestructureProposal(loadProposalFromCache(bookId))
                 } else {
-                    _aiRestructureProposal.value = null
+                    aiRestructureDelegate.setAiRestructureProposal(null)
                 }
             }
         }
@@ -1396,191 +1357,37 @@ class PageViewModel @Inject constructor(
             .toSet()
     }
 
-    private fun saveProposalToCache(bookId: String, proposal: BookRestructureProposal) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val cacheDir = getApplication<Application>().cacheDir ?: return@launch
-                val file = java.io.File(cacheDir, "ai_restructure_proposal_${bookId}.json")
-                val json = kotlinx.serialization.json.Json.encodeToString(BookRestructureProposal.serializer(), proposal)
-                file.writeText(json)
-            } catch (e: Exception) {
-                Log.e("PageViewModel", "Error saving proposal to cache", e)
-            }
-        }
+    fun saveProposalToCache(bookId: String, proposal: BookRestructureProposal) {
+        aiRestructureDelegate.saveProposalToCache(bookId, proposal)
     }
 
     fun loadProposalFromCache(bookId: String): BookRestructureProposal? {
-        return try {
-            val cacheDir = getApplication<Application>().cacheDir ?: return null
-            val file = java.io.File(cacheDir, "ai_restructure_proposal_${bookId}.json")
-            if (file.exists()) {
-                val json = file.readText()
-                kotlinx.serialization.json.Json.decodeFromString(BookRestructureProposal.serializer(), json)
-            } else {
-                null
-            }
-        } catch (e: Exception) {
-            Log.e("PageViewModel", "Error loading proposal from cache", e)
-            null
-        }
+        return aiRestructureDelegate.loadProposalFromCache(bookId)
     }
 
-    private val _isAiRestructureLoading = MutableStateFlow(false)
-    val isAiRestructureLoading: StateFlow<Boolean> = _isAiRestructureLoading.asStateFlow()
+    val isAiRestructureLoading: StateFlow<Boolean> = aiRestructureDelegate.isAiRestructureLoading
 
     fun generateAiRestructureProposal() {
         val bookId = activeBookId.value ?: return
-        viewModelScope.launch(Dispatchers.Default) {
-            _isAiRestructureLoading.value = true
-            _aiRestructureError.value = null
-            try {
-                // Fetch stats to include click count
-                val stats = buttonUsageRepository.getGroupedUsageStats(bookId)
-                val clickCounts = stats.flatMap { it.children }
-                    .associate { it.buttonConfigId to it.usageCount }
-
-                // Retrieve all pages of the book
-                val pages = pageManagementDelegate.unfilteredPages.value
-
-                // Format pages and buttons into JSON representation
-                val pagesArray = org.json.JSONArray()
-                pages.forEach { page ->
-                    if (_selectedPageIds.value.contains(page.id)) {
-                        val pageObj = org.json.JSONObject()
-                        pageObj.put("pageName", page.name)
-                        pageObj.put("rows", page.rows)
-                        pageObj.put("columns", page.columns)
-                        val buttonsArray = org.json.JSONArray()
-                        page.buttonConfigs.forEach { btn ->
-                            if (btn != null && btn.isActive && btn.label.isNotBlank()) {
-                                val btnObj = org.json.JSONObject()
-                                btnObj.put("label", btn.label)
-                                btnObj.put("clicks", clickCounts[btn.id] ?: 0)
-                                val action = btn.buttonAction
-                                if (action is NavigateToPageButtonAction) {
-                                    val targetPageName = pages.find { it.id == action.pageId }?.name ?: ""
-                                    btnObj.put("destinationPage", targetPageName)
-                                }
-                                buttonsArray.put(btnObj)
-                            }
-                        }
-                        pageObj.put("buttons", buttonsArray)
-                        pagesArray.put(pageObj)
-                    }
-                }
-
-                val pagesJsonString = pagesArray.toString()
-                val proposal = bookRestructureProposalUseCase.execute(pagesJsonString, _aiRestructureScope.value)
-                _aiRestructureProposal.value = proposal
-                saveProposalToCache(bookId, proposal)
-            } catch (e: Exception) {
-                Log.e("PageViewModel", "Error generating AI restructure proposal", e)
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(getApplication(), "Fehler: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
-                }
-            } finally {
-                _isAiRestructureLoading.value = false
-            }
-        }
+        aiRestructureDelegate.generateAiRestructureProposal(viewModelScope, bookId, _selectedPageIds.value, pageManagementDelegate)
     }
 
     fun loadMoreAiRestructureProposals() {
         val bookId = activeBookId.value ?: return
-        val currentProposal = _aiRestructureProposal.value ?: return
-        viewModelScope.launch(Dispatchers.Default) {
-            _isAiRestructureLoading.value = true
-            _aiRestructureError.value = null
-            try {
-                val stats = buttonUsageRepository.getGroupedUsageStats(bookId)
-                val clickCounts = stats.flatMap { it.children }
-                    .associate { it.buttonConfigId to it.usageCount }
-
-                val pages = pageManagementDelegate.unfilteredPages.value
-
-                val pagesArray = org.json.JSONArray()
-                pages.forEach { page ->
-                    if (_selectedPageIds.value.contains(page.id)) {
-                        val pageObj = org.json.JSONObject()
-                        pageObj.put("pageName", page.name)
-                        pageObj.put("rows", page.rows)
-                        pageObj.put("columns", page.columns)
-                        val buttonsArray = org.json.JSONArray()
-                        page.buttonConfigs.forEach { btn ->
-                            if (btn != null && btn.isActive && btn.label.isNotBlank()) {
-                                val btnObj = org.json.JSONObject()
-                                btnObj.put("label", btn.label)
-                                btnObj.put("clicks", clickCounts[btn.id] ?: 0)
-                                val action = btn.buttonAction
-                                if (action is NavigateToPageButtonAction) {
-                                    val targetPageName = pages.find { it.id == action.pageId }?.name ?: ""
-                                    btnObj.put("destinationPage", targetPageName)
-                                }
-                                buttonsArray.put(btnObj)
-                            }
-                        }
-                        pageObj.put("buttons", buttonsArray)
-                        pagesArray.put(pageObj)
-                    }
-                }
-
-                val pagesJsonString = pagesArray.toString()
-                
-                val existingActionsArray = org.json.JSONArray()
-                currentProposal.actions.forEach { act ->
-                    val actObj = org.json.JSONObject()
-                    actObj.put("type", act.type)
-                    actObj.put("rationale", act.rationale)
-                    act.buttonLabel?.let { actObj.put("buttonLabel", it) }
-                    act.sourcePageName?.let { actObj.put("sourcePageName", it) }
-                    act.targetPageName?.let { actObj.put("targetPageName", it) }
-                    act.displaceButtonLabel?.let { actObj.put("displaceButtonLabel", it) }
-                    act.displaceTargetPageName?.let { actObj.put("displaceTargetPageName", it) }
-                    act.targetPlacementDescription?.let { actObj.put("targetPlacementDescription", it) }
-                    existingActionsArray.put(actObj)
-                }
-                val existingProposalsJson = org.json.JSONObject().apply {
-                    put("actions", existingActionsArray)
-                }.toString()
-
-                val moreProposal = bookRestructureProposalUseCase.executeLoadMore(pagesJsonString, existingProposalsJson)
-                val combinedActions = currentProposal.actions + moreProposal.actions
-                val combinedProposal = BookRestructureProposal(combinedActions)
-                
-                _aiRestructureProposal.value = combinedProposal
-                saveProposalToCache(bookId, combinedProposal)
-            } catch (e: Exception) {
-                Log.e("PageViewModel", "Error loading more AI proposals", e)
-                _aiRestructureError.value = e.localizedMessage
-            } finally {
-                _isAiRestructureLoading.value = false
-            }
-        }
+        aiRestructureDelegate.loadMoreAiRestructureProposals(viewModelScope, bookId, _selectedPageIds.value, pageManagementDelegate)
     }
 
     fun clearAiRestructureProposal() {
-        _aiRestructureProposal.value = null
         val bookId = activeBookId.value ?: return
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val cacheDir = getApplication<Application>().cacheDir ?: return@launch
-                val file = java.io.File(cacheDir, "ai_restructure_proposal_${bookId}.json")
-                if (file.exists()) {
-                    file.delete()
-                }
-            } catch (e: Exception) {
-                Log.e("PageViewModel", "Error deleting proposal cache", e)
-            }
-        }
+        aiRestructureDelegate.deleteRestructureCache(viewModelScope, bookId)
     }
 
     fun applyAiRestructureProposal(proposal: BookRestructureProposal, onResult: (String) -> Unit) {
         val currentBookId = activeBookId.value ?: return
         viewModelScope.launch(Dispatchers.IO) {
-            _isAiRestructureLoading.value = true
+            aiRestructureDelegate.setAiRestructureProposal(proposal) // keep delegate updated
             try {
                 val newBookId = cloneBookUseCase.execute(currentBookId, proposal)
-                
-                // Fetch the default start page of the new book from database directly to load it immediately
                 val startId = settingsRepository.getDefaultStartPageIdForBook(newBookId)
                 val pages = pageManagementDelegate.pageRepository.getPagesForBook(newBookId)
                 val startPage = pages.find { it.id == startId } ?: pages.firstOrNull()
@@ -1597,8 +1404,6 @@ class PageViewModel @Inject constructor(
                 withContext(Dispatchers.Main) {
                     Toast.makeText(getApplication(), "Fehler beim Anwenden: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
                 }
-            } finally {
-                _isAiRestructureLoading.value = false
             }
         }
     }
@@ -1606,12 +1411,9 @@ class PageViewModel @Inject constructor(
     fun applySingleAiRestructureAction(action: com.andreas_kratzer.ghosttalk.core.model.RestructureAction, onResult: (String) -> Unit) {
         val currentBookId = activeBookId.value ?: return
         viewModelScope.launch(Dispatchers.IO) {
-            _isAiRestructureLoading.value = true
             try {
                 val singleProposal = BookRestructureProposal(listOf(action))
                 val newBookId = cloneBookUseCase.execute(currentBookId, singleProposal)
-                
-                // Fetch the default start page of the new book from database directly to load it immediately
                 val startId = settingsRepository.getDefaultStartPageIdForBook(newBookId)
                 val pages = pageManagementDelegate.pageRepository.getPagesForBook(newBookId)
                 val startPage = pages.find { it.id == startId } ?: pages.firstOrNull()
@@ -1625,200 +1427,30 @@ class PageViewModel @Inject constructor(
                 }
             } catch (e: java.lang.Exception) {
                 Log.e("PageViewModel", "Error applying single AI restructure action", e)
-            } finally {
-                _isAiRestructureLoading.value = false
             }
         }
-    }
-
-    private suspend fun buildRestructureSnapshotJson(bookId: String, selectedPageIds: Set<String>): String {
-        val pages = pageManagementDelegate.unfilteredPages.value
-        val historyEvents = buttonUsageRepository.getHistoryEventsForBook(bookId)
-        val totalClicks = historyEvents.size
-        val buttonHistoryEvents = historyEvents.filter { it.buttonId != null }.groupBy { it.buttonId!! }
-        
-        val rootJson = org.json.JSONObject()
-        rootJson.put("bookId", bookId)
-        rootJson.put("totalClicksInBook", totalClicks)
-        
-        val pagesArray = org.json.JSONArray()
-        pages.forEach { page ->
-            if (selectedPageIds.contains(page.id)) {
-                val pageObj = org.json.JSONObject()
-                pageObj.put("pageId", page.id)
-                pageObj.put("pageName", page.name)
-                
-                val buttonsArray = org.json.JSONArray()
-                page.buttonConfigs.forEach { btn ->
-                    if (btn != null && btn.isActive && btn.label.isNotBlank()) {
-                        val btnObj = org.json.JSONObject()
-                        btnObj.put("id", btn.id)
-                        btnObj.put("label", btn.label)
-                        
-                        val btnEvents = buttonHistoryEvents[btn.id] ?: emptyList()
-                        val btnClicks = btnEvents.size
-                        btnObj.put("clicks", btnClicks)
-                        
-                        val hourlyObj = org.json.JSONObject()
-                        if (btnClicks > 0) {
-                            var morning = 0
-                            var lunch = 0
-                            var evening = 0
-                            var night = 0
-                            val cal = java.util.Calendar.getInstance()
-                            btnEvents.forEach { ev ->
-                                cal.timeInMillis = ev.timestamp
-                                val hour = cal.get(java.util.Calendar.HOUR_OF_DAY)
-                                when (hour) {
-                                    in 5..11 -> morning++
-                                    in 12..16 -> lunch++
-                                    in 17..21 -> evening++
-                                    else -> night++
-                                }
-                            }
-                            hourlyObj.put("morning", morning.toDouble() / btnClicks)
-                            hourlyObj.put("lunch", lunch.toDouble() / btnClicks)
-                            hourlyObj.put("evening", evening.toDouble() / btnClicks)
-                            hourlyObj.put("night", night.toDouble() / btnClicks)
-                        } else {
-                            hourlyObj.put("morning", 0.25)
-                            hourlyObj.put("lunch", 0.25)
-                            hourlyObj.put("evening", 0.25)
-                            hourlyObj.put("night", 0.25)
-                        }
-                        btnObj.put("hourlyDistribution", hourlyObj)
-                        
-                        val successors = buttonUsageRepository.getMarkovSuccessors(bookId, btn.id, limit = 5)
-                        val totalSuccessorCount = successors.sumOf { it.second }
-                        val transitionsArray = org.json.JSONArray()
-                        successors.forEach { (successorId, count) ->
-                            val transitionObj = org.json.JSONObject()
-                            transitionObj.put("targetButtonId", successorId)
-                            val probability = if (totalSuccessorCount > 0) count.toDouble() / totalSuccessorCount else 0.0
-                            transitionObj.put("probability", probability)
-                            transitionsArray.put(transitionObj)
-                        }
-                        btnObj.put("nextButtonTransitions", transitionsArray)
-                        
-                        val action = btn.buttonAction
-                        if (action is NavigateToPageButtonAction) {
-                            val targetPageName = pages.find { it.id == action.pageId }?.name ?: ""
-                            btnObj.put("destinationPage", targetPageName)
-                        }
-                        buttonsArray.put(btnObj)
-                    }
-                }
-                pageObj.put("buttons", buttonsArray)
-                pagesArray.put(pageObj)
-            }
-        }
-        rootJson.put("pages", pagesArray)
-        return rootJson.toString()
-    }
-
-    private fun extractAllButtonIds(pagesJsonString: String): Set<String> {
-        val ids = mutableSetOf<String>()
-        return try {
-            val root = org.json.JSONObject(pagesJsonString)
-            val pagesArray = root.optJSONArray("pages") ?: return emptySet()
-            for (i in 0 until pagesArray.length()) {
-                val pageObj = pagesArray.getJSONObject(i)
-                val buttonsArray = pageObj.optJSONArray("buttons") ?: continue
-                for (j in 0 until buttonsArray.length()) {
-                    val btnObj = buttonsArray.getJSONObject(j)
-                    if (btnObj.has("id")) ids.add(btnObj.getString("id"))
-                }
-            }
-            ids
-        } catch (e: Exception) { emptySet() }
     }
 
     fun generateAiHierarchyProposal(feedback: String? = null) {
         val bookId = activeBookId.value ?: return
-        viewModelScope.launch(Dispatchers.Default) {
-            _isAiHierarchyLoading.value = true
-            _aiRestructureError.value = null
-            try {
-                val pagesJsonString = buildRestructureSnapshotJson(bookId, _selectedPageIds.value)
-                
-                val currentHierarchy = _aiHierarchyProposal.value
-                val manualEditsJson = if (currentHierarchy != null) {
-                    val editsArray = org.json.JSONArray()
-                    currentHierarchy.pages.forEach { node ->
-                        val nodeObj = org.json.JSONObject()
-                        nodeObj.put("name", node.name)
-                        nodeObj.put("description", node.description)
-                        nodeObj.put("subpages", org.json.JSONArray(node.subpages))
-                        node.sourcePageName?.let { nodeObj.put("sourcePageName", it) }
-                        nodeObj.put("buttonIds", org.json.JSONArray(node.buttonIds))
-                        editsArray.put(nodeObj)
-                    }
-                    org.json.JSONObject().put("pages", editsArray).toString()
-                } else null
-
-                val proposal = bookHierarchyProposalUseCase.execute(pagesJsonString, feedback, manualEditsJson)
-                _aiHierarchyProposal.value = proposal
-                _aiPageLayoutProposals.value = emptyMap()
-            } catch (e: Exception) {
-                Log.e("PageViewModel", "Error generating AI hierarchy proposal", e)
-                _aiRestructureError.value = e.localizedMessage
-            } finally {
-                _isAiHierarchyLoading.value = false
-            }
-        }
+        aiRestructureDelegate.generateAiHierarchyProposal(viewModelScope, bookId, _selectedPageIds.value, pageManagementDelegate, feedback)
     }
 
     fun updateHierarchyManualEdit(updatedProposal: com.andreas_kratzer.ghosttalk.core.model.BookHierarchyProposal) {
-        _aiHierarchyProposal.value = updatedProposal
+        aiRestructureDelegate.setAiHierarchyProposal(updatedProposal)
     }
 
     fun loadPageLayoutProposal(pageName: String) {
         val bookId = activeBookId.value ?: return
-        val currentHierarchy = _aiHierarchyProposal.value ?: return
-        val node = currentHierarchy.pages.find { it.name == pageName } ?: return
-
-        viewModelScope.launch(Dispatchers.Default) {
-            _isLoadingPageLayout.value = _isLoadingPageLayout.value + (pageName to true)
-            try {
-                val pagesJsonString = buildRestructureSnapshotJson(bookId, _selectedPageIds.value)
-
-                val layout = pageLayoutProposalUseCase.execute(
-                    targetPageName = node.name,
-                    description = node.description,
-                    subpages = node.subpages,
-                    buttonsJsonString = pagesJsonString
-                )
-
-                _aiPageLayoutProposals.value = _aiPageLayoutProposals.value + (pageName to layout)
-            } catch (e: Exception) {
-                Log.e("PageViewModel", "Error loading layout for $pageName", e)
-            } finally {
-                _isLoadingPageLayout.value = _isLoadingPageLayout.value - pageName
-            }
-        }
+        aiRestructureDelegate.loadPageLayoutProposal(viewModelScope, bookId, _selectedPageIds.value, pageManagementDelegate, pageName)
     }
 
     fun loadAllPageLayoutProposals(onComplete: () -> Unit) {
-        val hierarchy = _aiHierarchyProposal.value ?: return
+        val hierarchy = aiHierarchyProposal.value ?: return
         viewModelScope.launch(Dispatchers.Default) {
-            val missingPages = hierarchy.pages.filter { !_aiPageLayoutProposals.value.containsKey(it.name) }
+            val missingPages = hierarchy.pages.filter { !aiPageLayoutProposals.value.containsKey(it.name) }
             for (node in missingPages) {
-                _isLoadingPageLayout.value = _isLoadingPageLayout.value + (node.name to true)
-                try {
-                    val bookId = activeBookId.value ?: break
-                    val pagesJsonString = buildRestructureSnapshotJson(bookId, _selectedPageIds.value)
-                    val layout = pageLayoutProposalUseCase.execute(
-                        targetPageName = node.name,
-                        description = node.description,
-                        subpages = node.subpages,
-                        buttonsJsonString = pagesJsonString
-                    )
-                    _aiPageLayoutProposals.value = _aiPageLayoutProposals.value + (node.name to layout)
-                } catch (e: Exception) {
-                    Log.e("PageViewModel", "Error auto loading layout for ${node.name}", e)
-                } finally {
-                    _isLoadingPageLayout.value = _isLoadingPageLayout.value - node.name
-                }
+                loadPageLayoutProposal(node.name)
             }
             withContext(Dispatchers.Main) {
                 onComplete()
@@ -1828,84 +1460,21 @@ class PageViewModel @Inject constructor(
 
     fun applyHierarchyProposal(onResult: (String) -> Unit) {
         val currentBookId = activeBookId.value ?: return
-        val proposal = _aiHierarchyProposal.value ?: return
-        val layouts = _aiPageLayoutProposals.value
-
-        viewModelScope.launch(Dispatchers.IO) {
-            _isAiHierarchyLoading.value = true
-            try {
-                val pagesJsonString = buildRestructureSnapshotJson(currentBookId, _selectedPageIds.value)
-                
-                val missingPages = proposal.pages.filter { !layouts.containsKey(it.name) }
-                val resolvedLayouts = layouts.toMutableMap()
-                
-                for (node in missingPages) {
-                    try {
-                        val layout = pageLayoutProposalUseCase.execute(
-                            targetPageName = node.name,
-                            description = node.description,
-                            subpages = node.subpages,
-                            buttonsJsonString = pagesJsonString
-                        )
-                        resolvedLayouts[node.name] = layout
-                    } catch (e: Exception) {
-                        Log.e("PageViewModel", "Failed to resolve layout for ${node.name} during save", e)
-                    }
-                }
-                
-                val originalButtonIds = extractAllButtonIds(pagesJsonString)
-                val mappedButtonIds = resolvedLayouts.values
-                    .flatMap { it.actions }
-                    .filter { it.type == "MOVE_BUTTON" }
-                    .mapNotNull { it.buttonId }
-                    .toSet()
-                
-                val missingButtonIds = originalButtonIds - mappedButtonIds
-                
-                var finalProposal = proposal
-                if (missingButtonIds.isNotEmpty()) {
-                    Log.w("PageViewModel", "Safety belt active! ${missingButtonIds.size} unplaced buttons will be routed to Backup page.")
-                    val backupPageName = "Umsortierte Reste (Automatisch)"
-                    val backupPageDescription = "Automatisch vom System gesicherte Knöpfe, die von der KI unvollständig zugeordnet wurden."
-                    
-                    val updatedPages = proposal.pages.toMutableList().apply {
-                        add(com.andreas_kratzer.ghosttalk.core.model.HierarchyPageNode(backupPageName, backupPageDescription, emptyList(), "Backup", missingButtonIds.toList()))
-                    }
-                    finalProposal = proposal.copy(pages = updatedPages)
-                    
-                    val backupActions = missingButtonIds.map { id ->
-                        PageButtonAction(type = "MOVE_BUTTON", buttonLabel = "ID: $id", rationale = "Automatische Systemrettung.", buttonId = id)
-                    }
-                    resolvedLayouts[backupPageName] = PageLayoutProposal(backupPageName, backupActions)
-                }
-
-                val newBookId = cloneBookUseCase.applyHierarchyRestructure(currentBookId, finalProposal, resolvedLayouts)
-                val startId = settingsRepository.getDefaultStartPageIdForBook(newBookId)
-                val pages = pageManagementDelegate.pageRepository.getPagesForBook(newBookId)
-                val startPage = pages.find { it.id == startId } ?: pages.firstOrNull()
-
-                withContext(Dispatchers.Main) {
-                    setActiveBookId(newBookId)
-                    if (startPage != null) {
-                        loadPage(startPage)
-                    }
-                    onResult(newBookId)
-                }
-            } catch (e: Exception) {
-                Log.e("PageViewModel", "Error applying hierarchy restructure", e)
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(getApplication(), "Fehler beim Anwenden: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
-                }
-            } finally {
-                _isAiHierarchyLoading.value = false
-            }
-        }
+        aiRestructureDelegate.applyHierarchyProposal(
+            scope = viewModelScope,
+            currentBookId = currentBookId,
+            selectedPageIds = _selectedPageIds.value,
+            pageManagementDelegate = pageManagementDelegate,
+            setActiveBookId = ::setActiveBookId,
+            loadPage = ::loadPage,
+            onResult = onResult
+        )
     }
 
     fun clearHierarchyProposal() {
-        _aiHierarchyProposal.value = null
-        _aiPageLayoutProposals.value = emptyMap()
-        _aiRestructureError.value = null
+        aiRestructureDelegate.setAiHierarchyProposal(null)
+        aiRestructureDelegate.setAiPageLayoutProposals(emptyMap())
+        aiRestructureDelegate.clearAiRestructureError()
     }
 
     // --- Layout- & Struktur-Assistent Actions ---

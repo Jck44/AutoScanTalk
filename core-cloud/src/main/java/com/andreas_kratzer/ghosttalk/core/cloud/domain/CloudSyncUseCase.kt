@@ -326,20 +326,26 @@ class CloudSyncUseCase @Inject constructor(
                                             }
                                         }
                                     }
+                                     val uploadDir = File(context.cacheDir, "upload_temp")
+                                     if (!uploadDir.exists()) uploadDir.mkdirs()
+                                     val finalUploadFile = File(uploadDir, currentFileName)
+                                     if (finalUploadFile.exists()) finalUploadFile.delete()
+                                     mergedTempFile.renameTo(finalUploadFile)
 
-                                    remoteUpdateSuccess = if (remoteZipFile != null) {
-                                        storageProvider.updateFile(remoteZipFile.id, mergedTempFile, "application/zip", book.name) { _ -> }
-                                    } else {
-                                        val newId = storageProvider.uploadFile(mergedTempFile, "application/zip", book.name) { _ -> }
-                                        if (newId != null) {
-                                            uploadedFileId = newId
-                                            true
-                                        } else {
-                                            false
-                                        }
-                                    }
-                                    mergedTempFile.delete()
-                                }
+                                     remoteUpdateSuccess = if (remoteZipFile != null) {
+                                         storageProvider.updateFile(remoteZipFile.id, finalUploadFile, "application/zip", book.name) { _ -> }
+                                     } else {
+                                         val newId = storageProvider.uploadFile(finalUploadFile, "application/zip", book.name) { _ -> }
+                                         if (newId != null) {
+                                             uploadedFileId = newId
+                                             true
+                                         } else {
+                                             false
+                                         }
+                                     }
+                                     finalUploadFile.delete()
+                                     uploadDir.delete()
+                                 }
 
                                 if (localUpdateSuccess && remoteUpdateSuccess) {
                                     val metadata = storageProvider.getFileMetadata(uploadedFileId)

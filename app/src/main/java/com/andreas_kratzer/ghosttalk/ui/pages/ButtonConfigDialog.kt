@@ -105,6 +105,8 @@ import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.feature.settings.domain.FeatureGuard
 import com.andreas_kratzer.ghosttalk.ui.pages.actions.NavigationActionFields
+import com.andreas_kratzer.ghosttalk.ui.pages.components.ButtonSettingsUiState
+import com.andreas_kratzer.ghosttalk.ui.pages.components.ButtonSettingsActions
 import kotlinx.coroutines.launch
 import java.io.File
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
@@ -832,826 +834,124 @@ fun ButtonConfigDialog(
                 ) {
                     when (currentTab) {
                         0 -> {
-                            val rawGroups = listOf(
-                                com.andreas_kratzer.ghosttalk.core.model.ActionCategoryRegistry.GROUP_BASIS to listOf(
-                                    actionTypeSpeak to SpeakTextButtonAction(),
-                                    actionTypeNavigate to NavigateToPageButtonAction(),
-                                    actionTypeNavigateToStartPage to NavigateToStartPageButtonAction(),
-                                    actionTypeNavigateBack to NavigateBackButtonAction()
-                                ),
-                                com.andreas_kratzer.ghosttalk.core.model.ActionCategoryRegistry.GROUP_KI_ASSISTENZ to listOf(
-                                    actionTypeGemini to GeminiButtonAction(),
-                                    actionTypeGeminiSearch to GeminiSearchButtonAction(),
-                                    actionTypeGeminiVision to com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction(),
-                                    actionTypeWeather to WeatherButtonAction()
-                                ),
-                                com.andreas_kratzer.ghosttalk.core.model.ActionCategoryRegistry.GROUP_KOMMUNIKATION to listOf(
-                                    actionTypeReadNotifications to ControlDeviceButtonAction(DeviceActionType.READ_NOTIFICATIONS),
-                                    actionTypeClearNotifications to ControlDeviceButtonAction(DeviceActionType.CLEAR_NOTIFICATIONS),
-                                    actionTypeSendMessage to ControlDeviceButtonAction(DeviceActionType.SEND_MESSAGE),
-                                    actionTypeSendLastSpokenSms to ControlDeviceButtonAction(DeviceActionType.SEND_LAST_SPOKEN_SMS),
-                                    actionTypeStartCall to ControlDeviceButtonAction(DeviceActionType.START_CALL),
-                                    actionTypeToggleAutoRead to ControlDeviceButtonAction(DeviceActionType.TOGGLE_AUTO_READ_NOTIFICATIONS)
-                                ),
-                                com.andreas_kratzer.ghosttalk.core.model.ActionCategoryRegistry.GROUP_MEDIEN_MUSIK to listOf(
-                                    actionTypeSpotify to PlayMediaButtonAction(MediaProvider.SPOTIFY),
-                                    actionTypeYoutube to PlayMediaButtonAction(MediaProvider.YOUTUBE),
-                                    actionTypeYoutubeMusic to PlayMediaButtonAction(MediaProvider.YOUTUBE_MUSIC),
-                                    actionTypeAudible to PlayMediaButtonAction(MediaProvider.AUDIBLE),
-                                    actionTypeMediaPlayPause to ControlDeviceButtonAction(DeviceActionType.MEDIA_PLAY_PAUSE),
-                                    actionTypeMediaNext to ControlDeviceButtonAction(DeviceActionType.MEDIA_NEXT),
-                                    actionTypeMediaPrevious to ControlDeviceButtonAction(DeviceActionType.MEDIA_PREVIOUS)
-                                ),
-                                com.andreas_kratzer.ghosttalk.core.model.ActionCategoryRegistry.GROUP_GERAETE_EINSTELLUNGEN to listOf(
-                                    actionTypeReadTime to ControlDeviceButtonAction(DeviceActionType.READ_TIME),
-                                    actionTypeReadDate to ControlDeviceButtonAction(DeviceActionType.READ_DATE),
-                                    actionTypeReadCalendarEntries to ControlDeviceButtonAction(DeviceActionType.READ_CALENDAR_ENTRIES),
-                                    actionTypeReadBattery to ControlDeviceButtonAction(DeviceActionType.READ_BATTERY),
-                                    actionTypeVolumeMedia to ControlDeviceButtonAction(DeviceActionType.VOLUME_MEDIA),
-                                    actionTypeVolumeNotification to ControlDeviceButtonAction(DeviceActionType.VOLUME_NOTIFICATION),
-                                    actionTypeVolumeAlarm to ControlDeviceButtonAction(DeviceActionType.VOLUME_ALARM),
-                                    actionTypeVolumeCall to ControlDeviceButtonAction(DeviceActionType.VOLUME_CALL),
-                                    actionTypeVolumeInAppTts to ControlDeviceButtonAction(DeviceActionType.VOLUME_IN_APP_TTS),
-                                    actionTypeVolumeInAppCues to ControlDeviceButtonAction(DeviceActionType.VOLUME_IN_APP_CUES),
-                                    actionTypeStatusSilent to ControlDeviceButtonAction(DeviceActionType.STATUS_SILENT),
-                                    actionTypeStatusVibrate to ControlDeviceButtonAction(DeviceActionType.STATUS_VIBRATE),
-                                    actionTypeStatusLoud to ControlDeviceButtonAction(DeviceActionType.STATUS_LOUD),
-                                    actionTypeToggleScanning to ControlDeviceButtonAction(DeviceActionType.TOGGLE_SCANNING),
-                                    actionTypeStartSync to ControlDeviceButtonAction(DeviceActionType.START_SYNC)
-                                ),
-                                com.andreas_kratzer.ghosttalk.core.model.ActionCategoryRegistry.GROUP_SMART_HOME to listOf(
-                                    actionTypePhilipsHue to SmartHomeButtonAction(SmartHomeProvider.PHILIPS_HUE),
-                                    actionTypeGoogleHome to SmartHomeButtonAction(SmartHomeProvider.GOOGLE_HOME)
-                                ),
-                                com.andreas_kratzer.ghosttalk.core.model.ActionCategoryRegistry.GROUP_VERLAUF_VORHERSAGE to listOf(
-                                    actionTypeFrequent to FrequentActionButtonAction(),
-                                    actionTypePrevious to PreviousActionButtonAction(),
-                                    actionTypeSmart to SmartPredictionButtonAction()
-                                )
-                            )
-
-                            val dropdownGroups = rawGroups.map { (groupName, actionList) ->
-                                val enabledItems = actionList.filter { (_, action) ->
-                                    featureGuard?.isActionEnabled(action) ?: true
-                                }.map { (actionLabel, action) ->
-                                    actionLabel to {
-                                        selectedActionType = actionLabel
-                                        if (label.isBlank()) {
-                                            if (actionLabel == actionTypeNavigateToStartPage) {
-                                                label = "Zu Startseite"
-                                            } else if (actionLabel == actionTypeNavigateBack) {
-                                                label = "Vorherige Seite"
-                                            } else if (actionLabel == actionTypeNavigate && targetPageId.isNotEmpty()) {
-                                                val pageName = pages.find { it.id == targetPageId }?.name
-                                                if (pageName != null) {
-                                                    label = "Zu $pageName"
-                                                }
-                                            }
-                                        }
-                                        // Permission check for Weather
-                                        if (action is WeatherButtonAction) {
-                                            val hasFine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-                                            val hasCoarse = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
-                                            if (!hasFine && !hasCoarse) {
-                                                permissionLauncher.launch(
-                                                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                                DropdownGroup(name = groupName, items = enabledItems)
-                            }.filter { it.items.isNotEmpty() }
-
-                            SettingsGroupedDropdownItem(
-                                label = stringResource(R.string.button_action_label),
-                                selectedOption = selectedActionType,
-                                groups = dropdownGroups,
-                                iconProvider = { actionType ->
-                                    if (actionType == actionTypeSpotify || actionType == actionTypeYoutube || actionType == actionTypeYoutubeMusic || actionType == actionTypeAudible) {
-                                        val drawableRes = when (actionType) {
-                                            actionTypeSpotify -> CoreR.drawable.ic_spotify
-                                            actionTypeYoutube -> CoreR.drawable.ic_youtube
-                                            actionTypeYoutubeMusic -> CoreR.drawable.ic_youtube_music
-                                            actionTypeAudible -> CoreR.drawable.ic_audible
-                                            else -> CoreR.drawable.ic_spotify
-                                        }
-                                        Icon(
-                                            painter = androidx.compose.ui.res.painterResource(id = drawableRes),
-                                            contentDescription = null,
-                                            tint = androidx.compose.ui.graphics.Color.Unspecified,
-                                            modifier = Modifier.size(24.dp)
-                                        )
-                                    } else {
-                                        val icon = when (actionType) {
-                                            actionTypeSpeak -> Icons.Default.PlayArrow
-                                            actionTypeNavigate -> GhostTalkIcons.ArrowForward
-                                            actionTypeNavigateBack -> GhostTalkIcons.ArrowBack
-                                            actionTypeGemini, actionTypeGeminiSearch, actionTypeGeminiVision -> GhostTalkIcons.AutoAwesome
-                                            actionTypeWeather -> GhostTalkIcons.PartlyCloudy
-                                            actionTypeReadNotifications, actionTypeClearNotifications, actionTypeToggleAutoRead -> GhostTalkIcons.Notifications
-                                            actionTypeSendMessage -> GhostTalkIcons.Message
-                                            actionTypeStartCall -> GhostTalkIcons.Phone
-                                            actionTypeMediaPlayPause -> GhostTalkIcons.PlayPause
-                                            actionTypeMediaNext -> GhostTalkIcons.SkipNext
-                                            actionTypeMediaPrevious -> GhostTalkIcons.SkipPrevious
-                                            actionTypeReadTime -> GhostTalkIcons.AccessTime
-                                            actionTypeReadDate, actionTypeReadCalendarEntries -> GhostTalkIcons.DateRange
-                                            actionTypeReadBattery -> GhostTalkIcons.BatteryFull
-                                            actionTypeVolumeMedia, actionTypeVolumeNotification, actionTypeVolumeAlarm, actionTypeVolumeCall, actionTypeStatusLoud -> GhostTalkIcons.VolumeUp
-                                            actionTypeStatusSilent -> GhostTalkIcons.VolumeOff
-                                            actionTypeStatusVibrate -> GhostTalkIcons.Vibration
-                                            actionTypePhilipsHue, actionTypeGoogleHome, actionTypeNavigateToStartPage -> Icons.Default.Home
-                                            actionTypeFrequent, actionTypePrevious, actionTypeSmart -> GhostTalkIcons.History
-                                            else -> Icons.Default.Settings
-                                        }
-                                        Icon(
-                                            imageVector = icon,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(24.dp)
-                                        )
-                                    }
-                                },
-                                onValueChangeFinished = handleAutoSave
-                            )
-
-                            if (selectedActionType == actionTypeNavigate) {
-                                androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(8.dp))
-                                NavigationActionFields(
-                                    navigateToPageId = targetPageId,
-                                    onPageSelected = { selectedId -> 
-                                        targetPageId = selectedId
-                                        if (label.isBlank()) {
-                                            val pageName = pages.find { it.id == selectedId }?.name
-                                            if (pageName != null) {
-                                                label = "Zu $pageName"
-                                            }
-                                        }
-                                        handleAutoSave()
-                                    },
-                                    availablePages = pages.filter { it.id != defaultStartPageId },
-                                    templates = templates,
-                                    onNavigateToPage = onNavigateToPage,
-                                    onCreatePage = onCreatePage,
-                                    onDismissDialog = onDismiss,
-                                    onAutoSave = handleAutoSave
-                                )
-                            }
-
-                            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-                            SettingsEditTextItem(
-                                label = stringResource(R.string.button_label_field),
-                                value = label,
-                                onValueChange = { label = it },
-                                onFocusLost = {
-                                    handleFocusLost(label, { isLabelCached = it }, { isLabelPrefetching = it })
-                                },
-                                isPlaying = playingField == "label",
-                                isLoading = isLabelPrefetching,
-                                playPauseIconTint = if (isLabelCached) MaterialTheme.colorScheme.primary else null,
-                                onPlayPauseClick = onPlayTts?.let { play ->
-                                    {
-                                        handlePlayClick(
-                                            fieldName = "label",
-                                            text = label,
-                                            isCached = isLabelCached,
-                                            setCached = { isLabelCached = it },
-                                            setPrefetching = { isLabelPrefetching = it },
-                                            play = play
-                                        )
-                                    }
-                                }
-                            )
-
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = 4.dp),
-                                horizontalArrangement = Arrangement.End,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                if (isSuggestingLabel) {
-                                    androidx.compose.material3.CircularProgressIndicator(
-                                        modifier = Modifier.size(16.dp),
-                                        strokeWidth = 2.dp,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                    androidx.compose.foundation.layout.Spacer(modifier = Modifier.width(6.dp))
-                                    Text(
-                                        text = stringResource(R.string.generating_suggestion),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.outline
-                                    )
-                                } else {
-                                    val hasAi = onSuggestLabel != null
-                                    TextButton(
-                                        onClick = {
-                                            val currentConfig = buttonConfig.copy(
-                                                label = label,
-                                                spokenText = if (spokenText.isNotBlank()) spokenText else null,
-                                                spokenTextMode = spokenTextMode,
-                                                audioFileName = audioFileNameState,
-                                                auditoryCue = if (auditoryCueText.isNotBlank()) AuditoryCue.TextToSpeechCue(auditoryCueText) else null,
-                                                isActive = isActive,
-                                                playActionAsAuditoryCue = playActionAsAuditoryCue,
-                                                buttonAction = buildCurrentAction()
-                                            )
-                                            if (onSuggestLabel != null) {
-                                                isSuggestingLabel = true
-                                                onSuggestLabel(currentConfig) { suggestion ->
-                                                    isSuggestingLabel = false
-                                                    if (suggestion.isNotBlank()) {
-                                                        label = suggestion
-                                                        handleFocusLost(suggestion, { isLabelCached = it }, { isLabelPrefetching = it })
-                                                    } else {
-                                                        val localSuggest = getLocalLabelSuggestion(currentConfig, pages, context)
-                                                        if (localSuggest.isNotBlank()) {
-                                                            label = localSuggest
-                                                            handleFocusLost(localSuggest, { isLabelCached = it }, { isLabelPrefetching = it })
-                                                        } else {
-                                                            Toast.makeText(
-                                                                context,
-                                                                R.string.error_label_suggestion_failed,
-                                                                Toast.LENGTH_LONG
-                                                            ).show()
-                                                        }
-                                                    }
-                                                }
-                                            } else {
-                                                val localSuggest = getLocalLabelSuggestion(currentConfig, pages, context)
-                                                if (localSuggest.isNotBlank()) {
-                                                    label = localSuggest
-                                                    handleFocusLost(localSuggest, { isLabelCached = it }, { isLabelPrefetching = it })
-                                                } else {
-                                                    Toast.makeText(
-                                                        context,
-                                                        R.string.error_label_suggestion_failed,
-                                                        Toast.LENGTH_LONG
-                                                    ).show()
-                                                }
-                                            }
-                                        }
-                                    ) {
-                                        Icon(
-                                            imageVector = GhostTalkIcons.AutoAwesome,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                        androidx.compose.foundation.layout.Spacer(modifier = Modifier.width(4.dp))
-                                        Text(
-                                            text = stringResource(if (hasAi) R.string.ki_suggestion else R.string.local_suggestion_action),
-                                            style = MaterialTheme.typography.bodySmall
-                                        )
-                                    }
-                                }
-                            }
-                            
-                            Text(
-                                text = stringResource(R.string.button_spoken_text_field),
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.padding(start = 4.dp, bottom = 2.dp)
-                            )
-                            androidx.compose.material3.OutlinedCard(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = LocalDimensions.current.paddingSmall),
-                                colors = androidx.compose.material3.CardDefaults.outlinedCardColors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
-                                )
-                            ) {
-                                Column(
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 12.dp)
-                                    ) {
-                                        SingleChoiceSegmentedButtonRow(
-                                            modifier = Modifier.fillMaxWidth()
-                                        ) {
-                                            val modes = listOf(SpokenTextMode.TTS, SpokenTextMode.AUDIO)
-                                            modes.forEachIndexed { index, mode ->
-                                                SegmentedButton(
-                                                    selected = spokenTextMode == mode,
-                                                    onClick = { 
-                                                        spokenTextMode = mode
-                                                        handleAutoSave()
-                                                    },
-                                                    shape = SegmentedButtonDefaults.itemShape(index = index, count = modes.size),
-                                                    label = { 
-                                                        Text(
-                                                            text = if (mode == SpokenTextMode.TTS) {
-                                                                stringResource(R.string.button_spoken_text_mode_tts)
-                                                            } else {
-                                                                stringResource(R.string.button_spoken_text_mode_audio)
-                                                            },
-                                                            maxLines = 1
-                                                        )
-                                                    }
-                                                )
-                                            }
-                                        }
-                                    }
-
-                                    HorizontalDivider(
-                                        color = MaterialTheme.colorScheme.outlineVariant
-                                    )
-
-                                    Box(
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        if (spokenTextMode == SpokenTextMode.TTS) {
-                                            SettingsEditTextItem(
-                                                label = "",
-                                                placeholder = stringResource(R.string.button_spoken_text_placeholder),
-                                                value = spokenText,
-                                                onValueChange = { spokenText = it },
-                                                onFocusLost = {
-                                                    handleFocusLost(spokenText, { isSpokenTextCached = it }, { isSpokenTextPrefetching = it })
-                                                },
-                                                isPlaying = playingField == "spokenText",
-                                                isLoading = isSpokenTextPrefetching,
-                                                playPauseIconTint = if (isSpokenTextCached) MaterialTheme.colorScheme.primary else null,
-                                                onPlayPauseClick = onPlayTts?.let { play ->
-                                                    {
-                                                        handlePlayClick(
-                                                            fieldName = "spokenText",
-                                                            text = spokenText,
-                                                            isCached = isSpokenTextCached,
-                                                            setCached = { isSpokenTextCached = it },
-                                                            setPrefetching = { isSpokenTextPrefetching = it },
-                                                            play = play
-                                                        )
-                                                    }
-                                                },
-                                                borderless = true
-                                            )
-                                        } else {
-                                            val audioFileExists = remember(audioFileNameState) {
-                                                if (audioFileNameState.isNullOrBlank()) false
-                                                else File(context.filesDir.resolve("audio_recordings"), audioFileNameState!!).exists()
-                                            }
-
-                                            val infiniteTransition = rememberInfiniteTransition(label = "pulse")
-                                            val pulseAlpha by if (isRecording) {
-                                                infiniteTransition.animateFloat(
-                                                    initialValue = 0.4f,
-                                                    targetValue = 1f,
-                                                    animationSpec = infiniteRepeatable(
-                                                        animation = tween(durationMillis = 800, easing = LinearEasing),
-                                                        repeatMode = RepeatMode.Reverse
-                                                    ),
-                                                    label = "pulseAlpha"
-                                                )
-                                            } else {
-                                                remember { mutableFloatStateOf(1f) }
-                                            }
-
-                                            Column(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 16.dp),
-                                                horizontalAlignment = Alignment.CenterHorizontally,
-                                                verticalArrangement = Arrangement.spacedBy(12.dp)
-                                            ) {
-                                                Row(
-                                                    verticalAlignment = Alignment.CenterVertically,
-                                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                                ) {
-                                                    if (isRecording) {
-                                                        Box(
-                                                            modifier = Modifier
-                                                                .size(12.dp)
-                                                                .background(
-                                                                    color = MaterialTheme.colorScheme.error.copy(alpha = pulseAlpha),
-                                                                    shape = CircleShape
-                                                                )
-                                                        )
-                                                        Text(
-                                                            text = stringResource(R.string.button_audio_recording),
-                                                            style = MaterialTheme.typography.bodyMedium,
-                                                            color = MaterialTheme.colorScheme.error
-                                                        )
-                                                    } else if (audioFileExists) {
-                                                        Icon(
-                                                            imageVector = Icons.Default.Check,
-                                                            contentDescription = null,
-                                                            tint = MaterialTheme.colorScheme.primary,
-                                                            modifier = Modifier.size(16.dp)
-                                                        )
-                                                        Text(
-                                                            text = stringResource(R.string.button_audio_saved),
-                                                            style = MaterialTheme.typography.bodyMedium,
-                                                            color = MaterialTheme.colorScheme.primary
-                                                        )
-                                                    } else {
-                                                        Icon(
-                                                            imageVector = Icons.Default.Info,
-                                                            contentDescription = null,
-                                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                            modifier = Modifier.size(16.dp)
-                                                        )
-                                                        Text(
-                                                            text = stringResource(R.string.button_audio_ready),
-                                                            style = MaterialTheme.typography.bodyMedium,
-                                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                        )
-                                                    }
-                                                }
-
-                                                Row(
-                                                    modifier = Modifier.fillMaxWidth(),
-                                                    horizontalArrangement = Arrangement.SpaceEvenly,
-                                                    verticalAlignment = Alignment.CenterVertically
-                                                ) {
-                                                    Button(
-                                                        onClick = {
-                                                            if (isRecording) {
-                                                                stopVoiceRecording()
-                                                            } else {
-                                                                val hasMicPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
-                                                                if (hasMicPermission) {
-                                                                    startVoiceRecording()
-                                                                } else {
-                                                                    micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                                                                }
-                                                            }
-                                                        },
-                                                        colors = ButtonDefaults.buttonColors(
-                                                            containerColor = if (isRecording) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
-                                                        )
-                                                    ) {
-                                                        Icon(
-                                                            imageVector = if (isRecording) GhostTalkIcons.Stop else GhostTalkIcons.RecordVoiceOver,
-                                                            contentDescription = null,
-                                                            modifier = Modifier.padding(end = 4.dp).size(20.dp)
-                                                        )
-                                                        Text(
-                                                            text = if (isRecording) stringResource(R.string.button_audio_stop) else stringResource(R.string.button_audio_record)
-                                                        )
-                                                    }
-
-                                                    OutlinedButton(
-                                                        onClick = {
-                                                            val file = File(context.filesDir.resolve("audio_recordings"), audioFileNameState ?: "")
-                                                            playRecording(file)
-                                                        },
-                                                        enabled = audioFileExists && !isRecording,
-                                                        colors = ButtonDefaults.outlinedButtonColors(
-                                                            contentColor = if (isPlayingAudio) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
-                                                        )
-                                                    ) {
-                                                        Icon(
-                                                            imageVector = if (isPlayingAudio) GhostTalkIcons.Stop else Icons.Default.PlayArrow,
-                                                            contentDescription = null,
-                                                            modifier = Modifier.padding(end = 4.dp).size(20.dp)
-                                                        )
-                                                        Text(
-                                                            text = if (isPlayingAudio) stringResource(R.string.button_audio_stop) else stringResource(R.string.button_audio_play)
-                                                        )
-                                                    }
-
-                                                    IconButton(
-                                                        onClick = { showDeleteConfirmation = true },
-                                                        enabled = audioFileExists && !isRecording,
-                                                        colors = androidx.compose.material3.IconButtonDefaults.iconButtonColors(
-                                                            contentColor = MaterialTheme.colorScheme.error
-                                                        )
-                                                    ) {
-                                                        Icon(
-                                                            imageVector = Icons.Default.Delete,
-                                                            contentDescription = stringResource(R.string.button_audio_delete)
-                                                        )
-                                                    }
-                                                }
-                                            }
-
-                                            if (showDeleteConfirmation) {
-                                                AlertDialog(
-                                                    onDismissRequest = { showDeleteConfirmation = false },
-                                                    title = { Text(stringResource(R.string.button_audio_delete)) },
-                                                    text = { Text(stringResource(R.string.button_audio_delete_confirm)) },
-                                                    confirmButton = {
-                                                        TextButton(
-                                                            onClick = {
-                                                                showDeleteConfirmation = false
-                                                                val file = File(context.filesDir.resolve("audio_recordings"), audioFileNameState ?: "")
-                                                                if (file.exists()) {
-                                                                    file.delete()
-                                                                }
-                                                                audioFileNameState = null
-                                                                handleAutoSave()
-                                                                Toast.makeText(context, "Aufnahme gelöscht", Toast.LENGTH_SHORT).show()
-                                                            },
-                                                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                                                        ) {
-                                                            Text(stringResource(R.string.button_audio_delete))
-                                                        }
-                                                    },
-                                                    dismissButton = {
-                                                        TextButton(onClick = { showDeleteConfirmation = false }) {
-                                                            Text(stringResource(CoreR.string.dialog_close))
-                                                        }
-                                                    }
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-
-                            SettingsEditTextItem(
-                                label = stringResource(R.string.button_auditory_cue_field),
-                                value = auditoryCueText,
-                                onValueChange = { auditoryCueText = it },
-                                onFocusLost = {
-                                    handleFocusLost(auditoryCueText, { isAuditoryCueTextCached = it }, { isAuditoryCueTextPrefetching = it })
-                                },
-                                isPlaying = playingField == "auditoryCueText",
-                                isLoading = isAuditoryCueTextPrefetching,
-                                playPauseIconTint = if (isAuditoryCueTextCached) MaterialTheme.colorScheme.primary else null,
-                                onPlayPauseClick = onPlayTts?.let { play ->
-                                    {
-                                        handlePlayClick(
-                                            fieldName = "auditoryCueText",
-                                            text = auditoryCueText,
-                                            isCached = isAuditoryCueTextCached,
-                                            setCached = { isAuditoryCueTextCached = it },
-                                            setPrefetching = { isAuditoryCueTextPrefetching = it },
-                                            play = play
-                                        )
-                                    }
-                                }
-                            )
-
-                            androidx.compose.material3.Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = LocalDimensions.current.paddingSmall),
-                                colors = androidx.compose.material3.CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                                ),
-                                shape = MaterialTheme.shapes.medium
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                                    horizontalArrangement = Arrangement.SpaceEvenly,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .clickable { 
-                                                isActive = !isActive 
-                                                handleAutoSave()
-                                            }
-                                            .padding(vertical = 4.dp)
-                                    ) {
-                                        androidx.compose.material3.Switch(
-                                            checked = isActive,
-                                            onCheckedChange = { 
-                                                isActive = it
-                                                handleAutoSave()
-                                            },
-                                            thumbContent = if (isActive) {
-                                                { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(androidx.compose.material3.SwitchDefaults.IconSize)) }
-                                            } else null
-                                        )
-                                        Text(
-                                            text = stringResource(R.string.button_is_active_label),
-                                            style = MaterialTheme.typography.bodyMedium
-                                        )
-                                    }
-
-                                    androidx.compose.foundation.layout.Spacer(modifier = Modifier.width(8.dp))
-                                    androidx.compose.material3.VerticalDivider(modifier = Modifier.height(32.dp))
-                                    androidx.compose.foundation.layout.Spacer(modifier = Modifier.width(8.dp))
-
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .clickable { 
-                                                playActionAsAuditoryCue = !playActionAsAuditoryCue
-                                                handleAutoSave()
-                                            }
-                                            .padding(vertical = 4.dp)
-                                    ) {
-                                        androidx.compose.material3.Switch(
-                                            checked = playActionAsAuditoryCue,
-                                            onCheckedChange = { 
-                                                playActionAsAuditoryCue = it
-                                                handleAutoSave()
-                                            }
-                                        )
-                                        Text(
-                                            text = stringResource(R.string.button_play_as_cue_short),
-                                            style = MaterialTheme.typography.bodyMedium
-                                        )
-                                    }
-                                }
-                            }
-
-                            featureGuard?.let { guard ->
-                                val currentAction = buttonConfig.buttonAction
-                                val isActionEnabled = guard.isActionEnabled(currentAction)
-                                if (!isActionEnabled) {
-                                    val featureName = when (currentAction) {
-                                        is GeminiButtonAction, is GeminiSearchButtonAction -> "Gemini Cloud"
-                                        is GeminiNanoButtonAction -> "Gemini Nano"
-                                        is SmartHomeButtonAction -> "Smart Home"
-                                        is SmartPredictionButtonAction, is FrequentActionButtonAction -> "Smart Prediction"
-                                        is WeatherButtonAction -> "Wetter"
-                                        is ControlDeviceButtonAction -> {
-                                            if (currentAction.actionType == DeviceActionType.READ_NOTIFICATIONS) "Benachrichtigungen" else ""
-                                        }
-                                        else -> ""
-                                    }
-                                    if (featureName.isNotEmpty()) {
-                                        Text(
-                                            text = stringResource(R.string.feature_disabled_warning, featureName),
-                                            color = MaterialTheme.colorScheme.error,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            modifier = Modifier.padding(horizontal = 8.dp)
-                                        )
-                                    }
-                                }
-                            }
-
-
-                            ActionConfigFields(
+                            val settingsUiState = ButtonSettingsUiState(
+                                label = label,
+                                spokenText = spokenText,
+                                spokenTextMode = spokenTextMode,
+                                audioFileName = audioFileNameState,
+                                auditoryCueText = auditoryCueText,
+                                isActive = isActive,
+                                playActionAsAuditoryCue = playActionAsAuditoryCue,
                                 selectedActionType = selectedActionType,
-                                pages = pages,
-                                templates = templates,
                                 targetPageId = targetPageId,
-                                onTargetPageIdChange = { targetPageId = it },
                                 geminiPrompt = geminiPrompt,
-                                onGeminiPromptChange = { geminiPrompt = it },
-                                 rank = rank,
-                                 onRankChange = { newRank ->
-                                    val currentConfigWithOldRank = buttonConfig.copy(
-                                        label = label,
-                                        spokenText = if (spokenText.isNotBlank()) spokenText else null,
-                                        spokenTextMode = spokenTextMode,
-                                        audioFileName = audioFileNameState,
-                                        auditoryCue = if (auditoryCueText.isNotBlank()) AuditoryCue.TextToSpeechCue(auditoryCueText) else null,
-                                        isActive = isActive,
-                                        playActionAsAuditoryCue = playActionAsAuditoryCue,
-                                        buttonAction = buildCurrentAction()
-                                    )
-                                    val oldSuggest = getLocalLabelSuggestion(currentConfigWithOldRank, pages, context)
-                                    
-                                    rank = newRank
-                                    
-                                    val currentConfigWithNewRank = buttonConfig.copy(
-                                        label = label,
-                                        spokenText = if (spokenText.isNotBlank()) spokenText else null,
-                                        spokenTextMode = spokenTextMode,
-                                        audioFileName = audioFileNameState,
-                                        auditoryCue = if (auditoryCueText.isNotBlank()) AuditoryCue.TextToSpeechCue(auditoryCueText) else null,
-                                        isActive = isActive,
-                                        playActionAsAuditoryCue = playActionAsAuditoryCue,
-                                        buttonAction = buildCurrentAction()
-                                    )
-                                    val newSuggest = getLocalLabelSuggestion(currentConfigWithNewRank, pages, context)
-                                    
-                                    if (label == oldSuggest || label.isBlank()) {
-                                        label = newSuggest
-                                    }
-                                    handleAutoSave()
-                                },
+                                geminiVisionUseCloud = geminiVisionUseCloud,
+                                geminiVisionPlayShutterSound = geminiVisionPlayShutterSound,
+                                rank = rank,
                                 predictionType = predictionType,
-                                onPredictionTypeChange = { 
-                                    predictionType = it
-                                    handleAutoSave()
-                                },
-                                availableGeminiTools = availableGeminiTools,
                                 deviceActionType = deviceActionType,
-                                onDeviceActionTypeChange = { deviceActionType = it },
                                 volumeValue = volumeValue,
-                                onVolumeValueChange = { volumeValue = it },
                                 contactName = contactName,
-                                onContactNameChange = { contactName = it },
                                 contactPhone = contactPhone,
-                                onContactPhoneChange = { contactPhone = it },
-                                onContactSelected = { name, phone ->
-                                    contactName = name
-                                    contactPhone = phone
-                                    val updatedAction = ControlDeviceButtonAction(
-                                        actionType = deviceActionType,
-                                        volumeValue = volumeValue,
-                                        contactName = name,
-                                        contactPhone = phone,
-                                        messageText = messageText,
-                                        includeWeekday = includeWeekday,
-                                        prefixText = prefixText.takeIf { it.isNotBlank() },
-                                        suffixText = suffixText.takeIf { it.isNotBlank() },
-                                        offsetValue = offsetValue.toIntOrNull() ?: 0,
-                                        ignoreEmojis = ignoreEmojis
-                                    )
-                                    saveWithAction(updatedAction)
-                                },
                                 messageText = messageText,
-                                onMessageTextChange = { messageText = it },
                                 includeWeekday = includeWeekday,
-                                onIncludeWeekdayChange = { includeWeekday = it },
                                 prefixText = prefixText,
-                                onPrefixTextChange = { prefixText = it },
                                 suffixText = suffixText,
-                                onSuffixTextChange = { suffixText = it },
                                 offsetValue = offsetValue,
-                                onOffsetValueChange = { offsetValue = it },
                                 ignoreEmojis = ignoreEmojis,
-                                onIgnoreEmojisChange = {
-                                    ignoreEmojis = it
-                                    handleAutoSave()
-                                },
                                 smartHomeProvider = smartHomeProvider,
-                                onSmartHomeProviderChange = { smartHomeProvider = it },
                                 smartHomeDeviceId = smartHomeDeviceId,
-                                onSmartHomeDeviceIdChange = { smartHomeDeviceId = it },
                                 smartHomeDeviceName = smartHomeDeviceName,
-                                onSmartHomeDeviceNameChange = { smartHomeDeviceName = it },
                                 smartHomeIntent = smartHomeIntent,
-                                onSmartHomeIntentChange = { smartHomeIntent = it },
                                 smartHomeValue = smartHomeValue,
-                                onSmartHomeValueChange = { smartHomeValue = it },
-                                availableHomeDevices = availableHomeDevices,
-                                isFetchingDevices = isFetchingDevices,
-                                onFetchDevices = {
-                                    if (smartHomeProvider == SmartHomeProvider.PHILIPS_HUE) {
-                                        if (onRefreshHueCache != null) {
-                                            isFetchingDevices = true
-                                            onRefreshHueCache(false) { success ->
-                                                isFetchingDevices = false
-                                            }
-                                        } else if (philipsHueManager != null) {
-                                            scope.launch {
-                                                isFetchingDevices = true
-                                                val list = philipsHueManager.getLocalLights(hueBridgeIp, hueUsername)
-                                                if (list.isNotEmpty()) {
-                                                    availableHomeDevices = list
-                                                }
-                                                isFetchingDevices = false
-                                            }
-                                        }
-                                    }
-                                },
-                                onNavigateToPage = onNavigateToPage,
-                                onCreatePage = onCreatePage,
-                                onDismissDialog = onDismiss,
-                                useCloud = geminiVisionUseCloud,
-                                onUseCloudChange = { 
-                                    geminiVisionUseCloud = it
-                                    handleAutoSave()
-                                },
-                                isCloudEnabled = featureGuard?.isActionEnabled(GeminiButtonAction()) ?: true,
-                                playShutterSound = geminiVisionPlayShutterSound,
-                                onPlayShutterSoundChange = { 
-                                    geminiVisionPlayShutterSound = it
-                                    handleAutoSave()
-                                },
                                 mediaProvider = mediaProvider,
-                                onMediaProviderChange = {
-                                    mediaProvider = it
-                                    handleAutoSave()
-                                },
                                 mediaContentUri = mediaContentUri,
-                                onMediaContentUriChange = {
-                                    mediaContentUri = it
-                                    handleAutoSave()
-                                },
                                 mediaContentName = mediaContentName,
-                                onMediaContentNameChange = {
-                                    mediaContentName = it
-                                    handleAutoSave()
-                                },
                                 mediaReturnToAppDelaySec = mediaReturnToAppDelaySec,
-                                onMediaReturnToAppDelaySecChange = {
-                                    mediaReturnToAppDelaySec = it
-                                    handleAutoSave()
-                                },
                                 mediaForcePlayViaMediaSession = mediaForcePlayViaMediaSession,
-                                onMediaForcePlayViaMediaSessionChange = {
-                                    mediaForcePlayViaMediaSession = it
-                                    handleAutoSave()
-                                },
-                                spotifyPlaylists = spotifyPlaylists,
+                                isRecording = isRecording,
+                                isPlayingAudio = isPlayingAudio,
+                                showDeleteConfirmation = showDeleteConfirmation,
+                                isFetchingDevices = isFetchingDevices,
                                 isLoadingSpotifyPlaylists = isLoadingSpotifyPlaylists,
-                                spotifyUserDisplayName = spotifyUserDisplayName,
+                                spotifyUserDisplayName = spotifyUserDisplayName
+                            )
+
+                            val settingsActions = ButtonSettingsActions(
+                                onLabelChange = { label = it },
+                                onSpokenTextChange = { spokenText = it },
+                                onSpokenTextModeChange = { spokenTextMode = it },
+                                onAudioFileNameChange = { audioFileNameState = it },
+                                onAuditoryCueTextChange = { auditoryCueText = it },
+                                onIsActiveChange = { isActive = it },
+                                onPlayActionAsAuditoryCueChange = { playActionAsAuditoryCue = it },
+                                onSelectedActionTypeChange = { selectedActionType = it },
+                                onTargetPageIdChange = { targetPageId = it },
+                                onGeminiPromptChange = { geminiPrompt = it },
+                                onGeminiVisionUseCloudChange = { geminiVisionUseCloud = it },
+                                onGeminiVisionPlayShutterSoundChange = { geminiVisionPlayShutterSound = it },
+                                onRankChange = { rank = it },
+                                onPredictionTypeChange = { predictionType = it },
+                                onDeviceActionTypeChange = { deviceActionType = it },
+                                onVolumeValueChange = { volumeValue = it },
+                                onContactNameChange = { contactName = it },
+                                onContactPhoneChange = { contactPhone = it },
+                                onMessageTextChange = { messageText = it },
+                                onIncludeWeekdayChange = { includeWeekday = it },
+                                onPrefixTextChange = { prefixText = it },
+                                onSuffixTextChange = { suffixText = it },
+                                onOffsetValueChange = { offsetValue = it },
+                                onIgnoreEmojisChange = { ignoreEmojis = it },
+                                onSmartHomeProviderChange = { smartHomeProvider = it },
+                                onSmartHomeDeviceIdChange = { smartHomeDeviceId = it },
+                                onSmartHomeDeviceNameChange = { smartHomeDeviceName = it },
+                                onSmartHomeIntentChange = { smartHomeIntent = it },
+                                onSmartHomeValueChange = { smartHomeValue = it },
+                                onMediaProviderChange = { mediaProvider = it },
+                                onMediaContentUriChange = { mediaContentUri = it },
+                                onMediaContentNameChange = { mediaContentName = it },
+                                onMediaReturnToAppDelaySecChange = { mediaReturnToAppDelaySec = it },
+                                onMediaForcePlayViaMediaSessionChange = { mediaForcePlayViaMediaSession = it },
+                                onIsRecordingChange = { isRecording = it },
+                                onIsPlayingAudioChange = { isPlayingAudio = it },
+                                onShowDeleteConfirmationChange = { showDeleteConfirmation = it },
+                                onIsFetchingDevicesChange = { isFetchingDevices = it },
                                 onConnectSpotify = onConnectSpotify,
                                 onDisconnectSpotify = onDisconnectSpotify,
                                 onLoadSpotifyPlaylists = onLoadSpotifyPlaylists,
-                                onAutoSave = handleAutoSave
+                                onStartVoiceRecording = { startVoiceRecording() },
+                                onStopVoiceRecording = { stopVoiceRecording() },
+                                onPlayRecording = { file -> playRecording(file) },
+                                buildCurrentAction = buildCurrentAction,
+                                handleAutoSave = handleAutoSave,
+                                saveWithAction = saveWithAction
+                            )
+
+                            com.andreas_kratzer.ghosttalk.ui.pages.components.ButtonSettingsTabContent(
+                                context = context,
+                                uiState = settingsUiState,
+                                actions = settingsActions,
+                                buttonConfig = buttonConfig,
+                                pages = pages,
+                                templates = templates,
+                                defaultStartPageId = defaultStartPageId,
+                                featureGuard = featureGuard,
+                                availableGeminiTools = availableGeminiTools,
+                                spotifyPlaylists = spotifyPlaylists,
+                                availableHomeDevices = availableHomeDevices,
+                                permissionLauncher = permissionLauncher,
+                                micPermissionLauncher = micPermissionLauncher,
+                                onNavigateToPage = onNavigateToPage,
+                                onCreatePage = onCreatePage,
+                                onDismiss = onDismiss,
+                                onPlayTts = onPlayTts,
+                                onStopTts = onStopTts,
+                                isTtsElevenLabs = isTtsElevenLabs,
+                                isTextCached = isTextCached,
+                                onPrefetchText = onPrefetchText,
+                                onSuggestLabel = onSuggestLabel,
+                                onRefreshHueCache = onRefreshHueCache,
+                                onAvailableHomeDevicesChange = { availableHomeDevices = it }
                             )
                         }
                         1 -> {
