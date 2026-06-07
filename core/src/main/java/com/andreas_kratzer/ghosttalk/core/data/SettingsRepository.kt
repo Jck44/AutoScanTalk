@@ -76,4 +76,7 @@ interface SettingsRepository : SecuritySettings, KeyEventSettings, AudioSettings
     fun getActionLogLimitForBook(bookId: String): Int
     fun getLogIgnoredActionsForBook(bookId: String): Boolean
     fun getLogStopActionsForBook(bookId: String): Boolean
+
+    fun updateConfigLastModified(bookId: String)
+    fun getConfigLastModified(bookId: String): Long
 }

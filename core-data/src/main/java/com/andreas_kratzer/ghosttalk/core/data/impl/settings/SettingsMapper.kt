@@ -48,6 +48,7 @@ class SettingsMapper @Inject constructor(
             syncModeBook = settingsRepository.syncModeBook,
             syncModeTts = settingsRepository.syncModeTts,
             syncModeStats = settingsRepository.syncModeStats,
+            syncModeSettings = settingsRepository.syncModeSettings,
             ttsLanguage = settingsRepository.ttsLanguage,
             ttsVoiceName = settingsRepository.ttsVoiceName,
             pageSortOrder = settingsRepository.getPageSortOrderForBook(bookId),
@@ -129,6 +130,7 @@ class SettingsMapper @Inject constructor(
         // data.syncModeBook?.let { settingsRepository.syncModeBook = it }
         // data.syncModeTts?.let { settingsRepository.syncModeTts = it }
         // data.syncModeStats?.let { settingsRepository.syncModeStats = it }
+        // data.syncModeSettings?.let { settingsRepository.syncModeSettings = it }
         data.ttsLanguage?.let { settingsRepository.ttsLanguage = it }
         data.ttsVoiceName?.let { settingsRepository.ttsVoiceName = it }
         data.smartPredictionDelay?.let { settingsRepository.smartPredictionDelay = it }
@@ -180,5 +182,39 @@ class SettingsMapper @Inject constructor(
         data.autoEnableSpeakerphone?.let { settingsRepository.autoEnableSpeakerphone = it }
         data.simulateCallsEnabled?.let { settingsRepository.simulateCallsEnabled = it }
         data.hueCachedDevices?.let { settingsRepository.hueCachedDevices = it }
+    }
+
+    /**
+     * Exports only settings that are allowed to be synchronized.
+     */
+    fun exportConfigSettings(bookId: String): ImportExportData {
+        val fullData = exportSettings(bookId, ImportExportData())
+        return fullData.copy(
+            elevenLabsApiKey = null,
+            securityPinHash = null,
+            securityPinSalt = null,
+            isCloudSyncEnabled = null,
+            syncIntervalMinutes = null,
+            syncMode = null,
+            syncModeBook = null,
+            syncModeTts = null,
+            syncModeStats = null,
+            syncModeSettings = null
+        )
+    }
+
+    companion object {
+        val NON_SYNCABLE_SETTINGS = setOf(
+            "elevenLabsApiKey",
+            "securityPinHash",
+            "securityPinSalt",
+            "isCloudSyncEnabled",
+            "syncIntervalMinutes",
+            "syncMode",
+            "syncModeBook",
+            "syncModeTts",
+            "syncModeStats",
+            "syncModeSettings"
+        )
     }
 }

@@ -71,4 +71,8 @@ class DriveApiSyncStorageProvider(
     override suspend fun deleteFile(fileId: String): Boolean {
         return helper.deleteFile(fileId)
     }
+
+    override suspend fun updateProperties(fileId: String, properties: Map<String, String>): Boolean {
+        return helper.updateProperties(fileId, properties)
+    }
 }

@@ -100,6 +100,7 @@
     <string name="settings_cloud_sync_mode_book">Buch-Synchronisierung</string>
     <string name="settings_cloud_sync_mode_tts">TTS-Cache-Synchronisierung</string>
     <string name="settings_cloud_sync_mode_stats">Statistik-Übertragung</string>
+    <string name="settings_cloud_sync_mode_settings">Einstellungen-Synchronisierung</string>
     <string name="settings_cloud_sync_mode_two_way">2-Wege (Sichern &amp; Wiederherstellen)</string>
     <string name="settings_cloud_sync_mode_backup">Einseitig (Nur Sicherung)</string>
     <string name="settings_cloud_sync_mode_restore">Einseitig (Nur Wiederherstellung)</string>

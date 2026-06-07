@@ -218,4 +218,8 @@ class DocumentFolderSyncStorageProvider(
             }
         }
     }
+
+    override suspend fun updateProperties(fileId: String, properties: Map<String, String>): Boolean {
+        return false
+    }
 }

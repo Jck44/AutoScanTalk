@@ -30,6 +30,7 @@ object SettingsConstants {
     const val KEY_SYNC_MODE_BOOK = "sync_mode_book"
     const val KEY_SYNC_MODE_TTS = "sync_mode_tts"
     const val KEY_SYNC_MODE_STATS = "sync_mode_stats"
+    const val KEY_SYNC_MODE_SETTINGS = "sync_mode_settings"
     const val KEY_THEME_MODE = "theme_mode"
     const val KEY_INITIAL_TEMPLATES_CREATED = "initial_templates_created"
     const val KEY_PAGE_SORT_ORDER = "page_sort_order"

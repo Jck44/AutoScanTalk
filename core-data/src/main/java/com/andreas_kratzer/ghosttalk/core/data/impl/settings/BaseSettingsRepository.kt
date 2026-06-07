@@ -10,6 +10,8 @@ abstract class BaseSettingsRepository(
     protected val prefs: SharedPreferences,
     open val activeBookIdFlow: StateFlow<String?>
 ) {
+    var changeListener: ((String) -> Unit)? = null
+
     open val activeBookId: String get() = activeBookIdFlow.value ?: "book-default"
 
     protected fun getScopedKey(key: String): String = "${activeBookId}_$key"
@@ -133,6 +135,7 @@ abstract class BaseSettingsRepository(
             set(v) {
                 if (isScoped) putStringScoped(key, v) else prefs.edit { putString(key, v) }
                 _flow.value = v
+                changeListener?.invoke(key)
             }
 
         fun refresh() { if (isScoped) _flow.value = value }
@@ -154,6 +157,7 @@ abstract class BaseSettingsRepository(
             set(v) {
                 if (isScoped) putStringScoped(key, v) else prefs.edit { putString(key, v) }
                 _flow.value = v
+                changeListener?.invoke(key)
             }
 
         fun refresh() { if (isScoped) _flow.value = value }
@@ -175,6 +179,7 @@ abstract class BaseSettingsRepository(
             set(v) {
                 if (isScoped) putBooleanScoped(key, v) else prefs.edit { putBoolean(key, v) }
                 _flow.value = v
+                changeListener?.invoke(key)
             }
 
         fun refresh() { if (isScoped) _flow.value = value }
@@ -196,6 +201,7 @@ abstract class BaseSettingsRepository(
             set(v) {
                 if (isScoped) putIntScoped(key, v) else prefs.edit { putInt(key, v) }
                 _flow.value = v
+                changeListener?.invoke(key)
             }
 
         fun refresh() { if (isScoped) _flow.value = value }
@@ -217,6 +223,7 @@ abstract class BaseSettingsRepository(
             set(v) {
                 if (isScoped) putLongScoped(key, v) else prefs.edit { putLong(key, v) }
                 _flow.value = v
+                changeListener?.invoke(key)
             }
 
         fun refresh() { if (isScoped) _flow.value = value }
@@ -245,6 +252,7 @@ abstract class BaseSettingsRepository(
                     )
                 }
                 _flow.value = coerced
+                changeListener?.invoke(key)
             }
 
         fun refresh() { if (isScoped) _flow.value = value }
@@ -266,6 +274,7 @@ abstract class BaseSettingsRepository(
             set(v) {
                 if (isScoped) putStringSetScoped(key, v) else prefs.edit { putStringSet(key, v) }
                 _flow.value = v
+                changeListener?.invoke(key)
             }
 
         fun refresh() { if (isScoped) _flow.value = value }

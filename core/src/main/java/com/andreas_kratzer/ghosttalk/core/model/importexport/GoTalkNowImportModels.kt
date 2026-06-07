@@ -26,6 +26,7 @@ data class ImportExportData(
     val syncModeBook: String? = null,
     val syncModeTts: String? = null,
     val syncModeStats: String? = null,
+    val syncModeSettings: String? = null,
     val ttsLanguage: String? = null,
     val ttsVoiceName: String? = null,
     val pageSortOrder: String? = null,
@@ -248,3 +249,12 @@ data class ExportedButtonStat(
     val usageCount: Long,
     val lastUsedAt: Long
 )
+
+@Serializable
+data class BookConfigWrapper(
+    val version: Int = 1,
+    val bookId: String,
+    val lastModified: Long,
+    val settings: ImportExportData
+)
+

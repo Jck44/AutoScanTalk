@@ -4,7 +4,10 @@ import com.andreas_kratzer.ghosttalk.core.model.Page
 
 interface PageImportExportProvider {
     suspend fun exportPageListToJson(pages: List<Page>): String
-    suspend fun exportBookToJson(bookId: String): String
+    suspend fun exportBookToJson(bookId: String, includeSettings: Boolean = true): String
+    fun exportBookConfigToJson(bookId: String): String
+    fun importBookConfigFromJson(json: String, bookId: String): Result<Unit>
+    fun getBookConfigLastModified(bookId: String): Long
     suspend fun importFromJson(
         jsonString: String,
         bookId: String,

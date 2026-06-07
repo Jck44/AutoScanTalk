@@ -27,6 +27,7 @@ class CloudSettingsRepository(
     private val _syncModeBook = NonNullStringSetting(SettingsConstants.KEY_SYNC_MODE_BOOK, "TWO_WAY")
     private val _syncModeTts = NonNullStringSetting(SettingsConstants.KEY_SYNC_MODE_TTS, "TWO_WAY")
     private val _syncModeStats = NonNullStringSetting(SettingsConstants.KEY_SYNC_MODE_STATS, "RESTORE_ONLY")
+    private val _syncModeSettings = NonNullStringSetting(SettingsConstants.KEY_SYNC_MODE_SETTINGS, "TWO_WAY")
     private val _lastSuccessfulSyncTime = LongSetting(KEY_LAST_SYNC_TIME, 0L)
     private val _elevenLabsApiKey = StringSetting(SettingsConstants.KEY_ELEVENLABS_API_KEY)
     private val _elevenLabsModel = NonNullStringSetting(SettingsConstants.KEY_ELEVENLABS_MODEL, "eleven_multilingual_v2")
@@ -75,6 +76,7 @@ class CloudSettingsRepository(
     override val syncModeBookFlow = _syncModeBook.flow
     override val syncModeTtsFlow = _syncModeTts.flow
     override val syncModeStatsFlow = _syncModeStats.flow
+    override val syncModeSettingsFlow = _syncModeSettings.flow
     override val lastSuccessfulSyncTimeFlow = _lastSuccessfulSyncTime.flow
     override val elevenLabsApiKeyFlow = _elevenLabsApiKey.flow
     override val elevenLabsModelFlow = _elevenLabsModel.flow
@@ -100,6 +102,7 @@ class CloudSettingsRepository(
     override var syncModeBook: String by _syncModeBook
     override var syncModeTts: String by _syncModeTts
     override var syncModeStats: String by _syncModeStats
+    override var syncModeSettings: String by _syncModeSettings
     override var lastSuccessfulSyncTime: Long by _lastSuccessfulSyncTime
     override var elevenLabsApiKey: String? by _elevenLabsApiKey
     override var elevenLabsModel: String by _elevenLabsModel

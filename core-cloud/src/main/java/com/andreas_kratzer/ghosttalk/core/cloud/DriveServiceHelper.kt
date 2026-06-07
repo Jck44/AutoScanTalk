@@ -166,6 +166,33 @@ class DriveServiceHelper(private val driveService: Drive) {
     }
 
     /**
+     * Updates ONLY properties of a file without uploading content.
+     */
+    suspend fun updateProperties(
+        fileId: String,
+        properties: Map<String, String>
+    ): Boolean = withContext(Dispatchers.IO) {
+        val metadata = File().apply {
+            this.properties = properties
+        }
+        try {
+            Log.d(TAG, "Updating properties for file: $fileId")
+            driveService.files().update(fileId, metadata).execute()
+            Log.d(TAG, "Properties updated successfully for file: $fileId")
+            true
+        } catch (e: com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException) {
+            throw e
+        } catch (e: GoogleJsonResponseException) {
+            Log.e(TAG, "Failed to update properties. Status: ${e.statusCode}, Message: ${e.details.message}", e)
+            false
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to update properties due to unexpected exception: ${e.message}", e)
+            false
+        }
+    }
+
+
+    /**
      * Downloads a file from Drive.
      */
     suspend fun downloadFile(

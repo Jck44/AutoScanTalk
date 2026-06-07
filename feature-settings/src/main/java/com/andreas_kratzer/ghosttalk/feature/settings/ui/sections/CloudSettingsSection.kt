@@ -60,6 +60,7 @@ fun CloudSettingsSection(
     val syncModeBook by viewModel.syncModeBook.collectAsState()
     val syncModeTts by viewModel.syncModeTts.collectAsState()
     val syncModeStats by viewModel.syncModeStats.collectAsState()
+    val syncModeSettings by viewModel.syncModeSettings.collectAsState()
     val syncIntervalMinutes by viewModel.syncIntervalMinutes.collectAsState()
     val isCloudSyncEnabled by viewModel.isCloudSyncEnabled.collectAsState()
     val lastSyncTime by viewModel.lastSuccessfulSyncTime.collectAsState()
@@ -400,6 +401,28 @@ fun CloudSettingsSection(
                         "OFF" to R.string.settings_cloud_sync_mode_off
                     ).map { (mode, resId) ->
                         stringResource(resId) to { viewModel.setSyncModeStats(mode) }
+                    }
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                val syncModeSettingsLabel = when (syncModeSettings) {
+                    "OFF" -> stringResource(R.string.settings_cloud_sync_mode_off)
+                    "BACKUP_ONLY" -> stringResource(R.string.settings_cloud_sync_mode_backup)
+                    "RESTORE_ONLY" -> stringResource(R.string.settings_cloud_sync_mode_restore)
+                    else -> stringResource(R.string.settings_cloud_sync_mode_two_way)
+                }
+
+                SettingsDropdownItem(
+                    label = stringResource(R.string.settings_cloud_sync_mode_settings),
+                    selectedOption = syncModeSettingsLabel,
+                    options = listOf(
+                        "TWO_WAY" to R.string.settings_cloud_sync_mode_two_way,
+                        "BACKUP_ONLY" to R.string.settings_cloud_sync_mode_backup,
+                        "RESTORE_ONLY" to R.string.settings_cloud_sync_mode_restore,
+                        "OFF" to R.string.settings_cloud_sync_mode_off
+                    ).map { (mode, resId) ->
+                        stringResource(resId) to { viewModel.setSyncModeSettings(mode) }
                     }
                 )
 

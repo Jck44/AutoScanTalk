@@ -106,7 +106,7 @@ class PageImportExportManager @Inject constructor(
         json.encodeToString(exportData)
     }
 
-    override suspend fun exportBookToJson(bookId: String): String = withContext(Dispatchers.IO) {
+    override suspend fun exportBookToJson(bookId: String, includeSettings: Boolean): String = withContext(Dispatchers.IO) {
         val book = bookRepository.getBookById(bookId) ?: throw Exception("Book not found")
         val pages = pageRepository.getPagesForBook(bookId)
         
@@ -189,7 +189,11 @@ class PageImportExportManager @Inject constructor(
             deletedEntities = tombstones.sortedBy { it.entityId }
         )
 
-        val exportData = settingsMapper.exportSettings(bookId, baseExportData)
+        val exportData = if (includeSettings) {
+            settingsMapper.exportSettings(bookId, baseExportData)
+        } else {
+            baseExportData
+        }
 
         logger.d(TAG, "Exported book $bookId: defaultStartPageId='${exportData.defaultStartPageId}', scanDelay='${exportData.scanDelayMillis}'")
         json.encodeToString(exportData)
@@ -1062,6 +1066,35 @@ class PageImportExportManager @Inject constructor(
                 ?: 0L
         }
         return 0L
+    }
+
+    override fun exportBookConfigToJson(bookId: String): String {
+        val configSettings = settingsMapper.exportConfigSettings(bookId)
+        val wrapper = com.andreas_kratzer.ghosttalk.core.model.importexport.BookConfigWrapper(
+            version = 1,
+            bookId = bookId,
+            lastModified = getBookConfigLastModified(bookId),
+            settings = configSettings
+        )
+        return json.encodeToString(com.andreas_kratzer.ghosttalk.core.model.importexport.BookConfigWrapper.serializer(), wrapper)
+    }
+
+    override fun importBookConfigFromJson(jsonString: String, bookId: String): Result<Unit> {
+        return try {
+            val wrapper = json.decodeFromString<com.andreas_kratzer.ghosttalk.core.model.importexport.BookConfigWrapper>(jsonString)
+            settingsMapper.importSettings(wrapper.settings)
+            settingsRepository.updateConfigLastModified(bookId)
+            val prefs = context.getSharedPreferences("ghosttalk_settings", Context.MODE_PRIVATE)
+            prefs.edit().putLong("config_last_synced_remote_time_$bookId", wrapper.lastModified).apply()
+            prefs.edit().putLong("config_last_synced_local_time_$bookId", settingsRepository.getConfigLastModified(bookId)).apply()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override fun getBookConfigLastModified(bookId: String): Long {
+        return settingsRepository.getConfigLastModified(bookId)
     }
 
     private fun isSafeFile(parentDir: File, file: File): Boolean {

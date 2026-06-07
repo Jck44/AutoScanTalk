@@ -141,6 +141,7 @@ class SettingsViewModel @Inject constructor(
     val syncModeBook = settingsRepository.syncModeBookFlow
     val syncModeTts = settingsRepository.syncModeTtsFlow
     val syncModeStats = settingsRepository.syncModeStatsFlow
+    val syncModeSettings = settingsRepository.syncModeSettingsFlow
     val lastSuccessfulSyncTime = settingsRepository.lastSuccessfulSyncTimeFlow
     val syncIntervalMinutes = settingsRepository.syncIntervalMinutesFlow
     val googleDriveFolderId = settingsRepository.googleDriveFolderIdFlow
@@ -438,6 +439,7 @@ class SettingsViewModel @Inject constructor(
     fun setSyncModeBook(m: String) { settingsRepository.syncModeBook = m }
     fun setSyncModeTts(m: String) { settingsRepository.syncModeTts = m }
     fun setSyncModeStats(m: String) { settingsRepository.syncModeStats = m }
+    fun setSyncModeSettings(m: String) { settingsRepository.syncModeSettings = m }
     fun setGoogleAuthType(type: CloudAuthType) {
         settingsRepository.googleAuthType = type
     }

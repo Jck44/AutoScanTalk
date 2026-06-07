@@ -12,7 +12,6 @@ import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.data.SyncLogProvider
 import com.andreas_kratzer.ghosttalk.core.data.impl.PageImportExportManager
 import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportExportData
-import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportPage
 import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.google.api.services.drive.Drive
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -47,6 +46,12 @@ class CloudSyncUseCase @Inject constructor(
     private val FOLDER_NAME = "GhosTTalk_Sync"
     private val TTS_CACHE_FILE_NAME = "tts_cache.zip"
     private val syncMutex = kotlinx.coroutines.sync.Mutex()
+
+    private val bookMergeEngine = BookMergeEngine(logger)
+    private val audioSyncHelper = AudioSyncHelper(context, importExportManager, logger)
+    private val ttsSyncHelper = TtsSyncHelper(context, importExportManager, syncLogProvider, logger)
+    private val statisticsSyncHelper = StatisticsSyncHelper(context, importExportManager, syncLogProvider, logger)
+    private val configSyncHelper = ConfigSyncHelper(context, importExportManager, syncLogProvider, logger)
 
     private suspend fun getStorageProvider(drive: Drive?, folderId: String? = null): SyncStorageProvider {
         if (drive == null && folderId?.startsWith("content://") == true) {
@@ -141,8 +146,20 @@ class CloudSyncUseCase @Inject constructor(
                         }
                         syncLogProvider.addLogEntry("Inhalte sind identisch (NO_OP)", bookId, book.name)
                         
+                        val configModeStr = settingsRepository.syncModeSettings
+                        if (configModeStr != "OFF") {
+                            val configMode = if (syncMode == SyncMode.TWO_WAY) {
+                                try { SyncMode.valueOf(configModeStr) } catch (_: Exception) { SyncMode.TWO_WAY }
+                            } else syncMode
+                            try {
+                                configSyncHelper.syncBookConfig(storageProvider, configMode, bookId, book.name)
+                            } catch (e: Exception) {
+                                logger.e(TAG, "Config sync failed (non-fatal)", e)
+                            }
+                        }
+
                         try {
-                            syncAudioRecordings(storageProvider, resolvedBookMode ?: SyncMode.TWO_WAY, bookId)
+                            audioSyncHelper.syncAudioRecordings(storageProvider, resolvedBookMode ?: SyncMode.TWO_WAY, bookId)
                         } catch (e: Exception) {
                             logger.e(TAG, "Audio recordings sync failed (non-fatal)", e)
                         }
@@ -153,7 +170,7 @@ class CloudSyncUseCase @Inject constructor(
                                 try { SyncMode.valueOf(ttsModeStr) } catch (_: Exception) { SyncMode.TWO_WAY }
                             } else syncMode
                             try {
-                                syncTtsCache(storageProvider, ttsMode)
+                                ttsSyncHelper.syncTtsCache(storageProvider, ttsMode)
                             } catch (e: Exception) {
                                 logger.e(TAG, "TTS cache sync failed (non-fatal)", e)
                             }
@@ -165,7 +182,7 @@ class CloudSyncUseCase @Inject constructor(
                                 try { SyncMode.valueOf(statsModeStr) } catch (_: Exception) { SyncMode.BACKUP_ONLY }
                             } else syncMode
                             try {
-                                syncStatistics(storageProvider, statsMode, bookId, book.name)
+                                statisticsSyncHelper.syncStatistics(storageProvider, statsMode, bookId, book.name)
                             } catch (e: Exception) {
                                 logger.e(TAG, "Statistics sync failed (non-fatal)", e)
                             }
@@ -450,12 +467,12 @@ class CloudSyncUseCase @Inject constructor(
                                 // Perform sequential merge on detail level
                                 var merged = localData
                                 for (remoteItem in remoteDataList) {
-                                    merged = mergeBooks(merged, remoteItem)
+                                    merged = bookMergeEngine.mergeBooks(merged, remoteItem)
                                 }
 
                                 // Determine new sequence sequence
                                 val maxRemoteSeq = remoteDataList.mapNotNull { it.versionSequence }.maxOrNull() ?: 0L
-                                val mergedStructMd5 = calculateStructuralMd5FromJson(jsonParser.encodeToString(merged))
+                                val mergedStructMd5 = bookMergeEngine.calculateStructuralMd5FromJson(jsonParser.encodeToString(merged))
                                 val remoteMasterStructMd5 = remoteMasterFile?.properties?.get("structure_md5")
                                 val isTrivialMerge = remoteMasterFile != null && remoteMasterStructMd5 != null && mergedStructMd5 == remoteMasterStructMd5
 
@@ -504,7 +521,7 @@ class CloudSyncUseCase @Inject constructor(
 
                                         Log.d(TAG, "[COMMIT-SEQ] Phase 1: Bereite Pure-JSON-Upload vor. Erwartete Version: $expectedVersion")
                                         
-                                        val mergedStructMd5Upload = calculateStructuralMd5FromJson(mergedJson)
+                                        val mergedStructMd5Upload = bookMergeEngine.calculateStructuralMd5FromJson(mergedJson)
 
                                         // 5. Versuche den Upload mit Optimistic Locking
                                         val uploadSuccess = if (driveHelper != null && effectiveMasterFile != null) {
@@ -558,7 +575,7 @@ class CloudSyncUseCase @Inject constructor(
                                             Log.d(TAG, "[COMMIT-SEQ] Phase 2: Cloud-Upload wurde vom Server BESTÄTIGT. Starte jetzt den lokalen Datenbank-Commit via importFromJson...")
                                             
                                             try {
-                                                syncAudioRecordings(storageProvider, resolvedBookMode ?: SyncMode.TWO_WAY, bookId)
+                                                audioSyncHelper.syncAudioRecordings(storageProvider, resolvedBookMode ?: SyncMode.TWO_WAY, bookId)
                                                 audioSynced = true
                                             } catch (e: Exception) {
                                                 logger.e(TAG, "Audio recordings sync failed during merge conflict (non-fatal)", e)
@@ -621,10 +638,23 @@ class CloudSyncUseCase @Inject constructor(
                     }
                 }
 
+                // Sync settings/config config files before other resources
+                val configModeStr = settingsRepository.syncModeSettings
+                if (success && configModeStr != "OFF") {
+                    val configMode = if (syncMode == SyncMode.TWO_WAY) {
+                        try { SyncMode.valueOf(configModeStr) } catch (_: Exception) { SyncMode.TWO_WAY }
+                    } else syncMode
+                    try {
+                        configSyncHelper.syncBookConfig(storageProvider, configMode, bookId, book.name)
+                    } catch (e: Exception) {
+                        logger.e(TAG, "Config sync failed (non-fatal)", e)
+                    }
+                }
+
                 // Sync audio recordings after successful book sync
                 if (success && !audioSynced) {
                     try {
-                        syncAudioRecordings(storageProvider, resolvedBookMode ?: SyncMode.TWO_WAY, bookId)
+                        audioSyncHelper.syncAudioRecordings(storageProvider, resolvedBookMode ?: SyncMode.TWO_WAY, bookId)
                     } catch (e: Exception) {
                         logger.e(TAG, "Audio recordings sync failed (non-fatal)", e)
                     }
@@ -637,7 +667,7 @@ class CloudSyncUseCase @Inject constructor(
                         try { SyncMode.valueOf(ttsModeStr) } catch (_: Exception) { SyncMode.TWO_WAY }
                     } else syncMode
                     try {
-                        syncTtsCache(storageProvider, ttsMode)
+                        ttsSyncHelper.syncTtsCache(storageProvider, ttsMode)
                     } catch (e: Exception) {
                         logger.e(TAG, "TTS cache sync failed (non-fatal)", e)
                     }
@@ -649,7 +679,7 @@ class CloudSyncUseCase @Inject constructor(
                         try { SyncMode.valueOf(statsModeStr) } catch (_: Exception) { SyncMode.BACKUP_ONLY }
                     } else syncMode
                     try {
-                        syncStatistics(storageProvider, statsMode, bookId, book.name)
+                        statisticsSyncHelper.syncStatistics(storageProvider, statsMode, bookId, book.name)
                     } catch (e: Exception) {
                         logger.e(TAG, "Statistics sync failed (non-fatal)", e)
                     }
@@ -671,6 +701,21 @@ class CloudSyncUseCase @Inject constructor(
             if (remoteSyncError != null) {
                 try {
                     logger.d(TAG, "Running local fallback backup for book $bookId (already exported at start)...")
+
+                    val configModeStr = settingsRepository.syncModeSettings
+                    if (configModeStr != "OFF") {
+                        val configFileName = "config_$bookId.json"
+                        val configTemp = File(context.cacheDir, configFileName)
+                        try {
+                            val configJson = importExportManager.exportBookConfigToJson(bookId)
+                            configTemp.writeText(configJson)
+                            saveToLocalBackupFolder(configFileName, configTemp)
+                        } catch (ex: Exception) {
+                            logger.e(TAG, "Fallback config export failed", ex)
+                        } finally {
+                            if (configTemp.exists()) configTemp.delete()
+                        }
+                    }
 
                     val statsModeStr = settingsRepository.syncModeStats
                     if (statsModeStr != "OFF") {
@@ -818,7 +863,7 @@ class CloudSyncUseCase @Inject constructor(
                 downloadFile.delete()
                 if (!fileName.endsWith(".zip")) {
                     try {
-                        restoreAudioRecordingsIfAvailable(storageProvider, book.id)
+                        audioSyncHelper.restoreAudioRecordingsIfAvailable(storageProvider, book.id)
                     } catch (e: Exception) {
                         logger.e(TAG, "Failed to restore separate audio recordings (non-fatal)", e)
                     }
@@ -920,7 +965,7 @@ class CloudSyncUseCase @Inject constructor(
                             try { getStorageProvider(drive) } catch (_: Exception) { null }
                         }
                         if (storageProvider != null) {
-                            restoreTtsCacheIfAvailable(storageProvider)
+                            ttsSyncHelper.restoreTtsCacheIfAvailable(storageProvider)
                         }
                     } catch (e: Exception) {
                         logger.e(TAG, "TTS cache restore after cloud import failed (non-fatal)", e)
@@ -935,7 +980,7 @@ class CloudSyncUseCase @Inject constructor(
                                 try { getStorageProvider(drive) } catch (_: Exception) { null }
                             }
                             if (storageProvider != null) {
-                                restoreAudioRecordingsIfAvailable(storageProvider, bookId)
+                                audioSyncHelper.restoreAudioRecordingsIfAvailable(storageProvider, bookId)
                             }
                         } catch (e: Exception) {
                             logger.e(TAG, "Audio recordings restore after cloud import failed (non-fatal)", e)
@@ -952,10 +997,15 @@ class CloudSyncUseCase @Inject constructor(
                             }
                             if (storageProvider != null) {
                                 val bookName = fileName.substringBefore(".zip").substringBefore(".json")
-                                restoreStatisticsIfAvailable(storageProvider, bookId, bookName)
+                                try {
+                                    configSyncHelper.restoreBookConfigIfAvailable(storageProvider, bookId, bookName)
+                                } catch (e: Exception) {
+                                    logger.e(TAG, "Config restore after cloud import failed (non-fatal)", e)
+                                }
+                                statisticsSyncHelper.restoreStatisticsIfAvailable(storageProvider, bookId, bookName)
                             }
                         } catch (e: Exception) {
-                            logger.e(TAG, "Statistics restore after cloud import failed (non-fatal)", e)
+                            logger.e(TAG, "Statistics/Config restore after cloud import failed (non-fatal)", e)
                         }
                     }
                 } else {
@@ -1020,432 +1070,6 @@ class CloudSyncUseCase @Inject constructor(
         return uri.buildUpon().path(treePath).build().toString()
     }
 
-    private suspend fun syncAudioRecordings(
-        storageProvider: SyncStorageProvider,
-        syncMode: SyncMode,
-        bookId: String
-    ) = withContext(Dispatchers.IO) {
-        val audioFileName = "audio_$bookId.zip"
-        val remoteFile = try {
-            storageProvider.listFiles().find { it.name == audioFileName }
-        } catch (e: Exception) {
-            logger.e(TAG, "Failed to find audio recordings ZIP on Drive", e)
-            null
-        }
-
-        var localLastModified = importExportManager.getAudioRecordingsLastModified()
-        val remoteLastModified = remoteFile?.modifiedTime ?: 0L
-
-        val prefs = context.getSharedPreferences("ghosttalk_settings", Context.MODE_PRIVATE)
-        val lastSyncedLocalTime = prefs.getLong("audio_last_synced_local_time_$bookId", 0L)
-        val lastSyncedRemoteTime = prefs.getLong("audio_last_synced_remote_time_$bookId", 0L)
-
-        logger.d(TAG, "Audio recordings sync: local=$localLastModified, remote=$remoteLastModified, lastSyncedLocal=$lastSyncedLocalTime, lastSyncedRemote=$lastSyncedRemoteTime")
-
-        if (localLastModified == 0L && remoteFile == null) {
-            logger.d(TAG, "No audio recordings to sync.")
-            return@withContext
-        }
-
-        var hasLocalChanged = localLastModified > lastSyncedLocalTime + 2000 && localLastModified > 0L
-        var hasRemoteChanged = remoteFile != null && remoteLastModified > lastSyncedRemoteTime + 2000
-        val isLocalAudioEmpty = localLastModified == 0L
-
-        // Härtefall: Wenn im TWO_WAY-Modus BEIDE Seiten geändert wurden, führen wir vorab einen Audio-Merge durch
-        if (syncMode == SyncMode.TWO_WAY && hasLocalChanged && hasRemoteChanged && remoteFile != null) {
-            logger.d(TAG, "Zwei-Wege-Audio-Merge: Führe lokale Zusammenführung durch...")
-            val tempDownloadFile = File(context.cacheDir, "download_merge_$audioFileName")
-            try {
-                val downloadSuccess = storageProvider.downloadFile(remoteFile.id, tempDownloadFile) { _ -> }
-                if (downloadSuccess) {
-                    tempDownloadFile.inputStream().use { isStream ->
-                        importExportManager.importAudioRecordingsFromZip(isStream) { _, _ -> }
-                    }
-                    // Nach dem Import aktualisieren wir den lokalen Zeitstempel, da wir neue Dateien haben
-                    localLastModified = importExportManager.getAudioRecordingsLastModified()
-                    // Da wir die Remote-Änderungen integriert haben, gilt die Cloud für uns als verarbeitet
-                    hasRemoteChanged = false
-                    hasLocalChanged = true
-                }
-            } catch (e: Exception) {
-                logger.e(TAG, "Audio merge download/extract failed", e)
-            } finally {
-                if (tempDownloadFile.exists()) tempDownloadFile.delete()
-            }
-        }
-
-        val shouldUpload = when (syncMode) {
-            SyncMode.RESTORE_ONLY -> false
-            SyncMode.BACKUP_ONLY -> hasLocalChanged || remoteFile == null
-            SyncMode.TWO_WAY -> (hasLocalChanged && !hasRemoteChanged) || (localLastModified > 0L && remoteFile == null)
-        }
-
-        val shouldDownload = when (syncMode) {
-            SyncMode.BACKUP_ONLY -> false
-            SyncMode.RESTORE_ONLY -> hasRemoteChanged || (remoteFile != null && isLocalAudioEmpty)
-            SyncMode.TWO_WAY -> hasRemoteChanged || (remoteFile != null && isLocalAudioEmpty)
-        }
-
-        if (shouldUpload) {
-            logger.d(TAG, "Uploading audio recordings...")
-            val tempFile = File(context.cacheDir, audioFileName)
-            try {
-                tempFile.outputStream().use { os ->
-                    importExportManager.exportAudioRecordingsToZip(os) { _, _ -> }
-                }
-
-                val fileId = if (remoteFile != null) {
-                    val updateSuccess = storageProvider.updateFile(remoteFile.id, tempFile, "application/zip", null) { _ -> }
-                    if (updateSuccess) remoteFile.id else null
-                } else {
-                    storageProvider.uploadFile(tempFile, "application/zip", null) { _ -> }
-                }
-
-                if (fileId != null) {
-                    val newMetadata = storageProvider.getFileMetadata(fileId)
-                    val newRemoteTime = newMetadata?.modifiedTime ?: 0L
-                    prefs.edit()
-                        .putLong("audio_last_synced_local_time_$bookId", localLastModified)
-                        .putLong("audio_last_synced_remote_time_$bookId", newRemoteTime)
-                        .apply()
-                    logger.d(TAG, "Audio recordings upload success. synced local=$localLastModified remote=$newRemoteTime")
-                }
-            } catch (e: Exception) {
-                logger.e(TAG, "Failed to upload audio recordings", e)
-            } finally {
-                if (tempFile.exists()) tempFile.delete()
-            }
-        } else if (shouldDownload && remoteFile != null) {
-            logger.d(TAG, "Downloading audio recordings...")
-            val tempFile = File(context.cacheDir, "download_$audioFileName")
-            try {
-                val downloadSuccess = storageProvider.downloadFile(remoteFile.id, tempFile) { _ -> }
-                if (downloadSuccess) {
-                    tempFile.inputStream().use { isStream ->
-                        importExportManager.importAudioRecordingsFromZip(isStream) { _, _ -> }
-                    }
-                    prefs.edit()
-                        .putLong("audio_last_synced_local_time_$bookId", importExportManager.getAudioRecordingsLastModified())
-                        .putLong("audio_last_synced_remote_time_$bookId", remoteLastModified)
-                        .apply()
-                    logger.d(TAG, "Audio recordings download and extract success.")
-                }
-            } catch (e: Exception) {
-                logger.e(TAG, "Failed to download audio recordings", e)
-            } finally {
-                if (tempFile.exists()) tempFile.delete()
-            }
-        }
-    }
-
-    private suspend fun restoreAudioRecordingsIfAvailable(
-        storageProvider: SyncStorageProvider,
-        bookId: String
-    ) = withContext(Dispatchers.IO) {
-        val audioFileName = "audio_$bookId.zip"
-        val remoteFile = try {
-            storageProvider.listFiles().find { it.name == audioFileName }
-        } catch (e: Exception) {
-            logger.e(TAG, "Failed to find audio recordings for restore", e)
-            null
-        } ?: return@withContext
-
-        logger.d(TAG, "Found separate audio recordings on Drive, restoring...")
-        val tempFile = File(context.cacheDir, "download_$audioFileName")
-        try {
-            val success = storageProvider.downloadFile(remoteFile.id, tempFile) { _ -> }
-            if (success) {
-                tempFile.inputStream().use { isStream ->
-                    importExportManager.importAudioRecordingsFromZip(isStream) { _, _ -> }
-                }
-                val prefs = context.getSharedPreferences("ghosttalk_settings", Context.MODE_PRIVATE)
-                prefs.edit()
-                    .putLong("audio_last_synced_local_time_$bookId", importExportManager.getAudioRecordingsLastModified())
-                    .putLong("audio_last_synced_remote_time_$bookId", remoteFile.modifiedTime)
-                    .apply()
-            }
-        } catch (e: Exception) {
-            logger.e(TAG, "Failed to restore separate audio recordings", e)
-        } finally {
-            if (tempFile.exists()) tempFile.delete()
-        }
-    }
-
-    private suspend fun syncTtsCache(
-        storageProvider: SyncStorageProvider,
-        syncMode: SyncMode
-    ) = withContext(Dispatchers.IO) {
-        val remoteFile = try {
-            storageProvider.listFiles().find { it.name == TTS_CACHE_FILE_NAME }
-        } catch (e: Exception) {
-            logger.e(TAG, "Failed to find TTS cache on Drive", e)
-            null
-        }
-
-        val localLastModified = importExportManager.getTtsCacheLastModified()
-        val remoteLastModified = remoteFile?.modifiedTime ?: 0L
-
-        val prefs = context.getSharedPreferences("ghosttalk_settings", Context.MODE_PRIVATE)
-        val lastSyncedLocalTime = prefs.getLong("tts_cache_last_synced_local_time", 0L)
-        val lastSyncedRemoteTime = prefs.getLong("tts_cache_last_synced_remote_time", 0L)
-
-        logger.d(TAG, "TTS cache sync: local=$localLastModified, remote=$remoteLastModified, lastSyncedLocal=$lastSyncedLocalTime, lastSyncedRemote=$lastSyncedRemoteTime")
-
-        // No local cache and no remote cache -> nothing to do
-        if (localLastModified == 0L && remoteFile == null) {
-            logger.d(TAG, "No TTS cache to sync.")
-            return@withContext
-        }
-
-        val hasLocalChanged = localLastModified > lastSyncedLocalTime + 2000 && localLastModified > 0L
-        val hasRemoteChanged = remoteFile != null && remoteLastModified > lastSyncedRemoteTime + 2000
-
-        val shouldUpload = when (syncMode) {
-            SyncMode.RESTORE_ONLY -> false
-            SyncMode.BACKUP_ONLY -> hasLocalChanged || remoteFile == null
-            SyncMode.TWO_WAY -> hasLocalChanged && !hasRemoteChanged
-        }
-
-        val shouldDownload = when (syncMode) {
-            SyncMode.BACKUP_ONLY -> false
-            SyncMode.RESTORE_ONLY -> hasRemoteChanged
-            SyncMode.TWO_WAY -> hasRemoteChanged
-        }
-
-        if (shouldUpload) {
-            logger.d(TAG, "Uploading TTS cache...")
-            val tempFile = File(context.cacheDir, TTS_CACHE_FILE_NAME)
-            try {
-                tempFile.outputStream().use { os ->
-                    importExportManager.exportTtsCacheToZip(os) { _, _ -> }
-                }
-                if (tempFile.length() > 0) {
-                    saveToLocalBackupFolder(TTS_CACHE_FILE_NAME, tempFile)
-                    val fileId = if (remoteFile != null) {
-                        val updateSuccess = storageProvider.updateFile(remoteFile.id, tempFile, "application/zip", null) { _ -> }
-                        if (updateSuccess) remoteFile.id else null
-                    } else {
-                        storageProvider.uploadFile(tempFile, "application/zip", null) { _ -> }
-                    }
-
-                    if (fileId != null) {
-                        val newMetadata = storageProvider.getFileMetadata(fileId)
-                        val newRemoteTime = newMetadata?.modifiedTime ?: 0L
-                        prefs.edit()
-                            .putLong("tts_cache_last_synced_local_time", localLastModified)
-                            .putLong("tts_cache_last_synced_remote_time", newRemoteTime)
-                            .apply()
-                        syncLogProvider.addLogEntry("TTS-Cache in die Cloud hochgeladen", null, null)
-                    }
-                }
-            } finally {
-                tempFile.delete()
-            }
-        } else if (shouldDownload) {
-            logger.d(TAG, "Downloading TTS cache...")
-            val tempFile = File(context.cacheDir, "download_$TTS_CACHE_FILE_NAME")
-            try {
-                if (storageProvider.downloadFile(remoteFile!!.id, tempFile) { _ -> }) {
-                    tempFile.inputStream().use { inputStream ->
-                        importExportManager.importTtsCacheFromZip(inputStream) { _, _ -> }
-                    }
-                    saveToLocalBackupFolder(TTS_CACHE_FILE_NAME, tempFile)
-                    val newLocalLastModified = importExportManager.getTtsCacheLastModified()
-                    prefs.edit()
-                        .putLong("tts_cache_last_synced_local_time", newLocalLastModified)
-                        .putLong("tts_cache_last_synced_remote_time", remoteLastModified)
-                        .apply()
-                    syncLogProvider.addLogEntry("TTS-Cache aus der Cloud wiederhergestellt", null, null)
-                }
-            } finally {
-                tempFile.delete()
-            }
-        } else {
-            logger.d(TAG, "TTS cache is in sync.")
-            // Make sure the last synced values are aligned if they weren't yet
-            if (lastSyncedLocalTime == 0L || lastSyncedRemoteTime == 0L) {
-                prefs.edit()
-                    .putLong("tts_cache_last_synced_local_time", localLastModified)
-                    .putLong("tts_cache_last_synced_remote_time", remoteLastModified)
-                    .apply()
-            }
-        }
-    }
-
-    private suspend fun restoreTtsCacheIfAvailable(
-        storageProvider: SyncStorageProvider
-    ) {
-        val remoteFile = try {
-            storageProvider.listFiles().find { it.name == TTS_CACHE_FILE_NAME }
-        } catch (e: Exception) {
-            logger.e(TAG, "Failed to find TTS cache for restore", e)
-            null
-        } ?: return
-
-        logger.d(TAG, "Found separate TTS cache on Drive, restoring...")
-        val tempFile = File(context.cacheDir, "download_$TTS_CACHE_FILE_NAME")
-        try {
-            if (storageProvider.downloadFile(remoteFile.id, tempFile) { _ -> }) {
-                tempFile.inputStream().use { inputStream ->
-                    importExportManager.importTtsCacheFromZip(inputStream) { _, _ -> }
-                }
-                saveToLocalBackupFolder(TTS_CACHE_FILE_NAME, tempFile)
-                val newLocalLastModified = importExportManager.getTtsCacheLastModified()
-                val remoteLastModified = remoteFile.modifiedTime
-                val prefs = context.getSharedPreferences("ghosttalk_settings", Context.MODE_PRIVATE)
-                prefs.edit()
-                    .putLong("tts_cache_last_synced_local_time", newLocalLastModified)
-                    .putLong("tts_cache_last_synced_remote_time", remoteLastModified)
-                    .apply()
-                syncLogProvider.addLogEntry("TTS-Cache aus der Cloud wiederhergestellt", null, null)
-            }
-        } finally {
-            tempFile.delete()
-        }
-    }
-
-    private suspend fun syncStatistics(
-        storageProvider: SyncStorageProvider,
-        syncMode: SyncMode,
-        bookId: String,
-        bookName: String
-    ) = withContext(Dispatchers.IO) {
-        val statsFileName = "statistics_$bookId.zip"
-
-        val remoteFile = try {
-            storageProvider.listFiles().find { it.name == statsFileName }
-        } catch (e: Exception) {
-            logger.e(TAG, "Failed to find statistics backup on Drive", e)
-            null
-        }
-
-        val localLastModified = importExportManager.getStatisticsLastModified(bookId)
-        val remoteLastModified = remoteFile?.modifiedTime ?: 0L
-
-        val prefs = context.getSharedPreferences("ghosttalk_settings", Context.MODE_PRIVATE)
-        val lastSyncedLocalTime = prefs.getLong("stats_last_synced_local_time_$bookId", 0L)
-        val lastSyncedRemoteTime = prefs.getLong("stats_last_synced_remote_time_$bookId", 0L)
-
-        logger.w(TAG, "[STATS-DEBUG] syncStatistics called: syncMode=$syncMode, bookId='$bookId', statsFileName='$statsFileName'")
-        logger.w(TAG, "[STATS-DEBUG] remoteFile found: ${remoteFile != null} (name=${remoteFile?.name}, id=${remoteFile?.id})")
-        logger.w(TAG, "[STATS-DEBUG] localLastModified=$localLastModified, remoteLastModified=$remoteLastModified, lastSyncedLocal=$lastSyncedLocalTime, lastSyncedRemote=$lastSyncedRemoteTime")
-
-        if (localLastModified == 0L && remoteFile == null) {
-            logger.w(TAG, "[STATS-DEBUG] EARLY EXIT: No statistics to sync (localLastModified=0 AND no remote file).")
-            return@withContext
-        }
-
-        val hasLocalChanged = localLastModified > lastSyncedLocalTime + 2000 && localLastModified > 0L
-        val hasRemoteChanged = remoteFile != null && remoteLastModified > lastSyncedRemoteTime + 2000
-
-        val shouldUpload = when (syncMode) {
-            SyncMode.RESTORE_ONLY -> false
-            SyncMode.BACKUP_ONLY -> hasLocalChanged || remoteFile == null
-            SyncMode.TWO_WAY -> hasLocalChanged && !hasRemoteChanged
-        }
-
-        val shouldDownload = when (syncMode) {
-            SyncMode.BACKUP_ONLY -> false
-            SyncMode.RESTORE_ONLY -> hasRemoteChanged || localLastModified == 0L
-            SyncMode.TWO_WAY -> hasRemoteChanged || localLastModified == 0L
-        }
-
-        logger.w(TAG, "[STATS-DEBUG] Decision: hasLocalChanged=$hasLocalChanged, hasRemoteChanged=$hasRemoteChanged, shouldUpload=$shouldUpload, shouldDownload=$shouldDownload")
-
-        if (shouldUpload) {
-            logger.d(TAG, "Uploading statistics...")
-            val tempFile = File(context.cacheDir, statsFileName)
-            try {
-                tempFile.outputStream().use { os ->
-                    importExportManager.exportStatisticsToZip(bookId, os)
-                }
-                if (tempFile.length() > 0) {
-                    saveToLocalBackupFolder(statsFileName, tempFile)
-                    val fileId = if (remoteFile != null) {
-                        val updateSuccess = storageProvider.updateFile(remoteFile.id, tempFile, "application/zip", bookName) { _ -> }
-                        if (updateSuccess) remoteFile.id else null
-                    } else {
-                        storageProvider.uploadFile(tempFile, "application/zip", bookName) { _ -> }
-                    }
-
-                    if (fileId != null) {
-                        val newMetadata = storageProvider.getFileMetadata(fileId)
-                        val newRemoteTime = newMetadata?.modifiedTime ?: 0L
-                        prefs.edit()
-                            .putLong("stats_last_synced_local_time_$bookId", localLastModified)
-                            .putLong("stats_last_synced_remote_time_$bookId", newRemoteTime)
-                            .apply()
-                        syncLogProvider.addLogEntry("Statistik in die Cloud hochgeladen", bookId, bookName)
-                    }
-                }
-            } finally {
-                tempFile.delete()
-            }
-        } else if (shouldDownload) {
-            logger.d(TAG, "Downloading statistics...")
-            val tempFile = File(context.cacheDir, "download_$statsFileName")
-            try {
-                if (storageProvider.downloadFile(remoteFile!!.id, tempFile) { _ -> }) {
-                    tempFile.inputStream().use { inputStream ->
-                        importExportManager.importStatisticsFromZip(bookId, inputStream)
-                    }
-                    saveToLocalBackupFolder(statsFileName, tempFile)
-                    val newLocalLastModified = importExportManager.getStatisticsLastModified(bookId)
-                    prefs.edit()
-                        .putLong("stats_last_synced_local_time_$bookId", newLocalLastModified)
-                        .putLong("stats_last_synced_remote_time_$bookId", remoteLastModified)
-                        .apply()
-                    syncLogProvider.addLogEntry("Statistik aus der Cloud wiederhergestellt", bookId, bookName)
-                }
-            } finally {
-                tempFile.delete()
-            }
-        } else {
-            logger.d(TAG, "Statistics are in sync.")
-            if (lastSyncedLocalTime == 0L || lastSyncedRemoteTime == 0L) {
-                prefs.edit()
-                    .putLong("stats_last_synced_local_time_$bookId", localLastModified)
-                    .putLong("stats_last_synced_remote_time_$bookId", remoteLastModified)
-                    .apply()
-            }
-        }
-    }
-
-    private suspend fun restoreStatisticsIfAvailable(
-        storageProvider: SyncStorageProvider,
-        bookId: String,
-        bookName: String
-    ) {
-        val statsFileName = "statistics_$bookId.zip"
-        val remoteFile = try {
-            storageProvider.listFiles().find { it.name == statsFileName }
-        } catch (e: Exception) {
-            logger.e(TAG, "Failed to find statistics for restore", e)
-            null
-        } ?: return
-
-        logger.d(TAG, "Found separate statistics on Drive, restoring...")
-        val tempFile = File(context.cacheDir, "download_$statsFileName")
-        try {
-            if (storageProvider.downloadFile(remoteFile.id, tempFile) { _ -> }) {
-                tempFile.inputStream().use { inputStream ->
-                    importExportManager.importStatisticsFromZip(bookId, inputStream)
-                }
-                saveToLocalBackupFolder(statsFileName, tempFile)
-                val newLocalLastModified = importExportManager.getStatisticsLastModified(bookId)
-                val remoteLastModified = remoteFile.modifiedTime
-                val prefs = context.getSharedPreferences("ghosttalk_settings", Context.MODE_PRIVATE)
-                prefs.edit()
-                    .putLong("stats_last_synced_local_time_$bookId", newLocalLastModified)
-                    .putLong("stats_last_synced_remote_time_$bookId", remoteLastModified)
-                    .apply()
-                syncLogProvider.addLogEntry("Statistik aus der Cloud wiederhergestellt", bookId, bookName)
-            }
-        } finally {
-            tempFile.delete()
-        }
-    }
-
     suspend fun uploadLogFile(
         drive: Drive?,
         logFile: File
@@ -1482,145 +1106,7 @@ class CloudSyncUseCase @Inject constructor(
         }
     }
 
-    private fun mergeBooks(local: ImportExportData, remote: ImportExportData): ImportExportData {
-        val useLocalMetadata = (local.bookUpdatedAt ?: 0L) >= (remote.bookUpdatedAt ?: 0L)
-        val mergedBookName = if (useLocalMetadata) local.bookName else remote.bookName
-        val mergedDefaultStartPageId = if (useLocalMetadata) local.defaultStartPageId else remote.defaultStartPageId
-        val mergedPageSortOrder = if (useLocalMetadata) local.pageSortOrder else remote.pageSortOrder
-        val mergedTemplateSortOrder = if (useLocalMetadata) local.templateSortOrder else remote.templateSortOrder
-        val mergedActionLogLimit = if (useLocalMetadata) local.actionLogLimit else remote.actionLogLimit
-        val mergedLimitScanCycles = if (useLocalMetadata) local.limitScanCycles else remote.limitScanCycles
-        val mergedScanCycleLimit = if (useLocalMetadata) local.scanCycleLimit else remote.scanCycleLimit
-        val mergedLogIgnoredActions = if (useLocalMetadata) local.logIgnoredActions else remote.logIgnoredActions
-        val mergedLogStopActions = if (useLocalMetadata) local.logStopActions else remote.logStopActions
 
-        val localPagesMap = local.pages.associateBy { it.importId }
-        val remotePagesMap = remote.pages.associateBy { it.importId }
-
-        val localTombstones = local.deletedEntities?.associateBy { it.entityId } ?: emptyMap()
-        val remoteTombstones = remote.deletedEntities?.associateBy { it.entityId } ?: emptyMap()
-
-        val allPageIds = localPagesMap.keys + remotePagesMap.keys
-        val mergedPages = allPageIds.mapNotNull { pageId ->
-            val localPage = localPagesMap[pageId]
-            val remotePage = remotePagesMap[pageId]
-
-            if (localPage == null && remotePage != null) {
-                val tombstone = localTombstones[pageId]
-                if (tombstone != null) {
-                    val remoteTime = remotePage.updatedAt ?: remotePage.createdAt ?: 0L
-                    if (tombstone.deletedAt >= remoteTime) null else remotePage
-                } else {
-                    remotePage
-                }
-            } else if (remotePage == null && localPage != null) {
-                val tombstone = remoteTombstones[pageId]
-                if (tombstone != null) {
-                    val localTime = localPage.updatedAt ?: localPage.createdAt ?: 0L
-                    if (tombstone.deletedAt >= localTime) null else localPage
-                } else {
-                    localPage
-                }
-            } else if (localPage != null && remotePage != null) {
-                val localPageTime = localPage.updatedAt ?: localPage.createdAt ?: 0L
-                val remotePageTime = remotePage.updatedAt ?: remotePage.createdAt ?: 0L
-                val useLocalPage = localPageTime >= remotePageTime
-
-                val name = if (useLocalPage) localPage.name else remotePage.name
-                val rows = if (useLocalPage) localPage.rows else remotePage.rows
-                val columns = if (useLocalPage) localPage.columns else remotePage.columns
-                val templateId = if (useLocalPage) localPage.templateId else remotePage.templateId
-                val scanPattern = if (useLocalPage) localPage.scanPattern else remotePage.scanPattern
-                val rowNames = if (useLocalPage) localPage.rowNames else remotePage.rowNames
-                val orderIndex = if (useLocalPage) localPage.orderIndex else remotePage.orderIndex
-                val createdAt = if (useLocalPage) localPage.createdAt else remotePage.createdAt
-                val updatedAt = maxOf(localPageTime, remotePageTime)
-
-                val localButtonsMap = localPage.buttons.associateBy { it.index }
-                val remoteButtonsMap = remotePage.buttons.associateBy { it.index }
-                val allButtonIndices = localButtonsMap.keys + remoteButtonsMap.keys
-                val mergedButtons = allButtonIndices.mapNotNull { index ->
-                    val localButton = localButtonsMap[index]
-                    val remoteButton = remoteButtonsMap[index]
-
-                    if (localButton == null && remoteButton != null) {
-                        val remoteTime = remoteButton.updatedAt ?: 0L
-                        if (localPageTime >= remoteTime) null else remoteButton
-                    } else if (remoteButton == null && localButton != null) {
-                        val localTime = localButton.updatedAt ?: 0L
-                        if (remotePageTime >= localTime) null else localButton
-                    } else if (localButton != null && remoteButton != null) {
-                        val localButtonTime = localButton.updatedAt ?: 0L
-                        val remoteButtonTime = remoteButton.updatedAt ?: 0L
-                        if (localButtonTime >= remoteButtonTime) localButton else remoteButton
-                    } else {
-                        null
-                    }
-                }
-
-                ImportPage(
-                    importId = pageId,
-                    name = name,
-                    rows = rows,
-                    columns = columns,
-                    templateId = templateId,
-                    scanPattern = scanPattern,
-                    rowNames = rowNames,
-                    orderIndex = orderIndex,
-                    createdAt = createdAt,
-                    updatedAt = updatedAt,
-                    buttons = mergedButtons
-                )
-            } else {
-                null
-            }
-        }
-
-        val localTemplatesMap = (local.buttonTemplates ?: emptyList()).associateBy { it.id }
-        val remoteTemplatesMap = (remote.buttonTemplates ?: emptyList()).associateBy { it.id }
-        val allTemplateIds = localTemplatesMap.keys + remoteTemplatesMap.keys
-        val mergedButtonTemplates = allTemplateIds.map { id ->
-            val localT = localTemplatesMap[id]
-            val remoteT = remoteTemplatesMap[id]
-            if (localT == null) {
-                remoteT!!
-            } else if (remoteT == null) {
-                localT
-            } else {
-                val localTime = localT.button?.updatedAt ?: 0L
-                val remoteTime = remoteT.button?.updatedAt ?: 0L
-                if (localTime >= remoteTime) localT else remoteT
-            }
-        }
-
-        val mergedTombstones = if (local.deletedEntities == null && remote.deletedEntities == null) {
-            null
-        } else {
-            val cutoff = System.currentTimeMillis() - 90L * 24 * 60 * 60 * 1000 // 90 days
-            (local.deletedEntities.orEmpty() + remote.deletedEntities.orEmpty())
-                .associateBy { it.entityId }
-                .filterKeys { pageId -> mergedPages.none { it.importId == pageId } }
-                .values
-                .filter { it.deletedAt >= cutoff }
-                .toList()
-        }
-
-        return local.copy(
-            bookName = mergedBookName,
-            defaultStartPageId = mergedDefaultStartPageId,
-            pageSortOrder = mergedPageSortOrder,
-            templateSortOrder = mergedTemplateSortOrder,
-            actionLogLimit = mergedActionLogLimit,
-            limitScanCycles = mergedLimitScanCycles,
-            scanCycleLimit = mergedScanCycleLimit,
-            logIgnoredActions = mergedLogIgnoredActions,
-            logStopActions = mergedLogStopActions,
-            bookUpdatedAt = maxOf(local.bookUpdatedAt ?: 0L, remote.bookUpdatedAt ?: 0L),
-            pages = mergedPages,
-            buttonTemplates = mergedButtonTemplates,
-            deletedEntities = mergedTombstones
-        )
-    }
 
     private fun saveToLocalBackupFolder(fileName: String, tempFile: File) {
         try {
@@ -1660,35 +1146,12 @@ class CloudSyncUseCase @Inject constructor(
     private suspend fun calculateStructuralMd5(bookId: String): String {
         return try {
             val jsonStr = importExportManager.exportBookToJson(bookId)
-            calculateStructuralMd5FromJson(jsonStr)
+            bookMergeEngine.calculateStructuralMd5FromJson(jsonStr)
         } catch (e: Exception) {
             logger.e(TAG, "Failed to calculate structural MD5 for book $bookId", e)
             ""
         }
     }
 
-    private fun calculateStructuralMd5FromJson(jsonStr: String): String {
-        return try {
-            val jsonParser = kotlinx.serialization.json.Json { ignoreUnknownKeys = true; encodeDefaults = true }
-            val data = jsonParser.decodeFromString<com.andreas_kratzer.ghosttalk.core.model.importexport.ImportExportData>(jsonStr)
-            val cleanData = data.copy(
-                bookUpdatedAt = 0L,
-                versionSequence = 0L,
-                sourceDevice = null,
-                isCloudSyncEnabled = null,
-                syncIntervalMinutes = null,
-                syncModeBook = null,
-                syncModeTts = null,
-                syncModeStats = null,
-                syncMode = null
-            )
-            val cleanJson = jsonParser.encodeToString(com.andreas_kratzer.ghosttalk.core.model.importexport.ImportExportData.serializer(), cleanData)
-            val messageDigest = java.security.MessageDigest.getInstance("MD5")
-            val hashBytes = messageDigest.digest(cleanJson.toByteArray(Charsets.UTF_8))
-            hashBytes.joinToString("") { "%02x".format(it) }
-        } catch (e: Exception) {
-            logger.e(TAG, "Failed to calculate structural MD5 from JSON", e)
-            ""
-        }
-    }
+
 }

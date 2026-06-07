@@ -50,6 +50,23 @@ class SettingsRepositoryImpl @Inject constructor(
     private val callSettings = CallSettingsRepository(prefs, activeBookIdFlow)
 
     init {
+        val listener: (String) -> Unit = { key ->
+            if (key !in SettingsMapper.NON_SYNCABLE_SETTINGS) {
+                updateConfigLastModified(activeBookId)
+            }
+        }
+        voiceSettings.changeListener = listener
+        scanningSettings.changeListener = listener
+        securitySettings.changeListener = listener
+        cloudSettings.changeListener = listener
+        smartHomeSettings.changeListener = listener
+        genAiSettings.changeListener = listener
+        generalSettings.changeListener = listener
+        notificationSettings.changeListener = listener
+        advancedSettings.changeListener = listener
+        userSettings.changeListener = listener
+        callSettings.changeListener = listener
+
         cleanupLegacyBookPins()
     }
 
@@ -158,6 +175,7 @@ class SettingsRepositoryImpl @Inject constructor(
     override val syncModeBookFlow: StateFlow<String> get() = cloudSettings.syncModeBookFlow
     override val syncModeTtsFlow: StateFlow<String> get() = cloudSettings.syncModeTtsFlow
     override val syncModeStatsFlow: StateFlow<String> get() = cloudSettings.syncModeStatsFlow
+    override val syncModeSettingsFlow: StateFlow<String> get() = cloudSettings.syncModeSettingsFlow
     override val lastSuccessfulSyncTimeFlow: StateFlow<Long> get() = cloudSettings.lastSuccessfulSyncTimeFlow
     override val syncModeLogsFlow: StateFlow<String> get() = cloudSettings.syncModeLogsFlow
     override val syncLogsIntervalHoursFlow: StateFlow<Long> get() = cloudSettings.syncLogsIntervalHoursFlow
@@ -380,6 +398,9 @@ class SettingsRepositoryImpl @Inject constructor(
     override var syncModeStats: String
         get() = cloudSettings.syncModeStats
         set(value) { cloudSettings.syncModeStats = value }
+    override var syncModeSettings: String
+        get() = cloudSettings.syncModeSettings
+        set(value) { cloudSettings.syncModeSettings = value }
     override var hueBridgeIp: String
         get() = smartHomeSettings.hueBridgeIp
         set(value) { smartHomeSettings.hueBridgeIp = value }
@@ -882,4 +903,12 @@ class SettingsRepositoryImpl @Inject constructor(
     override var filterCallsNotInContacts: Boolean
         get() = callSettings.filterCallsNotInContacts
         set(value) { callSettings.filterCallsNotInContacts = value }
+
+    override fun updateConfigLastModified(bookId: String) {
+        prefs.edit().putLong("config_last_modified_$bookId", System.currentTimeMillis()).apply()
+    }
+
+    override fun getConfigLastModified(bookId: String): Long {
+        return prefs.getLong("config_last_modified_$bookId", 0L)
+    }
 }

@@ -22,6 +22,7 @@ interface SyncStorageProvider {
     suspend fun downloadFile(fileId: String, destFile: File, onProgress: (Float) -> Unit = {}): Boolean
     suspend fun getFileMetadata(fileId: String): RemoteSyncFile?
     suspend fun deleteFile(fileId: String): Boolean
+    suspend fun updateProperties(fileId: String, properties: Map<String, String>): Boolean
 }
 
 data class RemoteSyncFile(
