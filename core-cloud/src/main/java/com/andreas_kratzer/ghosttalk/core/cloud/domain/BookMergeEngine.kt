@@ -61,12 +61,12 @@ class BookMergeEngine(private val logger: Logger) {
                 val createdAt = if (useLocalPage) localPage.createdAt else remotePage.createdAt
                 val updatedAt = maxOf(localPageTime, remotePageTime)
 
-                val localButtonsMap = localPage.buttons.associateBy { it.index }
-                val remoteButtonsMap = remotePage.buttons.associateBy { it.index }
-                val allButtonIndices = localButtonsMap.keys + remoteButtonsMap.keys
-                val mergedButtons = allButtonIndices.mapNotNull { index ->
-                    val localButton = localButtonsMap[index]
-                    val remoteButton = remoteButtonsMap[index]
+                val localButtonsMap = localPage.buttons.associateBy { if (!it.id.isNullOrBlank()) "id_${it.id}" else "idx_${it.index}" }
+                val remoteButtonsMap = remotePage.buttons.associateBy { if (!it.id.isNullOrBlank()) "id_${it.id}" else "idx_${it.index}" }
+                val allButtonKeys = localButtonsMap.keys + remoteButtonsMap.keys
+                val mergedButtons = allButtonKeys.mapNotNull { key ->
+                    val localButton = localButtonsMap[key]
+                    val remoteButton = remoteButtonsMap[key]
 
                     if (localButton == null && remoteButton != null) {
                         val remoteTime = remoteButton.updatedAt ?: 0L

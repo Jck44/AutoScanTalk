@@ -118,12 +118,12 @@ class CloudSyncUseCase @Inject constructor(
             try {
                 val storageProvider = getStorageProvider(drive)
 
+                val remoteFiles = storageProvider.listFiles()
+
                 if (resolvedBookMode == null) {
                     logger.d(TAG, "Book sync is OFF. Skipping book synchronization.")
                     success = true
                 } else {
-                    // Fetch list of remote files matching this book
-                    val remoteFiles = storageProvider.listFiles()
                     val remoteMasterFile = remoteFiles.find { it.name == masterFileName }
                     val legacyZipFile = remoteFiles.find { it.name == zipFileName }
                     val effectiveMasterFile = remoteMasterFile ?: legacyZipFile
@@ -152,14 +152,14 @@ class CloudSyncUseCase @Inject constructor(
                                 try { SyncMode.valueOf(configModeStr) } catch (_: Exception) { SyncMode.TWO_WAY }
                             } else syncMode
                             try {
-                                configSyncHelper.syncBookConfig(storageProvider, configMode, bookId, book.name)
+                                configSyncHelper.syncBookConfig(storageProvider, remoteFiles, configMode, bookId, book.name)
                             } catch (e: Exception) {
                                 logger.e(TAG, "Config sync failed (non-fatal)", e)
                             }
                         }
 
                         try {
-                            audioSyncHelper.syncAudioRecordings(storageProvider, resolvedBookMode ?: SyncMode.TWO_WAY, bookId)
+                            audioSyncHelper.syncAudioRecordings(storageProvider, remoteFiles, resolvedBookMode ?: SyncMode.TWO_WAY, bookId)
                         } catch (e: Exception) {
                             logger.e(TAG, "Audio recordings sync failed (non-fatal)", e)
                         }
@@ -170,7 +170,7 @@ class CloudSyncUseCase @Inject constructor(
                                 try { SyncMode.valueOf(ttsModeStr) } catch (_: Exception) { SyncMode.TWO_WAY }
                             } else syncMode
                             try {
-                                ttsSyncHelper.syncTtsCache(storageProvider, ttsMode)
+                                ttsSyncHelper.syncTtsCache(storageProvider, remoteFiles, ttsMode)
                             } catch (e: Exception) {
                                 logger.e(TAG, "TTS cache sync failed (non-fatal)", e)
                             }
@@ -182,7 +182,7 @@ class CloudSyncUseCase @Inject constructor(
                                 try { SyncMode.valueOf(statsModeStr) } catch (_: Exception) { SyncMode.BACKUP_ONLY }
                             } else syncMode
                             try {
-                                statisticsSyncHelper.syncStatistics(storageProvider, statsMode, bookId, book.name)
+                                statisticsSyncHelper.syncStatistics(storageProvider, remoteFiles, statsMode, bookId, book.name)
                             } catch (e: Exception) {
                                 logger.e(TAG, "Statistics sync failed (non-fatal)", e)
                             }
@@ -505,87 +505,81 @@ class CloudSyncUseCase @Inject constructor(
                                 } else {
                                     val newSeq = maxOf(localSeq, maxRemoteSeq) + 1
                                     val mergedWithNewSeq = merged.copy(versionSequence = newSeq)
-
                                     val mergedJson = jsonParser.encodeToString(mergedWithNewSeq)
 
-                                    // 3. Erstelle die temporäre JSON-Datei für den Upload
-                                    val mergedTempFile = File(context.cacheDir, "merged_upload_book_$bookId.json")
-                                    try {
-                                        mergedTempFile.writeText(mergedJson, Charsets.UTF_8)
+                                    Log.d(TAG, "[COMMIT-SEQ] Phase 1: Starte lokalen Datenbank-Commit via importFromJson...")
+                                    val importResult = importExportManager.importFromJson(mergedJson, bookId, restoreSyncSettings = false)
 
-                                        // 4. VOR DEM UPLOAD: Frische expectedVersion holen, um Cache-Inkonsistenzen zu vermeiden
-                                        val expectedVersion = effectiveMasterFile?.version ?: 0L
-                                        val driveHelper = if (storageProvider is DriveApiSyncStorageProvider) {
-                                            DriveServiceHelper(drive!!)
-                                        } else null
+                                    if (importResult.isSuccess) {
+                                        Log.d(TAG, "[COMMIT-SEQ] Phase 2: Lokaler DB-Commit ERFOLGREICH. versionSequence in DB ist: $newSeq. Bereite Pure-JSON-Upload vor.")
 
-                                        Log.d(TAG, "[COMMIT-SEQ] Phase 1: Bereite Pure-JSON-Upload vor. Erwartete Version: $expectedVersion")
-                                        
-                                        val mergedStructMd5Upload = bookMergeEngine.calculateStructuralMd5FromJson(mergedJson)
-
-                                        // 5. Versuche den Upload mit Optimistic Locking
-                                        val uploadSuccess = if (driveHelper != null && effectiveMasterFile != null) {
-                                            driveHelper.uploadWithOptimisticLock(
-                                                fileId = effectiveMasterFile.id,
-                                                localFile = mergedTempFile,
-                                                mimeType = "application/json",
-                                                expectedVersion = expectedVersion,
-                                                properties = buildSyncProperties(
-                                                    bookId = bookId,
-                                                    bookName = mergedWithNewSeq.bookName ?: book.name,
-                                                    createdAt = mergedWithNewSeq.bookCreatedAt ?: book.createdAt,
-                                                    updatedAt = mergedWithNewSeq.bookUpdatedAt ?: System.currentTimeMillis(),
-                                                    versionSequence = newSeq,
-                                                    structureMd5 = mergedStructMd5Upload
-                                                )
-                                            )
-                                        } else if (effectiveMasterFile != null) {
-                                            storageProvider.updateFile(
-                                                effectiveMasterFile.id,
-                                                mergedTempFile,
-                                                "application/json",
-                                                book.name,
-                                                properties = buildSyncProperties(
-                                                    bookId = bookId,
-                                                    bookName = mergedWithNewSeq.bookName ?: book.name,
-                                                    createdAt = mergedWithNewSeq.bookCreatedAt ?: book.createdAt,
-                                                    updatedAt = mergedWithNewSeq.bookUpdatedAt ?: System.currentTimeMillis(),
-                                                    versionSequence = newSeq,
-                                                    structureMd5 = mergedStructMd5Upload
-                                                )
-                                            ) { _ -> }
-                                        } else {
-                                            storageProvider.uploadFile(
-                                                mergedTempFile,
-                                                "application/json",
-                                                book.name,
-                                                properties = buildSyncProperties(
-                                                    bookId = bookId,
-                                                    bookName = mergedWithNewSeq.bookName ?: book.name,
-                                                    createdAt = mergedWithNewSeq.bookCreatedAt ?: book.createdAt,
-                                                    updatedAt = mergedWithNewSeq.bookUpdatedAt ?: System.currentTimeMillis(),
-                                                    versionSequence = newSeq,
-                                                    structureMd5 = mergedStructMd5Upload
-                                                )
-                                            ) != null
-                                        }
-
-                                        // 6. AUSWERTUNG: Nur bei verifiziertem Cloud-Erfolg lokal abspeichern!
-                                        if (uploadSuccess) {
-                                            Log.d(TAG, "[COMMIT-SEQ] Phase 2: Cloud-Upload wurde vom Server BESTÄTIGT. Starte jetzt den lokalen Datenbank-Commit via importFromJson...")
+                                        val mergedTempFile = File(context.cacheDir, "merged_upload_book_$bookId.json")
+                                        try {
+                                            mergedTempFile.writeText(mergedJson, Charsets.UTF_8)
+                                            val expectedVersion = effectiveMasterFile?.version ?: 0L
+                                            val driveHelper = if (storageProvider is DriveApiSyncStorageProvider) {
+                                                DriveServiceHelper(drive!!)
+                                            } else null
                                             
-                                            try {
-                                                audioSyncHelper.syncAudioRecordings(storageProvider, resolvedBookMode ?: SyncMode.TWO_WAY, bookId)
-                                                audioSynced = true
-                                            } catch (e: Exception) {
-                                                logger.e(TAG, "Audio recordings sync failed during merge conflict (non-fatal)", e)
+                                            val mergedStructMd5Upload = bookMergeEngine.calculateStructuralMd5FromJson(mergedJson)
+
+                                            val uploadSuccess = if (driveHelper != null && effectiveMasterFile != null) {
+                                                driveHelper.uploadWithOptimisticLock(
+                                                    fileId = effectiveMasterFile.id,
+                                                    localFile = mergedTempFile,
+                                                    mimeType = "application/json",
+                                                    expectedVersion = expectedVersion,
+                                                    properties = buildSyncProperties(
+                                                        bookId = bookId,
+                                                        bookName = mergedWithNewSeq.bookName ?: book.name,
+                                                        createdAt = mergedWithNewSeq.bookCreatedAt ?: book.createdAt,
+                                                        updatedAt = mergedWithNewSeq.bookUpdatedAt ?: System.currentTimeMillis(),
+                                                        versionSequence = newSeq,
+                                                        structureMd5 = mergedStructMd5Upload
+                                                    )
+                                                )
+                                            } else if (effectiveMasterFile != null) {
+                                                storageProvider.updateFile(
+                                                    effectiveMasterFile.id,
+                                                    mergedTempFile,
+                                                    "application/json",
+                                                    book.name,
+                                                    properties = buildSyncProperties(
+                                                        bookId = bookId,
+                                                        bookName = mergedWithNewSeq.bookName ?: book.name,
+                                                        createdAt = mergedWithNewSeq.bookCreatedAt ?: book.createdAt,
+                                                        updatedAt = mergedWithNewSeq.bookUpdatedAt ?: System.currentTimeMillis(),
+                                                        versionSequence = newSeq,
+                                                        structureMd5 = mergedStructMd5Upload
+                                                    )
+                                                ) { _ -> }
+                                            } else {
+                                                storageProvider.uploadFile(
+                                                    mergedTempFile,
+                                                    "application/json",
+                                                    book.name,
+                                                    properties = buildSyncProperties(
+                                                        bookId = bookId,
+                                                        bookName = mergedWithNewSeq.bookName ?: book.name,
+                                                        createdAt = mergedWithNewSeq.bookCreatedAt ?: book.createdAt,
+                                                        updatedAt = mergedWithNewSeq.bookUpdatedAt ?: System.currentTimeMillis(),
+                                                        versionSequence = newSeq,
+                                                        structureMd5 = mergedStructMd5Upload
+                                                    )
+                                                ) != null
                                             }
 
-                                            val importResult = importExportManager.importFromJson(mergedJson, bookId, restoreSyncSettings = false)
-                                            
-                                            if (importResult.isSuccess) {
-                                                Log.d(TAG, "[COMMIT-SEQ] Phase 3: Lokaler Datenbank-Commit ERFOLGREICH. Die versionSequence in der DB steht jetzt final auf: $newSeq. Schließe Sync-Lauf ab.")
+                                            if (uploadSuccess) {
+                                                Log.d(TAG, "[COMMIT-SEQ] Phase 3: Cloud-Upload vom Server BESTÄTIGT. Schließe Sync-Lauf ab.")
                                                 syncLogProvider.addLogEntry("Zwei-Wege-Merge erfolgreich abgeschlossen (Sequence: $newSeq)", bookId, book.name)
+
+                                                try {
+                                                    audioSyncHelper.syncAudioRecordings(storageProvider, remoteFiles, resolvedBookMode ?: SyncMode.TWO_WAY, bookId)
+                                                    audioSynced = true
+                                                } catch (e: Exception) {
+                                                    logger.e(TAG, "Audio recordings sync failed during merge conflict (non-fatal)", e)
+                                                }
+
                                                 val finalMasterFile = storageProvider.listFiles().find { it.name == masterFileName }
                                                 val driveTime = finalMasterFile?.modifiedTime ?: 0L
                                                 if (driveTime > 0L) {
@@ -619,18 +613,15 @@ class CloudSyncUseCase @Inject constructor(
                                                 }
                                                 success = true
                                             } else {
-                                                Log.e(TAG, "[COMMIT-SEQ] KRITISCHER FEHLER: Phase 2 erfolgreich (Cloud hat Daten), aber Phase 3 FEHLGESCHLAGEN (Lokaler DB-Import abgebrochen): ${importResult.exceptionOrNull()?.message}")
-                                                syncLogProvider.addLogEntry("Zusammenführung Cloud erfolgreich, lokaler Import fehlgeschlagen", bookId, book.name, isError = true)
-                                                success = false
+                                                Log.w(TAG, "[COMMIT-SEQ] Cloud-Upload ABGEWIESEN (Lock/Netzwerkfehler). Lokaler Import bleibt erhalten (Self-Healing bei nächstem Sync).")
+                                                success = true
                                             }
-                                        } else {
-                                            // HIER GEHT DER SICHERHEITSGURT ZU: Bei Lock-Fehlstellung bleibt die DB unverändert
-                                            Log.w(TAG, "[COMMIT-SEQ] Cloud-Upload ABGEWIESEN (Sperrenfehler). Lokaler Datenbank-Commit wird übersprungen! Lokale versionSequence bleibt unverändert bei: $localSeq")
-                                            syncLogProvider.addLogEntry("Zusammenführung blockiert (Lock-Konflikt). Sequenz bleibt unverändert bei $localSeq.", bookId, book.name, isError = true)
-                                            success = false
+                                        } finally {
+                                            mergedTempFile.delete()
                                         }
-                                    } finally {
-                                        mergedTempFile.delete()
+                                    } else {
+                                        Log.e(TAG, "[COMMIT-SEQ] Lokaler Import des Merges FEHLGESCHLAGEN: ${importResult.exceptionOrNull()?.message}")
+                                        success = false
                                     }
                                 }
                             }
@@ -645,7 +636,7 @@ class CloudSyncUseCase @Inject constructor(
                         try { SyncMode.valueOf(configModeStr) } catch (_: Exception) { SyncMode.TWO_WAY }
                     } else syncMode
                     try {
-                        configSyncHelper.syncBookConfig(storageProvider, configMode, bookId, book.name)
+                        configSyncHelper.syncBookConfig(storageProvider, remoteFiles, configMode, bookId, book.name)
                     } catch (e: Exception) {
                         logger.e(TAG, "Config sync failed (non-fatal)", e)
                     }
@@ -654,7 +645,7 @@ class CloudSyncUseCase @Inject constructor(
                 // Sync audio recordings after successful book sync
                 if (success && !audioSynced) {
                     try {
-                        audioSyncHelper.syncAudioRecordings(storageProvider, resolvedBookMode ?: SyncMode.TWO_WAY, bookId)
+                        audioSyncHelper.syncAudioRecordings(storageProvider, remoteFiles, resolvedBookMode ?: SyncMode.TWO_WAY, bookId)
                     } catch (e: Exception) {
                         logger.e(TAG, "Audio recordings sync failed (non-fatal)", e)
                     }
@@ -667,7 +658,7 @@ class CloudSyncUseCase @Inject constructor(
                         try { SyncMode.valueOf(ttsModeStr) } catch (_: Exception) { SyncMode.TWO_WAY }
                     } else syncMode
                     try {
-                        ttsSyncHelper.syncTtsCache(storageProvider, ttsMode)
+                        ttsSyncHelper.syncTtsCache(storageProvider, remoteFiles, ttsMode)
                     } catch (e: Exception) {
                         logger.e(TAG, "TTS cache sync failed (non-fatal)", e)
                     }
@@ -679,7 +670,7 @@ class CloudSyncUseCase @Inject constructor(
                         try { SyncMode.valueOf(statsModeStr) } catch (_: Exception) { SyncMode.BACKUP_ONLY }
                     } else syncMode
                     try {
-                        statisticsSyncHelper.syncStatistics(storageProvider, statsMode, bookId, book.name)
+                        statisticsSyncHelper.syncStatistics(storageProvider, remoteFiles, statsMode, bookId, book.name)
                     } catch (e: Exception) {
                         logger.e(TAG, "Statistics sync failed (non-fatal)", e)
                     }
@@ -863,7 +854,8 @@ class CloudSyncUseCase @Inject constructor(
                 downloadFile.delete()
                 if (!fileName.endsWith(".zip")) {
                     try {
-                        audioSyncHelper.restoreAudioRecordingsIfAvailable(storageProvider, book.id)
+                        val remoteFiles = storageProvider.listFiles()
+                        audioSyncHelper.restoreAudioRecordingsIfAvailable(storageProvider, remoteFiles, book.id)
                     } catch (e: Exception) {
                         logger.e(TAG, "Failed to restore separate audio recordings (non-fatal)", e)
                     }
@@ -955,58 +947,43 @@ class CloudSyncUseCase @Inject constructor(
                             logger.e(TAG, "Failed to align book timestamp after import (non-fatal)", e)
                         }
                     }
-                    // Also restore TTS cache from separate file if available
                     try {
                         val storageProvider = if (isSafUri) {
-                            // Extract tree URI from document URI for folder-level access
                             val treeUri = extractTreeUriFromDocumentUri(fileId)
                             if (treeUri != null) DocumentFolderSyncStorageProvider(context, treeUri) else null
                         } else {
                             try { getStorageProvider(drive) } catch (_: Exception) { null }
                         }
                         if (storageProvider != null) {
-                            ttsSyncHelper.restoreTtsCacheIfAvailable(storageProvider)
-                        }
-                    } catch (e: Exception) {
-                        logger.e(TAG, "TTS cache restore after cloud import failed (non-fatal)", e)
-                    }
-                    // Also restore audio recordings from separate file if available
-                    if (bookId.isNotEmpty()) {
-                        try {
-                            val storageProvider = if (isSafUri) {
-                                val treeUri = extractTreeUriFromDocumentUri(fileId)
-                                if (treeUri != null) DocumentFolderSyncStorageProvider(context, treeUri) else null
-                            } else {
-                                try { getStorageProvider(drive) } catch (_: Exception) { null }
+                            val remoteFiles = storageProvider.listFiles()
+                            try {
+                                ttsSyncHelper.restoreTtsCacheIfAvailable(storageProvider, remoteFiles)
+                            } catch (e: Exception) {
+                                logger.e(TAG, "TTS cache restore after cloud import failed (non-fatal)", e)
                             }
-                            if (storageProvider != null) {
-                                audioSyncHelper.restoreAudioRecordingsIfAvailable(storageProvider, bookId)
+                            if (bookId.isNotEmpty()) {
+                                try {
+                                    audioSyncHelper.restoreAudioRecordingsIfAvailable(storageProvider, remoteFiles, bookId)
+                                } catch (e: Exception) {
+                                    logger.e(TAG, "Audio recordings restore after cloud import failed (non-fatal)", e)
+                                }
                             }
-                        } catch (e: Exception) {
-                            logger.e(TAG, "Audio recordings restore after cloud import failed (non-fatal)", e)
-                        }
-                    }
-                    // Also restore statistics from separate file if available
-                    if (bookId.isNotEmpty()) {
-                        try {
-                            val storageProvider = if (isSafUri) {
-                                val treeUri = extractTreeUriFromDocumentUri(fileId)
-                                if (treeUri != null) DocumentFolderSyncStorageProvider(context, treeUri) else null
-                            } else {
-                                try { getStorageProvider(drive) } catch (_: Exception) { null }
-                            }
-                            if (storageProvider != null) {
+                            if (bookId.isNotEmpty()) {
                                 val bookName = fileName.substringBefore(".zip").substringBefore(".json")
                                 try {
-                                    configSyncHelper.restoreBookConfigIfAvailable(storageProvider, bookId, bookName)
+                                    configSyncHelper.restoreBookConfigIfAvailable(storageProvider, remoteFiles, bookId, bookName)
                                 } catch (e: Exception) {
                                     logger.e(TAG, "Config restore after cloud import failed (non-fatal)", e)
                                 }
-                                statisticsSyncHelper.restoreStatisticsIfAvailable(storageProvider, bookId, bookName)
+                                try {
+                                    statisticsSyncHelper.restoreStatisticsIfAvailable(storageProvider, remoteFiles, bookId, bookName)
+                                } catch (e: Exception) {
+                                    logger.e(TAG, "Statistics/Config restore after cloud import failed (non-fatal)", e)
+                                }
                             }
-                        } catch (e: Exception) {
-                            logger.e(TAG, "Statistics/Config restore after cloud import failed (non-fatal)", e)
                         }
+                    } catch (e: Exception) {
+                        logger.e(TAG, "Resource restore after cloud import failed (non-fatal)", e)
                     }
                 } else {
                     syncLogProvider.addLogEntry("Cloud-Import fehlgeschlagen: ${result.exceptionOrNull()?.message}", null, null, isError = true)

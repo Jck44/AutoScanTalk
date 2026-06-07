@@ -6,6 +6,8 @@ import com.andreas_kratzer.ghosttalk.core.data.impl.PageImportExportManager
 import com.andreas_kratzer.ghosttalk.core.util.Logger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
 import java.io.File
 
 class ConfigSyncHelper(
@@ -30,118 +32,167 @@ class ConfigSyncHelper(
         }
     }
 
+    private fun calculateMd5(content: String): String {
+        val digest = java.security.MessageDigest.getInstance("MD5")
+        val hash = digest.digest(content.toByteArray(Charsets.UTF_8))
+        return hash.joinToString("") { "%02x".format(it) }
+    }
+
+    private fun mergeConfigJsons(localJson: String, remoteJson: String, baseJson: String?): String {
+        val jsonParser = Json { ignoreUnknownKeys = true; prettyPrint = true }
+        val localMap = jsonParser.parseToJsonElement(localJson).jsonObject
+        val remoteMap = jsonParser.parseToJsonElement(remoteJson).jsonObject
+        val baseMap = baseJson?.let { jsonParser.parseToJsonElement(it).jsonObject } ?: emptyMap()
+
+        val allKeys = localMap.keys + remoteMap.keys
+        val mergedMap = mutableMapOf<String, kotlinx.serialization.json.JsonElement>()
+
+        for (key in allKeys) {
+            val localVal = localMap[key]
+            val remoteVal = remoteMap[key]
+            val baseVal = baseMap[key]
+
+            // 3-way merge logic
+            val mergedVal = when {
+                localVal == remoteVal -> localVal
+                localVal != null && remoteVal == null -> {
+                    if (baseVal == localVal) null else localVal
+                }
+                localVal == null && remoteVal != null -> {
+                    if (baseVal == remoteVal) null else remoteVal
+                }
+                else -> {
+                    when {
+                        baseVal == remoteVal -> localVal
+                        baseVal == localVal -> remoteVal
+                        else -> localVal // default fallback
+                    }
+                }
+            }
+            if (mergedVal != null) {
+                mergedMap[key] = mergedVal
+            }
+        }
+        return jsonParser.encodeToString(
+            kotlinx.serialization.json.JsonObject.serializer(),
+            kotlinx.serialization.json.JsonObject(mergedMap)
+        )
+    }
+
     suspend fun syncBookConfig(
         storageProvider: SyncStorageProvider,
+        remoteFiles: List<RemoteSyncFile>,
         syncMode: SyncMode,
         bookId: String,
         bookName: String
     ) = withContext(Dispatchers.IO) {
         val configFileName = "config_$bookId.json"
 
-        val remoteFile = try {
-            storageProvider.listFiles().find { it.name == configFileName }
-        } catch (e: Exception) {
-            logger.e(TAG, "Failed to find config backup on Drive", e)
-            null
-        }
+        val remoteFile = remoteFiles.find { it.name == configFileName }
 
         val localLastModified = importExportManager.getBookConfigLastModified(bookId)
-        val remoteLastModified = remoteFile?.modifiedTime ?: 0L
 
-        val prefs = context.getSharedPreferences("ghosttalk_settings", Context.MODE_PRIVATE)
-        val lastSyncedLocalTime = prefs.getLong("config_last_synced_local_time_$bookId", 0L)
-        val lastSyncedRemoteTime = prefs.getLong("config_last_synced_remote_time_$bookId", 0L)
+        val localConfigJson = importExportManager.exportBookConfigToJson(bookId)
+        val localMd5 = calculateMd5(localConfigJson)
 
-        logger.w(TAG, "[CONFIG-SYNC] syncBookConfig called: syncMode=$syncMode, bookId='$bookId', configFileName='$configFileName'")
-        logger.w(TAG, "[CONFIG-SYNC] remoteFile found: ${remoteFile != null} (name=${remoteFile?.name}, id=${remoteFile?.id})")
-        logger.w(TAG, "[CONFIG-SYNC] localLastModified=$localLastModified, remoteLastModified=$remoteLastModified, lastSyncedLocal=$lastSyncedLocalTime, lastSyncedRemote=$lastSyncedRemoteTime")
+        val baseBackupFile = File(File(context.filesDir, "local_backups"), configFileName)
+        val baseConfigJson = if (baseBackupFile.exists()) baseBackupFile.readText() else null
+        val baseMd5 = baseConfigJson?.let { calculateMd5(it) } ?: ""
 
-        if (localLastModified == 0L && remoteFile == null) {
-            logger.w(TAG, "[CONFIG-SYNC] EARLY EXIT: No config to sync (localLastModified=0 AND no remote file).")
+        val hasLocalChanged = localMd5 != baseMd5 && localLastModified > 0L
+
+        var remoteConfigJson: String? = null
+        var remoteMd5 = ""
+        if (remoteFile != null) {
+            val downloadFile = File(context.cacheDir, "temp_config_eval_$bookId.json")
+            try {
+                if (storageProvider.downloadFile(remoteFile.id, downloadFile) { _ -> }) {
+                    remoteConfigJson = downloadFile.readText()
+                    remoteMd5 = calculateMd5(remoteConfigJson)
+                }
+            } catch (e: Exception) {
+                logger.e(TAG, "Failed to download remote config for evaluation", e)
+            } finally {
+                downloadFile.delete()
+            }
+        }
+
+        val hasRemoteChanged = remoteFile != null && remoteMd5 != baseMd5
+
+        logger.w(TAG, "[CONFIG-SYNC] syncBookConfig: hasLocalChanged=$hasLocalChanged, hasRemoteChanged=$hasRemoteChanged")
+
+        if (!hasLocalChanged && !hasRemoteChanged) {
+            logger.d(TAG, "Config settings are in sync.")
             return@withContext
         }
 
-        val hasLocalChanged = localLastModified > lastSyncedLocalTime + 2000 && localLastModified > 0L
-        val hasRemoteChanged = remoteFile != null && remoteLastModified > lastSyncedRemoteTime + 2000
+        if (syncMode == SyncMode.TWO_WAY && hasLocalChanged && hasRemoteChanged) {
+            logger.d(TAG, "Config conflict detected. Performing 3-way merge...")
+            val mergedJson = mergeConfigJsons(localConfigJson, remoteConfigJson!!, baseConfigJson)
+            val tempFile = File(context.cacheDir, configFileName)
+            try {
+                tempFile.writeText(mergedJson)
+                saveToLocalBackupFolder(configFileName, tempFile)
+                val updateSuccess = storageProvider.updateFile(remoteFile.id, tempFile, "application/json", bookName) { _ -> }
+                if (updateSuccess) {
+                    importExportManager.importBookConfigFromJson(mergedJson, bookId)
+                    syncLogProvider.addLogEntry("Einstellungen (gemergt) synchronisiert", bookId, bookName)
+                }
+            } finally {
+                tempFile.delete()
+            }
+            return@withContext
+        }
 
         val shouldUpload = when (syncMode) {
             SyncMode.RESTORE_ONLY -> false
             SyncMode.BACKUP_ONLY -> hasLocalChanged || remoteFile == null
-            SyncMode.TWO_WAY -> hasLocalChanged && !hasRemoteChanged
+            SyncMode.TWO_WAY -> hasLocalChanged
         }
 
         val shouldDownload = when (syncMode) {
             SyncMode.BACKUP_ONLY -> false
             SyncMode.RESTORE_ONLY -> hasRemoteChanged || localLastModified == 0L
-            SyncMode.TWO_WAY -> hasRemoteChanged || localLastModified == 0L
+            SyncMode.TWO_WAY -> hasRemoteChanged
         }
-
-        logger.w(TAG, "[CONFIG-SYNC] Decision: hasLocalChanged=$hasLocalChanged, hasRemoteChanged=$hasRemoteChanged, shouldUpload=$shouldUpload, shouldDownload=$shouldDownload")
 
         if (shouldUpload) {
             logger.d(TAG, "Uploading config...")
             val tempFile = File(context.cacheDir, configFileName)
             try {
-                val configJson = importExportManager.exportBookConfigToJson(bookId)
-                tempFile.writeText(configJson)
-                if (tempFile.length() > 0) {
-                    saveToLocalBackupFolder(configFileName, tempFile)
-                    val fileId = if (remoteFile != null) {
-                        val updateSuccess = storageProvider.updateFile(remoteFile.id, tempFile, "application/json", bookName) { _ -> }
-                        if (updateSuccess) remoteFile.id else null
-                    } else {
-                        storageProvider.uploadFile(tempFile, "application/json", bookName) { _ -> }
-                    }
-
-                    if (fileId != null) {
-                        val newMetadata = storageProvider.getFileMetadata(fileId)
-                        val newRemoteTime = newMetadata?.modifiedTime ?: 0L
-                        prefs.edit()
-                            .putLong("config_last_synced_local_time_$bookId", localLastModified)
-                            .putLong("config_last_synced_remote_time_$bookId", newRemoteTime)
-                            .apply()
-                        syncLogProvider.addLogEntry("Einstellungen in die Cloud hochgeladen", bookId, bookName)
-                    }
+                tempFile.writeText(localConfigJson)
+                saveToLocalBackupFolder(configFileName, tempFile)
+                if (remoteFile != null) {
+                    storageProvider.updateFile(remoteFile.id, tempFile, "application/json", bookName) { _ -> }
+                } else {
+                    storageProvider.uploadFile(tempFile, "application/json", bookName) { _ -> }
                 }
+                syncLogProvider.addLogEntry("Einstellungen in die Cloud hochgeladen", bookId, bookName)
             } finally {
                 tempFile.delete()
             }
-        } else if (shouldDownload) {
-            logger.d(TAG, "Downloading config...")
-            val tempFile = File(context.cacheDir, "download_$configFileName")
+        } else if (shouldDownload && remoteConfigJson != null) {
+            logger.d(TAG, "Downloading/Applying remote config...")
+            val tempFile = File(context.cacheDir, configFileName)
             try {
-                if (storageProvider.downloadFile(remoteFile!!.id, tempFile) { _ -> }) {
-                    val configJson = tempFile.readText()
-                    importExportManager.importBookConfigFromJson(configJson, bookId)
-                    saveToLocalBackupFolder(configFileName, tempFile)
-                    syncLogProvider.addLogEntry("Einstellungen aus der Cloud wiederhergestellt", bookId, bookName)
-                }
+                tempFile.writeText(remoteConfigJson)
+                importExportManager.importBookConfigFromJson(remoteConfigJson, bookId)
+                saveToLocalBackupFolder(configFileName, tempFile)
+                syncLogProvider.addLogEntry("Einstellungen aus der Cloud wiederhergestellt", bookId, bookName)
             } finally {
                 tempFile.delete()
-            }
-        } else {
-            logger.d(TAG, "Config settings are in sync.")
-            if (lastSyncedLocalTime == 0L || lastSyncedRemoteTime == 0L) {
-                prefs.edit()
-                    .putLong("config_last_synced_local_time_$bookId", localLastModified)
-                    .putLong("config_last_synced_remote_time_$bookId", remoteLastModified)
-                    .apply()
             }
         }
     }
 
     suspend fun restoreBookConfigIfAvailable(
         storageProvider: SyncStorageProvider,
+        remoteFiles: List<RemoteSyncFile>,
         bookId: String,
         bookName: String
     ) {
         val configFileName = "config_$bookId.json"
-        val remoteFile = try {
-            storageProvider.listFiles().find { it.name == configFileName }
-        } catch (e: Exception) {
-            logger.e(TAG, "Failed to find config for restore", e)
-            null
-        } ?: return
+        val remoteFile = remoteFiles.find { it.name == configFileName } ?: return
 
         logger.d(TAG, "Found separate config on Drive, restoring...")
         val tempFile = File(context.cacheDir, "download_$configFileName")

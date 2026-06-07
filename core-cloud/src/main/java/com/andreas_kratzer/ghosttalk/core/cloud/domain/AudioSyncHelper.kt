@@ -16,16 +16,12 @@ class AudioSyncHelper(
 
     suspend fun syncAudioRecordings(
         storageProvider: SyncStorageProvider,
+        remoteFiles: List<RemoteSyncFile>,
         syncMode: SyncMode,
         bookId: String
     ) = withContext(Dispatchers.IO) {
         val audioFileName = "audio_$bookId.zip"
-        val remoteFile = try {
-            storageProvider.listFiles().find { it.name == audioFileName }
-        } catch (e: Exception) {
-            logger.e(TAG, "Failed to find audio recordings ZIP on Drive", e)
-            null
-        }
+        val remoteFile = remoteFiles.find { it.name == audioFileName }
 
         var localLastModified = importExportManager.getAudioRecordingsLastModified()
         val remoteLastModified = remoteFile?.modifiedTime ?: 0L
@@ -131,15 +127,11 @@ class AudioSyncHelper(
 
     suspend fun restoreAudioRecordingsIfAvailable(
         storageProvider: SyncStorageProvider,
+        remoteFiles: List<RemoteSyncFile>,
         bookId: String
     ) = withContext(Dispatchers.IO) {
         val audioFileName = "audio_$bookId.zip"
-        val remoteFile = try {
-            storageProvider.listFiles().find { it.name == audioFileName }
-        } catch (e: Exception) {
-            logger.e(TAG, "Failed to find audio recordings for restore", e)
-            null
-        } ?: return@withContext
+        val remoteFile = remoteFiles.find { it.name == audioFileName } ?: return@withContext
 
         logger.d(TAG, "Found separate audio recordings on Drive, restoring...")
         val tempFile = File(context.cacheDir, "download_$audioFileName")

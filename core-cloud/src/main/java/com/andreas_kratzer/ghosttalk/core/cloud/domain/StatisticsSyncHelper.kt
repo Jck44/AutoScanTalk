@@ -32,18 +32,13 @@ class StatisticsSyncHelper(
 
     suspend fun syncStatistics(
         storageProvider: SyncStorageProvider,
+        remoteFiles: List<RemoteSyncFile>,
         syncMode: SyncMode,
         bookId: String,
         bookName: String
     ) = withContext(Dispatchers.IO) {
         val statsFileName = "statistics_$bookId.zip"
-
-        val remoteFile = try {
-            storageProvider.listFiles().find { it.name == statsFileName }
-        } catch (e: Exception) {
-            logger.e(TAG, "Failed to find statistics backup on Drive", e)
-            null
-        }
+        val remoteFile = remoteFiles.find { it.name == statsFileName }
 
         val localLastModified = importExportManager.getStatisticsLastModified(bookId)
         val remoteLastModified = remoteFile?.modifiedTime ?: 0L
@@ -139,16 +134,12 @@ class StatisticsSyncHelper(
 
     suspend fun restoreStatisticsIfAvailable(
         storageProvider: SyncStorageProvider,
+        remoteFiles: List<RemoteSyncFile>,
         bookId: String,
         bookName: String
     ) {
         val statsFileName = "statistics_$bookId.zip"
-        val remoteFile = try {
-            storageProvider.listFiles().find { it.name == statsFileName }
-        } catch (e: Exception) {
-            logger.e(TAG, "Failed to find statistics for restore", e)
-            null
-        } ?: return
+        val remoteFile = remoteFiles.find { it.name == statsFileName } ?: return
 
         logger.d(TAG, "Found separate statistics on Drive, restoring...")
         val tempFile = File(context.cacheDir, "download_$statsFileName")

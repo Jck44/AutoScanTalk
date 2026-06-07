@@ -33,14 +33,10 @@ class TtsSyncHelper(
 
     suspend fun syncTtsCache(
         storageProvider: SyncStorageProvider,
+        remoteFiles: List<RemoteSyncFile>,
         syncMode: SyncMode
     ) = withContext(Dispatchers.IO) {
-        val remoteFile = try {
-            storageProvider.listFiles().find { it.name == TTS_CACHE_FILE_NAME }
-        } catch (e: Exception) {
-            logger.e(TAG, "Failed to find TTS cache on Drive", e)
-            null
-        }
+        val remoteFile = remoteFiles.find { it.name == TTS_CACHE_FILE_NAME }
 
         val localLastModified = importExportManager.getTtsCacheLastModified()
         val remoteLastModified = remoteFile?.modifiedTime ?: 0L
@@ -131,14 +127,10 @@ class TtsSyncHelper(
     }
 
     suspend fun restoreTtsCacheIfAvailable(
-        storageProvider: SyncStorageProvider
+        storageProvider: SyncStorageProvider,
+        remoteFiles: List<RemoteSyncFile>
     ) {
-        val remoteFile = try {
-            storageProvider.listFiles().find { it.name == TTS_CACHE_FILE_NAME }
-        } catch (e: Exception) {
-            logger.e(TAG, "Failed to find TTS cache for restore", e)
-            null
-        } ?: return
+        val remoteFile = remoteFiles.find { it.name == TTS_CACHE_FILE_NAME } ?: return
 
         logger.d(TAG, "Found separate TTS cache on Drive, restoring...")
         val tempFile = File(context.cacheDir, "download_$TTS_CACHE_FILE_NAME")
