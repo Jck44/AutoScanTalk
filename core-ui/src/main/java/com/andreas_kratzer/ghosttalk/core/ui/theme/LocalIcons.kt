@@ -1399,5 +1399,27 @@ object GhostTalkIcons {
                 close()
             }
         }
+
+    val Tablet: ImageVector
+        get() = materialIcon(name = "Filled.Tablet") {
+            materialPath {
+                moveTo(21.0f, 4.0f)
+                horizontalLineTo(3.0f)
+                curveTo(1.9f, 4.0f, 1.0f, 4.9f, 1.0f, 6.0f)
+                verticalLineToRelative(12.0f)
+                curveTo(1.0f, 19.1f, 1.9f, 20.0f, 3.0f, 20.0f)
+                horizontalLineTo(21.0f)
+                curveTo(22.1f, 20.0f, 23.0f, 19.1f, 23.0f, 18.0f)
+                verticalLineTo(6.0f)
+                curveTo(23.0f, 4.9f, 22.1f, 4.0f, 21.0f, 4.0f)
+                close()
+                moveTo(19.0f, 18.0f)
+                horizontalLineTo(5.0f)
+                verticalLineTo(6.0f)
+                horizontalLineTo(19.0f)
+                verticalLineTo(18.0f)
+                close()
+            }
+        }
 }
 

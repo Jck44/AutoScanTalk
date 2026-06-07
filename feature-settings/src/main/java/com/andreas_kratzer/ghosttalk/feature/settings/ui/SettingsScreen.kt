@@ -77,20 +77,14 @@ import java.io.InputStreamReader
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 
 enum class SettingsSection(private val titleRes: Int, val icon: ImageVector, val isGlobal: Boolean, val isScoped: Boolean) {
-    GENERAL(R.string.settings_category_general, Icons.Default.Settings, isGlobal = true, isScoped = true),
-    VOICE(R.string.settings_category_voice, GhostTalkIcons.VolumeUp, isGlobal = false, isScoped = true),
-    VOCAL_SWITCH(R.string.settings_category_vocal_switch, GhostTalkIcons.RecordVoiceOver, isGlobal = false, isScoped = true),
-    SCANNING(R.string.settings_category_scanning, GhostTalkIcons.SwitchAccessShortcut, isGlobal = false, isScoped = true),
-    SECURITY(R.string.settings_category_security, GhostTalkIcons.Security, isGlobal = true, isScoped = false),
-    TELEPHONY(R.string.settings_category_call, Icons.Default.Phone, isGlobal = true, isScoped = false),
-    CLOUD(R.string.settings_category_cloud, GhostTalkIcons.Cloud, isGlobal = true, isScoped = true),
-    SMART_HOME(R.string.settings_category_smart_home, Icons.Default.Home, isGlobal = true, isScoped = false),
-    GEMINI(R.string.settings_category_gemini, GhostTalkIcons.AutoAwesome, isGlobal = false, isScoped = true),
-    NOTIFICATIONS(R.string.settings_category_notifications, GhostTalkIcons.Notifications, isGlobal = true, isScoped = false),
-    ADVANCED(R.string.settings_category_advanced, GhostTalkIcons.Science, isGlobal = true, isScoped = true);
+    ACCESSIBILITY(R.string.settings_section_accessibility, GhostTalkIcons.SwitchAccessShortcut, isGlobal = false, isScoped = true),
+    VOICE_ASSISTANT(R.string.settings_section_voice_assistant, GhostTalkIcons.VolumeUp, isGlobal = false, isScoped = true),
+    SECURITY(R.string.settings_section_security, GhostTalkIcons.Security, isGlobal = true, isScoped = false),
+    CLOUD_BACKUP(R.string.settings_section_cloud_backup, GhostTalkIcons.Cloud, isGlobal = true, isScoped = true),
+    SYSTEM_MAINTENANCE(R.string.settings_section_system_maintenance, GhostTalkIcons.Science, isGlobal = true, isScoped = true);
 
     fun getTitleRes(isGlobal: Boolean): Int {
-        return if (this == CLOUD && !isGlobal) {
+        return if (this == CLOUD_BACKUP && !isGlobal) {
             R.string.settings_category_cloud_book
         } else {
             titleRes
@@ -525,17 +519,16 @@ fun SubmenuContent(
     onNavigateToVocalTraining: () -> Unit = {}
 ) {
     when (section) {
-        SettingsSection.GENERAL -> {
-            GeneralSettingsSection(viewModel, isGlobal = isGlobal, onNavigateBack = onNavigateBack, onBookDeleted = onBookDeleted)
-        }
-        SettingsSection.VOICE -> {
-            VoiceSettingsSection(viewModel, isGlobal = isGlobal)
-        }
-        SettingsSection.VOCAL_SWITCH -> {
-            VocalSwitchSettingsSection(viewModel, isGlobal = isGlobal, onNavigateToVocalTraining = onNavigateToVocalTraining)
-        }
-        SettingsSection.SCANNING -> {
+        SettingsSection.ACCESSIBILITY -> {
             ScanningSettingsSection(viewModel, isGlobal = isGlobal)
+            VocalSwitchSettingsSection(viewModel, isGlobal = isGlobal, onNavigateToVocalTraining = onNavigateToVocalTraining)
+            CallSettingsSection(viewModel)
+            PermissionsSettingsSection(viewModel)
+        }
+        SettingsSection.VOICE_ASSISTANT -> {
+            VoiceSettingsSection(viewModel, isGlobal = isGlobal)
+            GenAiSettingsSection(viewModel)
+            SmartHomeSettingsSection(viewModel, isGlobal = isGlobal)
         }
         SettingsSection.SECURITY -> {
             val pin by viewModel.securityPin.collectAsState(null)
@@ -569,7 +562,7 @@ fun SubmenuContent(
                 isBiometricSupported = viewModel.isBiometricSupported
             )
         }
-        SettingsSection.CLOUD -> {
+        SettingsSection.CLOUD_BACKUP -> {
             CloudSettingsSection(
                 viewModel = viewModel,
                 isGlobal = isGlobal,
@@ -579,21 +572,10 @@ fun SubmenuContent(
                 onSelectSafFolderForImport = onSelectSafFolderForImport
             )
         }
-        SettingsSection.SMART_HOME -> {
-            SmartHomeSettingsSection(viewModel, isGlobal = isGlobal)
-        }
-        SettingsSection.GEMINI -> {
-            GenAiSettingsSection(viewModel)
-        }
-        SettingsSection.NOTIFICATIONS -> {
-            PermissionsSettingsSection(viewModel)
-        }
-        SettingsSection.TELEPHONY -> {
-            CallSettingsSection(viewModel)
-        }
-        SettingsSection.ADVANCED -> {
+        SettingsSection.SYSTEM_MAINTENANCE -> {
+            GeneralSettingsSection(viewModel, isGlobal = isGlobal, onNavigateBack = onNavigateBack, onBookDeleted = onBookDeleted)
             if (isGlobal) {
-                ExperimentalSettingsSection(viewModel) // Weather timeout is here and global
+                ExperimentalSettingsSection(viewModel)
                 MaintenanceSection(
                     viewModel = viewModel,
                     isGlobal = true,

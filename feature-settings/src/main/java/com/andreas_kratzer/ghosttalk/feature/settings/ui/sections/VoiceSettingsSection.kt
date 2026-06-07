@@ -75,7 +75,11 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
             val ttsEngine by viewModel.ttsEngine.collectAsState("google")
             val elevenLabsModel by viewModel.elevenLabsModel.collectAsState("eleven_multilingual_v2")
             
-            PreferenceCategory(stringResource(R.string.settings_category_voice), modifier = Modifier.weight(1f)) {
+            PreferenceCategory(
+                title = stringResource(R.string.settings_category_voice),
+                isCloudProfile = true,
+                modifier = Modifier.weight(1f)
+            ) {
                 // Engine Select
                 val engineOptions = listOf(
                     "google" to R.string.settings_tts_engine_google,
@@ -240,7 +244,11 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                 }
             }
 
-            PreferenceCategory(stringResource(R.string.settings_category_audio_hardware), modifier = Modifier.weight(1f)) {
+            PreferenceCategory(
+                title = stringResource(R.string.settings_category_audio_hardware),
+                isLocalDevice = true,
+                modifier = Modifier.weight(1f)
+            ) {
                 // TTS Audio Device Select
                 val ttsOptions = mutableListOf<Pair<String, () -> Unit>>()
                 ttsOptions.add(stringResource(R.string.settings_audio_default) to { viewModel.setTtsAudioDevice(null) })

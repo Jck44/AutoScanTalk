@@ -33,18 +33,39 @@ class PerformManualSyncUseCase @Inject constructor(
         mode: SyncMode,
         onProgress: (Float, String) -> Unit = { _, _ -> }
     ): Result = withContext(Dispatchers.IO) {
-        Log.d(TAG, "Starting manual sync execution. Mode: $mode")
-        val isSaf = settingsRepository.syncTargetType == "LOCAL_FOLDER_SAF"
+        val targetType = settingsRepository.syncTargetType
+        val authType = settingsRepository.googleAuthType
+        val folderId = settingsRepository.googleDriveFolderId
+        val folderName = settingsRepository.googleDriveFolderName
+        val safUri = settingsRepository.localFolderSafUri
+        var isSaf = targetType == "LOCAL_FOLDER_SAF"
+        Log.d(TAG, "Starting manual sync execution. Mode: $mode, syncTargetType='$targetType', isSaf=$isSaf, googleAuthType=$authType, googleDriveFolderId=$folderId, googleDriveFolderName=$folderName, localFolderSafUri=$safUri")
+
+        // Auto-correct: syncTargetType is LOCAL_FOLDER_SAF but no valid SAF URI exists
+        // and a Google Drive folder ID is present → switch to DRIVE_API
+        if (isSaf && (safUri == null || !safUri.startsWith("content://")) && folderId != null && !folderId.startsWith("content://")) {
+            Log.w(TAG, "Auto-correcting syncTargetType: was LOCAL_FOLDER_SAF but no valid SAF URI found (safUri=$safUri). Google Drive folder '$folderName' ($folderId) is configured. Switching to DRIVE_API.")
+            settingsRepository.syncTargetType = "DRIVE_API"
+            isSaf = false
+        }
 
         val drive = if (isSaf) {
+            Log.d(TAG, "SAF mode detected. Setting drive=null.")
             null
         } else {
-            DriveServiceHelper.buildDriveClient(
+            Log.d(TAG, "Drive API mode detected. Building drive client with authType=$authType...")
+            val client = DriveServiceHelper.buildDriveClient(
                 context = context,
-                authType = settingsRepository.googleAuthType,
+                authType = authType,
                 googleAuthManager = googleAuthManager,
                 googleWebAuthManager = googleWebAuthManager
-            ) ?: return@withContext Result.Error("Keine Google-Anmeldedaten oder Verbindung fehlgeschlagen.")
+            )
+            if (client == null) {
+                Log.e(TAG, "buildDriveClient returned null! authType=$authType")
+                return@withContext Result.Error("Keine Google-Anmeldedaten oder Verbindung fehlgeschlagen.")
+            }
+            Log.d(TAG, "Drive client built successfully.")
+            client
         }
 
         return@withContext try {

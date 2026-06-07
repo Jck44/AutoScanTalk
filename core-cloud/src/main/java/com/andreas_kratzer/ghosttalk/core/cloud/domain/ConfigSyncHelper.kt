@@ -207,4 +207,78 @@ class ConfigSyncHelper(
             tempFile.delete()
         }
     }
+
+    suspend fun syncProfile(
+        storageProvider: SyncStorageProvider,
+        remoteFiles: List<RemoteSyncFile>,
+        activeProfile: com.andreas_kratzer.ghosttalk.core.model.SettingsProfile,
+        settingsRepository: com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+    ) = withContext(Dispatchers.IO) {
+        val profileFileName = "profile_${activeProfile.id}.json"
+        val remoteFile = remoteFiles.find { it.name == profileFileName }
+
+        val jsonSerializer = Json { ignoreUnknownKeys = true; prettyPrint = true }
+        val localJson = jsonSerializer.encodeToString(com.andreas_kratzer.ghosttalk.core.model.ProfileConfig.serializer(), activeProfile.config)
+        val localMd5 = calculateMd5(localJson)
+
+        val baseBackupFile = File(File(context.filesDir, "local_backups"), profileFileName)
+        val baseJson = if (baseBackupFile.exists()) baseBackupFile.readText() else null
+
+        if (remoteFile == null) {
+            logger.d(TAG, "Uploading profile $profileFileName to cloud...")
+            val tempFile = File(context.cacheDir, profileFileName)
+            try {
+                tempFile.writeText(localJson)
+                saveToLocalBackupFolder(profileFileName, tempFile)
+                storageProvider.uploadFile(tempFile, "application/json", activeProfile.name) { _ -> }
+                syncLogProvider.addLogEntry("Profil ${activeProfile.name} in die Cloud hochgeladen", activeProfile.id, activeProfile.name)
+            } finally {
+                tempFile.delete()
+            }
+            return@withContext
+        }
+
+        var remoteJson: String? = null
+        val downloadFile = File(context.cacheDir, "temp_$profileFileName")
+        try {
+            if (storageProvider.downloadFile(remoteFile.id, downloadFile) { _ -> }) {
+                remoteJson = downloadFile.readText()
+            }
+        } catch (e: Exception) {
+            logger.e(TAG, "Failed to download remote profile", e)
+        } finally {
+            downloadFile.delete()
+        }
+
+        if (remoteJson == null) return@withContext
+
+        val remoteMd5 = calculateMd5(remoteJson)
+        if (localMd5 == remoteMd5) {
+            logger.d(TAG, "Profile is already in sync.")
+            return@withContext
+        }
+
+        logger.d(TAG, "Profile conflict/delta detected. Performing 3-way merge on profile configurations...")
+        val mergedJson = mergeConfigJsons(localJson, remoteJson, baseJson)
+        val tempFile = File(context.cacheDir, profileFileName)
+        try {
+            tempFile.writeText(mergedJson)
+            saveToLocalBackupFolder(profileFileName, tempFile)
+            
+            // Save local merge
+            val mergedConfig = jsonSerializer.decodeFromString(com.andreas_kratzer.ghosttalk.core.model.ProfileConfig.serializer(), mergedJson)
+            val updatedProfile = activeProfile.copy(
+                config = mergedConfig,
+                profileVersionSequence = activeProfile.profileVersionSequence + 1,
+                updatedAt = System.currentTimeMillis()
+            )
+            settingsRepository.updateProfile(updatedProfile)
+
+            // Update to cloud
+            storageProvider.updateFile(remoteFile.id, tempFile, "application/json", activeProfile.name) { _ -> }
+            syncLogProvider.addLogEntry("Profil ${activeProfile.name} (gemergt) synchronisiert", activeProfile.id, activeProfile.name)
+        } finally {
+            tempFile.delete()
+        }
+    }
 }

@@ -1171,5 +1171,44 @@ class SettingsViewModel @Inject constructor(
             }
         }
     }
+
+    // --- Profile Management ---
+    val activeProfileIdFlow = settingsRepository.activeProfileIdFlow
+    val allSettingsProfilesFlow = settingsRepository.getAllProfilesFlow().stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    fun setActiveProfileId(profileId: String) {
+        settingsRepository.activeProfileId = profileId
+    }
+
+    fun createNewProfile(name: String) {
+        viewModelScope.launch {
+            val currentConfig = settingsRepository.getProfileById(settingsRepository.activeProfileId)?.config 
+                ?: com.andreas_kratzer.ghosttalk.core.model.ProfileConfig()
+            val newProfile = com.andreas_kratzer.ghosttalk.core.model.SettingsProfile(
+                id = "profile-${java.util.UUID.randomUUID()}",
+                name = name,
+                config = currentConfig,
+                profileVersionSequence = 1L,
+                updatedAt = System.currentTimeMillis()
+            )
+            settingsRepository.insertProfile(newProfile)
+            settingsRepository.activeProfileId = newProfile.id
+        }
+    }
+
+    fun deleteProfile(profile: com.andreas_kratzer.ghosttalk.core.model.SettingsProfile) {
+        viewModelScope.launch {
+            if (profile.id != "profile-default") {
+                settingsRepository.deleteProfile(profile)
+                if (settingsRepository.activeProfileId == profile.id) {
+                    settingsRepository.activeProfileId = "profile-default"
+                }
+            }
+        }
+    }
 }
 

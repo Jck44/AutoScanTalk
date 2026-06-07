@@ -138,7 +138,7 @@ abstract class BaseSettingsRepository(
                 changeListener?.invoke(key)
             }
 
-        fun refresh() { if (isScoped) _flow.value = value }
+        fun refresh() { _flow.value = value }
 
         operator fun getValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>): String? = value
         operator fun setValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>, v: String?) { value = v }
@@ -160,7 +160,7 @@ abstract class BaseSettingsRepository(
                 changeListener?.invoke(key)
             }
 
-        fun refresh() { if (isScoped) _flow.value = value }
+        fun refresh() { _flow.value = value }
 
         operator fun getValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>): String = value
         operator fun setValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>, v: String) { value = v }
@@ -182,7 +182,7 @@ abstract class BaseSettingsRepository(
                 changeListener?.invoke(key)
             }
 
-        fun refresh() { if (isScoped) _flow.value = value }
+        fun refresh() { _flow.value = value }
 
         operator fun getValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>): Boolean = value
         operator fun setValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>, v: Boolean) { value = v }
@@ -204,7 +204,7 @@ abstract class BaseSettingsRepository(
                 changeListener?.invoke(key)
             }
 
-        fun refresh() { if (isScoped) _flow.value = value }
+        fun refresh() { _flow.value = value }
 
         operator fun getValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>): Int = value
         operator fun setValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>, v: Int) { value = v }
@@ -226,7 +226,7 @@ abstract class BaseSettingsRepository(
                 changeListener?.invoke(key)
             }
 
-        fun refresh() { if (isScoped) _flow.value = value }
+        fun refresh() { _flow.value = value }
 
         operator fun getValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>): Long = value
         operator fun setValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>, v: Long) { value = v }
@@ -255,7 +255,7 @@ abstract class BaseSettingsRepository(
                 changeListener?.invoke(key)
             }
 
-        fun refresh() { if (isScoped) _flow.value = value }
+        fun refresh() { _flow.value = value }
 
         operator fun getValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>): Float = value
         operator fun setValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>, v: Float) { value = v }
@@ -277,7 +277,7 @@ abstract class BaseSettingsRepository(
                 changeListener?.invoke(key)
             }
 
-        fun refresh() { if (isScoped) _flow.value = value }
+        fun refresh() { _flow.value = value }
 
         operator fun getValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>): Set<String> = value
         operator fun setValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>, v: Set<String>) { value = v }

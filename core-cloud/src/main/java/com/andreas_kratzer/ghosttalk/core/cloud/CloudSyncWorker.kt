@@ -30,10 +30,6 @@ class CloudSyncWorker @AssistedInject constructor(
 ) : CoroutineWorker(context, workerParams) {
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
-        if (!settingsRepository.isCloudSyncEnabled) {
-            return@withContext Result.success() // Sync was disabled while scheduled
-        }
-
         // Run rolling stats cleanup before uploading/syncing to Google Drive
         try {
             val retentionDays = settingsRepository.statsRetentionDays
@@ -44,7 +40,17 @@ class CloudSyncWorker @AssistedInject constructor(
         }
 
         val targetType = settingsRepository.syncTargetType
-        val isSaf = targetType == "LOCAL_FOLDER_SAF"
+        val folderId = settingsRepository.googleDriveFolderId
+        val safUri = settingsRepository.localFolderSafUri
+        var isSaf = targetType == "LOCAL_FOLDER_SAF"
+
+        // Auto-correct: syncTargetType is LOCAL_FOLDER_SAF but no valid SAF URI exists
+        // and a Google Drive folder ID is present → switch to DRIVE_API
+        if (isSaf && (safUri == null || !safUri.startsWith("content://")) && folderId != null && !folderId.startsWith("content://")) {
+            Log.w("CloudSyncWorker", "Auto-correcting syncTargetType: was LOCAL_FOLDER_SAF but no valid SAF URI. Drive folder $folderId configured. Switching to DRIVE_API.")
+            settingsRepository.syncTargetType = "DRIVE_API"
+            isSaf = false
+        }
 
         val drive = if (isSaf) {
             null

@@ -46,16 +46,39 @@ import kotlinx.coroutines.delay
 fun PreferenceCategory(
     title: String,
     modifier: Modifier = Modifier,
+    isCloudProfile: Boolean = false,
+    isLocalDevice: Boolean = false,
     content: @Composable ColumnScope.() -> Unit
 ) {
     val dimensions = LocalDimensions.current
     Column(modifier = modifier.padding(vertical = dimensions.paddingMedium)) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.primary,
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(start = dimensions.paddingSmall, bottom = dimensions.paddingMedium)
-        )
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.weight(1f)
+            )
+            if (isCloudProfile) {
+                Icon(
+                    imageVector = GhostTalkIcons.Cloud,
+                    contentDescription = "Profil-Einstellung (wird synchronisiert)",
+                    tint = MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier.size(18.dp).padding(horizontal = 2.dp)
+                )
+            }
+            if (isLocalDevice) {
+                Icon(
+                    imageVector = GhostTalkIcons.Tablet,
+                    contentDescription = "Lokale Einstellung (nicht synchronisiert)",
+                    tint = MaterialTheme.colorScheme.tertiary,
+                    modifier = Modifier.size(18.dp).padding(horizontal = 2.dp)
+                )
+            }
+        }
         Surface(
             shape = MaterialTheme.shapes.large,
             color = MaterialTheme.colorScheme.surfaceContainerLow,

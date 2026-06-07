@@ -28,6 +28,8 @@ class GeneralSettingsRepository(
     private val _forceSoftKeyboard = BooleanSetting(KEY_FORCE_SOFT_KEYBOARD, default = true, isScoped = false)
     private val _syncLogsStorage = StringSetting(KEY_SYNC_LOGS_STORAGE, isScoped = false)
     private val _isSetupCompleted = BooleanSetting(KEY_IS_SETUP_COMPLETED, default = false, isScoped = false)
+    private val _isCaregiverDevice = BooleanSetting("is_caregiver_device", default = false, isScoped = false)
+    private val _activeProfileId = StringSetting("local_active_profile_id", default = "profile-default", isScoped = false)
 
     val themeModeFlow = _themeMode.flow
     val pageSortOrderFlow = _pageSortOrder.flow
@@ -39,6 +41,8 @@ class GeneralSettingsRepository(
     val startupBehaviorFlow = _startupBehavior.flow
     val forceSoftKeyboardFlow = _forceSoftKeyboard.flow
     val isSetupCompletedFlow = _isSetupCompleted.flow
+    val isCaregiverDeviceFlow = _isCaregiverDevice.flow
+    val activeProfileIdFlow = _activeProfileId.flow
 
     var themeMode: String by _themeMode
     var pageSortOrder: String by _pageSortOrder
@@ -50,6 +54,10 @@ class GeneralSettingsRepository(
     var forceSoftKeyboard: Boolean by _forceSoftKeyboard
     var syncLogsStorage: String? by _syncLogsStorage
     var isSetupCompleted: Boolean by _isSetupCompleted
+    var isCaregiverDevice: Boolean by _isCaregiverDevice
+    var activeProfileId: String
+        get() = _activeProfileId.value ?: "profile-default"
+        set(value) { _activeProfileId.value = value }
 
 
     override fun refresh() {
@@ -63,5 +71,7 @@ class GeneralSettingsRepository(
         _forceSoftKeyboard.refresh()
         _syncLogsStorage.refresh()
         _isSetupCompleted.refresh()
+        _isCaregiverDevice.refresh()
+        _activeProfileId.refresh()
     }
 }

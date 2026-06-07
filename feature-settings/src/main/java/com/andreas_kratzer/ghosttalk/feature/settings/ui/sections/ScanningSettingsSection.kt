@@ -40,7 +40,11 @@ fun ScanningSettingsSection(
         verticalArrangement = Arrangement.spacedBy(dimensions.paddingMedium),
         maxItemsInEachRow = 2
     ) {
-        PreferenceCategory(stringResource(R.string.settings_category_scanning), modifier = Modifier.weight(1f)) {
+        PreferenceCategory(
+            title = stringResource(R.string.settings_category_scanning),
+            isCloudProfile = true,
+            modifier = Modifier.weight(1f)
+        ) {
             SettingsEditTextItem(
                 label = stringResource(R.string.settings_scan_delay), 
                 value = scanDelay.toString(),
@@ -98,7 +102,11 @@ fun ScanningSettingsSection(
             }
         }
 
-        PreferenceCategory("Statische Zeile", modifier = Modifier.weight(1f)) {
+        PreferenceCategory(
+            title = "Statische Zeile",
+            isCloudProfile = true,
+            modifier = Modifier.weight(1f)
+        ) {
             val staticRowEnabled by viewModel.staticRowEnabled.collectAsState(false)
 
             SettingsToggleItem(
@@ -108,7 +116,11 @@ fun ScanningSettingsSection(
             )
         }
 
-        PreferenceCategory(stringResource(R.string.settings_category_hardware), modifier = Modifier.weight(1f)) {
+        PreferenceCategory(
+            title = stringResource(R.string.settings_category_hardware),
+            isLocalDevice = true,
+            modifier = Modifier.weight(1f)
+        ) {
             val switchKey by viewModel.switchActivationKey.collectAsState("Space")
             SettingsEditTextItem(
                 label = stringResource(R.string.settings_switch_key), 

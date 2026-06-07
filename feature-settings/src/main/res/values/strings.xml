@@ -3,18 +3,23 @@
     <!-- Settings Screen Labels -->
     <string name="settings_category_general">Allgemein</string>
     <string name="settings_category_voice">Text-to-Speech</string>
-    <string name="settings_category_scanning">Scannen &amp; Bedienung</string>
+    <string name="settings_category_scanning">Bedienung (Scannen &amp; Taster)</string>
     <string name="settings_category_security">Sicherheit &amp; PIN</string>
-    <string name="settings_category_cloud">Konten &amp; Import</string>
+    <string name="settings_category_cloud">Cloud, Sync &amp; Konten</string>
     <string name="settings_category_smart_home">Smart Home (Experimentell)</string>
     <string name="settings_category_gemini">KI &amp; Vorhersagen</string>
     <string name="settings_category_elevenlabs">Eleven Labs</string>
     <string name="settings_category_notifications">Benachrichtigungen &amp; Berechtigungen</string>
     <string name="settings_category_cloud_book">Sicherung</string>
     <string name="settings_category_cloud_sync">Synchronisierung</string>
-    <string name="settings_category_advanced">Erweiterte Einstellungen</string>
+    <string name="settings_category_advanced">System &amp; Wartung</string>
     <string name="settings_category_vocal_switch">Vocal Switch (Mund-Steuerung)</string>
     <string name="settings_analytics_dashboard">Statistiken &amp; Empfehlungen</string>
+    <string name="settings_section_accessibility">Bedienung &amp; Taster</string>
+    <string name="settings_section_voice_assistant">Sprachausgabe &amp; KI</string>
+    <string name="settings_section_security">Sicherheit &amp; Sperren</string>
+    <string name="settings_section_cloud_backup">Cloud &amp; Profile</string>
+    <string name="settings_section_system_maintenance">System &amp; Wartung</string>
 
     <!-- General Settings -->
     <string name="settings_start_page">Startseite</string>
@@ -236,6 +241,13 @@
     <string name="settings_clear_usage_stats">Statistiken leeren</string>
     <string name="settings_clear_usage_stats_confirm">Möchtest du alle Nutzungsstatistiken für dieses Buch wirklich leeren?</string>
     <string name="settings_action_history_title">Aktionsverlauf</string>
+    <string name="settings_category_profile">Einstellungen Profil</string>
+    <string name="settings_profile_active">Aktives Profil</string>
+    <string name="settings_profile_create">Neues Profil erstellen</string>
+    <string name="settings_profile_delete">Profil löschen</string>
+    <string name="settings_profile_create_title">Neues Profil</string>
+    <string name="settings_profile_name_hint">Profilname</string>
+    <string name="settings_profile_delete_confirm">Möchtest du das Profil \"%s\" wirklich löschen? Dies kann nicht rückgängig gemacht werden.</string>
     <string name="settings_category_local_backup">Lokale Datensicherung</string>
     <string name="settings_local_backup_create">Sicherung erstellen</string>
     <string name="settings_local_backup_restore">Sicherung wiederherstellen</string>

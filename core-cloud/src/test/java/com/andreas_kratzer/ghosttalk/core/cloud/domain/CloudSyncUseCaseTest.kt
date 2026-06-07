@@ -67,11 +67,18 @@ class CloudSyncUseCaseTest {
         every { mockSettingsRepository.syncModeBook } returns "TWO_WAY"
         every { mockSettingsRepository.syncModeTts } returns "TWO_WAY"
         every { mockSettingsRepository.syncModeStats } returns "RESTORE_ONLY"
+        every { mockSettingsRepository.isCloudSyncEnabled } returns true
+        every { mockSettingsRepository.activeProfileId } returns "default-profile"
+        coEvery { mockSettingsRepository.getProfileById(any()) } returns null
 
         coEvery { mockImportExportManager.getStatisticsLastModified(any<String>()) } returns 0L
         every { mockImportExportManager.getTtsCacheLastModified() } returns 0L
         every { mockImportExportManager.getAudioRecordingsLastModified() } returns 0L
         
+        // Mock new findFolder / createFolder signatures
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder(any(), any()) } returns null
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().createFolder(any(), any()) } returns "folder_1"
+
         useCase = CloudSyncUseCase(mockContext, mockBookRepository, mockImportExportManager, mockSettingsRepository, mockSyncLogProvider, mockLogger)
     }
 

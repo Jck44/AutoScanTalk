@@ -82,7 +82,11 @@ fun GeneralSettingsSection(
         if (isGlobal) {
             // 1. Benutzeroberfläche (Sprache, Design)
             val categoryUi = stringResource(R.string.settings_category_ui)
-            PreferenceCategory(categoryUi, modifier = Modifier.weight(1f)) {
+            PreferenceCategory(
+                title = categoryUi,
+                isCloudProfile = true,
+                modifier = Modifier.weight(1f)
+            ) {
                 // App Sprache
                 val selectedAppLanguage by viewModel.selectedAppLanguage.collectAsState("default")
                 val appLanguageLabel = stringResource(R.string.settings_app_language)
@@ -130,7 +134,11 @@ fun GeneralSettingsSection(
 
             // 2. Verhalten (Tastatur, Logs, Startup)
             val categoryBehavior = stringResource(R.string.settings_category_behavior)
-            PreferenceCategory(categoryBehavior, modifier = Modifier.weight(1f)) {
+            PreferenceCategory(
+                title = categoryBehavior,
+                isCloudProfile = true,
+                modifier = Modifier.weight(1f)
+            ) {
                 SettingsToggleItem(
                     label = stringResource(R.string.settings_force_soft_keyboard),
                     checked = forceKeyboard,
@@ -184,7 +192,11 @@ fun GeneralSettingsSection(
             stringResource(R.string.book_dialog_delete_title)
             stringResource(R.string.book_dialog_delete_confirm, activeBook?.name ?: "")
 
-            PreferenceCategory(categoryGeneral, modifier = Modifier.weight(1f)) {
+            PreferenceCategory(
+                title = categoryGeneral,
+                isCloudProfile = true,
+                modifier = Modifier.weight(1f)
+            ) {
                 // 1. Book Rename
                 activeBook?.let { book ->
                     var editName by remember(book.id) { mutableStateOf(book.name) }

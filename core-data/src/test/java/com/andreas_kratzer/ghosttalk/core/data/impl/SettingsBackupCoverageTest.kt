@@ -87,7 +87,11 @@ class SettingsBackupCoverageTest {
         "syncModeLogs",
         "syncLogsIntervalHours",
         "lastLogsSyncTime",
-        "lastUploadedLogHash"
+        "lastUploadedLogHash",
+        "activeProfileId",
+        "activeProfileIdFlow",
+        "isCaregiverDevice",
+        "isCaregiverDeviceFlow"
     )
 
     private val propertyMappings = mapOf(

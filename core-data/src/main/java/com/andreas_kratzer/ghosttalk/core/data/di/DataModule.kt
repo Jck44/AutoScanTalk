@@ -148,9 +148,10 @@ abstract class DataModule {
         fun provideSettingsRepositoryImpl(
             @ApplicationContext context: Context,
             bookRepository: BookRepository,
+            settingsProfileDao: com.andreas_kratzer.ghosttalk.core.database.SettingsProfileDao,
             @ApplicationScope scope: CoroutineScope
         ): SettingsRepositoryImpl {
-            return SettingsRepositoryImpl(context, bookRepository, scope)
+            return SettingsRepositoryImpl(context, bookRepository, settingsProfileDao, scope)
         }
 
         @Provides

@@ -71,4 +71,9 @@ object DatabaseModule {
     fun provideDeletedEntityDao(database: AppDatabase): com.andreas_kratzer.ghosttalk.core.database.DeletedEntityDao {
         return database.deletedEntityDao()
     }
+
+    @Provides
+    fun provideSettingsProfileDao(database: AppDatabase): com.andreas_kratzer.ghosttalk.core.database.SettingsProfileDao {
+        return database.settingsProfileDao()
+    }
 }

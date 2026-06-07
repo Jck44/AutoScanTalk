@@ -231,8 +231,13 @@ class CloudSyncSettingsDelegate @Inject constructor(
     }
 
     fun selectDriveFolder(folderId: String?, folderName: String?) {
+        Log.d("CloudSyncDelegate", "selectDriveFolder: folderId=$folderId, folderName=$folderName, current syncTargetType=${settingsRepository.syncTargetType}")
         settingsRepository.googleDriveFolderId = folderId
         settingsRepository.googleDriveFolderName = folderName
+        if (folderId != null) {
+            settingsRepository.syncTargetType = "DRIVE_API"
+            Log.d("CloudSyncDelegate", "selectDriveFolder: syncTargetType set to DRIVE_API")
+        }
     }
 
     fun fetchAvailableBackupsForImportByUrlOrId(urlOrId: String, scope: CoroutineScope) {
@@ -400,6 +405,8 @@ class CloudSyncSettingsDelegate @Inject constructor(
                 }
                 settingsRepository.googleDriveFolderId = folder.id
                 settingsRepository.googleDriveFolderName = folder.name
+                settingsRepository.syncTargetType = "DRIVE_API"
+                Log.d("CloudSyncDelegate", "selectDriveFolderByUrlOrId: Set folderId=${folder.id}, folderName=${folder.name}, syncTargetType=DRIVE_API")
                 onResult(true, folder.name)
             } catch (e: Exception) {
                 Log.e("CloudSyncDelegate", "Failed to access manually entered folder: ${e.message}", e)

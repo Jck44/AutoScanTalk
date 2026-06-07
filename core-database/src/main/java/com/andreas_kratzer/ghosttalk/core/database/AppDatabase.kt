@@ -32,9 +32,10 @@ import java.util.UUID
     entities = [
         Page::class, Book::class, ButtonUsageStat::class, PageTemplate::class,
         ButtonEntity::class, ButtonUsageHistoryEntity::class, ButtonTemplateEntity::class,
-        UserModeSessionEntity::class, VocalProfileEntity::class, DeletedEntity::class
+        UserModeSessionEntity::class, VocalProfileEntity::class, DeletedEntity::class,
+        SettingsProfileEntity::class
     ],
-    version = 32,
+    version = 33,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -49,10 +50,27 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun userModeSessionDao(): UserModeSessionDao
     abstract fun vocalProfileDao(): VocalProfileDao
     abstract fun deletedEntityDao(): DeletedEntityDao
+    abstract fun settingsProfileDao(): SettingsProfileDao
 
     companion object {
         @Volatile
         private var INSTANCE: AppDatabase? = null
+
+        val MIGRATION_32_33: Migration = object : Migration(32, 33) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `settings_profiles` (
+                        `id` TEXT NOT NULL, 
+                        `name` TEXT NOT NULL, 
+                        `configJson` TEXT NOT NULL, 
+                        `profileVersionSequence` INTEGER NOT NULL DEFAULT 0, 
+                        `updatedAt` INTEGER NOT NULL, 
+                        `isDeleted` INTEGER NOT NULL DEFAULT 0, 
+                        PRIMARY KEY(`id`)
+                    )
+                """.trimIndent())
+            }
+        }
 
         val MIGRATION_29_30: Migration = object : Migration(29, 30) {
             override fun migrate(db: SupportSQLiteDatabase) {
@@ -562,7 +580,8 @@ abstract class AppDatabase : RoomDatabase() {
                     MIGRATION_28_29,
                     MIGRATION_29_30,
                     MIGRATION_30_31,
-                    MIGRATION_31_32
+                    MIGRATION_31_32,
+                    MIGRATION_32_33
                 )
                 .build()
                 INSTANCE = instance

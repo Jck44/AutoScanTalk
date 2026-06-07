@@ -18,13 +18,16 @@ class DriveServiceHelper(private val driveService: Drive) {
     /**
      * Creates a folder in Google Drive.
      */
-    suspend fun createFolder(folderName: String): String? = withContext(Dispatchers.IO) {
+    suspend fun createFolder(folderName: String, parentFolderId: String? = null): String? = withContext(Dispatchers.IO) {
         val metadata = File().apply {
             name = folderName
             mimeType = "application/vnd.google-apps.folder"
+            if (parentFolderId != null) {
+                parents = listOf(parentFolderId)
+            }
         }
         try {
-            Log.d(TAG, "Creating folder: $folderName")
+            Log.d(TAG, "Creating folder: $folderName" + (if (parentFolderId != null) " inside parent $parentFolderId" else ""))
             val googleFile = driveService.files().create(metadata).setFields("id").execute()
             Log.d(TAG, "Folder created successfully: ${googleFile.id}")
             googleFile.id
@@ -45,8 +48,9 @@ class DriveServiceHelper(private val driveService: Drive) {
     /**
      * Finds a folder by name.
      */
-    suspend fun findFolder(folderName: String): String? = withContext(Dispatchers.IO) {
-        val query = "name = '$folderName' and mimeType = 'application/vnd.google-apps.folder' and trashed = false"
+    suspend fun findFolder(folderName: String, parentFolderId: String? = null): String? = withContext(Dispatchers.IO) {
+        val parentQuery = if (parentFolderId != null) "'$parentFolderId' in parents and " else ""
+        val query = "${parentQuery}name = '$folderName' and mimeType = 'application/vnd.google-apps.folder' and trashed = false"
         try {
             Log.d(TAG, "Searching for folder: $folderName with query: $query")
             val result: FileList = driveService.files().list()

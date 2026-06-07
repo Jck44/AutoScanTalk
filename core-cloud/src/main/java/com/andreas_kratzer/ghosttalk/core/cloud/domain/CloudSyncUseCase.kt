@@ -54,14 +54,36 @@ class CloudSyncUseCase @Inject constructor(
     private val configSyncHelper = ConfigSyncHelper(context, importExportManager, syncLogProvider, logger)
 
     private suspend fun getStorageProvider(drive: Drive?, folderId: String? = null): SyncStorageProvider {
+        logger.d(TAG, "getStorageProvider: drive=${if (drive != null) "present" else "NULL"}, folderId=$folderId, settingsRepo.googleDriveFolderId=${settingsRepository.googleDriveFolderId}, syncTargetType=${settingsRepository.syncTargetType}")
         if (drive == null && folderId?.startsWith("content://") == true) {
+            logger.d(TAG, "getStorageProvider: Using DocumentFolderSyncStorageProvider (SAF mode)")
             return DocumentFolderSyncStorageProvider(context, folderId)
         }
-        val actualDrive = drive ?: throw IllegalStateException("Drive API client not available.")
+        val actualDrive = drive ?: run {
+            logger.e(TAG, "getStorageProvider: drive is NULL and folderId='$folderId' does not start with content://. syncTargetType=${settingsRepository.syncTargetType}")
+            throw IllegalStateException("Drive API client not available.")
+        }
         val actualFolderId = folderId ?: settingsRepository.googleDriveFolderId ?: DriveServiceHelper(
             actualDrive
         ).findFolder(FOLDER_NAME) ?: throw IllegalStateException("No valid folder ID found for Drive API.")
+        logger.d(TAG, "getStorageProvider: Using DriveApiSyncStorageProvider with folderId=$actualFolderId")
         return DriveApiSyncStorageProvider(actualDrive, actualFolderId)
+    }
+
+    private suspend fun resolveProfilesStorageProvider(drive: Drive?): SyncStorageProvider {
+        val folderId = settingsRepository.googleDriveFolderId
+        if (drive == null && folderId?.startsWith("content://") == true) {
+            // SAF Folder: Find or create a subfolder named "Profiles"
+            val rootDoc = androidx.documentfile.provider.DocumentFile.fromTreeUri(context, android.net.Uri.parse(folderId))
+            val profilesDoc = rootDoc?.findFile("Profiles") ?: rootDoc?.createDirectory("Profiles")
+            val targetUri = profilesDoc?.uri?.toString() ?: folderId
+            return DocumentFolderSyncStorageProvider(context, targetUri)
+        }
+        val actualDrive = drive ?: throw IllegalStateException("Drive API client not available.")
+        val helper = DriveServiceHelper(actualDrive)
+        val parentFolderId = folderId ?: helper.findFolder(FOLDER_NAME) ?: helper.createFolder(FOLDER_NAME) ?: throw IllegalStateException("Failed to resolve sync folder.")
+        val profilesFolderId = helper.findFolder("Profiles", parentFolderId) ?: helper.createFolder("Profiles", parentFolderId) ?: parentFolderId
+        return DriveApiSyncStorageProvider(actualDrive, profilesFolderId)
     }
 
     suspend fun syncBook(
@@ -120,6 +142,59 @@ class CloudSyncUseCase @Inject constructor(
                 val storageProvider = getStorageProvider(drive)
 
                 val remoteFiles = storageProvider.listFiles()
+
+                // --- STAGE 1: Profile Sync (Lifeline) ---
+                try {
+                    val profilesProvider = resolveProfilesStorageProvider(drive)
+                    val remoteProfileFiles = profilesProvider.listFiles()
+
+                    // 1. Sync the active profile (with Three-Way Merge)
+                    val activeProfileId = settingsRepository.activeProfileId
+                    val activeProfile = settingsRepository.getProfileById(activeProfileId)
+                    if (activeProfile != null) {
+                        logger.d(TAG, "Stage 1: Syncing active profile $activeProfileId")
+                        configSyncHelper.syncProfile(profilesProvider, remoteProfileFiles, activeProfile, settingsRepository)
+                    }
+
+                    // 2. Scan and download/import all other remote profiles
+                    val jsonSerializer = kotlinx.serialization.json.Json { ignoreUnknownKeys = true; prettyPrint = true }
+                    remoteProfileFiles.forEach { file ->
+                        if (file.name.startsWith("profile_") && file.name.endsWith(".json")) {
+                            val remoteProfileId = file.name.substringAfter("profile_").substringBefore(".json")
+                            if (settingsRepository.getProfileById(remoteProfileId) == null) {
+                                logger.d(TAG, "Auto-importing new remote profile: ${file.name}")
+                                val tempFile = File(context.cacheDir, "import_${file.name}")
+                                try {
+                                    if (profilesProvider.downloadFile(file.id, tempFile)) {
+                                        val profileJson = tempFile.readText()
+                                        val config = jsonSerializer.decodeFromString(com.andreas_kratzer.ghosttalk.core.model.ProfileConfig.serializer(), profileJson)
+                                        val newProfile = com.andreas_kratzer.ghosttalk.core.model.SettingsProfile(
+                                            id = remoteProfileId,
+                                            name = file.description ?: "Importiertes Profil",
+                                            config = config,
+                                            profileVersionSequence = file.version ?: 1L,
+                                            updatedAt = file.modifiedTime
+                                        )
+                                        settingsRepository.insertProfile(newProfile)
+                                        syncLogProvider.addLogEntry("Remote-Profil ${newProfile.name} importiert", newProfile.id, newProfile.name)
+                                    }
+                                } catch (ex: Exception) {
+                                    logger.e(TAG, "Failed to auto-import remote profile ${file.name}", ex)
+                                } finally {
+                                    tempFile.delete()
+                                }
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    logger.e(TAG, "Stage 1 Profile sync failed (non-fatal)", e)
+                }
+
+                // Check isCloudSyncEnabled. If disabled, skip Stage 2 book sync.
+                if (!settingsRepository.isCloudSyncEnabled) {
+                    logger.d(TAG, "Cloud sync is disabled in active profile. Skipping Stage 2 book/media sync.")
+                    return@withContext true
+                }
 
                 if (resolvedBookMode == null) {
                     logger.d(TAG, "Book sync is OFF. Skipping book synchronization.")

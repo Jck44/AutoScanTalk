@@ -13,12 +13,19 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import com.andreas_kratzer.ghosttalk.core.model.ProfileConfig
+import com.andreas_kratzer.ghosttalk.core.model.SettingsProfile
+import com.andreas_kratzer.ghosttalk.core.database.SettingsProfileEntity
+import com.andreas_kratzer.ghosttalk.core.database.toDomain
+import com.andreas_kratzer.ghosttalk.core.database.toEntity
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 @SuppressLint("CommitPrefEdits", "ApplySharedPref", "UseKtx")
 class SettingsRepositoryImpl @Inject constructor(
-    @ApplicationContext context: Context,
+    @ApplicationContext private val context: Context,
     private val bookRepository: BookRepository,
+    private val settingsProfileDao: com.andreas_kratzer.ghosttalk.core.database.SettingsProfileDao,
     @param:ApplicationScope private val scope: CoroutineScope
 ) : SettingsRepository {
 
@@ -50,9 +57,120 @@ class SettingsRepositoryImpl @Inject constructor(
     private val callSettings = CallSettingsRepository(prefs, activeBookIdFlow)
 
     init {
+        // Run bootstrapping on start
+        scope.launch {
+            try {
+                ProfileBootstrapper(settingsProfileDao, context).bootstrapIfNeeded()
+            } catch (e: Exception) {
+                // Non-fatal bootstrapper error
+            }
+        }
+
         val listener: (String) -> Unit = { key ->
             if (key !in SettingsMapper.NON_SYNCABLE_SETTINGS) {
                 updateConfigLastModified(activeBookId)
+            }
+            if (!isApplyingProfile) {
+                // If a syncable profile preference changes, write it back to the database
+                scope.launch {
+                    val activeId = activeProfileId
+                    val profile = getProfileById(activeId)
+                    if (profile != null) {
+                        val currentConfig = ProfileConfig(
+                            favoriteBookId = prefs.getString(SettingsConstants.KEY_FAVORITE_BOOK_ID, null),
+                            startupBehavior = prefs.getString(SettingsConstants.KEY_STARTUP_BEHAVIOR, "BOOK_SELECTION") ?: "BOOK_SELECTION",
+                            userModeScreenBehavior = prefs.getString(SettingsConstants.KEY_USER_MODE_SCREEN_BEHAVIOR, "GRID") ?: "GRID",
+                            securityPinHash = prefs.getString(SettingsConstants.KEY_SECURITY_PIN_HASH, null),
+                            securityPinSalt = prefs.getString(SettingsConstants.KEY_SECURITY_PIN_SALT, null),
+                            securityPinTimeoutMinutes = prefs.getLong(SettingsConstants.KEY_SECURITY_PIN_TIMEOUT_MINUTES, 30L),
+                            isPinRequiredForDeletion = prefs.getBoolean(SettingsConstants.KEY_IS_PIN_REQUIRED_FOR_DELETION, false),
+                            isSecurityRequiredForEdit = prefs.getBoolean(SettingsConstants.KEY_SECURITY_REQUIRED_FOR_EDIT, false),
+                            isSecurityRequiredForSettings = prefs.getBoolean(SettingsConstants.KEY_SECURITY_REQUIRED_FOR_SETTINGS, false),
+                            isSecurityRequiredForAnalytics = prefs.getBoolean(SettingsConstants.KEY_SECURITY_REQUIRED_FOR_ANALYTICS, false),
+                            elevenLabsApiKey = prefs.getString(SettingsConstants.KEY_ELEVENLABS_API_KEY, null),
+                            geminiApiKey = prefs.getString(SettingsConstants.KEY_GEMINI_API_KEY, null),
+                            useGeminiApiKey = prefs.getBoolean(SettingsConstants.KEY_USE_GEMINI_API_KEY, false),
+                            autoStartScanning = prefs.getBoolean(SettingsConstants.KEY_AUTO_START_SCANNING, true),
+                            scanDelayMillis = prefs.getLong(SettingsConstants.KEY_SCAN_DELAY_MILLIS, 3000L),
+                            holdingTimeMillis = prefs.getLong(SettingsConstants.KEY_HOLDING_TIME_MILLIS, 250L),
+                            resumeScanningFromStart = prefs.getBoolean(SettingsConstants.KEY_RESUME_SCANNING_FROM_START, true),
+                            switchActivationKey = prefs.getString(SettingsConstants.KEY_SWITCH_ACTIVATION_KEY, "~3") ?: "~3",
+                            volumeKeysActivate = prefs.getBoolean(SettingsConstants.KEY_VOLUME_KEYS_ACTIVATE, false),
+                            defaultScanPattern = prefs.getString(SettingsConstants.KEY_DEFAULT_SCAN_PATTERN, "linear") ?: "linear",
+                            limitScanCycles = prefs.getBoolean(SettingsConstants.KEY_LIMIT_SCAN_CYCLES, false),
+                            scanCycleLimit = prefs.getInt(SettingsConstants.KEY_SCAN_CYCLE_LIMIT, 2),
+                            staticRowEnabled = prefs.getBoolean(SettingsConstants.KEY_STATIC_ROW_ENABLED, false),
+                            staticRowScanPattern = prefs.getString(SettingsConstants.KEY_STATIC_ROW_SCAN_PATTERN, "linear") ?: "linear",
+                            lateClickThresholdMillis = prefs.getLong(SettingsConstants.KEY_LATE_CLICK_THRESHOLD_MILLIS, 250L),
+                            forceSoftKeyboard = prefs.getBoolean(SettingsConstants.KEY_FORCE_SOFT_KEYBOARD, true),
+                            vocalSwitchEnabled = prefs.getBoolean(SettingsConstants.KEY_VOCAL_SWITCH_ENABLED, false),
+                            ttsEngine = prefs.getString(SettingsConstants.KEY_TTS_ENGINE, null),
+                            ttsLanguage = prefs.getString(SettingsConstants.KEY_TTS_LANGUAGE, null),
+                            ttsVoiceName = prefs.getString(SettingsConstants.KEY_TTS_VOICE_NAME, null),
+                            googleTtsLanguage = prefs.getString(SettingsConstants.KEY_GOOGLE_TTS_LANGUAGE, null),
+                            googleTtsVoiceName = prefs.getString(SettingsConstants.KEY_GOOGLE_TTS_VOICE_NAME, null),
+                            elevenLabsTtsLanguage = prefs.getString(SettingsConstants.KEY_ELEVENLABS_TTS_LANGUAGE, null),
+                            elevenLabsTtsVoiceName = prefs.getString(SettingsConstants.KEY_ELEVENLABS_TTS_VOICE_NAME, null),
+                            elevenLabsModel = prefs.getString(SettingsConstants.KEY_ELEVENLABS_MODEL, "eleven_multilingual_v2") ?: "eleven_multilingual_v2",
+                            elevenLabsStability = prefs.getFloat(SettingsConstants.KEY_ELEVENLABS_STABILITY, 0.5f),
+                            elevenLabsSimilarityBoost = prefs.getFloat(SettingsConstants.KEY_ELEVENLABS_SIMILARITY_BOOST, 0.75f),
+                            ttsPlaybackSpeed = prefs.getFloat(SettingsConstants.KEY_TTS_PLAYBACK_SPEED, 1.0f),
+                            isSmartPredictionEnabled = prefs.getBoolean(SettingsConstants.KEY_SMART_PREDICTION_ENABLED, false),
+                            smartPredictionDelay = prefs.getLong(SettingsConstants.KEY_SMART_PREDICTION_DELAY, 2000L),
+                            isGeminiEnabled = prefs.getBoolean(SettingsConstants.KEY_GEMINI_ENABLED, false),
+                            useLocalGenerativeAi = prefs.getBoolean(SettingsConstants.KEY_USE_LOCAL_GENERATIVE_AI, true),
+                            geminiRedoPrediction = prefs.getBoolean(SettingsConstants.KEY_GEMINI_REDO_PREDICTION, false),
+                            geminiTimeout = prefs.getLong(SettingsConstants.KEY_GEMINI_TIMEOUT, 10000L),
+                            maxCallDurationSeconds = prefs.getInt(SettingsConstants.KEY_MAX_CALL_DURATION_SECONDS, 300),
+                            callDurationFeedbackIntervalSeconds = prefs.getInt(SettingsConstants.KEY_CALL_DURATION_FEEDBACK_INTERVAL_SECONDS, 60),
+                            outgoingCallIntro = prefs.getString(SettingsConstants.KEY_OUTGOING_CALL_INTRO, "") ?: "",
+                            incomingCallIntro = prefs.getString(SettingsConstants.KEY_INCOMING_CALL_INTRO, "") ?: "",
+                            incomingCallScanLimitUserModeActive = prefs.getInt(SettingsConstants.KEY_INCOMING_CALL_SCAN_LIMIT_ACTIVE, 2),
+                            incomingCallAutoActionUserModeActive = prefs.getString(SettingsConstants.KEY_INCOMING_CALL_AUTO_ACTION_ACTIVE, "NONE") ?: "NONE",
+                            incomingCallDelayUserModeInactive = prefs.getInt(SettingsConstants.KEY_INCOMING_CALL_DELAY_INACTIVE, 10),
+                            incomingCallAutoActionUserModeInactive = prefs.getString(SettingsConstants.KEY_INCOMING_CALL_AUTO_ACTION_INACTIVE, "NONE") ?: "NONE",
+                            callAnnouncementAsCue = prefs.getBoolean(SettingsConstants.KEY_CALL_ANNOUNCEMENT_AS_CUE, false),
+                            autoEnableSpeakerphone = prefs.getBoolean(SettingsConstants.KEY_CALL_AUTO_ENABLE_SPEAKERPHONE, true),
+                            simulateCallsEnabled = prefs.getBoolean(SettingsConstants.KEY_SIMULATE_CALLS_ENABLED, false),
+                            hangUpPressesRequired = prefs.getInt(SettingsConstants.KEY_CALL_HANG_UP_PRESSES_REQUIRED, 1),
+                            filterCallsNotInContacts = prefs.getBoolean(SettingsConstants.KEY_FILTER_CALLS_NOT_IN_CONTACTS, false),
+                            isNotificationReadingEnabled = prefs.getBoolean(SettingsConstants.KEY_NOTIFICATION_READING_ENABLED, false),
+                            monitoredNotificationApps = prefs.getStringSet(SettingsConstants.KEY_MONITORED_NOTIFICATION_APPS, emptySet()) ?: emptySet(),
+                            autoReadMode = prefs.getString(SettingsConstants.KEY_AUTO_READ_MODE, "OFF") ?: "OFF",
+                            autoReadOnlyInUserMode = prefs.getBoolean(SettingsConstants.KEY_AUTO_READ_ONLY_IN_USER_MODE, true),
+                            autoReadInStandby = prefs.getBoolean(SettingsConstants.KEY_AUTO_READ_IN_STANDBY, false),
+                            themeMode = prefs.getString(SettingsConstants.KEY_THEME_MODE, "LIGHT") ?: "LIGHT",
+                            appLanguage = prefs.getString(SettingsConstants.KEY_APP_LANGUAGE, null),
+                            pageSortOrder = prefs.getString(SettingsConstants.KEY_PAGE_SORT_ORDER, "MANUAL") ?: "MANUAL",
+                            templateSortOrder = prefs.getString(SettingsConstants.KEY_TEMPLATE_SORT_ORDER, "MANUAL") ?: "MANUAL",
+                            keepScreenOnUserMode = prefs.getBoolean(SettingsConstants.KEY_KEEP_SCREEN_ON_USER_MODE, true),
+                            actionLogLimit = prefs.getInt(SettingsConstants.KEY_ACTION_LOG_LIMIT, 100),
+                            persistActionLogs = prefs.getBoolean(SettingsConstants.KEY_PERSIST_ACTION_LOGS, true),
+                            showPageIdInLog = prefs.getBoolean(SettingsConstants.KEY_SHOW_PAGE_ID_IN_LOG, false),
+                            onlyRecordHardwareStats = prefs.getBoolean(SettingsConstants.KEY_ONLY_RECORD_HARDWARE_STATS, false),
+                            statsRetentionDays = prefs.getInt(SettingsConstants.KEY_STATS_RETENTION_DAYS, 30),
+                            statsAggregationHours = prefs.getInt(SettingsConstants.KEY_STATS_AGGREGATION_HOURS, 24),
+                            actionLogsStorage = prefs.getString(SettingsConstants.KEY_ACTION_LOGS_STORAGE, null),
+                            syncLogsStorage = prefs.getString(SettingsConstants.KEY_SYNC_LOGS_STORAGE, null),
+                            weatherCacheTimeout = prefs.getLong(SettingsConstants.KEY_WEATHER_CACHE_TIMEOUT, 60L),
+                            backgroundLocationEnabled = prefs.getBoolean(SettingsConstants.KEY_BACKGROUND_LOCATION_ENABLED, false),
+                            backgroundLocationInterval = prefs.getLong(SettingsConstants.KEY_BACKGROUND_LOCATION_INTERVAL, 4L),
+                            backgroundWeatherEnabled = prefs.getBoolean(SettingsConstants.KEY_BACKGROUND_WEATHER_ENABLED, false),
+                            backgroundWeatherInterval = prefs.getLong(SettingsConstants.KEY_BACKGROUND_WEATHER_INTERVAL, 4L),
+                            syncIntervalMinutes = prefs.getLong(SettingsConstants.KEY_SYNC_INTERVAL_MINUTES, 60L),
+                            syncModeBook = prefs.getString(SettingsConstants.KEY_SYNC_MODE_BOOK, "TWO_WAY") ?: "TWO_WAY",
+                            syncModeStats = prefs.getString(SettingsConstants.KEY_SYNC_MODE_STATS, "RESTORE_ONLY") ?: "RESTORE_ONLY",
+                            syncModeTts = prefs.getString(SettingsConstants.KEY_SYNC_MODE_TTS, "TWO_WAY") ?: "TWO_WAY",
+                            syncModeLogs = prefs.getString(SettingsConstants.KEY_SYNC_MODE_LOGS, "TWO_WAY") ?: "TWO_WAY",
+                            syncLogsIntervalHours = prefs.getLong(SettingsConstants.KEY_SYNC_LOGS_INTERVAL_HOURS, 24L),
+                            preferredMainSpeakerName = prefs.getString("preferred_main_speaker_name", null),
+                            preferredCueSpeakerName = prefs.getString("preferred_cue_speaker_name", null),
+                            fallbackToInternalAudio = prefs.getBoolean("fallback_to_internal_audio", true)
+                        )
+                        val updatedProfile = profile.copy(config = currentConfig, updatedAt = System.currentTimeMillis())
+                        updateProfile(updatedProfile)
+                    }
+                }
             }
         }
         voiceSettings.changeListener = listener
@@ -910,5 +1028,166 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override fun getConfigLastModified(bookId: String): Long {
         return prefs.getLong("config_last_modified_$bookId", 0L)
+    }
+
+    // --- Profile Management ---
+    private val jsonSerializer = kotlinx.serialization.json.Json { ignoreUnknownKeys = true; prettyPrint = true }
+
+    override val activeProfileIdFlow: StateFlow<String>
+        get() = generalSettings.activeProfileIdFlow as StateFlow<String>
+
+    override var activeProfileId: String
+        get() = generalSettings.activeProfileId
+        set(value) {
+            generalSettings.activeProfileId = value
+            scope.launch {
+                loadProfile(value)
+            }
+        }
+
+    override val isCaregiverDeviceFlow: StateFlow<Boolean>
+        get() = generalSettings.isCaregiverDeviceFlow
+
+    override var isCaregiverDevice: Boolean
+        get() = generalSettings.isCaregiverDevice
+        set(value) { generalSettings.isCaregiverDevice = value }
+
+    override fun getAllProfilesFlow(): kotlinx.coroutines.flow.Flow<List<com.andreas_kratzer.ghosttalk.core.model.SettingsProfile>> {
+        return settingsProfileDao.getAllProfilesFlow().map { list ->
+            list.map { it.toDomain(jsonSerializer) }
+        }
+    }
+
+    override suspend fun getAllProfiles(): List<com.andreas_kratzer.ghosttalk.core.model.SettingsProfile> {
+        return settingsProfileDao.getAllProfiles().map { it.toDomain(jsonSerializer) }
+    }
+
+    override suspend fun getProfileById(id: String): com.andreas_kratzer.ghosttalk.core.model.SettingsProfile? {
+        return settingsProfileDao.getProfileById(id)?.toDomain(jsonSerializer)
+    }
+
+    override suspend fun insertProfile(profile: com.andreas_kratzer.ghosttalk.core.model.SettingsProfile) {
+        val entity = profile.toEntity(jsonSerializer)
+        settingsProfileDao.insertProfile(entity)
+    }
+
+    override suspend fun updateProfile(profile: com.andreas_kratzer.ghosttalk.core.model.SettingsProfile) {
+        val entity = profile.toEntity(jsonSerializer)
+        settingsProfileDao.updateProfile(entity)
+    }
+
+    override suspend fun deleteProfile(profile: com.andreas_kratzer.ghosttalk.core.model.SettingsProfile) {
+        val entity = profile.toEntity(jsonSerializer)
+        settingsProfileDao.deleteProfile(entity)
+    }
+
+    private var isApplyingProfile = false
+
+    override suspend fun loadProfile(profileId: String) {
+        val profile = getProfileById(profileId) ?: return
+        isApplyingProfile = true
+        try {
+            val config = profile.config
+            // Write config JSON to SharedPreferences cached profile field
+            val configJson = jsonSerializer.encodeToString(com.andreas_kratzer.ghosttalk.core.model.ProfileConfig.serializer(), config)
+            prefs.edit().putString("cached_active_profile_config", configJson).apply()
+
+            // Update SharedPreferences keys corresponding to the profile
+            val editor = prefs.edit()
+            editor.putString(SettingsConstants.KEY_FAVORITE_BOOK_ID, config.favoriteBookId)
+            editor.putString(SettingsConstants.KEY_STARTUP_BEHAVIOR, config.startupBehavior)
+            editor.putString(SettingsConstants.KEY_USER_MODE_SCREEN_BEHAVIOR, config.userModeScreenBehavior)
+            editor.putString(SettingsConstants.KEY_SECURITY_PIN_HASH, config.securityPinHash)
+            editor.putString(SettingsConstants.KEY_SECURITY_PIN_SALT, config.securityPinSalt)
+            editor.putLong(SettingsConstants.KEY_SECURITY_PIN_TIMEOUT_MINUTES, config.securityPinTimeoutMinutes)
+            editor.putBoolean(SettingsConstants.KEY_IS_PIN_REQUIRED_FOR_DELETION, config.isPinRequiredForDeletion)
+            editor.putBoolean(SettingsConstants.KEY_SECURITY_REQUIRED_FOR_EDIT, config.isSecurityRequiredForEdit)
+            editor.putBoolean(SettingsConstants.KEY_SECURITY_REQUIRED_FOR_SETTINGS, config.isSecurityRequiredForSettings)
+            editor.putBoolean(SettingsConstants.KEY_SECURITY_REQUIRED_FOR_ANALYTICS, config.isSecurityRequiredForAnalytics)
+            editor.putString(SettingsConstants.KEY_ELEVENLABS_API_KEY, config.elevenLabsApiKey)
+            editor.putString(SettingsConstants.KEY_GEMINI_API_KEY, config.geminiApiKey)
+            editor.putBoolean(SettingsConstants.KEY_USE_GEMINI_API_KEY, config.useGeminiApiKey)
+            editor.putBoolean(SettingsConstants.KEY_AUTO_START_SCANNING, config.autoStartScanning)
+            editor.putLong(SettingsConstants.KEY_SCAN_DELAY_MILLIS, config.scanDelayMillis)
+            editor.putLong(SettingsConstants.KEY_HOLDING_TIME_MILLIS, config.holdingTimeMillis)
+            editor.putBoolean(SettingsConstants.KEY_RESUME_SCANNING_FROM_START, config.resumeScanningFromStart)
+            editor.putString(SettingsConstants.KEY_SWITCH_ACTIVATION_KEY, config.switchActivationKey)
+            editor.putBoolean(SettingsConstants.KEY_VOLUME_KEYS_ACTIVATE, config.volumeKeysActivate)
+            editor.putString(SettingsConstants.KEY_DEFAULT_SCAN_PATTERN, config.defaultScanPattern)
+            editor.putBoolean(SettingsConstants.KEY_LIMIT_SCAN_CYCLES, config.limitScanCycles)
+            editor.putInt(SettingsConstants.KEY_SCAN_CYCLE_LIMIT, config.scanCycleLimit)
+            editor.putBoolean(SettingsConstants.KEY_STATIC_ROW_ENABLED, config.staticRowEnabled)
+            editor.putString(SettingsConstants.KEY_STATIC_ROW_SCAN_PATTERN, config.staticRowScanPattern)
+            editor.putLong(SettingsConstants.KEY_LATE_CLICK_THRESHOLD_MILLIS, config.lateClickThresholdMillis)
+            editor.putBoolean(SettingsConstants.KEY_FORCE_SOFT_KEYBOARD, config.forceSoftKeyboard)
+            editor.putBoolean(SettingsConstants.KEY_VOCAL_SWITCH_ENABLED, config.vocalSwitchEnabled)
+            editor.putString(SettingsConstants.KEY_TTS_ENGINE, config.ttsEngine)
+            editor.putString(SettingsConstants.KEY_TTS_LANGUAGE, config.ttsLanguage)
+            editor.putString(SettingsConstants.KEY_TTS_VOICE_NAME, config.ttsVoiceName)
+            editor.putString(SettingsConstants.KEY_GOOGLE_TTS_LANGUAGE, config.googleTtsLanguage)
+            editor.putString(SettingsConstants.KEY_GOOGLE_TTS_VOICE_NAME, config.googleTtsVoiceName)
+            editor.putString(SettingsConstants.KEY_ELEVENLABS_TTS_LANGUAGE, config.elevenLabsTtsLanguage)
+            editor.putString(SettingsConstants.KEY_ELEVENLABS_TTS_VOICE_NAME, config.elevenLabsTtsVoiceName)
+            editor.putString(SettingsConstants.KEY_ELEVENLABS_MODEL, config.elevenLabsModel)
+            editor.putFloat(SettingsConstants.KEY_ELEVENLABS_STABILITY, config.elevenLabsStability)
+            editor.putFloat(SettingsConstants.KEY_ELEVENLABS_SIMILARITY_BOOST, config.elevenLabsSimilarityBoost)
+            editor.putFloat(SettingsConstants.KEY_TTS_PLAYBACK_SPEED, config.ttsPlaybackSpeed)
+            editor.putBoolean(SettingsConstants.KEY_SMART_PREDICTION_ENABLED, config.isSmartPredictionEnabled)
+            editor.putLong(SettingsConstants.KEY_SMART_PREDICTION_DELAY, config.smartPredictionDelay)
+            editor.putBoolean(SettingsConstants.KEY_GEMINI_ENABLED, config.isGeminiEnabled)
+            editor.putBoolean(SettingsConstants.KEY_USE_LOCAL_GENERATIVE_AI, config.useLocalGenerativeAi)
+            editor.putBoolean(SettingsConstants.KEY_GEMINI_REDO_PREDICTION, config.geminiRedoPrediction)
+            editor.putLong(SettingsConstants.KEY_GEMINI_TIMEOUT, config.geminiTimeout)
+            editor.putInt(SettingsConstants.KEY_MAX_CALL_DURATION_SECONDS, config.maxCallDurationSeconds)
+            editor.putInt(SettingsConstants.KEY_CALL_DURATION_FEEDBACK_INTERVAL_SECONDS, config.callDurationFeedbackIntervalSeconds)
+            editor.putString(SettingsConstants.KEY_OUTGOING_CALL_INTRO, config.outgoingCallIntro)
+            editor.putString(SettingsConstants.KEY_INCOMING_CALL_INTRO, config.incomingCallIntro)
+            editor.putInt(SettingsConstants.KEY_INCOMING_CALL_SCAN_LIMIT_ACTIVE, config.incomingCallScanLimitUserModeActive)
+            editor.putString(SettingsConstants.KEY_INCOMING_CALL_AUTO_ACTION_ACTIVE, config.incomingCallAutoActionUserModeActive)
+            editor.putInt(SettingsConstants.KEY_INCOMING_CALL_DELAY_INACTIVE, config.incomingCallDelayUserModeInactive)
+            editor.putString(SettingsConstants.KEY_INCOMING_CALL_AUTO_ACTION_INACTIVE, config.incomingCallAutoActionUserModeInactive)
+            editor.putBoolean(SettingsConstants.KEY_CALL_ANNOUNCEMENT_AS_CUE, config.callAnnouncementAsCue)
+            editor.putBoolean(SettingsConstants.KEY_CALL_AUTO_ENABLE_SPEAKERPHONE, config.autoEnableSpeakerphone)
+            editor.putBoolean(SettingsConstants.KEY_SIMULATE_CALLS_ENABLED, config.simulateCallsEnabled)
+            editor.putInt(SettingsConstants.KEY_CALL_HANG_UP_PRESSES_REQUIRED, config.hangUpPressesRequired)
+            editor.putBoolean(SettingsConstants.KEY_FILTER_CALLS_NOT_IN_CONTACTS, config.filterCallsNotInContacts)
+            editor.putBoolean(SettingsConstants.KEY_NOTIFICATION_READING_ENABLED, config.isNotificationReadingEnabled)
+            editor.putStringSet(SettingsConstants.KEY_MONITORED_NOTIFICATION_APPS, config.monitoredNotificationApps)
+            editor.putString(SettingsConstants.KEY_AUTO_READ_MODE, config.autoReadMode)
+            editor.putBoolean(SettingsConstants.KEY_AUTO_READ_ONLY_IN_USER_MODE, config.autoReadOnlyInUserMode)
+            editor.putBoolean(SettingsConstants.KEY_AUTO_READ_IN_STANDBY, config.autoReadInStandby)
+            editor.putString(SettingsConstants.KEY_THEME_MODE, config.themeMode)
+            editor.putString(SettingsConstants.KEY_APP_LANGUAGE, config.appLanguage)
+            editor.putString(SettingsConstants.KEY_PAGE_SORT_ORDER, config.pageSortOrder)
+            editor.putString(SettingsConstants.KEY_TEMPLATE_SORT_ORDER, config.templateSortOrder)
+            editor.putBoolean(SettingsConstants.KEY_KEEP_SCREEN_ON_USER_MODE, config.keepScreenOnUserMode)
+            editor.putInt(SettingsConstants.KEY_ACTION_LOG_LIMIT, config.actionLogLimit)
+            editor.putBoolean(SettingsConstants.KEY_PERSIST_ACTION_LOGS, config.persistActionLogs)
+            editor.putBoolean(SettingsConstants.KEY_SHOW_PAGE_ID_IN_LOG, config.showPageIdInLog)
+            editor.putBoolean(SettingsConstants.KEY_ONLY_RECORD_HARDWARE_STATS, config.onlyRecordHardwareStats)
+            editor.putInt(SettingsConstants.KEY_STATS_RETENTION_DAYS, config.statsRetentionDays)
+            editor.putInt(SettingsConstants.KEY_STATS_AGGREGATION_HOURS, config.statsAggregationHours)
+            editor.putString(SettingsConstants.KEY_ACTION_LOGS_STORAGE, config.actionLogsStorage)
+            editor.putString(SettingsConstants.KEY_SYNC_LOGS_STORAGE, config.syncLogsStorage)
+            editor.putLong(SettingsConstants.KEY_WEATHER_CACHE_TIMEOUT, config.weatherCacheTimeout)
+            editor.putBoolean(SettingsConstants.KEY_BACKGROUND_LOCATION_ENABLED, config.backgroundLocationEnabled)
+            editor.putLong(SettingsConstants.KEY_BACKGROUND_LOCATION_INTERVAL, config.backgroundLocationInterval)
+            editor.putBoolean(SettingsConstants.KEY_BACKGROUND_WEATHER_ENABLED, config.backgroundWeatherEnabled)
+            editor.putLong(SettingsConstants.KEY_BACKGROUND_WEATHER_INTERVAL, config.backgroundWeatherInterval)
+            editor.putLong(SettingsConstants.KEY_SYNC_INTERVAL_MINUTES, config.syncIntervalMinutes)
+            editor.putString(SettingsConstants.KEY_SYNC_MODE_BOOK, config.syncModeBook)
+            editor.putString(SettingsConstants.KEY_SYNC_MODE_STATS, config.syncModeStats)
+            editor.putString(SettingsConstants.KEY_SYNC_MODE_TTS, config.syncModeTts)
+            editor.putString(SettingsConstants.KEY_SYNC_MODE_LOGS, config.syncModeLogs)
+            editor.putLong(SettingsConstants.KEY_SYNC_LOGS_INTERVAL_HOURS, config.syncLogsIntervalHours)
+            editor.putString("preferred_main_speaker_name", config.preferredMainSpeakerName)
+            editor.putString("preferred_cue_speaker_name", config.preferredCueSpeakerName)
+            editor.putBoolean("fallback_to_internal_audio", config.fallbackToInternalAudio)
+            editor.apply()
+
+            refreshFlows()
+        } finally {
+            isApplyingProfile = false
+        }
     }
 }

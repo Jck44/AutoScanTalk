@@ -37,6 +37,8 @@ class PerformManualSyncUseCaseTest {
     fun setup() {
         mockkStatic(Log::class)
         every { Log.d(any(), any()) } returns 0
+        every { Log.w(any(), any<String>()) } returns 0
+        every { Log.e(any(), any()) } returns 0
         
         googleAuthManager = mockk(relaxed = true)
         googleWebAuthManager = mockk(relaxed = true)
@@ -101,12 +103,13 @@ class PerformManualSyncUseCaseTest {
     fun `execute returns Success when target is SAF even if no Google credentials found`() = runTest {
         every { googleAuthManager.getGoogleCredential() } returns null
         every { settingsRepository.syncTargetType } returns "LOCAL_FOLDER_SAF"
+        every { settingsRepository.localFolderSafUri } returns "content://com.android.externalstorage/tree/primary%3AGoSTalk"
         every { settingsRepository.activeBookId } returns "book1"
         coEvery { cloudSyncUseCase.syncBook(null, "book1", SyncMode.TWO_WAY, any()) } returns true
 
         val result = useCase.execute(SyncMode.TWO_WAY)
 
-        assertTrue(result is PerformManualSyncUseCase.Result.Success)
+        assertTrue("Expected Success but got $result", result is PerformManualSyncUseCase.Result.Success)
         coVerify { cloudSyncUseCase.syncBook(null, "book1", SyncMode.TWO_WAY, any()) }
     }
 }

@@ -79,4 +79,20 @@ interface SettingsRepository : SecuritySettings, KeyEventSettings, AudioSettings
 
     fun updateConfigLastModified(bookId: String)
     fun getConfigLastModified(bookId: String): Long
+
+    // --- Profile Management ---
+    fun getAllProfilesFlow(): kotlinx.coroutines.flow.Flow<List<com.andreas_kratzer.ghosttalk.core.model.SettingsProfile>>
+    suspend fun getAllProfiles(): List<com.andreas_kratzer.ghosttalk.core.model.SettingsProfile>
+    suspend fun getProfileById(id: String): com.andreas_kratzer.ghosttalk.core.model.SettingsProfile?
+    suspend fun insertProfile(profile: com.andreas_kratzer.ghosttalk.core.model.SettingsProfile)
+    suspend fun updateProfile(profile: com.andreas_kratzer.ghosttalk.core.model.SettingsProfile)
+    suspend fun deleteProfile(profile: com.andreas_kratzer.ghosttalk.core.model.SettingsProfile)
+    
+    val activeProfileIdFlow: kotlinx.coroutines.flow.StateFlow<String>
+    var activeProfileId: String
+    
+    suspend fun loadProfile(profileId: String)
+
+    val isCaregiverDeviceFlow: kotlinx.coroutines.flow.StateFlow<Boolean>
+    var isCaregiverDevice: Boolean
 }

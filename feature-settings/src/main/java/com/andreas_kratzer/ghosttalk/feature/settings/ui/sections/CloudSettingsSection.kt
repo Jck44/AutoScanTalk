@@ -106,6 +106,116 @@ fun CloudSettingsSection(
 
         val elevenLabsApiKey by viewModel.elevenLabsApiKey.collectAsState("")
 
+        val activeProfileId by viewModel.activeProfileIdFlow.collectAsState("profile-default")
+        val allProfiles by viewModel.allSettingsProfilesFlow.collectAsState()
+        val showCreateProfileDialog = remember { mutableStateOf(false) }
+        val newProfileName = remember { mutableStateOf("") }
+        val showDeleteConfirmDialog = remember { mutableStateOf<com.andreas_kratzer.ghosttalk.core.model.SettingsProfile?>(null) }
+
+        PreferenceCategory(
+            title = stringResource(R.string.settings_category_profile),
+            isCloudProfile = true
+        ) {
+            val currentProfileName = allProfiles.find { it.id == activeProfileId }?.name ?: "Standard Profil"
+            
+            SettingsDropdownItem(
+                label = stringResource(R.string.settings_profile_active),
+                selectedOption = currentProfileName,
+                options = allProfiles.map { profile ->
+                    profile.name to { viewModel.setActiveProfileId(profile.id) }
+                }
+            )
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button(
+                    onClick = { showCreateProfileDialog.value = true },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(stringResource(R.string.settings_profile_create))
+                }
+                
+                val currentProfile = allProfiles.find { it.id == activeProfileId }
+                if (currentProfile != null && currentProfile.id != "profile-default") {
+                    OutlinedButton(
+                        onClick = { showDeleteConfirmDialog.value = currentProfile },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text(stringResource(R.string.settings_profile_delete))
+                    }
+                }
+            }
+        }
+
+        if (showCreateProfileDialog.value) {
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = { showCreateProfileDialog.value = false },
+                title = { Text(stringResource(R.string.settings_profile_create_title)) },
+                text = {
+                    androidx.compose.material3.OutlinedTextField(
+                        value = newProfileName.value,
+                        onValueChange = { newProfileName.value = it },
+                        label = { Text(stringResource(R.string.settings_profile_name_hint)) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            if (newProfileName.value.isNotBlank()) {
+                                viewModel.createNewProfile(newProfileName.value)
+                                newProfileName.value = ""
+                                showCreateProfileDialog.value = false
+                            }
+                        },
+                        enabled = newProfileName.value.isNotBlank()
+                    ) {
+                        Text(stringResource(com.andreas_kratzer.ghosttalk.core.ui.R.string.dialog_confirm))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showCreateProfileDialog.value = false }) {
+                        Text(stringResource(com.andreas_kratzer.ghosttalk.core.ui.R.string.action_cancel))
+                    }
+                }
+            )
+        }
+
+        if (showDeleteConfirmDialog.value != null) {
+            val profileToDelete = showDeleteConfirmDialog.value!!
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = { showDeleteConfirmDialog.value = null },
+                title = { Text(stringResource(R.string.settings_profile_delete)) },
+                text = { Text(stringResource(R.string.settings_profile_delete_confirm, profileToDelete.name)) },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            viewModel.deleteProfile(profileToDelete)
+                            showDeleteConfirmDialog.value = null
+                        }
+                    ) {
+                        Text(
+                            text = stringResource(com.andreas_kratzer.ghosttalk.core.ui.R.string.dialog_confirm),
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDeleteConfirmDialog.value = null }) {
+                        Text(stringResource(com.andreas_kratzer.ghosttalk.core.ui.R.string.action_cancel))
+                    }
+                }
+            )
+        }
+
+        Spacer(modifier = Modifier.height(dimensions.paddingMedium))
+
         PreferenceCategory(stringResource(R.string.settings_category_cloud_account)) {
             val authTypeLabel = if (googleAuthType == com.andreas_kratzer.ghosttalk.core.model.CloudAuthType.SYSTEM) {
                 "Systemweiter Google Account"
