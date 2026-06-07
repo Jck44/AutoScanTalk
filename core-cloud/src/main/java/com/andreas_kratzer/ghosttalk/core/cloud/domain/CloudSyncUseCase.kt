@@ -200,8 +200,6 @@ class CloudSyncUseCase @Inject constructor(
                                     }
                                 } catch (e: Exception) {
                                     logger.e(TAG, "Error downloading or parsing remote master file", e)
-                                } finally {
-                                    if (downloadFile.exists()) downloadFile.delete()
                                 }
                             }
 
