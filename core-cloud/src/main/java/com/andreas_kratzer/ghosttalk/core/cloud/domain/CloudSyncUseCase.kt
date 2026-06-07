@@ -76,6 +76,7 @@ class CloudSyncUseCase @Inject constructor(
 
             var remoteSyncError: Exception? = null
             var success = false
+            var audioSynced = false
 
             val zipFileName = "book_$bookId.zip"
             val masterFileName = "book_$bookId.json"
@@ -139,7 +140,37 @@ class CloudSyncUseCase @Inject constructor(
                             bookRepository.updateLastModified(bookId, effectiveMasterFile.modifiedTime, incrementSequence = false)
                         }
                         syncLogProvider.addLogEntry("Inhalte sind identisch (NO_OP)", bookId, book.name)
-                        success = true
+                        
+                        try {
+                            syncAudioRecordings(storageProvider, resolvedBookMode ?: SyncMode.TWO_WAY, bookId)
+                        } catch (e: Exception) {
+                            logger.e(TAG, "Audio recordings sync failed (non-fatal)", e)
+                        }
+
+                        val ttsModeStr = settingsRepository.syncModeTts
+                        if (ttsModeStr != "OFF") {
+                            val ttsMode = if (syncMode == SyncMode.TWO_WAY) {
+                                try { SyncMode.valueOf(ttsModeStr) } catch (_: Exception) { SyncMode.TWO_WAY }
+                            } else syncMode
+                            try {
+                                syncTtsCache(storageProvider, ttsMode)
+                            } catch (e: Exception) {
+                                logger.e(TAG, "TTS cache sync failed (non-fatal)", e)
+                            }
+                        }
+
+                        val statsModeStr = settingsRepository.syncModeStats
+                        if (statsModeStr != "OFF") {
+                            val statsMode = if (syncMode == SyncMode.TWO_WAY) {
+                                try { SyncMode.valueOf(statsModeStr) } catch (_: Exception) { SyncMode.BACKUP_ONLY }
+                            } else syncMode
+                            try {
+                                syncStatistics(storageProvider, statsMode, bookId, book.name)
+                            } catch (e: Exception) {
+                                logger.e(TAG, "Statistics sync failed (non-fatal)", e)
+                            }
+                        }
+                        return@withContext true
                     } else if (remoteMasterFile == null && remoteConflictFiles.isEmpty()) {
                         logger.d(TAG, "No remote file found. Uploading local book as master...")
                         val newFileId = storageProvider.uploadFile(
@@ -526,6 +557,13 @@ class CloudSyncUseCase @Inject constructor(
                                         if (uploadSuccess) {
                                             Log.d(TAG, "[COMMIT-SEQ] Phase 2: Cloud-Upload wurde vom Server BESTÄTIGT. Starte jetzt den lokalen Datenbank-Commit via importFromJson...")
                                             
+                                            try {
+                                                syncAudioRecordings(storageProvider, resolvedBookMode ?: SyncMode.TWO_WAY, bookId)
+                                                audioSynced = true
+                                            } catch (e: Exception) {
+                                                logger.e(TAG, "Audio recordings sync failed during merge conflict (non-fatal)", e)
+                                            }
+
                                             val importResult = importExportManager.importFromJson(mergedJson, bookId, restoreSyncSettings = false)
                                             
                                             if (importResult.isSuccess) {
@@ -584,7 +622,7 @@ class CloudSyncUseCase @Inject constructor(
                 }
 
                 // Sync audio recordings after successful book sync
-                if (success) {
+                if (success && !audioSynced) {
                     try {
                         syncAudioRecordings(storageProvider, resolvedBookMode ?: SyncMode.TWO_WAY, bookId)
                     } catch (e: Exception) {
@@ -778,6 +816,13 @@ class CloudSyncUseCase @Inject constructor(
                 bookRepository.updateLastModified(book.id, remoteLastModified, incrementSequence = false)
                 saveToLocalBackupFolder(fileName, downloadFile)
                 downloadFile.delete()
+                if (!fileName.endsWith(".zip")) {
+                    try {
+                        restoreAudioRecordingsIfAvailable(storageProvider, book.id)
+                    } catch (e: Exception) {
+                        logger.e(TAG, "Failed to restore separate audio recordings (non-fatal)", e)
+                    }
+                }
                 true
             } else {
                 logger.e(TAG, "Import failed: ${result.exceptionOrNull()?.message}")
@@ -988,7 +1033,7 @@ class CloudSyncUseCase @Inject constructor(
             null
         }
 
-        val localLastModified = importExportManager.getAudioRecordingsLastModified()
+        var localLastModified = importExportManager.getAudioRecordingsLastModified()
         val remoteLastModified = remoteFile?.modifiedTime ?: 0L
 
         val prefs = context.getSharedPreferences("ghosttalk_settings", Context.MODE_PRIVATE)
@@ -1002,19 +1047,43 @@ class CloudSyncUseCase @Inject constructor(
             return@withContext
         }
 
-        val hasLocalChanged = localLastModified > lastSyncedLocalTime + 2000 && localLastModified > 0L
-        val hasRemoteChanged = remoteFile != null && remoteLastModified > lastSyncedRemoteTime + 2000
+        var hasLocalChanged = localLastModified > lastSyncedLocalTime + 2000 && localLastModified > 0L
+        var hasRemoteChanged = remoteFile != null && remoteLastModified > lastSyncedRemoteTime + 2000
+        val isLocalAudioEmpty = localLastModified == 0L
+
+        // Härtefall: Wenn im TWO_WAY-Modus BEIDE Seiten geändert wurden, führen wir vorab einen Audio-Merge durch
+        if (syncMode == SyncMode.TWO_WAY && hasLocalChanged && hasRemoteChanged && remoteFile != null) {
+            logger.d(TAG, "Zwei-Wege-Audio-Merge: Führe lokale Zusammenführung durch...")
+            val tempDownloadFile = File(context.cacheDir, "download_merge_$audioFileName")
+            try {
+                val downloadSuccess = storageProvider.downloadFile(remoteFile.id, tempDownloadFile) { _ -> }
+                if (downloadSuccess) {
+                    tempDownloadFile.inputStream().use { isStream ->
+                        importExportManager.importAudioRecordingsFromZip(isStream) { _, _ -> }
+                    }
+                    // Nach dem Import aktualisieren wir den lokalen Zeitstempel, da wir neue Dateien haben
+                    localLastModified = importExportManager.getAudioRecordingsLastModified()
+                    // Da wir die Remote-Änderungen integriert haben, gilt die Cloud für uns als verarbeitet
+                    hasRemoteChanged = false
+                    hasLocalChanged = true
+                }
+            } catch (e: Exception) {
+                logger.e(TAG, "Audio merge download/extract failed", e)
+            } finally {
+                if (tempDownloadFile.exists()) tempDownloadFile.delete()
+            }
+        }
 
         val shouldUpload = when (syncMode) {
             SyncMode.RESTORE_ONLY -> false
             SyncMode.BACKUP_ONLY -> hasLocalChanged || remoteFile == null
-            SyncMode.TWO_WAY -> hasLocalChanged && !hasRemoteChanged
+            SyncMode.TWO_WAY -> (hasLocalChanged && !hasRemoteChanged) || (localLastModified > 0L && remoteFile == null)
         }
 
         val shouldDownload = when (syncMode) {
             SyncMode.BACKUP_ONLY -> false
-            SyncMode.RESTORE_ONLY -> hasRemoteChanged
-            SyncMode.TWO_WAY -> hasRemoteChanged
+            SyncMode.RESTORE_ONLY -> hasRemoteChanged || (remoteFile != null && isLocalAudioEmpty)
+            SyncMode.TWO_WAY -> hasRemoteChanged || (remoteFile != null && isLocalAudioEmpty)
         }
 
         if (shouldUpload) {

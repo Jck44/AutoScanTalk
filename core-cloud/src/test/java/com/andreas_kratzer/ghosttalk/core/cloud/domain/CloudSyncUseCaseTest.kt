@@ -750,4 +750,69 @@ class CloudSyncUseCaseTest {
         coVerify(exactly = 1) { mockImportExportManager.exportAudioRecordingsToZip(any(), any()) }
         coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().updateFile(eq("audio_file_1"), any(), eq("application/zip"), any(), any(), any()) }
     }
+
+    @Test
+    fun `syncBook merges audio recordings on conflict in TWO_WAY mode`() = runTest {
+        val bookId = "test-book"
+        val now = System.currentTimeMillis()
+
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder(any()) } returns "folder_1"
+
+        val localJson = "{\"bookUpdatedAt\":1000,\"versionSequence\":1,\"pages\":[]}"
+        coEvery { mockImportExportManager.exportBookToJson(bookId) } returns localJson
+
+        val expectedMd5 = calculateStructuralMd5FromJson(localJson)
+
+        val remoteFile = com.google.api.services.drive.model.File().apply {
+            id = "file_1"
+            name = "book_$bookId.json"
+            modifiedTime = com.google.api.client.util.DateTime(now)
+            properties = mapOf("version_sequence" to "1", "structure_md5" to expectedMd5)
+        }
+        val remoteAudioFile = com.google.api.services.drive.model.File().apply {
+            id = "audio_file_1"
+            name = "audio_$bookId.zip"
+            modifiedTime = com.google.api.client.util.DateTime(now) // Remote also changed
+        }
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("folder_1") } returns listOf(remoteFile, remoteAudioFile)
+
+        // Mock SharedPreferences
+        val mockPrefs = mockk<android.content.SharedPreferences>(relaxed = true)
+        every { mockContext.getSharedPreferences("ghosttalk_settings", Context.MODE_PRIVATE) } returns mockPrefs
+        every { mockPrefs.getLong("audio_last_synced_remote_time_$bookId", 0L) } returns (now - 100000)
+        every { mockPrefs.getLong("audio_last_synced_local_time_$bookId", 0L) } returns (now - 100000)
+
+        val mockEditor = mockk<android.content.SharedPreferences.Editor>(relaxed = true)
+        every { mockPrefs.edit() } returns mockEditor
+        every { mockEditor.putLong(any(), any()) } returns mockEditor
+
+        // Set local audio changed
+        coEvery { mockImportExportManager.getAudioRecordingsLastModified() } returns now
+        coEvery { mockImportExportManager.exportAudioRecordingsToZip(any(), any()) } coAnswers {
+            val os = firstArg<java.io.OutputStream>()
+            os.write(byteArrayOf(1, 2, 3))
+        }
+        coEvery { mockImportExportManager.importAudioRecordingsFromZip(any(), any()) } returns Unit
+
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile("audio_file_1", any(), any()) } answers {
+            val file = args[1] as File
+            file.writeBytes(byteArrayOf(1, 2, 3))
+            true
+        }
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().updateFile(any(), any(), any(), any(), any(), any()) } returns true
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().getFileMetadata("audio_file_1") } returns com.google.api.services.drive.model.File().apply {
+            id = "audio_file_1"
+            modifiedTime = com.google.api.client.util.DateTime(now)
+        }
+
+        val result = useCase.syncBook(mockDrive, bookId, SyncMode.TWO_WAY)
+        advanceUntilIdle()
+
+        assertEquals(true, result)
+        // Verify audio download/merge and export/update were BOTH called
+        coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile("audio_file_1", any(), any()) }
+        coVerify(exactly = 1) { mockImportExportManager.importAudioRecordingsFromZip(any(), any()) }
+        coVerify(exactly = 1) { mockImportExportManager.exportAudioRecordingsToZip(any(), any()) }
+        coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().updateFile(eq("audio_file_1"), any(), eq("application/zip"), any(), any(), any()) }
+    }
 }
