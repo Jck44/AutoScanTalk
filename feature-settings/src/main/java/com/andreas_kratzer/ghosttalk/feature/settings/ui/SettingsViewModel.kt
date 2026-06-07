@@ -1191,6 +1191,21 @@ class SettingsViewModel @Inject constructor(
         settingsRepository.activeProfileId = profileId
     }
 
+    fun renameActiveProfile(newName: String) {
+        viewModelScope.launch {
+            val activeId = settingsRepository.activeProfileId
+            val activeProfile = settingsRepository.getProfileById(activeId)
+            if (activeProfile != null && newName.isNotBlank() && activeProfile.name != newName) {
+                val updatedProfile = activeProfile.copy(
+                    name = newName,
+                    profileVersionSequence = activeProfile.profileVersionSequence + 1,
+                    updatedAt = System.currentTimeMillis()
+                )
+                settingsRepository.updateProfile(updatedProfile)
+            }
+        }
+    }
+
     fun createNewProfile(name: String) {
         viewModelScope.launch {
             val currentConfig = settingsRepository.getProfileById(settingsRepository.activeProfileId)?.config 
@@ -1210,9 +1225,19 @@ class SettingsViewModel @Inject constructor(
     fun deleteProfile(profile: com.andreas_kratzer.ghosttalk.core.model.SettingsProfile) {
         viewModelScope.launch {
             if (profile.id != "profile-default") {
+                val allProfiles = settingsRepository.getAllProfiles()
+                if (allProfiles.size <= 1) {
+                    // Cannot delete the only remaining profile
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(application, "Das einzige verbleibende Profil kann nicht gelöscht werden.", Toast.LENGTH_LONG).show()
+                    }
+                    return@launch
+                }
                 settingsRepository.deleteProfile(profile)
                 if (settingsRepository.activeProfileId == profile.id) {
-                    settingsRepository.activeProfileId = "profile-default"
+                    // Fall back to default or another remaining profile
+                    val remainingProfile = allProfiles.find { it.id != profile.id }
+                    settingsRepository.activeProfileId = remainingProfile?.id ?: "profile-default"
                 }
             }
         }

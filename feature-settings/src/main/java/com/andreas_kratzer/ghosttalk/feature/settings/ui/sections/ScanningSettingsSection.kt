@@ -29,7 +29,6 @@ fun ScanningSettingsSection(
     val resumeFromStart by viewModel.resumeScanningFromStart.collectAsState(true)
     val scanPattern by viewModel.defaultScanPattern.collectAsState("linear")
     val holdingTime by viewModel.holdingTimeMillis.collectAsState(0L)
-    val bluetoothDelay by viewModel.bluetoothDelay.collectAsState(1500L)
     val lateClickThreshold by viewModel.lateClickThresholdMillis.collectAsState(250L)
 
     val dimensions = LocalDimensions.current
@@ -127,13 +126,6 @@ fun ScanningSettingsSection(
                 value = switchKey,
                 onValueChange = { viewModel.setSwitchActivationKey(it) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
-            )
-
-            SettingsEditTextItem(
-                label = stringResource(R.string.settings_bluetooth_delay), 
-                value = bluetoothDelay.toString(),
-                onValueChange = { viewModel.setBluetoothDelay(it) },
-                numericOnly = true
             )
         }
     }

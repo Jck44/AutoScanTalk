@@ -77,18 +77,23 @@ import java.io.InputStreamReader
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 
 enum class SettingsSection(private val titleRes: Int, val icon: ImageVector, val isGlobal: Boolean, val isScoped: Boolean) {
-    ACCESSIBILITY(R.string.settings_section_accessibility, GhostTalkIcons.SwitchAccessShortcut, isGlobal = false, isScoped = true),
-    VOICE_ASSISTANT(R.string.settings_section_voice_assistant, GhostTalkIcons.VolumeUp, isGlobal = false, isScoped = true),
-    SECURITY(R.string.settings_section_security, GhostTalkIcons.Security, isGlobal = true, isScoped = false),
-    CLOUD_BACKUP(R.string.settings_section_cloud_backup, GhostTalkIcons.Cloud, isGlobal = true, isScoped = true),
-    SYSTEM_MAINTENANCE(R.string.settings_section_system_maintenance, GhostTalkIcons.Science, isGlobal = true, isScoped = true);
+    // Buch-Einstellungen (Scoped to current book, syncable)
+    BOOK_TTS(R.string.settings_category_voice, GhostTalkIcons.VolumeUp, isGlobal = false, isScoped = true),
+    BOOK_SCANNING(R.string.settings_category_scanning, GhostTalkIcons.SwitchAccessShortcut, isGlobal = false, isScoped = true),
+    BOOK_AI(R.string.settings_category_gemini, GhostTalkIcons.AutoAwesome, isGlobal = false, isScoped = true),
+    BOOK_CALLS(R.string.settings_category_call, Icons.Default.Phone, isGlobal = false, isScoped = true),
+    BOOK_SMART_INTEGRATION(R.string.settings_category_smart_home, Icons.Default.Home, isGlobal = false, isScoped = true),
+    BOOK_INFO(R.string.settings_category_general, Icons.Default.Settings, isGlobal = false, isScoped = true),
+
+    // App- & Geräte-Einstellungen (Global/Local, device-specific)
+    APP_SECURITY(R.string.settings_category_security, GhostTalkIcons.Security, isGlobal = true, isScoped = false),
+    APP_AUDIO_ROUTING(R.string.settings_category_audio_hardware, GhostTalkIcons.VolumeUp, isGlobal = true, isScoped = false),
+    APP_UI(R.string.settings_category_ui, Icons.Default.Settings, isGlobal = true, isScoped = false),
+    APP_CLOUD_SYNC(R.string.settings_category_cloud, GhostTalkIcons.Cloud, isGlobal = true, isScoped = false),
+    APP_MAINTENANCE(R.string.settings_category_maintenance, GhostTalkIcons.Science, isGlobal = true, isScoped = false);
 
     fun getTitleRes(isGlobal: Boolean): Int {
-        return if (this == CLOUD_BACKUP && !isGlobal) {
-            R.string.settings_category_cloud_book
-        } else {
-            titleRes
-        }
+        return titleRes
     }
 }
 
@@ -519,18 +524,26 @@ fun SubmenuContent(
     onNavigateToVocalTraining: () -> Unit = {}
 ) {
     when (section) {
-        SettingsSection.ACCESSIBILITY -> {
-            ScanningSettingsSection(viewModel, isGlobal = isGlobal)
-            VocalSwitchSettingsSection(viewModel, isGlobal = isGlobal, onNavigateToVocalTraining = onNavigateToVocalTraining)
-            CallSettingsSection(viewModel)
-            PermissionsSettingsSection(viewModel)
+        SettingsSection.BOOK_TTS -> {
+            VoiceSettingsSection(viewModel, isGlobal = false)
         }
-        SettingsSection.VOICE_ASSISTANT -> {
-            VoiceSettingsSection(viewModel, isGlobal = isGlobal)
+        SettingsSection.BOOK_SCANNING -> {
+            ScanningSettingsSection(viewModel, isGlobal = false)
+            VocalSwitchSettingsSection(viewModel, isGlobal = false, onNavigateToVocalTraining = onNavigateToVocalTraining)
+        }
+        SettingsSection.BOOK_AI -> {
             GenAiSettingsSection(viewModel)
-            SmartHomeSettingsSection(viewModel, isGlobal = isGlobal)
         }
-        SettingsSection.SECURITY -> {
+        SettingsSection.BOOK_CALLS -> {
+            CallSettingsSection(viewModel)
+        }
+        SettingsSection.BOOK_SMART_INTEGRATION -> {
+            SmartHomeSettingsSection(viewModel, isGlobal = false)
+        }
+        SettingsSection.BOOK_INFO -> {
+            GeneralSettingsSection(viewModel, isGlobal = false, onNavigateBack = onNavigateBack, onBookDeleted = onBookDeleted)
+        }
+        SettingsSection.APP_SECURITY -> {
             val pin by viewModel.securityPin.collectAsState(null)
             val timeout by viewModel.securityPinTimeoutMinutes.collectAsState(30L)
             val reqDeletion by viewModel.isPinRequiredForDeletion.collectAsState(false)
@@ -562,36 +575,32 @@ fun SubmenuContent(
                 isBiometricSupported = viewModel.isBiometricSupported
             )
         }
-        SettingsSection.CLOUD_BACKUP -> {
+        SettingsSection.APP_AUDIO_ROUTING -> {
+            VoiceSettingsSection(viewModel, isGlobal = true)
+        }
+        SettingsSection.APP_UI -> {
+            GeneralSettingsSection(viewModel, isGlobal = true, onNavigateBack = onNavigateBack, onBookDeleted = onBookDeleted)
+        }
+        SettingsSection.APP_CLOUD_SYNC -> {
             CloudSettingsSection(
                 viewModel = viewModel,
-                isGlobal = isGlobal,
+                isGlobal = true,
                 onLocalExport = onLocalExport,
                 onLocalImport = onLocalImport,
                 onSelectSafFolder = onSelectSafFolder,
                 onSelectSafFolderForImport = onSelectSafFolderForImport
             )
         }
-        SettingsSection.SYSTEM_MAINTENANCE -> {
-            GeneralSettingsSection(viewModel, isGlobal = isGlobal, onNavigateBack = onNavigateBack, onBookDeleted = onBookDeleted)
-            if (isGlobal) {
-                ExperimentalSettingsSection(viewModel)
-                MaintenanceSection(
-                    viewModel = viewModel,
-                    isGlobal = true,
-                    onLocalExport = {},
-                    onLocalImport = onLocalImport
-                )
-            }
-            TestSettingsSection(viewModel, isGlobal = isGlobal)
-            if (!isGlobal) {
-                MaintenanceSection(
-                    viewModel = viewModel,
-                    isGlobal = false,
-                    onLocalExport = onLocalExport,
-                    onLocalImport = onLocalImport
-                )
-            }
+        SettingsSection.APP_MAINTENANCE -> {
+            PermissionsSettingsSection(viewModel)
+            ExperimentalSettingsSection(viewModel)
+            TestSettingsSection(viewModel, isGlobal = true)
+            MaintenanceSection(
+                viewModel = viewModel,
+                isGlobal = true,
+                onLocalExport = {},
+                onLocalImport = onLocalImport
+            )
         }
     }
 }

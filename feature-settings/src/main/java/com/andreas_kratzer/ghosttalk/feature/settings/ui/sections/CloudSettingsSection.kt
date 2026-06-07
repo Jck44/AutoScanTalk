@@ -23,6 +23,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -32,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.core.ui.components.PreferenceCategory
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsDropdownItem
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsToggleItem
+import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsEditTextItem
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.feature.settings.R
@@ -112,11 +114,13 @@ fun CloudSettingsSection(
         val newProfileName = remember { mutableStateOf("") }
         val showDeleteConfirmDialog = remember { mutableStateOf<com.andreas_kratzer.ghosttalk.core.model.SettingsProfile?>(null) }
 
+        val currentProfile = allProfiles.find { it.id == activeProfileId }
+
         PreferenceCategory(
             title = stringResource(R.string.settings_category_profile),
             isCloudProfile = true
         ) {
-            val currentProfileName = allProfiles.find { it.id == activeProfileId }?.name ?: "Standard Profil"
+            val currentProfileName = currentProfile?.name ?: "Standard Profil"
             
             SettingsDropdownItem(
                 label = stringResource(R.string.settings_profile_active),
@@ -125,6 +129,21 @@ fun CloudSettingsSection(
                     profile.name to { viewModel.setActiveProfileId(profile.id) }
                 }
             )
+
+            currentProfile?.let { profile ->
+                var renameText by remember(profile.id) { mutableStateOf(profile.name) }
+                Spacer(modifier = Modifier.height(8.dp))
+                SettingsEditTextItem(
+                    label = "Profil umbenennen",
+                    value = renameText,
+                    onValueChange = {
+                        renameText = it
+                        if (it.isNotBlank()) {
+                            viewModel.renameActiveProfile(it)
+                        }
+                    }
+                )
+            }
             
             Spacer(modifier = Modifier.height(12.dp))
             

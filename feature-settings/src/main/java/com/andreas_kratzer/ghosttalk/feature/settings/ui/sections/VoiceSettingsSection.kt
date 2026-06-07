@@ -28,6 +28,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import com.andreas_kratzer.ghosttalk.core.tts.VoiceUtils
 import com.andreas_kratzer.ghosttalk.core.ui.components.PreferenceCategory
+import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsEditTextItem
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsSliderItem
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsToggleItem
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
@@ -243,7 +244,11 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                     Text(text = stringResource(R.string.settings_voice_preview_button))
                 }
             }
+        }
 
+        if (isGlobal) {
+            val bluetoothDelay by viewModel.bluetoothDelay.collectAsState(1500L)
+            
             PreferenceCategory(
                 title = stringResource(R.string.settings_category_audio_hardware),
                 isLocalDevice = true,
@@ -339,6 +344,15 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                     label = stringResource(R.string.settings_headphone_volume_label),
                     value = headphoneVolume / 100f,
                     onValueChange = { viewModel.setHeadphoneVolume((it * 100).toInt()) }
+                )
+
+                Spacer(modifier = Modifier.height(dimensions.paddingSmall))
+
+                SettingsEditTextItem(
+                    label = stringResource(R.string.settings_bluetooth_delay),
+                    value = bluetoothDelay.toString(),
+                    onValueChange = { viewModel.setBluetoothDelay(it) },
+                    numericOnly = true
                 )
             }
         }
