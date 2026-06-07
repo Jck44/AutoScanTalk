@@ -99,6 +99,7 @@ class CloudSyncUseCase @Inject constructor(
             } else {
                 if (bookModeStr == "OFF") null else syncMode
             }
+            val audioSyncMode = resolvedBookMode ?: SyncMode.TWO_WAY
 
             // Local Export (needed for comparison and backup)
             val tempFile = File(context.cacheDir, masterFileName)
@@ -159,7 +160,7 @@ class CloudSyncUseCase @Inject constructor(
                         }
 
                         try {
-                            audioSyncHelper.syncAudioRecordings(storageProvider, remoteFiles, resolvedBookMode ?: SyncMode.TWO_WAY, bookId)
+                            audioSyncHelper.syncAudioRecordings(storageProvider, remoteFiles, audioSyncMode, bookId)
                         } catch (e: Exception) {
                             logger.e(TAG, "Audio recordings sync failed (non-fatal)", e)
                         }
@@ -227,9 +228,7 @@ class CloudSyncUseCase @Inject constructor(
                         if (isIdentical) {
                             logger.d(TAG, "NO_OP: Local and remote files are identical (MD5 match). Skipping evaluation download.")
                             syncLogProvider.addLogEntry("Inhalte sind identisch (NO_OP)", bookId, book.name)
-                            if (remoteMasterFile != null) {
-                                bookRepository.updateLastModified(bookId, remoteMasterFile.modifiedTime, incrementSequence = false)
-                            }
+                            bookRepository.updateLastModified(bookId, remoteMasterFile.modifiedTime, incrementSequence = false)
                             success = true
                         } else {
                             val needDownloadForEvaluation = remoteSeqFromProps == null
@@ -485,7 +484,7 @@ class CloudSyncUseCase @Inject constructor(
                                     if (importResult.isSuccess) {
                                         logger.d(TAG, "Trivial Merge (Fast-Forward) successful (Sequence: $maxRemoteSeq)")
                                         syncLogProvider.addLogEntry("Trivial-Merge (Fast-Forward) erfolgreich (Sequence: $maxRemoteSeq)", bookId, book.name)
-                                        val driveTime = remoteMasterFile?.modifiedTime ?: 0L
+                                        val driveTime = remoteMasterFile.modifiedTime
                                         if (driveTime > 0L) {
                                             bookRepository.updateLastModified(bookId, driveTime, incrementSequence = false)
                                         }
@@ -574,7 +573,7 @@ class CloudSyncUseCase @Inject constructor(
                                                 syncLogProvider.addLogEntry("Zwei-Wege-Merge erfolgreich abgeschlossen (Sequence: $newSeq)", bookId, book.name)
 
                                                 try {
-                                                    audioSyncHelper.syncAudioRecordings(storageProvider, remoteFiles, resolvedBookMode ?: SyncMode.TWO_WAY, bookId)
+                                                    audioSyncHelper.syncAudioRecordings(storageProvider, remoteFiles, audioSyncMode, bookId)
                                                     audioSynced = true
                                                 } catch (e: Exception) {
                                                     logger.e(TAG, "Audio recordings sync failed during merge conflict (non-fatal)", e)
@@ -645,7 +644,7 @@ class CloudSyncUseCase @Inject constructor(
                 // Sync audio recordings after successful book sync
                 if (success && !audioSynced) {
                     try {
-                        audioSyncHelper.syncAudioRecordings(storageProvider, remoteFiles, resolvedBookMode ?: SyncMode.TWO_WAY, bookId)
+                        audioSyncHelper.syncAudioRecordings(storageProvider, remoteFiles, audioSyncMode, bookId)
                     } catch (e: Exception) {
                         logger.e(TAG, "Audio recordings sync failed (non-fatal)", e)
                     }

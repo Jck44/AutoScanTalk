@@ -200,13 +200,13 @@ class PageImportExportManager @Inject constructor(
     }
 
     override suspend fun importFromJson(
-        jsonString: String,
+        json: String,
         bookId: String,
         regenerateIds: Boolean,
         restoreSyncSettings: Boolean
     ): Result<Int> = withContext(Dispatchers.IO) {
         try {
-            val importData = json.decodeFromString<ImportExportData>(jsonString)
+            val importData = this@PageImportExportManager.json.decodeFromString<ImportExportData>(json)
             logger.d(TAG, "Importing JSON for book $bookId: defaultStartPageId='${importData.defaultStartPageId}', bookName='${importData.bookName}'")
 
             // 1. Clean state: Delete existing pages for this book before importing

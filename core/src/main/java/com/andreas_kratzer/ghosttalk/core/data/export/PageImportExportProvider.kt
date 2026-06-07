@@ -6,10 +6,10 @@ interface PageImportExportProvider {
     suspend fun exportPageListToJson(pages: List<Page>): String
     suspend fun exportBookToJson(bookId: String, includeSettings: Boolean = true): String
     fun exportBookConfigToJson(bookId: String): String
-    fun importBookConfigFromJson(json: String, bookId: String): Result<Unit>
+    fun importBookConfigFromJson(jsonString: String, bookId: String): Result<Unit>
     fun getBookConfigLastModified(bookId: String): Long
     suspend fun importFromJson(
-        jsonString: String,
+        json: String,
         bookId: String,
         regenerateIds: Boolean = false,
         restoreSyncSettings: Boolean = false

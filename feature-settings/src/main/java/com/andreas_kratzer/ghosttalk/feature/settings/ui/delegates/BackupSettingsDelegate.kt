@@ -148,7 +148,7 @@ class BackupSettingsDelegate @Inject constructor(
         }
 
         val result = importExportManager.importFromJson(
-            jsonString = json,
+            json = json,
             bookId = activeBookId,
             regenerateIds = false, // Preserve IDs for matching book
             restoreSyncSettings = false
