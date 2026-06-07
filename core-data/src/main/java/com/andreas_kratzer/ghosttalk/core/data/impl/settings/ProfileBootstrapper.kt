@@ -5,6 +5,8 @@ import android.content.SharedPreferences
 import com.andreas_kratzer.ghosttalk.core.database.SettingsProfileDao
 import com.andreas_kratzer.ghosttalk.core.database.SettingsProfileEntity
 import com.andreas_kratzer.ghosttalk.core.model.ProfileConfig
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import java.util.UUID
 import javax.inject.Inject
@@ -18,14 +20,13 @@ class ProfileBootstrapper @Inject constructor(
 ) {
     private val prefs: SharedPreferences = context.getSharedPreferences(SettingsConstants.PREFS_NAME, Context.MODE_PRIVATE)
 
-    suspend fun bootstrapIfNeeded() {
+    suspend fun bootstrapIfNeeded() = withContext(Dispatchers.IO) {
         val currentProfileId = prefs.getString("local_active_profile_id", null)
-        if (currentProfileId == null) {
+        if (currentProfileId == null || settingsProfileDao.getAllProfiles().isEmpty()) {
             val androidId = android.provider.Settings.Secure.getString(context.contentResolver, android.provider.Settings.Secure.ANDROID_ID) ?: ""
             val deviceId = if (androidId.isNotBlank()) androidId else UUID.randomUUID().toString().substring(0, 8)
-            val newUuid = "profile_$deviceId"
-            val deviceModel = android.os.Build.MODEL ?: "Tablet"
-            val profileName = "Profil ($deviceModel)"
+            val newUuid = "profile_${UUID.randomUUID()}"
+            val profileName = "Profile $deviceId"
 
             // Read the syncable settings directly using the keys
             val legacyConfig = ProfileConfig(

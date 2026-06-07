@@ -342,6 +342,13 @@ class SettingsViewModel @Inject constructor(
     fun setResumeScanningFromStart(b: Boolean) = scanningDelegate.setResumeScanningFromStart(b)
     fun setDefaultScanPattern(p: String) = scanningDelegate.setDefaultScanPattern(p)
     fun setHoldingTimeInput(i: String) = scanningDelegate.setHoldingTimeInput(i)
+    val isCaregiverDevice = settingsRepository.isCaregiverDeviceFlow
+        .stateIn(viewModelScope, SharingStarted.Eagerly, settingsRepository.isCaregiverDevice)
+
+    fun setCaregiverDevice(enabled: Boolean) {
+        settingsRepository.isCaregiverDevice = enabled
+    }
+
     fun setBluetoothDelay(d: String) = scanningDelegate.setBluetoothDelay(d)
 
     fun signIn(ctx: Context) = cloudSyncDelegate.signIn(ctx, viewModelScope)

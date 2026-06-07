@@ -130,6 +130,15 @@ fun GeneralSettingsSection(
                         themeDark to { viewModel.setThemeMode("DARK") }
                     )
                 )
+
+                // Betreuer-Tablet (Caregiver) Toggle
+                val isCaregiver by viewModel.isCaregiverDevice.collectAsState()
+                SettingsToggleItem(
+                    label = "Betreuer-Tablet (Caregiver-Modus)",
+                    checked = isCaregiver,
+                    description = "Aktiviert den Caregiver-Modus für dieses Gerät.",
+                    onCheckedChange = { viewModel.setCaregiverDevice(it) }
+                )
             }
 
             // 2. Verhalten (Tastatur, Logs, Startup)

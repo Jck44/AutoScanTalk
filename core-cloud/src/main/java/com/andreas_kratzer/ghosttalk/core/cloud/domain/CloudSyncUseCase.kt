@@ -148,12 +148,11 @@ class CloudSyncUseCase @Inject constructor(
                     val profilesProvider = resolveProfilesStorageProvider(drive)
                     val remoteProfileFiles = profilesProvider.listFiles()
 
-                    // 1. Sync the active profile (with Three-Way Merge)
-                    val activeProfileId = settingsRepository.activeProfileId
-                    val activeProfile = settingsRepository.getProfileById(activeProfileId)
-                    if (activeProfile != null) {
-                        logger.d(TAG, "Stage 1: Syncing active profile $activeProfileId")
-                        configSyncHelper.syncProfile(profilesProvider, remoteProfileFiles, activeProfile, settingsRepository)
+                    // 1. Sync all local profiles
+                    val localProfiles = settingsRepository.getAllProfiles()
+                    logger.d(TAG, "Stage 1: Syncing ${localProfiles.size} local profiles")
+                    localProfiles.forEach { profile ->
+                        configSyncHelper.syncProfile(profilesProvider, remoteProfileFiles, profile, settingsRepository)
                     }
 
                     // 2. Scan and download/import all other remote profiles
