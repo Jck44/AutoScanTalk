@@ -112,17 +112,4 @@ open class AudioDeviceManager @Inject constructor(
         return devices.find { it.type == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER } ?: devices.firstOrNull()
     }
 
-    open fun routeAudioBySemanticName(preferredName: String?): String? {
-        if (preferredName.isNullOrBlank()) return null
-        val devices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
-        val match = devices.find { device ->
-            val productName = device.productName?.toString() ?: ""
-            productName.contains(preferredName, ignoreCase = true)
-        }
-        return match?.let { device ->
-            val safeProductName = device.productName?.toString()?.replace(" ", "_") ?: "unknown"
-            val persistentId = if (device.address.isNotBlank()) device.address else "type_${device.type}_$safeProductName"
-            "${device.id}|$persistentId"
-        }
-    }
 }

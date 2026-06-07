@@ -6,7 +6,6 @@ import android.util.Log
 import com.andreas_kratzer.ghosttalk.core.data.BookRepository
 import com.andreas_kratzer.ghosttalk.core.data.SyncLogProvider
 import com.andreas_kratzer.ghosttalk.core.data.impl.PageImportExportManager
-import com.andreas_kratzer.ghosttalk.core.data.export.PageImportExportProvider
 import com.andreas_kratzer.ghosttalk.core.model.Book
 import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.google.api.services.drive.Drive
@@ -655,7 +654,7 @@ class CloudSyncUseCaseTest {
             val messageDigest = java.security.MessageDigest.getInstance("MD5")
             val hashBytes = messageDigest.digest(cleanJson.toByteArray(Charsets.UTF_8))
             hashBytes.joinToString("") { "%02x".format(it) }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             ""
         }
     }
@@ -707,7 +706,7 @@ class CloudSyncUseCaseTest {
 
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder(any()) } returns "folder_1"
 
-        val localJson = "{\"bookUpdatedAt\":1000,\"versionSequence\":1,\"pages\":[]}"
+        val localJson = "{\"bookUpdatedAt\":1001,\"versionSequence\":1,\"pages\":[]}"
         coEvery { mockImportExportManager.exportBookToJson(bookId) } returns localJson
 
         val expectedMd5 = calculateStructuralMd5FromJson(localJson)

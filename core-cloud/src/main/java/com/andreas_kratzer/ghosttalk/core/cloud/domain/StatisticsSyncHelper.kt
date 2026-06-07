@@ -1,6 +1,7 @@
 package com.andreas_kratzer.ghosttalk.core.cloud.domain
 
 import android.content.Context
+import androidx.core.content.edit
 import com.andreas_kratzer.ghosttalk.core.data.SyncLogProvider
 import com.andreas_kratzer.ghosttalk.core.data.impl.PageImportExportManager
 import com.andreas_kratzer.ghosttalk.core.util.Logger
@@ -92,10 +93,10 @@ class StatisticsSyncHelper(
                     if (fileId != null) {
                         val newMetadata = storageProvider.getFileMetadata(fileId)
                         val newRemoteTime = newMetadata?.modifiedTime ?: 0L
-                        prefs.edit()
-                            .putLong("stats_last_synced_local_time_$bookId", localLastModified)
-                            .putLong("stats_last_synced_remote_time_$bookId", newRemoteTime)
-                            .apply()
+                        prefs.edit {
+                            putLong("stats_last_synced_local_time_$bookId", localLastModified)
+                            putLong("stats_last_synced_remote_time_$bookId", newRemoteTime)
+                        }
                         syncLogProvider.addLogEntry("Statistik in die Cloud hochgeladen", bookId, bookName)
                     }
                 }
@@ -112,10 +113,10 @@ class StatisticsSyncHelper(
                     }
                     saveToLocalBackupFolder(statsFileName, tempFile)
                     val newLocalLastModified = importExportManager.getStatisticsLastModified(bookId)
-                    prefs.edit()
-                        .putLong("stats_last_synced_local_time_$bookId", newLocalLastModified)
-                        .putLong("stats_last_synced_remote_time_$bookId", remoteLastModified)
-                        .apply()
+                    prefs.edit {
+                        putLong("stats_last_synced_local_time_$bookId", newLocalLastModified)
+                        putLong("stats_last_synced_remote_time_$bookId", remoteLastModified)
+                    }
                     syncLogProvider.addLogEntry("Statistik aus der Cloud wiederhergestellt", bookId, bookName)
                 }
             } finally {
@@ -124,10 +125,10 @@ class StatisticsSyncHelper(
         } else {
             logger.d(TAG, "Statistics are in sync.")
             if (lastSyncedLocalTime == 0L || lastSyncedRemoteTime == 0L) {
-                prefs.edit()
-                    .putLong("stats_last_synced_local_time_$bookId", localLastModified)
-                    .putLong("stats_last_synced_remote_time_$bookId", remoteLastModified)
-                    .apply()
+                prefs.edit {
+                    putLong("stats_last_synced_local_time_$bookId", localLastModified)
+                    putLong("stats_last_synced_remote_time_$bookId", remoteLastModified)
+                }
             }
         }
     }
@@ -152,10 +153,10 @@ class StatisticsSyncHelper(
                 val newLocalLastModified = importExportManager.getStatisticsLastModified(bookId)
                 val remoteLastModified = remoteFile.modifiedTime
                 val prefs = context.getSharedPreferences("ghosttalk_settings", Context.MODE_PRIVATE)
-                prefs.edit()
-                    .putLong("stats_last_synced_local_time_$bookId", newLocalLastModified)
-                    .putLong("stats_last_synced_remote_time_$bookId", remoteLastModified)
-                    .apply()
+                prefs.edit {
+                    putLong("stats_last_synced_local_time_$bookId", newLocalLastModified)
+                    putLong("stats_last_synced_remote_time_$bookId", remoteLastModified)
+                }
                 syncLogProvider.addLogEntry("Statistik aus der Cloud wiederhergestellt", bookId, bookName)
             }
         } finally {

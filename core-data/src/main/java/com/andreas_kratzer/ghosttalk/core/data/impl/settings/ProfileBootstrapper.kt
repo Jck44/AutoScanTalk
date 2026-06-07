@@ -1,7 +1,9 @@
 package com.andreas_kratzer.ghosttalk.core.data.impl.settings
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.core.content.edit
 import com.andreas_kratzer.ghosttalk.core.database.SettingsProfileDao
 import com.andreas_kratzer.ghosttalk.core.database.SettingsProfileEntity
 import com.andreas_kratzer.ghosttalk.core.model.ProfileConfig
@@ -20,6 +22,7 @@ class ProfileBootstrapper @Inject constructor(
 ) {
     private val prefs: SharedPreferences = context.getSharedPreferences(SettingsConstants.PREFS_NAME, Context.MODE_PRIVATE)
 
+    @SuppressLint("HardwareIds")
     suspend fun bootstrapIfNeeded() = withContext(Dispatchers.IO) {
         val currentProfileId = prefs.getString("local_active_profile_id", null)
         if (currentProfileId == null || settingsProfileDao.getAllProfiles().isEmpty()) {
@@ -129,10 +132,10 @@ class ProfileBootstrapper @Inject constructor(
 
             settingsProfileDao.insertProfile(defaultEntity)
 
-            prefs.edit()
-                .putString("local_active_profile_id", newUuid)
-                .putString("cached_active_profile_config", configJson)
-                .apply()
+            prefs.edit {
+                putString("local_active_profile_id", newUuid)
+                putString("cached_active_profile_config", configJson)
+            }
         }
     }
 }

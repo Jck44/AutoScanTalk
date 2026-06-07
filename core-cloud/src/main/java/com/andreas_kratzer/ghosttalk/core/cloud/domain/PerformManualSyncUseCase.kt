@@ -7,7 +7,6 @@ import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
 import com.andreas_kratzer.ghosttalk.core.cloud.GoogleWebAuthManager
 import com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper
 import com.andreas_kratzer.ghosttalk.core.settings.CloudSettings
-import com.google.api.services.drive.Drive
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -15,7 +14,7 @@ import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 class PerformManualSyncUseCase @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val googleAuthManager: GoogleAuthManager,
     private val googleWebAuthManager: GoogleWebAuthManager,
     private val cloudSyncUseCase: CloudSyncUseCase,
@@ -55,7 +54,6 @@ class PerformManualSyncUseCase @Inject constructor(
         } else {
             Log.d(TAG, "Drive API mode detected. Building drive client with authType=$authType...")
             val client = DriveServiceHelper.buildDriveClient(
-                context = context,
                 authType = authType,
                 googleAuthManager = googleAuthManager,
                 googleWebAuthManager = googleWebAuthManager

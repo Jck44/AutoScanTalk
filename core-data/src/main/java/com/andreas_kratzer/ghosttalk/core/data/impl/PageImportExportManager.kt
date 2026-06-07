@@ -1085,8 +1085,10 @@ class PageImportExportManager @Inject constructor(
             settingsMapper.importSettings(wrapper.settings)
             settingsRepository.updateConfigLastModified(bookId)
             val prefs = context.getSharedPreferences("ghosttalk_settings", Context.MODE_PRIVATE)
-            prefs.edit().putLong("config_last_synced_remote_time_$bookId", wrapper.lastModified).apply()
-            prefs.edit().putLong("config_last_synced_local_time_$bookId", settingsRepository.getConfigLastModified(bookId)).apply()
+            prefs.edit {
+                putLong("config_last_synced_remote_time_$bookId", wrapper.lastModified)
+                putLong("config_last_synced_local_time_$bookId", settingsRepository.getConfigLastModified(bookId))
+            }
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

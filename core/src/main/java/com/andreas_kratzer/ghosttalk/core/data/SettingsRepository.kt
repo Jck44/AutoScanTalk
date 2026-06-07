@@ -18,7 +18,9 @@ import com.andreas_kratzer.ghosttalk.core.settings.ScanningSettings
 import com.andreas_kratzer.ghosttalk.core.settings.SmartHomeSettings
 import com.andreas_kratzer.ghosttalk.core.settings.TtsSettings
 import com.andreas_kratzer.ghosttalk.core.settings.UserSettings
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
+import com.andreas_kratzer.ghosttalk.core.model.SettingsProfile
 
 /**
  * A facade interface that combines all specialized settings interfaces.
@@ -81,18 +83,18 @@ interface SettingsRepository : SecuritySettings, KeyEventSettings, AudioSettings
     fun getConfigLastModified(bookId: String): Long
 
     // --- Profile Management ---
-    fun getAllProfilesFlow(): kotlinx.coroutines.flow.Flow<List<com.andreas_kratzer.ghosttalk.core.model.SettingsProfile>>
-    suspend fun getAllProfiles(): List<com.andreas_kratzer.ghosttalk.core.model.SettingsProfile>
-    suspend fun getProfileById(id: String): com.andreas_kratzer.ghosttalk.core.model.SettingsProfile?
-    suspend fun insertProfile(profile: com.andreas_kratzer.ghosttalk.core.model.SettingsProfile)
-    suspend fun updateProfile(profile: com.andreas_kratzer.ghosttalk.core.model.SettingsProfile)
-    suspend fun deleteProfile(profile: com.andreas_kratzer.ghosttalk.core.model.SettingsProfile)
+    fun getAllProfilesFlow(): Flow<List<SettingsProfile>>
+    suspend fun getAllProfiles(): List<SettingsProfile>
+    suspend fun getProfileById(id: String): SettingsProfile?
+    suspend fun insertProfile(profile: SettingsProfile)
+    suspend fun updateProfile(profile: SettingsProfile)
+    suspend fun deleteProfile(profile: SettingsProfile)
     
-    val activeProfileIdFlow: kotlinx.coroutines.flow.StateFlow<String>
+    val activeProfileIdFlow: StateFlow<String>
     var activeProfileId: String
     
     suspend fun loadProfile(profileId: String)
 
-    val isCaregiverDeviceFlow: kotlinx.coroutines.flow.StateFlow<Boolean>
+    val isCaregiverDeviceFlow: StateFlow<Boolean>
     var isCaregiverDevice: Boolean
 }

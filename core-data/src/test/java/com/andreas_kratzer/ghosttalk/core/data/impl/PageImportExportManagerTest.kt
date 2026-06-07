@@ -49,7 +49,7 @@ class PageImportExportManagerTest {
     private val prefsEditor: SharedPreferences.Editor = mockk(relaxed = true)
     private val authManager: com.andreas_kratzer.ghosttalk.core.cloud.AuthManager = mockk(relaxed = true)
     
-    private val settingsMapper = SettingsMapper(settingsRepository, authManager)
+    private val settingsMapper = SettingsMapper(settingsRepository)
     private val actionMapper = ActionMapper()
     private val buttonTemplateRepository: com.andreas_kratzer.ghosttalk.core.data.ButtonTemplateRepository = mockk(relaxed = true)
     private val userModeSessionRepository: UserModeSessionRepository = mockk(relaxed = true)

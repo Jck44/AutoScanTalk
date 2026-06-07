@@ -92,7 +92,7 @@ enum class SettingsSection(private val titleRes: Int, val icon: ImageVector, val
     APP_CLOUD_SYNC(R.string.settings_category_cloud, GhostTalkIcons.Cloud, isGlobal = true, isScoped = false),
     APP_MAINTENANCE(R.string.settings_category_maintenance, GhostTalkIcons.Science, isGlobal = true, isScoped = false);
 
-    fun getTitleRes(isGlobal: Boolean): Int {
+    fun getTitleRes(): Int {
         return titleRes
     }
 }
@@ -284,7 +284,7 @@ private fun SettingsTopBar(
                 text = if (selectedSection == null)
                     stringResource(if (isGlobal) CoreR.string.settings_title_global else CoreR.string.settings_title_book)
                 else
-                    stringResource(selectedSection.getTitleRes(isGlobal)),
+                    stringResource(selectedSection.getTitleRes()),
                 style = MaterialTheme.typography.titleLarge
             )
         },
@@ -342,7 +342,7 @@ private fun SettingsMainMenu(
                 ListItem(
                     headlineContent = {
                         Text(
-                            text = stringResource(section.getTitleRes(isGlobal)),
+                            text = stringResource(section.getTitleRes()),
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.Medium
                         )
@@ -403,7 +403,6 @@ private fun SettingsSubMenu(
         SubmenuContent(
             section,
             viewModel,
-            isGlobal = isGlobal,
             onNavigateBack = onNavigateBack,
             onBookDeleted = onBookDeleted,
             onLockClicked = onLockClicked,
@@ -513,7 +512,6 @@ private fun handleLocalExport(
 fun SubmenuContent(
     section: SettingsSection, 
     viewModel: SettingsViewModel,
-    isGlobal: Boolean,
     onNavigateBack: () -> Unit = {},
     onBookDeleted: () -> Unit = {},
     onLockClicked: () -> Unit = {},
@@ -587,7 +585,6 @@ fun SubmenuContent(
                 isGlobal = true,
                 onLocalExport = onLocalExport,
                 onLocalImport = onLocalImport,
-                onSelectSafFolder = onSelectSafFolder,
                 onSelectSafFolderForImport = onSelectSafFolderForImport
             )
         }

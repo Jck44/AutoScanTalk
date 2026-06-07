@@ -1,6 +1,5 @@
 package com.andreas_kratzer.ghosttalk.core.cloud.domain
 
-import android.content.Context
 import android.content.Intent
 import android.util.Log
 import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager

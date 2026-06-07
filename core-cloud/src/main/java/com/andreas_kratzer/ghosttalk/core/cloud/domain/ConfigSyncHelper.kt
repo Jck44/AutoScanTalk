@@ -146,13 +146,13 @@ class ConfigSyncHelper(
 
         val shouldUpload = when (syncMode) {
             SyncMode.RESTORE_ONLY -> false
-            SyncMode.BACKUP_ONLY -> hasLocalChanged || remoteFile == null
+            SyncMode.BACKUP_ONLY -> hasLocalChanged
             SyncMode.TWO_WAY -> hasLocalChanged
         }
 
         val shouldDownload = when (syncMode) {
             SyncMode.BACKUP_ONLY -> false
-            SyncMode.RESTORE_ONLY -> hasRemoteChanged || localLastModified == 0L
+            SyncMode.RESTORE_ONLY -> hasRemoteChanged
             SyncMode.TWO_WAY -> hasRemoteChanged
         }
 

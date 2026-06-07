@@ -38,7 +38,7 @@ class SettingsRoundTripTest {
         every { prefsEditor.putBoolean(any(), any()) } returns prefsEditor
         every { prefsEditor.putInt(any(), any()) } returns prefsEditor
 
-        val settingsMapper = SettingsMapper(settingsRepository, authManager)
+        val settingsMapper = SettingsMapper(settingsRepository)
         val actionMapper = ActionMapper()
         val buttonTemplateRepository = mockk<com.andreas_kratzer.ghosttalk.core.data.ButtonTemplateRepository>(relaxed = true)
         every { buttonTemplateRepository.getTemplates() } returns kotlinx.coroutines.flow.flowOf(emptyList())

@@ -10,9 +10,6 @@ import com.andreas_kratzer.ghosttalk.core.cloud.domain.SyncMode
 import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
-import com.google.api.client.http.javanet.NetHttpTransport
-import com.google.api.client.json.gson.GsonFactory
-import com.google.api.services.drive.Drive
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.Dispatchers
@@ -56,7 +53,6 @@ class CloudSyncWorker @AssistedInject constructor(
             null
         } else {
             val client = DriveServiceHelper.buildDriveClient(
-                context = applicationContext,
                 authType = settingsRepository.googleAuthType,
                 googleAuthManager = googleAuthManager,
                 googleWebAuthManager = googleWebAuthManager

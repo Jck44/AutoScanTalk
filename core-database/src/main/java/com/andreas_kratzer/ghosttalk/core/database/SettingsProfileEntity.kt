@@ -19,7 +19,7 @@ data class SettingsProfileEntity(
 fun SettingsProfileEntity.toDomain(json: Json = Json { ignoreUnknownKeys = true }): SettingsProfile {
     val config = try {
         json.decodeFromString<ProfileConfig>(configJson)
-    } catch (e: Exception) {
+    } catch (_: Exception) {
         ProfileConfig()
     }
     return SettingsProfile(

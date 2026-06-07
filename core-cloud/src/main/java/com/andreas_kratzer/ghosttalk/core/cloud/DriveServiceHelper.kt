@@ -10,6 +10,7 @@ import com.google.api.services.drive.model.FileList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.FileOutputStream
+import com.andreas_kratzer.ghosttalk.core.model.CloudAuthType
 
 class DriveServiceHelper(private val driveService: Drive) {
 
@@ -259,28 +260,7 @@ class DriveServiceHelper(private val driveService: Drive) {
         success
     }
 
-    /**
-     * Renames a file in Google Drive.
-     */
-    suspend fun renameFile(fileId: String, newName: String): Boolean = withContext(Dispatchers.IO) {
-        val metadata = File().apply {
-            name = newName
-        }
-        try {
-            Log.d(TAG, "Renaming file $fileId to $newName")
-            driveService.files().update(fileId, metadata).execute()
-            Log.d(TAG, "File renamed successfully: $fileId")
-            true
-        } catch (e: com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException) {
-            throw e
-        } catch (e: GoogleJsonResponseException) {
-            Log.e(TAG, "Failed to rename file. Status: ${e.statusCode}, Message: ${e.details.message}", e)
-            false
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to rename file due to unexpected exception: ${e.message}", e)
-            false
-        }
-    }
+
 
     /**
      * Lists files in a folder.
@@ -427,16 +407,14 @@ class DriveServiceHelper(private val driveService: Drive) {
     }
 
     companion object {
-        private const val BUILDER_TAG = "DriveClientBuilder"
 
         suspend fun buildDriveClient(
-            context: Context,
-            authType: com.andreas_kratzer.ghosttalk.core.model.CloudAuthType,
+            authType: CloudAuthType,
             googleAuthManager: GoogleAuthManager,
             googleWebAuthManager: GoogleWebAuthManager
         ): Drive? {
             return when (authType) {
-                com.andreas_kratzer.ghosttalk.core.model.CloudAuthType.SYSTEM -> {
+                CloudAuthType.SYSTEM -> {
                     val credential = googleAuthManager.getGoogleCredential() ?: return null
                     Drive.Builder(
                         com.google.api.client.http.javanet.NetHttpTransport(),
@@ -447,7 +425,7 @@ class DriveServiceHelper(private val driveService: Drive) {
                         request.readTimeout = 3 * 60 * 1000    // 3 minutes
                     }.setApplicationName("GhosTTalk").build()
                 }
-                com.andreas_kratzer.ghosttalk.core.model.CloudAuthType.WEB_FLOW -> {
+                CloudAuthType.WEB_FLOW -> {
                     val token = googleWebAuthManager.getOrRefreshToken() ?: return null
                     val initializer = com.google.api.client.http.HttpRequestInitializer { req ->
                         req.headers.authorization = "Bearer $token"

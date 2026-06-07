@@ -1,10 +1,7 @@
 package com.andreas_kratzer.ghosttalk.core.data.impl.settings
 
-import android.util.Log
-import com.andreas_kratzer.ghosttalk.core.cloud.AuthManager
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportExportData
-import com.andreas_kratzer.ghosttalk.core.util.EncryptionUtils
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -14,10 +11,8 @@ import javax.inject.Singleton
  */
 @Singleton
 class SettingsMapper @Inject constructor(
-    private val settingsRepository: SettingsRepository,
-    private val authManager: AuthManager
+    private val settingsRepository: SettingsRepository
 ) {
-    private val TAG = "SettingsMapper"
 
     /**
      * Populates an [ImportExportData] object with settings for a specific book.

@@ -54,10 +54,6 @@ class BackupSettingsDelegate @Inject constructor(
         _backupRestoreProgress.value = progress
     }
 
-    fun setBackupRestoreStatus(status: String?) {
-        _backupRestoreStatus.value = status
-    }
-
     suspend fun exportLocalBackup(): String {
         return importExportManager.exportBookToJson(settingsRepository.activeBookId)
     }

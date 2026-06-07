@@ -1,6 +1,7 @@
 package com.andreas_kratzer.ghosttalk.core.cloud.domain
 
 import android.content.Context
+import androidx.core.content.edit
 import com.andreas_kratzer.ghosttalk.core.data.impl.PageImportExportManager
 import com.andreas_kratzer.ghosttalk.core.util.Logger
 import kotlinx.coroutines.Dispatchers
@@ -91,10 +92,10 @@ class AudioSyncHelper(
                 if (fileId != null) {
                     val newMetadata = storageProvider.getFileMetadata(fileId)
                     val newRemoteTime = newMetadata?.modifiedTime ?: 0L
-                    prefs.edit()
-                        .putLong("audio_last_synced_local_time_$bookId", localLastModified)
-                        .putLong("audio_last_synced_remote_time_$bookId", newRemoteTime)
-                        .apply()
+                    prefs.edit {
+                        putLong("audio_last_synced_local_time_$bookId", localLastModified)
+                        putLong("audio_last_synced_remote_time_$bookId", newRemoteTime)
+                    }
                     logger.d(TAG, "Audio recordings upload success. synced local=$localLastModified remote=$newRemoteTime")
                 }
             } catch (e: Exception) {
@@ -111,10 +112,10 @@ class AudioSyncHelper(
                     tempFile.inputStream().use { isStream ->
                         importExportManager.importAudioRecordingsFromZip(isStream) { _, _ -> }
                     }
-                    prefs.edit()
-                        .putLong("audio_last_synced_local_time_$bookId", importExportManager.getAudioRecordingsLastModified())
-                        .putLong("audio_last_synced_remote_time_$bookId", remoteLastModified)
-                        .apply()
+                    prefs.edit {
+                        putLong("audio_last_synced_local_time_$bookId", importExportManager.getAudioRecordingsLastModified())
+                        putLong("audio_last_synced_remote_time_$bookId", remoteLastModified)
+                    }
                     logger.d(TAG, "Audio recordings download and extract success.")
                 }
             } catch (e: Exception) {
@@ -142,10 +143,10 @@ class AudioSyncHelper(
                     importExportManager.importAudioRecordingsFromZip(isStream) { _, _ -> }
                 }
                 val prefs = context.getSharedPreferences("ghosttalk_settings", Context.MODE_PRIVATE)
-                prefs.edit()
-                    .putLong("audio_last_synced_local_time_$bookId", importExportManager.getAudioRecordingsLastModified())
-                    .putLong("audio_last_synced_remote_time_$bookId", remoteFile.modifiedTime)
-                    .apply()
+                prefs.edit {
+                    putLong("audio_last_synced_local_time_$bookId", importExportManager.getAudioRecordingsLastModified())
+                    putLong("audio_last_synced_remote_time_$bookId", remoteFile.modifiedTime)
+                }
             }
         } catch (e: Exception) {
             logger.e(TAG, "Failed to restore separate audio recordings", e)

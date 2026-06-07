@@ -15,7 +15,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import com.andreas_kratzer.ghosttalk.core.model.ProfileConfig
 import com.andreas_kratzer.ghosttalk.core.model.SettingsProfile
-import com.andreas_kratzer.ghosttalk.core.database.SettingsProfileEntity
 import com.andreas_kratzer.ghosttalk.core.database.toDomain
 import com.andreas_kratzer.ghosttalk.core.database.toEntity
 import kotlinx.coroutines.flow.map
@@ -23,7 +22,7 @@ import javax.inject.Inject
 
 @SuppressLint("CommitPrefEdits", "ApplySharedPref", "UseKtx")
 class SettingsRepositoryImpl @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val bookRepository: BookRepository,
     private val settingsProfileDao: com.andreas_kratzer.ghosttalk.core.database.SettingsProfileDao,
     @param:ApplicationScope private val scope: CoroutineScope
@@ -1033,6 +1032,7 @@ class SettingsRepositoryImpl @Inject constructor(
     // --- Profile Management ---
     private val jsonSerializer = kotlinx.serialization.json.Json { ignoreUnknownKeys = true; prettyPrint = true }
 
+    @Suppress("UNCHECKED_CAST")
     override val activeProfileIdFlow: StateFlow<String>
         get() = generalSettings.activeProfileIdFlow as StateFlow<String>
 
@@ -1052,31 +1052,31 @@ class SettingsRepositoryImpl @Inject constructor(
         get() = generalSettings.isCaregiverDevice
         set(value) { generalSettings.isCaregiverDevice = value }
 
-    override fun getAllProfilesFlow(): kotlinx.coroutines.flow.Flow<List<com.andreas_kratzer.ghosttalk.core.model.SettingsProfile>> {
+    override fun getAllProfilesFlow(): kotlinx.coroutines.flow.Flow<List<SettingsProfile>> {
         return settingsProfileDao.getAllProfilesFlow().map { list ->
             list.map { it.toDomain(jsonSerializer) }
         }
     }
 
-    override suspend fun getAllProfiles(): List<com.andreas_kratzer.ghosttalk.core.model.SettingsProfile> {
+    override suspend fun getAllProfiles(): List<SettingsProfile> {
         return settingsProfileDao.getAllProfiles().map { it.toDomain(jsonSerializer) }
     }
 
-    override suspend fun getProfileById(id: String): com.andreas_kratzer.ghosttalk.core.model.SettingsProfile? {
+    override suspend fun getProfileById(id: String): SettingsProfile? {
         return settingsProfileDao.getProfileById(id)?.toDomain(jsonSerializer)
     }
 
-    override suspend fun insertProfile(profile: com.andreas_kratzer.ghosttalk.core.model.SettingsProfile) {
+    override suspend fun insertProfile(profile: SettingsProfile) {
         val entity = profile.toEntity(jsonSerializer)
         settingsProfileDao.insertProfile(entity)
     }
 
-    override suspend fun updateProfile(profile: com.andreas_kratzer.ghosttalk.core.model.SettingsProfile) {
+    override suspend fun updateProfile(profile: SettingsProfile) {
         val entity = profile.toEntity(jsonSerializer)
         settingsProfileDao.updateProfile(entity)
     }
 
-    override suspend fun deleteProfile(profile: com.andreas_kratzer.ghosttalk.core.model.SettingsProfile) {
+    override suspend fun deleteProfile(profile: SettingsProfile) {
         val entity = profile.toEntity(jsonSerializer)
         settingsProfileDao.deleteProfile(entity)
     }
@@ -1089,7 +1089,7 @@ class SettingsRepositoryImpl @Inject constructor(
         try {
             val config = profile.config
             // Write config JSON to SharedPreferences cached profile field
-            val configJson = jsonSerializer.encodeToString(com.andreas_kratzer.ghosttalk.core.model.ProfileConfig.serializer(), config)
+            val configJson = jsonSerializer.encodeToString(ProfileConfig.serializer(), config)
             prefs.edit().putString("cached_active_profile_config", configJson).apply()
 
             // Update SharedPreferences keys corresponding to the profile

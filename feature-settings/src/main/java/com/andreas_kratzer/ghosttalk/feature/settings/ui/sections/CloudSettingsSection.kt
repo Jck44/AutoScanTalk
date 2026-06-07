@@ -52,7 +52,6 @@ fun CloudSettingsSection(
     isGlobal: Boolean,
     onLocalExport: () -> Unit,
     onLocalImport: () -> Unit,
-    onSelectSafFolder: () -> Unit = {},
     onSelectSafFolderForImport: () -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -69,10 +68,7 @@ fun CloudSettingsSection(
 
     val googleDriveFolderId by viewModel.googleDriveFolderId.collectAsState()
     val googleDriveFolderName by viewModel.googleDriveFolderName.collectAsState()
-    val syncTargetType by viewModel.syncTargetType.collectAsState()
     val googleAuthType by viewModel.googleAuthType.collectAsState()
-    val localFolderSafUri by viewModel.localFolderSafUri.collectAsState()
-    val localFolderSafName by viewModel.localFolderSafName.collectAsState()
     val driveFolders by viewModel.driveFolders.collectAsState()
     val isBrowsingFolders by viewModel.isBrowsingFolders.collectAsState()
     val showFolderPicker = remember { mutableStateOf(false) }
@@ -286,7 +282,7 @@ fun CloudSettingsSection(
             Spacer(modifier = Modifier.height(dimensions.paddingMedium))
 
             PreferenceCategory(stringResource(R.string.settings_category_elevenlabs)) {
-                com.andreas_kratzer.ghosttalk.core.ui.components.SettingsEditTextItem(
+                SettingsEditTextItem(
                     label = stringResource(R.string.settings_elevenlabs_api_key),
                     value = elevenLabsApiKey ?: "",
                     onValueChange = { viewModel.setElevenLabsApiKey(it) }

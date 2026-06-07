@@ -49,7 +49,7 @@ class DocumentFolderSyncStorageProvider(
                     )
                 }
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             // Fallback to cached listFiles
             val files = root.listFiles()
             return files.map { doc ->
@@ -209,11 +209,11 @@ class DocumentFolderSyncStorageProvider(
         return try {
             DocumentsContract.deleteDocument(context.contentResolver, fileId.toUri())
             true
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             try {
                 val doc = DocumentFile.fromSingleUri(context, fileId.toUri())
                 doc?.delete() ?: false
-            } catch (e2: Exception) {
+            } catch (_: Exception) {
                 false
             }
         }

@@ -45,7 +45,6 @@ class CloudSyncUseCase @Inject constructor(
     private val TAG = "CloudSyncUseCase"
     private val FOLDER_NAME = "GhosTTalk_Sync"
     private val TTS_CACHE_FILE_NAME = "tts_cache.zip"
-    private val syncMutex = kotlinx.coroutines.sync.Mutex()
 
     private val bookMergeEngine = BookMergeEngine(logger)
     private val audioSyncHelper = AudioSyncHelper(context, importExportManager, logger)
@@ -74,7 +73,7 @@ class CloudSyncUseCase @Inject constructor(
         val folderId = settingsRepository.googleDriveFolderId
         if (drive == null && folderId?.startsWith("content://") == true) {
             // SAF Folder: Find or create a subfolder named "Profiles"
-            val rootDoc = androidx.documentfile.provider.DocumentFile.fromTreeUri(context, android.net.Uri.parse(folderId))
+            val rootDoc = androidx.documentfile.provider.DocumentFile.fromTreeUri(context, Uri.parse(folderId))
             val profilesDoc = rootDoc?.findFile("Profiles") ?: rootDoc?.createDirectory("Profiles")
             val targetUri = profilesDoc?.uri?.toString() ?: folderId
             return DocumentFolderSyncStorageProvider(context, targetUri)
@@ -294,7 +293,6 @@ class CloudSyncUseCase @Inject constructor(
                         }
                     } else {
                         // 2. We have remote master or conflict files. Determine what action to take.
-                        var remoteData: ImportExportData? = null
                         val remoteSeqFromProps = remoteMasterFile?.properties?.get("version_sequence")?.toLongOrNull()
                         var remoteSeq = remoteSeqFromProps ?: 0L
 
@@ -313,7 +311,7 @@ class CloudSyncUseCase @Inject constructor(
                                     if (downloadSuccess) {
                                         val remoteJson = readJsonFromFile(downloadFile)
                                         val jsonParser = kotlinx.serialization.json.Json { ignoreUnknownKeys = true; encodeDefaults = true }
-                                        remoteData = jsonParser.decodeFromString<ImportExportData>(remoteJson)
+                                        val remoteData = jsonParser.decodeFromString<ImportExportData>(remoteJson)
                                         remoteSeq = remoteData.versionSequence ?: 0L
                                     } else {
                                         logger.e(TAG, "Failed to download remote master file for evaluation.")

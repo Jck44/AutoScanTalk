@@ -15,6 +15,11 @@
     <string name="settings_category_advanced">Advanced Settings</string>
     <string name="settings_category_vocal_switch">Vocal Switch (Mouth Control)</string>
     <string name="settings_analytics_dashboard">Statistics &amp; Recommendations</string>
+    <string name="settings_section_accessibility">Accessibility &amp; Switches</string>
+    <string name="settings_section_voice_assistant">Voice Assistant &amp; AI</string>
+    <string name="settings_section_security">Security &amp; Locks</string>
+    <string name="settings_section_cloud_backup">Cloud &amp; Profiles</string>
+    <string name="settings_section_system_maintenance">System &amp; Maintenance</string>
     
     <!-- General Settings -->
     <string name="settings_start_page">Start Page</string>
@@ -215,6 +220,13 @@
     <string name="settings_clear_usage_stats">Clear Statistics</string>
     <string name="settings_clear_usage_stats_confirm">Do you really want to clear all usage statistics for this book?</string>
     <string name="settings_action_history_title">Action History</string>
+    <string name="settings_category_profile">Profile Settings</string>
+    <string name="settings_profile_active">Active Profile</string>
+    <string name="settings_profile_create">Create New Profile</string>
+    <string name="settings_profile_delete">Delete Profile</string>
+    <string name="settings_profile_create_title">New Profile</string>
+    <string name="settings_profile_name_hint">Profile Name</string>
+    <string name="settings_profile_delete_confirm">Do you really want to delete the profile \"%s\"? This cannot be undone.</string>
     <string name="settings_category_local_backup">Local Backup</string>
     <string name="settings_local_backup_create">Create Backup</string>
     <string name="settings_local_backup_restore">Restore Backup</string>
