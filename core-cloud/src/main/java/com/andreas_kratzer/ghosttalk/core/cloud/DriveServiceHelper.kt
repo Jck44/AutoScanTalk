@@ -76,17 +76,22 @@ class DriveServiceHelper(private val driveService: Drive) {
     /**
      * Uploads a file to a specific folder.
      */
+    /**
+     * Uploads a file to a specific folder.
+     */
     suspend fun uploadFile(
         parentFolderId: String,
         file: java.io.File,
         mimeType: String,
         description: String? = null,
+        properties: Map<String, String>? = null,
         onProgress: (Float) -> Unit = {}
     ): String? = withContext(Dispatchers.IO) {
         val metadata = File().apply {
             name = file.name
             parents = listOf(parentFolderId)
             this.description = description
+            this.properties = properties
         }
         val mediaContent = FileContent(mimeType, file)
         try {
@@ -124,11 +129,13 @@ class DriveServiceHelper(private val driveService: Drive) {
         file: java.io.File,
         mimeType: String,
         description: String? = null,
+        properties: Map<String, String>? = null,
         onProgress: (Float) -> Unit = {}
     ): Boolean = withContext(Dispatchers.IO) {
         val metadata = File().apply {
             name = file.name
             this.description = description
+            this.properties = properties
         }
         val mediaContent = FileContent(mimeType, file)
         try {
@@ -251,7 +258,7 @@ class DriveServiceHelper(private val driveService: Drive) {
         val query = "'$folderId' in parents and trashed = false"
         try {
             Log.d(TAG, "Listing files in folder: $folderId with query: $query")
-            val result: FileList = driveService.files().list().setQ(query).setFields("files(id, name, modifiedTime, description)").execute()
+            val result: FileList = driveService.files().list().setQ(query).setFields("files(id, name, modifiedTime, description, properties, md5Checksum, version)").execute()
             val files = result.files ?: emptyList()
             Log.d(TAG, "Found ${files.size} files in folder $folderId")
             files
@@ -273,7 +280,7 @@ class DriveServiceHelper(private val driveService: Drive) {
         val query = "name contains '$queryText' and trashed = false"
         try {
             Log.d(TAG, "Searching for files with query: $query")
-            val result: FileList = driveService.files().list().setQ(query).setFields("files(id, name, modifiedTime)").execute()
+            val result: FileList = driveService.files().list().setQ(query).setFields("files(id, name, modifiedTime, properties, md5Checksum, version)").execute()
             val files = result.files ?: emptyList()
             Log.d(TAG, "Found ${files.size} files matching '$queryText'")
             files
@@ -296,7 +303,7 @@ class DriveServiceHelper(private val driveService: Drive) {
     suspend fun getFileMetadata(fileId: String): File? = withContext(Dispatchers.IO) {
         try {
             Log.d(TAG, "Fetching metadata for file: $fileId")
-            driveService.files().get(fileId).setFields("id, name, modifiedTime, description").execute()
+            driveService.files().get(fileId).setFields("id, name, modifiedTime, description, properties, md5Checksum, version").execute()
         } catch (e: com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException) {
             throw e
         } catch (e: Exception) {
@@ -312,7 +319,8 @@ class DriveServiceHelper(private val driveService: Drive) {
         fileId: String,
         localFile: java.io.File,
         mimeType: String,
-        expectedVersion: Long
+        expectedVersion: Long,
+        properties: Map<String, String>? = null
     ): Boolean = withContext(Dispatchers.IO) {
         val logTag = "DriveLockHandshake"
         try {
@@ -333,7 +341,10 @@ class DriveServiceHelper(private val driveService: Drive) {
             
             Log.d(logTag, "[3/3] Sperren-Check erfolgreich (oder Legacy-Bypass). Starte physischen Datei-Upload auf Google Drive...")
             val content = FileContent(mimeType, localFile)
-            val updateResponse = driveService.files().update(fileId, null, content).execute()
+            val metadata = File().apply {
+                this.properties = properties
+            }
+            val updateResponse = driveService.files().update(fileId, metadata, content).execute()
             
             Log.i(logTag, "[SUCCESS] Datei erfolgreich auf Google Drive überschrieben. Neue Server-Revision ist: ${updateResponse.version}")
             true

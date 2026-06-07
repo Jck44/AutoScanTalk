@@ -93,14 +93,14 @@ class CloudSyncUseCaseTest {
         }
         
         coEvery { mockImportExportManager.exportBookToJson(bookId) } returns "{\"versionSequence\": 2, \"bookUpdatedAt\": $now}"
-        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock(any(), any(), any(), any()) } returns true
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock(any(), any(), any(), any(), any()) } returns true
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().getFileMetadata(any()) } returns remoteFile
 
         useCase.syncBook(mockDrive, bookId, SyncMode.BACKUP_ONLY)
         advanceUntilIdle()
 
         // Verify that uploadWithOptimisticLock was called and downloadFile was called exactly once for sequence check
-        coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock("file_1", any(), "application/json", 1L) }
+        coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock("file_1", any(), "application/json", 1L, any()) }
         coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile("file_1", any(), any()) }
     }
 
@@ -131,7 +131,7 @@ class CloudSyncUseCaseTest {
         advanceUntilIdle()
 
         // Verify that uploadWithOptimisticLock was NOT called, and downloadFile was called exactly once
-        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock(any(), any(), any(), any()) }
+        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock(any(), any(), any(), any(), any()) }
         coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile("file_1", any(), any()) }
     }
 
@@ -157,7 +157,7 @@ class CloudSyncUseCaseTest {
         advanceUntilIdle()
 
         coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile("file_1", any(), any()) }
-        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock(any(), any(), any(), any()) }
+        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock(any(), any(), any(), any(), any()) }
         coVerify(exactly = 1) { mockImportExportManager.importFromJson(any(), bookId, restoreSyncSettings = false) }
     }
 
@@ -180,7 +180,7 @@ class CloudSyncUseCaseTest {
         advanceUntilIdle()
 
         coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile(any(), any(), any()) }
-        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock(any(), any(), any(), any()) }
+        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock(any(), any(), any(), any(), any()) }
     }
 
     @Test
@@ -205,7 +205,7 @@ class CloudSyncUseCaseTest {
         advanceUntilIdle()
 
         coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile("file_1", any(), any()) }
-        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock(any(), any(), any(), any()) }
+        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock(any(), any(), any(), any(), any()) }
         coVerify(exactly = 1) { mockImportExportManager.importFromJson(any(), bookId, restoreSyncSettings = false) }
     }
 
@@ -234,12 +234,12 @@ class CloudSyncUseCaseTest {
         coEvery { mockBookRepository.getBookById(bookId) } returns mockBook
 
         coEvery { mockImportExportManager.exportBookToJson(bookId) } returns "{\"versionSequence\": 2, \"bookUpdatedAt\": $now}"
-        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock(any(), any(), any(), any()) } returns true
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock(any(), any(), any(), any(), any()) } returns true
 
         useCase.syncBook(mockDrive, bookId, SyncMode.TWO_WAY)
         advanceUntilIdle()
 
-        coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock("file_1", any(), "application/json", 1L) }
+        coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock("file_1", any(), "application/json", 1L, any()) }
         coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile("file_1", any(), any()) }
     }
 
@@ -266,7 +266,7 @@ class CloudSyncUseCaseTest {
         coEvery { mockBookRepository.getBookById(bookId) } returns mockBook
 
         coEvery { mockImportExportManager.exportBookToJson(bookId) } returns "{\"versionSequence\": 1, \"bookUpdatedAt\": $now}"
-        coEvery { mockImportExportManager.importFromJson(any(), any(), any()) } returns Result.success("test-book")
+        coEvery { mockImportExportManager.importFromJson(any(), any(), any()) } returns Result.success(5)
 
         useCase.syncBook(mockDrive, bookId, SyncMode.TWO_WAY)
         advanceUntilIdle()
@@ -295,7 +295,7 @@ class CloudSyncUseCaseTest {
 
         coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile(any(), any(), any()) }
         coVerify(exactly = 0) { mockImportExportManager.importFromJson(any(), any(), any()) }
-        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock(any(), any(), any(), any()) }
+        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock(any(), any(), any(), any(), any()) }
     }
 
     @Test
@@ -374,7 +374,7 @@ class CloudSyncUseCaseTest {
 
         // Verify that downloadFile was called (overwriting local) because resolvedBookMode is RESTORE_ONLY
         coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile("file_1", any(), any()) }
-        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock(any(), any(), any(), any()) }
+        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock(any(), any(), any(), any(), any()) }
     }
 
     @Test
@@ -399,7 +399,7 @@ class CloudSyncUseCaseTest {
         // Verify success is returned, but no downloading/importing/exporting or uploading took place
         assert(result)
         coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile(any(), any(), any()) }
-        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock(any(), any(), any(), any()) }
+        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock(any(), any(), any(), any(), any()) }
     }
 
     @Test
@@ -418,13 +418,13 @@ class CloudSyncUseCaseTest {
         
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder(any()) } returns "folder_1"
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("folder_1") } returns emptyList() // No remote stats file
-        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadFile(any(), any(), any(), any()) } returns "new_stats_id"
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadFile(any(), any(), any(), any(), any(), any()) } returns "new_stats_id"
 
         useCase.syncBook(mockDrive, bookId, SyncMode.TWO_WAY)
         advanceUntilIdle()
 
         // Verify that statistics upload was invoked because statsMode resolves to BACKUP_ONLY
-        coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadFile(any(), any<File>(), eq("application/zip"), eq("Test"), any()) }
+        coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadFile(any(), any<File>(), eq("application/zip"), any(), any(), any()) }
     }
 
     @Test
@@ -451,7 +451,7 @@ class CloudSyncUseCaseTest {
 
         // Verify that stats were downloaded/restored because the manual RESTORE_ONLY overrides the BACKUP_ONLY setting
         coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile("stats_file_1", any(), any()) }
-        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadFile(any(), any<File>(), any(), any(), any()) }
+        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadFile(any(), any<File>(), any(), any(), any(), any()) }
     }
 
     @Test
@@ -463,7 +463,7 @@ class CloudSyncUseCaseTest {
         every { mockSettingsRepository.syncModeTts } returns "BACKUP_ONLY"
 
         // Mock export calls to verify they are run in fallback path
-        coEvery { mockImportExportManager.exportBookToZip(eq(bookId), any(), any(), any()) } returns Unit
+        coEvery { mockImportExportManager.exportBookToJson(eq(bookId)) } returns "{}"
         coEvery { mockImportExportManager.exportStatisticsToZip(eq(bookId), any()) } returns Unit
         coEvery { mockImportExportManager.exportTtsCacheToZip(any(), any()) } returns Unit
 
@@ -474,7 +474,7 @@ class CloudSyncUseCaseTest {
         assertEquals(false, result)
 
         // Verify fallback exports were called
-        coVerify(exactly = 1) { mockImportExportManager.exportBookToZip(eq(bookId), any(), any(), any()) }
+        coVerify(exactly = 1) { mockImportExportManager.exportBookToJson(eq(bookId)) }
         coVerify(exactly = 1) { mockImportExportManager.exportStatisticsToZip(eq(bookId), any()) }
         coVerify(exactly = 1) { mockImportExportManager.exportTtsCacheToZip(any(), any()) }
         coVerify(exactly = 1) { mockSyncLogProvider.addLogEntry(
@@ -521,11 +521,11 @@ class CloudSyncUseCaseTest {
 
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder(any()) } returns "folder_1"
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("folder_1") } returns emptyList() // No remote file exists
-        coEvery { mockImportExportManager.exportBookToZip(eq(bookId), any(), any(), any()) } returns Unit
-        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadFile(any(), any<File>(), any(), any(), any()) } returns "new_file_id"
+        coEvery { mockImportExportManager.exportBookToJson(eq(bookId)) } returns "{}"
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadFile(any(), any<File>(), any(), any(), any(), any()) } returns "new_file_id"
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().getFileMetadata(any()) } returns com.google.api.services.drive.model.File().apply {
             id = "new_file_id"
-            name = "book_test-book.zip"
+            name = "book_test-book.json"
             modifiedTime = com.google.api.client.util.DateTime(System.currentTimeMillis())
         }
 
@@ -534,7 +534,7 @@ class CloudSyncUseCaseTest {
 
         assertEquals(true, result)
         // Verify uploadFile was called and downloadFile was NOT called
-        coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadFile(any(), any<File>(), any(), any(), any()) }
+        coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadFile(any(), any<File>(), any(), any(), any(), any()) }
         coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile(any(), any(), any()) }
     }
 
@@ -545,11 +545,11 @@ class CloudSyncUseCaseTest {
 
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder(any()) } returns "folder_1"
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("folder_1") } returns emptyList() // No remote file exists
-        coEvery { mockImportExportManager.exportBookToZip(eq(bookId), any(), any(), any()) } returns Unit
-        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadFile(any(), any<File>(), any(), any(), any()) } returns "new_file_id"
+        coEvery { mockImportExportManager.exportBookToJson(eq(bookId)) } returns "{}"
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadFile(any(), any<File>(), any(), any(), any(), any()) } returns "new_file_id"
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().getFileMetadata(any()) } returns com.google.api.services.drive.model.File().apply {
             id = "new_file_id"
-            name = "book_test-book.zip"
+            name = "book_test-book.json"
             modifiedTime = com.google.api.client.util.DateTime(System.currentTimeMillis())
         }
 
@@ -558,7 +558,42 @@ class CloudSyncUseCaseTest {
 
         assertEquals(true, result)
         // Verify uploadFile was called and downloadFile was NOT called
-        coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadFile(any(), any<File>(), any(), any(), any()) }
+        coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadFile(any(), any<File>(), any(), any(), any(), any()) }
         coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile(any(), any(), any()) }
+    }
+
+    @Test
+    fun `syncBook skips download and merge if remote properties structure_md5 matches local structure_md5`() = runTest {
+        val bookId = "test-book"
+        val now = System.currentTimeMillis()
+
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder(any()) } returns "folder_1"
+
+        val mockJson = "{\"bookUpdatedAt\":123456,\"versionSequence\":2,\"pages\":[]}"
+        coEvery { mockImportExportManager.exportBookToJson(bookId) } returns mockJson
+
+        val jsonParser = kotlinx.serialization.json.Json { ignoreUnknownKeys = true; encodeDefaults = true }
+        val data = jsonParser.decodeFromString<com.andreas_kratzer.ghosttalk.core.model.importexport.ImportExportData>(mockJson)
+        val cleanData = data.copy(bookUpdatedAt = 0L, versionSequence = 0L)
+        val cleanJson = jsonParser.encodeToString(com.andreas_kratzer.ghosttalk.core.model.importexport.ImportExportData.serializer(), cleanData)
+        val messageDigest = java.security.MessageDigest.getInstance("MD5")
+        val hashBytes = messageDigest.digest(cleanJson.toByteArray(Charsets.UTF_8))
+        val expectedMd5 = hashBytes.joinToString("") { "%02x".format(it) }
+
+        val remoteFile = com.google.api.services.drive.model.File().apply {
+            id = "file_1"
+            name = "book_$bookId.json"
+            modifiedTime = com.google.api.client.util.DateTime(now)
+            properties = mapOf("structure_md5" to expectedMd5)
+        }
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("folder_1") } returns listOf(remoteFile)
+
+        val result = useCase.syncBook(mockDrive, bookId, SyncMode.TWO_WAY)
+        advanceUntilIdle()
+
+        assertEquals(true, result)
+        // Verify download and upload were skipped
+        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile(any(), any(), any()) }
+        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock(any(), any(), any(), any(), any()) }
     }
 }

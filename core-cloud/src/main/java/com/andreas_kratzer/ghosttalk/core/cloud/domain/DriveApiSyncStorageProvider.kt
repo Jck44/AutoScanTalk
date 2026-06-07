@@ -20,7 +20,8 @@ class DriveApiSyncStorageProvider(
                 description = file.description,
                 modifiedTime = file.modifiedTime?.value ?: 0L,
                 md5Checksum = file.md5Checksum,
-                version = file.version
+                version = file.version,
+                properties = file.properties
             )
         }
     }
@@ -29,9 +30,10 @@ class DriveApiSyncStorageProvider(
         tempFile: File,
         mimeType: String,
         description: String?,
+        properties: Map<String, String>?,
         onProgress: (Float) -> Unit
     ): String? {
-        return helper.uploadFile(folderId, tempFile, mimeType, description, onProgress)
+        return helper.uploadFile(folderId, tempFile, mimeType, description, properties, onProgress)
     }
 
     override suspend fun updateFile(
@@ -39,9 +41,10 @@ class DriveApiSyncStorageProvider(
         tempFile: File,
         mimeType: String,
         description: String?,
+        properties: Map<String, String>?,
         onProgress: (Float) -> Unit
     ): Boolean {
-        return helper.updateFile(fileId, tempFile, mimeType, description, onProgress)
+        return helper.updateFile(fileId, tempFile, mimeType, description, properties, onProgress)
     }
 
     override suspend fun downloadFile(
@@ -60,7 +63,8 @@ class DriveApiSyncStorageProvider(
             description = file.description,
             modifiedTime = file.modifiedTime?.value ?: 0L,
             md5Checksum = file.md5Checksum,
-            version = file.version
+            version = file.version,
+            properties = file.properties
         )
     }
 

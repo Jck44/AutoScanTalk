@@ -68,6 +68,7 @@ class DocumentFolderSyncStorageProvider(
         tempFile: File,
         mimeType: String,
         description: String?,
+        properties: Map<String, String>?,
         onProgress: (Float) -> Unit
     ): String? {
         val root = rootDoc ?: return null
@@ -111,6 +112,7 @@ class DocumentFolderSyncStorageProvider(
         tempFile: File,
         mimeType: String,
         description: String?,
+        properties: Map<String, String>?,
         onProgress: (Float) -> Unit
     ): Boolean {
         val uri = fileId.toUri()

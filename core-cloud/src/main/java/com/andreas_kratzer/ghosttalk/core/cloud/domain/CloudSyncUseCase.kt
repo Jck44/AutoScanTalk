@@ -127,15 +127,30 @@ class CloudSyncUseCase @Inject constructor(
 
                     val localSeq = book.versionSequence
                     val localMd5 = CloudSyncOptimizer().calculateMD5(tempFile)
+                    val localStructMd5 = calculateStructuralMd5(bookId)
+                    val remoteStructMd5 = remoteMasterFile?.properties?.get("structure_md5")
 
-                    // 1. Initial Upload if no remote files exist at all
-                    if (remoteMasterFile == null && remoteConflictFiles.isEmpty()) {
+                    // Schutzgurt: Wenn Sequenzen gleich sind ODER die Struktur-MD5 übereinstimmt, KEIN Konflikt/Download nötig!
+                    if ((remoteMasterFile != null && localSeq == remoteMasterFile.version) ||
+                        (remoteStructMd5 != null && localStructMd5 == remoteStructMd5)) {
+                        logger.d(TAG, "Sequenzen sind identisch oder Struktur-MD5 stimmt überein ($localSeq). Überspringe Merge-Check und Download.")
+                        if (effectiveMasterFile != null) {
+                            bookRepository.updateLastModified(bookId, effectiveMasterFile.modifiedTime, incrementSequence = false)
+                        }
+                        syncLogProvider.addLogEntry("Inhalte sind identisch (NO_OP)", bookId, book.name)
+                        success = true
+                    } else if (remoteMasterFile == null && remoteConflictFiles.isEmpty()) {
                         logger.d(TAG, "No remote file found. Uploading local book as master...")
-                        val newFileId = storageProvider.uploadFile(tempFile, "application/zip", book.name) { p ->
+                        val newFileId = storageProvider.uploadFile(
+                            tempFile = tempFile,
+                            mimeType = "application/json",
+                            description = book.name,
+                            properties = mapOf("structure_md5" to localStructMd5)
+                        ) { p ->
                             onProgress(0.2f + p * 0.8f, "Uploading to Drive...")
                         }
                         if (newFileId != null) {
-                            syncLogProvider.addLogEntry("Erster Upload in die Cloud (ZIP)", bookId, book.name)
+                            syncLogProvider.addLogEntry("Erster Upload in die Cloud (JSON)", bookId, book.name)
                             val metadata = storageProvider.getFileMetadata(newFileId)
                             val driveTime = metadata?.modifiedTime ?: 0L
                             if (driveTime > 0L) {
@@ -247,7 +262,12 @@ class CloudSyncUseCase @Inject constructor(
                                     } else null
 
                                     val uploadSuccess = if (remoteMasterFile == null && legacyZipFile != null) {
-                                        val newId = storageProvider.uploadFile(tempFile, "application/json", book.name) { _ -> }
+                                        val newId = storageProvider.uploadFile(
+                                            tempFile = tempFile,
+                                            mimeType = "application/json",
+                                            description = book.name,
+                                            properties = mapOf("structure_md5" to localStructMd5)
+                                        ) { _ -> }
                                         if (newId != null) {
                                             try {
                                                 storageProvider.deleteFile(legacyZipFile.id)
@@ -258,9 +278,21 @@ class CloudSyncUseCase @Inject constructor(
                                         } else false
                                     } else {
                                         if (driveHelper != null) {
-                                            driveHelper.uploadWithOptimisticLock(effectiveMasterFile.id, tempFile, "application/json", expectedVersion)
+                                            driveHelper.uploadWithOptimisticLock(
+                                                fileId = effectiveMasterFile.id,
+                                                localFile = tempFile,
+                                                mimeType = "application/json",
+                                                expectedVersion = expectedVersion,
+                                                properties = mapOf("structure_md5" to localStructMd5)
+                                            )
                                         } else {
-                                            storageProvider.updateFile(effectiveMasterFile.id, tempFile, "application/json", book.name) { _ -> }
+                                            storageProvider.updateFile(
+                                                fileId = effectiveMasterFile.id,
+                                                tempFile = tempFile,
+                                                mimeType = "application/json",
+                                                description = book.name,
+                                                properties = mapOf("structure_md5" to localStructMd5)
+                                            ) { _ -> }
                                         }
                                     }
 
@@ -451,30 +483,30 @@ class CloudSyncUseCase @Inject constructor(
                             }
                         }
                     }
+                }
 
-                    // Sync TTS cache and statistics separately after successful book sync
-                    val ttsModeStr = settingsRepository.syncModeTts
-                    if (success && ttsModeStr != "OFF") {
-                        val ttsMode = if (syncMode == SyncMode.TWO_WAY) {
-                            try { SyncMode.valueOf(ttsModeStr) } catch (_: Exception) { SyncMode.TWO_WAY }
-                        } else syncMode
-                        try {
-                            syncTtsCache(storageProvider, ttsMode)
-                        } catch (e: Exception) {
-                            logger.e(TAG, "TTS cache sync failed (non-fatal)", e)
-                        }
+                // Sync TTS cache and statistics separately after successful book sync
+                val ttsModeStr = settingsRepository.syncModeTts
+                if (success && ttsModeStr != "OFF") {
+                    val ttsMode = if (syncMode == SyncMode.TWO_WAY) {
+                        try { SyncMode.valueOf(ttsModeStr) } catch (_: Exception) { SyncMode.TWO_WAY }
+                    } else syncMode
+                    try {
+                        syncTtsCache(storageProvider, ttsMode)
+                    } catch (e: Exception) {
+                        logger.e(TAG, "TTS cache sync failed (non-fatal)", e)
                     }
+                }
 
-                    val statsModeStr = settingsRepository.syncModeStats
-                    if (success && statsModeStr != "OFF") {
-                        val statsMode = if (syncMode == SyncMode.TWO_WAY) {
-                            try { SyncMode.valueOf(statsModeStr) } catch (_: Exception) { SyncMode.BACKUP_ONLY }
-                        } else syncMode
-                        try {
-                            syncStatistics(storageProvider, statsMode, bookId, book.name)
-                        } catch (e: Exception) {
-                            logger.e(TAG, "Statistics sync failed (non-fatal)", e)
-                        }
+                val statsModeStr = settingsRepository.syncModeStats
+                if (success && statsModeStr != "OFF") {
+                    val statsMode = if (syncMode == SyncMode.TWO_WAY) {
+                        try { SyncMode.valueOf(statsModeStr) } catch (_: Exception) { SyncMode.BACKUP_ONLY }
+                    } else syncMode
+                    try {
+                        syncStatistics(storageProvider, statsMode, bookId, book.name)
+                    } catch (e: Exception) {
+                        logger.e(TAG, "Statistics sync failed (non-fatal)", e)
                     }
                 }
             } catch (e: Exception) {
@@ -1282,6 +1314,34 @@ class CloudSyncUseCase @Inject constructor(
             logger.d(TAG, "Saved local backup copy to $destFile")
         } catch (e: Exception) {
             logger.e(TAG, "Failed to save local backup copy for $fileName", e)
+        }
+    }
+
+    private suspend fun calculateStructuralMd5(bookId: String): String {
+        return try {
+            val jsonStr = importExportManager.exportBookToJson(bookId)
+            calculateStructuralMd5FromJson(jsonStr)
+        } catch (e: Exception) {
+            logger.e(TAG, "Failed to calculate structural MD5 for book $bookId", e)
+            ""
+        }
+    }
+
+    private fun calculateStructuralMd5FromJson(jsonStr: String): String {
+        return try {
+            val jsonParser = kotlinx.serialization.json.Json { ignoreUnknownKeys = true; encodeDefaults = true }
+            val data = jsonParser.decodeFromString<com.andreas_kratzer.ghosttalk.core.model.importexport.ImportExportData>(jsonStr)
+            val cleanData = data.copy(
+                bookUpdatedAt = 0L,
+                versionSequence = 0L
+            )
+            val cleanJson = jsonParser.encodeToString(com.andreas_kratzer.ghosttalk.core.model.importexport.ImportExportData.serializer(), cleanData)
+            val messageDigest = java.security.MessageDigest.getInstance("MD5")
+            val hashBytes = messageDigest.digest(cleanJson.toByteArray(Charsets.UTF_8))
+            hashBytes.joinToString("") { "%02x".format(it) }
+        } catch (e: Exception) {
+            logger.e(TAG, "Failed to calculate structural MD5 from JSON", e)
+            ""
         }
     }
 }

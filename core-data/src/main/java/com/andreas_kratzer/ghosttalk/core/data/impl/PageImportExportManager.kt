@@ -153,7 +153,7 @@ class PageImportExportManager @Inject constructor(
             bookUpdatedAt = book.updatedAt,
             versionSequence = book.versionSequence,
             sourceDevice = "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}",
-            buttonTemplates = mappedButtonTemplates,
+            buttonTemplates = mappedButtonTemplates.sortedBy { it.id },
             pages = pages.map { page ->
                 ImportPage(
                     importId = page.id,
@@ -182,11 +182,11 @@ class PageImportExportManager @Inject constructor(
                                 updatedAt = it.updatedAt
                             )
                         }
-                    }
+                    }.sortedBy { it.index }
                 )
-            },
+            }.sortedBy { it.importId },
             logicalVersion = null, // Deprecated/unused, kept for JSON compatibility
-            deletedEntities = tombstones
+            deletedEntities = tombstones.sortedBy { it.entityId }
         )
 
         val exportData = settingsMapper.exportSettings(bookId, baseExportData)
