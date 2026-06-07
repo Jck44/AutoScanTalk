@@ -83,6 +83,7 @@ enum class SettingsSection(private val titleRes: Int, val icon: ImageVector, val
     BOOK_AI(R.string.settings_category_gemini, GhostTalkIcons.AutoAwesome, isGlobal = false, isScoped = true),
     BOOK_CALLS(R.string.settings_category_call, Icons.Default.Phone, isGlobal = false, isScoped = true),
     BOOK_SMART_INTEGRATION(R.string.settings_category_smart_home, Icons.Default.Home, isGlobal = false, isScoped = true),
+    BOOK_CLOUD_SYNC(R.string.settings_category_cloud_book, GhostTalkIcons.Cloud, isGlobal = false, isScoped = true),
     BOOK_INFO(R.string.settings_category_general, Icons.Default.Settings, isGlobal = false, isScoped = true),
 
     // App- & Geräte-Einstellungen (Global/Local, device-specific)
@@ -537,6 +538,15 @@ fun SubmenuContent(
         }
         SettingsSection.BOOK_SMART_INTEGRATION -> {
             SmartHomeSettingsSection(viewModel, isGlobal = false)
+        }
+        SettingsSection.BOOK_CLOUD_SYNC -> {
+            CloudSettingsSection(
+                viewModel = viewModel,
+                isGlobal = false,
+                onLocalExport = onLocalExport,
+                onLocalImport = onLocalImport,
+                onSelectSafFolderForImport = onSelectSafFolderForImport
+            )
         }
         SettingsSection.BOOK_INFO -> {
             GeneralSettingsSection(viewModel, isGlobal = false, onNavigateBack = onNavigateBack, onBookDeleted = onBookDeleted)
