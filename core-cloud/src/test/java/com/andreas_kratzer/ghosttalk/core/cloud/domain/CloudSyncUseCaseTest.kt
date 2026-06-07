@@ -6,6 +6,7 @@ import android.util.Log
 import com.andreas_kratzer.ghosttalk.core.data.BookRepository
 import com.andreas_kratzer.ghosttalk.core.data.SyncLogProvider
 import com.andreas_kratzer.ghosttalk.core.data.impl.PageImportExportManager
+import com.andreas_kratzer.ghosttalk.core.data.export.PageImportExportProvider
 import com.andreas_kratzer.ghosttalk.core.model.Book
 import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.google.api.services.drive.Drive
@@ -31,17 +32,24 @@ import java.io.File
 class CloudSyncUseCaseTest {
 
     private lateinit var useCase: CloudSyncUseCase
-    private val mockContext: Context = mockk(relaxed = true)
-
-    private val mockBookRepository: BookRepository = mockk(relaxed = true)
-    private val mockImportExportManager: PageImportExportManager = mockk(relaxed = true)
-    private val mockDrive: Drive = mockk(relaxed = true)
-    private val mockLogger: Logger = mockk(relaxed = true)
-    private val mockSyncLogProvider: SyncLogProvider = mockk(relaxed = true)
-    private val mockSettingsRepository: com.andreas_kratzer.ghosttalk.core.data.SettingsRepository = mockk(relaxed = true)
+    private lateinit var mockContext: Context
+    private lateinit var mockBookRepository: BookRepository
+    private lateinit var mockImportExportManager: PageImportExportManager
+    private lateinit var mockDrive: Drive
+    private lateinit var mockLogger: Logger
+    private lateinit var mockSyncLogProvider: SyncLogProvider
+    private lateinit var mockSettingsRepository: com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 
     @Before
     fun setup() {
+        mockContext = mockk(relaxed = true)
+        mockBookRepository = mockk(relaxed = true)
+        mockImportExportManager = mockk(relaxed = true)
+        mockDrive = mockk(relaxed = true)
+        mockLogger = mockk(relaxed = true)
+        mockSyncLogProvider = mockk(relaxed = true)
+        mockSettingsRepository = mockk(relaxed = true)
+
         mockkStatic(Log::class)
         every { Log.d(any(), any()) } returns 0
         every { Log.w(any(), any<String>()) } returns 0
@@ -59,6 +67,10 @@ class CloudSyncUseCaseTest {
         every { mockSettingsRepository.syncModeBook } returns "TWO_WAY"
         every { mockSettingsRepository.syncModeTts } returns "TWO_WAY"
         every { mockSettingsRepository.syncModeStats } returns "RESTORE_ONLY"
+
+        coEvery { mockImportExportManager.getStatisticsLastModified(any<String>()) } returns 0L
+        every { mockImportExportManager.getTtsCacheLastModified() } returns 0L
+        every { mockImportExportManager.getAudioRecordingsLastModified() } returns 0L
         
         useCase = CloudSyncUseCase(mockContext, mockBookRepository, mockImportExportManager, mockSettingsRepository, mockSyncLogProvider, mockLogger)
     }
@@ -615,5 +627,127 @@ class CloudSyncUseCaseTest {
         // Verify download and upload were skipped
         coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile(any(), any(), any()) }
         coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock(any(), any(), any(), any(), any()) }
+    }
+
+    private fun calculateStructuralMd5FromJson(jsonStr: String): String {
+        return try {
+            val jsonParser = kotlinx.serialization.json.Json { ignoreUnknownKeys = true; encodeDefaults = true }
+            val data = jsonParser.decodeFromString<com.andreas_kratzer.ghosttalk.core.model.importexport.ImportExportData>(jsonStr)
+            val cleanData = data.copy(
+                bookUpdatedAt = 0L,
+                versionSequence = 0L,
+                sourceDevice = null,
+                isCloudSyncEnabled = null,
+                syncIntervalMinutes = null,
+                syncModeBook = null,
+                syncModeTts = null,
+                syncModeStats = null,
+                syncMode = null
+            )
+            val cleanJson = jsonParser.encodeToString(com.andreas_kratzer.ghosttalk.core.model.importexport.ImportExportData.serializer(), cleanData)
+            val messageDigest = java.security.MessageDigest.getInstance("MD5")
+            val hashBytes = messageDigest.digest(cleanJson.toByteArray(Charsets.UTF_8))
+            hashBytes.joinToString("") { "%02x".format(it) }
+        } catch (e: Exception) {
+            ""
+        }
+    }
+
+    @Test
+    fun `syncBook performs trivial merge and skips upload if merged struct matches remote struct`() = runTest {
+        val bookId = "test-book"
+        val now = System.currentTimeMillis()
+
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder(any()) } returns "folder_1"
+
+        val localJson = "{\"bookUpdatedAt\":1000,\"versionSequence\":1,\"pages\":[]}"
+        coEvery { mockImportExportManager.exportBookToJson(bookId) } returns localJson
+
+        val expectedMd5 = calculateStructuralMd5FromJson(localJson)
+
+        val remoteFile = com.google.api.services.drive.model.File().apply {
+            id = "file_1"
+            name = "book_$bookId.json"
+            modifiedTime = com.google.api.client.util.DateTime(now)
+            properties = mapOf("version_sequence" to "3", "structure_md5" to expectedMd5)
+        }
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("folder_1") } returns listOf(remoteFile)
+
+        // Mock download during conflict evaluation
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile("file_1", any()) } answers {
+            val file = secondArg<File>()
+            file.writeText("{\"bookUpdatedAt\":2000,\"versionSequence\":3,\"pages\":[]}")
+            true
+        }
+
+        // Import mock
+        coEvery { mockImportExportManager.importFromJson(any(), any(), any()) } returns Result.success(1)
+
+        val result = useCase.syncBook(mockDrive, bookId, SyncMode.TWO_WAY)
+        advanceUntilIdle()
+
+        assertEquals(true, result)
+        // Verify we imported the fast-forwarded book
+        coVerify(exactly = 1) { mockImportExportManager.importFromJson(any(), eq(bookId), any()) }
+        // Verify we did NOT upload anything because it's a trivial merge
+        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock(any(), any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `syncBook syncs audio recordings zip file separately after successful sync`() = runTest {
+        val bookId = "test-book"
+        val now = System.currentTimeMillis()
+
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder(any()) } returns "folder_1"
+
+        val localJson = "{\"bookUpdatedAt\":1000,\"versionSequence\":1,\"pages\":[]}"
+        coEvery { mockImportExportManager.exportBookToJson(bookId) } returns localJson
+
+        val expectedMd5 = calculateStructuralMd5FromJson(localJson)
+
+        val remoteFile = com.google.api.services.drive.model.File().apply {
+            id = "file_1"
+            name = "book_$bookId.json"
+            modifiedTime = com.google.api.client.util.DateTime(now)
+            properties = mapOf("version_sequence" to "1", "structure_md5" to expectedMd5)
+        }
+        val remoteAudioFile = com.google.api.services.drive.model.File().apply {
+            id = "audio_file_1"
+            name = "audio_$bookId.zip"
+            modifiedTime = com.google.api.client.util.DateTime(now - 100000)
+        }
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("folder_1") } returns listOf(remoteFile, remoteAudioFile)
+
+        // Mock SharedPreferences
+        val mockPrefs = mockk<android.content.SharedPreferences>(relaxed = true)
+        every { mockContext.getSharedPreferences("ghosttalk_settings", Context.MODE_PRIVATE) } returns mockPrefs
+        every { mockPrefs.getLong("audio_last_synced_remote_time_$bookId", 0L) } returns (now - 100000)
+        every { mockPrefs.getLong("audio_last_synced_local_time_$bookId", 0L) } returns 0L
+
+        val mockEditor = mockk<android.content.SharedPreferences.Editor>(relaxed = true)
+        every { mockPrefs.edit() } returns mockEditor
+        every { mockEditor.putLong(any(), any()) } returns mockEditor
+
+        // Set local audio changed
+        coEvery { mockImportExportManager.getAudioRecordingsLastModified() } returns now
+        coEvery { mockImportExportManager.exportAudioRecordingsToZip(any(), any()) } coAnswers {
+            // Write some mock zip data
+            val os = firstArg<java.io.OutputStream>()
+            os.write(byteArrayOf(1, 2, 3))
+        }
+
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().updateFile(any(), any(), any(), any(), any(), any()) } returns true
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().getFileMetadata("audio_file_1") } returns com.google.api.services.drive.model.File().apply {
+            id = "audio_file_1"
+            modifiedTime = com.google.api.client.util.DateTime(now)
+        }
+
+        val result = useCase.syncBook(mockDrive, bookId, SyncMode.TWO_WAY)
+        advanceUntilIdle()
+
+        assertEquals(true, result)
+        // Verify audio export and update were called
+        coVerify(exactly = 1) { mockImportExportManager.exportAudioRecordingsToZip(any(), any()) }
+        coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().updateFile(eq("audio_file_1"), any(), eq("application/zip"), any(), any(), any()) }
     }
 }

@@ -50,4 +50,15 @@ interface PageImportExportProvider {
         inputStream: java.io.InputStream
     )
     suspend fun getStatisticsLastModified(bookId: String): Long
+
+    suspend fun exportAudioRecordingsToZip(
+        outputStream: java.io.OutputStream,
+        onProgress: (Float, String) -> Unit = { _, _ -> }
+    )
+    suspend fun importAudioRecordingsFromZip(
+        inputStream: java.io.InputStream,
+        onProgress: (Float, String) -> Unit = { _, _ -> }
+    )
+    fun getAudioRecordingsLastModified(): Long
 }
+

@@ -993,9 +993,81 @@ class PageImportExportManager @Inject constructor(
         maxOf(lastHistoryTime, lastStatTime, lastSessionTime)
     }
 
+    override suspend fun exportAudioRecordingsToZip(
+        outputStream: OutputStream,
+        onProgress: (Float, String) -> Unit
+    ) = withContext(Dispatchers.IO) {
+        ZipOutputStream(outputStream).use { zip ->
+            val audioDir = File(context.filesDir, "audio_recordings")
+            val files = if (audioDir.exists() && audioDir.isDirectory) {
+                audioDir.listFiles()?.filter { it.isFile && it.name.endsWith(".ogg") } ?: emptyList()
+            } else {
+                emptyList()
+            }
+
+            val totalFiles = files.size
+            logger.d(TAG, "Exporting audio recordings: $totalFiles files")
+            files.forEachIndexed { index, file ->
+                val progress = index.toFloat() / totalFiles.coerceAtLeast(1)
+                onProgress(progress, "Compressing: ${file.name}")
+                zip.putNextEntry(ZipEntry("audio_recordings/${file.name}"))
+                file.inputStream().use { input -> input.copyTo(zip) }
+                zip.closeEntry()
+            }
+            onProgress(1f, "Audio recordings export complete.")
+        }
+    }
+
+    override suspend fun importAudioRecordingsFromZip(
+        inputStream: InputStream,
+        onProgress: (Float, String) -> Unit
+    ) = withContext(Dispatchers.IO) {
+        val zipIn = ZipInputStream(inputStream)
+        val audioDir = File(context.filesDir, "audio_recordings")
+        if (!audioDir.exists()) audioDir.mkdirs()
+
+        var count = 0
+        var entry = zipIn.nextEntry
+        while (entry != null) {
+            if (entry.name.startsWith("audio_recordings/")) {
+                val fileName = entry.name.substringAfter("audio_recordings/")
+                if (fileName.isNotEmpty()) {
+                    val targetFile = File(audioDir, fileName)
+                    if (!isSafeFile(audioDir, targetFile)) {
+                        throw SecurityException("Ungültiger Pfad in Zip-Eintrag (Directory Traversal Versuch): ${entry.name}")
+                    }
+                    val shouldExtract = !targetFile.exists() || (entry.time > targetFile.lastModified())
+                    if (shouldExtract) {
+                        onProgress(0.5f, "Extracting: $fileName")
+                        FileOutputStream(targetFile).use { out -> zipIn.copyTo(out) }
+                        if (entry.time != -1L) {
+                            targetFile.setLastModified(entry.time)
+                        }
+                        count++
+                    }
+                }
+            }
+            zipIn.closeEntry()
+            entry = zipIn.nextEntry
+        }
+        logger.d(TAG, "Imported $count audio recording files")
+        onProgress(1f, "Audio recordings import complete.")
+    }
+
+    override fun getAudioRecordingsLastModified(): Long {
+        val audioDir = File(context.filesDir, "audio_recordings")
+        if (audioDir.exists() && audioDir.isDirectory) {
+            return audioDir.listFiles()?.filter { it.isFile && it.name.endsWith(".ogg") }
+                ?.maxOfOrNull { it.lastModified() }
+                ?: 0L
+        }
+        return 0L
+    }
+
     private fun isSafeFile(parentDir: File, file: File): Boolean {
         val canonicalParent = parentDir.canonicalPath
         val canonicalTarget = file.canonicalPath
         return canonicalTarget.startsWith(canonicalParent + File.separator)
     }
 }
+
