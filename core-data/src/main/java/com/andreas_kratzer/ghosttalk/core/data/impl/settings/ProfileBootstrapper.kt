@@ -18,7 +18,7 @@ import javax.inject.Singleton
 class ProfileBootstrapper @Inject constructor(
     private val settingsProfileDao: SettingsProfileDao,
     private val context: Context,
-    private val json: Json = Json { ignoreUnknownKeys = true; prettyPrint = true }
+    private val json: Json = Json { ignoreUnknownKeys = true; prettyPrint = true; encodeDefaults = true }
 ) {
     private val prefs: SharedPreferences = context.getSharedPreferences(SettingsConstants.PREFS_NAME, Context.MODE_PRIVATE)
 

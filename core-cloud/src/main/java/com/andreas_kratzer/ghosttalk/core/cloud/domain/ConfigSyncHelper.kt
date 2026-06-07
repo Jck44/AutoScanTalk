@@ -217,8 +217,8 @@ class ConfigSyncHelper(
         val profileFileName = "profile_${activeProfile.id}.json"
         val remoteFile = remoteFiles.find { it.name == profileFileName }
 
-        val jsonSerializer = Json { ignoreUnknownKeys = true; prettyPrint = true }
-        val localJson = jsonSerializer.encodeToString(com.andreas_kratzer.ghosttalk.core.model.ProfileConfig.serializer(), activeProfile.config)
+        val jsonSerializer = Json { ignoreUnknownKeys = true; prettyPrint = true; encodeDefaults = true }
+        val localJson = jsonSerializer.encodeToString(com.andreas_kratzer.ghosttalk.core.model.SettingsProfile.serializer(), activeProfile)
         val localMd5 = calculateMd5(localJson)
 
         val baseBackupFile = File(File(context.filesDir, "local_backups"), profileFileName)
@@ -259,24 +259,77 @@ class ConfigSyncHelper(
         }
 
         logger.d(TAG, "Profile conflict/delta detected. Performing 3-way merge on profile configurations...")
-        val mergedJson = mergeConfigJsons(localJson, remoteJson, baseJson)
+        
+        // Decode remote and base profiles (handling both SettingsProfile and legacy ProfileConfig format)
+        val remoteProfile = try {
+            jsonSerializer.decodeFromString(com.andreas_kratzer.ghosttalk.core.model.SettingsProfile.serializer(), remoteJson)
+        } catch (e: Exception) {
+            try {
+                val config = jsonSerializer.decodeFromString(com.andreas_kratzer.ghosttalk.core.model.ProfileConfig.serializer(), remoteJson)
+                com.andreas_kratzer.ghosttalk.core.model.SettingsProfile(
+                    id = activeProfile.id,
+                    name = remoteFile.description ?: activeProfile.name,
+                    config = config,
+                    profileVersionSequence = 0L,
+                    updatedAt = 0L
+                )
+            } catch (e2: Exception) {
+                logger.e(TAG, "Failed to parse remote profile JSON as SettingsProfile or legacy ProfileConfig", e2)
+                return@withContext
+            }
+        }
+
+        val baseProfile = baseJson?.let {
+            try {
+                jsonSerializer.decodeFromString(com.andreas_kratzer.ghosttalk.core.model.SettingsProfile.serializer(), it)
+            } catch (e: Exception) {
+                try {
+                    val config = jsonSerializer.decodeFromString(com.andreas_kratzer.ghosttalk.core.model.ProfileConfig.serializer(), it)
+                    com.andreas_kratzer.ghosttalk.core.model.SettingsProfile(
+                        id = activeProfile.id,
+                        name = activeProfile.name,
+                        config = config,
+                        profileVersionSequence = 0L,
+                        updatedAt = 0L
+                    )
+                } catch (e2: Exception) {
+                    null
+                }
+            }
+        }
+
+        val localConfigJson = jsonSerializer.encodeToString(com.andreas_kratzer.ghosttalk.core.model.ProfileConfig.serializer(), activeProfile.config)
+        val remoteConfigJson = jsonSerializer.encodeToString(com.andreas_kratzer.ghosttalk.core.model.ProfileConfig.serializer(), remoteProfile.config)
+        val baseConfigJson = baseProfile?.let { jsonSerializer.encodeToString(com.andreas_kratzer.ghosttalk.core.model.ProfileConfig.serializer(), it.config) }
+
+        val mergedConfigJson = mergeConfigJsons(localConfigJson, remoteConfigJson, baseConfigJson)
+        val mergedConfig = jsonSerializer.decodeFromString(com.andreas_kratzer.ghosttalk.core.model.ProfileConfig.serializer(), mergedConfigJson)
+
         val tempFile = File(context.cacheDir, profileFileName)
         try {
-            tempFile.writeText(mergedJson)
+            val mergedName = if (remoteProfile.updatedAt > activeProfile.updatedAt) remoteProfile.name else activeProfile.name
+            val mergedIsDeleted = if (remoteProfile.updatedAt > activeProfile.updatedAt) remoteProfile.isDeleted else activeProfile.isDeleted
+            val mergedSequence = maxOf(activeProfile.profileVersionSequence, remoteProfile.profileVersionSequence) + 1
+            val mergedUpdatedAt = System.currentTimeMillis()
+
+            val updatedProfile = activeProfile.copy(
+                name = mergedName,
+                config = mergedConfig,
+                profileVersionSequence = mergedSequence,
+                updatedAt = mergedUpdatedAt,
+                isDeleted = mergedIsDeleted
+            )
+
+            val updatedProfileJson = jsonSerializer.encodeToString(com.andreas_kratzer.ghosttalk.core.model.SettingsProfile.serializer(), updatedProfile)
+            tempFile.writeText(updatedProfileJson)
             saveToLocalBackupFolder(profileFileName, tempFile)
             
             // Save local merge
-            val mergedConfig = jsonSerializer.decodeFromString(com.andreas_kratzer.ghosttalk.core.model.ProfileConfig.serializer(), mergedJson)
-            val updatedProfile = activeProfile.copy(
-                config = mergedConfig,
-                profileVersionSequence = activeProfile.profileVersionSequence + 1,
-                updatedAt = System.currentTimeMillis()
-            )
             settingsRepository.updateProfile(updatedProfile)
 
             // Update to cloud
-            storageProvider.updateFile(remoteFile.id, tempFile, "application/json", activeProfile.name) { _ -> }
-            syncLogProvider.addLogEntry("Profil ${activeProfile.name} (gemergt) synchronisiert", activeProfile.id, activeProfile.name)
+            storageProvider.updateFile(remoteFile.id, tempFile, "application/json", updatedProfile.name) { _ -> }
+            syncLogProvider.addLogEntry("Profil ${updatedProfile.name} (gemergt) synchronisiert", updatedProfile.id, updatedProfile.name)
         } finally {
             tempFile.delete()
         }

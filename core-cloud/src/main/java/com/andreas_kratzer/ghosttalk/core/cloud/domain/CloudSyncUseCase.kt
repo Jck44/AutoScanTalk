@@ -155,7 +155,7 @@ class CloudSyncUseCase @Inject constructor(
                     }
 
                     // 2. Scan and download/import all other remote profiles
-                    val jsonSerializer = kotlinx.serialization.json.Json { ignoreUnknownKeys = true; prettyPrint = true }
+                    val jsonSerializer = kotlinx.serialization.json.Json { ignoreUnknownKeys = true; prettyPrint = true; encodeDefaults = true }
                     remoteProfileFiles.forEach { file ->
                         if (file.name.startsWith("profile_") && file.name.endsWith(".json")) {
                             val remoteProfileId = file.name.substringAfter("profile_").substringBefore(".json")
@@ -165,16 +165,28 @@ class CloudSyncUseCase @Inject constructor(
                                 try {
                                     if (profilesProvider.downloadFile(file.id, tempFile)) {
                                         val profileJson = tempFile.readText()
-                                        val config = jsonSerializer.decodeFromString(com.andreas_kratzer.ghosttalk.core.model.ProfileConfig.serializer(), profileJson)
-                                        val newProfile = com.andreas_kratzer.ghosttalk.core.model.SettingsProfile(
-                                            id = remoteProfileId,
-                                            name = file.description ?: "Importiertes Profil",
-                                            config = config,
-                                            profileVersionSequence = file.version ?: 1L,
-                                            updatedAt = file.modifiedTime
-                                        )
-                                        settingsRepository.insertProfile(newProfile)
-                                        syncLogProvider.addLogEntry("Remote-Profil ${newProfile.name} importiert", newProfile.id, newProfile.name)
+                                        val importedProfile = try {
+                                            jsonSerializer.decodeFromString(com.andreas_kratzer.ghosttalk.core.model.SettingsProfile.serializer(), profileJson)
+                                        } catch (e: Exception) {
+                                            try {
+                                                val config = jsonSerializer.decodeFromString(com.andreas_kratzer.ghosttalk.core.model.ProfileConfig.serializer(), profileJson)
+                                                com.andreas_kratzer.ghosttalk.core.model.SettingsProfile(
+                                                    id = remoteProfileId,
+                                                    name = file.description ?: "Importiertes Profil",
+                                                    config = config,
+                                                    profileVersionSequence = file.version ?: 1L,
+                                                    updatedAt = file.modifiedTime
+                                                )
+                                            } catch (e2: Exception) {
+                                                logger.e(TAG, "Failed to parse imported profile JSON as SettingsProfile or legacy ProfileConfig", e2)
+                                                null
+                                            }
+                                        }
+
+                                        if (importedProfile != null) {
+                                            settingsRepository.insertProfile(importedProfile)
+                                            syncLogProvider.addLogEntry("Remote-Profil ${importedProfile.name} importiert", importedProfile.id, importedProfile.name)
+                                        }
                                     }
                                 } catch (ex: Exception) {
                                     logger.e(TAG, "Failed to auto-import remote profile ${file.name}", ex)

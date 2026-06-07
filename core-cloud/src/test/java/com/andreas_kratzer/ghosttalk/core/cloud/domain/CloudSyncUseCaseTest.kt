@@ -821,4 +821,192 @@ class CloudSyncUseCaseTest {
         coVerify(exactly = 1) { mockImportExportManager.exportAudioRecordingsToZip(any(), any()) }
         coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().updateFile(eq("audio_file_1"), any(), eq("application/zip"), any(), any(), any()) }
     }
+
+    @Test
+    fun `syncBook auto-imports remote profile when local profile does not exist`() = runTest {
+        val bookId = "test-book"
+        val now = System.currentTimeMillis()
+
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder("GhosTTalk_Sync") } returns "parent_folder_1"
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder("Profiles", "parent_folder_1") } returns "profiles_folder_1"
+
+        val remoteProfileFile = com.google.api.services.drive.model.File().apply {
+            id = "profile_file_1"
+            name = "profile_profile1.json"
+            description = "My Custom Profile"
+            version = 2L
+            modifiedTime = com.google.api.client.util.DateTime(now)
+        }
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("profiles_folder_1") } returns listOf(remoteProfileFile)
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("parent_folder_1") } returns emptyList()
+
+        val jsonSerializer = kotlinx.serialization.json.Json { ignoreUnknownKeys = true; prettyPrint = true; encodeDefaults = true }
+        val testProfile = com.andreas_kratzer.ghosttalk.core.model.SettingsProfile(
+            id = "profile1",
+            name = "My Custom Profile",
+            config = com.andreas_kratzer.ghosttalk.core.model.ProfileConfig(
+                favoriteBookId = "book_1",
+                incomingCallDelayUserModeInactive = 42
+            ),
+            profileVersionSequence = 2L,
+            updatedAt = now
+        )
+        val modernJson = jsonSerializer.encodeToString(com.andreas_kratzer.ghosttalk.core.model.SettingsProfile.serializer(), testProfile)
+
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile("profile_file_1", any(), any()) } answers {
+            val file = args[1] as File
+            file.writeText(modernJson)
+            true
+        }
+
+        coEvery { mockSettingsRepository.getAllProfiles() } returns emptyList()
+        coEvery { mockSettingsRepository.getProfileById("profile1") } returns null
+
+        useCase.syncBook(mockDrive, bookId, SyncMode.TWO_WAY)
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { mockSettingsRepository.insertProfile(withArg {
+            assertEquals("profile1", it.id)
+            assertEquals("My Custom Profile", it.name)
+            assertEquals("book_1", it.config.favoriteBookId)
+            assertEquals(42, it.config.incomingCallDelayUserModeInactive)
+            assertEquals(2L, it.profileVersionSequence)
+        }) }
+    }
+
+    @Test
+    fun `syncBook auto-imports remote profile in legacy format when local profile does not exist`() = runTest {
+        val bookId = "test-book"
+        val now = System.currentTimeMillis()
+
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder("GhosTTalk_Sync") } returns "parent_folder_1"
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder("Profiles", "parent_folder_1") } returns "profiles_folder_1"
+
+        val remoteProfileFile = com.google.api.services.drive.model.File().apply {
+            id = "profile_file_1"
+            name = "profile_profile1.json"
+            description = "Legacy Profile Description"
+            version = 1L
+            modifiedTime = com.google.api.client.util.DateTime(now)
+        }
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("profiles_folder_1") } returns listOf(remoteProfileFile)
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("parent_folder_1") } returns emptyList()
+
+        val jsonSerializer = kotlinx.serialization.json.Json { ignoreUnknownKeys = true; prettyPrint = true; encodeDefaults = true }
+        val legacyConfig = com.andreas_kratzer.ghosttalk.core.model.ProfileConfig(
+            favoriteBookId = "book_legacy",
+            incomingCallDelayUserModeInactive = 99
+        )
+        val legacyJson = jsonSerializer.encodeToString(com.andreas_kratzer.ghosttalk.core.model.ProfileConfig.serializer(), legacyConfig)
+
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile("profile_file_1", any(), any()) } answers {
+            val file = args[1] as File
+            file.writeText(legacyJson)
+            true
+        }
+
+        coEvery { mockSettingsRepository.getAllProfiles() } returns emptyList()
+        coEvery { mockSettingsRepository.getProfileById("profile1") } returns null
+
+        useCase.syncBook(mockDrive, bookId, SyncMode.TWO_WAY)
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { mockSettingsRepository.insertProfile(withArg {
+            assertEquals("profile1", it.id)
+            assertEquals("Legacy Profile Description", it.name)
+            assertEquals("book_legacy", it.config.favoriteBookId)
+            assertEquals(99, it.config.incomingCallDelayUserModeInactive)
+            assertEquals(1L, it.profileVersionSequence)
+        }) }
+    }
+
+    @Test
+    fun `syncBook merges settings profile when local and remote differ`() = runTest {
+        val bookId = "test-book"
+        val now = System.currentTimeMillis()
+
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder("GhosTTalk_Sync") } returns "parent_folder_1"
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder("Profiles", "parent_folder_1") } returns "profiles_folder_1"
+
+        val remoteProfileFile = com.google.api.services.drive.model.File().apply {
+            id = "profile_file_1"
+            name = "profile_profile1.json"
+            description = "Remote Profile Name"
+            version = 1L
+            modifiedTime = com.google.api.client.util.DateTime(now)
+        }
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("profiles_folder_1") } returns listOf(remoteProfileFile)
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("parent_folder_1") } returns emptyList()
+
+        val jsonSerializer = kotlinx.serialization.json.Json { ignoreUnknownKeys = true; prettyPrint = true; encodeDefaults = true }
+        
+        val baseConfig = com.andreas_kratzer.ghosttalk.core.model.ProfileConfig(
+            favoriteBookId = "book_base",
+            incomingCallDelayUserModeInactive = 10
+        )
+        val baseProfile = com.andreas_kratzer.ghosttalk.core.model.SettingsProfile(
+            id = "profile1",
+            name = "Base Name",
+            config = baseConfig,
+            profileVersionSequence = 1L,
+            updatedAt = now - 2000
+        )
+        
+        val remoteConfig = com.andreas_kratzer.ghosttalk.core.model.ProfileConfig(
+            favoriteBookId = "book_base",
+            incomingCallDelayUserModeInactive = 20
+        )
+        val remoteProfile = com.andreas_kratzer.ghosttalk.core.model.SettingsProfile(
+            id = "profile1",
+            name = "Remote Name",
+            config = remoteConfig,
+            profileVersionSequence = 2L,
+            updatedAt = now - 1000
+        )
+        val remoteJson = jsonSerializer.encodeToString(com.andreas_kratzer.ghosttalk.core.model.SettingsProfile.serializer(), remoteProfile)
+
+        val localConfig = com.andreas_kratzer.ghosttalk.core.model.ProfileConfig(
+            favoriteBookId = "book_local",
+            incomingCallDelayUserModeInactive = 10
+        )
+        val localProfile = com.andreas_kratzer.ghosttalk.core.model.SettingsProfile(
+            id = "profile1",
+            name = "Local Name",
+            config = localConfig,
+            profileVersionSequence = 2L,
+            updatedAt = now
+        )
+
+        val tempDir = File(System.getProperty("java.io.tmpdir") ?: "/tmp")
+        val baseBackupFile = File(tempDir, "local_backups/profile_profile1.json")
+        baseBackupFile.parentFile?.mkdirs()
+        val baseJson = jsonSerializer.encodeToString(com.andreas_kratzer.ghosttalk.core.model.SettingsProfile.serializer(), baseProfile)
+        baseBackupFile.writeText(baseJson)
+
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile("profile_file_1", any(), any()) } answers {
+            val file = args[1] as File
+            file.writeText(remoteJson)
+            true
+        }
+
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().updateFile("profile_file_1", any(), any(), any(), any(), any()) } returns true
+
+        coEvery { mockSettingsRepository.getAllProfiles() } returns listOf(localProfile)
+        coEvery { mockSettingsRepository.getProfileById("profile1") } returns localProfile
+
+        useCase.syncBook(mockDrive, bookId, SyncMode.TWO_WAY)
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { mockSettingsRepository.updateProfile(withArg {
+            assertEquals("profile1", it.id)
+            assertEquals("Local Name", it.name)
+            assertEquals("book_local", it.config.favoriteBookId)
+            assertEquals(20, it.config.incomingCallDelayUserModeInactive)
+            assertEquals(3L, it.profileVersionSequence)
+        }) }
+
+        coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().updateFile("profile_file_1", any(), "application/json", "Local Name", any(), any()) }
+
+        baseBackupFile.delete()
+    }
 }

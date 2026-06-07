@@ -1022,7 +1022,7 @@ class SettingsRepositoryImpl @Inject constructor(
     }
 
     // --- Profile Management ---
-    private val jsonSerializer = kotlinx.serialization.json.Json { ignoreUnknownKeys = true; prettyPrint = true }
+    private val jsonSerializer = kotlinx.serialization.json.Json { ignoreUnknownKeys = true; prettyPrint = true; encodeDefaults = true }
 
     @Suppress("UNCHECKED_CAST")
     override val activeProfileIdFlow: StateFlow<String>
