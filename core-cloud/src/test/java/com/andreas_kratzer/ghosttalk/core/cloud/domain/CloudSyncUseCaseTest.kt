@@ -331,6 +331,26 @@ class CloudSyncUseCaseTest {
     }
 
     @Test
+    fun `getAvailableBackups reads bookName from custom properties and avoids download`() = runTest {
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder(any()) } returns "folder_1"
+        
+        val remoteFile1 = com.google.api.services.drive.model.File().apply {
+            id = "f1"
+            name = "book_1.json"
+            properties = mapOf("book_name" to "Properties Book Name")
+            modifiedTime = com.google.api.client.util.DateTime(1000L)
+        }
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("folder_1") } returns listOf(remoteFile1)
+
+        val backups = useCase.getAvailableBackups(mockDrive)
+        advanceUntilIdle()
+
+        assertEquals(1, backups.size)
+        assertEquals("Properties Book Name", backups[0].bookName)
+        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile(any(), any(), any()) }
+    }
+
+    @Test
     fun `syncBook uses custom folder ID if provided`() = runTest {
         val bookId = "test-book"
         val customFolderId = "custom_folder_123"

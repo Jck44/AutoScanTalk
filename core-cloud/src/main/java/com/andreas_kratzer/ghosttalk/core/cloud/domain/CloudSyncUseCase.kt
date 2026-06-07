@@ -145,7 +145,14 @@ class CloudSyncUseCase @Inject constructor(
                             tempFile = tempFile,
                             mimeType = "application/json",
                             description = book.name,
-                            properties = mapOf("structure_md5" to localStructMd5)
+                            properties = buildSyncProperties(
+                                bookId = bookId,
+                                bookName = book.name,
+                                createdAt = book.createdAt,
+                                updatedAt = book.updatedAt,
+                                versionSequence = localSeq,
+                                structureMd5 = localStructMd5
+                            )
                         ) { p ->
                             onProgress(0.2f + p * 0.8f, "Uploading to Drive...")
                         }
@@ -164,7 +171,8 @@ class CloudSyncUseCase @Inject constructor(
                     } else {
                         // 2. We have remote master or conflict files. Determine what action to take.
                         var remoteData: ImportExportData? = null
-                        var remoteSeq = 0L
+                        val remoteSeqFromProps = remoteMasterFile?.properties?.get("version_sequence")?.toLongOrNull()
+                        var remoteSeq = remoteSeqFromProps ?: 0L
 
                         val isIdentical = remoteMasterFile != null && remoteConflictFiles.isEmpty() && localMd5 == remoteMasterFile.md5Checksum
                         if (isIdentical) {
@@ -175,7 +183,8 @@ class CloudSyncUseCase @Inject constructor(
                             }
                             success = true
                         } else {
-                            if (remoteMasterFile != null) {
+                            val needDownloadForEvaluation = remoteSeqFromProps == null
+                            if (needDownloadForEvaluation && remoteMasterFile != null) {
                                 val downloadFile = File(context.cacheDir, "download_${remoteMasterFile.name}")
                                 try {
                                     val downloadSuccess = storageProvider.downloadFile(remoteMasterFile.id, downloadFile) { _ -> }
@@ -191,6 +200,8 @@ class CloudSyncUseCase @Inject constructor(
                                     }
                                 } catch (e: Exception) {
                                     logger.e(TAG, "Error downloading or parsing remote master file", e)
+                                } finally {
+                                    if (downloadFile.exists()) downloadFile.delete()
                                 }
                             }
 
@@ -266,7 +277,14 @@ class CloudSyncUseCase @Inject constructor(
                                             tempFile = tempFile,
                                             mimeType = "application/json",
                                             description = book.name,
-                                            properties = mapOf("structure_md5" to localStructMd5)
+                                            properties = buildSyncProperties(
+                                                bookId = bookId,
+                                                bookName = book.name,
+                                                createdAt = book.createdAt,
+                                                updatedAt = book.updatedAt,
+                                                versionSequence = localSeq,
+                                                structureMd5 = localStructMd5
+                                            )
                                         ) { _ -> }
                                         if (newId != null) {
                                             try {
@@ -283,7 +301,14 @@ class CloudSyncUseCase @Inject constructor(
                                                 localFile = tempFile,
                                                 mimeType = "application/json",
                                                 expectedVersion = expectedVersion,
-                                                properties = mapOf("structure_md5" to localStructMd5)
+                                                properties = buildSyncProperties(
+                                                    bookId = bookId,
+                                                    bookName = book.name,
+                                                    createdAt = book.createdAt,
+                                                    updatedAt = book.updatedAt,
+                                                    versionSequence = localSeq,
+                                                    structureMd5 = localStructMd5
+                                                )
                                             )
                                         } else {
                                             storageProvider.updateFile(
@@ -291,7 +316,14 @@ class CloudSyncUseCase @Inject constructor(
                                                 tempFile = tempFile,
                                                 mimeType = "application/json",
                                                 description = book.name,
-                                                properties = mapOf("structure_md5" to localStructMd5)
+                                                properties = buildSyncProperties(
+                                                    bookId = bookId,
+                                                    bookName = book.name,
+                                                    createdAt = book.createdAt,
+                                                    updatedAt = book.updatedAt,
+                                                    versionSequence = localSeq,
+                                                    structureMd5 = localStructMd5
+                                                )
                                             ) { _ -> }
                                         }
                                     }
@@ -410,6 +442,8 @@ class CloudSyncUseCase @Inject constructor(
                                     } else null
 
                                     Log.d(TAG, "[COMMIT-SEQ] Phase 1: Bereite Pure-JSON-Upload vor. Erwartete Version: $expectedVersion")
+                                    
+                                    val mergedStructMd5 = calculateStructuralMd5FromJson(mergedJson)
 
                                     // 5. Versuche den Upload mit Optimistic Locking
                                     val uploadSuccess = if (driveHelper != null && effectiveMasterFile != null) {
@@ -417,12 +451,45 @@ class CloudSyncUseCase @Inject constructor(
                                             fileId = effectiveMasterFile.id,
                                             localFile = mergedTempFile,
                                             mimeType = "application/json",
-                                            expectedVersion = expectedVersion
+                                            expectedVersion = expectedVersion,
+                                            properties = buildSyncProperties(
+                                                bookId = bookId,
+                                                bookName = mergedWithNewSeq.bookName ?: book.name,
+                                                createdAt = mergedWithNewSeq.bookCreatedAt ?: book.createdAt,
+                                                updatedAt = mergedWithNewSeq.bookUpdatedAt ?: System.currentTimeMillis(),
+                                                versionSequence = newSeq,
+                                                structureMd5 = mergedStructMd5
+                                            )
                                         )
                                     } else if (effectiveMasterFile != null) {
-                                        storageProvider.updateFile(effectiveMasterFile.id, mergedTempFile, "application/json", book.name) { _ -> }
+                                        storageProvider.updateFile(
+                                            effectiveMasterFile.id,
+                                            mergedTempFile,
+                                            "application/json",
+                                            book.name,
+                                            properties = buildSyncProperties(
+                                                bookId = bookId,
+                                                bookName = mergedWithNewSeq.bookName ?: book.name,
+                                                createdAt = mergedWithNewSeq.bookCreatedAt ?: book.createdAt,
+                                                updatedAt = mergedWithNewSeq.bookUpdatedAt ?: System.currentTimeMillis(),
+                                                versionSequence = newSeq,
+                                                structureMd5 = mergedStructMd5
+                                            )
+                                        ) { _ -> }
                                     } else {
-                                        storageProvider.uploadFile(mergedTempFile, "application/json", book.name) != null
+                                        storageProvider.uploadFile(
+                                            mergedTempFile,
+                                            "application/json",
+                                            book.name,
+                                            properties = buildSyncProperties(
+                                                bookId = bookId,
+                                                bookName = mergedWithNewSeq.bookName ?: book.name,
+                                                createdAt = mergedWithNewSeq.bookCreatedAt ?: book.createdAt,
+                                                updatedAt = mergedWithNewSeq.bookUpdatedAt ?: System.currentTimeMillis(),
+                                                versionSequence = newSeq,
+                                                structureMd5 = mergedStructMd5
+                                            )
+                                        ) != null
                                     }
 
                                     // 6. AUSWERTUNG: Nur bei verifiziertem Cloud-Erfolg lokal abspeichern!
@@ -594,7 +661,7 @@ class CloudSyncUseCase @Inject constructor(
 
         files.filter { it.name != TTS_CACHE_FILE_NAME && !it.name.startsWith("statistics_") }.mapNotNull { file ->
             try {
-                val bookName = file.description ?: if (file.name.endsWith(".json")) {
+                val bookName = file.properties?.get("book_name") ?: file.description ?: if (file.name.endsWith(".json")) {
                     logger.d(TAG, "Processing metadata for legacy JSON file: ${file.name}")
                     val downloadFile = File(context.cacheDir, "metadata_${file.name}")
                     if (storageProvider.downloadFile(file.id, downloadFile)) {
@@ -1317,6 +1384,27 @@ class CloudSyncUseCase @Inject constructor(
         }
     }
 
+    private fun buildSyncProperties(
+        bookId: String,
+        bookName: String,
+        createdAt: Long,
+        updatedAt: Long,
+        versionSequence: Long,
+        structureMd5: String
+    ): Map<String, String> {
+        return mapOf(
+            "app_name" to "GhostTalk",
+            "ghosttalk_import_version" to "1.1",
+            "book_id" to bookId,
+            "book_name" to bookName,
+            "book_created_at" to createdAt.toString(),
+            "book_updated_at" to updatedAt.toString(),
+            "version_sequence" to versionSequence.toString(),
+            "structure_md5" to structureMd5,
+            "source_device" to "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}"
+        )
+    }
+
     private suspend fun calculateStructuralMd5(bookId: String): String {
         return try {
             val jsonStr = importExportManager.exportBookToJson(bookId)
@@ -1333,7 +1421,14 @@ class CloudSyncUseCase @Inject constructor(
             val data = jsonParser.decodeFromString<com.andreas_kratzer.ghosttalk.core.model.importexport.ImportExportData>(jsonStr)
             val cleanData = data.copy(
                 bookUpdatedAt = 0L,
-                versionSequence = 0L
+                versionSequence = 0L,
+                sourceDevice = null,
+                isCloudSyncEnabled = null,
+                syncIntervalMinutes = null,
+                syncModeBook = null,
+                syncModeTts = null,
+                syncModeStats = null,
+                syncMode = null
             )
             val cleanJson = jsonParser.encodeToString(com.andreas_kratzer.ghosttalk.core.model.importexport.ImportExportData.serializer(), cleanData)
             val messageDigest = java.security.MessageDigest.getInstance("MD5")
