@@ -81,7 +81,6 @@ class SettingsBackupCoverageTest {
         "headphoneVolumeFlow",
         "hangUpPressesRequired",    // Call hang-up presses setting (local)
         "staticRowEnabledFlow",
-        "staticRowScanPatternFlow",
         "filterCallsNotInContacts",
         "filterCallsNotInContactsFlow",
         "syncModeLogs",

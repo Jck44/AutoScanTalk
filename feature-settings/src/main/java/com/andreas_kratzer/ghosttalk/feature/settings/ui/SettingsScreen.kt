@@ -550,6 +550,7 @@ fun SubmenuContent(
         }
         SettingsSection.BOOK_INFO -> {
             GeneralSettingsSection(viewModel, isGlobal = false, onNavigateBack = onNavigateBack, onBookDeleted = onBookDeleted)
+            TestSettingsSection(viewModel, isGlobal = false)
         }
         SettingsSection.APP_SECURITY -> {
             val pin by viewModel.securityPin.collectAsState(null)

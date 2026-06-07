@@ -56,7 +56,6 @@ class ProfileBootstrapper @Inject constructor(
                 limitScanCycles = prefs.getBoolean(SettingsConstants.KEY_LIMIT_SCAN_CYCLES, false),
                 scanCycleLimit = prefs.getInt(SettingsConstants.KEY_SCAN_CYCLE_LIMIT, 2),
                 staticRowEnabled = prefs.getBoolean(SettingsConstants.KEY_STATIC_ROW_ENABLED, false),
-                staticRowScanPattern = prefs.getString(SettingsConstants.KEY_STATIC_ROW_SCAN_PATTERN, "linear") ?: "linear",
                 lateClickThresholdMillis = prefs.getLong(SettingsConstants.KEY_LATE_CLICK_THRESHOLD_MILLIS, 250L),
                 forceSoftKeyboard = prefs.getBoolean(SettingsConstants.KEY_FORCE_SOFT_KEYBOARD, true),
                 vocalSwitchEnabled = prefs.getBoolean(SettingsConstants.KEY_VOCAL_SWITCH_ENABLED, false),

@@ -14,7 +14,6 @@ data class ImportExportData(
     val volumeKeysActivate: Boolean? = null,
     val defaultScanPattern: String? = null,
     val staticRowEnabled: Boolean? = null,
-    val staticRowScanPattern: String? = null,
     val isSmartPredictionEnabled: Boolean? = null,
     val geminiRedoPrediction: Boolean? = null,
     val geminiTimeout: Long? = null,

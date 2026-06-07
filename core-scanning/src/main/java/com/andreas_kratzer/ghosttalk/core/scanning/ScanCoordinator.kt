@@ -29,7 +29,6 @@ class ScanCoordinator @Inject constructor(
     private var isSmartPredictionLoading: StateFlow<Boolean>? = null
     private var smartPredictions: StateFlow<List<String>?>? = null
     private var staticRowPage: StateFlow<Page?>? = null
-    private var staticRowScanPattern: StateFlow<String>? = null
     private var observeJob: kotlinx.coroutines.Job? = null
 
     private data class Data(
@@ -141,8 +140,7 @@ class ScanCoordinator @Inject constructor(
         resolvedPage: StateFlow<Page?>,
         isSmartPredictionLoading: StateFlow<Boolean>,
         smartPredictions: StateFlow<List<String>?>,
-        staticRowPage: StateFlow<Page?> = MutableStateFlow(null),
-        staticRowScanPattern: StateFlow<String> = MutableStateFlow("linear")
+        staticRowPage: StateFlow<Page?> = MutableStateFlow(null)
     ) {
         this.currentPage = currentPage
         this.isUserModeActive = isUserModeActive

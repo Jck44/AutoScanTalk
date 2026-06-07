@@ -78,7 +78,6 @@ class PageViewModelStateTest {
         every { settingsRepository.defaultScanPatternFlow } returns MutableStateFlow("linear")
         every { settingsRepository.showTestButtonsFlow } returns MutableStateFlow(false)
         every { settingsRepository.staticRowEnabledFlow } returns MutableStateFlow(false)
-        every { settingsRepository.staticRowScanPatternFlow } returns MutableStateFlow("linear")
         
         every { buttonTemplateRepository.getTemplates() } returns MutableStateFlow(emptyList())
         every { buttonUsageRepository.buttonHistory } returns MutableStateFlow(emptyList())

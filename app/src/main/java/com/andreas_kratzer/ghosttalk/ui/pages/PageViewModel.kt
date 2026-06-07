@@ -502,8 +502,7 @@ class PageViewModel @Inject constructor(
             resolvedPage = resolvedPage,
             isSmartPredictionLoading = isSmartPredictionLoading,
             smartPredictions = smartPredictions,
-            staticRowPage = staticRowPage,
-            staticRowScanPattern = settingsRepository.staticRowScanPatternFlow
+            staticRowPage = staticRowPage
         )
 
         // Observe book settings for scan limit

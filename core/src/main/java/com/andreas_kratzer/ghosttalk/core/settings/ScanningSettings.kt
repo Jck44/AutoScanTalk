@@ -28,9 +28,7 @@ interface ScanningSettings {
     var cuesAudioDeviceAddress: String?
     
     var staticRowEnabled: Boolean
-    var staticRowScanPattern: String
     val staticRowEnabledFlow: StateFlow<Boolean>
-    val staticRowScanPatternFlow: StateFlow<String>
     
     var lateClickThresholdMillis: Long
     val lateClickThresholdFlow: StateFlow<Long>

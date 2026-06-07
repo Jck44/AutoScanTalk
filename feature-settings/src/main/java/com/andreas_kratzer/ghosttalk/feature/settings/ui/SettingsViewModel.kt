@@ -124,7 +124,6 @@ class SettingsViewModel @Inject constructor(
     val isVocalSwitchEnabled = settingsRepository.isVocalSwitchEnabledFlow
     
     val staticRowEnabled = settingsRepository.staticRowEnabledFlow
-    val staticRowScanPattern = settingsRepository.staticRowScanPatternFlow
     
     val defaultStartPageId = settingsRepository.defaultStartPageIdFlow
     val selectedTtsAudioDeviceAddress = settingsRepository.ttsAudioDeviceAddressFlow
@@ -702,7 +701,6 @@ class SettingsViewModel @Inject constructor(
     fun setScanCycleLimitInput(input: String) = scanningDelegate.setScanCycleLimitInput(input)
     
     fun setStaticRowEnabled(enabled: Boolean) = scanningDelegate.setStaticRowEnabled(enabled)
-    fun setStaticRowScanPattern(pattern: String) = scanningDelegate.setStaticRowScanPattern(pattern)
     fun setLateClickThresholdInput(input: String) = scanningDelegate.setLateClickThresholdInput(input)
     fun setActionLogLimitInput(input: String) {
         updateActionLogLimitUseCase(input)

@@ -32,7 +32,6 @@ class SettingsMapper @Inject constructor(
             volumeKeysActivate = settingsRepository.getVolumeKeysActivateForBook(bookId),
             defaultScanPattern = settingsRepository.getDefaultScanPatternForBook(bookId),
             staticRowEnabled = settingsRepository.getStaticRowEnabledForBook(bookId),
-            staticRowScanPattern = settingsRepository.getStaticRowScanPatternForBook(bookId),
             isSmartPredictionEnabled = settingsRepository.getIsSmartPredictionEnabledForBook(bookId),
             geminiRedoPrediction = settingsRepository.geminiRedoPrediction,
             geminiTimeout = settingsRepository.geminiTimeout,
@@ -112,7 +111,6 @@ class SettingsMapper @Inject constructor(
         data.volumeKeysActivate?.let { settingsRepository.volumeKeysActivate = it }
         data.defaultScanPattern?.let { settingsRepository.defaultScanPattern = it }
         data.staticRowEnabled?.let { settingsRepository.staticRowEnabled = it }
-        data.staticRowScanPattern?.let { settingsRepository.staticRowScanPattern = it }
         data.isSmartPredictionEnabled?.let { settingsRepository.isSmartPredictionEnabled = it }
         data.geminiRedoPrediction?.let { settingsRepository.geminiRedoPrediction = it }
         data.geminiTimeout?.let { settingsRepository.geminiTimeout = it }

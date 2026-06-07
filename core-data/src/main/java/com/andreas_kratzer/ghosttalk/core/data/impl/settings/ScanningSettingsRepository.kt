@@ -17,6 +17,21 @@ class ScanningSettingsRepository(
     activeBookIdFlow: StateFlow<String?>
 ) : BaseSettingsRepository(prefs, activeBookIdFlow) {
 
+    init {
+        // Migration/Cleanup: remove the deprecated static_row_scan_pattern key if it exists
+        val keysToRemove = mutableListOf<String>()
+        prefs.all.keys.forEach { key ->
+            if (key.endsWith("static_row_scan_pattern")) {
+                keysToRemove.add(key)
+            }
+        }
+        if (keysToRemove.isNotEmpty()) {
+            prefs.edit().apply {
+                keysToRemove.forEach { remove(it) }
+            }.apply()
+        }
+    }
+
     private val _autoStartScanning = BooleanSetting(KEY_AUTO_START_SCANNING, true)
     private val _scanDelay = LongSetting(KEY_SCAN_DELAY_MILLIS, 3000L)
     private val _resumeScanningFromStart = BooleanSetting(KEY_RESUME_SCANNING_FROM_START, true)
@@ -31,7 +46,6 @@ class ScanningSettingsRepository(
     private val _speakerVolume = IntSetting(SettingsConstants.KEY_SPEAKER_VOLUME, 100, isScoped = false)
     private val _headphoneVolume = IntSetting(SettingsConstants.KEY_HEADPHONE_VOLUME, 100, isScoped = false)
     private val _staticRowEnabled = BooleanSetting(SettingsConstants.KEY_STATIC_ROW_ENABLED, false)
-    private val _staticRowScanPattern = NonNullStringSetting(SettingsConstants.KEY_STATIC_ROW_SCAN_PATTERN, "linear")
     private val _lateClickThreshold = LongSetting(SettingsConstants.KEY_LATE_CLICK_THRESHOLD_MILLIS, 250L)
     private val _vocalSwitchEnabled = BooleanSetting(KEY_VOCAL_SWITCH_ENABLED, false)
 
@@ -49,7 +63,6 @@ class ScanningSettingsRepository(
     val speakerVolumeFlow = _speakerVolume.flow
     val headphoneVolumeFlow = _headphoneVolume.flow
     val staticRowEnabledFlow = _staticRowEnabled.flow
-    val staticRowScanPatternFlow = _staticRowScanPattern.flow
     val lateClickThresholdFlow = _lateClickThreshold.flow
     val vocalSwitchEnabledFlow = _vocalSwitchEnabled.flow
 
@@ -67,7 +80,6 @@ class ScanningSettingsRepository(
     var speakerVolume: Int by _speakerVolume
     var headphoneVolume: Int by _headphoneVolume
     var staticRowEnabled: Boolean by _staticRowEnabled
-    var staticRowScanPattern: String by _staticRowScanPattern
     var lateClickThresholdMillis: Long by _lateClickThreshold
     var vocalSwitchEnabled: Boolean by _vocalSwitchEnabled
 
@@ -87,7 +99,6 @@ class ScanningSettingsRepository(
         _speakerVolume.refresh()
         _headphoneVolume.refresh()
         _staticRowEnabled.refresh()
-        _staticRowScanPattern.refresh()
         _lateClickThreshold.refresh()
         _vocalSwitchEnabled.refresh()
     }

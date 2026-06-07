@@ -99,7 +99,6 @@ class SettingsRepositoryImpl @Inject constructor(
                             limitScanCycles = prefs.getBoolean(SettingsConstants.KEY_LIMIT_SCAN_CYCLES, false),
                             scanCycleLimit = prefs.getInt(SettingsConstants.KEY_SCAN_CYCLE_LIMIT, 2),
                             staticRowEnabled = prefs.getBoolean(SettingsConstants.KEY_STATIC_ROW_ENABLED, false),
-                            staticRowScanPattern = prefs.getString(SettingsConstants.KEY_STATIC_ROW_SCAN_PATTERN, "linear") ?: "linear",
                             lateClickThresholdMillis = prefs.getLong(SettingsConstants.KEY_LATE_CLICK_THRESHOLD_MILLIS, 250L),
                             forceSoftKeyboard = prefs.getBoolean(SettingsConstants.KEY_FORCE_SOFT_KEYBOARD, true),
                             vocalSwitchEnabled = prefs.getBoolean(SettingsConstants.KEY_VOCAL_SWITCH_ENABLED, false),
@@ -227,7 +226,6 @@ class SettingsRepositoryImpl @Inject constructor(
     override val limitScanCyclesFlow: StateFlow<Boolean> get() = scanningSettings.limitScanCyclesFlow
     override val scanCycleLimitFlow: StateFlow<Int> get() = scanningSettings.scanCycleLimitFlow
     override val staticRowEnabledFlow: StateFlow<Boolean> get() = scanningSettings.staticRowEnabledFlow
-    override val staticRowScanPatternFlow: StateFlow<String> get() = scanningSettings.staticRowScanPatternFlow
     
     
 
@@ -392,10 +390,6 @@ class SettingsRepositoryImpl @Inject constructor(
     override var staticRowEnabled: Boolean
         get() = scanningSettings.staticRowEnabled
         set(value) { scanningSettings.staticRowEnabled = value }
-
-    override var staticRowScanPattern: String
-        get() = scanningSettings.staticRowScanPattern
-        set(value) { scanningSettings.staticRowScanPattern = value }
 
     override var lateClickThresholdMillis: Long
         get() = scanningSettings.lateClickThresholdMillis
@@ -947,8 +941,6 @@ class SettingsRepositoryImpl @Inject constructor(
     override fun getStaticRowEnabledForBook(bookId: String): Boolean =
         scanningSettings.getBooleanForBook(bookId, SettingsConstants.KEY_STATIC_ROW_ENABLED, false)
 
-    override fun getStaticRowScanPatternForBook(bookId: String): String =
-        scanningSettings.getStringForBook(bookId, SettingsConstants.KEY_STATIC_ROW_SCAN_PATTERN, "linear") ?: "linear"
 
     override fun getLateClickThresholdMillisForBook(bookId: String): Long =
         scanningSettings.getLongForBook(bookId, SettingsConstants.KEY_LATE_CLICK_THRESHOLD_MILLIS, 250L)
@@ -1117,7 +1109,6 @@ class SettingsRepositoryImpl @Inject constructor(
             editor.putBoolean(SettingsConstants.KEY_LIMIT_SCAN_CYCLES, config.limitScanCycles)
             editor.putInt(SettingsConstants.KEY_SCAN_CYCLE_LIMIT, config.scanCycleLimit)
             editor.putBoolean(SettingsConstants.KEY_STATIC_ROW_ENABLED, config.staticRowEnabled)
-            editor.putString(SettingsConstants.KEY_STATIC_ROW_SCAN_PATTERN, config.staticRowScanPattern)
             editor.putLong(SettingsConstants.KEY_LATE_CLICK_THRESHOLD_MILLIS, config.lateClickThresholdMillis)
             editor.putBoolean(SettingsConstants.KEY_FORCE_SOFT_KEYBOARD, config.forceSoftKeyboard)
             editor.putBoolean(SettingsConstants.KEY_VOCAL_SWITCH_ENABLED, config.vocalSwitchEnabled)

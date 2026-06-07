@@ -297,30 +297,36 @@ fun GeneralSettingsSection(
                 }
 
                 // 3. Combined Screen Behavior
-                val behaviorLabel = when {
-                    screenBehavior == "DIMMED" -> screenDimmed
-                    screenBehavior == "BLACK" -> screenBlack
-                    else -> screenOn
-                }
+    val keepScreenOn by viewModel.keepScreenOnUserMode.collectAsState(true)
 
-                SettingsDropdownItem(
-                    label = screenBehaviorLabel,
-                    selectedOption = behaviorLabel,
-                    options = listOf(
-                        screenOn to {
-                            viewModel.setKeepScreenOnUserMode(true)
-                            viewModel.setUserModeScreenBehavior("NORMAL")
-                        },
-                        screenDimmed to {
-                            viewModel.setKeepScreenOnUserMode(true)
-                            viewModel.setUserModeScreenBehavior("DIMMED")
-                        },
-                        screenBlack to {
-                            viewModel.setKeepScreenOnUserMode(true)
-                            viewModel.setUserModeScreenBehavior("BLACK")
-                        }
-                    )
-                )
+    val behaviorLabel = when {
+        !keepScreenOn -> stringResource(R.string.settings_system_default)
+        screenBehavior == "DIMMED" -> screenDimmed
+        screenBehavior == "BLACK" -> screenBlack
+        else -> screenOn
+    }
+
+    SettingsDropdownItem(
+        label = screenBehaviorLabel,
+        selectedOption = behaviorLabel,
+        options = listOf(
+            stringResource(R.string.settings_system_default) to {
+                viewModel.setKeepScreenOnUserMode(false)
+            },
+            screenOn to {
+                viewModel.setKeepScreenOnUserMode(true)
+                viewModel.setUserModeScreenBehavior("NORMAL")
+            },
+            screenDimmed to {
+                viewModel.setKeepScreenOnUserMode(true)
+                viewModel.setUserModeScreenBehavior("DIMMED")
+            },
+            screenBlack to {
+                viewModel.setKeepScreenOnUserMode(true)
+                viewModel.setUserModeScreenBehavior("BLACK")
+            }
+        )
+    )
 
                 // 4. Delete Book Button (moved into category)
                 Spacer(modifier = Modifier.height(dimensions.paddingLarge))

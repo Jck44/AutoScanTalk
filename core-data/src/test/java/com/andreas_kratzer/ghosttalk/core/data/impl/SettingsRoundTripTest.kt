@@ -74,7 +74,7 @@ class SettingsRoundTripTest {
         val mappedProperties = listOf(
             "autoStartScanning", "scanDelayMillis", "resumeScanningFromStart",
             "switchActivationKey", "volumeKeysActivate", "defaultScanPattern",
-            "staticRowEnabled", "staticRowScanPattern",
+            "staticRowEnabled",
             "isSmartPredictionEnabled", "geminiRedoPrediction", "geminiTimeout",
             "isGeminiEnabled", "useLocalGenerativeAi",
             // Note: isCloudSyncEnabled, syncIntervalMinutes, syncMode are intentionally

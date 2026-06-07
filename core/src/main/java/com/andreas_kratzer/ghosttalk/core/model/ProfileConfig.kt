@@ -34,7 +34,6 @@ data class ProfileConfig(
     val limitScanCycles: Boolean = false,
     val scanCycleLimit: Int = 2,
     val staticRowEnabled: Boolean = false,
-    val staticRowScanPattern: String = "linear",
     val lateClickThresholdMillis: Long = 250,
     val forceSoftKeyboard: Boolean = true,
     val vocalSwitchEnabled: Boolean = false,

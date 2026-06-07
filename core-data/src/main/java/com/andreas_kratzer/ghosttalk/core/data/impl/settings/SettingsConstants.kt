@@ -98,7 +98,6 @@ object SettingsConstants {
     const val KEY_HAS_ACCEPTED_PAGE_SPLIT_OPT_IN = "has_accepted_page_split_opt_in"
     
     const val KEY_STATIC_ROW_ENABLED = "static_row_enabled"
-    const val KEY_STATIC_ROW_SCAN_PATTERN = "static_row_scan_pattern"
     
     const val KEY_SPOTIFY_ACCESS_TOKEN = "spotify_access_token"
     const val KEY_SPOTIFY_REFRESH_TOKEN = "spotify_refresh_token"
