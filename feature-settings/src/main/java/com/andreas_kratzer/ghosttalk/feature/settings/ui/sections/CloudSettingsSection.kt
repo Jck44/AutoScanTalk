@@ -48,7 +48,7 @@ import java.util.Locale
 @Composable
 fun CloudSettingsSection(
     viewModel: SettingsViewModel,
-    isGlobal: Boolean
+    showSyncSettings: Boolean
 ) {
     val context = LocalContext.current
     val userEmail by viewModel.userEmail.collectAsState()
@@ -98,7 +98,7 @@ fun CloudSettingsSection(
 
         val elevenLabsApiKey by viewModel.elevenLabsApiKey.collectAsState("")
 
-        if (!isGlobal) {
+        if (!showSyncSettings) {
             PreferenceCategory(stringResource(R.string.settings_category_cloud_account)) {
                 val authTypeLabel = if (googleAuthType == com.andreas_kratzer.ghosttalk.core.model.CloudAuthType.SYSTEM) {
                     stringResource(R.string.settings_google_auth_system)
@@ -147,7 +147,7 @@ fun CloudSettingsSection(
             }
         }
 
-        if (isGlobal) {
+        if (!showSyncSettings) {
             Spacer(modifier = Modifier.height(dimensions.paddingMedium))
 
             PreferenceCategory(stringResource(R.string.settings_category_elevenlabs)) {
@@ -209,7 +209,7 @@ fun CloudSettingsSection(
             }
         }
 
-        if (isGlobal) {
+        if (!showSyncSettings) {
             PreferenceCategory(stringResource(R.string.settings_category_spotify)) {
                 if (spotifyUserDisplayName != null) {
                     Text(
@@ -514,7 +514,7 @@ fun CloudSettingsSection(
 
 
 
-        if (!isGlobal) {
+        if (showSyncSettings) {
             Spacer(modifier = Modifier.height(dimensions.paddingMedium))
             
             val statsRetentionDays by viewModel.statsRetentionDays.collectAsState()

@@ -6,7 +6,8 @@
     <string name="settings_category_voice">Text-to-Speech</string>
     <string name="settings_category_scanning">Scanning &amp; Operation</string>
     <string name="settings_category_security">Security &amp; PIN</string>
-    <string name="settings_category_cloud">Accounts &amp; Import</string>
+    <string name="settings_category_cloud">Synchronization</string>
+    <string name="settings_category_accounts">Accounts</string>
     <string name="settings_category_smart_home">Smart Home (Experimental)</string>
     <string name="settings_category_gemini">Gemini AI Assistant</string>
     <string name="settings_category_elevenlabs">ElevenLabs</string>

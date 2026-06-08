@@ -114,6 +114,7 @@ enum class SettingsSection(private val titleRes: Int, val icon: ImageVector) {
     CALLS(R.string.settings_category_call, Icons.Default.Phone),
     SMART_INTEGRATION(R.string.settings_category_smart_home, Icons.Default.Home),
     CLOUD_SYNC(R.string.settings_category_cloud, GhostTalkIcons.Cloud),
+    ACCOUNTS(R.string.settings_category_accounts, GhostTalkIcons.ManageAccounts),
     MAINTENANCE(R.string.settings_category_maintenance, GhostTalkIcons.Science);
 
     fun getTitleRes(): Int {
@@ -211,11 +212,16 @@ fun getSearchableItems(): List<SettingsSearchItem> {
         // PROFILE
         SettingsSearchItem(stringResource(R.string.settings_category_profile), stringResource(R.string.settings_category_profile), SettingsSection.PROFILE),
 
-        // CLOUD_SYNC
+        // CLOUD_SYNC (Synchronization)
         SettingsSearchItem(stringResource(R.string.settings_cloud_sync_enabled), stringResource(R.string.settings_category_cloud), SettingsSection.CLOUD_SYNC),
         SettingsSearchItem(stringResource(R.string.settings_sync_drive_location), stringResource(R.string.settings_category_cloud), SettingsSection.CLOUD_SYNC),
         SettingsSearchItem(stringResource(R.string.settings_cloud_sync_interval), stringResource(R.string.settings_category_cloud), SettingsSection.CLOUD_SYNC),
         SettingsSearchItem(stringResource(R.string.settings_category_local_backup), stringResource(R.string.settings_category_maintenance), SettingsSection.MAINTENANCE),
+
+        // ACCOUNTS
+        SettingsSearchItem(stringResource(R.string.settings_category_cloud_account), stringResource(R.string.settings_category_accounts), SettingsSection.ACCOUNTS),
+        SettingsSearchItem(stringResource(R.string.settings_elevenlabs_api_key), stringResource(R.string.settings_category_accounts), SettingsSection.ACCOUNTS),
+        SettingsSearchItem(stringResource(R.string.settings_spotify_connection), stringResource(R.string.settings_category_accounts), SettingsSection.ACCOUNTS),
 
         // PERMISSIONS
         SettingsSearchItem(stringResource(R.string.settings_category_notifications), stringResource(R.string.settings_category_notifications), SettingsSection.PERMISSIONS),
@@ -945,12 +951,13 @@ fun SubmenuContent(
         SettingsSection.CLOUD_SYNC -> {
             CloudSettingsSection(
                 viewModel = viewModel,
-                isGlobal = false
+                showSyncSettings = true
             )
-            Spacer(modifier = Modifier.height(16.dp))
+        }
+        SettingsSection.ACCOUNTS -> {
             CloudSettingsSection(
                 viewModel = viewModel,
-                isGlobal = true
+                showSyncSettings = false
             )
         }
         SettingsSection.PERMISSIONS -> {

@@ -387,6 +387,60 @@ object GhostTalkIcons {
             }
         }
 
+    val ManageAccounts: ImageVector
+        get() = materialIcon(name = "Filled.ManageAccounts") {
+            materialPath {
+                moveTo(12.0f, 12.0f)
+                curveToRelative(2.21f, 0.0f, 4.0f, -1.79f, 4.0f, -4.0f)
+                reflectiveCurveToRelative(-1.79f, -4.0f, -4.0f, -4.0f)
+                reflectiveCurveToRelative(-4.0f, 1.79f, -4.0f, 4.0f)
+                reflectiveCurveToRelative(1.79f, 4.0f, 4.0f, 4.0f)
+                close()
+                moveTo(12.0f, 14.0f)
+                curveToRelative(-2.67f, 0.0f, -8.0f, 1.34f, -8.0f, 4.0f)
+                verticalLineToRelative(1.0f)
+                horizontalLineToRelative(9.29f)
+                curveToRelative(-0.19f, -0.64f, -0.29f, -1.31f, -0.29f, -2.0f)
+                curveToRelative(0.0f, -1.0f, 0.22f, -1.94f, 0.6f, -2.79f)
+                curveTo(13.16f, 14.08f, 12.59f, 14.0f, 12.0f, 14.0f)
+                close()
+                moveTo(20.0f, 17.5f)
+                curveToRelative(0.0f, -0.28f, -0.03f, -0.54f, -0.07f, -0.8f)
+                lineToRelative(0.87f, -0.76f)
+                lineToRelative(-0.75f, -1.3f)
+                lineToRelative(-1.1f, 0.37f)
+                curveToRelative(-0.28f, -0.22f, -0.6f, -0.39f, -0.95f, -0.5f)
+                lineTo(17.75f, 14.0f)
+                horizontalLineToRelative(-1.5f)
+                lineToRelative(-0.25f, 1.51f)
+                curveToRelative(-0.35f, 0.11f, -0.67f, 0.28f, -0.95f, 0.5f)
+                lineToRelative(-1.1f, -0.37f)
+                lineToRelative(-0.75f, 1.3f)
+                lineToRelative(0.87f, 0.76f)
+                curveToRelative(-0.04f, 0.26f, -0.07f, 0.53f, -0.07f, 0.8f)
+                reflectiveCurveToRelative(0.03f, 0.54f, 0.07f, 0.8f)
+                lineToRelative(-0.87f, 0.76f)
+                lineToRelative(0.75f, 1.3f)
+                lineToRelative(1.1f, -0.37f)
+                curveToRelative(0.28f, 0.22f, 0.6f, 0.39f, 0.95f, 0.5f)
+                lineTo(16.25f, 21.0f)
+                horizontalLineToRelative(1.5f)
+                lineToRelative(0.25f, -1.51f)
+                curveToRelative(0.35f, -0.11f, 0.67f, -0.28f, 0.95f, -0.5f)
+                lineToRelative(1.1f, 0.37f)
+                lineToRelative(0.75f, -1.3f)
+                lineToRelative(-0.87f, -0.76f)
+                curveToRelative(0.04f, -0.26f, 0.07f, -0.52f, 0.07f, -0.8f)
+                close()
+                moveTo(17.0f, 19.0f)
+                curveToRelative(-0.83f, 0.0f, -1.5f, -0.67f, -1.5f, -1.5f)
+                reflectiveCurveToRelative(0.67f, -1.5f, 1.5f, -1.5f)
+                reflectiveCurveToRelative(1.5f, 0.67f, 1.5f, 1.5f)
+                reflectiveCurveToRelative(-0.67f, 1.5f, -1.5f, 1.5f)
+                close()
+            }
+        }
+
     val Cloud: ImageVector
         get() = materialIcon(name = "Filled.Cloud") {
             materialPath {
