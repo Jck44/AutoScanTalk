@@ -221,10 +221,12 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
 
                 SettingsSliderItem(
                     label = stringResource(R.string.settings_tts_playback_speed),
-                    value = (playbackSpeed - 0.5f) / 2.5f,
-                    onValueChange = { viewModel.setTtsPlaybackSpeed(0.5f + it * 2.5f) },
+                    value = playbackSpeed.coerceIn(0.5f, 2.0f),
+                    onValueChange = { viewModel.setTtsPlaybackSpeed(it) },
+                    valueRange = 0.5f..2.0f,
+                    steps = 14,
                     description = stringResource(R.string.settings_tts_playback_speed_desc) + " (${String.format(
-                        Locale.US, "%.2f", playbackSpeed)}x)"
+                        Locale.US, "%.2f", playbackSpeed.coerceIn(0.5f, 2.0f))}x)"
                 )
 
                 Spacer(modifier = Modifier.height(dimensions.paddingSmall))
@@ -233,7 +235,7 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                     onClick = { viewModel.playVoicePreview() },
                     modifier = Modifier.fillMaxWidth(),
                     shape = MaterialTheme.shapes.medium,
-                    enabled = !selectedVoiceName.isNullOrEmpty()
+                    enabled = true
                 ) {
                     Icon(
                         imageVector = Icons.Default.PlayArrow,

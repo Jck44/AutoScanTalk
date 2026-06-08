@@ -13,7 +13,9 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -22,15 +24,19 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.foundation.layout.width
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.core.ui.components.PreferenceCategory
+import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.feature.settings.R
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
+import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.BackupSelectionDialog
+import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.DriveFolderPickerDialog
 
 @Suppress("UNUSED_PARAMETER", "UNUSED_VALUE")
 @SuppressLint("LocalContextGetResourceValueCall")
@@ -39,9 +45,14 @@ fun MaintenanceSection(
     viewModel: SettingsViewModel,
     isGlobal: Boolean,
     onLocalExport: () -> Unit,
-    onLocalImport: () -> Unit
+    onLocalImport: () -> Unit,
+    onSelectSafFolderForImport: () -> Unit = {}
 ) {
     val context = LocalContext.current
+    val userEmail by viewModel.userEmail.collectAsState()
+    val isSyncing by viewModel.isSyncing.collectAsState()
+    val showImportFolderPicker = remember { mutableStateOf(false) }
+    val showManualImportUrlDialog = remember { mutableStateOf(false) }
     val updateErrorFormat = stringResource(R.string.settings_maintenance_check_update_error)
     val showDeleteEmptyButtonsConfirmation = remember { mutableStateOf(false) }
     val updateStatus by viewModel.updateCheckStatus.collectAsState()
@@ -146,6 +157,86 @@ fun MaintenanceSection(
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.height(LocalDimensions.current.paddingLarge))
+
+            PreferenceCategory(stringResource(R.string.settings_category_cloud_import)) {
+                Button(
+                    onClick = { showImportFolderPicker.value = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = userEmail != null && !isSyncing
+                ) {
+                    Icon(GhostTalkIcons.Cloud, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(stringResource(R.string.settings_cloud_import_drive_api))
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedButton(
+                    onClick = { showManualImportUrlDialog.value = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = userEmail != null && !isSyncing
+                ) {
+                    Icon(GhostTalkIcons.Cloud, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(stringResource(R.string.settings_cloud_import_shared_link))
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(
+                    onClick = onSelectSafFolderForImport,
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isSyncing
+                ) {
+                    Icon(GhostTalkIcons.Cloud, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(stringResource(R.string.settings_cloud_import_saf))
+                }
+
+                Text(
+                    text = stringResource(R.string.settings_cloud_import_explanation),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 12.dp)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(LocalDimensions.current.paddingLarge))
+
+        PreferenceCategory(stringResource(R.string.settings_category_local_backup)) {
+            if (!isGlobal) {
+                Text(
+                    text = stringResource(R.string.settings_local_backup_describe_create),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(LocalDimensions.current.paddingSmall))
+                Button(
+                    onClick = onLocalExport,
+                    shape = MaterialTheme.shapes.medium,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(stringResource(R.string.settings_local_backup_create))
+                }
+                Spacer(modifier = Modifier.height(LocalDimensions.current.paddingLarge))
+            }
+
+            Text(
+                text = stringResource(if (isGlobal) R.string.settings_local_backup_describe_global_import else R.string.settings_local_backup_describe_restore),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(LocalDimensions.current.paddingSmall))
+            OutlinedButton(
+                onClick = onLocalImport,
+                shape = MaterialTheme.shapes.medium,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(if (isGlobal) R.string.settings_local_backup_import else R.string.settings_local_backup_restore))
+            }
         }
     }
 
@@ -176,6 +267,77 @@ fun MaintenanceSection(
             dismissButton = {
                 TextButton(onClick = { showDeleteEmptyButtonsConfirmation.value = false }) {
                     Text(stringResource(com.andreas_kratzer.ghosttalk.core.ui.R.string.dialog_close))
+                }
+            }
+        )
+    }
+
+    val driveFolders by viewModel.driveFolders.collectAsState()
+    val isBrowsingFolders by viewModel.isBrowsingFolders.collectAsState()
+    val availableBackups by viewModel.availableBackups.collectAsState()
+    val showBackupSelectionDialog by viewModel.showBackupSelectionDialog.collectAsState()
+
+    if (showImportFolderPicker.value) {
+        DriveFolderPickerDialog(
+            folders = driveFolders,
+            isLoading = isBrowsingFolders,
+            onFetchFolders = { parentId -> viewModel.fetchDriveFolders(parentId) },
+            onFolderSelected = { id, _ ->
+                viewModel.fetchAvailableBackupsForImport(id)
+                showImportFolderPicker.value = false
+            },
+            onDismiss = { showImportFolderPicker.value = false }
+        )
+    }
+
+    if (showBackupSelectionDialog) {
+        BackupSelectionDialog(
+            backups = availableBackups,
+            onDismiss = { viewModel.dismissBackupSelectionDialog() },
+            onBackupSelected = { backupInfo ->
+                viewModel.importCloudBackup(backupInfo)
+            }
+        )
+    }
+
+    if (showManualImportUrlDialog.value) {
+        val urlOrIdInput = remember { mutableStateOf("") }
+
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showManualImportUrlDialog.value = false },
+            title = { Text(stringResource(R.string.settings_cloud_import_dialog_title)) },
+            text = {
+                Column {
+                    Text(
+                        text = stringResource(R.string.settings_cloud_import_dialog_explanation),
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    androidx.compose.material3.OutlinedTextField(
+                        value = urlOrIdInput.value,
+                        onValueChange = { urlOrIdInput.value = it },
+                        label = { Text(stringResource(R.string.settings_cloud_import_link_or_id_label)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.fetchAvailableBackupsForImportByUrlOrId(urlOrIdInput.value)
+                        showManualImportUrlDialog.value = false
+                    },
+                    enabled = urlOrIdInput.value.isNotBlank()
+                ) {
+                    Text(stringResource(R.string.settings_cloud_import_search_backups))
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showManualImportUrlDialog.value = false }
+                ) {
+                    Text(stringResource(com.andreas_kratzer.ghosttalk.core.ui.R.string.action_cancel))
                 }
             }
         )

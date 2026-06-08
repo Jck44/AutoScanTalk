@@ -270,6 +270,21 @@ class SettingsViewModel @Inject constructor(
     private val _updateCheckStatus = MutableStateFlow<UpdateCheckStatus?>(null)
     val updateCheckStatus = _updateCheckStatus.asStateFlow()
     
+    private val _highlightedSettingKey = MutableStateFlow<String?>(null)
+    val highlightedSettingKey = _highlightedSettingKey.asStateFlow()
+
+    fun setHighlightedSettingKey(key: String?) {
+        _highlightedSettingKey.value = key
+        if (key != null) {
+            viewModelScope.launch {
+                delay(2000)
+                if (_highlightedSettingKey.value == key) {
+                    _highlightedSettingKey.value = null
+                }
+            }
+        }
+    }
+
     private var prefetchJob: kotlinx.coroutines.Job? = null
 
     init {

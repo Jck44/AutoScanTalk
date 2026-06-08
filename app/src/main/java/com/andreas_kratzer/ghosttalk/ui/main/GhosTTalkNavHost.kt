@@ -226,6 +226,7 @@ fun GhostTalkNavHost(
             BookListScreen(
                 bookViewModel = bookViewModel,
                 settingsRepository = settingsRepository,
+                securityManager = securityManager,
                 onBookSelected = { selectedBookId ->
                     pageViewModel.setActiveBookId(selectedBookId)
                     settingsRepository.activeBookId = selectedBookId

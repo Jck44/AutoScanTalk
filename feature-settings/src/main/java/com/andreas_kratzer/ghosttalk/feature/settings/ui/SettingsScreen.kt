@@ -5,15 +5,26 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -21,33 +32,47 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
@@ -56,6 +81,7 @@ import com.andreas_kratzer.ghosttalk.feature.settings.R
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.ActionHistoryDialog
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.BackupRestoreProgressDialog
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.UsageStatisticsDialog
+import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.BookSettingsSection
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.CallSettingsSection
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.CloudSettingsSection
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.ExperimentalSettingsSection
@@ -63,6 +89,7 @@ import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.GenAiSettingsS
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.GeneralSettingsSection
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.MaintenanceSection
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.PermissionsSettingsSection
+import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.ProfileSettingsSection
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.ScanningSettingsSection
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.SecuritySettingsSection
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.sections.SmartHomeSettingsSection
@@ -76,26 +103,144 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 
-enum class SettingsSection(private val titleRes: Int, val icon: ImageVector, val isGlobal: Boolean, val isScoped: Boolean) {
-    // Buch-Einstellungen (Scoped to current book, syncable)
-    BOOK_TTS(R.string.settings_category_voice, GhostTalkIcons.VolumeUp, isGlobal = false, isScoped = true),
-    BOOK_SCANNING(R.string.settings_category_scanning, GhostTalkIcons.SwitchAccessShortcut, isGlobal = false, isScoped = true),
-    BOOK_AI(R.string.settings_category_gemini, GhostTalkIcons.AutoAwesome, isGlobal = false, isScoped = true),
-    BOOK_CALLS(R.string.settings_category_call, Icons.Default.Phone, isGlobal = false, isScoped = true),
-    BOOK_SMART_INTEGRATION(R.string.settings_category_smart_home, Icons.Default.Home, isGlobal = false, isScoped = true),
-    BOOK_CLOUD_SYNC(R.string.settings_category_cloud_book, GhostTalkIcons.Cloud, isGlobal = false, isScoped = true),
-    BOOK_INFO(R.string.settings_category_general, Icons.Default.Settings, isGlobal = false, isScoped = true),
-
-    // App- & Geräte-Einstellungen (Global/Local, device-specific)
-    APP_SECURITY(R.string.settings_category_security, GhostTalkIcons.Security, isGlobal = true, isScoped = false),
-    APP_AUDIO_ROUTING(R.string.settings_category_audio_hardware, GhostTalkIcons.VolumeUp, isGlobal = true, isScoped = false),
-    APP_UI(R.string.settings_category_ui, Icons.Default.Settings, isGlobal = true, isScoped = false),
-    APP_CLOUD_SYNC(R.string.settings_category_cloud, GhostTalkIcons.Cloud, isGlobal = true, isScoped = false),
-    APP_MAINTENANCE(R.string.settings_category_maintenance, GhostTalkIcons.Science, isGlobal = true, isScoped = false);
+enum class SettingsSection(private val titleRes: Int, val icon: ImageVector) {
+    GENERAL(R.string.settings_category_general, Icons.Default.Settings),
+    PROFILE(R.string.settings_category_profile, Icons.Default.Person),
+    MANAGE_BOOK(R.string.settings_category_manage_book, GhostTalkIcons.Book),
+    VOICE(R.string.settings_category_voice, Icons.Default.PlayArrow),
+    AUDIO_HARDWARE(R.string.settings_category_audio_hardware, GhostTalkIcons.VolumeUp),
+    SCANNING(R.string.settings_category_scanning, GhostTalkIcons.SwitchAccessShortcut),
+    VOCAL_SWITCH(R.string.settings_category_vocal_switch, GhostTalkIcons.RecordVoiceOver),
+    PERMISSIONS(R.string.settings_category_notifications, GhostTalkIcons.Notifications),
+    SECURITY(R.string.settings_category_security, GhostTalkIcons.Security),
+    AI(R.string.settings_category_gemini, GhostTalkIcons.AutoAwesome),
+    CALLS(R.string.settings_category_call, Icons.Default.Phone),
+    SMART_INTEGRATION(R.string.settings_category_smart_home, Icons.Default.Home),
+    CLOUD_SYNC(R.string.settings_category_cloud, GhostTalkIcons.Cloud),
+    MAINTENANCE(R.string.settings_category_maintenance, GhostTalkIcons.Science);
 
     fun getTitleRes(): Int {
         return titleRes
     }
+}
+
+data class SettingsSearchItem(
+    val title: String,
+    val description: String,
+    val section: SettingsSection
+)
+
+@Composable
+fun getSearchableItems(): List<SettingsSearchItem> {
+    return listOf(
+        // GENERAL
+        SettingsSearchItem(stringResource(R.string.settings_app_language), stringResource(R.string.settings_category_general), SettingsSection.GENERAL),
+        SettingsSearchItem(stringResource(R.string.settings_theme_mode), stringResource(R.string.settings_category_general), SettingsSection.GENERAL),
+        SettingsSearchItem(stringResource(R.string.settings_startup_behavior), stringResource(R.string.settings_category_general), SettingsSection.GENERAL),
+        SettingsSearchItem(stringResource(R.string.settings_force_soft_keyboard), stringResource(R.string.settings_category_general), SettingsSection.GENERAL),
+        SettingsSearchItem(stringResource(R.string.settings_persist_logs), stringResource(R.string.settings_category_general), SettingsSection.GENERAL),
+        SettingsSearchItem(stringResource(R.string.settings_screen_behavior), stringResource(R.string.settings_category_general), SettingsSection.GENERAL),
+        SettingsSearchItem("Betreuer-Tablet (Caregiver-Modus)", stringResource(R.string.settings_category_general), SettingsSection.GENERAL),
+
+        // MANAGE BOOK
+        SettingsSearchItem(stringResource(R.string.book_name_label), stringResource(R.string.settings_category_manage_book), SettingsSection.MANAGE_BOOK),
+        SettingsSearchItem(stringResource(R.string.settings_start_page), stringResource(R.string.settings_category_manage_book), SettingsSection.MANAGE_BOOK),
+        SettingsSearchItem(stringResource(R.string.book_delete_description), stringResource(R.string.settings_category_manage_book), SettingsSection.MANAGE_BOOK),
+
+        // VOICE
+        SettingsSearchItem(stringResource(R.string.settings_tts_engine), stringResource(R.string.settings_category_voice), SettingsSection.VOICE),
+        SettingsSearchItem(stringResource(R.string.settings_elevenlabs_model), stringResource(R.string.settings_category_voice), SettingsSection.VOICE),
+        SettingsSearchItem(stringResource(R.string.elevenlabs_stability), stringResource(R.string.settings_category_voice), SettingsSection.VOICE),
+        SettingsSearchItem(stringResource(R.string.elevenlabs_similarity_boost), stringResource(R.string.settings_category_voice), SettingsSection.VOICE),
+        SettingsSearchItem(stringResource(R.string.settings_tts_language), stringResource(R.string.settings_category_voice), SettingsSection.VOICE),
+        SettingsSearchItem(stringResource(R.string.settings_select_voice), stringResource(R.string.settings_category_voice), SettingsSection.VOICE),
+        SettingsSearchItem(stringResource(R.string.settings_tts_playback_speed), stringResource(R.string.settings_category_voice), SettingsSection.VOICE),
+
+        // AUDIO HARDWARE
+        SettingsSearchItem(stringResource(R.string.settings_audio_tts), stringResource(R.string.settings_category_audio_hardware), SettingsSection.AUDIO_HARDWARE),
+        SettingsSearchItem(stringResource(R.string.settings_audio_cues), stringResource(R.string.settings_category_audio_hardware), SettingsSection.AUDIO_HARDWARE),
+        SettingsSearchItem(stringResource(R.string.settings_recording_source), stringResource(R.string.settings_category_audio_hardware), SettingsSection.AUDIO_HARDWARE),
+        SettingsSearchItem(stringResource(R.string.settings_block_volume_keys), stringResource(R.string.settings_category_audio_hardware), SettingsSection.AUDIO_HARDWARE),
+        SettingsSearchItem(stringResource(R.string.settings_speaker_volume_label), stringResource(R.string.settings_category_audio_hardware), SettingsSection.AUDIO_HARDWARE),
+        SettingsSearchItem(stringResource(R.string.settings_headphone_volume_label), stringResource(R.string.settings_category_audio_hardware), SettingsSection.AUDIO_HARDWARE),
+        SettingsSearchItem(stringResource(R.string.settings_bluetooth_delay), stringResource(R.string.settings_category_audio_hardware), SettingsSection.AUDIO_HARDWARE),
+
+        // SCANNING
+        SettingsSearchItem(stringResource(R.string.settings_scan_delay), stringResource(R.string.settings_category_scanning), SettingsSection.SCANNING),
+        SettingsSearchItem(stringResource(R.string.settings_late_click_threshold), stringResource(R.string.settings_category_scanning), SettingsSection.SCANNING),
+        SettingsSearchItem(stringResource(R.string.settings_holding_time), stringResource(R.string.settings_category_scanning), SettingsSection.SCANNING),
+        SettingsSearchItem(stringResource(R.string.settings_scan_pattern), stringResource(R.string.settings_category_scanning), SettingsSection.SCANNING),
+        SettingsSearchItem(stringResource(R.string.settings_auto_scan), stringResource(R.string.settings_category_scanning), SettingsSection.SCANNING),
+        SettingsSearchItem(stringResource(R.string.settings_restart_scan), stringResource(R.string.settings_category_scanning), SettingsSection.SCANNING),
+        SettingsSearchItem(stringResource(R.string.settings_limit_scan_cycles), stringResource(R.string.settings_category_scanning), SettingsSection.SCANNING),
+        SettingsSearchItem(stringResource(R.string.settings_scan_cycle_limit), stringResource(R.string.settings_category_scanning), SettingsSection.SCANNING),
+        SettingsSearchItem("Statische Zeile über jeder Seite anzeigen", stringResource(R.string.settings_category_scanning), SettingsSection.SCANNING),
+        SettingsSearchItem(stringResource(R.string.settings_switch_key), stringResource(R.string.settings_category_scanning), SettingsSection.SCANNING),
+
+        // VOCAL SWITCH
+        SettingsSearchItem(stringResource(R.string.settings_category_vocal_switch), stringResource(R.string.settings_category_vocal_switch), SettingsSection.VOCAL_SWITCH),
+        SettingsSearchItem("Vocal Switch Training / Stimme trainieren", stringResource(R.string.settings_category_vocal_switch), SettingsSection.VOCAL_SWITCH),
+
+        // SECURITY
+        SettingsSearchItem(stringResource(R.string.settings_security_set_pin_title), stringResource(R.string.settings_category_security), SettingsSection.SECURITY),
+        SettingsSearchItem(stringResource(R.string.settings_security_pin_timeout), stringResource(R.string.settings_category_security), SettingsSection.SECURITY),
+        SettingsSearchItem(stringResource(R.string.settings_security_pin_required_for_deletion), stringResource(R.string.settings_category_security), SettingsSection.SECURITY),
+        SettingsSearchItem(stringResource(R.string.settings_security_biometric_enabled), stringResource(R.string.settings_category_security), SettingsSection.SECURITY),
+        SettingsSearchItem(stringResource(R.string.settings_security_require_for_edit), stringResource(R.string.settings_category_security), SettingsSection.SECURITY),
+        SettingsSearchItem(stringResource(R.string.settings_security_require_for_settings), stringResource(R.string.settings_category_security), SettingsSection.SECURITY),
+        SettingsSearchItem(stringResource(R.string.settings_security_require_for_analytics), stringResource(R.string.settings_category_security), SettingsSection.SECURITY),
+
+        // AI
+        SettingsSearchItem(stringResource(R.string.settings_gemini_enable), stringResource(R.string.settings_category_gemini), SettingsSection.AI),
+        SettingsSearchItem(stringResource(R.string.settings_gemini_api_key), stringResource(R.string.settings_category_gemini), SettingsSection.AI),
+        SettingsSearchItem("Antwort-Timeout", stringResource(R.string.settings_category_gemini), SettingsSection.AI),
+        SettingsSearchItem(stringResource(R.string.settings_gemini_redo_prediction), stringResource(R.string.settings_category_gemini), SettingsSection.AI),
+        SettingsSearchItem(stringResource(R.string.settings_smart_prediction_enable), stringResource(R.string.settings_category_gemini), SettingsSection.AI),
+
+        // CALLS
+        SettingsSearchItem(stringResource(R.string.settings_max_call_duration), stringResource(R.string.settings_category_call), SettingsSection.CALLS),
+        SettingsSearchItem(stringResource(R.string.settings_call_duration_feedback_interval), stringResource(R.string.settings_category_call), SettingsSection.CALLS),
+        SettingsSearchItem(stringResource(R.string.settings_call_intro_outgoing), stringResource(R.string.settings_category_call), SettingsSection.CALLS),
+        SettingsSearchItem(stringResource(R.string.settings_call_intro_incoming), stringResource(R.string.settings_category_call), SettingsSection.CALLS),
+        SettingsSearchItem(stringResource(R.string.settings_call_filter_not_in_contacts), stringResource(R.string.settings_category_call), SettingsSection.CALLS),
+        SettingsSearchItem(stringResource(R.string.settings_call_auto_enable_speakerphone), stringResource(R.string.settings_category_call), SettingsSection.CALLS),
+        SettingsSearchItem("Telefonanrufe simulieren", stringResource(R.string.settings_category_call), SettingsSection.CALLS),
+
+        // SMART_INTEGRATION
+        SettingsSearchItem(stringResource(R.string.settings_hue_bridge_ip), stringResource(R.string.settings_category_smart_home), SettingsSection.SMART_INTEGRATION),
+        SettingsSearchItem("Philips Hue Bridge Verbindung", stringResource(R.string.settings_category_smart_home), SettingsSection.SMART_INTEGRATION),
+        SettingsSearchItem("Spotify Verbindung", stringResource(R.string.settings_category_smart_home), SettingsSection.SMART_INTEGRATION),
+
+        // PROFILE
+        SettingsSearchItem(stringResource(R.string.settings_category_profile), stringResource(R.string.settings_category_profile), SettingsSection.PROFILE),
+
+        // CLOUD_SYNC
+        SettingsSearchItem(stringResource(R.string.settings_cloud_sync_enabled), stringResource(R.string.settings_category_cloud), SettingsSection.CLOUD_SYNC),
+        SettingsSearchItem(stringResource(R.string.settings_sync_drive_location), stringResource(R.string.settings_category_cloud), SettingsSection.CLOUD_SYNC),
+        SettingsSearchItem(stringResource(R.string.settings_cloud_sync_interval), stringResource(R.string.settings_category_cloud), SettingsSection.CLOUD_SYNC),
+        SettingsSearchItem(stringResource(R.string.settings_category_local_backup), stringResource(R.string.settings_category_maintenance), SettingsSection.MAINTENANCE),
+
+        // PERMISSIONS
+        SettingsSearchItem(stringResource(R.string.settings_category_notifications), stringResource(R.string.settings_category_notifications), SettingsSection.PERMISSIONS),
+
+        // MAINTENANCE
+        SettingsSearchItem(stringResource(R.string.settings_category_experimental), stringResource(R.string.settings_category_maintenance), SettingsSection.MAINTENANCE),
+        SettingsSearchItem(stringResource(R.string.settings_category_button_history), stringResource(R.string.settings_category_maintenance), SettingsSection.MAINTENANCE),
+        SettingsSearchItem(stringResource(R.string.settings_category_cloud_import), stringResource(R.string.settings_category_maintenance), SettingsSection.MAINTENANCE)
+    )
+}
+
+@Composable
+fun Modifier.highlightSetting(label: String, highlightedKey: String?): Modifier {
+    val isHighlighted = label == highlightedKey
+    val alpha by animateFloatAsState(
+        targetValue = if (isHighlighted) 0.6f else 0f,
+        animationSpec = tween(durationMillis = 1000)
+    )
+    return this.background(
+        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = alpha),
+        shape = MaterialTheme.shapes.medium
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -112,7 +257,11 @@ fun SettingsScreen(
     val context = LocalContext.current
     val dimensions = LocalDimensions.current
     
+    val configuration = LocalConfiguration.current
+    val isLargeScreen = configuration.screenWidthDp >= 720
+
     var selectedSection by rememberSaveable { mutableStateOf<SettingsSection?>(null) }
+    var searchQuery by rememberSaveable { mutableStateOf("") }
 
     val authIntent by viewModel.authIntentFlow.collectAsState(null)
     val signInError by viewModel.signInErrorMessage.collectAsState()
@@ -187,50 +336,228 @@ fun SettingsScreen(
         }
     }
 
-    BackHandler {
-        if (selectedSection == null) {
+    LaunchedEffect(isLargeScreen) {
+        if (isLargeScreen && selectedSection == null) {
+            selectedSection = SettingsSection.GENERAL
+        }
+    }
+
+    val handleBack = {
+        if (isLargeScreen || selectedSection == null) {
             onNavigateBack()
         } else {
             selectedSection = null
         }
     }
 
+    BackHandler {
+        handleBack()
+    }
+
     Scaffold(
         topBar = {
             SettingsTopBar(
                 selectedSection = selectedSection,
-                isGlobal = isGlobal,
-                onBack = { if (selectedSection == null) onNavigateBack() else selectedSection = null },
-                onNavigateToGlobalSettings = onNavigateToGlobalSettings
+                isLargeScreen = isLargeScreen,
+                onBack = handleBack
             )
         }
     ) { paddingValues ->
-        if (selectedSection == null) {
-            SettingsMainMenu(
-                isGlobal = isGlobal,
-                padding = paddingValues,
-                dimensions = dimensions,
-                onSectionSelected = { selectedSection = it }
-            )
+        if (isLargeScreen) {
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+            ) {
+                // Sidebar
+                Column(
+                    modifier = Modifier
+                        .width(320.dp)
+                        .fillMaxHeight()
+                        .padding(horizontal = dimensions.paddingMedium, vertical = dimensions.paddingSmall)
+                ) {
+                    SettingsSearchBar(
+                        query = searchQuery,
+                        onQueryChange = { searchQuery = it }
+                    )
+                    
+                    Spacer(modifier = Modifier.height(dimensions.paddingMedium))
+                    
+                    if (searchQuery.isNotBlank()) {
+                        val searchItems = getSearchableItems()
+                        val results = searchItems.filter {
+                            it.title.contains(searchQuery, ignoreCase = true) ||
+                            it.description.contains(searchQuery, ignoreCase = true)
+                        }
+                        LazyColumn(
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            if (results.isEmpty()) {
+                                item {
+                                    Text(
+                                        text = "Keine Einstellungen gefunden",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        modifier = Modifier.padding(dimensions.paddingMedium)
+                                    )
+                                }
+                            } else {
+                                items(results) { result ->
+                                    SearchResultItem(
+                                        result = result,
+                                        onClick = {
+                                            selectedSection = result.section
+                                            viewModel.setHighlightedSettingKey(result.title)
+                                            searchQuery = ""
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)
+                        ) {
+                            items(SettingsSection.entries) { section ->
+                                val isSelected = selectedSection == section
+                                Surface(
+                                    onClick = { selectedSection = section },
+                                    shape = MaterialTheme.shapes.large,
+                                    color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    ListItem(
+                                        headlineContent = {
+                                            Text(
+                                                text = stringResource(section.getTitleRes()),
+                                                style = MaterialTheme.typography.bodyLarge,
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                                color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+                                            )
+                                        },
+                                        leadingContent = {
+                                            Icon(
+                                                imageVector = section.icon,
+                                                contentDescription = null,
+                                                tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.size(24.dp)
+                                            )
+                                        },
+                                        colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    
+                    HorizontalDivider(modifier = Modifier.padding(vertical = dimensions.paddingMedium))
+                    VersionInfo()
+                }
+
+                VerticalDivider()
+
+                // Details Pane
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                ) {
+                    selectedSection?.let { section ->
+                        SettingsSubMenu(
+                            section = section,
+                            padding = PaddingValues(0.dp),
+                            dimensions = dimensions,
+                            isGlobal = isGlobal,
+                            viewModel = viewModel,
+                            onNavigateBack = onNavigateBack,
+                            onBookDeleted = onBookDeleted,
+                            onLockClicked = {
+                                viewModel.lock()
+                                onNavigateToStart()
+                            },
+                            onLocalExport = { localExportLauncher.launch("GhostTalk_Backup.zip") },
+                            onLocalImport = { localImportLauncher.launch("*/*") },
+                            onSelectSafFolder = { safFolderLauncher.launch(null) },
+                            onSelectSafFolderForImport = { safImportFolderLauncher.launch(null) },
+                            onNavigateToVocalTraining = onNavigateToVocalTraining
+                        )
+                    }
+                }
+            }
         } else {
-            SettingsSubMenu(
-                section = selectedSection!!,
-                padding = paddingValues,
-                dimensions = dimensions,
-                isGlobal = isGlobal,
-                viewModel = viewModel,
-                onNavigateBack = onNavigateBack,
-                onBookDeleted = onBookDeleted,
-                onLockClicked = {
-                    viewModel.lock()
-                    onNavigateToStart()
-                },
-                onLocalExport = { localExportLauncher.launch("GhostTalk_Backup.zip") },
-                onLocalImport = { localImportLauncher.launch("*/*") },
-                onSelectSafFolder = { safFolderLauncher.launch(null) },
-                onSelectSafFolderForImport = { safImportFolderLauncher.launch(null) },
-                onNavigateToVocalTraining = onNavigateToVocalTraining
-            )
+            // Mobile (Single Pane)
+            if (selectedSection == null) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues)
+                        .padding(horizontal = dimensions.paddingLarge, vertical = dimensions.paddingMedium)
+                ) {
+                    SettingsSearchBar(
+                        query = searchQuery,
+                        onQueryChange = { searchQuery = it }
+                    )
+                    
+                    Spacer(modifier = Modifier.height(dimensions.paddingMedium))
+
+                    if (searchQuery.isNotBlank()) {
+                        val searchItems = getSearchableItems()
+                        val results = searchItems.filter {
+                            it.title.contains(searchQuery, ignoreCase = true) ||
+                            it.description.contains(searchQuery, ignoreCase = true)
+                        }
+                        LazyColumn(
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            if (results.isEmpty()) {
+                                item {
+                                    Text(
+                                        text = "Keine Einstellungen gefunden",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        modifier = Modifier.padding(dimensions.paddingMedium)
+                                    )
+                                }
+                            } else {
+                                items(results) { result ->
+                                    SearchResultItem(
+                                        result = result,
+                                        onClick = {
+                                            selectedSection = result.section
+                                            viewModel.setHighlightedSettingKey(result.title)
+                                            searchQuery = ""
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        SettingsMainMenu(
+                            padding = PaddingValues(0.dp),
+                            dimensions = dimensions,
+                            onSectionSelected = { selectedSection = it }
+                        )
+                    }
+                }
+            } else {
+                SettingsSubMenu(
+                    section = selectedSection!!,
+                    padding = paddingValues,
+                    dimensions = dimensions,
+                    isGlobal = isGlobal,
+                    viewModel = viewModel,
+                    onNavigateBack = onNavigateBack,
+                    onBookDeleted = onBookDeleted,
+                    onLockClicked = {
+                        viewModel.lock()
+                        onNavigateToStart()
+                    },
+                    onLocalExport = { localExportLauncher.launch("GhostTalk_Backup.zip") },
+                    onLocalImport = { localImportLauncher.launch("*/*") },
+                    onSelectSafFolder = { safFolderLauncher.launch(null) },
+                    onSelectSafFolderForImport = { safImportFolderLauncher.launch(null) },
+                    onNavigateToVocalTraining = onNavigateToVocalTraining
+                )
+            }
         }
     }
 
@@ -275,15 +602,14 @@ fun SettingsScreen(
 @Composable
 private fun SettingsTopBar(
     selectedSection: SettingsSection?,
-    isGlobal: Boolean,
-    onBack: () -> Unit,
-    onNavigateToGlobalSettings: () -> Unit
+    isLargeScreen: Boolean,
+    onBack: () -> Unit
 ) {
     TopAppBar(
         title = {
             Text(
-                text = if (selectedSection == null)
-                    stringResource(if (isGlobal) CoreR.string.settings_title_global else CoreR.string.settings_title_book)
+                text = if (isLargeScreen || selectedSection == null)
+                    "Einstellungen"
                 else
                     stringResource(selectedSection.getTitleRes()),
                 style = MaterialTheme.typography.titleLarge
@@ -296,42 +622,97 @@ private fun SettingsTopBar(
             ) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
             }
-        },
-        actions = {
-            if (!isGlobal && selectedSection == null) {
-                IconButton(
-                    onClick = onNavigateToGlobalSettings,
-                    modifier = Modifier.testTag("settings_global_button")
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Settings,
-                        contentDescription = stringResource(CoreR.string.settings_title_global)
-                    )
-                }
-            }
         }
     )
 }
 
 @Composable
+private fun SettingsSearchBar(
+    query: String,
+    onQueryChange: (String) -> Unit
+) {
+    OutlinedTextField(
+        value = query,
+        onValueChange = onQueryChange,
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        placeholder = { Text(stringResource(R.string.settings_search_placeholder)) },
+        leadingIcon = {
+            Icon(imageVector = Icons.Default.Search, contentDescription = stringResource(R.string.settings_search_label))
+        },
+        trailingIcon = {
+            if (query.isNotEmpty()) {
+                IconButton(onClick = { onQueryChange("") }) {
+                    Icon(imageVector = Icons.Default.Clear, contentDescription = stringResource(R.string.settings_search_clear))
+                }
+            }
+        },
+        singleLine = true
+    )
+}
+
+@Composable
+private fun SearchResultItem(
+    result: SettingsSearchItem,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .clickable { onClick() },
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+        )
+    ) {
+        ListItem(
+            headlineContent = {
+                Text(
+                    text = result.title,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            },
+            supportingContent = {
+                Text(
+                    text = result.description,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            },
+            leadingContent = {
+                Icon(
+                    imageVector = result.section.icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp)
+                )
+            },
+            colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+        )
+    }
+}
+
+@Composable
 private fun SettingsMainMenu(
-    isGlobal: Boolean,
     padding: PaddingValues,
     dimensions: com.andreas_kratzer.ghosttalk.core.ui.theme.Dimensions,
     onSectionSelected: (SettingsSection) -> Unit
 ) {
-    val sections = SettingsSection.entries.filter { if (isGlobal) it.isGlobal else it.isScoped }
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minSize = 300.dp),
         modifier = Modifier
             .padding(padding)
             .fillMaxSize()
-            .padding(horizontal = dimensions.paddingLarge, vertical = dimensions.paddingMedium),
+            .padding(vertical = dimensions.paddingMedium),
         verticalArrangement = Arrangement.spacedBy(dimensions.paddingSmall),
         horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium),
         contentPadding = PaddingValues(bottom = dimensions.paddingDoubleExtraLarge)
     ) {
-        items(sections) { section ->
+        items(SettingsSection.entries) { section ->
             Surface(
                 onClick = { onSectionSelected(section) },
                 shape = MaterialTheme.shapes.large,
@@ -523,36 +904,30 @@ fun SubmenuContent(
     onNavigateToVocalTraining: () -> Unit = {}
 ) {
     when (section) {
-        SettingsSection.BOOK_TTS -> {
+        SettingsSection.GENERAL -> {
+            GeneralSettingsSection(viewModel, isGlobal = true, onNavigateBack = onNavigateBack, onBookDeleted = onBookDeleted)
+            Spacer(modifier = Modifier.height(16.dp))
+            GeneralSettingsSection(viewModel, isGlobal = false, onNavigateBack = onNavigateBack, onBookDeleted = onBookDeleted)
+        }
+        SettingsSection.PROFILE -> {
+            ProfileSettingsSection(viewModel)
+        }
+        SettingsSection.MANAGE_BOOK -> {
+            BookSettingsSection(viewModel, onNavigateBack = onNavigateBack, onBookDeleted = onBookDeleted)
+        }
+        SettingsSection.VOICE -> {
             VoiceSettingsSection(viewModel, isGlobal = false)
         }
-        SettingsSection.BOOK_SCANNING -> {
+        SettingsSection.AUDIO_HARDWARE -> {
+            VoiceSettingsSection(viewModel, isGlobal = true)
+        }
+        SettingsSection.SCANNING -> {
             ScanningSettingsSection(viewModel, isGlobal = false)
+        }
+        SettingsSection.VOCAL_SWITCH -> {
             VocalSwitchSettingsSection(viewModel, isGlobal = false, onNavigateToVocalTraining = onNavigateToVocalTraining)
         }
-        SettingsSection.BOOK_AI -> {
-            GenAiSettingsSection(viewModel)
-        }
-        SettingsSection.BOOK_CALLS -> {
-            CallSettingsSection(viewModel)
-        }
-        SettingsSection.BOOK_SMART_INTEGRATION -> {
-            SmartHomeSettingsSection(viewModel, isGlobal = false)
-        }
-        SettingsSection.BOOK_CLOUD_SYNC -> {
-            CloudSettingsSection(
-                viewModel = viewModel,
-                isGlobal = false,
-                onLocalExport = onLocalExport,
-                onLocalImport = onLocalImport,
-                onSelectSafFolderForImport = onSelectSafFolderForImport
-            )
-        }
-        SettingsSection.BOOK_INFO -> {
-            GeneralSettingsSection(viewModel, isGlobal = false, onNavigateBack = onNavigateBack, onBookDeleted = onBookDeleted)
-            TestSettingsSection(viewModel, isGlobal = false)
-        }
-        SettingsSection.APP_SECURITY -> {
+        SettingsSection.SECURITY -> {
             val pin by viewModel.securityPin.collectAsState(null)
             val timeout by viewModel.securityPinTimeoutMinutes.collectAsState(30L)
             val reqDeletion by viewModel.isPinRequiredForDeletion.collectAsState(false)
@@ -584,13 +959,24 @@ fun SubmenuContent(
                 isBiometricSupported = viewModel.isBiometricSupported
             )
         }
-        SettingsSection.APP_AUDIO_ROUTING -> {
-            VoiceSettingsSection(viewModel, isGlobal = true)
+        SettingsSection.AI -> {
+            GenAiSettingsSection(viewModel)
         }
-        SettingsSection.APP_UI -> {
-            GeneralSettingsSection(viewModel, isGlobal = true, onNavigateBack = onNavigateBack, onBookDeleted = onBookDeleted)
+        SettingsSection.CALLS -> {
+            CallSettingsSection(viewModel)
         }
-        SettingsSection.APP_CLOUD_SYNC -> {
+        SettingsSection.SMART_INTEGRATION -> {
+            SmartHomeSettingsSection(viewModel, isGlobal = false)
+        }
+        SettingsSection.CLOUD_SYNC -> {
+            CloudSettingsSection(
+                viewModel = viewModel,
+                isGlobal = false,
+                onLocalExport = onLocalExport,
+                onLocalImport = onLocalImport,
+                onSelectSafFolderForImport = onSelectSafFolderForImport
+            )
+            Spacer(modifier = Modifier.height(16.dp))
             CloudSettingsSection(
                 viewModel = viewModel,
                 isGlobal = true,
@@ -599,15 +985,29 @@ fun SubmenuContent(
                 onSelectSafFolderForImport = onSelectSafFolderForImport
             )
         }
-        SettingsSection.APP_MAINTENANCE -> {
+        SettingsSection.PERMISSIONS -> {
             PermissionsSettingsSection(viewModel)
+        }
+        SettingsSection.MAINTENANCE -> {
             ExperimentalSettingsSection(viewModel)
+            Spacer(modifier = Modifier.height(16.dp))
+            TestSettingsSection(viewModel, isGlobal = false)
+            Spacer(modifier = Modifier.height(16.dp))
             TestSettingsSection(viewModel, isGlobal = true)
+            Spacer(modifier = Modifier.height(16.dp))
+            MaintenanceSection(
+                viewModel = viewModel,
+                isGlobal = false,
+                onLocalExport = onLocalExport,
+                onLocalImport = onLocalImport
+            )
+            Spacer(modifier = Modifier.height(16.dp))
             MaintenanceSection(
                 viewModel = viewModel,
                 isGlobal = true,
                 onLocalExport = {},
-                onLocalImport = onLocalImport
+                onLocalImport = onLocalImport,
+                onSelectSafFolderForImport = onSelectSafFolderForImport
             )
         }
     }

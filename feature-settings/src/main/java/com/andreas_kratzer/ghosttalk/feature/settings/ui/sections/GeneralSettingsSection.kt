@@ -2,12 +2,14 @@
 package com.andreas_kratzer.ghosttalk.feature.settings.ui.sections
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import com.andreas_kratzer.ghosttalk.feature.settings.ui.highlightSetting
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -51,27 +53,12 @@ fun GeneralSettingsSection(
 ) {
     val theme by viewModel.themeMode.collectAsState("SYSTEM")
     val persistLogs by viewModel.persistActionLogs.collectAsState(false)
-    val defaultStartPageId by viewModel.defaultStartPageId.collectAsState(null)
-    val allPages by viewModel.allPages.collectAsState()
-
     val screenBehavior by viewModel.userModeScreenBehavior.collectAsState("NORMAL")
     val startupBehavior by viewModel.startupBehavior.collectAsState("BOOK_SELECTION")
-    val activeBook by viewModel.activeBook.collectAsState()
     val forceKeyboard by viewModel.forceSoftKeyboard.collectAsState(false)
 
-    val showDeleteConfirm = remember { mutableStateOf(false) }
-    val showDeleteSecurity = remember { mutableStateOf(false) }
-    var expandedStartPage by remember { mutableStateOf(false) }
-    var startPageSearchQuery by remember { mutableStateOf("") }
-
     val dimensions = LocalDimensions.current
-    LocalContext.current
-    val focusManager = LocalFocusManager.current
-
-    val bookName = activeBook?.name ?: ""
-    stringResource(R.string.book_delete_description)
-    val deleteConfirmTitle = stringResource(R.string.book_dialog_delete_title)
-    val deleteConfirmMessage = stringResource(R.string.book_dialog_delete_confirm, bookName)
+    val highlightedKey by viewModel.highlightedSettingKey.collectAsState()
 
     FlowRow(
         modifier = Modifier.fillMaxWidth(),
@@ -99,15 +86,17 @@ fun GeneralSettingsSection(
                     locale.getDisplayName(locale)
                 }
 
-                SettingsDropdownItem(
-                    label = appLanguageLabel,
-                    selectedOption = currentLanguageLabel,
-                    options = listOf(
-                        systemDefault to { viewModel.setAppLanguage("default") }
-                    ) + listOf("de", "en").map { code ->
-                        Locale.forLanguageTag(code).getDisplayName(Locale.forLanguageTag(code)) to { viewModel.setAppLanguage(code) }
-                    }
-                )
+                Box(modifier = Modifier.fillMaxWidth().highlightSetting(appLanguageLabel, highlightedKey)) {
+                    SettingsDropdownItem(
+                        label = appLanguageLabel,
+                        selectedOption = currentLanguageLabel,
+                        options = listOf(
+                            systemDefault to { viewModel.setAppLanguage("default") }
+                        ) + listOf("de", "en").map { code ->
+                            Locale.forLanguageTag(code).getDisplayName(Locale.forLanguageTag(code)) to { viewModel.setAppLanguage(code) }
+                        }
+                    )
+                }
 
                 // App Design
                 val themeModeLabel = stringResource(R.string.settings_theme_mode)
@@ -121,24 +110,28 @@ fun GeneralSettingsSection(
                     else -> themeSystem
                 }
 
-                SettingsDropdownItem(
-                    label = themeModeLabel,
-                    selectedOption = themeLabel,
-                    options = listOf(
-                        themeSystem to { viewModel.setThemeMode("SYSTEM") },
-                        themeLight to { viewModel.setThemeMode("LIGHT") },
-                        themeDark to { viewModel.setThemeMode("DARK") }
+                Box(modifier = Modifier.fillMaxWidth().highlightSetting(themeModeLabel, highlightedKey)) {
+                    SettingsDropdownItem(
+                        label = themeModeLabel,
+                        selectedOption = themeLabel,
+                        options = listOf(
+                            themeSystem to { viewModel.setThemeMode("SYSTEM") },
+                            themeLight to { viewModel.setThemeMode("LIGHT") },
+                            themeDark to { viewModel.setThemeMode("DARK") }
+                        )
                     )
-                )
+                }
 
                 // Betreuer-Tablet (Caregiver) Toggle
                 val isCaregiver by viewModel.isCaregiverDevice.collectAsState()
-                SettingsToggleItem(
-                    label = "Betreuer-Tablet (Caregiver-Modus)",
-                    checked = isCaregiver,
-                    description = "Aktiviert den Caregiver-Modus für dieses Gerät.",
-                    onCheckedChange = { viewModel.setCaregiverDevice(it) }
-                )
+                Box(modifier = Modifier.fillMaxWidth().highlightSetting("Betreuer-Tablet (Caregiver-Modus)", highlightedKey)) {
+                    SettingsToggleItem(
+                        label = "Betreuer-Tablet (Caregiver-Modus)",
+                        checked = isCaregiver,
+                        description = "Aktiviert den Caregiver-Modus für dieses Gerät.",
+                        onCheckedChange = { viewModel.setCaregiverDevice(it) }
+                    )
+                }
             }
 
             // 2. Verhalten (Tastatur, Logs, Startup)
@@ -148,18 +141,22 @@ fun GeneralSettingsSection(
                 isCloudProfile = true,
                 modifier = Modifier.weight(1f)
             ) {
-                SettingsToggleItem(
-                    label = stringResource(R.string.settings_force_soft_keyboard),
-                    checked = forceKeyboard,
-                    description = stringResource(R.string.settings_force_soft_keyboard_desc),
-                    onCheckedChange = { viewModel.setForceSoftKeyboard(it) }
-                )
+                Box(modifier = Modifier.fillMaxWidth().highlightSetting(stringResource(R.string.settings_force_soft_keyboard), highlightedKey)) {
+                    SettingsToggleItem(
+                        label = stringResource(R.string.settings_force_soft_keyboard),
+                        checked = forceKeyboard,
+                        description = stringResource(R.string.settings_force_soft_keyboard_desc),
+                        onCheckedChange = { viewModel.setForceSoftKeyboard(it) }
+                    )
+                }
 
-                SettingsToggleItem(
-                    label = stringResource(R.string.settings_persist_logs),
-                    checked = persistLogs,
-                    onCheckedChange = { viewModel.setPersistActionLogs(it) }
-                )
+                Box(modifier = Modifier.fillMaxWidth().highlightSetting(stringResource(R.string.settings_persist_logs), highlightedKey)) {
+                    SettingsToggleItem(
+                        label = stringResource(R.string.settings_persist_logs),
+                        checked = persistLogs,
+                        onCheckedChange = { viewModel.setPersistActionLogs(it) }
+                    )
+                }
 
                 val startupBehaviorLabel = stringResource(R.string.settings_startup_behavior)
                 val startupBookList = stringResource(R.string.settings_startup_behavior_book_list)
@@ -172,57 +169,115 @@ fun GeneralSettingsSection(
                     else -> startupBookList
                 }
 
-                SettingsDropdownItem(
-                    label = startupBehaviorLabel,
-                    selectedOption = startupLabel,
-                    options = listOf(
-                        startupBookList to { viewModel.setStartupBehavior("BOOK_SELECTION") },
-                        startupLastBook to { viewModel.setStartupBehavior("SELECTED_BOOK") },
-                        startupUserMode to { viewModel.setStartupBehavior("USER_MODE") }
+                Box(modifier = Modifier.fillMaxWidth().highlightSetting(startupBehaviorLabel, highlightedKey)) {
+                    SettingsDropdownItem(
+                        label = startupBehaviorLabel,
+                        selectedOption = startupLabel,
+                        options = listOf(
+                            startupBookList to { viewModel.setStartupBehavior("BOOK_SELECTION") },
+                            startupLastBook to { viewModel.setStartupBehavior("SELECTED_BOOK") },
+                            startupUserMode to { viewModel.setStartupBehavior("USER_MODE") }
+                        )
                     )
-                )
+                }
             }
-
-
         }
 
         if (!isGlobal) {
             val categoryGeneral = stringResource(R.string.settings_category_general)
-            stringResource(R.string.settings_keep_screen_on)
             val screenBehaviorLabel = stringResource(R.string.settings_screen_behavior)
             val screenOn = stringResource(R.string.settings_screen_behavior_on)
             val screenDimmed = stringResource(R.string.settings_screen_behavior_dimmed)
             val screenBlack = stringResource(R.string.settings_screen_behavior_black)
-            val startPageLabel = stringResource(R.string.settings_start_page)
-            val startPageAuto = stringResource(R.string.settings_start_page_auto)
-
-            val bookNameLabel = stringResource(R.string.book_name_label)
-            val deleteBookLabel = stringResource(R.string.book_delete_description)
-            stringResource(R.string.book_dialog_delete_title)
-            stringResource(R.string.book_dialog_delete_confirm, activeBook?.name ?: "")
 
             PreferenceCategory(
                 title = categoryGeneral,
                 isCloudProfile = true,
                 modifier = Modifier.weight(1f)
             ) {
-                // 1. Book Rename
-                activeBook?.let { book ->
-                    var editName by remember(book.id) { mutableStateOf(book.name) }
-                    SettingsEditTextItem(
-                        label = bookNameLabel,
-                        value = editName,
-                        onValueChange = {
-                            editName = it
-                            if (it.isNotBlank()) {
-                                viewModel.updateActiveBookName(it)
-                            }
-                        },
-                        forceKeyboard = forceKeyboard
-                    )
+                // Combined Screen Behavior
+                val keepScreenOn by viewModel.keepScreenOnUserMode.collectAsState(true)
+
+                val behaviorLabel = when {
+                    !keepScreenOn -> stringResource(R.string.settings_system_default)
+                    screenBehavior == "DIMMED" -> screenDimmed
+                    screenBehavior == "BLACK" -> screenBlack
+                    else -> screenOn
                 }
 
-                // 2. Default Start Page Selector with Filter
+                Box(modifier = Modifier.fillMaxWidth().highlightSetting(screenBehaviorLabel, highlightedKey)) {
+                    SettingsDropdownItem(
+                        label = screenBehaviorLabel,
+                        selectedOption = behaviorLabel,
+                        options = listOf(
+                            stringResource(R.string.settings_system_default) to {
+                                viewModel.setKeepScreenOnUserMode(false)
+                            },
+                            screenOn to {
+                                viewModel.setKeepScreenOnUserMode(true)
+                                viewModel.setUserModeScreenBehavior("NORMAL")
+                            },
+                            screenDimmed to {
+                                viewModel.setKeepScreenOnUserMode(true)
+                                viewModel.setUserModeScreenBehavior("DIMMED")
+                            },
+                            screenBlack to {
+                                viewModel.setKeepScreenOnUserMode(true)
+                                viewModel.setUserModeScreenBehavior("BLACK")
+                            }
+                        )
+                    )
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+fun BookSettingsSection(
+    viewModel: SettingsViewModel,
+    onNavigateBack: () -> Unit = {},
+    onBookDeleted: () -> Unit = onNavigateBack
+) {
+    val defaultStartPageId by viewModel.defaultStartPageId.collectAsState(null)
+    val allPages by viewModel.allPages.collectAsState()
+    val activeBook by viewModel.activeBook.collectAsState()
+    val forceKeyboard by viewModel.forceSoftKeyboard.collectAsState(false)
+
+    val showDeleteConfirm = remember { mutableStateOf(false) }
+    val showDeleteSecurity = remember { mutableStateOf(false) }
+    var expandedStartPage by remember { mutableStateOf(false) }
+    var startPageSearchQuery by remember { mutableStateOf("") }
+
+    val dimensions = LocalDimensions.current
+    val focusManager = LocalFocusManager.current
+
+    val bookName = activeBook?.name ?: ""
+    val deleteConfirmTitle = stringResource(R.string.book_dialog_delete_title)
+    val deleteConfirmMessage = stringResource(R.string.book_dialog_delete_confirm, bookName)
+
+    val highlightedKey by viewModel.highlightedSettingKey.collectAsState()
+
+    val startPageLabel = stringResource(R.string.settings_start_page)
+    val startPageAuto = stringResource(R.string.settings_start_page_auto)
+    val bookNameLabel = stringResource(R.string.book_name_label)
+    val deleteBookLabel = stringResource(R.string.book_delete_description)
+
+    FlowRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium),
+        verticalArrangement = Arrangement.spacedBy(dimensions.paddingMedium),
+        maxItemsInEachRow = 2
+    ) {
+        val categoryManageBook = stringResource(R.string.settings_category_manage_book)
+        PreferenceCategory(
+            title = categoryManageBook,
+            isCloudProfile = false, // Purely local to this specific book
+            modifier = Modifier.weight(1f)
+        ) {
+            // Default Start Page Selector with Filter
+            Box(modifier = Modifier.fillMaxWidth().highlightSetting(startPageLabel, highlightedKey)) {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)
@@ -295,41 +350,31 @@ fun GeneralSettingsSection(
                         }
                     }
                 }
-
-                // 3. Combined Screen Behavior
-    val keepScreenOn by viewModel.keepScreenOnUserMode.collectAsState(true)
-
-    val behaviorLabel = when {
-        !keepScreenOn -> stringResource(R.string.settings_system_default)
-        screenBehavior == "DIMMED" -> screenDimmed
-        screenBehavior == "BLACK" -> screenBlack
-        else -> screenOn
-    }
-
-    SettingsDropdownItem(
-        label = screenBehaviorLabel,
-        selectedOption = behaviorLabel,
-        options = listOf(
-            stringResource(R.string.settings_system_default) to {
-                viewModel.setKeepScreenOnUserMode(false)
-            },
-            screenOn to {
-                viewModel.setKeepScreenOnUserMode(true)
-                viewModel.setUserModeScreenBehavior("NORMAL")
-            },
-            screenDimmed to {
-                viewModel.setKeepScreenOnUserMode(true)
-                viewModel.setUserModeScreenBehavior("DIMMED")
-            },
-            screenBlack to {
-                viewModel.setKeepScreenOnUserMode(true)
-                viewModel.setUserModeScreenBehavior("BLACK")
             }
-        )
-    )
 
-                // 4. Delete Book Button (moved into category)
-                Spacer(modifier = Modifier.height(dimensions.paddingLarge))
+            Spacer(modifier = Modifier.height(dimensions.paddingSmall))
+
+            // Book Rename
+            activeBook?.let { book ->
+                var editName by remember(book.id) { mutableStateOf(book.name) }
+                Box(modifier = Modifier.fillMaxWidth().highlightSetting(bookNameLabel, highlightedKey)) {
+                    SettingsEditTextItem(
+                        label = bookNameLabel,
+                        value = editName,
+                        onValueChange = {
+                            editName = it
+                            if (it.isNotBlank()) {
+                                viewModel.updateActiveBookName(it)
+                            }
+                        },
+                        forceKeyboard = forceKeyboard
+                    )
+                }
+            }
+
+            // Delete Book Button
+            Spacer(modifier = Modifier.height(dimensions.paddingLarge))
+            Box(modifier = Modifier.fillMaxWidth().highlightSetting(deleteBookLabel, highlightedKey)) {
                 Button(
                     onClick = {
                         if (viewModel.securityManager.isSecurityRequiredForDeletion()) {
@@ -372,7 +417,7 @@ fun GeneralSettingsSection(
                     onClick = {
                         showDeleteConfirm.value = false
                         viewModel.deleteActiveBook {
-                            onBookDeleted() 
+                            onBookDeleted()
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)

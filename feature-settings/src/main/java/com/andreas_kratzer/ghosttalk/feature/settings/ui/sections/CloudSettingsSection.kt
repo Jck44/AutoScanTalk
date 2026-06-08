@@ -104,176 +104,51 @@ fun CloudSettingsSection(
 
         val elevenLabsApiKey by viewModel.elevenLabsApiKey.collectAsState("")
 
-        val activeProfileId by viewModel.activeProfileIdFlow.collectAsState("profile-default")
-        val allProfiles by viewModel.allSettingsProfilesFlow.collectAsState()
-        val showCreateProfileDialog = remember { mutableStateOf(false) }
-        val newProfileName = remember { mutableStateOf("") }
-        val showDeleteConfirmDialog = remember { mutableStateOf<com.andreas_kratzer.ghosttalk.core.model.SettingsProfile?>(null) }
-
-        val currentProfile = allProfiles.find { it.id == activeProfileId }
-
-        PreferenceCategory(
-            title = stringResource(R.string.settings_category_profile),
-            isCloudProfile = true
-        ) {
-            val currentProfileName = currentProfile?.name ?: "Standard Profil"
-            
-            SettingsDropdownItem(
-                label = stringResource(R.string.settings_profile_active),
-                selectedOption = currentProfileName,
-                options = allProfiles.map { profile ->
-                    profile.name to { viewModel.setActiveProfileId(profile.id) }
+        if (!isGlobal) {
+            PreferenceCategory(stringResource(R.string.settings_category_cloud_account)) {
+                val authTypeLabel = if (googleAuthType == com.andreas_kratzer.ghosttalk.core.model.CloudAuthType.SYSTEM) {
+                    "Systemweiter Google Account"
+                } else {
+                    "In-App Google Web-Login"
                 }
-            )
 
-            currentProfile?.let { profile ->
-                var renameText by remember(profile.id) { mutableStateOf(profile.name) }
-                Spacer(modifier = Modifier.height(8.dp))
-                SettingsEditTextItem(
-                    label = "Profil umbenennen",
-                    value = renameText,
-                    onValueChange = {
-                        renameText = it
-                        if (it.isNotBlank()) {
-                            viewModel.renameActiveProfile(it)
-                        }
-                    }
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Button(
-                    onClick = { showCreateProfileDialog.value = true },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(stringResource(R.string.settings_profile_create))
-                }
-                
-                val currentProfile = allProfiles.find { it.id == activeProfileId }
-                if (currentProfile != null && currentProfile.id != "profile-default") {
-                    OutlinedButton(
-                        onClick = { showDeleteConfirmDialog.value = currentProfile },
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                    ) {
-                        Text(stringResource(R.string.settings_profile_delete))
-                    }
-                }
-            }
-        }
-
-        if (showCreateProfileDialog.value) {
-            androidx.compose.material3.AlertDialog(
-                onDismissRequest = { showCreateProfileDialog.value = false },
-                title = { Text(stringResource(R.string.settings_profile_create_title)) },
-                text = {
-                    androidx.compose.material3.OutlinedTextField(
-                        value = newProfileName.value,
-                        onValueChange = { newProfileName.value = it },
-                        label = { Text(stringResource(R.string.settings_profile_name_hint)) },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
+                SettingsDropdownItem(
+                    label = "Google Anmeldeverfahren",
+                    selectedOption = authTypeLabel,
+                    options = listOf(
+                        "Systemweiter Google Account" to { viewModel.setGoogleAuthType(com.andreas_kratzer.ghosttalk.core.model.CloudAuthType.SYSTEM) },
+                        "In-App Google Web-Login" to { viewModel.setGoogleAuthType(com.andreas_kratzer.ghosttalk.core.model.CloudAuthType.WEB_FLOW) }
                     )
-                },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            if (newProfileName.value.isNotBlank()) {
-                                viewModel.createNewProfile(newProfileName.value)
-                                newProfileName.value = ""
-                                showCreateProfileDialog.value = false
-                            }
-                        },
-                        enabled = newProfileName.value.isNotBlank()
-                    ) {
-                        Text(stringResource(com.andreas_kratzer.ghosttalk.core.ui.R.string.dialog_confirm))
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showCreateProfileDialog.value = false }) {
-                        Text(stringResource(com.andreas_kratzer.ghosttalk.core.ui.R.string.action_cancel))
-                    }
-                }
-            )
-        }
-
-        if (showDeleteConfirmDialog.value != null) {
-            val profileToDelete = showDeleteConfirmDialog.value!!
-            androidx.compose.material3.AlertDialog(
-                onDismissRequest = { showDeleteConfirmDialog.value = null },
-                title = { Text(stringResource(R.string.settings_profile_delete)) },
-                text = { Text(stringResource(R.string.settings_profile_delete_confirm, profileToDelete.name)) },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            viewModel.deleteProfile(profileToDelete)
-                            showDeleteConfirmDialog.value = null
-                        }
-                    ) {
-                        Text(
-                            text = stringResource(com.andreas_kratzer.ghosttalk.core.ui.R.string.dialog_confirm),
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showDeleteConfirmDialog.value = null }) {
-                        Text(stringResource(com.andreas_kratzer.ghosttalk.core.ui.R.string.action_cancel))
-                    }
-                }
-            )
-        }
-
-        Spacer(modifier = Modifier.height(dimensions.paddingMedium))
-
-        PreferenceCategory(stringResource(R.string.settings_category_cloud_account)) {
-            val authTypeLabel = if (googleAuthType == com.andreas_kratzer.ghosttalk.core.model.CloudAuthType.SYSTEM) {
-                "Systemweiter Google Account"
-            } else {
-                "In-App Google Web-Login"
-            }
-
-            SettingsDropdownItem(
-                label = "Google Anmeldeverfahren",
-                selectedOption = authTypeLabel,
-                options = listOf(
-                    "Systemweiter Google Account" to { viewModel.setGoogleAuthType(com.andreas_kratzer.ghosttalk.core.model.CloudAuthType.SYSTEM) },
-                    "In-App Google Web-Login" to { viewModel.setGoogleAuthType(com.andreas_kratzer.ghosttalk.core.model.CloudAuthType.WEB_FLOW) }
                 )
-            )
 
-            Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-            if (userEmail != null) {
-                Text(
-                    text = stringResource(R.string.settings_cloud_signed_in_as, userEmail!!),
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                Button(
-                    onClick = { viewModel.signOut() },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(stringResource(R.string.settings_cloud_sign_out))
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedButton(
-                    onClick = { viewModel.switchAccount(context) },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Konto wechseln")
-                }
-            } else {
-                Button(
-                    onClick = { viewModel.signIn(context) },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(stringResource(R.string.settings_cloud_sign_in))
+                if (userEmail != null) {
+                    Text(
+                        text = stringResource(R.string.settings_cloud_signed_in_as, userEmail!!),
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    Button(
+                        onClick = { viewModel.signOut() },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(R.string.settings_cloud_sign_out))
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedButton(
+                        onClick = { viewModel.switchAccount(context) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Konto wechseln")
+                    }
+                } else {
+                    Button(
+                        onClick = { viewModel.signIn(context) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(R.string.settings_cloud_sign_in))
+                    }
                 }
             }
         }
@@ -341,54 +216,6 @@ fun CloudSettingsSection(
         }
 
         if (isGlobal) {
-            // Global Mode: Show Google Drive and SAF folder import options independently
-            PreferenceCategory(stringResource(R.string.settings_category_cloud_import)) {
-                // Option 1: Google Drive API
-                Button(
-                    onClick = { showImportFolderPicker.value = true },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = userEmail != null && !isSyncing
-                ) {
-                    Icon(GhostTalkIcons.Cloud, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Über Google Drive API importieren")
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                OutlinedButton(
-                    onClick = { showManualImportUrlDialog.value = true },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = userEmail != null && !isSyncing
-                ) {
-                    Icon(GhostTalkIcons.Cloud, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Aus geteiltem Drive-Ordner importieren (Link)")
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Option 2: SAF
-                Button(
-                    onClick = onSelectSafFolderForImport,
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !isSyncing
-                ) {
-                    Icon(GhostTalkIcons.Cloud, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Aus Android-Ordner importieren (SAF)")
-                }
-
-                Text(
-                    text = stringResource(R.string.settings_cloud_import_explanation),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 12.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(dimensions.paddingMedium))
-
             PreferenceCategory(stringResource(R.string.settings_category_spotify)) {
                 if (spotifyUserDisplayName != null) {
                     Text(
@@ -691,40 +518,7 @@ fun CloudSettingsSection(
             }
         }
 
-        Spacer(modifier = Modifier.height(dimensions.paddingLarge))
 
-        PreferenceCategory(stringResource(R.string.settings_category_local_backup)) {
-            if (!isGlobal) {
-                Text(
-                    text = stringResource(R.string.settings_local_backup_describe_create),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.height(dimensions.paddingSmall))
-                Button(
-                    onClick = onLocalExport,
-                    shape = MaterialTheme.shapes.medium,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(stringResource(R.string.settings_local_backup_create))
-                }
-                Spacer(modifier = Modifier.height(dimensions.paddingLarge))
-            }
-
-            Text(
-                text = stringResource(if (isGlobal) R.string.settings_local_backup_describe_global_import else R.string.settings_local_backup_describe_restore),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(dimensions.paddingSmall))
-            OutlinedButton(
-                onClick = onLocalImport,
-                shape = MaterialTheme.shapes.medium,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(stringResource(if (isGlobal) R.string.settings_local_backup_import else R.string.settings_local_backup_restore))
-            }
-        }
 
         if (!isGlobal) {
             Spacer(modifier = Modifier.height(dimensions.paddingMedium))
@@ -823,34 +617,11 @@ fun CloudSettingsSection(
         )
     }
 
-    if (showImportFolderPicker.value) {
-        DriveFolderPickerDialog(
-            folders = driveFolders,
-            isLoading = isBrowsingFolders,
-            onFetchFolders = { parentId -> viewModel.fetchDriveFolders(parentId) },
-            onFolderSelected = { id, _ ->
-                viewModel.fetchAvailableBackupsForImport(id)
-                showImportFolderPicker.value = false
-            },
-            onDismiss = { showImportFolderPicker.value = false }
-        )
-    }
-
     if (showSyncLogDialog.value) {
         SyncLogDialog(
             logs = syncLogs,
             onDismiss = { showSyncLogDialog.value = false },
             onClearLogs = { viewModel.clearSyncLogs() }
-        )
-    }
-
-    if (showBackupSelectionDialog) {
-        BackupSelectionDialog(
-            backups = availableBackups,
-            onDismiss = { viewModel.dismissBackupSelectionDialog() },
-            onBackupSelected = { backupInfo ->
-                viewModel.importCloudBackup(backupInfo)
-            }
         )
     }
 
@@ -921,46 +692,141 @@ fun CloudSettingsSection(
         )
     }
 
-    if (showManualImportUrlDialog.value) {
-        val urlOrIdInput = remember { mutableStateOf("") }
 
-        androidx.compose.material3.AlertDialog(
-            onDismissRequest = { showManualImportUrlDialog.value = false },
-            title = { Text("Aus geteiltem Ordner importieren") },
-            text = {
-                Column {
-                    Text(
-                        text = "Füge den Google Drive Link zum geteilten Ordner oder die Ordner-ID hier ein, um nach verfügbaren Backups zu suchen.",
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                    androidx.compose.material3.OutlinedTextField(
-                        value = urlOrIdInput.value,
-                        onValueChange = { urlOrIdInput.value = it },
-                        label = { Text("Link oder ID") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
-                    )
+}
+
+@Composable
+fun ProfileSettingsSection(
+    viewModel: SettingsViewModel
+) {
+    val activeProfileId by viewModel.activeProfileIdFlow.collectAsState("profile-default")
+    val allProfiles by viewModel.allSettingsProfilesFlow.collectAsState()
+    val showCreateProfileDialog = remember { mutableStateOf(false) }
+    val newProfileName = remember { mutableStateOf("") }
+    val showDeleteConfirmDialog = remember { mutableStateOf<com.andreas_kratzer.ghosttalk.core.model.SettingsProfile?>(null) }
+    val currentProfile = allProfiles.find { it.id == activeProfileId }
+    val dimensions = LocalDimensions.current
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(dimensions.paddingMedium)
+    ) {
+        PreferenceCategory(
+            title = stringResource(R.string.settings_category_profile),
+            isCloudProfile = true
+        ) {
+            val currentProfileName = currentProfile?.name ?: "Standard Profil"
+            
+            SettingsDropdownItem(
+                label = stringResource(R.string.settings_profile_active),
+                selectedOption = currentProfileName,
+                options = allProfiles.map { profile ->
+                    profile.name to { viewModel.setActiveProfileId(profile.id) }
                 }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        viewModel.fetchAvailableBackupsForImportByUrlOrId(urlOrIdInput.value)
-                        showManualImportUrlDialog.value = false
-                    },
-                    enabled = urlOrIdInput.value.isNotBlank()
+            )
+
+            currentProfile?.let { profile ->
+                var renameText by remember(profile.id) { mutableStateOf(profile.name) }
+                Spacer(modifier = Modifier.height(8.dp))
+                SettingsEditTextItem(
+                    label = stringResource(R.string.settings_profile_rename),
+                    value = renameText,
+                    onValueChange = {
+                        renameText = it
+                        if (it.isNotBlank()) {
+                            viewModel.renameActiveProfile(it)
+                        }
+                    }
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button(
+                    onClick = { showCreateProfileDialog.value = true },
+                    modifier = Modifier.weight(1f)
                 ) {
-                    Text("Nach Backups suchen")
+                    Text(stringResource(R.string.settings_profile_create))
                 }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { showManualImportUrlDialog.value = false }
-                ) {
-                    Text("Abbrechen")
+                
+                val currentProfile = allProfiles.find { it.id == activeProfileId }
+                if (currentProfile != null && currentProfile.id != "profile-default") {
+                    OutlinedButton(
+                        onClick = { showDeleteConfirmDialog.value = currentProfile },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text(stringResource(R.string.settings_profile_delete))
+                    }
                 }
             }
-        )
+        }
+
+        if (showCreateProfileDialog.value) {
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = { showCreateProfileDialog.value = false },
+                title = { Text(stringResource(R.string.settings_profile_create_title)) },
+                text = {
+                    androidx.compose.material3.OutlinedTextField(
+                        value = newProfileName.value,
+                        onValueChange = { newProfileName.value = it },
+                        label = { Text(stringResource(R.string.settings_profile_name_hint)) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            if (newProfileName.value.isNotBlank()) {
+                                viewModel.createNewProfile(newProfileName.value)
+                                newProfileName.value = ""
+                                showCreateProfileDialog.value = false
+                            }
+                        },
+                        enabled = newProfileName.value.isNotBlank()
+                    ) {
+                        Text(stringResource(com.andreas_kratzer.ghosttalk.core.ui.R.string.dialog_confirm))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showCreateProfileDialog.value = false }) {
+                        Text(stringResource(com.andreas_kratzer.ghosttalk.core.ui.R.string.action_cancel))
+                    }
+                }
+            )
+        }
+
+        if (showDeleteConfirmDialog.value != null) {
+            val profileToDelete = showDeleteConfirmDialog.value!!
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = { showDeleteConfirmDialog.value = null },
+                title = { Text(stringResource(R.string.settings_profile_delete)) },
+                text = { Text(stringResource(R.string.settings_profile_delete_confirm, profileToDelete.name)) },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            viewModel.deleteProfile(profileToDelete)
+                            showDeleteConfirmDialog.value = null
+                        }
+                    ) {
+                        Text(
+                            text = stringResource(com.andreas_kratzer.ghosttalk.core.ui.R.string.dialog_confirm),
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDeleteConfirmDialog.value = null }) {
+                        Text(stringResource(com.andreas_kratzer.ghosttalk.core.ui.R.string.action_cancel))
+                    }
+                }
+            )
+        }
     }
 }

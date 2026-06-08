@@ -68,6 +68,17 @@ fun StartScreen(
                     IconButton(onClick = onNavigateToBooks) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.start_back_to_books))
                     }
+                },
+                actions = {
+                    IconButton(
+                        onClick = onNavigateToSettings,
+                        modifier = Modifier.testTag("start_settings_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = stringResource(CoreR.string.settings_title_book)
+                        )
+                    }
                 }
             )
         }
@@ -95,7 +106,7 @@ fun StartScreen(
                     maxItemsInEachRow = if (isLandscape) 2 else 1
                 ) {
                     val cardModifier = if (isLandscape) Modifier.weight(1f) else Modifier.fillMaxWidth()
-
+ 
                 GhostTalkCard(
                     title = stringResource(R.string.start_user_mode),
                     icon = Icons.Filled.PlayArrow,
@@ -113,16 +124,6 @@ fun StartScreen(
                     modifier = cardModifier.testTag("start_card_manage"),
                     containerColor = MaterialTheme.colorScheme.tertiaryContainer,
                     iconColor = MaterialTheme.colorScheme.tertiary,
-                    height = dynamicCardHeight
-                )
-                
-                GhostTalkCard(
-                    title = stringResource(CoreR.string.settings_title_book),
-                    icon = Icons.Filled.Settings,
-                    onClick = onNavigateToSettings,
-                    modifier = cardModifier.testTag("start_card_settings"),
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    iconColor = MaterialTheme.colorScheme.secondary,
                     height = dynamicCardHeight
                 )
 

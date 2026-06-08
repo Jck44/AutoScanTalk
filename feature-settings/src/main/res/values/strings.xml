@@ -2,6 +2,7 @@
 <resources>
     <!-- Settings Screen Labels -->
     <string name="settings_category_general">Allgemein</string>
+    <string name="settings_category_manage_book">Aktuelles Buch verwalten</string>
     <string name="settings_category_voice">Text-to-Speech</string>
     <string name="settings_category_scanning">Bedienung (Scannen &amp; Taster)</string>
     <string name="settings_category_security">Sicherheit &amp; PIN</string>
@@ -241,8 +242,12 @@
     <string name="settings_clear_usage_stats">Statistiken leeren</string>
     <string name="settings_clear_usage_stats_confirm">Möchtest du alle Nutzungsstatistiken für dieses Buch wirklich leeren?</string>
     <string name="settings_action_history_title">Aktionsverlauf</string>
-    <string name="settings_category_profile">Einstellungen Profil</string>
+    <string name="settings_category_profile">Profil</string>
+    <string name="settings_search_placeholder">Einstellungen suchen...</string>
+    <string name="settings_search_clear">Löschen</string>
+    <string name="settings_search_label">Suchen</string>
     <string name="settings_profile_active">Aktives Profil</string>
+    <string name="settings_profile_rename">Profil umbenennen</string>
     <string name="settings_profile_create">Neues Profil erstellen</string>
     <string name="settings_profile_delete">Profil löschen</string>
     <string name="settings_profile_create_title">Neues Profil</string>
@@ -294,6 +299,13 @@
     <string name="settings_category_cloud_import">Import (Sync-Ziel)</string>
     <string name="settings_cloud_import_as_new">Importieren (Sync-Ziel)</string>
     <string name="settings_cloud_import_explanation">Importiere ein Buch aus dem konfigurierten Sync-Ziel als neues Buch. Ein Überschreiben lokaler Bücher mit der gleichen ID wird verhindert.</string>
+    <string name="settings_cloud_import_drive_api">Über Google Drive API importieren</string>
+    <string name="settings_cloud_import_shared_link">Aus geteiltem Drive-Ordner importieren (Link)</string>
+    <string name="settings_cloud_import_saf">Aus Android-Ordner importieren (SAF)</string>
+    <string name="settings_cloud_import_dialog_title">Aus geteiltem Ordner importieren</string>
+    <string name="settings_cloud_import_link_or_id_label">Link oder ID</string>
+    <string name="settings_cloud_import_search_backups">Nach Backups suchen</string>
+    <string name="settings_cloud_import_dialog_explanation">Füge den Google Drive Link zum geteilten Ordner oder die Ordner-ID hier ein, um nach verfügbaren Backups zu suchen.</string>
     <string name="page_list_show">Seiten verwalten</string>
 
     <!-- Smart Home -->

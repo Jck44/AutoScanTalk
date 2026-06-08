@@ -25,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -66,14 +67,14 @@ fun GenAiSettingsSection(viewModel: SettingsViewModel) {
         }
     }
 
-    FlowRow(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium),
-        verticalArrangement = Arrangement.spacedBy(dimensions.paddingMedium),
-        maxItemsInEachRow = 2
-    ) {
-        // --- Smarte Vorhersagen ---
-        PreferenceCategory("Smarte Vorhersagen (Statistik)", modifier = Modifier.weight(1f)) {
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+    val isLargeScreen = configuration.screenWidthDp >= 720
+    val showSideBySide = isLargeScreen || isLandscape
+
+    @Composable
+    fun SmartPredictionsCategory(modifier: Modifier = Modifier) {
+        PreferenceCategory("Smarte Vorhersagen (Statistik)", modifier = modifier) {
             SettingsToggleItem(
                 label = stringResource(R.string.settings_smart_prediction_enable),
                 checked = smartEnabled,
@@ -81,9 +82,11 @@ fun GenAiSettingsSection(viewModel: SettingsViewModel) {
                 onCheckedChange = { viewModel.setSmartPredictionEnabled(it) }
             )
         }
+    }
 
-        // --- Gemini (Cloud) -----
-        PreferenceCategory(stringResource(R.string.settings_category_gemini), modifier = Modifier.weight(1f)) {
+    @Composable
+    fun GeminiCategory(modifier: Modifier = Modifier) {
+        PreferenceCategory(stringResource(R.string.settings_category_gemini), modifier = modifier) {
             SettingsToggleItem(stringResource(R.string.settings_gemini_enable), isEnabled) { 
                 viewModel.setGeminiEnabled(context, it) 
             }
@@ -238,6 +241,24 @@ fun GenAiSettingsSection(viewModel: SettingsViewModel) {
                     }
                 }
             }
+        }
+    }
+
+    if (showSideBySide) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium)
+        ) {
+            SmartPredictionsCategory(modifier = Modifier.weight(1f))
+            GeminiCategory(modifier = Modifier.weight(1f))
+        }
+    } else {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(dimensions.paddingMedium)
+        ) {
+            SmartPredictionsCategory(modifier = Modifier.fillMaxWidth())
+            GeminiCategory(modifier = Modifier.fillMaxWidth())
         }
     }
 }

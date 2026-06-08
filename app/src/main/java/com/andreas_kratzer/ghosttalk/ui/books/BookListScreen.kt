@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -13,6 +14,8 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
@@ -51,18 +54,31 @@ import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import java.text.SimpleDateFormat
 import java.util.Date
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
+import com.andreas_kratzer.ghosttalk.feature.settings.R as SettingsR
+
+import androidx.compose.ui.Alignment
+import com.andreas_kratzer.ghosttalk.core.SecurityManager
+import com.andreas_kratzer.ghosttalk.core.ui.components.SecurityEntryDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookListScreen(
     bookViewModel: BookViewModel,
     settingsRepository: SettingsRepository,
+    securityManager: SecurityManager,
     onBookSelected: (String) -> Unit,
     onNavigateToGlobalSettings: () -> Unit
 ) {
     val allBooks by bookViewModel.allBooks.collectAsState()
     
     var showAddDialog by remember { mutableStateOf(false) }
+    var showEditDialog by remember { mutableStateOf(false) }
+    var editingBook by remember { mutableStateOf<com.andreas_kratzer.ghosttalk.core.model.Book?>(null) }
+    var editBookName by remember { mutableStateOf("") }
+    
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+    var showDeleteSecurity by remember { mutableStateOf(false) }
+    var deletingBook by remember { mutableStateOf<com.andreas_kratzer.ghosttalk.core.model.Book?>(null) }
 
     val dimensions = LocalDimensions.current
     val locale = LocalConfiguration.current.locales[0]
@@ -128,22 +144,179 @@ fun BookListScreen(
                     height = dynamicCardHeight,
                     testTag = "book_card_${book.id}",
                     trailingAction = {
-                        IconButton(
-                            onClick = { settingsRepository.favoriteBookId = book.id },
-                            modifier = Modifier.testTag("book_favorite_button_${book.id}")
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(
-                                imageVector = if (isFavorite) Icons.Default.Star else GhostTalkIcons.StarBorder,
-                                contentDescription = stringResource(R.string.book_favorite_description),
-                                tint = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            IconButton(
+                                onClick = { settingsRepository.favoriteBookId = book.id },
+                                modifier = Modifier.testTag("book_favorite_button_${book.id}")
+                            ) {
+                                Icon(
+                                    imageVector = if (isFavorite) Icons.Default.Star else GhostTalkIcons.StarBorder,
+                                    contentDescription = stringResource(R.string.book_favorite_description),
+                                    tint = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            
+                            IconButton(
+                                onClick = {
+                                    editingBook = book
+                                    editBookName = book.name
+                                    showEditDialog = true
+                                },
+                                modifier = Modifier.testTag("book_edit_button_${book.id}")
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Edit,
+                                    contentDescription = stringResource(R.string.action_edit),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+
+                            IconButton(
+                                onClick = {
+                                    deletingBook = book
+                                    if (securityManager.isSecurityRequiredForDeletion()) {
+                                        showDeleteSecurity = true
+                                    } else {
+                                        showDeleteConfirm = true
+                                    }
+                                },
+                                modifier = Modifier.testTag("book_delete_button_${book.id}")
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = stringResource(R.string.action_delete),
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            }
                         }
                     }
                 )
             }
         }
 
-        /* security dialogs for delete and edit removed as they moved to settings screen */
+        // Security PIN verification for deletion
+        if (showDeleteSecurity) {
+            SecurityEntryDialog(
+                onDismiss = { showDeleteSecurity = false },
+                onConfirm = { success ->
+                    if (success) {
+                        showDeleteSecurity = false
+                        showDeleteConfirm = true
+                    }
+                },
+                securityManager = securityManager,
+                isBiometricEnabled = settingsRepository.isBiometricEnabled
+            )
+        }
+
+        // Delete confirmation dialog
+        if (showDeleteConfirm) {
+            val bookToDelete = deletingBook
+            if (bookToDelete != null) {
+                AlertDialog(
+                    onDismissRequest = { showDeleteConfirm = false },
+                    title = { Text(stringResource(SettingsR.string.book_dialog_delete_title)) },
+                    text = { Text(stringResource(SettingsR.string.book_dialog_delete_confirm, bookToDelete.name)) },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                showDeleteConfirm = false
+                                bookViewModel.deleteBook(bookToDelete)
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                            shape = MaterialTheme.shapes.medium
+                        ) {
+                            Text(stringResource(R.string.action_delete))
+                        }
+                    },
+                    dismissButton = {
+                        Button(
+                            onClick = { showDeleteConfirm = false },
+                            shape = MaterialTheme.shapes.medium,
+                            colors = ButtonDefaults.textButtonColors()
+                        ) {
+                            Text(stringResource(R.string.action_cancel))
+                        }
+                    }
+                )
+            }
+        }
+
+        // Edit/Rename Dialog
+        if (showEditDialog) {
+            val bookToEdit = editingBook
+            if (bookToEdit != null) {
+                var editError by remember { mutableStateOf(false) }
+                AlertDialog(
+                    onDismissRequest = { showEditDialog = false },
+                    title = { Text(stringResource(R.string.book_dialog_rename_title)) },
+                    text = {
+                        Column {
+                            val forceKeyboard by bookViewModel.forceSoftKeyboard.collectAsState()
+                            val keyboardController = LocalSoftwareKeyboardController.current
+                            OutlinedTextField(
+                                value = editBookName,
+                                onValueChange = {
+                                    editBookName = it
+                                    if (it.isNotBlank()) editError = false
+                                },
+                                label = { Text(stringResource(R.string.book_name_label)) },
+                                singleLine = true,
+                                shape = MaterialTheme.shapes.large,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .onFocusChanged {
+                                        if (it.isFocused && forceKeyboard) {
+                                            keyboardController?.show()
+                                        }
+                                    },
+                                isError = editError,
+                                supportingText = {
+                                    if (editError) {
+                                        Text(stringResource(R.string.error_book_name_required))
+                                    }
+                                }
+                            )
+                        }
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                if (editBookName.isNotBlank()) {
+                                    bookViewModel.updateBook(
+                                        book = bookToEdit,
+                                        newName = editBookName,
+                                        actionLogLimit = bookToEdit.actionLogLimit,
+                                        limitScanCycles = bookToEdit.limitScanCycles,
+                                        scanCycleLimit = bookToEdit.scanCycleLimit,
+                                        logIgnoredActions = bookToEdit.logIgnoredActions,
+                                        logStopActions = bookToEdit.logStopActions
+                                    )
+                                    showEditDialog = false
+                                } else {
+                                    editError = true
+                                }
+                            },
+                            shape = MaterialTheme.shapes.medium
+                        ) {
+                            Text(stringResource(R.string.action_save))
+                        }
+                    },
+                    dismissButton = {
+                        Button(
+                            onClick = { showEditDialog = false },
+                            shape = MaterialTheme.shapes.medium,
+                            colors = ButtonDefaults.textButtonColors()
+                        ) {
+                            Text(stringResource(R.string.action_cancel))
+                        }
+                    }
+                )
+            }
+        }
 
         if (showAddDialog) {
             var newBookName by remember { mutableStateOf("") }

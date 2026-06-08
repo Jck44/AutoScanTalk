@@ -78,6 +78,29 @@ object GhostTalkIcons {
             }
         }
 
+    val Book: ImageVector
+        get() = materialIcon(name = "Filled.Book") {
+            materialPath {
+                moveTo(18.0f, 2.0f)
+                horizontalLineTo(6.0f)
+                curveTo(4.9f, 2.0f, 4.0f, 2.9f, 4.0f, 4.0f)
+                verticalLineToRelative(16.0f)
+                curveTo(4.0f, 21.1f, 4.9f, 22.0f, 6.0f, 22.0f)
+                horizontalLineToRelative(12.0f)
+                curveTo(19.1f, 22.0f, 20.0f, 21.1f, 20.0f, 20.0f)
+                verticalLineTo(4.0f)
+                curveTo(20.0f, 2.9f, 19.1f, 2.0f, 18.0f, 2.0f)
+                close()
+                moveTo(6.0f, 4.0f)
+                horizontalLineToRelative(5.0f)
+                verticalLineToRelative(8.0f)
+                lineTo(8.5f, 10.5f)
+                lineTo(6.0f, 12.0f)
+                verticalLineTo(4.0f)
+                close()
+            }
+        }
+
     val Sort: ImageVector
         get() = materialIcon(name = "AutoMirrored.Filled.Sort", autoMirror = true) {
             materialPath {

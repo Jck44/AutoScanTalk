@@ -2,6 +2,7 @@
 <resources>
     <!-- Settings Screen Labels -->
     <string name="settings_category_general">General</string>
+    <string name="settings_category_manage_book">Manage Current Book</string>
     <string name="settings_category_voice">Text-to-Speech</string>
     <string name="settings_category_scanning">Scanning &amp; Operation</string>
     <string name="settings_category_security">Security &amp; PIN</string>
@@ -220,8 +221,12 @@
     <string name="settings_clear_usage_stats">Clear Statistics</string>
     <string name="settings_clear_usage_stats_confirm">Do you really want to clear all usage statistics for this book?</string>
     <string name="settings_action_history_title">Action History</string>
-    <string name="settings_category_profile">Profile Settings</string>
+    <string name="settings_category_profile">Profile</string>
+    <string name="settings_search_placeholder">Search settings...</string>
+    <string name="settings_search_clear">Clear</string>
+    <string name="settings_search_label">Search</string>
     <string name="settings_profile_active">Active Profile</string>
+    <string name="settings_profile_rename">Rename Profile</string>
     <string name="settings_profile_create">Create New Profile</string>
     <string name="settings_profile_delete">Delete Profile</string>
     <string name="settings_profile_create_title">New Profile</string>
@@ -273,6 +278,13 @@
     <string name="settings_category_cloud_import">Import (Sync Target)</string>
     <string name="settings_cloud_import_as_new">Import (Sync Target)</string>
     <string name="settings_cloud_import_explanation">Import a book from the configured sync target as a new book. Existing local books with the same ID will not be overwritten.</string>
+    <string name="settings_cloud_import_drive_api">Import via Google Drive API</string>
+    <string name="settings_cloud_import_shared_link">Import from shared Drive folder (Link)</string>
+    <string name="settings_cloud_import_saf">Import from Android folder (SAF)</string>
+    <string name="settings_cloud_import_dialog_title">Import from shared folder</string>
+    <string name="settings_cloud_import_link_or_id_label">Link or ID</string>
+    <string name="settings_cloud_import_search_backups">Search for backups</string>
+    <string name="settings_cloud_import_dialog_explanation">Paste the Google Drive link to the shared folder or the folder ID here to search for available backups.</string>
     <string name="page_list_show">Manage Pages</string>
 
     <!-- Smart Home -->

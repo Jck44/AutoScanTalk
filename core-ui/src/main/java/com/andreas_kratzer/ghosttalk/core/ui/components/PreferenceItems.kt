@@ -343,7 +343,9 @@ fun SettingsSliderItem(
     onValueChange: (Float) -> Unit,
     modifier: Modifier = Modifier,
     valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
-    description: String? = null
+    steps: Int = 0,
+    description: String? = null,
+    valueFormatter: ((Float) -> String)? = null
 ) {
     val dimensions = LocalDimensions.current
     Column(
@@ -370,10 +372,16 @@ fun SettingsSliderItem(
                 value = value,
                 onValueChange = onValueChange,
                 valueRange = valueRange,
+                steps = steps,
                 modifier = Modifier.weight(1f)
             )
+            val displayValue = if (valueFormatter != null) {
+                valueFormatter(value)
+            } else {
+                "${(value * 100).toInt()}%"
+            }
             Text(
-                text = "${(value * 100).toInt()}%",
+                text = displayValue,
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(start = dimensions.paddingMedium)
             )
