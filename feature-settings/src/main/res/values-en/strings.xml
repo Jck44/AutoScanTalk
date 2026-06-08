@@ -52,8 +52,8 @@
     <!-- TTS Settings -->
     <string name="settings_tts_language">TTS Language</string>
     <string name="settings_tts_engine">Speech Engine</string>
-    <string name="settings_tts_engine_google">Google TTS (System)</string>
-    <string name="settings_tts_engine_elevenlabs">ElevenLabs TTS (Cloud)</string>
+    <string name="settings_tts_engine_google">Android Text-To-Speech Engine</string>
+    <string name="settings_tts_engine_elevenlabs">ElevenLabs Text-To-Speech</string>
     <string name="settings_tts_playback_speed">Playback Speed</string>
     <string name="settings_tts_playback_speed_desc">Adjusts the talking speed of the voice.</string>
     <string name="settings_system_default">System Default</string>
@@ -333,6 +333,11 @@
     <string name="elevenlabs_api_key_not_found_google">No API Key found in Google Password Manager.</string>
     <string name="elevenlabs_api_key_error_google">Error accessing Google Password Manager: %s</string>
     <string name="elevenlabs_api_key_no_manager_google">Google Password Manager is not available or not up to date on this device.</string>
+    <string name="gemini_api_key_saved_google">Gemini API Key saved to Google Password Manager.</string>
+    <string name="gemini_api_key_imported_google">Gemini API Key imported from Google Password Manager.</string>
+    <string name="gemini_api_key_not_found_google">No Gemini API Key found in Google Password Manager.</string>
+    <string name="gemini_api_key_error_google">Error accessing Google Password Manager: %s</string>
+    <string name="gemini_api_key_no_manager_google">Google Password Manager is not available or not up to date on this device.</string>
 
     <!-- Maintenance / Cleanup -->
     <string name="settings_maintenance_delete_empty_buttons_title">Delete empty buttons</string>
@@ -463,4 +468,32 @@
     <string name="settings_logs_upload_report">Upload error report to cloud</string>
     <string name="settings_logs_upload_success">Error report uploaded successfully.</string>
     <string name="settings_logs_upload_skipped">No new error report needed (no new entries).</string>
+
+    <!-- Settings Screen Added Strings -->
+    <string name="settings_caregiver_mode">Caregiver Tablet (Caregiver Mode)</string>
+    <string name="settings_caregiver_mode_desc">Enables the caregiver mode for this device.</string>
+    <string name="settings_static_row_title">Static Row</string>
+    <string name="settings_show_static_row">Show static row above each page</string>
+    <string name="settings_vocal_switch_training">Vocal Switch Training / Train voice</string>
+    <string name="settings_vocal_switch_activate">Activate Vocal Switch</string>
+    <string name="settings_vocal_profile_manage">Train &amp; manage vocal profiles</string>
+    <string name="settings_vocal_profile_manage_desc">Tap to train and manage</string>
+    <string name="settings_gemini_timeout">Response Timeout</string>
+    <string name="settings_simulate_phone_calls">Simulate phone calls</string>
+    <string name="settings_hue_bridge_connection">Philips Hue Bridge connection</string>
+    <string name="settings_spotify_connection">Spotify connection</string>
+    <string name="settings_no_results">No settings found</string>
+    <string name="settings_no_pages_found">No pages found</string>
+    <string name="settings_title">Settings</string>
+    <string name="settings_google_auth_system">System Google Account</string>
+    <string name="settings_google_auth_web">In-App Google Web Login</string>
+    <string name="settings_google_auth_label">Google Login Method</string>
+    <string name="settings_cloud_switch_account">Switch account</string>
+    <string name="settings_sync_manual_dialog_title">Enter shared link or folder ID</string>
+    <string name="settings_sync_manual_dialog_desc">Paste the Google Drive link to the shared folder or the folder ID here. The folder must have been created by the GhosTTalk app (e.g., on the patient device).</string>
+    <string name="settings_sync_manual_dialog_input_label">Link or ID</string>
+    <string name="settings_sync_manual_dialog_confirm">Link</string>
+    <string name="settings_profile_default_name">Default Profile</string>
+    <string name="settings_smart_predictions_title">Smart Predictions (Statistics)</string>
+    <string name="settings_gemini_tool_status_title">Cloud Features Status:</string>
 </resources>

@@ -100,4 +100,47 @@ class GenAiSettingsDelegate @Inject constructor(
         }
         return null
     }
+
+    suspend fun saveGeminiApiKeyToGoogle(activity: android.app.Activity): PasswordManagerResult {
+        val key = settingsRepository.geminiApiKey
+        if (key.isNullOrEmpty()) return PasswordManagerResult.Error("API Key is empty")
+        
+        return authManager.saveApiKeyToPasswordManager(activity, key, "gemini").fold(
+            onSuccess = { PasswordManagerResult.Success },
+            onFailure = { e -> e.toPasswordManagerResult() }
+        )
+    }
+
+    suspend fun importGeminiApiKeyFromGoogle(activity: android.app.Activity): PasswordManagerResult {
+        return authManager.getApiKeyFromPasswordManager(activity, "gemini").fold(
+            onSuccess = { key ->
+                if (!key.isNullOrEmpty()) {
+                    settingsRepository.geminiApiKey = key
+                    PasswordManagerResult.Success
+                } else {
+                    PasswordManagerResult.NoKeyFound
+                }
+            },
+            onFailure = { e -> e.toPasswordManagerResult() }
+        )
+    }
+
+    private fun Throwable.toPasswordManagerResult(): PasswordManagerResult {
+        return when (this) {
+            is androidx.credentials.exceptions.GetCredentialCancellationException,
+            is androidx.credentials.exceptions.CreateCredentialCancellationException -> {
+                PasswordManagerResult.Cancelled
+            }
+            is androidx.credentials.exceptions.NoCredentialException -> {
+                PasswordManagerResult.NoKeyFound
+            }
+            is androidx.credentials.exceptions.GetCredentialProviderConfigurationException,
+            is androidx.credentials.exceptions.CreateCredentialProviderConfigurationException -> {
+                PasswordManagerResult.NoManager
+            }
+            else -> {
+                PasswordManagerResult.Error(this.message ?: "Unknown error")
+            }
+        }
+    }
 }

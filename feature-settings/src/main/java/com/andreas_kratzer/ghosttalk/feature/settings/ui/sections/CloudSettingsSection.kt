@@ -107,17 +107,17 @@ fun CloudSettingsSection(
         if (!isGlobal) {
             PreferenceCategory(stringResource(R.string.settings_category_cloud_account)) {
                 val authTypeLabel = if (googleAuthType == com.andreas_kratzer.ghosttalk.core.model.CloudAuthType.SYSTEM) {
-                    "Systemweiter Google Account"
+                    stringResource(R.string.settings_google_auth_system)
                 } else {
-                    "In-App Google Web-Login"
+                    stringResource(R.string.settings_google_auth_web)
                 }
 
                 SettingsDropdownItem(
-                    label = "Google Anmeldeverfahren",
+                    label = stringResource(R.string.settings_google_auth_label),
                     selectedOption = authTypeLabel,
                     options = listOf(
-                        "Systemweiter Google Account" to { viewModel.setGoogleAuthType(com.andreas_kratzer.ghosttalk.core.model.CloudAuthType.SYSTEM) },
-                        "In-App Google Web-Login" to { viewModel.setGoogleAuthType(com.andreas_kratzer.ghosttalk.core.model.CloudAuthType.WEB_FLOW) }
+                        stringResource(R.string.settings_google_auth_system) to { viewModel.setGoogleAuthType(com.andreas_kratzer.ghosttalk.core.model.CloudAuthType.SYSTEM) },
+                        stringResource(R.string.settings_google_auth_web) to { viewModel.setGoogleAuthType(com.andreas_kratzer.ghosttalk.core.model.CloudAuthType.WEB_FLOW) }
                     )
                 )
 
@@ -140,7 +140,7 @@ fun CloudSettingsSection(
                         onClick = { viewModel.switchAccount(context) },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Konto wechseln")
+                        Text(stringResource(R.string.settings_cloud_switch_account))
                     }
                 } else {
                     Button(
@@ -632,18 +632,18 @@ fun CloudSettingsSection(
 
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { if (!isVerifying.value) showManualUrlDialog.value = false },
-            title = { Text("Freigabe-Link oder Ordner-ID eingeben") },
+            title = { Text(stringResource(R.string.settings_sync_manual_dialog_title)) },
             text = {
                 Column {
                     Text(
-                        text = "Füge den Google Drive Link zum geteilten Ordner oder die Ordner-ID hier ein. Der Ordner muss von der GhostTalk-App (z. B. auf dem Patientengerät) erstellt worden sein.",
+                        text = stringResource(R.string.settings_sync_manual_dialog_desc),
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
                     androidx.compose.material3.OutlinedTextField(
                         value = urlOrIdInput.value,
                         onValueChange = { urlOrIdInput.value = it },
-                        label = { Text("Link oder ID") },
+                        label = { Text(stringResource(R.string.settings_sync_manual_dialog_input_label)) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         enabled = !isVerifying.value
@@ -678,7 +678,7 @@ fun CloudSettingsSection(
                     },
                     enabled = urlOrIdInput.value.isNotBlank() && !isVerifying.value
                 ) {
-                    Text("Verknüpfen")
+                    Text(stringResource(R.string.settings_sync_manual_dialog_confirm))
                 }
             },
             dismissButton = {
@@ -686,7 +686,7 @@ fun CloudSettingsSection(
                     onClick = { showManualUrlDialog.value = false },
                     enabled = !isVerifying.value
                 ) {
-                    Text("Abbrechen")
+                    Text(stringResource(com.andreas_kratzer.ghosttalk.core.ui.R.string.action_cancel))
                 }
             }
         )
@@ -716,7 +716,7 @@ fun ProfileSettingsSection(
             title = stringResource(R.string.settings_category_profile),
             isCloudProfile = true
         ) {
-            val currentProfileName = currentProfile?.name ?: "Standard Profil"
+            val currentProfileName = currentProfile?.name ?: stringResource(R.string.settings_profile_default_name)
             
             SettingsDropdownItem(
                 label = stringResource(R.string.settings_profile_active),

@@ -102,14 +102,14 @@ fun ScanningSettingsSection(
         }
 
         PreferenceCategory(
-            title = "Statische Zeile",
+            title = stringResource(R.string.settings_static_row_title),
             isCloudProfile = true,
             modifier = Modifier.weight(1f)
         ) {
             val staticRowEnabled by viewModel.staticRowEnabled.collectAsState(false)
 
             SettingsToggleItem(
-                label = "Statische Zeile über jeder Seite anzeigen",
+                label = stringResource(R.string.settings_show_static_row),
                 checked = staticRowEnabled,
                 onCheckedChange = { viewModel.setStaticRowEnabled(it) }
             )

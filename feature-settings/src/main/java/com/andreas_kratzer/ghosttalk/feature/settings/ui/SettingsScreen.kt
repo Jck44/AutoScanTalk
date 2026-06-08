@@ -140,7 +140,7 @@ fun getSearchableItems(): List<SettingsSearchItem> {
         SettingsSearchItem(stringResource(R.string.settings_force_soft_keyboard), stringResource(R.string.settings_category_general), SettingsSection.GENERAL),
         SettingsSearchItem(stringResource(R.string.settings_persist_logs), stringResource(R.string.settings_category_general), SettingsSection.GENERAL),
         SettingsSearchItem(stringResource(R.string.settings_screen_behavior), stringResource(R.string.settings_category_general), SettingsSection.GENERAL),
-        SettingsSearchItem("Betreuer-Tablet (Caregiver-Modus)", stringResource(R.string.settings_category_general), SettingsSection.GENERAL),
+        SettingsSearchItem(stringResource(R.string.settings_caregiver_mode), stringResource(R.string.settings_category_general), SettingsSection.GENERAL),
 
         // MANAGE BOOK
         SettingsSearchItem(stringResource(R.string.book_name_label), stringResource(R.string.settings_category_manage_book), SettingsSection.MANAGE_BOOK),
@@ -174,12 +174,12 @@ fun getSearchableItems(): List<SettingsSearchItem> {
         SettingsSearchItem(stringResource(R.string.settings_restart_scan), stringResource(R.string.settings_category_scanning), SettingsSection.SCANNING),
         SettingsSearchItem(stringResource(R.string.settings_limit_scan_cycles), stringResource(R.string.settings_category_scanning), SettingsSection.SCANNING),
         SettingsSearchItem(stringResource(R.string.settings_scan_cycle_limit), stringResource(R.string.settings_category_scanning), SettingsSection.SCANNING),
-        SettingsSearchItem("Statische Zeile über jeder Seite anzeigen", stringResource(R.string.settings_category_scanning), SettingsSection.SCANNING),
+        SettingsSearchItem(stringResource(R.string.settings_show_static_row), stringResource(R.string.settings_category_scanning), SettingsSection.SCANNING),
         SettingsSearchItem(stringResource(R.string.settings_switch_key), stringResource(R.string.settings_category_scanning), SettingsSection.SCANNING),
 
         // VOCAL SWITCH
         SettingsSearchItem(stringResource(R.string.settings_category_vocal_switch), stringResource(R.string.settings_category_vocal_switch), SettingsSection.VOCAL_SWITCH),
-        SettingsSearchItem("Vocal Switch Training / Stimme trainieren", stringResource(R.string.settings_category_vocal_switch), SettingsSection.VOCAL_SWITCH),
+        SettingsSearchItem(stringResource(R.string.settings_vocal_switch_training), stringResource(R.string.settings_category_vocal_switch), SettingsSection.VOCAL_SWITCH),
 
         // SECURITY
         SettingsSearchItem(stringResource(R.string.settings_security_set_pin_title), stringResource(R.string.settings_category_security), SettingsSection.SECURITY),
@@ -193,7 +193,7 @@ fun getSearchableItems(): List<SettingsSearchItem> {
         // AI
         SettingsSearchItem(stringResource(R.string.settings_gemini_enable), stringResource(R.string.settings_category_gemini), SettingsSection.AI),
         SettingsSearchItem(stringResource(R.string.settings_gemini_api_key), stringResource(R.string.settings_category_gemini), SettingsSection.AI),
-        SettingsSearchItem("Antwort-Timeout", stringResource(R.string.settings_category_gemini), SettingsSection.AI),
+        SettingsSearchItem(stringResource(R.string.settings_gemini_timeout), stringResource(R.string.settings_category_gemini), SettingsSection.AI),
         SettingsSearchItem(stringResource(R.string.settings_gemini_redo_prediction), stringResource(R.string.settings_category_gemini), SettingsSection.AI),
         SettingsSearchItem(stringResource(R.string.settings_smart_prediction_enable), stringResource(R.string.settings_category_gemini), SettingsSection.AI),
 
@@ -204,12 +204,12 @@ fun getSearchableItems(): List<SettingsSearchItem> {
         SettingsSearchItem(stringResource(R.string.settings_call_intro_incoming), stringResource(R.string.settings_category_call), SettingsSection.CALLS),
         SettingsSearchItem(stringResource(R.string.settings_call_filter_not_in_contacts), stringResource(R.string.settings_category_call), SettingsSection.CALLS),
         SettingsSearchItem(stringResource(R.string.settings_call_auto_enable_speakerphone), stringResource(R.string.settings_category_call), SettingsSection.CALLS),
-        SettingsSearchItem("Telefonanrufe simulieren", stringResource(R.string.settings_category_call), SettingsSection.CALLS),
+        SettingsSearchItem(stringResource(R.string.settings_simulate_phone_calls), stringResource(R.string.settings_category_call), SettingsSection.CALLS),
 
         // SMART_INTEGRATION
         SettingsSearchItem(stringResource(R.string.settings_hue_bridge_ip), stringResource(R.string.settings_category_smart_home), SettingsSection.SMART_INTEGRATION),
-        SettingsSearchItem("Philips Hue Bridge Verbindung", stringResource(R.string.settings_category_smart_home), SettingsSection.SMART_INTEGRATION),
-        SettingsSearchItem("Spotify Verbindung", stringResource(R.string.settings_category_smart_home), SettingsSection.SMART_INTEGRATION),
+        SettingsSearchItem(stringResource(R.string.settings_hue_bridge_connection), stringResource(R.string.settings_category_smart_home), SettingsSection.SMART_INTEGRATION),
+        SettingsSearchItem(stringResource(R.string.settings_spotify_connection), stringResource(R.string.settings_category_smart_home), SettingsSection.SMART_INTEGRATION),
 
         // PROFILE
         SettingsSearchItem(stringResource(R.string.settings_category_profile), stringResource(R.string.settings_category_profile), SettingsSection.PROFILE),
@@ -395,7 +395,7 @@ fun SettingsScreen(
                             if (results.isEmpty()) {
                                 item {
                                     Text(
-                                        text = "Keine Einstellungen gefunden",
+                                        text = stringResource(R.string.settings_no_results),
                                         style = MaterialTheme.typography.bodyMedium,
                                         modifier = Modifier.padding(dimensions.paddingMedium)
                                     )
@@ -512,7 +512,7 @@ fun SettingsScreen(
                             if (results.isEmpty()) {
                                 item {
                                     Text(
-                                        text = "Keine Einstellungen gefunden",
+                                        text = stringResource(R.string.settings_no_results),
                                         style = MaterialTheme.typography.bodyMedium,
                                         modifier = Modifier.padding(dimensions.paddingMedium)
                                     )
@@ -609,7 +609,7 @@ private fun SettingsTopBar(
         title = {
             Text(
                 text = if (isLargeScreen || selectedSection == null)
-                    "Einstellungen"
+                    stringResource(R.string.settings_title)
                 else
                     stringResource(selectedSection.getTitleRes()),
                 style = MaterialTheme.typography.titleLarge

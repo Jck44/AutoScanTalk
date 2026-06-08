@@ -13,12 +13,17 @@ interface AuthManager {
     suspend fun signOut()
 
     /**
-     * Saves the ElevenLabs API Key to the Google Password Manager.
+     * Saves the API Key to the Google Password Manager.
      */
-    suspend fun saveApiKeyToPasswordManager(activity: android.app.Activity, apiKey: String): Result<Unit>
+    suspend fun saveApiKeyToPasswordManager(activity: android.app.Activity, apiKey: String, serviceName: String = "elevenlabs"): Result<Unit>
 
     /**
-     * Retrieves the ElevenLabs API Key from the Google Password Manager.
+     * Retrieves the API Key from the Google Password Manager.
      */
-    suspend fun getApiKeyFromPasswordManager(activity: android.app.Activity): Result<String?>
+    suspend fun getApiKeyFromPasswordManager(activity: android.app.Activity, serviceName: String = "elevenlabs"): Result<String?>
+
+    /**
+     * Retrieves the username and password/API key pair from the Google Password Manager.
+     */
+    suspend fun getCredentialFromPasswordManager(activity: android.app.Activity): Result<Pair<String, String>?>
 }

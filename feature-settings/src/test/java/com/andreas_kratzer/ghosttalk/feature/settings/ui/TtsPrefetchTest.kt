@@ -123,7 +123,8 @@ class TtsPrefetchTest {
             syncLogProvider = mockk(relaxed = true),
             callActionProxy = { mockk(relaxed = true) },
             exportLogsUseCase = mockk(relaxed = true),
-            rescheduleLogUploadUseCase = mockk(relaxed = true)
+            rescheduleLogUploadUseCase = mockk(relaxed = true),
+            authManager = mockk(relaxed = true)
         )
     }
 

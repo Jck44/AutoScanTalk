@@ -676,6 +676,23 @@ private fun RestoreProfileDialog(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Lokale Backup-Datei importieren (.zip / .json)")
                 }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedButton(
+                    onClick = {
+                        val activity = context as? android.app.Activity ?: (context as? android.content.ContextWrapper)?.baseContext as? android.app.Activity
+                        if (activity != null) {
+                            viewModel.restoreApiKeysFromPasswordManager(activity)
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Icon(imageVector = Icons.Default.Settings, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("API-Schlüssel aus Passwort-Manager laden")
+                }
             }
         },
         confirmButton = {

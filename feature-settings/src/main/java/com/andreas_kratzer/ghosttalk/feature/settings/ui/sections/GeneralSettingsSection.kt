@@ -124,11 +124,12 @@ fun GeneralSettingsSection(
 
                 // Betreuer-Tablet (Caregiver) Toggle
                 val isCaregiver by viewModel.isCaregiverDevice.collectAsState()
-                Box(modifier = Modifier.fillMaxWidth().highlightSetting("Betreuer-Tablet (Caregiver-Modus)", highlightedKey)) {
+                val caregiverLabel = stringResource(R.string.settings_caregiver_mode)
+                Box(modifier = Modifier.fillMaxWidth().highlightSetting(caregiverLabel, highlightedKey)) {
                     SettingsToggleItem(
-                        label = "Betreuer-Tablet (Caregiver-Modus)",
+                        label = caregiverLabel,
                         checked = isCaregiver,
-                        description = "Aktiviert den Caregiver-Modus für dieses Gerät.",
+                        description = stringResource(R.string.settings_caregiver_mode_desc),
                         onCheckedChange = { viewModel.setCaregiverDevice(it) }
                     )
                 }
@@ -342,7 +343,7 @@ fun BookSettingsSection(
 
                             if (filteredPages.isEmpty() && startPageSearchQuery.isNotEmpty()) {
                                 DropdownMenuItem(
-                                    text = { Text("Keine Seiten gefunden", style = MaterialTheme.typography.bodyLarge) },
+                                    text = { Text(stringResource(R.string.settings_no_pages_found), style = MaterialTheme.typography.bodyLarge) },
                                     onClick = { },
                                     enabled = false
                                 )

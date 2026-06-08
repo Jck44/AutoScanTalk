@@ -51,8 +51,8 @@
     <!-- TTS Settings -->
     <string name="settings_tts_language">TTS-Sprache</string>
     <string name="settings_tts_engine">Sprach-Engine</string>
-    <string name="settings_tts_engine_google">Google TTS (System)</string>
-    <string name="settings_tts_engine_elevenlabs">ElevenLabs TTS (Cloud)</string>
+    <string name="settings_tts_engine_google">Android Text-To-Speech Engine</string>
+    <string name="settings_tts_engine_elevenlabs">ElevenLabs Text-To-Speech</string>
     <string name="settings_tts_playback_speed">Wiedergabegeschwindigkeit</string>
     <string name="settings_tts_playback_speed_desc">Passt das Sprechtempo der Stimme an.</string>
     <string name="settings_system_default">System-Standard</string>
@@ -184,6 +184,11 @@
     <string name="elevenlabs_api_key_not_found_google">Kein API-Key im Google Passwort-Manager gefunden.</string>
     <string name="elevenlabs_api_key_error_google">Fehler beim Zugriff auf Google Passwort-Manager: %s</string>
     <string name="elevenlabs_api_key_no_manager_google">Google Passwort-Manager ist auf diesem Gerät nicht verfügbar oder nicht aktuell.</string>
+    <string name="gemini_api_key_saved_google">Gemini API-Key im Google Passwort-Manager gespeichert.</string>
+    <string name="gemini_api_key_imported_google">Gemini API-Key aus Google Passwort-Manager importiert.</string>
+    <string name="gemini_api_key_not_found_google">Kein Gemini API-Key im Google Passwort-Manager gefunden.</string>
+    <string name="gemini_api_key_error_google">Fehler beim Zugriff auf Google Passwort-Manager: %s</string>
+    <string name="gemini_api_key_no_manager_google">Google Passwort-Manager ist auf diesem Gerät nicht verfügbar oder nicht aktuell.</string>
     <string name="settings_smart_prediction_hint">Ermöglicht Buttons, die dynamisch die nächste wahrscheinliche Aktion vorhersagen.</string>
     <string name="settings_gemini_redo_prediction">Bei Navigation auf die gleiche Seite erneut Prediction machen</string>
     <string name="settings_gemini_redo_prediction_hint">Erzwingt eine neue KI-Vorhersage, auch wenn dieselbe Seite erneut aufgerufen wird.</string>
@@ -464,4 +469,32 @@
     <string name="settings_logs_upload_report">Fehlerbericht in Cloud hochladen</string>
     <string name="settings_logs_upload_success">Fehlerbericht erfolgreich hochgeladen.</string>
     <string name="settings_logs_upload_skipped">Kein neuer Fehlerbericht nötig (keine neuen Einträge).</string>
+
+    <!-- Settings Screen Added Strings -->
+    <string name="settings_caregiver_mode">Betreuer-Tablet (Caregiver-Modus)</string>
+    <string name="settings_caregiver_mode_desc">Aktiviert den Caregiver-Modus für dieses Gerät.</string>
+    <string name="settings_static_row_title">Statische Zeile</string>
+    <string name="settings_show_static_row">Statische Zeile über jeder Seite anzeigen</string>
+    <string name="settings_vocal_switch_training">Vocal Switch Training / Stimme trainieren</string>
+    <string name="settings_vocal_switch_activate">Vocal Switch aktivieren</string>
+    <string name="settings_vocal_profile_manage">Vocal-Profile anlernen &amp; verwalten</string>
+    <string name="settings_vocal_profile_manage_desc">Tippen zum Anlernen und Verwalten</string>
+    <string name="settings_gemini_timeout">Antwort-Timeout</string>
+    <string name="settings_simulate_phone_calls">Telefonanrufe simulieren</string>
+    <string name="settings_hue_bridge_connection">Philips Hue Bridge Verbindung</string>
+    <string name="settings_spotify_connection">Spotify Verbindung</string>
+    <string name="settings_no_results">Keine Einstellungen gefunden</string>
+    <string name="settings_no_pages_found">Keine Seiten gefunden</string>
+    <string name="settings_title">Einstellungen</string>
+    <string name="settings_google_auth_system">Systemweiter Google Account</string>
+    <string name="settings_google_auth_web">In-App Google Web-Login</string>
+    <string name="settings_google_auth_label">Google Anmeldeverfahren</string>
+    <string name="settings_cloud_switch_account">Konto wechseln</string>
+    <string name="settings_sync_manual_dialog_title">Freigabe-Link oder Ordner-ID eingeben</string>
+    <string name="settings_sync_manual_dialog_desc">Füge den Google Drive Link zum geteilten Ordner oder die Ordner-ID hier ein. Der Ordner muss von der GhostTalk-App (z. B. auf dem Patientengerät) erstellt worden sein.</string>
+    <string name="settings_sync_manual_dialog_input_label">Link oder ID</string>
+    <string name="settings_sync_manual_dialog_confirm">Verknüpfen</string>
+    <string name="settings_profile_default_name">Standard Profil</string>
+    <string name="settings_smart_predictions_title">Smarte Vorhersagen (Statistik)</string>
+    <string name="settings_gemini_tool_status_title">Cloud Features Status:</string>
 </resources>

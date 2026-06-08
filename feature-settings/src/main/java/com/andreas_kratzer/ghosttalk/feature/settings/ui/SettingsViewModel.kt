@@ -92,7 +92,8 @@ class SettingsViewModel @Inject constructor(
     private val syncLogProvider: SyncLogProvider,
     private val callActionProxy: dagger.Lazy<CallActionProxy>,
     private val exportLogsUseCase: ExportLogsUseCase,
-    private val rescheduleLogUploadUseCase: RescheduleLogUploadUseCase
+    private val rescheduleLogUploadUseCase: RescheduleLogUploadUseCase,
+    val authManager: com.andreas_kratzer.ghosttalk.core.cloud.AuthManager
 ) : AndroidViewModel(application) {
 
     private val _activeBookId = settingsRepository.activeBookIdFlow
@@ -519,6 +520,47 @@ class SettingsViewModel @Inject constructor(
                 null // Don't show anything on cancel
             is com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.PasswordManagerResult.Error -> 
                 application.getString(R.string.elevenlabs_api_key_error_google, result.message)
+        }
+
+        if (message != null) {
+            Toast.makeText(application, message, Toast.LENGTH_LONG).show()
+        }
+    }
+
+    fun saveGeminiApiKeyToGoogle(activity: android.app.Activity) {
+        viewModelScope.launch {
+            val result = genAiDelegate.saveGeminiApiKeyToGoogle(activity)
+            handleGeminiPasswordManagerResult(result, isImport = false)
+        }
+    }
+
+    fun importGeminiApiKeyFromGoogle(activity: android.app.Activity) {
+        viewModelScope.launch {
+            val result = genAiDelegate.importGeminiApiKeyFromGoogle(activity)
+            handleGeminiPasswordManagerResult(result, isImport = true)
+        }
+    }
+
+    private fun handleGeminiPasswordManagerResult(
+        result: com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.PasswordManagerResult,
+        isImport: Boolean
+    ) {
+        val message = when (result) {
+            is com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.PasswordManagerResult.Success -> {
+                if (isImport) {
+                    application.getString(R.string.gemini_api_key_imported_google)
+                } else {
+                    application.getString(R.string.gemini_api_key_saved_google)
+                }
+            }
+            is com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.PasswordManagerResult.NoKeyFound -> 
+                application.getString(R.string.gemini_api_key_not_found_google)
+            is com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.PasswordManagerResult.NoManager -> 
+                application.getString(R.string.gemini_api_key_no_manager_google)
+            is com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.PasswordManagerResult.Cancelled -> 
+                null // Don't show anything on cancel
+            is com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.PasswordManagerResult.Error -> 
+                application.getString(R.string.gemini_api_key_error_google, result.message)
         }
 
         if (message != null) {
@@ -1253,6 +1295,49 @@ class SettingsViewModel @Inject constructor(
                     settingsRepository.activeProfileId = remainingProfile?.id ?: "profile-default"
                 }
             }
+        }
+    }
+
+    fun restoreApiKeysFromPasswordManager(activity: android.app.Activity) {
+        viewModelScope.launch {
+            authManager.getCredentialFromPasswordManager(activity).fold(
+                onSuccess = { credential ->
+                    if (credential != null) {
+                        val (id, password) = credential
+                        if (id.contains("gemini", ignoreCase = true)) {
+                            settingsRepository.geminiApiKey = password
+                            Toast.makeText(
+                                application,
+                                application.getString(R.string.gemini_api_key_imported_google),
+                                Toast.LENGTH_LONG
+                            ).show()
+                        } else {
+                            ttsDelegate.setElevenLabsApiKey(password)
+                            Toast.makeText(
+                                application,
+                                application.getString(R.string.elevenlabs_api_key_imported_google),
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    } else {
+                        Toast.makeText(
+                            application,
+                            application.getString(R.string.elevenlabs_api_key_not_found_google),
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                },
+                onFailure = { e ->
+                    val cancelled = e is androidx.credentials.exceptions.GetCredentialCancellationException
+                    if (!cancelled) {
+                        Toast.makeText(
+                            application,
+                            String.format(application.getString(R.string.elevenlabs_api_key_error_google), e.message),
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+            )
         }
     }
 }

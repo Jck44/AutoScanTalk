@@ -33,13 +33,13 @@ fun VocalSwitchSettingsSection(
     ) {
         PreferenceCategory(stringResource(R.string.settings_category_vocal_switch), modifier = Modifier.weight(1f)) {
             SettingsToggleItem(
-                label = "Vocal Switch aktivieren",
+                label = stringResource(R.string.settings_vocal_switch_activate),
                 checked = isVocalSwitchEnabled,
                 onCheckedChange = { viewModel.scanningDelegate.setVocalSwitchEnabled(it) }
             )
             com.andreas_kratzer.ghosttalk.core.ui.components.SettingsClickableItem(
-                label = "Vocal-Profile anlernen & verwalten",
-                value = "Tippen zum Anlernen und Verwalten",
+                label = stringResource(R.string.settings_vocal_profile_manage),
+                value = stringResource(R.string.settings_vocal_profile_manage_desc),
                 onClick = onNavigateToVocalTraining
             )
         }

@@ -11,7 +11,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -32,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase
 import com.andreas_kratzer.ghosttalk.core.ui.components.PreferenceCategory
+import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsDropdownItem
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsEditTextItem
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsToggleItem
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
@@ -74,7 +78,7 @@ fun GenAiSettingsSection(viewModel: SettingsViewModel) {
 
     @Composable
     fun SmartPredictionsCategory(modifier: Modifier = Modifier) {
-        PreferenceCategory("Smarte Vorhersagen (Statistik)", modifier = modifier) {
+        PreferenceCategory(stringResource(R.string.settings_smart_predictions_title), modifier = modifier) {
             SettingsToggleItem(
                 label = stringResource(R.string.settings_smart_prediction_enable),
                 checked = smartEnabled,
@@ -94,43 +98,22 @@ fun GenAiSettingsSection(viewModel: SettingsViewModel) {
             if (isEnabled) {
                 Spacer(modifier = Modifier.height(dimensions.paddingSmall))
                 
-                Text(
-                    text = stringResource(R.string.settings_gemini_auth_method),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(horizontal = dimensions.paddingMedium, vertical = dimensions.paddingSmall)
+                SettingsDropdownItem(
+                    label = stringResource(R.string.settings_gemini_auth_method),
+                    selectedOption = if (useGeminiApiKey) {
+                        stringResource(R.string.settings_gemini_auth_apikey)
+                    } else {
+                        stringResource(R.string.settings_gemini_auth_oauth)
+                    },
+                    options = listOf(
+                        stringResource(R.string.settings_gemini_auth_oauth) to {
+                            viewModel.setUseGeminiApiKey(false)
+                        },
+                        stringResource(R.string.settings_gemini_auth_apikey) to {
+                            viewModel.setUseGeminiApiKey(true)
+                        }
+                    )
                 )
-                
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = dimensions.paddingMedium),
-                    horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.clickable { viewModel.setUseGeminiApiKey(false) }
-                    ) {
-                        androidx.compose.material3.RadioButton(
-                            selected = !useGeminiApiKey,
-                            onClick = { viewModel.setUseGeminiApiKey(false) }
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(text = stringResource(R.string.settings_gemini_auth_oauth), style = MaterialTheme.typography.bodyMedium)
-                    }
-                    
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.clickable { viewModel.setUseGeminiApiKey(true) }
-                    ) {
-                        androidx.compose.material3.RadioButton(
-                            selected = useGeminiApiKey,
-                            onClick = { viewModel.setUseGeminiApiKey(true) }
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(text = stringResource(R.string.settings_gemini_auth_apikey), style = MaterialTheme.typography.bodyMedium)
-                    }
-                }
                 
                 Spacer(modifier = Modifier.height(dimensions.paddingMedium))
                 
@@ -192,6 +175,34 @@ fun GenAiSettingsSection(viewModel: SettingsViewModel) {
                             Text(stringResource(R.string.settings_gemini_api_key_link_button))
                         }
 
+                        Spacer(modifier = Modifier.height(dimensions.paddingSmall))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)
+                        ) {
+                            val activity = context as? android.app.Activity ?: (context as? android.content.ContextWrapper)?.baseContext as? android.app.Activity
+                            
+                            OutlinedButton(
+                                onClick = { activity?.let { viewModel.saveGeminiApiKeyToGoogle(it) } },
+                                modifier = Modifier.weight(1f),
+                                enabled = userEmail != null && !geminiApiKey.isNullOrEmpty()
+                            ) {
+                                Icon(GhostTalkIcons.CloudUpload, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(stringResource(R.string.settings_cloud_backup_now), style = MaterialTheme.typography.labelSmall)
+                            }
+                            OutlinedButton(
+                                onClick = { activity?.let { viewModel.importGeminiApiKeyFromGoogle(it) } },
+                                modifier = Modifier.weight(1f),
+                                enabled = userEmail != null
+                            ) {
+                                Icon(GhostTalkIcons.CloudDownload, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(stringResource(R.string.settings_cloud_restore_now), style = MaterialTheme.typography.labelSmall)
+                            }
+                        }
+
                         if (clipboardKey != null) {
                             Spacer(modifier = Modifier.height(dimensions.paddingSmall))
                             Button(
@@ -214,7 +225,7 @@ fun GenAiSettingsSection(viewModel: SettingsViewModel) {
             if (isEnabled) {
                 Column(modifier = Modifier.fillMaxWidth().padding(dimensions.paddingMedium)) {
                     Text(
-                        text = "Cloud Features Status:", 
+                        text = stringResource(R.string.settings_gemini_tool_status_title), 
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.primary
                     )

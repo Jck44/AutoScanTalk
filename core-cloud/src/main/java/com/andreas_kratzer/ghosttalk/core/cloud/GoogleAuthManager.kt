@@ -112,17 +112,18 @@ class GoogleAuthManager @javax.inject.Inject constructor(
         prefs.edit { remove(KEY_USER_EMAIL) }
     }
 
-    override suspend fun saveApiKeyToPasswordManager(activity: android.app.Activity, apiKey: String): Result<Unit> {
+    override suspend fun saveApiKeyToPasswordManager(activity: android.app.Activity, apiKey: String, serviceName: String): Result<Unit> {
         val email = _userEmail.value ?: return Result.failure(IllegalStateException("User not signed in"))
-        Log.d(TAG, "Saving API Key to Password Manager for $email")
+        val targetId = if (serviceName == "elevenlabs") email else "$email ($serviceName)"
+        Log.d(TAG, "Saving API Key to Password Manager for $targetId")
 
         return try {
             val createPasswordRequest = CreatePasswordRequest(
-                id = email,
+                id = targetId,
                 password = apiKey
             )
             credentialManager.createCredential(activity, createPasswordRequest)
-            Log.i(TAG, "Successfully saved ElevenLabs API Key to Google Password Manager")
+            Log.i(TAG, "Successfully saved $serviceName API Key to Google Password Manager")
             Result.success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to save API Key to Password Manager: ${e.message}")
@@ -130,8 +131,8 @@ class GoogleAuthManager @javax.inject.Inject constructor(
         }
     }
 
-    override suspend fun getApiKeyFromPasswordManager(activity: android.app.Activity): Result<String?> {
-        Log.d(TAG, "Retrieving API Key from Password Manager")
+    override suspend fun getApiKeyFromPasswordManager(activity: android.app.Activity, serviceName: String): Result<String?> {
+        Log.d(TAG, "Retrieving API Key from Password Manager for $serviceName")
         
         return try {
             val getPasswordOption = GetPasswordOption()
@@ -144,7 +145,7 @@ class GoogleAuthManager @javax.inject.Inject constructor(
             val credential = result.credential
             
             if (credential is PasswordCredential) {
-                Log.i(TAG, "Successfully retrieved password credential from Manager")
+                Log.i(TAG, "Successfully retrieved password credential from Manager: ${credential.id}")
                 Result.success(credential.password)
             } else {
                 Log.w(TAG, "Retrieved credential is not a PasswordCredential")
@@ -152,6 +153,27 @@ class GoogleAuthManager @javax.inject.Inject constructor(
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to retrieve API Key from Password Manager: ${e.message}")
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getCredentialFromPasswordManager(activity: android.app.Activity): Result<Pair<String, String>?> {
+        Log.d(TAG, "Retrieving username and password pair from Password Manager")
+        return try {
+            val getPasswordOption = GetPasswordOption()
+            val request = GetCredentialRequest(listOf(getPasswordOption))
+            val result = credentialManager.getCredential(activity, request)
+            val credential = result.credential
+            
+            if (credential is PasswordCredential) {
+                Log.i(TAG, "Successfully retrieved credential from Manager: id=${credential.id}")
+                Result.success(Pair(credential.id, credential.password))
+            } else {
+                Log.w(TAG, "Retrieved credential is not a PasswordCredential")
+                Result.success(null)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to retrieve credential from Password Manager: ${e.message}")
             Result.failure(e)
         }
     }
