@@ -1,3 +1,4 @@
+@file:Suppress("DEPRECATION", "UNUSED_VALUE", "ASSIGNED_VALUE_IS_NEVER_READ", "UNUSED_PARAMETER")
 package com.andreas_kratzer.ghosttalk.ui.pages.components
 
 import android.Manifest

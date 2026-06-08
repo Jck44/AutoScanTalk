@@ -298,18 +298,14 @@ class PageViewModelTest {
             application = application,
             systemCallManager = systemCallManager,
             settingsRepository = settingsRepository,
-            ttsHelper = ttsHelper,
-            actionExecutor = actionExecutor,
-            scanCoordinator = scanCoordinator
+            ttsHelper = ttsHelper
         )
 
         val aiRestructureDelegate = com.andreas_kratzer.ghosttalk.ui.pages.delegates.AiRestructureDelegate(
             application = application,
-            bookRepository = bookRepository,
             buttonUsageRepository = buttonUsageRepository,
             settingsRepository = settingsRepository,
             cloneBookUseCase = mockk(relaxed = true),
-            bookRestructureProposalUseCase = mockk(relaxed = true),
             bookHierarchyProposalUseCase = mockk(relaxed = true),
             pageLayoutProposalUseCase = mockk(relaxed = true)
         )
@@ -342,8 +338,7 @@ class PageViewModelTest {
             userModeSessionRepository = userModeSessionRepository,
             splitPageUseCase = mockk(relaxed = true),
             createPageUseCase = createPageUseCase,
-            pageLayoutOptimizer = optimizer,
-            cloneBookUseCase = mockk(relaxed = true)
+            pageLayoutOptimizer = optimizer
         )
     }
 

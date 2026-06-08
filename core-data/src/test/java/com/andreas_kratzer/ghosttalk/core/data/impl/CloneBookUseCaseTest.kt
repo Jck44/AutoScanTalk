@@ -78,7 +78,6 @@ class CloneBookUseCaseTest {
         every { mockPrefsEditor.putFloat(any(), any()) } returns mockPrefsEditor
 
         cloneBookUseCase = CloneBookUseCase(
-            context = mockContext,
             appDatabase = mockDatabase,
             bookRepository = mockBookRepository,
             prefs = mockPrefs

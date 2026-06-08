@@ -253,7 +253,6 @@ fun SettingsScreen(
     val context = LocalContext.current
     val dimensions = LocalDimensions.current
     
-    val configuration = LocalConfiguration.current
     val density = androidx.compose.ui.platform.LocalDensity.current
     val containerWidthDp = with(density) {
         androidx.compose.ui.platform.LocalWindowInfo.current.containerSize.width.toDp()
@@ -450,7 +449,6 @@ fun SettingsScreen(
                             section = section,
                             padding = PaddingValues(0.dp),
                             dimensions = dimensions,
-                            isGlobal = isGlobal,
                             viewModel = viewModel,
                             onNavigateBack = onNavigateBack,
                             onBookDeleted = onBookDeleted,
@@ -525,7 +523,6 @@ fun SettingsScreen(
                     section = selectedSection!!,
                     padding = paddingValues,
                     dimensions = dimensions,
-                    isGlobal = isGlobal,
                     viewModel = viewModel,
                     onNavigateBack = onNavigateBack,
                     onBookDeleted = onBookDeleted,
@@ -745,7 +742,6 @@ private fun SettingsSubMenu(
     section: SettingsSection,
     padding: PaddingValues,
     dimensions: com.andreas_kratzer.ghosttalk.core.ui.theme.Dimensions,
-    isGlobal: Boolean,
     viewModel: SettingsViewModel,
     onNavigateBack: () -> Unit,
     onBookDeleted: () -> Unit,

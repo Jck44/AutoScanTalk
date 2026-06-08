@@ -122,18 +122,14 @@ class PageViewModelStateTest {
             application = application,
             systemCallManager = systemCallManager,
             settingsRepository = settingsRepository,
-            ttsHelper = mockk(relaxed = true),
-            actionExecutor = actionExecutor,
-            scanCoordinator = scanCoordinator
+            ttsHelper = mockk(relaxed = true)
         )
 
         val aiRestructureDelegate = com.andreas_kratzer.ghosttalk.ui.pages.delegates.AiRestructureDelegate(
             application = application,
-            bookRepository = bookRepository,
             buttonUsageRepository = buttonUsageRepository,
             settingsRepository = settingsRepository,
             cloneBookUseCase = mockk(relaxed = true),
-            bookRestructureProposalUseCase = mockk(relaxed = true),
             bookHierarchyProposalUseCase = mockk(relaxed = true),
             pageLayoutProposalUseCase = mockk(relaxed = true)
         )
@@ -167,8 +163,7 @@ class PageViewModelStateTest {
             userModeSessionRepository = userModeSessionRepository,
             splitPageUseCase = mockk(relaxed = true),
             createPageUseCase = mockk(relaxed = true),
-            pageLayoutOptimizer = mockk(relaxed = true),
-            cloneBookUseCase = mockk(relaxed = true)
+            pageLayoutOptimizer = mockk(relaxed = true)
         )
         
         // Advance to allow launch in init to execute

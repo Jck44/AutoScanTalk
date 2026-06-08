@@ -4,9 +4,7 @@ import android.app.Application
 import android.util.Log
 import android.widget.Toast
 import com.andreas_kratzer.ghosttalk.core.ai.domain.BookHierarchyProposalUseCase
-import com.andreas_kratzer.ghosttalk.core.ai.domain.BookRestructureProposalUseCase
 import com.andreas_kratzer.ghosttalk.core.ai.domain.PageLayoutProposalUseCase
-import com.andreas_kratzer.ghosttalk.core.data.BookRepository
 import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.data.impl.CloneBookUseCase
@@ -27,11 +25,9 @@ import javax.inject.Inject
 
 class AiRestructureDelegate @Inject constructor(
     private val application: Application,
-    private val bookRepository: BookRepository,
     private val buttonUsageRepository: ButtonUsageRepository,
     private val settingsRepository: SettingsRepository,
     private val cloneBookUseCase: CloneBookUseCase,
-    private val bookRestructureProposalUseCase: BookRestructureProposalUseCase,
     private val bookHierarchyProposalUseCase: BookHierarchyProposalUseCase,
     private val pageLayoutProposalUseCase: PageLayoutProposalUseCase
 ) {
@@ -67,31 +63,12 @@ class AiRestructureDelegate @Inject constructor(
         _aiRestructureError.value = null
     }
 
-    fun clearAiRestructureProposal() {
-        _aiRestructureProposal.value = null
-    }
-
     fun setAiRestructureProposal(proposal: BookRestructureProposal?) {
         _aiRestructureProposal.value = proposal
     }
 
     fun setAiHierarchyProposal(proposal: BookHierarchyProposal?) {
         _aiHierarchyProposal.value = proposal
-    }
-
-    fun setAiPageLayoutProposals(proposals: Map<String, PageLayoutProposal>) {
-        _aiPageLayoutProposals.value = proposals
-    }
-
-    fun saveProposalToCache(bookId: String, proposal: BookRestructureProposal) {
-        try {
-            val cacheDir = application.cacheDir ?: return
-            val file = java.io.File(cacheDir, "ai_restructure_proposal_${bookId}.json")
-            val json = kotlinx.serialization.json.Json.encodeToString(BookRestructureProposal.serializer(), proposal)
-            file.writeText(json)
-        } catch (e: Exception) {
-            Log.e("AiRestructureDelegate", "Error saving proposal to cache", e)
-        }
     }
 
     fun loadProposalFromCache(bookId: String): BookRestructureProposal? {
@@ -107,140 +84,6 @@ class AiRestructureDelegate @Inject constructor(
         } catch (e: Exception) {
             Log.e("AiRestructureDelegate", "Error loading proposal from cache", e)
             null
-        }
-    }
-
-    fun generateAiRestructureProposal(
-        scope: CoroutineScope,
-        bookId: String,
-        selectedPageIds: Set<String>,
-        pageManagementDelegate: PageManagementDelegate
-    ) {
-        scope.launch(Dispatchers.Default) {
-            _isAiRestructureLoading.value = true
-            _aiRestructureError.value = null
-            try {
-                val stats = buttonUsageRepository.getGroupedUsageStats(bookId)
-                val clickCounts = stats.flatMap { it.children }
-                    .associate { it.buttonConfigId to it.usageCount }
-
-                val pages = pageManagementDelegate.unfilteredPages.value
-
-                val pagesArray = org.json.JSONArray()
-                pages.forEach { page ->
-                    if (selectedPageIds.contains(page.id)) {
-                        val pageObj = org.json.JSONObject()
-                        pageObj.put("pageName", page.name)
-                        pageObj.put("rows", page.rows)
-                        pageObj.put("columns", page.columns)
-                        val buttonsArray = org.json.JSONArray()
-                        page.buttonConfigs.forEach { btn ->
-                            if (btn != null && btn.isActive && btn.label.isNotBlank()) {
-                                val btnObj = org.json.JSONObject()
-                                btnObj.put("label", btn.label)
-                                btnObj.put("clicks", clickCounts[btn.id] ?: 0)
-                                val action = btn.buttonAction
-                                if (action is NavigateToPageButtonAction) {
-                                    val targetPageName = pages.find { it.id == action.pageId }?.name ?: ""
-                                    btnObj.put("destinationPage", targetPageName)
-                                }
-                                buttonsArray.put(btnObj)
-                            }
-                        }
-                        pageObj.put("buttons", buttonsArray)
-                        pagesArray.put(pageObj)
-                    }
-                }
-
-                val pagesJsonString = pagesArray.toString()
-                val proposal = bookRestructureProposalUseCase.execute(pagesJsonString, _aiRestructureScope.value)
-                _aiRestructureProposal.value = proposal
-                saveProposalToCache(bookId, proposal)
-            } catch (e: Exception) {
-                Log.e("AiRestructureDelegate", "Error generating AI restructure proposal", e)
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(application, "Fehler: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
-                }
-            } finally {
-                _isAiRestructureLoading.value = false
-            }
-        }
-    }
-
-    fun loadMoreAiRestructureProposals(
-        scope: CoroutineScope,
-        bookId: String,
-        selectedPageIds: Set<String>,
-        pageManagementDelegate: PageManagementDelegate
-    ) {
-        val currentProposal = _aiRestructureProposal.value ?: return
-        scope.launch(Dispatchers.Default) {
-            _isAiRestructureLoading.value = true
-            _aiRestructureError.value = null
-            try {
-                val stats = buttonUsageRepository.getGroupedUsageStats(bookId)
-                val clickCounts = stats.flatMap { it.children }
-                    .associate { it.buttonConfigId to it.usageCount }
-
-                val pages = pageManagementDelegate.unfilteredPages.value
-
-                val pagesArray = org.json.JSONArray()
-                pages.forEach { page ->
-                    if (selectedPageIds.contains(page.id)) {
-                        val pageObj = org.json.JSONObject()
-                        pageObj.put("pageName", page.name)
-                        pageObj.put("rows", page.rows)
-                        pageObj.put("columns", page.columns)
-                        val buttonsArray = org.json.JSONArray()
-                        page.buttonConfigs.forEach { btn ->
-                            if (btn != null && btn.isActive && btn.label.isNotBlank()) {
-                                val btnObj = org.json.JSONObject()
-                                btnObj.put("label", btn.label)
-                                btnObj.put("clicks", clickCounts[btn.id] ?: 0)
-                                val action = btn.buttonAction
-                                if (action is NavigateToPageButtonAction) {
-                                    val targetPageName = pages.find { it.id == action.pageId }?.name ?: ""
-                                    btnObj.put("destinationPage", targetPageName)
-                                }
-                                buttonsArray.put(btnObj)
-                            }
-                        }
-                        pageObj.put("buttons", buttonsArray)
-                        pagesArray.put(pageObj)
-                    }
-                }
-
-                val pagesJsonString = pagesArray.toString()
-                
-                val existingActionsArray = org.json.JSONArray()
-                currentProposal.actions.forEach { act ->
-                    val actObj = org.json.JSONObject()
-                    actObj.put("type", act.type)
-                    actObj.put("rationale", act.rationale)
-                    act.buttonLabel?.let { actObj.put("buttonLabel", it) }
-                    act.sourcePageName?.let { actObj.put("sourcePageName", it) }
-                    act.targetPageName?.let { actObj.put("targetPageName", it) }
-                    act.displaceButtonLabel?.let { actObj.put("displaceButtonLabel", it) }
-                    act.displaceTargetPageName?.let { actObj.put("displaceTargetPageName", it) }
-                    act.targetPlacementDescription?.let { actObj.put("targetPlacementDescription", it) }
-                    existingActionsArray.put(actObj)
-                }
-                val existingProposalsJson = org.json.JSONObject().apply {
-                    put("actions", existingActionsArray)
-                }.toString()
-
-                val moreProposal = bookRestructureProposalUseCase.executeLoadMore(pagesJsonString, existingProposalsJson)
-                val combinedActions = currentProposal.actions + moreProposal.actions
-                val combinedProposal = BookRestructureProposal(combinedActions)
-                
-                _aiRestructureProposal.value = combinedProposal
-                saveProposalToCache(bookId, combinedProposal)
-            } catch (e: Exception) {
-                Log.e("AiRestructureDelegate", "Error loading more AI proposals", e)
-                _aiRestructureError.value = e.localizedMessage
-            } finally {
-                _isAiRestructureLoading.value = false
-            }
         }
     }
 
@@ -516,6 +359,6 @@ class AiRestructureDelegate @Inject constructor(
                 }
             }
             ids
-        } catch (e: Exception) { emptySet() }
+        } catch (_: Exception) { emptySet() }
     }
 }

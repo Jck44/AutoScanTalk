@@ -1,10 +1,8 @@
 package com.andreas_kratzer.ghosttalk.ui.pages.delegates
 
 import android.app.Application
-import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
 import com.andreas_kratzer.ghosttalk.core.call.SystemCallManager
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.core.scanning.ScanCoordinator
 import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -17,9 +15,7 @@ class CallManagementDelegate @Inject constructor(
     private val application: Application,
     private val systemCallManager: SystemCallManager,
     private val settingsRepository: SettingsRepository,
-    private val ttsHelper: TextToSpeechHelper,
-    private val actionExecutor: ActionExecutor,
-    private val scanCoordinator: ScanCoordinator
+    private val ttsHelper: TextToSpeechHelper
 ) {
     val callState = systemCallManager.callState
     val callerName = systemCallManager.callerName

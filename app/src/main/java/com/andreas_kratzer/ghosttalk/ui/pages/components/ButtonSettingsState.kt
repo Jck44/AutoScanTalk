@@ -105,7 +105,7 @@ data class ButtonSettingsActions(
     val saveWithAction: (ButtonAction) -> Unit
 )
 
-class ActionTypeResolver(private val context: Context) {
+class ActionTypeResolver(context: Context) {
     val actionTypeSpeak = context.getString(R.string.button_action_speak_text)
     val actionTypeNavigate = context.getString(R.string.button_action_navigate_page)
     val actionTypeNavigateBack = context.getString(R.string.button_action_navigate_back)

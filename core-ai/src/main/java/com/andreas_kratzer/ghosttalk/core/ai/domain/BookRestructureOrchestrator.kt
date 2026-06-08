@@ -94,6 +94,6 @@ class BookRestructureOrchestrator @Inject constructor(
                 }
             }
             ids
-        } catch (e: Exception) { emptySet() }
+        } catch (_: Exception) { emptySet() }
     }
 }

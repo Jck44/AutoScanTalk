@@ -86,8 +86,7 @@ class PageViewModel @Inject constructor(
     private val userModeSessionRepository: com.andreas_kratzer.ghosttalk.core.data.UserModeSessionRepository,
     private val splitPageUseCase: SplitPageUseCase,
     private val createPageUseCase: CreatePageUseCase,
-    private val pageLayoutOptimizer: com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer,
-    private val cloneBookUseCase: com.andreas_kratzer.ghosttalk.core.data.impl.CloneBookUseCase
+    private val pageLayoutOptimizer: com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer
 ) : AndroidViewModel(application), com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions {
 
     private val pageBackStack = mutableListOf<String>()

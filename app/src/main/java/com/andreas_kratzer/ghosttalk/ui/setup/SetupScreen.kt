@@ -80,6 +80,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
 import androidx.core.net.toUri
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsDropdownItem
@@ -390,7 +391,7 @@ private fun WelcomeStepContent(
 
     val setShowRestoreDialog = { value: Boolean ->
         showRestoreDialog = value
-        uiPrefs.edit().putBoolean("show_restore_dialog", value).apply()
+        uiPrefs.edit { putBoolean("show_restore_dialog", value) }
     }
 
     Image(

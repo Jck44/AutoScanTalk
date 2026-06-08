@@ -1,7 +1,7 @@
 package com.andreas_kratzer.ghosttalk.core.data.impl
 
-import android.content.Context
 import android.content.SharedPreferences
+import androidx.core.content.edit
 import androidx.room.withTransaction
 import com.andreas_kratzer.ghosttalk.core.data.BookRepository
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants
@@ -14,14 +14,12 @@ import com.andreas_kratzer.ghosttalk.core.model.BookRestructureProposal
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.PageLayoutProposal
-import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class CloneBookUseCase @Inject constructor(
-    @param:ApplicationContext private val context: Context,
     private val appDatabase: AppDatabase,
     private val bookRepository: BookRepository,
     private val prefs: SharedPreferences
@@ -335,31 +333,31 @@ class CloneBookUseCase @Inject constructor(
 
         // 8. Clone SharedPreferences Settings
         val allPrefs = prefs.all
-        val editor = prefs.edit()
-        allPrefs.forEach { (key, value) ->
-            if (key.startsWith("${sourceBookId}_")) {
-                val newKey = key.replaceFirst("${sourceBookId}_", "${targetBookId}_")
-                when (value) {
-                    is String -> {
-                        if (key.endsWith(SettingsConstants.KEY_DEFAULT_START_PAGE_ID)) {
-                            val newPageId = pageIdMap[value] ?: value
-                            editor.putString(newKey, newPageId)
-                        } else {
-                            editor.putString(newKey, value)
+        prefs.edit {
+            allPrefs.forEach { (key, value) ->
+                if (key.startsWith("${sourceBookId}_")) {
+                    val newKey = key.replaceFirst("${sourceBookId}_", "${targetBookId}_")
+                    when (value) {
+                        is String -> {
+                            if (key.endsWith(SettingsConstants.KEY_DEFAULT_START_PAGE_ID)) {
+                                val newPageId = pageIdMap[value] ?: value
+                                putString(newKey, newPageId)
+                            } else {
+                                putString(newKey, value)
+                            }
                         }
-                    }
-                    is Boolean -> editor.putBoolean(newKey, value)
-                    is Int -> editor.putInt(newKey, value)
-                    is Long -> editor.putLong(newKey, value)
-                    is Float -> editor.putFloat(newKey, value)
-                    is Set<*> -> {
-                        @Suppress("UNCHECKED_CAST")
-                        editor.putStringSet(newKey, value as Set<String>)
+                        is Boolean -> putBoolean(newKey, value)
+                        is Int -> putInt(newKey, value)
+                        is Long -> putLong(newKey, value)
+                        is Float -> putFloat(newKey, value)
+                        is Set<*> -> {
+                            @Suppress("UNCHECKED_CAST")
+                            putStringSet(newKey, value as Set<String>)
+                        }
                     }
                 }
             }
         }
-        editor.apply()
 
         // Return the new targetBookId
         targetBookId
@@ -788,31 +786,31 @@ class CloneBookUseCase @Inject constructor(
 
         // SharedPrefs Settings
         val allPrefs = prefs.all
-        val editor = prefs.edit()
-        allPrefs.forEach { (key, value) ->
-            if (key.startsWith("${sourceBookId}_")) {
-                val newKey = key.replaceFirst("${sourceBookId}_", "${targetBookId}_")
-                when (value) {
-                    is String -> {
-                        if (key.endsWith(SettingsConstants.KEY_DEFAULT_START_PAGE_ID)) {
-                            val newPageId = pageIdMap["Hauptseite"] ?: pageIdMap.values.firstOrNull() ?: value
-                            editor.putString(newKey, newPageId)
-                        } else {
-                            editor.putString(newKey, value)
+        prefs.edit {
+            allPrefs.forEach { (key, value) ->
+                if (key.startsWith("${sourceBookId}_")) {
+                    val newKey = key.replaceFirst("${sourceBookId}_", "${targetBookId}_")
+                    when (value) {
+                        is String -> {
+                            if (key.endsWith(SettingsConstants.KEY_DEFAULT_START_PAGE_ID)) {
+                                val newPageId = pageIdMap["Hauptseite"] ?: pageIdMap.values.firstOrNull() ?: value
+                                putString(newKey, newPageId)
+                            } else {
+                                putString(newKey, value)
+                            }
                         }
-                    }
-                    is Boolean -> editor.putBoolean(newKey, value)
-                    is Int -> editor.putInt(newKey, value)
-                    is Long -> editor.putLong(newKey, value)
-                    is Float -> editor.putFloat(newKey, value)
-                    is Set<*> -> {
-                        @Suppress("UNCHECKED_CAST")
-                        editor.putStringSet(newKey, value as Set<String>)
+                        is Boolean -> putBoolean(newKey, value)
+                        is Int -> putInt(newKey, value)
+                        is Long -> putLong(newKey, value)
+                        is Float -> putFloat(newKey, value)
+                        is Set<*> -> {
+                            @Suppress("UNCHECKED_CAST")
+                            putStringSet(newKey, value as Set<String>)
+                        }
                     }
                 }
             }
         }
-        editor.apply()
 
         targetBookId
     }
