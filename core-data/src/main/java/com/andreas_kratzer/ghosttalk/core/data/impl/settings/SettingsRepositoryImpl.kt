@@ -653,6 +653,11 @@ class SettingsRepositoryImpl @Inject constructor(
         set(value) { genAiSettings.useGeminiApiKey = value }
     override val useGeminiApiKeyFlow: StateFlow<Boolean> get() = genAiSettings.useGeminiApiKeyFlow
 
+    override var isGeminiVerified: Boolean
+        get() = genAiSettings.isGeminiVerified
+        set(value) { genAiSettings.isGeminiVerified = value }
+    override val isGeminiVerifiedFlow: StateFlow<Boolean> get() = genAiSettings.isGeminiVerifiedFlow
+
     override var hasAcceptedPageSplitOptIn: Boolean
         get() = genAiSettings.hasAcceptedPageSplitOptIn
         set(value) { genAiSettings.hasAcceptedPageSplitOptIn = value }

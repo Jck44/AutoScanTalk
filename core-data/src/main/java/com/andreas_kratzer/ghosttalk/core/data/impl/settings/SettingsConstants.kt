@@ -95,6 +95,7 @@ object SettingsConstants {
     const val KEY_RECORDING_AUDIO_SOURCE = "recording_audio_source"
     const val KEY_GEMINI_API_KEY = "gemini_api_key"
     const val KEY_USE_GEMINI_API_KEY = "use_gemini_api_key"
+    const val KEY_GEMINI_VERIFIED = "gemini_verified"
     const val KEY_HAS_ACCEPTED_PAGE_SPLIT_OPT_IN = "has_accepted_page_split_opt_in"
     
     const val KEY_STATIC_ROW_ENABLED = "static_row_enabled"

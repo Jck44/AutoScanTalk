@@ -169,6 +169,7 @@ class SettingsViewModel @Inject constructor(
     val geminiToolStatus = genAiDelegate.geminiToolStatus
     val geminiApiKey = settingsRepository.geminiApiKeyFlow
     val useGeminiApiKey = settingsRepository.useGeminiApiKeyFlow
+    val isGeminiVerified = settingsRepository.isGeminiVerifiedFlow
 
     val spotifyUserDisplayName = settingsRepository.spotifyUserDisplayNameFlow
     val spotifyPlaylists: StateFlow<List<SpotifyPlaylist>> = spotifyDelegate.spotifyPlaylists
@@ -373,6 +374,7 @@ class SettingsViewModel @Inject constructor(
         // Disable cloud-dependent features on sign out
         settingsRepository.isCloudSyncEnabled = false
         settingsRepository.isGeminiEnabled = false
+        settingsRepository.isGeminiVerified = false
         settingsRepository.googleDriveFolderId = null
         settingsRepository.googleDriveFolderName = null
         genAiDelegate.updateGeminiToolStatus()
@@ -737,9 +739,11 @@ class SettingsViewModel @Inject constructor(
     fun setGeminiRedoPrediction(e: Boolean) { settingsRepository.geminiRedoPrediction = e }
     fun setGeminiApiKey(key: String?) {
         settingsRepository.geminiApiKey = key
+        settingsRepository.isGeminiVerified = false
     }
     fun setUseGeminiApiKey(useKey: Boolean) {
         settingsRepository.useGeminiApiKey = useKey
+        settingsRepository.isGeminiVerified = false
     }
 
     fun connectSpotify(ctx: Context) {

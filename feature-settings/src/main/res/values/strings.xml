@@ -497,4 +497,8 @@
     <string name="settings_profile_default_name">Standard Profil</string>
     <string name="settings_smart_predictions_title">Smarte Vorhersagen (Statistik)</string>
     <string name="settings_gemini_tool_status_title">Cloud Features Status:</string>
+    <string name="settings_gemini_status_verified">Die Verbindung zu Gemini ist aktiv und verifiziert.</string>
+    <string name="settings_gemini_status_unverified">Die Verbindung zu Gemini wurde noch nicht getestet.</string>
+    <string name="settings_gemini_test_button">Verbindung testen</string>
+    <string name="settings_gemini_retest_button">Erneut testen</string>
 </resources>

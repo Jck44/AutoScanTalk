@@ -27,6 +27,9 @@ interface GenAiSettings {
     var useGeminiApiKey: Boolean
     val useGeminiApiKeyFlow: StateFlow<Boolean>
 
+    var isGeminiVerified: Boolean
+    val isGeminiVerifiedFlow: StateFlow<Boolean>
+
     var hasAcceptedPageSplitOptIn: Boolean
     val hasAcceptedPageSplitOptInFlow: StateFlow<Boolean>
 }

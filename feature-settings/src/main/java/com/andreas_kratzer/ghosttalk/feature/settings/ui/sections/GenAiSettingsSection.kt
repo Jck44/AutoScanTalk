@@ -32,6 +32,10 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.core.net.toUri
 import com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase
 import com.andreas_kratzer.ghosttalk.core.ui.components.PreferenceCategory
@@ -52,6 +56,7 @@ fun GenAiSettingsSection(viewModel: SettingsViewModel) {
     val userEmail by viewModel.userEmail.collectAsState()
 
     val smartEnabled by viewModel.isSmartPredictionEnabled.collectAsState(false)
+    val isVerified by viewModel.isGeminiVerified.collectAsState(false)
 
     val context = LocalContext.current
     val dimensions = LocalDimensions.current
@@ -223,32 +228,79 @@ fun GenAiSettingsSection(viewModel: SettingsViewModel) {
             Spacer(modifier = Modifier.height(dimensions.paddingMedium))
 
             if (isEnabled) {
-                Column(modifier = Modifier.fillMaxWidth().padding(dimensions.paddingMedium)) {
-                    Text(
-                        text = stringResource(R.string.settings_gemini_tool_status_title), 
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    toolStatus.forEach { (name, status) ->
-                        val isAvailable = status == GeminiUseCase.ToolStatus.AVAILABLE
-                        val statusText = when (status) {
-                            GeminiUseCase.ToolStatus.AVAILABLE -> stringResource(R.string.settings_gemini_tool_status_active)
-                            GeminiUseCase.ToolStatus.REQUIRES_AUTH -> stringResource(R.string.settings_gemini_tool_status_requires_auth)
-                            GeminiUseCase.ToolStatus.FAILED -> stringResource(R.string.settings_gemini_tool_status_failed)
-                            GeminiUseCase.ToolStatus.PENDING -> stringResource(R.string.settings_gemini_tool_status_pending)
-                        }
-                        val color = if (isAvailable) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
-                        Text(text = "• $name: $statusText", color = color, style = MaterialTheme.typography.bodySmall)
-                    }
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(dimensions.paddingMedium))
+                
+                val cardColor = if (isVerified) {
+                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
+                } else {
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                }
+                val borderColor = if (isVerified) {
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                } else {
+                    MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                }
+                val icon = if (isVerified) GhostTalkIcons.Cloud else GhostTalkIcons.AutoAwesome
+                val iconColor = if (isVerified) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                val descriptionText = if (isVerified) {
+                    stringResource(R.string.settings_gemini_status_verified)
+                } else {
+                    stringResource(R.string.settings_gemini_status_unverified)
+                }
 
-                    Button(
-                        onClick = { viewModel.activateGemini(context) },
-                        shape = MaterialTheme.shapes.medium,
-                        modifier = Modifier.padding(top = dimensions.paddingMedium)
+                androidx.compose.material3.Card(
+                    colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = cardColor),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, borderColor),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = dimensions.paddingMedium)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(dimensions.paddingMedium)
                     ) {
-                        Text(stringResource(R.string.settings_gemini_activate_button))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = null,
+                                tint = iconColor,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(dimensions.paddingSmall))
+                            Text(
+                                text = buildAnnotatedString {
+                                    append(stringResource(R.string.settings_gemini_tool_status_title))
+                                    append(" ")
+                                    withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = if (isVerified) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error)) {
+                                        append(if (isVerified) stringResource(R.string.settings_gemini_tool_status_active) else stringResource(R.string.settings_gemini_tool_status_failed))
+                                    }
+                                },
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        
+                        Spacer(modifier = Modifier.height(dimensions.paddingSmall))
+                        
+                        Text(
+                            text = descriptionText,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        
+                        Spacer(modifier = Modifier.height(dimensions.paddingMedium))
+                        
+                        Button(
+                            onClick = { viewModel.activateGemini(context) },
+                            shape = MaterialTheme.shapes.medium,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = if (isVerified) stringResource(R.string.settings_gemini_retest_button) else stringResource(R.string.settings_gemini_test_button),
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                        }
                     }
                 }
             }

@@ -11,8 +11,10 @@ class ActivateGeminiUseCase @Inject constructor(
         try {
             geminiUseCase.generateResponse("Ping")
             settingsRepository.isGeminiEnabled = true
+            settingsRepository.isGeminiVerified = true
             onSuccess()
         } catch (e: Exception) {
+            settingsRepository.isGeminiVerified = false
             onError(e)
         }
     }

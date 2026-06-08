@@ -8,6 +8,7 @@ import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.K
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_HAS_ACCEPTED_PAGE_SPLIT_OPT_IN
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_USE_GEMINI_API_KEY
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_USE_LOCAL_GENERATIVE_AI
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_GEMINI_VERIFIED
 import kotlinx.coroutines.flow.StateFlow
 
 class GenAiSettingsRepository(
@@ -26,6 +27,7 @@ class GenAiSettingsRepository(
         decrypt = { SecuritySettingsEncryptor.decryptLocal(it, context) }
     )
     private val _useGeminiApiKey = BooleanSetting(KEY_USE_GEMINI_API_KEY, false)
+    private val _isGeminiVerified = BooleanSetting(KEY_GEMINI_VERIFIED, false)
     private val _hasAcceptedPageSplitOptIn = BooleanSetting(KEY_HAS_ACCEPTED_PAGE_SPLIT_OPT_IN, false)
 
     val isGeminiEnabledFlow = _isGeminiEnabled.flow
@@ -34,6 +36,7 @@ class GenAiSettingsRepository(
     val geminiTimeoutFlow = _geminiTimeout.flow
     val geminiApiKeyFlow = _geminiApiKey.flow
     val useGeminiApiKeyFlow = _useGeminiApiKey.flow
+    val isGeminiVerifiedFlow = _isGeminiVerified.flow
     val hasAcceptedPageSplitOptInFlow = _hasAcceptedPageSplitOptIn.flow
 
     var isGeminiEnabled: Boolean by _isGeminiEnabled
@@ -42,6 +45,7 @@ class GenAiSettingsRepository(
     var geminiTimeout: Long by _geminiTimeout
     var geminiApiKey: String? by _geminiApiKey
     var useGeminiApiKey: Boolean by _useGeminiApiKey
+    var isGeminiVerified: Boolean by _isGeminiVerified
     var hasAcceptedPageSplitOptIn: Boolean by _hasAcceptedPageSplitOptIn
 
     override fun refresh() {
@@ -51,6 +55,7 @@ class GenAiSettingsRepository(
         _geminiTimeout.refresh()
         _geminiApiKey.refresh()
         _useGeminiApiKey.refresh()
+        _isGeminiVerified.refresh()
         _hasAcceptedPageSplitOptIn.refresh()
     }
 }
