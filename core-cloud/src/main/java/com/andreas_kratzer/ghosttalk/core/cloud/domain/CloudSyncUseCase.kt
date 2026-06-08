@@ -862,7 +862,12 @@ class CloudSyncUseCase @Inject constructor(
         val files = storageProvider.listFiles()
         logger.d(TAG, "Found ${files.size} total files in sync folder.")
 
-        files.filter { it.name != TTS_CACHE_FILE_NAME && !it.name.startsWith("statistics_") }.mapNotNull { file ->
+        files.filter { 
+            it.name != TTS_CACHE_FILE_NAME && 
+            !it.name.startsWith("statistics_") &&
+            it.mimeType != "application/vnd.google-apps.folder" &&
+            it.mimeType != "vnd.android.document/directory"
+        }.mapNotNull { file ->
             try {
                 val bookName = file.properties?.get("book_name") ?: file.description ?: if (file.name.endsWith(".json")) {
                     logger.d(TAG, "Processing metadata for legacy JSON file: ${file.name}")

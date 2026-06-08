@@ -11,4 +11,9 @@ interface AudioSettings {
     val speakerVolumeFlow: kotlinx.coroutines.flow.StateFlow<Int>
     var headphoneVolume: Int
     val headphoneVolumeFlow: kotlinx.coroutines.flow.StateFlow<Int>
+
+    var preferredMainSpeakerName: String?
+    val preferredMainSpeakerNameFlow: kotlinx.coroutines.flow.StateFlow<String?>
+    var preferredCueSpeakerName: String?
+    val preferredCueSpeakerNameFlow: kotlinx.coroutines.flow.StateFlow<String?>
 }

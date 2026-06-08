@@ -32,5 +32,6 @@ data class RemoteSyncFile(
     val modifiedTime: Long,
     val md5Checksum: String? = null,
     val version: Long? = null,
-    val properties: Map<String, String>? = null
+    val properties: Map<String, String>? = null,
+    val mimeType: String? = null
 )

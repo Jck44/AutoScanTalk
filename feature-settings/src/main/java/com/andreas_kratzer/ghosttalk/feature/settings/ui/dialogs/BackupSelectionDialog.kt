@@ -104,10 +104,15 @@ private fun BackupItem(
             .padding(dimensions.paddingMedium)
     ) {
         Text(
-            text = backup.bookName,
+            text = backup.bookName.ifEmpty { backup.fileName },
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurface,
             fontWeight = FontWeight.SemiBold
+        )
+        Text(
+            text = "ID: ${backup.fileId}",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Text(
             text = stringResource(

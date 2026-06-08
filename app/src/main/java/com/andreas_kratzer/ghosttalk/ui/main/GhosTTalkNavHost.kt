@@ -17,8 +17,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.andreas_kratzer.ghosttalk.core.SecurityManager
+import com.andreas_kratzer.ghosttalk.core.data.BookRepository
 import com.andreas_kratzer.ghosttalk.core.data.PageRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.data.impl.SampleDataInitializer
 import com.andreas_kratzer.ghosttalk.core.ui.components.SecurityEntryDialog
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.ContentManagementScreen
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsScreen
@@ -48,6 +50,8 @@ fun GhostTalkNavHost(
     settingsViewModel: SettingsViewModel,
     settingsRepository: SettingsRepository,
     pageRepository: PageRepository,
+    bookRepository: BookRepository,
+    sampleDataInitializer: SampleDataInitializer,
     securityManager: SecurityManager
 ) {
     val isUnlocked by securityManager.isUnlocked.collectAsState()
@@ -182,12 +186,34 @@ fun GhostTalkNavHost(
     ) {
         composable("onboarding_setup") {
             com.andreas_kratzer.ghosttalk.ui.setup.SetupScreen(
+                viewModel = settingsViewModel,
                 onSetupFinished = {
-                    settingsRepository.isSetupCompleted = true
-                    runOnMainThread {
-                        navController.navigate("book_list") {
-                            popUpTo("onboarding_setup") { inclusive = true }
-                            launchSingleTop = true
+                    coroutineScope.launch {
+                        val defaultBookId = "book-default"
+                        // 1. Ensure at least one book exists. returns either default or first existing.
+                        val initializedBookId = sampleDataInitializer.initializeIfNeeded(defaultBookId)
+                        
+                        // 2. Load the user's last active book preference
+                        val persistedActiveBookId = settingsRepository.activeBookId
+                        
+                        // 3. Verify it still exists in the DB
+                        val finalActiveBookId = if (bookRepository.getBookById(persistedActiveBookId) != null) {
+                            persistedActiveBookId
+                        } else {
+                            initializedBookId
+                        }
+
+                        // 4. Set the final active book
+                        settingsRepository.activeBookId = finalActiveBookId
+                        pageViewModel.setActiveBookId(finalActiveBookId)
+                        
+                        settingsRepository.isSetupCompleted = true
+                        
+                        runOnMainThread {
+                            navController.navigate("book_list") {
+                                popUpTo("onboarding_setup") { inclusive = true }
+                                launchSingleTop = true
+                            }
                         }
                     }
                 },

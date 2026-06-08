@@ -269,7 +269,7 @@ class DriveServiceHelper(private val driveService: Drive) {
         val query = "'$folderId' in parents and trashed = false"
         try {
             Log.d(TAG, "Listing files in folder: $folderId with query: $query")
-            val result: FileList = driveService.files().list().setQ(query).setFields("files(id, name, modifiedTime, description, properties, md5Checksum, version)").execute()
+            val result: FileList = driveService.files().list().setQ(query).setFields("files(id, name, modifiedTime, description, properties, md5Checksum, version, mimeType)").execute()
             val files = result.files ?: emptyList()
             Log.d(TAG, "Found ${files.size} files in folder $folderId")
             files
@@ -306,15 +306,12 @@ class DriveServiceHelper(private val driveService: Drive) {
         }
     }
     /**
-     * Fetches metadata for a specific file.
-     */
-    /**
-     * Fetches metadata for a specific file.
+     * @param fileId The ID of the file.
      */
     suspend fun getFileMetadata(fileId: String): File? = withContext(Dispatchers.IO) {
         try {
             Log.d(TAG, "Fetching metadata for file: $fileId")
-            driveService.files().get(fileId).setFields("id, name, modifiedTime, description, properties, md5Checksum, version").execute()
+            driveService.files().get(fileId).setFields("id, name, modifiedTime, description, properties, md5Checksum, version, mimeType").execute()
         } catch (e: com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException) {
             throw e
         } catch (e: Exception) {

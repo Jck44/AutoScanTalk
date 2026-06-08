@@ -8,6 +8,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.provider.Settings
 import android.telecom.TelecomManager
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
@@ -22,6 +23,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -46,20 +48,27 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -77,6 +86,12 @@ import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 import com.andreas_kratzer.ghosttalk.feature.settings.R as SettingsR
+import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsDropdownItem
+import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
+import com.andreas_kratzer.ghosttalk.core.cloud.domain.RemoteBackupInfo
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import kotlinx.coroutines.launch
 
 private enum class SetupStep(val index: Int) {
     WELCOME(0),
@@ -84,18 +99,21 @@ private enum class SetupStep(val index: Int) {
     OVERLAY(2),
     NOTIFICATIONS(3),
     DIALER(4),
-    COMPLETED(5)
+    DEVICE_SETTINGS(5),
+    COMPLETED(6)
 }
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun SetupScreen(
+    viewModel: SettingsViewModel,
     onSetupFinished: () -> Unit,
     onRequestDefaultDialer: (Activity) -> Unit
 ) {
     val context = LocalContext.current
     val dimensions = LocalDimensions.current
     val packageName = context.packageName
+    val coroutineScope = rememberCoroutineScope()
 
     var currentStep by remember { mutableStateOf(SetupStep.WELCOME) }
 
@@ -151,6 +169,51 @@ fun SetupScreen(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { _ ->
         checkPermissions()
+    }
+
+    // Launcher for local file import
+    val localImportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let {
+            coroutineScope.launch {
+                try {
+                    val fileName = uri.path?.lowercase() ?: ""
+                    val isZip = fileName.endsWith(".zip") || context.contentResolver.getType(uri) == "application/zip"
+                    if (isZip) {
+                        context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                            viewModel.importGlobalManualBackupZip(
+                                inputStream = inputStream,
+                                onSuccess = { _ ->
+                                    Toast.makeText(context, "Profil erfolgreich geladen. Bitte schließe die Einrichtung ab.", Toast.LENGTH_SHORT).show()
+                                    currentStep = SetupStep.BASIC_PERMISSIONS
+                                },
+                                onError = { error ->
+                                    Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+                                }
+                            )
+                        }
+                    } else {
+                        context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                            val reader = BufferedReader(InputStreamReader(inputStream))
+                            val jsonContent = reader.readText()
+                            viewModel.importGlobalManualBackup(
+                                json = jsonContent,
+                                onSuccess = { _ ->
+                                    Toast.makeText(context, "Profil erfolgreich geladen. Bitte schließe die Einrichtung ab.", Toast.LENGTH_SHORT).show()
+                                    currentStep = SetupStep.BASIC_PERMISSIONS
+                                },
+                                onError = { error ->
+                                    Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+                                }
+                            )
+                        }
+                    }
+                } catch (e: Exception) {
+                    Toast.makeText(context, "Fehler beim Import: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
     }
 
     Scaffold(
@@ -247,7 +310,11 @@ fun SetupScreen(
                 verticalArrangement = Arrangement.Center
             ) {
                 when (step) {
-                    SetupStep.WELCOME -> WelcomeStepContent()
+                    SetupStep.WELCOME -> WelcomeStepContent(
+                        viewModel = viewModel,
+                        onRestoreSuccess = { currentStep = SetupStep.BASIC_PERMISSIONS },
+                        onLocalImportClick = { localImportLauncher.launch("*/*") }
+                    )
                     SetupStep.BASIC_PERMISSIONS -> BasicPermissionsStepContent(
                         cameraGranted = cameraGranted,
                         locationGranted = locationGranted,
@@ -297,6 +364,9 @@ fun SetupScreen(
                             }
                         }
                     )
+                    SetupStep.DEVICE_SETTINGS -> DeviceSettingsStepContent(
+                        viewModel = viewModel
+                    )
                     SetupStep.COMPLETED -> CompletedStepContent(
                         onFinish = onSetupFinished
                     )
@@ -307,8 +377,23 @@ fun SetupScreen(
 }
 
 @Composable
-private fun WelcomeStepContent() {
+private fun WelcomeStepContent(
+    viewModel: SettingsViewModel,
+    onRestoreSuccess: () -> Unit,
+    onLocalImportClick: () -> Unit
+) {
+    val context = LocalContext.current
+    val uiPrefs = remember { context.getSharedPreferences("setup_ui_prefs", Context.MODE_PRIVATE) }
     val localDimensions = LocalDimensions.current
+    var showRestoreDialog by remember { 
+        mutableStateOf(uiPrefs.getBoolean("show_restore_dialog", false)) 
+    }
+
+    val setShowRestoreDialog = { value: Boolean ->
+        showRestoreDialog = value
+        uiPrefs.edit().putBoolean("show_restore_dialog", value).apply()
+    }
+
     Image(
         painter = painterResource(id = CoreR.drawable.ic_app_logo),
         contentDescription = null,
@@ -329,6 +414,472 @@ private fun WelcomeStepContent() {
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(horizontal = localDimensions.paddingMedium)
     )
+    Spacer(modifier = Modifier.height(localDimensions.paddingDoubleExtraLarge))
+
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f)
+        ),
+        shape = MaterialTheme.shapes.medium,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(localDimensions.paddingLarge),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "Bereits GhostTalk genutzt?",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(localDimensions.paddingSmall))
+            Text(
+                text = "Stelle dein bestehendes Profil über ein lokales Backup oder Cloud Sync wieder her.",
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(localDimensions.paddingMedium))
+            Button(
+                onClick = { setShowRestoreDialog(true) },
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Icon(GhostTalkIcons.CloudDownload, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Profil wiederherstellen")
+            }
+        }
+    }
+
+    if (showRestoreDialog) {
+        RestoreProfileDialog(
+            viewModel = viewModel,
+            onDismiss = { setShowRestoreDialog(false) },
+            onLocalImportClick = {
+                setShowRestoreDialog(false)
+                onLocalImportClick()
+            },
+            onRestoreSuccess = onRestoreSuccess
+        )
+    }
+}
+
+@Composable
+private fun RestoreProfileDialog(
+    viewModel: SettingsViewModel,
+    onDismiss: () -> Unit,
+    onLocalImportClick: () -> Unit,
+    onRestoreSuccess: () -> Unit
+) {
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
+    val dateFormat = remember(locale) { java.text.SimpleDateFormat("dd.MM.yyyy HH:mm", locale) }
+    val userEmail by viewModel.userEmail.collectAsState()
+    val isSyncing by viewModel.isSyncing.collectAsState()
+    val availableBackups by viewModel.availableBackups.collectAsState()
+    val googleAuthType by viewModel.googleAuthType.collectAsState()
+
+    LaunchedEffect(userEmail) {
+        if (userEmail != null) {
+            viewModel.fetchAvailableBackupsForImport()
+        }
+    }
+
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Profil wiederherstellen",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = "Wähle eine Methode, um dein bestehendes Profil und deine Bücher zu laden:",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "ÜBER GOOGLE DRIVE SYNC (Empfohlen):",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+                if (userEmail == null) {
+                    Button(
+                        onClick = {
+                            viewModel.setGoogleAuthType(com.andreas_kratzer.ghosttalk.core.model.CloudAuthType.SYSTEM)
+                            viewModel.signIn(context)
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.medium
+                    ) {
+                        Icon(GhostTalkIcons.Cloud, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Bei Google anmelden (System-Konto)")
+                    }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Button(
+                        onClick = {
+                            viewModel.setGoogleAuthType(com.andreas_kratzer.ghosttalk.core.model.CloudAuthType.WEB_FLOW)
+                            viewModel.signIn(context)
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.medium,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    ) {
+                        Icon(GhostTalkIcons.Cloud, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Google Web-Login (In-App OAuth)")
+                    }
+                } else {
+                    val authTypeLabel = if (googleAuthType == com.andreas_kratzer.ghosttalk.core.model.CloudAuthType.SYSTEM) "System-Konto" else "In-App Web-Login"
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text(
+                                text = "Angemeldet als ($authTypeLabel):",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = userEmail ?: "",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    if (isSyncing) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    } else {
+                        Button(
+                            onClick = { viewModel.fetchAvailableBackupsForImport() },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = MaterialTheme.shapes.medium
+                        ) {
+                            Icon(GhostTalkIcons.Cloud, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Backups suchen")
+                        }
+
+                        if (availableBackups.isNotEmpty()) {
+                            Text(
+                                text = "Gefundene Backups:",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            availableBackups.forEach { backup ->
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            viewModel.cloudSyncDelegate.importCloudBackup(
+                                                backupInfo = backup,
+                                                scope = coroutineScope,
+                                                onProgress = { _, _ -> },
+                                                onImported = {
+                                                    Toast.makeText(context, "Profil erfolgreich wiederhergestellt.", Toast.LENGTH_SHORT).show()
+                                                    onRestoreSuccess()
+                                                },
+                                                onComplete = {}
+                                            )
+                                        },
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                                    )
+                                ) {
+                                    Column(modifier = Modifier.padding(12.dp)) {
+                                        Text(
+                                            text = backup.bookName.ifEmpty { backup.fileName },
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Text(
+                                            text = "ID: ${backup.fileId}",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Text(
+                                            text = "Datum: ${dateFormat.format(java.util.Date(backup.lastModified))}",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
+                        } else {
+                            Text(
+                                text = "Keine Cloud-Backups im Standard-Ordner gelistet. Klicke auf 'Backups suchen'.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+                    OutlinedButton(
+                        onClick = { viewModel.signOut() },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                        shape = MaterialTheme.shapes.medium
+                    ) {
+                        Text("Abmelden")
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(MaterialTheme.colorScheme.outlineVariant))
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = "ALTERNATIVER IMPORT:",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                OutlinedButton(
+                    onClick = onLocalImportClick,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Icon(painterResource(id = CoreR.drawable.ic_app_logo), contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Lokale Backup-Datei importieren (.zip / .json)")
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Schließen")
+            }
+        }
+    )
+}
+
+@Composable
+private fun DeviceSettingsStepContent(viewModel: SettingsViewModel) {
+    val localDimensions = LocalDimensions.current
+    val speakerVolume by viewModel.speakerVolume.collectAsState(100)
+    val headphoneVolume by viewModel.headphoneVolume.collectAsState(100)
+    val blockVolumeKeys by viewModel.blockVolumeKeys.collectAsState(false)
+    val bluetoothDelay by viewModel.bluetoothDelay.collectAsState(1500L)
+
+    val availableAudioDevices by viewModel.availableAudioDevices.collectAsState()
+    val cachedAudioDevices by viewModel.cachedAudioDevices.collectAsState()
+    val selectedTtsAddress by viewModel.selectedTtsAudioDeviceAddress.collectAsState(null)
+    val selectedCuesAddress by viewModel.selectedCuesAudioDeviceAddress.collectAsState(null)
+
+    LaunchedEffect(Unit) {
+        viewModel.refresh()
+    }
+
+    Text(
+        text = "Lokale Geräte-Einstellungen",
+        style = MaterialTheme.typography.titleLarge,
+        fontWeight = FontWeight.Bold,
+        textAlign = TextAlign.Center
+    )
+    Spacer(modifier = Modifier.height(localDimensions.paddingSmall))
+    Text(
+        text = "Diese Optionen gelten nur für dieses Gerät und werden nicht synchronisiert.",
+        style = MaterialTheme.typography.bodyMedium,
+        textAlign = TextAlign.Center,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
+    Spacer(modifier = Modifier.height(localDimensions.paddingLarge))
+
+    Column(
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        // TTS Audio Device Select
+        val ttsOptions = remember(availableAudioDevices, cachedAudioDevices) {
+            val options = mutableListOf<Pair<String, () -> Unit>>()
+            options.add("Standard-Gerät" to { viewModel.setTtsAudioDevice(null) })
+            val activeDeviceIds = availableAudioDevices.mapNotNull { it.address.split("|").getOrNull(1) }.toSet()
+            
+            availableAudioDevices.forEach { device ->
+                options.add(device.name to { viewModel.setTtsAudioDevice(device.address) })
+            }
+            
+            cachedAudioDevices.forEach { (persistentId, name) ->
+                if (!activeDeviceIds.contains(persistentId)) {
+                    val displayName = "$name (Offline)"
+                    val fallbackAddress = "0|$persistentId"
+                    options.add(displayName to { viewModel.setTtsAudioDevice(fallbackAddress) })
+                }
+            }
+            options
+        }
+
+        SettingsDropdownItem(
+            label = "Audio-Ausgabe (Sprachausgabe)",
+            selectedOption = viewModel.getResolvedDeviceName(selectedTtsAddress),
+            options = ttsOptions
+        )
+
+        // Cues Audio Device Select
+        val cuesOptions = remember(availableAudioDevices, cachedAudioDevices) {
+            val options = mutableListOf<Pair<String, () -> Unit>>()
+            options.add("Standard-Gerät" to { viewModel.setCuesAudioDevice(null) })
+            val activeDeviceIds = availableAudioDevices.mapNotNull { it.address.split("|").getOrNull(1) }.toSet()
+            
+            availableAudioDevices.forEach { device ->
+                options.add(device.name to { viewModel.setCuesAudioDevice(device.address) })
+            }
+            
+            cachedAudioDevices.forEach { (persistentId, name) ->
+                if (!activeDeviceIds.contains(persistentId)) {
+                    val displayName = "$name (Offline)"
+                    val fallbackAddress = "0|$persistentId"
+                    options.add(displayName to { viewModel.setCuesAudioDevice(fallbackAddress) })
+                }
+            }
+            options
+        }
+
+        SettingsDropdownItem(
+            label = "Audio-Ausgabe (Hinweistöne / Cues)",
+            selectedOption = viewModel.getResolvedDeviceName(selectedCuesAddress),
+            options = cuesOptions
+        )
+
+        // Speaker Volume
+        Column {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Lautstärke Lautsprecher",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    text = "$speakerVolume%",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            Slider(
+                value = speakerVolume / 100f,
+                onValueChange = { viewModel.setSpeakerVolume((it * 100).toInt()) }
+            )
+        }
+
+        // Headphone Volume
+        Column {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Lautstärke Kopfhörer",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    text = "$headphoneVolume%",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            Slider(
+                value = headphoneVolume / 100f,
+                onValueChange = { viewModel.setHeadphoneVolume((it * 100).toInt()) }
+            )
+        }
+
+        // Block volume keys
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f), MaterialTheme.shapes.medium)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Lautstärketasten sperren",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    text = "Verhindert versehentliche Lautstärkeänderungen durch physische Tasten.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Switch(
+                checked = blockVolumeKeys,
+                onCheckedChange = { viewModel.setBlockVolumeKeys(it) }
+            )
+        }
+
+        // Bluetooth Delay
+        Column {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Bluetooth Audio Verzögerung",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    text = "${bluetoothDelay}ms",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            Slider(
+                value = bluetoothDelay.toFloat(),
+                onValueChange = { viewModel.setBluetoothDelay(it.toLong().toString()) },
+                valueRange = 0f..3000f,
+                steps = 59 // 50ms increments
+            )
+            Text(
+                text = "Gibt Audiosignale leicht verzögert aus, um abgehackten Bluetooth-Ton zu korrigieren.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
 }
 
 @Composable

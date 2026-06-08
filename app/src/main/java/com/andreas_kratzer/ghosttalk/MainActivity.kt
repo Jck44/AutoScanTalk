@@ -196,35 +196,46 @@ class MainActivity : AppCompatActivity() {
         val defaultBookId = "book-default"
 
         lifecycleScope.launch {
-            // Check if there is already user data (books) before running the initializer
-            val hasExistingData = withContext(Dispatchers.IO) {
-                bookRepository.getAllBooksList().isNotEmpty()
-            }
-            if (hasExistingData && !settingsRepository.isSetupCompleted) {
-                settingsRepository.isSetupCompleted = true
+            val migrationPrefs = getSharedPreferences("setup_migration_prefs", MODE_PRIVATE)
+            val migrationDone = migrationPrefs.getBoolean("setup_completed_migration_done", false)
+            Log.d("MainActivity", "DEBUG_SETUP: migrationDone = $migrationDone, isSetupCompleted = ${settingsRepository.isSetupCompleted}")
+            if (!migrationDone) {
+                val hasExistingData = withContext(Dispatchers.IO) {
+                    val books = bookRepository.getAllBooksList()
+                    books.any { it.id != "book-default" }
+                }
+                Log.d("MainActivity", "DEBUG_SETUP: hasExistingData = $hasExistingData")
+                if (hasExistingData && !settingsRepository.isSetupCompleted) {
+                    settingsRepository.isSetupCompleted = true
+                }
+                migrationPrefs.edit().putBoolean("setup_completed_migration_done", true).commit()
             }
 
-            // 1. Ensure at least one book exists. returns either default or first existing.
-            val initializedBookId = sampleDataInitializer.initializeIfNeeded(defaultBookId)
-            
-            // 2. Load the user's last active book preference
-            val persistedActiveBookId = settingsRepository.activeBookId
-            
-            // 3. Verify it still exists in the DB
-            val finalActiveBookId = if (bookRepository.getBookById(persistedActiveBookId) != null) {
-                persistedActiveBookId
+            if (settingsRepository.isSetupCompleted) {
+                // 1. Ensure at least one book exists. returns either default or first existing.
+                val initializedBookId = sampleDataInitializer.initializeIfNeeded(defaultBookId)
+                
+                // 2. Load the user's last active book preference
+                val persistedActiveBookId = settingsRepository.activeBookId
+                
+                // 3. Verify it still exists in the DB
+                val finalActiveBookId = if (bookRepository.getBookById(persistedActiveBookId) != null) {
+                    persistedActiveBookId
+                } else {
+                    // Fallback to the one guaranteed to exist by SampleDataInitializer
+                    initializedBookId
+                }
+
+                // 4. Set the final active book
+                settingsRepository.activeBookId = finalActiveBookId
+                pageViewModel.setActiveBookId(finalActiveBookId)
+                backgroundScheduler.scheduleLocationUpdate()
+                backgroundScheduler.scheduleWeatherUpdate()
+                withContext(Dispatchers.IO) {
+                    pageRepository.purgeInstallUpdateButtons()
+                }
             } else {
-                // Fallback to the one guaranteed to exist by SampleDataInitializer
-                initializedBookId
-            }
-
-            // 4. Set the final active book
-            settingsRepository.activeBookId = finalActiveBookId
-            pageViewModel.setActiveBookId(finalActiveBookId)
-            backgroundScheduler.scheduleLocationUpdate()
-            backgroundScheduler.scheduleWeatherUpdate()
-            withContext(Dispatchers.IO) {
-                pageRepository.purgeInstallUpdateButtons()
+                Log.d("MainActivity", "Setup is not completed yet, skipping database initialization on startup.")
             }
             isDbInitialized = true
             handleIntent(intent)
@@ -358,6 +369,8 @@ class MainActivity : AppCompatActivity() {
                             settingsViewModel = settingsViewModel,
                             settingsRepository = settingsRepository,
                             pageRepository = pageRepository,
+                            bookRepository = bookRepository,
+                            sampleDataInitializer = sampleDataInitializer,
                             securityManager = securityManager
                         )
 
@@ -534,7 +547,7 @@ class MainActivity : AppCompatActivity() {
                     Log.e("MainActivity", "Spotify OAuth callback processing failed.")
                 }
             }
-        } else if (data.scheme == "com.googleusercontent.apps.974414517482-2fo3sfu8ij49gotcduivt6dsu9e7cleu" && (data.host == "oauth2redirect" || data.path == "/oauth2redirect")) {
+        } else if (data.scheme == "com.googleusercontent.apps.974414517482-2fo3sfu8ij49gotcduivt6dsu9e7cleu") {
             lifecycleScope.launch {
                 val success = googleWebAuthManager.handleAuthRedirect(data)
                 if (success) {

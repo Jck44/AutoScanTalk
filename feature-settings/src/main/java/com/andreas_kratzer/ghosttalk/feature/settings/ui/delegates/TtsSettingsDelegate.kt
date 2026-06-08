@@ -79,6 +79,23 @@ class TtsSettingsDelegate @Inject constructor(
                     }
                 }
                 loadCachedAudioDevices()
+
+                // Auto-select devices based on preferred main/cue speaker names if address is currently null
+                val currentTtsAddr = settingsRepository.ttsAudioDeviceAddress
+                val prefTtsName = settingsRepository.preferredMainSpeakerName
+                if (currentTtsAddr == null && !prefTtsName.isNullOrEmpty()) {
+                    devices.find { it.name == prefTtsName }?.let { matched ->
+                        settingsRepository.ttsAudioDeviceAddress = matched.address
+                    }
+                }
+
+                val currentCuesAddr = settingsRepository.cuesAudioDeviceAddress
+                val prefCuesName = settingsRepository.preferredCueSpeakerName
+                if (currentCuesAddr == null && !prefCuesName.isNullOrEmpty()) {
+                    devices.find { it.name == prefCuesName }?.let { matched ->
+                        settingsRepository.cuesAudioDeviceAddress = matched.address
+                    }
+                }
             }
         }
     }
@@ -116,12 +133,14 @@ class TtsSettingsDelegate @Inject constructor(
     fun setTtsAudioDevice(addr: String?) {
         settingsRepository.ttsAudioDeviceAddress = addr
         saveDeviceNameToCacheIfPresent(addr)
+        settingsRepository.preferredMainSpeakerName = if (addr == null) null else getResolvedDeviceName(addr)
         speakFeedback("Ausgabegerät für Sprechen ausgewählt", addr)
     }
 
     fun setCuesAudioDevice(addr: String?) {
         settingsRepository.cuesAudioDeviceAddress = addr
         saveDeviceNameToCacheIfPresent(addr)
+        settingsRepository.preferredCueSpeakerName = if (addr == null) null else getResolvedDeviceName(addr)
         speakFeedback("Ausgabegerät für Feedback ausgewählt", addr)
     }
 

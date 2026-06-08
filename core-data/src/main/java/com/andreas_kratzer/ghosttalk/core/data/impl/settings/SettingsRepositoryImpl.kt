@@ -383,6 +383,8 @@ class SettingsRepositoryImpl @Inject constructor(
     override val blockVolumeKeysFlow: StateFlow<Boolean> get() = scanningSettings.blockVolumeKeysFlow
     override val speakerVolumeFlow: StateFlow<Int> get() = scanningSettings.speakerVolumeFlow
     override val headphoneVolumeFlow: StateFlow<Int> get() = scanningSettings.headphoneVolumeFlow
+    override val preferredMainSpeakerNameFlow: StateFlow<String?> get() = voiceSettings.preferredMainSpeakerNameFlow
+    override val preferredCueSpeakerNameFlow: StateFlow<String?> get() = voiceSettings.preferredCueSpeakerNameFlow
     override val isCloudSyncEnabledFlow: StateFlow<Boolean> get() = cloudSettings.isCloudSyncEnabledFlow
     override val lateClickThresholdFlow: StateFlow<Long> get() = scanningSettings.lateClickThresholdFlow
 
@@ -591,6 +593,14 @@ class SettingsRepositoryImpl @Inject constructor(
     override var headphoneVolume: Int
         get() = scanningSettings.headphoneVolume
         set(value) { scanningSettings.headphoneVolume = value }
+
+    override var preferredMainSpeakerName: String?
+        get() = voiceSettings.preferredMainSpeakerName
+        set(value) { voiceSettings.preferredMainSpeakerName = value }
+
+    override var preferredCueSpeakerName: String?
+        get() = voiceSettings.preferredCueSpeakerName
+        set(value) { voiceSettings.preferredCueSpeakerName = value }
 
     override var isCloudSyncEnabled: Boolean
         get() = cloudSettings.isCloudSyncEnabled

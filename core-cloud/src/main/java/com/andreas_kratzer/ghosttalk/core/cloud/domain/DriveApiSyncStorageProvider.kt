@@ -21,7 +21,8 @@ class DriveApiSyncStorageProvider(
                 modifiedTime = file.modifiedTime?.value ?: 0L,
                 md5Checksum = file.md5Checksum,
                 version = file.version,
-                properties = file.properties
+                properties = file.properties,
+                mimeType = file.mimeType
             )
         }
     }
@@ -64,7 +65,8 @@ class DriveApiSyncStorageProvider(
             modifiedTime = file.modifiedTime?.value ?: 0L,
             md5Checksum = file.md5Checksum,
             version = file.version,
-            properties = file.properties
+            properties = file.properties,
+            mimeType = file.mimeType
         )
     }
 

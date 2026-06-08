@@ -203,21 +203,13 @@ class CloudSyncSettingsDelegate @Inject constructor(
 
     fun fetchDriveFolders(parentFolderId: String = "root", scope: CoroutineScope) {
         scope.launch {
-            val credential = authManager.getGoogleCredential()
-            if (credential == null) {
-                Toast.makeText(application, "Kein Cloud-Konto verbunden.", Toast.LENGTH_LONG).show()
-                return@launch
-            }
             _isBrowsingFolders.value = true
             try {
-                val drive = com.google.api.services.drive.Drive.Builder(
-                    com.google.api.client.http.javanet.NetHttpTransport(),
-                    com.google.api.client.json.gson.GsonFactory.getDefaultInstance()
-                ) { request ->
-                    credential.initialize(request)
-                    request.connectTimeout = 3 * 60 * 1000 // 3 minutes
-                    request.readTimeout = 3 * 60 * 1000    // 3 minutes
-                }.setApplicationName("GhostTalk").build()
+                val drive = buildDriveClient()
+                if (drive == null) {
+                    Toast.makeText(application, "Kein Cloud-Konto verbunden.", Toast.LENGTH_LONG).show()
+                    return@launch
+                }
 
                 _driveFolders.value = getDriveFoldersUseCase.execute(drive, parentFolderId)
             } catch (e: UserRecoverableAuthIOException) {
@@ -279,19 +271,11 @@ class CloudSyncSettingsDelegate @Inject constructor(
                 val backups = if (isSaf) {
                     cloudSyncUseCase.getAvailableBackups(null, null)
                 } else {
-                    val credential = authManager.getGoogleCredential()
-                    if (credential == null) {
+                    val drive = buildDriveClient()
+                    if (drive == null) {
                         Toast.makeText(application, "Kein Cloud-Konto verbunden.", Toast.LENGTH_LONG).show()
                         return@launch
                     }
-                    val drive = com.google.api.services.drive.Drive.Builder(
-                        com.google.api.client.http.javanet.NetHttpTransport(),
-                        com.google.api.client.json.gson.GsonFactory.getDefaultInstance()
-                    ) { request ->
-                        credential.initialize(request)
-                        request.connectTimeout = 3 * 60 * 1000 // 3 minutes
-                        request.readTimeout = 3 * 60 * 1000    // 3 minutes
-                    }.setApplicationName("GhostTalk").build()
                     cloudSyncUseCase.getAvailableBackups(drive, folderId)
                 }
 
@@ -330,19 +314,12 @@ class CloudSyncSettingsDelegate @Inject constructor(
                 val drive = if (isSaf) {
                     null
                 } else {
-                    val credential = authManager.getGoogleCredential()
-                    if (credential == null) {
-                        Toast.makeText(application, "Anmeldung fehlgeschlagen.", Toast.LENGTH_LONG).show()
+                    val d = buildDriveClient()
+                    if (d == null) {
+                        Toast.makeText(application, "Anmeldung fehlgeschlagen oder kein Konto verbunden.", Toast.LENGTH_LONG).show()
                         return@launch
                     }
-                    com.google.api.services.drive.Drive.Builder(
-                        com.google.api.client.http.javanet.NetHttpTransport(),
-                        com.google.api.client.json.gson.GsonFactory.getDefaultInstance()
-                    ) { request ->
-                        credential.initialize(request)
-                        request.connectTimeout = 3 * 60 * 1000 // 3 minutes
-                        request.readTimeout = 3 * 60 * 1000    // 3 minutes
-                    }.setApplicationName("GhostTalk").build()
+                    d
                 }
 
                 val result = cloudSyncUseCase.importCloudBackup(drive, backupInfo.fileId, backupInfo.fileName, onProgress)
@@ -383,20 +360,12 @@ class CloudSyncSettingsDelegate @Inject constructor(
             return
         }
         scope.launch {
-            val credential = authManager.getGoogleCredential()
-            if (credential == null) {
-                onResult(false, "Kein Cloud-Konto verbunden.")
-                return@launch
-            }
             try {
-                val drive = com.google.api.services.drive.Drive.Builder(
-                    com.google.api.client.http.javanet.NetHttpTransport(),
-                    com.google.api.client.json.gson.GsonFactory.getDefaultInstance()
-                ) { request ->
-                    credential.initialize(request)
-                    request.connectTimeout = 3 * 60 * 1000 // 3 minutes
-                    request.readTimeout = 3 * 60 * 1000    // 3 minutes
-                }.setApplicationName("GhostTalk").build()
+                val drive = buildDriveClient()
+                if (drive == null) {
+                    onResult(false, "Kein Cloud-Konto verbunden.")
+                    return@launch
+                }
 
                 val folder = withContext(Dispatchers.IO) {
                     drive.files().get(folderId)
@@ -442,5 +411,15 @@ class CloudSyncSettingsDelegate @Inject constructor(
             currentContext = currentContext.baseContext
         }
         return null
+    }
+
+    private suspend fun buildDriveClient(): com.google.api.services.drive.Drive? {
+        val authType = settingsRepository.googleAuthType
+        val gAuth = authManager as? com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager ?: return null
+        return com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper.buildDriveClient(
+            authType = authType,
+            googleAuthManager = gAuth,
+            googleWebAuthManager = googleWebAuthManager
+        )
     }
 }

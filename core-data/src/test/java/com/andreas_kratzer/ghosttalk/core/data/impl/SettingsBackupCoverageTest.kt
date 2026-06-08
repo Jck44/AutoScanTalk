@@ -25,6 +25,10 @@ class SettingsBackupCoverageTest {
         "ttsAudioDeviceAddressFlow",
         "cuesAudioDeviceAddress",  // Hardware-specific
         "cuesAudioDeviceAddressFlow",
+        "preferredMainSpeakerName", // Profile-level setting (local/synced via ProfileConfig)
+        "preferredMainSpeakerNameFlow",
+        "preferredCueSpeakerName",  // Profile-level setting (local/synced via ProfileConfig)
+        "preferredCueSpeakerNameFlow",
         "ttsPlaybackSpeed",
         "ttsPlaybackSpeedFlow",
         "recordingAudioSource",     // Hardware-specific

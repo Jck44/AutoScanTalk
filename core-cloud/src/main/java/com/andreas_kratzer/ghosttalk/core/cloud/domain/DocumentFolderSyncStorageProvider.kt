@@ -25,18 +25,21 @@ class DocumentFolderSyncStorageProvider(
             val projection = arrayOf(
                 DocumentsContract.Document.COLUMN_DOCUMENT_ID,
                 DocumentsContract.Document.COLUMN_DISPLAY_NAME,
-                DocumentsContract.Document.COLUMN_LAST_MODIFIED
+                DocumentsContract.Document.COLUMN_LAST_MODIFIED,
+                DocumentsContract.Document.COLUMN_MIME_TYPE
             )
             
             context.contentResolver.query(childrenUri, projection, null, null, null)?.use { cursor ->
                 val idIndex = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DOCUMENT_ID)
                 val nameIndex = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
                 val modifiedIndex = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_LAST_MODIFIED)
+                val mimeIndex = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_MIME_TYPE)
                 
                 while (cursor.moveToNext()) {
                     val docId = cursor.getString(idIndex)
                     val name = cursor.getString(nameIndex)
                     val modifiedTime = cursor.getLong(modifiedIndex)
+                    val mimeType = cursor.getString(mimeIndex)
                     
                     val docUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, docId)
                     resultList.add(
@@ -44,7 +47,8 @@ class DocumentFolderSyncStorageProvider(
                             id = docUri.toString(),
                             name = name,
                             description = name,
-                            modifiedTime = modifiedTime
+                            modifiedTime = modifiedTime,
+                            mimeType = mimeType
                         )
                     )
                 }
@@ -57,7 +61,8 @@ class DocumentFolderSyncStorageProvider(
                     id = doc.uri.toString(),
                     name = doc.name ?: "",
                     description = doc.name,
-                    modifiedTime = doc.lastModified()
+                    modifiedTime = doc.lastModified(),
+                    mimeType = doc.type
                 )
             }
         }
@@ -174,7 +179,8 @@ class DocumentFolderSyncStorageProvider(
         val uri = fileId.toUri()
         val projection = arrayOf(
             DocumentsContract.Document.COLUMN_DISPLAY_NAME,
-            DocumentsContract.Document.COLUMN_LAST_MODIFIED
+            DocumentsContract.Document.COLUMN_LAST_MODIFIED,
+            DocumentsContract.Document.COLUMN_MIME_TYPE
         )
         
         try {
@@ -182,14 +188,17 @@ class DocumentFolderSyncStorageProvider(
                 if (cursor.moveToFirst()) {
                     val nameIndex = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
                     val modifiedIndex = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_LAST_MODIFIED)
+                    val mimeIndex = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_MIME_TYPE)
                     val name = cursor.getString(nameIndex)
                     val modifiedTime = cursor.getLong(modifiedIndex)
+                    val mimeType = cursor.getString(mimeIndex)
                     
                     return RemoteSyncFile(
                         id = fileId,
                         name = name,
                         description = name,
-                        modifiedTime = modifiedTime
+                        modifiedTime = modifiedTime,
+                        mimeType = mimeType
                     )
                 }
             }
@@ -201,7 +210,8 @@ class DocumentFolderSyncStorageProvider(
             id = doc.uri.toString(),
             name = doc.name ?: "",
             description = doc.name,
-            modifiedTime = doc.lastModified()
+            modifiedTime = doc.lastModified(),
+            mimeType = doc.type
         )
     }
 
