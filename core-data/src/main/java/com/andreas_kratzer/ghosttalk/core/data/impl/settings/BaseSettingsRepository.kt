@@ -125,15 +125,28 @@ abstract class BaseSettingsRepository(
     protected inner class StringSetting(
         private val key: String,
         private val default: String? = null,
-        private val isScoped: Boolean = true
+        private val isScoped: Boolean = true,
+        private val encrypt: ((String) -> String)? = null,
+        private val decrypt: ((String) -> String)? = null
     ) {
-        private val _flow = MutableStateFlow(if (isScoped) getStringScoped(key, default) else prefs.getString(key, default))
+        private fun getTransformed(raw: String?): String? {
+            if (raw == null) return null
+            return decrypt?.invoke(raw) ?: raw
+        }
+
+        private fun setTransformed(raw: String?): String? {
+            if (raw == null) return null
+            return encrypt?.invoke(raw) ?: raw
+        }
+
+        private val _flow = MutableStateFlow(getTransformed(if (isScoped) getStringScoped(key, default) else prefs.getString(key, default)))
         val flow: StateFlow<String?> = _flow.asStateFlow()
 
         var value: String?
-            get() = if (isScoped) getStringScoped(key, default) else prefs.getString(key, default)
+            get() = getTransformed(if (isScoped) getStringScoped(key, default) else prefs.getString(key, default))
             set(v) {
-                if (isScoped) putStringScoped(key, v) else prefs.edit { putString(key, v) }
+                val transformed = setTransformed(v)
+                if (isScoped) putStringScoped(key, transformed) else prefs.edit { putString(key, transformed) }
                 _flow.value = v
                 changeListener?.invoke(key)
             }

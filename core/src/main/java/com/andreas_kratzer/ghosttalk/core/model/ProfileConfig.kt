@@ -93,6 +93,8 @@ data class ProfileConfig(
     val onlyRecordHardwareStats: Boolean = false,
     val statsRetentionDays: Int = 30,
     val statsAggregationHours: Int = 24,
+    val logIgnoredActions: Boolean = false,
+    val logStopActions: Boolean = false,
     val actionLogsStorage: String? = null,
     val syncLogsStorage: String? = null,
     val weatherCacheTimeout: Long = 60,
@@ -112,5 +114,23 @@ data class ProfileConfig(
     // Semantisches Audio-Routing
     val preferredMainSpeakerName: String? = null,
     val preferredCueSpeakerName: String? = null,
-    val fallbackToInternalAudio: Boolean = true
+    val fallbackToInternalAudio: Boolean = true,
+
+    val bluetoothDelay: Long = 100,
+
+    // Smart Home & Hue
+    val hueBridgeIp: String = "",
+    val hueUsername: String = "",
+    val hueBridgeFingerprint: String = "",
+    val hueCachedDevices: String = "",
+
+    // Audio & Volume
+    val speakerVolume: Int = 100,
+    val headphoneVolume: Int = 100,
+    val blockVolumeKeys: Boolean = false,
+
+    // Cloud Sync
+    val isCloudSyncEnabled: Boolean = false,
+    val googleDriveFolderId: String? = null,
+    val googleDriveFolderName: String? = null
 )

@@ -22,8 +22,8 @@ class GoogleWebAuthManager @Inject constructor(
 
     companion object {
         private const val TAG = "GoogleWebAuthManager"
-        const val CLIENT_ID = "974414517482-m4ibjmnj0js4j6tpm3a78r18og3jksdq.apps.googleusercontent.com"
-        const val REDIRECT_URI = "ghosttalk://oauth2redirect"
+        val CLIENT_ID = BuildConfig.GOOGLE_CLIENT_ID
+        const val REDIRECT_URI = "com.googleusercontent.apps.974414517482-2fo3sfu8ij49gotcduivt6dsu9e7cleu:/oauth2redirect"
     }
 
     fun startWebAuthFlow(context: Context) {

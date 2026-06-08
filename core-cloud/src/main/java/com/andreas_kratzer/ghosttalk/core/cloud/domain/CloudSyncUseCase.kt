@@ -197,7 +197,7 @@ class CloudSyncUseCase @Inject constructor(
                         }
                     }
                 } catch (e: Exception) {
-                    logger.e(TAG, "Stage 1 Profile sync failed (non-fatal)", e)
+                    logger.e(TAG, "[SYNC-STAGE-1-ERROR] Stage 1 Profile sync failed (non-fatal): ${e.message}", e)
                 }
 
                 // Check isCloudSyncEnabled. If disabled, skip Stage 2 book sync.
@@ -232,6 +232,7 @@ class CloudSyncUseCase @Inject constructor(
                         }
                         syncLogProvider.addLogEntry("Inhalte sind identisch (NO_OP)", bookId, book.name)
                         
+                        /*
                         val configModeStr = settingsRepository.syncModeSettings
                         if (configModeStr != "OFF") {
                             val configMode = if (syncMode == SyncMode.TWO_WAY) {
@@ -243,6 +244,7 @@ class CloudSyncUseCase @Inject constructor(
                                 logger.e(TAG, "Config sync failed (non-fatal)", e)
                             }
                         }
+                        */
 
                         try {
                             audioSyncHelper.syncAudioRecordings(storageProvider, remoteFiles, audioSyncMode, bookId)
@@ -279,7 +281,7 @@ class CloudSyncUseCase @Inject constructor(
                         val newFileId = storageProvider.uploadFile(
                             tempFile = tempFile,
                             mimeType = "application/json",
-                            description = book.name,
+                            description = buildBookDescription(book.name),
                             properties = buildSyncProperties(
                                 bookId = bookId,
                                 bookName = book.name,
@@ -406,7 +408,7 @@ class CloudSyncUseCase @Inject constructor(
                                         val newId = storageProvider.uploadFile(
                                             tempFile = tempFile,
                                             mimeType = "application/json",
-                                            description = book.name,
+                                            description = buildBookDescription(book.name),
                                             properties = buildSyncProperties(
                                                 bookId = bookId,
                                                 bookName = book.name,
@@ -438,14 +440,15 @@ class CloudSyncUseCase @Inject constructor(
                                                     updatedAt = book.updatedAt,
                                                     versionSequence = localSeq,
                                                     structureMd5 = localStructMd5
-                                                )
+                                                ),
+                                                description = buildBookDescription(book.name)
                                             )
                                         } else {
                                             storageProvider.updateFile(
                                                 fileId = effectiveMasterFile.id,
                                                 tempFile = tempFile,
                                                 mimeType = "application/json",
-                                                description = book.name,
+                                                description = buildBookDescription(book.name),
                                                 properties = buildSyncProperties(
                                                     bookId = bookId,
                                                     bookName = book.name,
@@ -619,14 +622,15 @@ class CloudSyncUseCase @Inject constructor(
                                                         updatedAt = mergedWithNewSeq.bookUpdatedAt ?: System.currentTimeMillis(),
                                                         versionSequence = newSeq,
                                                         structureMd5 = mergedStructMd5Upload
-                                                    )
+                                                    ),
+                                                    description = buildBookDescription(mergedWithNewSeq.bookName ?: book.name)
                                                 )
                                             } else if (effectiveMasterFile != null) {
                                                 storageProvider.updateFile(
                                                     effectiveMasterFile.id,
                                                     mergedTempFile,
                                                     "application/json",
-                                                    book.name,
+                                                    buildBookDescription(mergedWithNewSeq.bookName ?: book.name),
                                                     properties = buildSyncProperties(
                                                         bookId = bookId,
                                                         bookName = mergedWithNewSeq.bookName ?: book.name,
@@ -640,7 +644,7 @@ class CloudSyncUseCase @Inject constructor(
                                                 storageProvider.uploadFile(
                                                     mergedTempFile,
                                                     "application/json",
-                                                    book.name,
+                                                    buildBookDescription(mergedWithNewSeq.bookName ?: book.name),
                                                     properties = buildSyncProperties(
                                                         bookId = bookId,
                                                         bookName = mergedWithNewSeq.bookName ?: book.name,
@@ -712,6 +716,7 @@ class CloudSyncUseCase @Inject constructor(
                     }
                 }
 
+                /*
                 // Sync settings/config config files before other resources
                 val configModeStr = settingsRepository.syncModeSettings
                 if (success && configModeStr != "OFF") {
@@ -724,6 +729,7 @@ class CloudSyncUseCase @Inject constructor(
                         logger.e(TAG, "Config sync failed (non-fatal)", e)
                     }
                 }
+                */
 
                 // Sync audio recordings after successful book sync
                 if (success && !audioSynced) {
@@ -1053,11 +1059,13 @@ class CloudSyncUseCase @Inject constructor(
                             }
                             if (bookId.isNotEmpty()) {
                                 val bookName = fileName.substringBefore(".zip").substringBefore(".json")
+                                /*
                                 try {
                                     configSyncHelper.restoreBookConfigIfAvailable(storageProvider, remoteFiles, bookId, bookName)
                                 } catch (e: Exception) {
                                     logger.e(TAG, "Config restore after cloud import failed (non-fatal)", e)
                                 }
+                                */
                                 try {
                                     statisticsSyncHelper.restoreStatisticsIfAvailable(storageProvider, remoteFiles, bookId, bookName)
                                 } catch (e: Exception) {
@@ -1138,10 +1146,10 @@ class CloudSyncUseCase @Inject constructor(
             val storageProvider = getStorageProvider(drive)
             val existingFile = storageProvider.listFiles().find { it.name == logFile.name }
             if (existingFile != null) {
-                storageProvider.updateFile(existingFile.id, logFile, "text/plain", "App Logcat Extract")
-            } else {
-                storageProvider.uploadFile(logFile, "text/plain", "App Logcat Extract") != null
-            }
+                                storageProvider.updateFile(existingFile.id, logFile, "text/plain", buildLogDescription())
+                            } else {
+                                storageProvider.uploadFile(logFile, "text/plain", buildLogDescription()) != null
+                            }
         } catch (e: Exception) {
             logger.e(TAG, "Failed to upload log file to remote storage provider", e)
             false
@@ -1211,6 +1219,26 @@ class CloudSyncUseCase @Inject constructor(
             logger.e(TAG, "Failed to calculate structural MD5 for book $bookId", e)
             ""
         }
+    }
+
+    private fun buildBookDescription(bookName: String): String {
+        val device = "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}"
+        val versionName = try {
+            context.packageManager.getPackageInfo(context.packageName, 0).versionName
+        } catch (e: Exception) {
+            "unknown"
+        }
+        return "$bookName Book (Uploaded by $device - App v$versionName)"
+    }
+
+    private fun buildLogDescription(): String {
+        val device = "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}"
+        val versionName = try {
+            context.packageManager.getPackageInfo(context.packageName, 0).versionName
+        } catch (e: Exception) {
+            "unknown"
+        }
+        return "App Logcat Extract (Uploaded by $device - App v$versionName)"
     }
 
 

@@ -534,7 +534,7 @@ class MainActivity : AppCompatActivity() {
                     Log.e("MainActivity", "Spotify OAuth callback processing failed.")
                 }
             }
-        } else if (data.scheme == "ghosttalk" && data.host == "oauth2redirect") {
+        } else if (data.scheme == "com.googleusercontent.apps.974414517482-2fo3sfu8ij49gotcduivt6dsu9e7cleu" && (data.host == "oauth2redirect" || data.path == "/oauth2redirect")) {
             lifecycleScope.launch {
                 val success = googleWebAuthManager.handleAuthRedirect(data)
                 if (success) {

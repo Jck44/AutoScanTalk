@@ -78,10 +78,10 @@ class TtsSyncHelper(
                 if (tempFile.length() > 0) {
                     saveToLocalBackupFolder(tempFile)
                     val fileId = if (remoteFile != null) {
-                        val updateSuccess = storageProvider.updateFile(remoteFile.id, tempFile, "application/zip", null) { _ -> }
+                        val updateSuccess = storageProvider.updateFile(remoteFile.id, tempFile, "application/zip", buildTtsDescription()) { _ -> }
                         if (updateSuccess) remoteFile.id else null
                     } else {
-                        storageProvider.uploadFile(tempFile, "application/zip", null) { _ -> }
+                        storageProvider.uploadFile(tempFile, "application/zip", buildTtsDescription()) { _ -> }
                     }
 
                     if (fileId != null) {
@@ -153,5 +153,15 @@ class TtsSyncHelper(
         } finally {
             tempFile.delete()
         }
+    }
+
+    private fun buildTtsDescription(): String {
+        val device = "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}"
+        val versionName = try {
+            context.packageManager.getPackageInfo(context.packageName, 0).versionName
+        } catch (e: Exception) {
+            "unknown"
+        }
+        return "TTS Cache (Uploaded by $device - App v$versionName)"
     }
 }

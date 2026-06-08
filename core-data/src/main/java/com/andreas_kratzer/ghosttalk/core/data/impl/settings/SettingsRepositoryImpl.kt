@@ -46,9 +46,9 @@ class SettingsRepositoryImpl @Inject constructor(
     private val voiceSettings = VoiceSettingsRepository(prefs, activeBookIdFlow)
     private val scanningSettings = ScanningSettingsRepository(prefs, activeBookIdFlow)
     private val securitySettings = SecuritySettingsRepository(prefs, activeBookIdFlow)
-    private val cloudSettings = CloudSettingsRepository(prefs, activeBookIdFlow)
+    private val cloudSettings = CloudSettingsRepository(prefs, activeBookIdFlow, context)
     private val smartHomeSettings = SmartHomeSettingsRepository(prefs, activeBookIdFlow)
-    private val genAiSettings = GenAiSettingsRepository(prefs, activeBookIdFlow)
+    private val genAiSettings = GenAiSettingsRepository(prefs, activeBookIdFlow, context)
     private val generalSettings = GeneralSettingsRepository(prefs, activeBookIdFlow)
     private val notificationSettings = NotificationSettingsRepository(prefs, activeBookIdFlow)
     private val advancedSettings = AdvancedSettingsRepository(prefs, activeBookIdFlow)
@@ -59,9 +59,97 @@ class SettingsRepositoryImpl @Inject constructor(
         // Run bootstrapping on start
         scope.launch {
             try {
-                ProfileBootstrapper(settingsProfileDao, context).bootstrapIfNeeded()
+                ProfileBootstrapper(settingsProfileDao, context, com.andreas_kratzer.ghosttalk.core.util.AppLogger(context)).bootstrapIfNeeded()
+                
+                // One-time migration of book-scoped scanning settings to global settings & active profile config
+                if (!prefs.getBoolean("migration_scanning_settings_to_profile_done", false)) {
+                    val activeBookId = _activeBookIdFlow.value
+                    
+                    val keysToMigrate = listOf(
+                        Triple(SettingsConstants.KEY_AUTO_START_SCANNING, "boolean", true),
+                        Triple(SettingsConstants.KEY_SCAN_DELAY_MILLIS, "long", 3000L),
+                        Triple(SettingsConstants.KEY_RESUME_SCANNING_FROM_START, "boolean", true),
+                        Triple(SettingsConstants.KEY_HOLDING_TIME_MILLIS, "long", 250L),
+                        Triple(SettingsConstants.KEY_DEFAULT_SCAN_PATTERN, "string", "linear"),
+                        Triple(SettingsConstants.KEY_LIMIT_SCAN_CYCLES, "boolean", false),
+                        Triple(SettingsConstants.KEY_SCAN_CYCLE_LIMIT, "int", 2),
+                        Triple(SettingsConstants.KEY_STATIC_ROW_ENABLED, "boolean", false),
+                        Triple(SettingsConstants.KEY_LATE_CLICK_THRESHOLD_MILLIS, "long", 250L),
+                        Triple(SettingsConstants.KEY_VOCAL_SWITCH_ENABLED, "boolean", false),
+                        Triple(SettingsConstants.KEY_SWITCH_ACTIVATION_KEY, "string", "~3")
+                    )
+                    
+                    val editor = prefs.edit()
+                    var profileConfigUpdated = false
+                    
+                    val activeId = generalSettings.activeProfileId
+                    val profile = settingsProfileDao.getProfileById(activeId)?.toDomain(jsonSerializer)
+                    var currentConfig = profile?.config ?: ProfileConfig()
+                    
+                    for ((key, type, defaultValue) in keysToMigrate) {
+                        var migratedValue: Any? = null
+                        val activeScopedKey = "${activeBookId}_$key"
+                        
+                        // 1. Check active book
+                        if (prefs.contains(activeScopedKey)) {
+                            migratedValue = when (type) {
+                                "boolean" -> prefs.getBoolean(activeScopedKey, defaultValue as Boolean)
+                                "long" -> prefs.getLong(activeScopedKey, defaultValue as Long)
+                                "int" -> prefs.getInt(activeScopedKey, defaultValue as Int)
+                                "string" -> prefs.getString(activeScopedKey, defaultValue as String)
+                                else -> null
+                            }
+                        }
+                        
+                        // 2. Fallback: check any other book-scoped key in preferences
+                        if (migratedValue == null || migratedValue == defaultValue) {
+                            val allPrefs = prefs.all
+                            for ((prefKey, prefValue) in allPrefs) {
+                                if (prefKey.endsWith("_$key") && prefValue != null && prefValue != defaultValue) {
+                                    migratedValue = prefValue
+                                    break
+                                }
+                            }
+                        }
+                        
+                        // If we found a custom key value, write it globally and update config builder
+                        if (migratedValue != null && migratedValue != defaultValue) {
+                            when (type) {
+                                "boolean" -> editor.putBoolean(key, migratedValue as Boolean)
+                                "long" -> editor.putLong(key, migratedValue as Long)
+                                "int" -> editor.putInt(key, migratedValue as Int)
+                                "string" -> editor.putString(key, migratedValue as String)
+                            }
+                            
+                            // Update our local config representation
+                            currentConfig = when (key) {
+                                SettingsConstants.KEY_AUTO_START_SCANNING -> currentConfig.copy(autoStartScanning = migratedValue as Boolean)
+                                SettingsConstants.KEY_SCAN_DELAY_MILLIS -> currentConfig.copy(scanDelayMillis = migratedValue as Long)
+                                SettingsConstants.KEY_RESUME_SCANNING_FROM_START -> currentConfig.copy(resumeScanningFromStart = migratedValue as Boolean)
+                                SettingsConstants.KEY_HOLDING_TIME_MILLIS -> currentConfig.copy(holdingTimeMillis = migratedValue as Long)
+                                SettingsConstants.KEY_DEFAULT_SCAN_PATTERN -> currentConfig.copy(defaultScanPattern = migratedValue as String)
+                                SettingsConstants.KEY_LIMIT_SCAN_CYCLES -> currentConfig.copy(limitScanCycles = migratedValue as Boolean)
+                                SettingsConstants.KEY_SCAN_CYCLE_LIMIT -> currentConfig.copy(scanCycleLimit = migratedValue as Int)
+                                SettingsConstants.KEY_STATIC_ROW_ENABLED -> currentConfig.copy(staticRowEnabled = migratedValue as Boolean)
+                                SettingsConstants.KEY_LATE_CLICK_THRESHOLD_MILLIS -> currentConfig.copy(lateClickThresholdMillis = migratedValue as Long)
+                                SettingsConstants.KEY_VOCAL_SWITCH_ENABLED -> currentConfig.copy(vocalSwitchEnabled = migratedValue as Boolean)
+                                SettingsConstants.KEY_SWITCH_ACTIVATION_KEY -> currentConfig.copy(switchActivationKey = migratedValue as String)
+                                else -> currentConfig
+                            }
+                            profileConfigUpdated = true
+                        }
+                    }
+                    
+                    editor.putBoolean("migration_scanning_settings_to_profile_done", true)
+                    editor.apply()
+                    
+                    if (profileConfigUpdated && profile != null) {
+                        val updatedProfile = profile.copy(config = currentConfig, updatedAt = System.currentTimeMillis())
+                        settingsProfileDao.updateProfile(updatedProfile.toEntity(jsonSerializer))
+                    }
+                }
             } catch (e: Exception) {
-                // Non-fatal bootstrapper error
+                // Non-fatal bootstrapper/migration error
             }
         }
 
@@ -163,7 +251,19 @@ class SettingsRepositoryImpl @Inject constructor(
                             syncLogsIntervalHours = prefs.getLong(SettingsConstants.KEY_SYNC_LOGS_INTERVAL_HOURS, 24L),
                             preferredMainSpeakerName = prefs.getString("preferred_main_speaker_name", null),
                             preferredCueSpeakerName = prefs.getString("preferred_cue_speaker_name", null),
-                            fallbackToInternalAudio = prefs.getBoolean("fallback_to_internal_audio", true)
+                            fallbackToInternalAudio = prefs.getBoolean("fallback_to_internal_audio", true),
+                            logIgnoredActions = prefs.getBoolean(SettingsConstants.KEY_LOG_IGNORED_ACTIONS, false),
+                            bluetoothDelay = prefs.getLong(SettingsConstants.KEY_BLUETOOTH_DELAY, 100L),
+                            hueBridgeIp = prefs.getString(SettingsConstants.KEY_HUE_BRIDGE_IP, "") ?: "",
+                            hueUsername = prefs.getString(SettingsConstants.KEY_HUE_USERNAME, "") ?: "",
+                            hueBridgeFingerprint = prefs.getString(SettingsConstants.KEY_HUE_BRIDGE_FINGERPRINT, "") ?: "",
+                            hueCachedDevices = prefs.getString(SettingsConstants.KEY_HUE_CACHED_DEVICES, "") ?: "",
+                            speakerVolume = prefs.getInt(SettingsConstants.KEY_SPEAKER_VOLUME, 100),
+                            headphoneVolume = prefs.getInt(SettingsConstants.KEY_HEADPHONE_VOLUME, 100),
+                            blockVolumeKeys = prefs.getBoolean(SettingsConstants.KEY_BLOCK_VOLUME_KEYS, false),
+                            isCloudSyncEnabled = prefs.getBoolean(SettingsConstants.KEY_CLOUD_SYNC_ENABLED, false),
+                            googleDriveFolderId = prefs.getString(SettingsConstants.KEY_GOOGLE_DRIVE_FOLDER_ID, null),
+                            googleDriveFolderName = prefs.getString(SettingsConstants.KEY_GOOGLE_DRIVE_FOLDER_NAME, null)
                         )
                         val updatedProfile = profile.copy(config = currentConfig, updatedAt = System.currentTimeMillis())
                         updateProfile(updatedProfile)
@@ -1174,6 +1274,19 @@ class SettingsRepositoryImpl @Inject constructor(
             editor.putString("preferred_main_speaker_name", config.preferredMainSpeakerName)
             editor.putString("preferred_cue_speaker_name", config.preferredCueSpeakerName)
             editor.putBoolean("fallback_to_internal_audio", config.fallbackToInternalAudio)
+            editor.putBoolean(SettingsConstants.KEY_LOG_IGNORED_ACTIONS, config.logIgnoredActions)
+            editor.putBoolean(SettingsConstants.KEY_LOG_STOP_ACTIONS, config.logStopActions)
+            editor.putLong(SettingsConstants.KEY_BLUETOOTH_DELAY, config.bluetoothDelay)
+            editor.putString(SettingsConstants.KEY_HUE_BRIDGE_IP, config.hueBridgeIp)
+            editor.putString(SettingsConstants.KEY_HUE_USERNAME, config.hueUsername)
+            editor.putString(SettingsConstants.KEY_HUE_BRIDGE_FINGERPRINT, config.hueBridgeFingerprint)
+            editor.putString(SettingsConstants.KEY_HUE_CACHED_DEVICES, config.hueCachedDevices)
+            editor.putInt(SettingsConstants.KEY_SPEAKER_VOLUME, config.speakerVolume)
+            editor.putInt(SettingsConstants.KEY_HEADPHONE_VOLUME, config.headphoneVolume)
+            editor.putBoolean(SettingsConstants.KEY_BLOCK_VOLUME_KEYS, config.blockVolumeKeys)
+            editor.putBoolean(SettingsConstants.KEY_CLOUD_SYNC_ENABLED, config.isCloudSyncEnabled)
+            editor.putString(SettingsConstants.KEY_GOOGLE_DRIVE_FOLDER_ID, config.googleDriveFolderId)
+            editor.putString(SettingsConstants.KEY_GOOGLE_DRIVE_FOLDER_NAME, config.googleDriveFolderName)
             editor.apply()
 
             refreshFlows()

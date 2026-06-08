@@ -38,6 +38,32 @@ class ConfigSyncHelper(
         return hash.joinToString("") { "%02x".format(it) }
     }
 
+    private fun buildConfigPropertiesAndDescription(
+        type: String,
+        name: String,
+        updatedAt: Long
+    ): Pair<Map<String, String>, String> {
+        val device = "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}"
+        val versionName = try {
+            context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "unknown"
+        } catch (e: Exception) {
+            "unknown"
+        }
+        val androidId = android.provider.Settings.Secure.getString(context.contentResolver, android.provider.Settings.Secure.ANDROID_ID) ?: "unknown"
+        val properties = mapOf(
+            "app_name" to "GhostTalk",
+            "sync_type" to type,
+            "name" to name,
+            "updated_at" to updatedAt.toString(),
+            "source_device" to device,
+            "device_id" to androidId,
+            "app_version" to versionName
+        )
+        val displayType = if (type == "profile") "Profile" else "Config"
+        val description = "$name $displayType (Uploaded by $device - App v$versionName)"
+        return Pair(properties, description)
+    }
+
     private fun mergeConfigJsons(localJson: String, remoteJson: String, baseJson: String?): String {
         val jsonParser = Json { ignoreUnknownKeys = true; prettyPrint = true }
         val localMap = jsonParser.parseToJsonElement(localJson).jsonObject
@@ -79,6 +105,7 @@ class ConfigSyncHelper(
         )
     }
 
+    /*
     suspend fun syncBookConfig(
         storageProvider: SyncStorageProvider,
         remoteFiles: List<RemoteSyncFile>,
@@ -133,7 +160,8 @@ class ConfigSyncHelper(
             try {
                 tempFile.writeText(mergedJson)
                 saveToLocalBackupFolder(configFileName, tempFile)
-                val updateSuccess = storageProvider.updateFile(remoteFile.id, tempFile, "application/json", bookName) { _ -> }
+                val (properties, description) = buildConfigPropertiesAndDescription("book_config", bookName, System.currentTimeMillis())
+                val updateSuccess = storageProvider.updateFile(remoteFile.id, tempFile, "application/json", description, properties) { _ -> }
                 if (updateSuccess) {
                     importExportManager.importBookConfigFromJson(mergedJson, bookId)
                     syncLogProvider.addLogEntry("Einstellungen (gemergt) synchronisiert", bookId, bookName)
@@ -162,10 +190,11 @@ class ConfigSyncHelper(
             try {
                 tempFile.writeText(localConfigJson)
                 saveToLocalBackupFolder(configFileName, tempFile)
+                val (properties, description) = buildConfigPropertiesAndDescription("book_config", bookName, localLastModified)
                 if (remoteFile != null) {
-                    storageProvider.updateFile(remoteFile.id, tempFile, "application/json", bookName) { _ -> }
+                    storageProvider.updateFile(remoteFile.id, tempFile, "application/json", description, properties) { _ -> }
                 } else {
-                    storageProvider.uploadFile(tempFile, "application/json", bookName) { _ -> }
+                    storageProvider.uploadFile(tempFile, "application/json", description, properties) { _ -> }
                 }
                 syncLogProvider.addLogEntry("Einstellungen in die Cloud hochgeladen", bookId, bookName)
             } finally {
@@ -207,6 +236,40 @@ class ConfigSyncHelper(
             tempFile.delete()
         }
     }
+    */
+
+    private fun getTransitSeed(settingsRepository: com.andreas_kratzer.ghosttalk.core.data.SettingsRepository): String {
+        val email = settingsRepository.googleUserEmail
+        return if (!email.isNullOrBlank()) email else "ghosttalk_transit_fallback"
+    }
+
+    private fun encryptProfileForTransit(
+        profile: com.andreas_kratzer.ghosttalk.core.model.SettingsProfile,
+        seed: String
+    ): com.andreas_kratzer.ghosttalk.core.model.SettingsProfile {
+        val encryptor = com.andreas_kratzer.ghosttalk.core.data.impl.settings.SecuritySettingsEncryptor
+        val encryptedConfig = profile.config.copy(
+            securityPinHash = profile.config.securityPinHash?.let { encryptor.encryptForTransit(it, seed) },
+            securityPinSalt = profile.config.securityPinSalt?.let { encryptor.encryptForTransit(it, seed) },
+            hueUsername = encryptor.encryptForTransit(profile.config.hueUsername, seed),
+            hueBridgeFingerprint = encryptor.encryptForTransit(profile.config.hueBridgeFingerprint, seed)
+        )
+        return profile.copy(config = encryptedConfig)
+    }
+
+    private fun decryptProfileFromTransit(
+        profile: com.andreas_kratzer.ghosttalk.core.model.SettingsProfile,
+        seed: String
+    ): com.andreas_kratzer.ghosttalk.core.model.SettingsProfile {
+        val encryptor = com.andreas_kratzer.ghosttalk.core.data.impl.settings.SecuritySettingsEncryptor
+        val decryptedConfig = profile.config.copy(
+            securityPinHash = profile.config.securityPinHash?.let { encryptor.decryptFromTransit(it, seed) },
+            securityPinSalt = profile.config.securityPinSalt?.let { encryptor.decryptFromTransit(it, seed) },
+            hueUsername = encryptor.decryptFromTransit(profile.config.hueUsername, seed),
+            hueBridgeFingerprint = encryptor.decryptFromTransit(profile.config.hueBridgeFingerprint, seed)
+        )
+        return profile.copy(config = decryptedConfig)
+    }
 
     suspend fun syncProfile(
         storageProvider: SyncStorageProvider,
@@ -217,8 +280,11 @@ class ConfigSyncHelper(
         val profileFileName = "profile_${activeProfile.id}.json"
         val remoteFile = remoteFiles.find { it.name == profileFileName }
 
+        val transitSeed = getTransitSeed(settingsRepository)
+        val encryptedActiveProfile = encryptProfileForTransit(activeProfile, transitSeed)
+
         val jsonSerializer = Json { ignoreUnknownKeys = true; prettyPrint = true; encodeDefaults = true }
-        val localJson = jsonSerializer.encodeToString(com.andreas_kratzer.ghosttalk.core.model.SettingsProfile.serializer(), activeProfile)
+        val localJson = jsonSerializer.encodeToString(com.andreas_kratzer.ghosttalk.core.model.SettingsProfile.serializer(), encryptedActiveProfile)
         val localMd5 = calculateMd5(localJson)
 
         val baseBackupFile = File(File(context.filesDir, "local_backups"), profileFileName)
@@ -230,7 +296,8 @@ class ConfigSyncHelper(
             try {
                 tempFile.writeText(localJson)
                 saveToLocalBackupFolder(profileFileName, tempFile)
-                storageProvider.uploadFile(tempFile, "application/json", activeProfile.name) { _ -> }
+                val (properties, description) = buildConfigPropertiesAndDescription("profile", activeProfile.name, activeProfile.updatedAt)
+                storageProvider.uploadFile(tempFile, "application/json", description, properties) { _ -> }
                 syncLogProvider.addLogEntry("Profil ${activeProfile.name} in die Cloud hochgeladen", activeProfile.id, activeProfile.name)
             } finally {
                 tempFile.delete()
@@ -252,9 +319,24 @@ class ConfigSyncHelper(
 
         if (remoteJson == null) return@withContext
 
-        val remoteMd5 = calculateMd5(remoteJson)
-        if (localMd5 == remoteMd5) {
-            logger.d(TAG, "Profile is already in sync.")
+        // Decode remote profile config to check if the settings are actually different
+        val remoteProfileConfig = try {
+            val parsedProfile = jsonSerializer.decodeFromString(com.andreas_kratzer.ghosttalk.core.model.SettingsProfile.serializer(), remoteJson)
+            val decryptedRemoteProfile = decryptProfileFromTransit(parsedProfile, transitSeed)
+            decryptedRemoteProfile.config
+        } catch (e: Exception) {
+            try {
+                jsonSerializer.decodeFromString(com.andreas_kratzer.ghosttalk.core.model.ProfileConfig.serializer(), remoteJson)
+            } catch (e2: Exception) {
+                logger.e(TAG, "Failed to parse remote profile config for comparison", e2)
+                null
+            }
+        }
+
+        if (remoteProfileConfig != null && activeProfile.config == remoteProfileConfig && activeProfile.name == (
+            try { jsonSerializer.decodeFromString(com.andreas_kratzer.ghosttalk.core.model.SettingsProfile.serializer(), remoteJson).name } catch(_: Exception) { remoteFile.description ?: activeProfile.name }
+        )) {
+            logger.d(TAG, "Profile settings and name are identical. Skipping sync.")
             return@withContext
         }
 
@@ -262,7 +344,8 @@ class ConfigSyncHelper(
         
         // Decode remote and base profiles (handling both SettingsProfile and legacy ProfileConfig format)
         val remoteProfile = try {
-            jsonSerializer.decodeFromString(com.andreas_kratzer.ghosttalk.core.model.SettingsProfile.serializer(), remoteJson)
+            val parsedProfile = jsonSerializer.decodeFromString(com.andreas_kratzer.ghosttalk.core.model.SettingsProfile.serializer(), remoteJson)
+            decryptProfileFromTransit(parsedProfile, transitSeed)
         } catch (e: Exception) {
             try {
                 val config = jsonSerializer.decodeFromString(com.andreas_kratzer.ghosttalk.core.model.ProfileConfig.serializer(), remoteJson)
@@ -281,7 +364,8 @@ class ConfigSyncHelper(
 
         val baseProfile = baseJson?.let {
             try {
-                jsonSerializer.decodeFromString(com.andreas_kratzer.ghosttalk.core.model.SettingsProfile.serializer(), it)
+                val parsedProfile = jsonSerializer.decodeFromString(com.andreas_kratzer.ghosttalk.core.model.SettingsProfile.serializer(), it)
+                decryptProfileFromTransit(parsedProfile, transitSeed)
             } catch (e: Exception) {
                 try {
                     val config = jsonSerializer.decodeFromString(com.andreas_kratzer.ghosttalk.core.model.ProfileConfig.serializer(), it)
@@ -320,7 +404,8 @@ class ConfigSyncHelper(
                 isDeleted = mergedIsDeleted
             )
 
-            val updatedProfileJson = jsonSerializer.encodeToString(com.andreas_kratzer.ghosttalk.core.model.SettingsProfile.serializer(), updatedProfile)
+            val encryptedUpdatedProfile = encryptProfileForTransit(updatedProfile, transitSeed)
+            val updatedProfileJson = jsonSerializer.encodeToString(com.andreas_kratzer.ghosttalk.core.model.SettingsProfile.serializer(), encryptedUpdatedProfile)
             tempFile.writeText(updatedProfileJson)
             saveToLocalBackupFolder(profileFileName, tempFile)
             
@@ -328,7 +413,8 @@ class ConfigSyncHelper(
             settingsRepository.updateProfile(updatedProfile)
 
             // Update to cloud
-            storageProvider.updateFile(remoteFile.id, tempFile, "application/json", updatedProfile.name) { _ -> }
+            val (properties, description) = buildConfigPropertiesAndDescription("profile", updatedProfile.name, updatedProfile.updatedAt)
+            storageProvider.updateFile(remoteFile.id, tempFile, "application/json", description, properties) { _ -> }
             syncLogProvider.addLogEntry("Profil ${updatedProfile.name} (gemergt) synchronisiert", updatedProfile.id, updatedProfile.name)
         } finally {
             tempFile.delete()

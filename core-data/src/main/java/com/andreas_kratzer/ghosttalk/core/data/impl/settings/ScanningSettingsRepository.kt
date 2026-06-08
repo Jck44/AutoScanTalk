@@ -36,7 +36,7 @@ class ScanningSettingsRepository(
     private val _scanDelay = LongSetting(KEY_SCAN_DELAY_MILLIS, 3000L)
     private val _resumeScanningFromStart = BooleanSetting(KEY_RESUME_SCANNING_FROM_START, true)
     private val _holdingTimeMillis = LongSetting(KEY_HOLDING_TIME_MILLIS, 250L)
-    private val _switchActivationKey = NonNullStringSetting(KEY_SWITCH_ACTIVATION_KEY, "~3")
+    private val _switchActivationKey = NonNullStringSetting(KEY_SWITCH_ACTIVATION_KEY, "~3", isScoped = false)
     private val _volumeKeysActivate = BooleanSetting(KEY_VOLUME_KEYS_ACTIVATE, false)
     private val _defaultScanPattern = NonNullStringSetting(KEY_DEFAULT_SCAN_PATTERN, "linear")
     private val _bluetoothDelay = LongSetting(KEY_BLUETOOTH_DELAY, 100L, isScoped = false)

@@ -14,7 +14,8 @@ import kotlinx.coroutines.flow.StateFlow
 
 class CloudSettingsRepository(
     prefs: SharedPreferences,
-    activeBookIdFlow: StateFlow<String?>
+    activeBookIdFlow: StateFlow<String?>,
+    private val context: android.content.Context
 ) : BaseSettingsRepository(prefs, activeBookIdFlow), CloudSettings {
 
     override val activeBookIdFlow: StateFlow<String?> = super.activeBookIdFlow
@@ -29,7 +30,11 @@ class CloudSettingsRepository(
     private val _syncModeStats = NonNullStringSetting(SettingsConstants.KEY_SYNC_MODE_STATS, "RESTORE_ONLY")
     private val _syncModeSettings = NonNullStringSetting(SettingsConstants.KEY_SYNC_MODE_SETTINGS, "TWO_WAY")
     private val _lastSuccessfulSyncTime = LongSetting(KEY_LAST_SYNC_TIME, 0L)
-    private val _elevenLabsApiKey = StringSetting(SettingsConstants.KEY_ELEVENLABS_API_KEY)
+    private val _elevenLabsApiKey = StringSetting(
+        key = SettingsConstants.KEY_ELEVENLABS_API_KEY,
+        encrypt = { SecuritySettingsEncryptor.encryptLocal(it, context) },
+        decrypt = { SecuritySettingsEncryptor.decryptLocal(it, context) }
+    )
     private val _elevenLabsModel = NonNullStringSetting(SettingsConstants.KEY_ELEVENLABS_MODEL, "eleven_multilingual_v2")
     private val _elevenLabsStability = FloatSetting(SettingsConstants.KEY_ELEVENLABS_STABILITY, 0.5f)
     private val _elevenLabsSimilarityBoost = FloatSetting(SettingsConstants.KEY_ELEVENLABS_SIMILARITY_BOOST, 0.75f)

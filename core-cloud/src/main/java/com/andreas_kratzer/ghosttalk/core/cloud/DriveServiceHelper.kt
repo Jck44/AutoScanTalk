@@ -331,7 +331,8 @@ class DriveServiceHelper(private val driveService: Drive) {
         localFile: java.io.File,
         mimeType: String,
         expectedVersion: Long,
-        properties: Map<String, String>? = null
+        properties: Map<String, String>? = null,
+        description: String? = null
     ): Boolean = withContext(Dispatchers.IO) {
         val logTag = "DriveLockHandshake"
         try {
@@ -354,6 +355,7 @@ class DriveServiceHelper(private val driveService: Drive) {
             val content = FileContent(mimeType, localFile)
             val metadata = File().apply {
                 this.properties = properties
+                this.description = description
             }
             val updateResponse = driveService.files().update(fileId, metadata, content).execute()
             

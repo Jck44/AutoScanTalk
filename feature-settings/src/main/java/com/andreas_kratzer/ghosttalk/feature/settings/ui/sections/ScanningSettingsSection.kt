@@ -117,7 +117,7 @@ fun ScanningSettingsSection(
 
         PreferenceCategory(
             title = stringResource(R.string.settings_category_hardware),
-            isLocalDevice = true,
+            isCloudProfile = true,
             modifier = Modifier.weight(1f)
         ) {
             val switchKey by viewModel.switchActivationKey.collectAsState("Space")

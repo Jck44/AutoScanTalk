@@ -285,7 +285,8 @@ fun CloudSettingsSection(
                 SettingsEditTextItem(
                     label = stringResource(R.string.settings_elevenlabs_api_key),
                     value = elevenLabsApiKey ?: "",
-                    onValueChange = { viewModel.setElevenLabsApiKey(it) }
+                    onValueChange = { viewModel.setElevenLabsApiKey(it) },
+                    isPassword = true
                 )
                 Text(
                     text = stringResource(R.string.settings_elevenlabs_api_key_description),

@@ -15,6 +15,10 @@ android {
         consumerProguardFiles("consumer-rules.pro")
     }
 
+    buildFeatures {
+        buildConfig = true
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -22,6 +26,10 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            buildConfigField("String", "GOOGLE_CLIENT_ID", "\"974414517482-2fo3sfu8ij49gotcduivt6dsu9e7cleu.apps.googleusercontent.com\"")
+        }
+        debug {
+            buildConfigField("String", "GOOGLE_CLIENT_ID", "\"974414517482-2fo3sfu8ij49gotcduivt6dsu9e7cleu.apps.googleusercontent.com\"")
         }
     }
     compileOptions {

@@ -184,30 +184,15 @@ class SettingsMapper @Inject constructor(
         val fullData = exportSettings(bookId, ImportExportData())
         return fullData.copy(
             elevenLabsApiKey = null,
-            securityPinHash = null,
-            securityPinSalt = null,
-            isCloudSyncEnabled = null,
-            syncIntervalMinutes = null,
-            syncMode = null,
-            syncModeBook = null,
-            syncModeTts = null,
-            syncModeStats = null,
-            syncModeSettings = null
+            syncMode = null
         )
     }
 
     companion object {
         val NON_SYNCABLE_SETTINGS = setOf(
             "elevenLabsApiKey",
-            "securityPinHash",
-            "securityPinSalt",
-            "isCloudSyncEnabled",
-            "syncIntervalMinutes",
-            "syncMode",
-            "syncModeBook",
-            "syncModeTts",
-            "syncModeStats",
-            "syncModeSettings"
+            "geminiApiKey",
+            "syncMode"
         )
     }
 }

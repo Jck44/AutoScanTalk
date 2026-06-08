@@ -66,18 +66,57 @@ class ExportLogsUseCase @Inject constructor(
         sb.append("Sync-Zieltyp     : ").append(settingsRepository.syncTargetType).append("\n")
         sb.append("=========================================\n\n")
 
-        // 2. Read Logcat output for this process (noise lines are filtered out)
+        // 2. Read from RollingFileLogger files (falling back to Logcat if empty)
         try {
-            val process = Runtime.getRuntime().exec(arrayOf("logcat", "-d", "-v", "time"))
-            val reader = BufferedReader(InputStreamReader(process.inputStream))
-            var line: String?
-            while (reader.readLine().also { line = it } != null) {
-                if (!isNoiseLine(line!!)) {
-                    sb.append(line).append("\n")
+            val rollingFileLogger = com.andreas_kratzer.ghosttalk.core.util.RollingFileLogger(context)
+            val files = rollingFileLogger.getLogFiles()
+            if (files.isNotEmpty()) {
+                val now = System.currentTimeMillis()
+                val twelveHoursAgo = now - 12 * 60 * 60 * 1000 // 12 hours window
+                val dateFormat = SimpleDateFormat("MM-dd HH:mm:ss.SSS", Locale.US)
+                val currentYear = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
+                
+                var lastLineWasAppended = true
+                for (file in files) {
+                    file.forEachLine { line ->
+                        // Check if the line starts with a timestamp (e.g. "06-08 15:00:00.000")
+                        val hasTimestamp = line.length >= 18 && line[2] == '-' && line[5] == ' ' && line[8] == ':' && line[11] == ':' && line[14] == '.'
+                        if (hasTimestamp) {
+                            val timeStr = line.substring(0, 18)
+                            try {
+                                val date = dateFormat.parse(timeStr)
+                                if (date != null) {
+                                    val cal = java.util.Calendar.getInstance()
+                                    cal.time = date
+                                    cal.set(java.util.Calendar.YEAR, currentYear)
+                                    val timestamp = cal.timeInMillis
+                                    // Filter logs older than 12 hours
+                                    lastLineWasAppended = timestamp >= twelveHoursAgo
+                                } else {
+                                    lastLineWasAppended = true
+                                }
+                            } catch (pe: Exception) {
+                                lastLineWasAppended = true
+                            }
+                        }
+                        if (lastLineWasAppended) {
+                            sb.append(line).append("\n")
+                        }
+                    }
+                }
+            } else {
+                // Fallback to logcat if no files exist
+                val process = Runtime.getRuntime().exec(arrayOf("logcat", "-d", "-v", "time"))
+                val reader = BufferedReader(InputStreamReader(process.inputStream))
+                var line: String?
+                while (reader.readLine().also { line = it } != null) {
+                    if (!isNoiseLine(line!!)) {
+                        sb.append(line).append("\n")
+                    }
                 }
             }
         } catch (e: Exception) {
-            sb.append("Fehler beim Auslesen von Logcat: ").append(e.message).append("\n")
+            sb.append("Fehler beim Auslesen der Logs: ").append(e.message).append("\n")
         }
 
         sb.toString()

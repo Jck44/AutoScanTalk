@@ -162,7 +162,8 @@ fun GenAiSettingsSection(viewModel: SettingsViewModel) {
                     SettingsEditTextItem(
                         label = stringResource(R.string.settings_gemini_api_key),
                         value = geminiApiKey ?: "",
-                        onValueChange = { viewModel.setGeminiApiKey(it) }
+                        onValueChange = { viewModel.setGeminiApiKey(it) },
+                        isPassword = true
                     )
                     Text(
                         text = stringResource(R.string.settings_gemini_api_key_description),

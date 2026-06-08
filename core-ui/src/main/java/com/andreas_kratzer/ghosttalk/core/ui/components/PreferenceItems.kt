@@ -170,19 +170,21 @@ fun SettingsEditTextItem(
     isLoading: Boolean = false,
     playPauseIconTint: androidx.compose.ui.graphics.Color? = null,
     borderless: Boolean = false,
-    placeholder: String = ""
+    placeholder: String = "",
+    isPassword: Boolean = false
 ) {
     val dimensions = LocalDimensions.current
     var localValue by remember(value) { mutableStateOf(value) }
+    var passwordVisible by remember { mutableStateOf(false) }
     val keyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
 
     val defaultKeyboardOptions = if (numericOnly) {
         KeyboardOptions(keyboardType = KeyboardType.Number)
     } else {
         KeyboardOptions(
-            keyboardType = KeyboardType.Text,
-            autoCorrectEnabled = true,
-            capitalization = KeyboardCapitalization.Sentences
+            keyboardType = if (isPassword) KeyboardType.Password else KeyboardType.Text,
+            autoCorrectEnabled = !isPassword,
+            capitalization = if (isPassword) KeyboardCapitalization.None else KeyboardCapitalization.Sentences
         )
     }
 
@@ -226,6 +228,11 @@ fun SettingsEditTextItem(
                 }
             },
         keyboardOptions = keyboardOptions ?: defaultKeyboardOptions,
+        visualTransformation = if (isPassword && !passwordVisible) {
+            androidx.compose.ui.text.input.PasswordVisualTransformation()
+        } else {
+            androidx.compose.ui.text.input.VisualTransformation.None
+        },
         singleLine = true,
         colors = if (borderless) {
             OutlinedTextFieldDefaults.colors(
@@ -252,6 +259,16 @@ fun SettingsEditTextItem(
                             tint = playPauseIconTint ?: androidx.compose.material3.LocalContentColor.current
                         )
                     }
+                }
+            }
+        } else if (isPassword && localValue.isNotBlank()) {
+            {
+                val icon = if (passwordVisible) GhostTalkIcons.Visibility else GhostTalkIcons.VisibilityOff
+                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = if (passwordVisible) "Hide password" else "Show password"
+                    )
                 }
             }
         } else null

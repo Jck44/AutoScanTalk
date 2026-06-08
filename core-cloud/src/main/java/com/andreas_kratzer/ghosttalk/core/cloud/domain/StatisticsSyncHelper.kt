@@ -84,10 +84,10 @@ class StatisticsSyncHelper(
                 if (tempFile.length() > 0) {
                     saveToLocalBackupFolder(statsFileName, tempFile)
                     val fileId = if (remoteFile != null) {
-                        val updateSuccess = storageProvider.updateFile(remoteFile.id, tempFile, "application/zip", bookName) { _ -> }
+                        val updateSuccess = storageProvider.updateFile(remoteFile.id, tempFile, "application/zip", buildStatsDescription(bookName)) { _ -> }
                         if (updateSuccess) remoteFile.id else null
                     } else {
-                        storageProvider.uploadFile(tempFile, "application/zip", bookName) { _ -> }
+                        storageProvider.uploadFile(tempFile, "application/zip", buildStatsDescription(bookName)) { _ -> }
                     }
 
                     if (fileId != null) {
@@ -162,5 +162,15 @@ class StatisticsSyncHelper(
         } finally {
             tempFile.delete()
         }
+    }
+
+    private fun buildStatsDescription(bookName: String): String {
+        val device = "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}"
+        val versionName = try {
+            context.packageManager.getPackageInfo(context.packageName, 0).versionName
+        } catch (e: Exception) {
+            "unknown"
+        }
+        return "$bookName Stats (Uploaded by $device - App v$versionName)"
     }
 }

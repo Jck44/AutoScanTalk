@@ -240,7 +240,7 @@ class SettingsRepositoryTest {
         val testKey = "Enter"
         repository.switchActivationKey = testKey
 
-        assertEquals(testKey, mockedPrefsStore["book-default_switch_activation_key"])
+        assertEquals(testKey, mockedPrefsStore["switch_activation_key"])
         assertEquals(testKey, repository.switchActivationKey)
         assertEquals(testKey, repository.switchActivationKeyFlow.first())
     }

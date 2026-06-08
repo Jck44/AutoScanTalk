@@ -18,6 +18,7 @@ import javax.inject.Singleton
 class ProfileBootstrapper @Inject constructor(
     private val settingsProfileDao: SettingsProfileDao,
     private val context: Context,
+    private val logger: com.andreas_kratzer.ghosttalk.core.util.Logger,
     private val json: Json = Json { ignoreUnknownKeys = true; prettyPrint = true; encodeDefaults = true }
 ) {
     private val prefs: SharedPreferences = context.getSharedPreferences(SettingsConstants.PREFS_NAME, Context.MODE_PRIVATE)
@@ -30,6 +31,14 @@ class ProfileBootstrapper @Inject constructor(
             val deviceId = if (androidId.isNotBlank()) androidId else UUID.randomUUID().toString().substring(0, 8)
             val newUuid = "profile_${UUID.randomUUID()}"
             val profileName = "Profile $deviceId"
+
+            val tag = "ProfileBootstrapper"
+            val hasLegacySettings = prefs.contains(SettingsConstants.KEY_STARTUP_BEHAVIOR) || prefs.contains(SettingsConstants.KEY_FAVORITE_BOOK_ID)
+            if (hasLegacySettings) {
+                logger.w(tag, "[MIGRATION] Migrating legacy SharedPreferences settings. Initializing Profile with GUID: $newUuid (Device ID: $deviceId)")
+            } else {
+                logger.w(tag, "[BOOTSTRAP] Initial bootstrapping of the device. Generating Profile with GUID: $newUuid (Device ID: $deviceId)")
+            }
 
             // Read the syncable settings directly using the keys
             val legacyConfig = ProfileConfig(
@@ -117,7 +126,20 @@ class ProfileBootstrapper @Inject constructor(
                 syncModeStats = prefs.getString(SettingsConstants.KEY_SYNC_MODE_STATS, "RESTORE_ONLY") ?: "RESTORE_ONLY",
                 syncModeTts = prefs.getString(SettingsConstants.KEY_SYNC_MODE_TTS, "TWO_WAY") ?: "TWO_WAY",
                 syncModeLogs = prefs.getString(SettingsConstants.KEY_SYNC_MODE_LOGS, "TWO_WAY") ?: "TWO_WAY",
-                syncLogsIntervalHours = prefs.getLong(SettingsConstants.KEY_SYNC_LOGS_INTERVAL_HOURS, 24L)
+                syncLogsIntervalHours = prefs.getLong(SettingsConstants.KEY_SYNC_LOGS_INTERVAL_HOURS, 24L),
+                logIgnoredActions = prefs.getBoolean(SettingsConstants.KEY_LOG_IGNORED_ACTIONS, false),
+                logStopActions = prefs.getBoolean(SettingsConstants.KEY_LOG_STOP_ACTIONS, false),
+                bluetoothDelay = prefs.getLong(SettingsConstants.KEY_BLUETOOTH_DELAY, 100L),
+                hueBridgeIp = prefs.getString(SettingsConstants.KEY_HUE_BRIDGE_IP, "") ?: "",
+                hueUsername = prefs.getString(SettingsConstants.KEY_HUE_USERNAME, "") ?: "",
+                hueBridgeFingerprint = prefs.getString(SettingsConstants.KEY_HUE_BRIDGE_FINGERPRINT, "") ?: "",
+                hueCachedDevices = prefs.getString(SettingsConstants.KEY_HUE_CACHED_DEVICES, "") ?: "",
+                speakerVolume = prefs.getInt(SettingsConstants.KEY_SPEAKER_VOLUME, 100),
+                headphoneVolume = prefs.getInt(SettingsConstants.KEY_HEADPHONE_VOLUME, 100),
+                blockVolumeKeys = prefs.getBoolean(SettingsConstants.KEY_BLOCK_VOLUME_KEYS, false),
+                isCloudSyncEnabled = prefs.getBoolean(SettingsConstants.KEY_CLOUD_SYNC_ENABLED, false),
+                googleDriveFolderId = prefs.getString(SettingsConstants.KEY_GOOGLE_DRIVE_FOLDER_ID, null),
+                googleDriveFolderName = prefs.getString(SettingsConstants.KEY_GOOGLE_DRIVE_FOLDER_NAME, null)
             )
 
             val configJson = json.encodeToString(ProfileConfig.serializer(), legacyConfig)

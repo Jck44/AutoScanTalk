@@ -12,14 +12,19 @@ import kotlinx.coroutines.flow.StateFlow
 
 class GenAiSettingsRepository(
     prefs: SharedPreferences,
-    activeBookIdFlow: StateFlow<String?>
+    activeBookIdFlow: StateFlow<String?>,
+    private val context: android.content.Context
 ) : BaseSettingsRepository(prefs, activeBookIdFlow) {
 
     private val _isGeminiEnabled = BooleanSetting(KEY_GEMINI_ENABLED, false)
     private val _useLocalGenerativeAi = BooleanSetting(KEY_USE_LOCAL_GENERATIVE_AI, true)
     private val _geminiRedoPrediction = BooleanSetting(KEY_GEMINI_REDO_PREDICTION, false)
     private val _geminiTimeout = LongSetting(KEY_GEMINI_TIMEOUT, 6000L)
-    private val _geminiApiKey = StringSetting(KEY_GEMINI_API_KEY)
+    private val _geminiApiKey = StringSetting(
+        key = KEY_GEMINI_API_KEY,
+        encrypt = { SecuritySettingsEncryptor.encryptLocal(it, context) },
+        decrypt = { SecuritySettingsEncryptor.decryptLocal(it, context) }
+    )
     private val _useGeminiApiKey = BooleanSetting(KEY_USE_GEMINI_API_KEY, false)
     private val _hasAcceptedPageSplitOptIn = BooleanSetting(KEY_HAS_ACCEPTED_PAGE_SPLIT_OPT_IN, false)
 
