@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import android.util.Log
 import androidx.browser.customtabs.CustomTabsIntent
+import androidx.core.net.toUri
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -31,7 +32,7 @@ class GoogleWebAuthManager @Inject constructor(
         pendingCodeVerifier = verifier
         val challenge = PkceGenerator.generateCodeChallenge(verifier)
 
-        val url = Uri.parse("https://accounts.google.com/o/oauth2/v2/auth").buildUpon()
+        val url = "https://accounts.google.com/o/oauth2/v2/auth".toUri().buildUpon()
             .appendQueryParameter("client_id", CLIENT_ID)
             .appendQueryParameter("redirect_uri", REDIRECT_URI)
             .appendQueryParameter("response_type", "code")
@@ -43,7 +44,7 @@ class GoogleWebAuthManager @Inject constructor(
 
         Log.d(TAG, "Starting Web Auth Flow with URL: $url")
         val customTabsIntent = CustomTabsIntent.Builder().build()
-        customTabsIntent.launchUrl(context, Uri.parse(url))
+        customTabsIntent.launchUrl(context, url.toUri())
     }
 
     suspend fun handleAuthRedirect(uri: Uri): Boolean = withContext(Dispatchers.IO) {
@@ -96,7 +97,7 @@ class GoogleWebAuthManager @Inject constructor(
         return@withContext false
     }
 
-    private suspend fun fetchAndStoreUserEmail(token: String) {
+    private fun fetchAndStoreUserEmail(token: String) {
         try {
             val url = URL("https://www.googleapis.com/oauth2/v3/userinfo")
             val connection = url.openConnection() as HttpURLConnection

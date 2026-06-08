@@ -12,7 +12,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -24,10 +23,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -59,11 +58,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -251,14 +248,17 @@ fun SettingsScreen(
     onNavigateToStart: () -> Unit = {},
     isGlobal: Boolean = false,
     viewModel: SettingsViewModel = hiltViewModel(),
-    onNavigateToGlobalSettings: () -> Unit = {},
     onNavigateToVocalTraining: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val dimensions = LocalDimensions.current
     
     val configuration = LocalConfiguration.current
-    val isLargeScreen = configuration.screenWidthDp >= 720
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val containerWidthDp = with(density) {
+        androidx.compose.ui.platform.LocalWindowInfo.current.containerSize.width.toDp()
+    }
+    val isLargeScreen = containerWidthDp >= 720.dp
 
     var selectedSection by rememberSaveable { mutableStateOf<SettingsSection?>(null) }
     var searchQuery by rememberSaveable { mutableStateOf("") }
@@ -300,23 +300,6 @@ fun SettingsScreen(
         }
     }
 
-    val safFolderLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocumentTree()
-    ) { uri ->
-        uri?.let {
-            val takeFlags: Int = Intent.FLAG_GRANT_READ_URI_PERMISSION or
-                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-            try {
-                context.contentResolver.takePersistableUriPermission(it, takeFlags)
-                val doc = androidx.documentfile.provider.DocumentFile.fromTreeUri(context, it)
-                val displayName = doc?.name ?: it.lastPathSegment ?: "Ausgewählter SAF-Ordner"
-                viewModel.selectLocalFolderSaf(it.toString(), displayName)
-            } catch (e: Exception) {
-                e.printStackTrace()
-                Toast.makeText(context, "Fehler beim Zuweisen der Berechtigungen: ${e.message}", Toast.LENGTH_LONG).show()
-            }
-        }
-    }
 
     val safImportFolderLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocumentTree()
@@ -477,7 +460,6 @@ fun SettingsScreen(
                             },
                             onLocalExport = { localExportLauncher.launch("GhostTalk_Backup.zip") },
                             onLocalImport = { localImportLauncher.launch("*/*") },
-                            onSelectSafFolder = { safFolderLauncher.launch(null) },
                             onSelectSafFolderForImport = { safImportFolderLauncher.launch(null) },
                             onNavigateToVocalTraining = onNavigateToVocalTraining
                         )
@@ -553,7 +535,6 @@ fun SettingsScreen(
                     },
                     onLocalExport = { localExportLauncher.launch("GhostTalk_Backup.zip") },
                     onLocalImport = { localImportLauncher.launch("*/*") },
-                    onSelectSafFolder = { safFolderLauncher.launch(null) },
                     onSelectSafFolderForImport = { safImportFolderLauncher.launch(null) },
                     onNavigateToVocalTraining = onNavigateToVocalTraining
                 )
@@ -745,7 +726,7 @@ private fun SettingsMainMenu(
                             modifier = Modifier.size(20.dp)
                         )
                     },
-                    colors = ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent)
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent)
                 )
             }
         }
@@ -771,7 +752,6 @@ private fun SettingsSubMenu(
     onLockClicked: () -> Unit,
     onLocalExport: () -> Unit,
     onLocalImport: () -> Unit,
-    onSelectSafFolder: () -> Unit,
     onSelectSafFolderForImport: () -> Unit,
     onNavigateToVocalTraining: () -> Unit
 ) {
@@ -790,7 +770,6 @@ private fun SettingsSubMenu(
             onLockClicked = onLockClicked,
             onLocalExport = onLocalExport,
             onLocalImport = onLocalImport,
-            onSelectSafFolder = onSelectSafFolder,
             onSelectSafFolderForImport = onSelectSafFolderForImport,
             onNavigateToVocalTraining = onNavigateToVocalTraining
         )
@@ -899,15 +878,14 @@ fun SubmenuContent(
     onLockClicked: () -> Unit = {},
     onLocalExport: () -> Unit = {},
     onLocalImport: () -> Unit = {},
-    onSelectSafFolder: () -> Unit = {},
     onSelectSafFolderForImport: () -> Unit = {},
     onNavigateToVocalTraining: () -> Unit = {}
 ) {
     when (section) {
         SettingsSection.GENERAL -> {
-            GeneralSettingsSection(viewModel, isGlobal = true, onNavigateBack = onNavigateBack, onBookDeleted = onBookDeleted)
+            GeneralSettingsSection(viewModel, isGlobal = true)
             Spacer(modifier = Modifier.height(16.dp))
-            GeneralSettingsSection(viewModel, isGlobal = false, onNavigateBack = onNavigateBack, onBookDeleted = onBookDeleted)
+            GeneralSettingsSection(viewModel, isGlobal = false)
         }
         SettingsSection.PROFILE -> {
             ProfileSettingsSection(viewModel)
@@ -925,7 +903,7 @@ fun SubmenuContent(
             ScanningSettingsSection(viewModel, isGlobal = false)
         }
         SettingsSection.VOCAL_SWITCH -> {
-            VocalSwitchSettingsSection(viewModel, isGlobal = false, onNavigateToVocalTraining = onNavigateToVocalTraining)
+            VocalSwitchSettingsSection(viewModel, onNavigateToVocalTraining = onNavigateToVocalTraining)
         }
         SettingsSection.SECURITY -> {
             val pin by viewModel.securityPin.collectAsState(null)
@@ -971,18 +949,12 @@ fun SubmenuContent(
         SettingsSection.CLOUD_SYNC -> {
             CloudSettingsSection(
                 viewModel = viewModel,
-                isGlobal = false,
-                onLocalExport = onLocalExport,
-                onLocalImport = onLocalImport,
-                onSelectSafFolderForImport = onSelectSafFolderForImport
+                isGlobal = false
             )
             Spacer(modifier = Modifier.height(16.dp))
             CloudSettingsSection(
                 viewModel = viewModel,
-                isGlobal = true,
-                onLocalExport = onLocalExport,
-                onLocalImport = onLocalImport,
-                onSelectSafFolderForImport = onSelectSafFolderForImport
+                isGlobal = true
             )
         }
         SettingsSection.PERMISSIONS -> {

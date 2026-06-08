@@ -1,10 +1,10 @@
 package com.andreas_kratzer.ghosttalk.core.ai.domain
 
+import android.util.Log
 import com.andreas_kratzer.ghosttalk.core.model.BookHierarchyProposal
 import com.andreas_kratzer.ghosttalk.core.model.HierarchyPageNode
 import com.andreas_kratzer.ghosttalk.core.model.PageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.PageLayoutProposal
-import android.util.Log
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk

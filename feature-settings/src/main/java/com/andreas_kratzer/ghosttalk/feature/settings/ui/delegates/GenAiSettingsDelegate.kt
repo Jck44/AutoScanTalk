@@ -101,7 +101,7 @@ class GenAiSettingsDelegate @Inject constructor(
         return null
     }
 
-    suspend fun saveGeminiApiKeyToGoogle(activity: android.app.Activity): PasswordManagerResult {
+    suspend fun saveGeminiApiKeyToGoogle(activity: Activity): PasswordManagerResult {
         val key = settingsRepository.geminiApiKey
         if (key.isNullOrEmpty()) return PasswordManagerResult.Error("API Key is empty")
         
@@ -111,7 +111,7 @@ class GenAiSettingsDelegate @Inject constructor(
         )
     }
 
-    suspend fun importGeminiApiKeyFromGoogle(activity: android.app.Activity): PasswordManagerResult {
+    suspend fun importGeminiApiKeyFromGoogle(activity: Activity): PasswordManagerResult {
         return authManager.getApiKeyFromPasswordManager(activity, "gemini").fold(
             onSuccess = { key ->
                 if (!key.isNullOrEmpty()) {

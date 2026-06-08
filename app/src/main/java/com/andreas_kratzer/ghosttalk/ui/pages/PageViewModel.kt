@@ -13,6 +13,7 @@ import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
 import com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase
 import com.andreas_kratzer.ghosttalk.core.ai.domain.SplitPageUseCase
 import com.andreas_kratzer.ghosttalk.core.ai.domain.UpdateSmartPredictionsUseCase
+import com.andreas_kratzer.ghosttalk.core.call.CallState
 import com.andreas_kratzer.ghosttalk.core.cloud.PhilipsHueManager
 import com.andreas_kratzer.ghosttalk.core.cloud.SpotifyManager
 import com.andreas_kratzer.ghosttalk.core.cloud.SpotifyPlaylist
@@ -30,8 +31,6 @@ import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToStartPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.OptionalProperty
 import com.andreas_kratzer.ghosttalk.core.model.Page
-import com.andreas_kratzer.ghosttalk.core.model.PageLayoutProposal
-import com.andreas_kratzer.ghosttalk.core.model.PageButtonAction
 import com.andreas_kratzer.ghosttalk.core.scanning.ScanCoordinator
 import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
 import com.andreas_kratzer.ghosttalk.domain.actions.ResolveDynamicButtonsUseCase
@@ -40,7 +39,6 @@ import com.andreas_kratzer.ghosttalk.ui.pages.delegates.InteractionDelegate
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.PageManagementDelegate
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.ScreenManagementDelegate
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.SmartPredictionDelegate
-import com.andreas_kratzer.ghosttalk.core.call.CallState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -89,9 +87,6 @@ class PageViewModel @Inject constructor(
     private val splitPageUseCase: SplitPageUseCase,
     private val createPageUseCase: CreatePageUseCase,
     private val pageLayoutOptimizer: com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer,
-    private val bookRestructureProposalUseCase: com.andreas_kratzer.ghosttalk.core.ai.domain.BookRestructureProposalUseCase,
-    private val bookHierarchyProposalUseCase: com.andreas_kratzer.ghosttalk.core.ai.domain.BookHierarchyProposalUseCase,
-    private val pageLayoutProposalUseCase: com.andreas_kratzer.ghosttalk.core.ai.domain.PageLayoutProposalUseCase,
     private val cloneBookUseCase: com.andreas_kratzer.ghosttalk.core.data.impl.CloneBookUseCase
 ) : AndroidViewModel(application), com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions {
 
@@ -389,9 +384,6 @@ class PageViewModel @Inject constructor(
     val hangUpPressCount = callManagementDelegate.hangUpPressCount
     val focusedCallScreenButton = callManagementDelegate.focusedCallScreenButton
 
-    fun speakCallScreenButton(button: String, isInitial: Boolean) {
-        callManagementDelegate.speakCallScreenButton(button, isInitial)
-    }
 
     fun startCallScanning() {
         callManagementDelegate.startCallScanning(viewModelScope)
@@ -447,7 +439,7 @@ class PageViewModel @Inject constructor(
             onGoBackRequested = ::navigateBack,
             smartPredictions = _smartPredictions,
             currentBookIdFlow = activeBookId,
-            onVocalSwitchTriggered = { action, label, positiveConfidence, negativeConfidence, threshold ->
+            onVocalSwitchTriggered = { action, label, positiveConfidence, _, threshold ->
                 if (action != null) {
                     val config = ButtonConfig(
                         id = java.util.UUID.randomUUID().toString(),
@@ -689,7 +681,6 @@ class PageViewModel @Inject constructor(
         }
     }
 
-    fun hasHistory(): Boolean = pageBackStack.isNotEmpty()
 
     fun navigateBack() {
         if (pageBackStack.isNotEmpty()) {
@@ -722,7 +713,7 @@ class PageViewModel @Inject constructor(
 
     fun activateFocusedButton() {
         val state = systemCallManager.callState.value
-        if (state == com.andreas_kratzer.ghosttalk.core.call.CallState.RINGING) {
+        if (state == CallState.RINGING) {
             if (focusedCallScreenButton.value == "ANNEHMEN") {
                 systemCallManager.answerCall()
             } else {
@@ -731,8 +722,8 @@ class PageViewModel @Inject constructor(
             return
         }
         
-        if (state == com.andreas_kratzer.ghosttalk.core.call.CallState.ACTIVE ||
-            state == com.andreas_kratzer.ghosttalk.core.call.CallState.DIALING) {
+        if (state == CallState.ACTIVE ||
+            state == CallState.DIALING) {
             val currentTime = System.currentTimeMillis()
             val holdingTime = settingsRepository.holdingTimeMillis
             if (currentTime - lastCallPressTime < holdingTime) {
@@ -1356,9 +1347,6 @@ class PageViewModel @Inject constructor(
             .toSet()
     }
 
-    fun saveProposalToCache(bookId: String, proposal: BookRestructureProposal) {
-        aiRestructureDelegate.saveProposalToCache(bookId, proposal)
-    }
 
     fun loadProposalFromCache(bookId: String): BookRestructureProposal? {
         return aiRestructureDelegate.loadProposalFromCache(bookId)
@@ -1366,69 +1354,14 @@ class PageViewModel @Inject constructor(
 
     val isAiRestructureLoading: StateFlow<Boolean> = aiRestructureDelegate.isAiRestructureLoading
 
-    fun generateAiRestructureProposal() {
-        val bookId = activeBookId.value ?: return
-        aiRestructureDelegate.generateAiRestructureProposal(viewModelScope, bookId, _selectedPageIds.value, pageManagementDelegate)
-    }
 
-    fun loadMoreAiRestructureProposals() {
-        val bookId = activeBookId.value ?: return
-        aiRestructureDelegate.loadMoreAiRestructureProposals(viewModelScope, bookId, _selectedPageIds.value, pageManagementDelegate)
-    }
 
     fun clearAiRestructureProposal() {
         val bookId = activeBookId.value ?: return
         aiRestructureDelegate.deleteRestructureCache(viewModelScope, bookId)
     }
 
-    fun applyAiRestructureProposal(proposal: BookRestructureProposal, onResult: (String) -> Unit) {
-        val currentBookId = activeBookId.value ?: return
-        viewModelScope.launch(Dispatchers.IO) {
-            aiRestructureDelegate.setAiRestructureProposal(proposal) // keep delegate updated
-            try {
-                val newBookId = cloneBookUseCase.execute(currentBookId, proposal)
-                val startId = settingsRepository.getDefaultStartPageIdForBook(newBookId)
-                val pages = pageManagementDelegate.pageRepository.getPagesForBook(newBookId)
-                val startPage = pages.find { it.id == startId } ?: pages.firstOrNull()
 
-                withContext(Dispatchers.Main) {
-                    setActiveBookId(newBookId)
-                    if (startPage != null) {
-                        loadPage(startPage)
-                    }
-                    onResult(newBookId)
-                }
-            } catch (e: Exception) {
-                Log.e("PageViewModel", "Error applying AI restructure proposal", e)
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(getApplication(), "Fehler beim Anwenden: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
-                }
-            }
-        }
-    }
-
-    fun applySingleAiRestructureAction(action: com.andreas_kratzer.ghosttalk.core.model.RestructureAction, onResult: (String) -> Unit) {
-        val currentBookId = activeBookId.value ?: return
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val singleProposal = BookRestructureProposal(listOf(action))
-                val newBookId = cloneBookUseCase.execute(currentBookId, singleProposal)
-                val startId = settingsRepository.getDefaultStartPageIdForBook(newBookId)
-                val pages = pageManagementDelegate.pageRepository.getPagesForBook(newBookId)
-                val startPage = pages.find { it.id == startId } ?: pages.firstOrNull()
-
-                withContext(Dispatchers.Main) {
-                    setActiveBookId(newBookId)
-                    if (startPage != null) {
-                        loadPage(startPage)
-                    }
-                    onResult(newBookId)
-                }
-            } catch (e: java.lang.Exception) {
-                Log.e("PageViewModel", "Error applying single AI restructure action", e)
-            }
-        }
-    }
 
     fun generateAiHierarchyProposal(feedback: String? = null) {
         val bookId = activeBookId.value ?: return
@@ -1470,11 +1403,6 @@ class PageViewModel @Inject constructor(
         )
     }
 
-    fun clearHierarchyProposal() {
-        aiRestructureDelegate.setAiHierarchyProposal(null)
-        aiRestructureDelegate.setAiPageLayoutProposals(emptyMap())
-        aiRestructureDelegate.clearAiRestructureError()
-    }
 
     // --- Layout- & Struktur-Assistent Actions ---
 
@@ -1749,7 +1677,7 @@ class PageViewModel @Inject constructor(
                                         rowNames.add(name.trim())
                                     }
                                 }
-                            } catch (gsonEx: Exception) {
+                            } catch (_: Exception) {
                                 val jsonArray = org.json.JSONArray(cleanResponse)
                                 for (i in 0 until jsonArray.length()) {
                                     rowNames.add(jsonArray.getString(i).trim())

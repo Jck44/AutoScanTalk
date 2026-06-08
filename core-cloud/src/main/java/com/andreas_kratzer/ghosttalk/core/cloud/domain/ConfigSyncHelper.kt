@@ -10,6 +10,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import java.io.File
 
+@Suppress("unused", "SameParameterValue")
 class ConfigSyncHelper(
     private val context: Context,
     private val importExportManager: PageImportExportManager,
@@ -38,6 +39,7 @@ class ConfigSyncHelper(
         return hash.joinToString("") { "%02x".format(it) }
     }
 
+    @android.annotation.SuppressLint("HardwareIds")
     private fun buildConfigPropertiesAndDescription(
         type: String,
         name: String,
@@ -46,7 +48,7 @@ class ConfigSyncHelper(
         val device = "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}"
         val versionName = try {
             context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "unknown"
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             "unknown"
         }
         val androidId = android.provider.Settings.Secure.getString(context.contentResolver, android.provider.Settings.Secure.ANDROID_ID) ?: "unknown"
@@ -285,7 +287,7 @@ class ConfigSyncHelper(
 
         val jsonSerializer = Json { ignoreUnknownKeys = true; prettyPrint = true; encodeDefaults = true }
         val localJson = jsonSerializer.encodeToString(com.andreas_kratzer.ghosttalk.core.model.SettingsProfile.serializer(), encryptedActiveProfile)
-        val localMd5 = calculateMd5(localJson)
+        calculateMd5(localJson)
 
         val baseBackupFile = File(File(context.filesDir, "local_backups"), profileFileName)
         val baseJson = if (baseBackupFile.exists()) baseBackupFile.readText() else null
@@ -324,7 +326,7 @@ class ConfigSyncHelper(
             val parsedProfile = jsonSerializer.decodeFromString(com.andreas_kratzer.ghosttalk.core.model.SettingsProfile.serializer(), remoteJson)
             val decryptedRemoteProfile = decryptProfileFromTransit(parsedProfile, transitSeed)
             decryptedRemoteProfile.config
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             try {
                 jsonSerializer.decodeFromString(com.andreas_kratzer.ghosttalk.core.model.ProfileConfig.serializer(), remoteJson)
             } catch (e2: Exception) {
@@ -346,7 +348,7 @@ class ConfigSyncHelper(
         val remoteProfile = try {
             val parsedProfile = jsonSerializer.decodeFromString(com.andreas_kratzer.ghosttalk.core.model.SettingsProfile.serializer(), remoteJson)
             decryptProfileFromTransit(parsedProfile, transitSeed)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             try {
                 val config = jsonSerializer.decodeFromString(com.andreas_kratzer.ghosttalk.core.model.ProfileConfig.serializer(), remoteJson)
                 com.andreas_kratzer.ghosttalk.core.model.SettingsProfile(
@@ -366,7 +368,7 @@ class ConfigSyncHelper(
             try {
                 val parsedProfile = jsonSerializer.decodeFromString(com.andreas_kratzer.ghosttalk.core.model.SettingsProfile.serializer(), it)
                 decryptProfileFromTransit(parsedProfile, transitSeed)
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 try {
                     val config = jsonSerializer.decodeFromString(com.andreas_kratzer.ghosttalk.core.model.ProfileConfig.serializer(), it)
                     com.andreas_kratzer.ghosttalk.core.model.SettingsProfile(
@@ -376,7 +378,7 @@ class ConfigSyncHelper(
                         profileVersionSequence = 0L,
                         updatedAt = 0L
                     )
-                } catch (e2: Exception) {
+                } catch (_: Exception) {
                     null
                 }
             }

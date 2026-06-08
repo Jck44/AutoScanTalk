@@ -317,9 +317,6 @@ fun GhostTalkNavHost(
                         popUpTo("start") { inclusive = true }
                     }
                 },
-                onNavigateToGlobalSettings = {
-                    navigateWithSecurity("settings?isGlobal=true")
-                },
                 onNavigateToVocalTraining = {
                     navController.safeNavigate("vocal_training")
                 }

@@ -83,10 +83,8 @@ class ScanCoordinator @Inject constructor(
 
     // For reaction-time and late click heuristic tracking
     private var _previousFocusedButtonId: String? = null
-    val previousFocusedButtonId: String? get() = _previousFocusedButtonId
 
     private var _lastFocusChangeTime: Long = -1L
-    val lastFocusChangeTime: Long get() = _lastFocusChangeTime
 
     fun getPreviousFocusedButton(): String? = _previousFocusedButtonId
     fun getTimeSinceLastFocusChangeMs(): Long {

@@ -19,7 +19,6 @@ import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
 @Composable
 fun VocalSwitchSettingsSection(
     viewModel: SettingsViewModel,
-    isGlobal: Boolean,
     onNavigateToVocalTraining: () -> Unit
 ) {
     val isVocalSwitchEnabled by viewModel.isVocalSwitchEnabled.collectAsState(false)

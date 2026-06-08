@@ -168,9 +168,6 @@ class PageViewModelStateTest {
             splitPageUseCase = mockk(relaxed = true),
             createPageUseCase = mockk(relaxed = true),
             pageLayoutOptimizer = mockk(relaxed = true),
-            bookRestructureProposalUseCase = mockk(relaxed = true),
-            bookHierarchyProposalUseCase = mockk(relaxed = true),
-            pageLayoutProposalUseCase = mockk(relaxed = true),
             cloneBookUseCase = mockk(relaxed = true)
         )
         

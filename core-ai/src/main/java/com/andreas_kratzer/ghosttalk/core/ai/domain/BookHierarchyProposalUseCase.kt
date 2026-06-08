@@ -2,7 +2,6 @@ package com.andreas_kratzer.ghosttalk.core.ai.domain
 
 import com.andreas_kratzer.ghosttalk.core.model.BookHierarchyProposal
 import com.andreas_kratzer.ghosttalk.core.model.HierarchyPageNode
-import org.json.JSONArray
 import org.json.JSONObject
 import javax.inject.Inject
 import javax.inject.Singleton

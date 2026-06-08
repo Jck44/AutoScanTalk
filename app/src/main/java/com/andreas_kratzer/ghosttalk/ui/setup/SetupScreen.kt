@@ -82,16 +82,15 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsDropdownItem
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
-import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
-import com.andreas_kratzer.ghosttalk.feature.settings.R as SettingsR
-import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsDropdownItem
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
-import com.andreas_kratzer.ghosttalk.core.cloud.domain.RemoteBackupInfo
+import kotlinx.coroutines.launch
 import java.io.BufferedReader
 import java.io.InputStreamReader
-import kotlinx.coroutines.launch
+import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
+import com.andreas_kratzer.ghosttalk.feature.settings.R as SettingsR
 
 private enum class SetupStep(val index: Int) {
     WELCOME(0),
@@ -681,7 +680,7 @@ private fun RestoreProfileDialog(
 
                 OutlinedButton(
                     onClick = {
-                        val activity = context as? android.app.Activity ?: (context as? android.content.ContextWrapper)?.baseContext as? android.app.Activity
+                        val activity = context as? Activity ?: (context as? android.content.ContextWrapper)?.baseContext as? Activity
                         if (activity != null) {
                             viewModel.restoreApiKeysFromPasswordManager(activity)
                         }

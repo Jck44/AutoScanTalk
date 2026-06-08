@@ -1,8 +1,8 @@
 package com.andreas_kratzer.ghosttalk.core.cloud
 
+import android.util.Log
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import android.util.Log
 
 object SyncConcurrencyGuard {
     private val localMutex = Mutex()

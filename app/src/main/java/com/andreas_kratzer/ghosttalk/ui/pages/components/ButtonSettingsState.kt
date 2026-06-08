@@ -3,8 +3,12 @@ package com.andreas_kratzer.ghosttalk.ui.pages.components
 import android.content.Context
 import androidx.compose.runtime.Immutable
 import com.andreas_kratzer.ghosttalk.R
-import com.andreas_kratzer.ghosttalk.core.model.*
-import com.andreas_kratzer.ghosttalk.core.cloud.SpotifyPlaylist
+import com.andreas_kratzer.ghosttalk.core.model.ButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.DeviceActionType
+import com.andreas_kratzer.ghosttalk.core.model.MediaProvider
+import com.andreas_kratzer.ghosttalk.core.model.PredictionType
+import com.andreas_kratzer.ghosttalk.core.model.SmartHomeProvider
+import com.andreas_kratzer.ghosttalk.core.model.SpokenTextMode
 
 @Immutable
 data class ButtonSettingsUiState(

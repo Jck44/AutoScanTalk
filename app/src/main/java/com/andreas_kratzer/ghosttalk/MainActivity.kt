@@ -12,6 +12,7 @@ import android.view.WindowManager
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.core.content.edit
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -43,8 +44,8 @@ import androidx.navigation.compose.rememberNavController
 import com.andreas_kratzer.ghosttalk.core.KeyEventCoordinator
 import com.andreas_kratzer.ghosttalk.core.SecurityManager
 import com.andreas_kratzer.ghosttalk.core.UpdateManager
-import com.andreas_kratzer.ghosttalk.core.cloud.SpotifyManager
 import com.andreas_kratzer.ghosttalk.core.cloud.GoogleWebAuthManager
+import com.andreas_kratzer.ghosttalk.core.cloud.SpotifyManager
 import com.andreas_kratzer.ghosttalk.core.data.PageRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.data.export.PageImportExportProvider
@@ -170,11 +171,7 @@ class MainActivity : AppCompatActivity() {
                         android.Manifest.permission.RECORD_AUDIO
                     ) == android.content.pm.PackageManager.PERMISSION_GRANTED
                     if (hasPermission) {
-                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                            startForegroundService(serviceIntent)
-                        } else {
-                            startService(serviceIntent)
-                        }
+                        startForegroundService(serviceIntent)
                     } else {
                         Log.w("MainActivity", "Vocal switch enabled but RECORD_AUDIO permission not granted.")
                     }
@@ -208,7 +205,7 @@ class MainActivity : AppCompatActivity() {
                 if (hasExistingData && !settingsRepository.isSetupCompleted) {
                     settingsRepository.isSetupCompleted = true
                 }
-                migrationPrefs.edit().putBoolean("setup_completed_migration_done", true).commit()
+                migrationPrefs.edit { putBoolean("setup_completed_migration_done", true) }
             }
 
             if (settingsRepository.isSetupCompleted) {

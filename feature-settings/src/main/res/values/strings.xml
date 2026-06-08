@@ -248,7 +248,7 @@
     <string name="settings_clear_usage_stats_confirm">Möchtest du alle Nutzungsstatistiken für dieses Buch wirklich leeren?</string>
     <string name="settings_action_history_title">Aktionsverlauf</string>
     <string name="settings_category_profile">Profil</string>
-    <string name="settings_search_placeholder">Einstellungen suchen...</string>
+    <string name="settings_search_placeholder">Einstellungen suchen&#8230;</string>
     <string name="settings_search_clear">Löschen</string>
     <string name="settings_search_label">Suchen</string>
     <string name="settings_profile_active">Aktives Profil</string>

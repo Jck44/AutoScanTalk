@@ -343,9 +343,6 @@ class PageViewModelTest {
             splitPageUseCase = mockk(relaxed = true),
             createPageUseCase = createPageUseCase,
             pageLayoutOptimizer = optimizer,
-            bookRestructureProposalUseCase = mockk(relaxed = true),
-            bookHierarchyProposalUseCase = mockk(relaxed = true),
-            pageLayoutProposalUseCase = mockk(relaxed = true),
             cloneBookUseCase = mockk(relaxed = true)
         )
     }
@@ -693,6 +690,7 @@ class PageViewModelTest {
     }
 
     @Test
+    @Suppress("UNUSED_VARIABLE")
     fun testLayoutOptimizationFilterAndSort() = runTest {
         val page1 = Page(id = "p1", bookId = "b1", name = "Banana Page", rows = 4, columns = 4, buttonConfigs = List(49) { null })
         val page2 = Page(id = "p2", bookId = "b1", name = "Apple Page", rows = 4, columns = 4, buttonConfigs = List(49) { null })
@@ -981,6 +979,7 @@ class PageViewModelTest {
     }
 
     @Test
+    @Suppress("UNUSED_VARIABLE")
     fun `magicCleanup executes all layout optimizations sequentially`() = runTest {
         val targetPageId = "p1"
         val btn1 = ButtonConfig(id = "btn1", label = "A", isActive = true)

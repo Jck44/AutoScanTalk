@@ -9,7 +9,6 @@ import android.util.Log
 import android.widget.Toast
 import com.andreas_kratzer.ghosttalk.core.cloud.AuthManager
 import com.andreas_kratzer.ghosttalk.core.cloud.GoogleWebAuthManager
-import com.andreas_kratzer.ghosttalk.core.model.CloudAuthType
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.CloudSyncUseCase
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.GetDriveFoldersUseCase
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.PerformManualSyncUseCase
@@ -20,6 +19,7 @@ import com.andreas_kratzer.ghosttalk.core.cloud.domain.SignOutUseCase
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.SyncMode
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.data.SyncLogProvider
+import com.andreas_kratzer.ghosttalk.core.model.CloudAuthType
 import com.andreas_kratzer.ghosttalk.feature.settings.R
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
 import com.google.api.services.drive.model.File
@@ -27,10 +27,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext

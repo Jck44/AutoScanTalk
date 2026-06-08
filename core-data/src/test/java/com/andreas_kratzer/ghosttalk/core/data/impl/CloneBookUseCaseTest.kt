@@ -20,9 +20,9 @@ import com.andreas_kratzer.ghosttalk.core.model.BookRestructureProposal
 import com.andreas_kratzer.ghosttalk.core.model.ButtonUsageStat
 import com.andreas_kratzer.ghosttalk.core.model.CategoryInfo
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.RestructureAction
+import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -648,7 +648,7 @@ class CloneBookUseCaseTest {
             )
         )
 
-        val newBookId = cloneBookUseCase.applyHierarchyRestructure(sourceBookId, proposal, layouts)
+        cloneBookUseCase.applyHierarchyRestructure(sourceBookId, proposal, layouts)
 
         val pageSlots = mutableListOf<Page>()
         coVerify { mockPageDao.insertPageEntity(capture(pageSlots)) }

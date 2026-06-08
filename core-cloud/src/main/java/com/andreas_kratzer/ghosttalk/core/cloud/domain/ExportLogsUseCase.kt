@@ -38,6 +38,7 @@ class ExportLogsUseCase @Inject constructor(
 ) {
     private val timestampFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
 
+    @android.annotation.SuppressLint("HardwareIds")
     suspend fun generateLogString(): String = withContext(Dispatchers.IO) {
         val sb = StringBuilder()
         
@@ -56,7 +57,7 @@ class ExportLogsUseCase @Inject constructor(
         try {
             val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
             sb.append("App-Version      : ").append(pInfo.versionName).append(" (Code ").append(pInfo.longVersionCode).append(")\n")
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             sb.append("App-Version      : unknown\n")
         }
         
@@ -95,7 +96,7 @@ class ExportLogsUseCase @Inject constructor(
                                 } else {
                                     lastLineWasAppended = true
                                 }
-                            } catch (pe: Exception) {
+                            } catch (_: Exception) {
                                 lastLineWasAppended = true
                             }
                         }
@@ -263,6 +264,7 @@ class ExportLogsUseCase @Inject constructor(
         context.startActivity(chooserIntent)
     }
 
+    @android.annotation.SuppressLint("HardwareIds")
     suspend fun uploadLogs(drive: Drive?, force: Boolean = false): LogUploadResult = withContext(Dispatchers.IO) {
         if (!force && settingsRepository.syncModeLogs == "OFF") {
             return@withContext LogUploadResult.Skipped("Log-Upload ist deaktiviert.")

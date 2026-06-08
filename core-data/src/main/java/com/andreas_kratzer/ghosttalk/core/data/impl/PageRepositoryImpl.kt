@@ -6,9 +6,9 @@ import com.andreas_kratzer.ghosttalk.core.database.AppDatabase
 import com.andreas_kratzer.ghosttalk.core.database.ButtonDao
 import com.andreas_kratzer.ghosttalk.core.database.PageDao
 import com.andreas_kratzer.ghosttalk.core.database.toButtonEntities
-import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.ControlDeviceButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.DeviceActionType
+import com.andreas_kratzer.ghosttalk.core.model.Page
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 

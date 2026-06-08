@@ -1,20 +1,17 @@
 package com.andreas_kratzer.ghosttalk.feature.settings.ui.sections
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
-import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -31,17 +28,17 @@ import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
-import com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase
 import com.andreas_kratzer.ghosttalk.core.ui.components.PreferenceCategory
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsDropdownItem
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsEditTextItem
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsToggleItem
+import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.feature.settings.R
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
@@ -50,7 +47,6 @@ import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
 @Composable
 fun GenAiSettingsSection(viewModel: SettingsViewModel) {
     val isEnabled by viewModel.isGeminiEnabled.collectAsState(false)
-    val toolStatus by viewModel.geminiToolStatus.collectAsState(emptyMap())
     val geminiApiKey by viewModel.geminiApiKey.collectAsState("")
     val useGeminiApiKey by viewModel.useGeminiApiKey.collectAsState(false)
     val userEmail by viewModel.userEmail.collectAsState()
@@ -78,7 +74,11 @@ fun GenAiSettingsSection(viewModel: SettingsViewModel) {
 
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
-    val isLargeScreen = configuration.screenWidthDp >= 720
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val containerWidthDp = with(density) {
+        androidx.compose.ui.platform.LocalWindowInfo.current.containerSize.width.toDp()
+    }
+    val isLargeScreen = containerWidthDp >= 720.dp
     val showSideBySide = isLargeScreen || isLandscape
 
     @Composable

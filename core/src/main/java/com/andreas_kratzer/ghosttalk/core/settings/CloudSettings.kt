@@ -1,7 +1,7 @@
 package com.andreas_kratzer.ghosttalk.core.settings
 
-import kotlinx.coroutines.flow.StateFlow
 import com.andreas_kratzer.ghosttalk.core.model.CloudAuthType
+import kotlinx.coroutines.flow.StateFlow
 
 interface CloudSettings {
     var isCloudSyncEnabled: Boolean

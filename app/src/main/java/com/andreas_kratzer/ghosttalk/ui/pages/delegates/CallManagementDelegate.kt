@@ -1,19 +1,15 @@
 package com.andreas_kratzer.ghosttalk.ui.pages.delegates
 
 import android.app.Application
-import androidx.lifecycle.viewModelScope
-import com.andreas_kratzer.ghosttalk.core.call.CallState
+import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
 import com.andreas_kratzer.ghosttalk.core.call.SystemCallManager
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.scanning.ScanCoordinator
 import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
-import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 

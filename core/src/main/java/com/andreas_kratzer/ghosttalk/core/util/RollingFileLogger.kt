@@ -9,7 +9,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-class RollingFileLogger(private val context: Context) {
+class RollingFileLogger(context: Context) {
     private val TAG = "RollingFileLogger"
     private val logDir = try {
         val dir = context.filesDir
@@ -18,7 +18,7 @@ class RollingFileLogger(private val context: Context) {
         } else {
             File("/tmp", "app_logs")
         }
-    } catch (e: Exception) {
+    } catch (_: Exception) {
         File("/tmp", "app_logs")
     }
     private val currentLogFile = File(logDir, "app_log_current.txt")
@@ -87,6 +87,7 @@ class RollingFileLogger(private val context: Context) {
         return files
     }
 
+    @Suppress("unused")
     @Synchronized
     fun clearLogs() {
         try {

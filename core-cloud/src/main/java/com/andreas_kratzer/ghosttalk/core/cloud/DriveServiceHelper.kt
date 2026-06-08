@@ -1,7 +1,7 @@
 package com.andreas_kratzer.ghosttalk.core.cloud
 
-import android.content.Context
 import android.util.Log
+import com.andreas_kratzer.ghosttalk.core.model.CloudAuthType
 import com.google.api.client.googleapis.json.GoogleJsonResponseException
 import com.google.api.client.http.FileContent
 import com.google.api.services.drive.Drive
@@ -10,7 +10,6 @@ import com.google.api.services.drive.model.FileList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.FileOutputStream
-import com.andreas_kratzer.ghosttalk.core.model.CloudAuthType
 
 class DriveServiceHelper(private val driveService: Drive) {
 

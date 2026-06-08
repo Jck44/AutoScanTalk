@@ -5,19 +5,19 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.andreas_kratzer.ghosttalk.core.data.BookRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.core.model.CloudAuthType
+import com.andreas_kratzer.ghosttalk.core.database.toDomain
+import com.andreas_kratzer.ghosttalk.core.database.toEntity
 import com.andreas_kratzer.ghosttalk.core.di.ApplicationScope
+import com.andreas_kratzer.ghosttalk.core.model.CloudAuthType
+import com.andreas_kratzer.ghosttalk.core.model.ProfileConfig
+import com.andreas_kratzer.ghosttalk.core.model.SettingsProfile
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
-import com.andreas_kratzer.ghosttalk.core.model.ProfileConfig
-import com.andreas_kratzer.ghosttalk.core.model.SettingsProfile
-import com.andreas_kratzer.ghosttalk.core.database.toDomain
-import com.andreas_kratzer.ghosttalk.core.database.toEntity
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @SuppressLint("CommitPrefEdits", "ApplySharedPref", "UseKtx")
@@ -148,7 +148,7 @@ class SettingsRepositoryImpl @Inject constructor(
                         settingsProfileDao.updateProfile(updatedProfile.toEntity(jsonSerializer))
                     }
                 }
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 // Non-fatal bootstrapper/migration error
             }
         }

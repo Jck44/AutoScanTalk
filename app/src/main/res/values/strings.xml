@@ -445,8 +445,8 @@
     <string name="analytics_ai_inactive_badge">Nicht direkt erreichbar</string>
     <string name="analytics_ai_no_pages_selected_warning">Bitte wähle mindestens eine Seite für die Analyse aus.</string>
     <string name="analytics_ai_scope_title">Optimierungs-Tiefe</string>
-    <string name="analytics_ai_scope_quick">Schnell (3-5 Tipps)</string>
-    <string name="analytics_ai_scope_detailed">Detailliert (10-15 Tipps)</string>
+    <string name="analytics_ai_scope_quick">Schnell (3&#8211;5 Tipps)</string>
+    <string name="analytics_ai_scope_detailed">Detailliert (10&#8211;15 Tipps)</string>
     <string name="analytics_ai_scope_full">Vollständig (20+ Tipps)</string>
     <string name="analytics_ai_token_warning_title">⚠️ Hoher Token-Verbrauch</string>
     <string name="analytics_ai_token_warning_desc">Eine vollständige Reorganisation des gesamten Buchs analysiert alle Knöpfe und Verknüpfungen intensiv. Dies verbraucht eine hohe Anzahl an Tokens und kann bei großen Büchern das Limit erreichen. Fortfahren?</string>

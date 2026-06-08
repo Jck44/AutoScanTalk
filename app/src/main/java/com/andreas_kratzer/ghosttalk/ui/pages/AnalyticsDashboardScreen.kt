@@ -1,7 +1,6 @@
 package com.andreas_kratzer.ghosttalk.ui.pages
 
 import android.annotation.SuppressLint
-import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -48,7 +46,9 @@ import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.domain.pages.UsageLocation
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
-import com.andreas_kratzer.ghosttalk.ui.pages.analytics.*
+import com.andreas_kratzer.ghosttalk.ui.pages.analytics.AnalyticsDetailsTab
+import com.andreas_kratzer.ghosttalk.ui.pages.analytics.AnalyticsOverviewTab
+import com.andreas_kratzer.ghosttalk.ui.pages.analytics.AnalyticsRecommendationsTab
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date

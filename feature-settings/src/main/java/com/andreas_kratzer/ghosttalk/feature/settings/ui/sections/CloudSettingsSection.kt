@@ -32,13 +32,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.core.ui.components.PreferenceCategory
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsDropdownItem
-import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsToggleItem
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsEditTextItem
+import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsToggleItem
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.feature.settings.R
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
-import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.BackupSelectionDialog
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.DriveFolderPickerDialog
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.SyncLogDialog
 import java.text.SimpleDateFormat
@@ -49,10 +48,7 @@ import java.util.Locale
 @Composable
 fun CloudSettingsSection(
     viewModel: SettingsViewModel,
-    isGlobal: Boolean,
-    onLocalExport: () -> Unit,
-    onLocalImport: () -> Unit,
-    onSelectSafFolderForImport: () -> Unit = {}
+    isGlobal: Boolean
 ) {
     val context = LocalContext.current
     val userEmail by viewModel.userEmail.collectAsState()
@@ -74,10 +70,8 @@ fun CloudSettingsSection(
     val showFolderPicker = remember { mutableStateOf(false) }
     val showManualUrlDialog = remember { mutableStateOf(false) }
 
-    val availableBackups by viewModel.availableBackups.collectAsState()
-    val showBackupSelectionDialog by viewModel.showBackupSelectionDialog.collectAsState()
-    val showImportFolderPicker = remember { mutableStateOf(false) }
-    val showManualImportUrlDialog = remember { mutableStateOf(false) }
+    remember { mutableStateOf(false) }
+    remember { mutableStateOf(false) }
     val syncLogs by viewModel.syncLogs.collectAsState()
     val showSyncLogDialog = remember { mutableStateOf(false) }
     val spotifyUserDisplayName by viewModel.spotifyUserDisplayName.collectAsState()

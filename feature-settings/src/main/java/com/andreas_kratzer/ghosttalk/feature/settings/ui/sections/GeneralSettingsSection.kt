@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import com.andreas_kratzer.ghosttalk.feature.settings.ui.highlightSetting
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -29,7 +28,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import com.andreas_kratzer.ghosttalk.core.ui.components.PreferenceCategory
@@ -40,6 +38,7 @@ import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsToggleItem
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.feature.settings.R
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
+import com.andreas_kratzer.ghosttalk.feature.settings.ui.highlightSetting
 import java.util.Locale
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 
@@ -47,9 +46,7 @@ import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 @Composable
 fun GeneralSettingsSection(
     viewModel: SettingsViewModel,
-    isGlobal: Boolean,
-    onNavigateBack: () -> Unit = {},
-    onBookDeleted: () -> Unit = onNavigateBack
+    isGlobal: Boolean
 ) {
     val theme by viewModel.themeMode.collectAsState("SYSTEM")
     val persistLogs by viewModel.persistActionLogs.collectAsState(false)

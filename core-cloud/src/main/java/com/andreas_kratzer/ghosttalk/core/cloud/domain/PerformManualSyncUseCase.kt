@@ -3,9 +3,9 @@ package com.andreas_kratzer.ghosttalk.core.cloud.domain
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper
 import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
 import com.andreas_kratzer.ghosttalk.core.cloud.GoogleWebAuthManager
-import com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper
 import com.andreas_kratzer.ghosttalk.core.settings.CloudSettings
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -14,7 +14,6 @@ import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 class PerformManualSyncUseCase @Inject constructor(
-    @param:ApplicationContext private val context: Context,
     private val googleAuthManager: GoogleAuthManager,
     private val googleWebAuthManager: GoogleWebAuthManager,
     private val cloudSyncUseCase: CloudSyncUseCase,

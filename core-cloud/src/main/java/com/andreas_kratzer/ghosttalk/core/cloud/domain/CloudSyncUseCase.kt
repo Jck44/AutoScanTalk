@@ -167,7 +167,7 @@ class CloudSyncUseCase @Inject constructor(
                                         val profileJson = tempFile.readText()
                                         val importedProfile = try {
                                             jsonSerializer.decodeFromString(com.andreas_kratzer.ghosttalk.core.model.SettingsProfile.serializer(), profileJson)
-                                        } catch (e: Exception) {
+                                        } catch (_: Exception) {
                                             try {
                                                 val config = jsonSerializer.decodeFromString(com.andreas_kratzer.ghosttalk.core.model.ProfileConfig.serializer(), profileJson)
                                                 com.andreas_kratzer.ghosttalk.core.model.SettingsProfile(
@@ -1230,7 +1230,7 @@ class CloudSyncUseCase @Inject constructor(
         val device = "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}"
         val versionName = try {
             context.packageManager.getPackageInfo(context.packageName, 0).versionName
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             "unknown"
         }
         return "$bookName Book (Uploaded by $device - App v$versionName)"
@@ -1240,7 +1240,7 @@ class CloudSyncUseCase @Inject constructor(
         val device = "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}"
         val versionName = try {
             context.packageManager.getPackageInfo(context.packageName, 0).versionName
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             "unknown"
         }
         return "App Logcat Extract (Uploaded by $device - App v$versionName)"

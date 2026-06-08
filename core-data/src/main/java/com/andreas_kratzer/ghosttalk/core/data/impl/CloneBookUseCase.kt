@@ -9,11 +9,11 @@ import com.andreas_kratzer.ghosttalk.core.database.AppDatabase
 import com.andreas_kratzer.ghosttalk.core.database.ButtonEntity
 import com.andreas_kratzer.ghosttalk.core.database.UserModeSessionEntity
 import com.andreas_kratzer.ghosttalk.core.model.AuditoryCue
-import com.andreas_kratzer.ghosttalk.core.model.BookRestructureProposal
 import com.andreas_kratzer.ghosttalk.core.model.BookHierarchyProposal
-import com.andreas_kratzer.ghosttalk.core.model.PageLayoutProposal
+import com.andreas_kratzer.ghosttalk.core.model.BookRestructureProposal
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.Page
+import com.andreas_kratzer.ghosttalk.core.model.PageLayoutProposal
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.UUID
 import javax.inject.Inject

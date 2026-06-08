@@ -44,7 +44,6 @@ class PerformManualSyncUseCaseTest {
         cloudSyncUseCase = mockk(relaxed = true)
         settingsRepository = mockk(relaxed = true)
         useCase = PerformManualSyncUseCase(
-            context = mockk(relaxed = true),
             googleAuthManager = googleAuthManager,
             googleWebAuthManager = googleWebAuthManager,
             cloudSyncUseCase = cloudSyncUseCase,

@@ -146,7 +146,7 @@ fun ActionConfigFields(
     val actionTypeStatusVibrate = stringResource(R.string.status_vibrate)
     val actionTypeStatusLoud = stringResource(R.string.status_loud)
     val actionTypeToggleScanning = stringResource(R.string.button_device_control_toggle_scanning)
-    val actionTypeInstallUpdate = stringResource(R.string.button_device_control_install_update)
+    stringResource(R.string.button_device_control_install_update)
     val actionTypeStartSync = stringResource(R.string.button_device_control_start_sync)
 
     // Smart Home

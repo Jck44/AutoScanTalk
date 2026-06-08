@@ -5,6 +5,7 @@ import com.andreas_kratzer.ghosttalk.core.SecuritySettings
 import com.andreas_kratzer.ghosttalk.core.actions.ControlDeviceSettings
 import com.andreas_kratzer.ghosttalk.core.actions.SpeechSettings
 import com.andreas_kratzer.ghosttalk.core.audio.AudioSettings
+import com.andreas_kratzer.ghosttalk.core.model.SettingsProfile
 import com.andreas_kratzer.ghosttalk.core.settings.AdvancedSettings
 import com.andreas_kratzer.ghosttalk.core.settings.CallSettings
 import com.andreas_kratzer.ghosttalk.core.settings.CloudSettings
@@ -20,7 +21,6 @@ import com.andreas_kratzer.ghosttalk.core.settings.TtsSettings
 import com.andreas_kratzer.ghosttalk.core.settings.UserSettings
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
-import com.andreas_kratzer.ghosttalk.core.model.SettingsProfile
 
 /**
  * A facade interface that combines all specialized settings interfaces.

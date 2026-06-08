@@ -94,7 +94,9 @@ class SettingsBackupCoverageTest {
         "activeProfileId",
         "activeProfileIdFlow",
         "isCaregiverDevice",
-        "isCaregiverDeviceFlow"
+        "isCaregiverDeviceFlow",
+        "isGeminiVerified",
+        "isGeminiVerifiedFlow"
     )
 
     private val propertyMappings = mapOf(

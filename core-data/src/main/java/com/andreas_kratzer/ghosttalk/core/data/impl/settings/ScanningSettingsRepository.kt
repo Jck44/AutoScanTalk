@@ -10,6 +10,7 @@ import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.K
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SWITCH_ACTIVATION_KEY
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_VOCAL_SWITCH_ENABLED
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_VOLUME_KEYS_ACTIVATE
+import androidx.core.content.edit
 import kotlinx.coroutines.flow.StateFlow
 
 class ScanningSettingsRepository(
@@ -26,9 +27,9 @@ class ScanningSettingsRepository(
             }
         }
         if (keysToRemove.isNotEmpty()) {
-            prefs.edit().apply {
+            prefs.edit {
                 keysToRemove.forEach { remove(it) }
-            }.apply()
+            }
         }
     }
 

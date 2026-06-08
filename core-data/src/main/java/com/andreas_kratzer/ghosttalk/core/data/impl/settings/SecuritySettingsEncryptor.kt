@@ -4,9 +4,9 @@ import android.util.Base64
 import java.security.MessageDigest
 import java.security.SecureRandom
 import javax.crypto.Cipher
-import javax.crypto.spec.SecretKeySpec
 import javax.crypto.spec.IvParameterSpec
- 
+import javax.crypto.spec.SecretKeySpec
+
 object SecuritySettingsEncryptor {
  
     private const val ALGORITHM = "AES/CBC/PKCS5Padding"
@@ -19,6 +19,7 @@ object SecuritySettingsEncryptor {
         return SecretKeySpec(keyBytes, "AES")
     }
  
+    @android.annotation.SuppressLint("HardwareIds")
     fun encryptLocal(value: String, context: android.content.Context): String {
         if (value.isEmpty()) return ""
         try {
@@ -37,11 +38,12 @@ object SecuritySettingsEncryptor {
             val encryptedBytes = cipher.doFinal(value.toByteArray(Charsets.UTF_8))
             val combined = ivBytes + encryptedBytes
             return PREFIX_LOCAL + Base64.encodeToString(combined, Base64.DEFAULT).trim()
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             return value
         }
     }
  
+    @android.annotation.SuppressLint("HardwareIds")
     fun decryptLocal(encryptedValue: String, context: android.content.Context): String {
         if (encryptedValue.isEmpty()) return ""
         if (!encryptedValue.startsWith(PREFIX_LOCAL)) return encryptedValue
@@ -62,7 +64,7 @@ object SecuritySettingsEncryptor {
             cipher.init(Cipher.DECRYPT_MODE, keySpec, IvParameterSpec(ivBytes))
             val decryptedBytes = cipher.doFinal(ciphertext)
             return String(decryptedBytes, Charsets.UTF_8)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             return encryptedValue
         }
     }
@@ -80,7 +82,7 @@ object SecuritySettingsEncryptor {
             val encryptedBytes = cipher.doFinal(value.toByteArray(Charsets.UTF_8))
             val combined = ivBytes + encryptedBytes
             return PREFIX_TRANSIT + Base64.encodeToString(combined, Base64.NO_WRAP).trim()
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             return value
         }
     }
@@ -101,7 +103,7 @@ object SecuritySettingsEncryptor {
             cipher.init(Cipher.DECRYPT_MODE, keySpec, IvParameterSpec(ivBytes))
             val decryptedBytes = cipher.doFinal(ciphertext)
             return String(decryptedBytes, Charsets.UTF_8)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             return encryptedValue
         }
     }

@@ -3,14 +3,13 @@ package com.andreas_kratzer.ghosttalk.core.ai.domain
 import android.util.Log
 import com.andreas_kratzer.ghosttalk.core.model.BookHierarchyProposal
 import com.andreas_kratzer.ghosttalk.core.model.HierarchyPageNode
-import com.andreas_kratzer.ghosttalk.core.model.PageLayoutProposal
 import com.andreas_kratzer.ghosttalk.core.model.PageButtonAction
-import org.json.JSONArray
+import com.andreas_kratzer.ghosttalk.core.model.PageLayoutProposal
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 @Singleton
 class BookRestructureOrchestrator @Inject constructor(

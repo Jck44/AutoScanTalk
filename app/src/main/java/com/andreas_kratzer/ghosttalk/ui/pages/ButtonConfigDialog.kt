@@ -1,74 +1,41 @@
 @file:Suppress("DEPRECATION", "UNUSED_PARAMETER")
 package com.andreas_kratzer.ghosttalk.ui.pages
 
-import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
-import android.content.pm.PackageManager
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
-import androidx.core.content.ContextCompat
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.cloud.HomeDevice
 import com.andreas_kratzer.ghosttalk.core.cloud.PhilipsHueManager
@@ -96,20 +63,12 @@ import com.andreas_kratzer.ghosttalk.core.model.SmartHomeButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SmartHomeProvider
 import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.SpokenTextMode
 import com.andreas_kratzer.ghosttalk.core.model.WeatherButtonAction
-import com.andreas_kratzer.ghosttalk.core.ui.components.DropdownGroup
-import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsEditTextItem
-import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsGroupedDropdownItem
-import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.feature.settings.domain.FeatureGuard
-import com.andreas_kratzer.ghosttalk.ui.pages.actions.NavigationActionFields
-import com.andreas_kratzer.ghosttalk.ui.pages.components.ButtonSettingsUiState
 import com.andreas_kratzer.ghosttalk.ui.pages.components.ButtonSettingsActions
-import kotlinx.coroutines.launch
+import com.andreas_kratzer.ghosttalk.ui.pages.components.ButtonSettingsUiState
 import java.io.File
-import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 
 @Composable
 fun ButtonConfigDialog(
@@ -156,7 +115,6 @@ fun ButtonConfigDialog(
 ) {
     val context = LocalContext.current
     var label by remember { mutableStateOf(buttonConfig.label) }
-    var isSuggestingLabel by remember { mutableStateOf(false) }
     var spokenText by remember { mutableStateOf(buttonConfig.spokenText ?: "") }
     var spokenTextMode by remember { mutableStateOf(buttonConfig.spokenTextMode) }
     var audioFileNameState by remember { mutableStateOf(buttonConfig.audioFileName) }
@@ -218,22 +176,10 @@ fun ButtonConfigDialog(
     val isElevenLabs = remember { isTtsElevenLabs() }
 
     // Label cache state
-    var isLabelPrefetching by remember { mutableStateOf(false) }
-    var isLabelCached by remember(label, isTextCached) {
-        mutableStateOf(if (isElevenLabs) (isTextCached?.invoke(label) ?: false) else false)
-    }
 
     // SpokenText cache state
-    var isSpokenTextPrefetching by remember { mutableStateOf(false) }
-    var isSpokenTextCached by remember(spokenText, isTextCached) {
-        mutableStateOf(if (isElevenLabs) (isTextCached?.invoke(spokenText) ?: false) else false)
-    }
 
     // AuditoryCueText cache state
-    var isAuditoryCueTextPrefetching by remember { mutableStateOf(false) }
-    var isAuditoryCueTextCached by remember(auditoryCueText, isTextCached) {
-        mutableStateOf(if (isElevenLabs) (isTextCached?.invoke(auditoryCueText) ?: false) else false)
-    }
 
 
     DisposableEffect(Unit) {
@@ -510,7 +456,7 @@ fun ButtonConfigDialog(
             }
         }
     }
-    val scope = rememberCoroutineScope()
+    rememberCoroutineScope()
 
     val buildCurrentAction = {
         when (selectedActionType) {

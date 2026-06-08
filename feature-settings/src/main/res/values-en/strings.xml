@@ -222,7 +222,7 @@
     <string name="settings_clear_usage_stats_confirm">Do you really want to clear all usage statistics for this book?</string>
     <string name="settings_action_history_title">Action History</string>
     <string name="settings_category_profile">Profile</string>
-    <string name="settings_search_placeholder">Search settings...</string>
+    <string name="settings_search_placeholder">Search settings&#8230;</string>
     <string name="settings_search_clear">Clear</string>
     <string name="settings_search_label">Search</string>
     <string name="settings_profile_active">Active Profile</string>

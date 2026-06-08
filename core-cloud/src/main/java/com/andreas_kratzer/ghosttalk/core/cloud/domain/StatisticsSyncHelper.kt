@@ -168,7 +168,7 @@ class StatisticsSyncHelper(
         val device = "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}"
         val versionName = try {
             context.packageManager.getPackageInfo(context.packageName, 0).versionName
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             "unknown"
         }
         return "$bookName Stats (Uploaded by $device - App v$versionName)"
