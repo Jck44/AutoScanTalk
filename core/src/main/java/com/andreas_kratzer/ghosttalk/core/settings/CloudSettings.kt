@@ -4,8 +4,8 @@ import com.andreas_kratzer.ghosttalk.core.model.CloudAuthType
 import kotlinx.coroutines.flow.StateFlow
 
 interface CloudSettings {
-    var isCloudSyncEnabled: Boolean
-    val isCloudSyncEnabledFlow: StateFlow<Boolean>
+    var isDataCloudSyncEnabled: Boolean
+    val isDataCloudSyncEnabledFlow: StateFlow<Boolean>
     var syncIntervalMinutes: Long
     val syncIntervalMinutesFlow: StateFlow<Long>
     var foregroundSyncIntervalMinutes: Long
@@ -51,6 +51,15 @@ interface CloudSettings {
 
     var googleDriveFolderId: String?
     val googleDriveFolderIdFlow: StateFlow<String?>
+
+    var googleDriveProfilesFolderId: String?
+    val googleDriveProfilesFolderIdFlow: StateFlow<String?>
+
+    var googleDriveLogsFolderId: String?
+    val googleDriveLogsFolderIdFlow: StateFlow<String?>
+
+    var lastFolderValidationTime: Long
+    val lastFolderValidationTimeFlow: StateFlow<Long>
 
     var googleDriveFolderName: String?
     val googleDriveFolderNameFlow: StateFlow<String?>

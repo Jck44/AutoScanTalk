@@ -155,7 +155,7 @@ class BookMergeEngine(private val logger: Logger) {
                 bookUpdatedAt = 0L,
                 versionSequence = 0L,
                 sourceDevice = null,
-                isCloudSyncEnabled = null,
+                isDataCloudSyncEnabled = null,
                 syncIntervalMinutes = null,
                 syncModeBook = null,
                 syncModeTts = null,

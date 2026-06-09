@@ -322,7 +322,7 @@ class MainActivity : AppCompatActivity() {
             repeatOnLifecycle(Lifecycle.State.RESUMED) {
                 while (true) {
                     delay(60000) // Check every 60 seconds (1 minute)
-                    if (settingsRepository.isCloudSyncEnabled) {
+                    if (settingsRepository.isDataCloudSyncEnabled) {
                         val lastSync = settingsRepository.lastSuccessfulSyncTime
                         val intervalMs = settingsRepository.foregroundSyncIntervalMinutes * 60 * 1000L
                         val now = System.currentTimeMillis()
@@ -463,7 +463,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStop() {
         super.onStop()
-        if (settingsRepository.isCloudSyncEnabled) {
+        if (settingsRepository.isDataCloudSyncEnabled) {
             triggerBackgroundSync()
         }
     }

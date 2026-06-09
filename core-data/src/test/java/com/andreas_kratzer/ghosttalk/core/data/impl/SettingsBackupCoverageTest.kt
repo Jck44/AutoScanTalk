@@ -19,7 +19,6 @@ class SettingsBackupCoverageTest {
         "hasAcceptedPageSplitOptIn", // Local opt-in state (no backup needed)
         "showTestButtons",         // Dev setting
         "persistActionLogs",       // File path (local)
-        "actionLogsStorage",       // File path (local)
         "syncLogsStorage",         // Local state (sync logs)
         "ttsAudioDeviceAddress",   // Hardware-specific
         "ttsAudioDeviceAddressFlow",
@@ -64,7 +63,11 @@ class SettingsBackupCoverageTest {
         "syncModeBook",             // Device-specific sync setting
         "syncModeTts",              // Device-specific sync setting
         "syncModeStats",            // Device-specific sync setting
+        "foregroundSyncIntervalMinutes", // Device-specific foreground sync interval
         "googleDriveFolderId",      // Device-specific folder target
+        "googleDriveProfilesFolderId", // Device-specific folder target
+        "googleDriveLogsFolderId",  // Device-specific folder target
+        "lastFolderValidationTime", // Local cache validation timestamp
         "googleDriveFolderName",    // Device-specific folder target name
         "statsRetentionDays",       // Local device maintenance preference
         "statsAggregationHours",    // Local device maintenance preference

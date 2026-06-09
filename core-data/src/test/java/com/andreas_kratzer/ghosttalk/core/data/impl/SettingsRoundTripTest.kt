@@ -77,7 +77,7 @@ class SettingsRoundTripTest {
             "staticRowEnabled",
             "isSmartPredictionEnabled", "geminiRedoPrediction", "geminiTimeout",
             "isGeminiEnabled", "useLocalGenerativeAi",
-            // Note: isCloudSyncEnabled, syncIntervalMinutes, syncMode are intentionally
+            // Note: isDataCloudSyncEnabled, syncIntervalMinutes, syncMode are intentionally
             // excluded from import (device-specific cloud sync settings)
             "ttsLanguage", "ttsVoiceName",
             "smartPredictionDelay", "keepScreenOnUserMode", "userModeScreenBehavior",

@@ -139,7 +139,7 @@ class SettingsViewModel @Inject constructor(
     val showTestButtons = settingsRepository.showTestButtonsFlow
     val showPageIdInLog = settingsRepository.showPageIdInLogFlow
     
-    val isCloudSyncEnabled = settingsRepository.isCloudSyncEnabledFlow
+    val isDataCloudSyncEnabled = settingsRepository.isDataCloudSyncEnabledFlow
     val syncModeBook = settingsRepository.syncModeBookFlow
     val syncModeTts = settingsRepository.syncModeTtsFlow
     val syncModeStats = settingsRepository.syncModeStatsFlow
@@ -345,7 +345,7 @@ class SettingsViewModel @Inject constructor(
         debouncedSyncJob?.cancel()
         debouncedSyncJob = viewModelScope.launch {
             delay(5000)
-            if (!settingsRepository.isCloudSyncEnabled || userEmail.value == null) return@launch
+            if (userEmail.value == null) return@launch
             try {
                 performProfilesSyncUseCase.execute()
             } catch (e: Exception) {
@@ -355,7 +355,7 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun autoSyncProfilesOnOpen() {
-        if (!settingsRepository.isCloudSyncEnabled || userEmail.value == null) return
+        if (userEmail.value == null) return
 
         viewModelScope.launch {
             _isProfileSyncing.value = true
@@ -446,7 +446,7 @@ class SettingsViewModel @Inject constructor(
     fun signOut() {
         cloudSyncDelegate.signOut(viewModelScope)
         // Disable cloud-dependent features on sign out
-        settingsRepository.isCloudSyncEnabled = false
+        settingsRepository.isDataCloudSyncEnabled = false
         settingsRepository.isGeminiEnabled = false
         settingsRepository.isGeminiVerified = false
         settingsRepository.googleDriveFolderId = null

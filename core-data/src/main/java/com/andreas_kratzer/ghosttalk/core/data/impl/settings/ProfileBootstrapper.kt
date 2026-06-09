@@ -114,8 +114,6 @@ class ProfileBootstrapper @Inject constructor(
                 onlyRecordHardwareStats = prefs.getBoolean(SettingsConstants.KEY_ONLY_RECORD_HARDWARE_STATS, false),
                 statsRetentionDays = prefs.getInt(SettingsConstants.KEY_STATS_RETENTION_DAYS, 30),
                 statsAggregationHours = prefs.getInt(SettingsConstants.KEY_STATS_AGGREGATION_HOURS, 24),
-                actionLogsStorage = prefs.getString(SettingsConstants.KEY_ACTION_LOGS_STORAGE, null),
-                syncLogsStorage = prefs.getString(SettingsConstants.KEY_SYNC_LOGS_STORAGE, null),
                 weatherCacheTimeout = prefs.getLong(SettingsConstants.KEY_WEATHER_CACHE_TIMEOUT, 60L),
                 backgroundLocationEnabled = prefs.getBoolean(SettingsConstants.KEY_BACKGROUND_LOCATION_ENABLED, false),
                 backgroundLocationInterval = prefs.getLong(SettingsConstants.KEY_BACKGROUND_LOCATION_INTERVAL, 4L),
@@ -138,7 +136,7 @@ class ProfileBootstrapper @Inject constructor(
                 speakerVolume = prefs.getInt(SettingsConstants.KEY_SPEAKER_VOLUME, 100),
                 headphoneVolume = prefs.getInt(SettingsConstants.KEY_HEADPHONE_VOLUME, 100),
                 blockVolumeKeys = prefs.getBoolean(SettingsConstants.KEY_BLOCK_VOLUME_KEYS, false),
-                isCloudSyncEnabled = prefs.getBoolean(SettingsConstants.KEY_CLOUD_SYNC_ENABLED, false),
+                isDataCloudSyncEnabled = prefs.getBoolean(SettingsConstants.KEY_CLOUD_SYNC_ENABLED, false),
                 googleDriveFolderId = prefs.getString(SettingsConstants.KEY_GOOGLE_DRIVE_FOLDER_ID, null),
                 googleDriveFolderName = prefs.getString(SettingsConstants.KEY_GOOGLE_DRIVE_FOLDER_NAME, null),
                 firebaseAnalyticsEnabled = prefs.getBoolean(SettingsConstants.KEY_FIREBASE_ANALYTICS_ENABLED, true)

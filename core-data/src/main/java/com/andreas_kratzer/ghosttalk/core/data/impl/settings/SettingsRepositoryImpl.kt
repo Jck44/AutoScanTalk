@@ -237,8 +237,6 @@ class SettingsRepositoryImpl @Inject constructor(
                             firebaseAnalyticsEnabled = prefs.getBoolean(SettingsConstants.KEY_FIREBASE_ANALYTICS_ENABLED, true),
                             statsRetentionDays = prefs.getInt(SettingsConstants.KEY_STATS_RETENTION_DAYS, 30),
                             statsAggregationHours = prefs.getInt(SettingsConstants.KEY_STATS_AGGREGATION_HOURS, 24),
-                            actionLogsStorage = prefs.getString(SettingsConstants.KEY_ACTION_LOGS_STORAGE, null),
-                            syncLogsStorage = prefs.getString(SettingsConstants.KEY_SYNC_LOGS_STORAGE, null),
                             weatherCacheTimeout = prefs.getLong(SettingsConstants.KEY_WEATHER_CACHE_TIMEOUT, 60L),
                             backgroundLocationEnabled = prefs.getBoolean(SettingsConstants.KEY_BACKGROUND_LOCATION_ENABLED, false),
                             backgroundLocationInterval = prefs.getLong(SettingsConstants.KEY_BACKGROUND_LOCATION_INTERVAL, 4L),
@@ -255,6 +253,7 @@ class SettingsRepositoryImpl @Inject constructor(
                             preferredCueSpeakerName = prefs.getString("preferred_cue_speaker_name", null),
                             fallbackToInternalAudio = prefs.getBoolean("fallback_to_internal_audio", true),
                             logIgnoredActions = prefs.getBoolean(SettingsConstants.KEY_LOG_IGNORED_ACTIONS, false),
+                            logStopActions = prefs.getBoolean(SettingsConstants.KEY_LOG_STOP_ACTIONS, false),
                             bluetoothDelay = prefs.getLong(SettingsConstants.KEY_BLUETOOTH_DELAY, 100L),
                             hueBridgeIp = prefs.getString(SettingsConstants.KEY_HUE_BRIDGE_IP, "") ?: "",
                             hueUsername = prefs.getString(SettingsConstants.KEY_HUE_USERNAME, "") ?: "",
@@ -263,12 +262,14 @@ class SettingsRepositoryImpl @Inject constructor(
                             speakerVolume = prefs.getInt(SettingsConstants.KEY_SPEAKER_VOLUME, 100),
                             headphoneVolume = prefs.getInt(SettingsConstants.KEY_HEADPHONE_VOLUME, 100),
                             blockVolumeKeys = prefs.getBoolean(SettingsConstants.KEY_BLOCK_VOLUME_KEYS, false),
-                            isCloudSyncEnabled = prefs.getBoolean(SettingsConstants.KEY_CLOUD_SYNC_ENABLED, false),
+                            isDataCloudSyncEnabled = prefs.getBoolean(SettingsConstants.KEY_CLOUD_SYNC_ENABLED, false),
                             googleDriveFolderId = prefs.getString(SettingsConstants.KEY_GOOGLE_DRIVE_FOLDER_ID, null),
                             googleDriveFolderName = prefs.getString(SettingsConstants.KEY_GOOGLE_DRIVE_FOLDER_NAME, null)
                         )
-                        val updatedProfile = profile.copy(config = currentConfig, updatedAt = System.currentTimeMillis())
-                        updateProfile(updatedProfile)
+                        if (profile.config != currentConfig) {
+                            val updatedProfile = profile.copy(config = currentConfig, updatedAt = System.currentTimeMillis())
+                            updateProfile(updatedProfile)
+                        }
                     }
                 }
             }
@@ -355,9 +356,7 @@ class SettingsRepositoryImpl @Inject constructor(
     override val onlyRecordHardwareStatsFlow: StateFlow<Boolean> get() = userSettings.onlyRecordHardwareStatsFlow
     override val firebaseAnalyticsEnabledFlow: StateFlow<Boolean> get() = userSettings.firebaseAnalyticsEnabledFlow
 
-    // --- AdvancedSettings ---
     override val persistActionLogsFlow: StateFlow<Boolean> get() = advancedSettings.persistActionLogsFlow
-    override val actionLogsStorageFlow: StateFlow<String?> get() = advancedSettings.actionLogsStorageFlow
     override val showTestButtonsFlow: StateFlow<Boolean> get() = advancedSettings.showTestButtonsFlow
     override val weatherCacheTimeoutFlow: StateFlow<Long> get() = advancedSettings.weatherCacheTimeoutFlow
     override val smartPredictionDelayFlow: StateFlow<Long> get() = advancedSettings.smartPredictionDelayFlow
@@ -388,7 +387,7 @@ class SettingsRepositoryImpl @Inject constructor(
     override val headphoneVolumeFlow: StateFlow<Int> get() = scanningSettings.headphoneVolumeFlow
     override val preferredMainSpeakerNameFlow: StateFlow<String?> get() = voiceSettings.preferredMainSpeakerNameFlow
     override val preferredCueSpeakerNameFlow: StateFlow<String?> get() = voiceSettings.preferredCueSpeakerNameFlow
-    override val isCloudSyncEnabledFlow: StateFlow<Boolean> get() = cloudSettings.isCloudSyncEnabledFlow
+    override val isDataCloudSyncEnabledFlow: StateFlow<Boolean> get() = cloudSettings.isDataCloudSyncEnabledFlow
     override val lateClickThresholdFlow: StateFlow<Long> get() = scanningSettings.lateClickThresholdFlow
 
     override val syncIntervalMinutesFlow: StateFlow<Long> get() = cloudSettings.syncIntervalMinutesFlow
@@ -425,6 +424,9 @@ class SettingsRepositoryImpl @Inject constructor(
     override val spotifyTokenExpiresAtFlow: StateFlow<Long> get() = cloudSettings.spotifyTokenExpiresAtFlow
     override val spotifyUserDisplayNameFlow: StateFlow<String?> get() = cloudSettings.spotifyUserDisplayNameFlow
     override val googleDriveFolderIdFlow: StateFlow<String?> get() = cloudSettings.googleDriveFolderIdFlow
+    override val googleDriveProfilesFolderIdFlow: StateFlow<String?> get() = cloudSettings.googleDriveProfilesFolderIdFlow
+    override val googleDriveLogsFolderIdFlow: StateFlow<String?> get() = cloudSettings.googleDriveLogsFolderIdFlow
+    override val lastFolderValidationTimeFlow: StateFlow<Long> get() = cloudSettings.lastFolderValidationTimeFlow
     override val googleDriveFolderNameFlow: StateFlow<String?> get() = cloudSettings.googleDriveFolderNameFlow
     override val syncTargetTypeFlow: StateFlow<String> get() = cloudSettings.syncTargetTypeFlow
     override val localFolderSafUriFlow: StateFlow<String?> get() = cloudSettings.localFolderSafUriFlow
@@ -526,9 +528,6 @@ class SettingsRepositoryImpl @Inject constructor(
         get() = advancedSettings.persistActionLogs
         set(value) { advancedSettings.persistActionLogs = value }
 
-    override var actionLogsStorage: String?
-        get() = advancedSettings.actionLogsStorage
-        set(value) { advancedSettings.actionLogsStorage = value }
 
     override var switchActivationKey: String
         get() = scanningSettings.switchActivationKey
@@ -606,9 +605,9 @@ class SettingsRepositoryImpl @Inject constructor(
         get() = voiceSettings.preferredCueSpeakerName
         set(value) { voiceSettings.preferredCueSpeakerName = value }
 
-    override var isCloudSyncEnabled: Boolean
-        get() = cloudSettings.isCloudSyncEnabled
-        set(value) { cloudSettings.isCloudSyncEnabled = value }
+    override var isDataCloudSyncEnabled: Boolean
+        get() = cloudSettings.isDataCloudSyncEnabled
+        set(value) { cloudSettings.isDataCloudSyncEnabled = value }
 
     override var syncIntervalMinutes: Long
         get() = cloudSettings.syncIntervalMinutes
@@ -870,6 +869,18 @@ class SettingsRepositoryImpl @Inject constructor(
     override var googleDriveFolderId: String?
         get() = cloudSettings.googleDriveFolderId
         set(value) { cloudSettings.googleDriveFolderId = value }
+
+    override var googleDriveProfilesFolderId: String?
+        get() = cloudSettings.googleDriveProfilesFolderId
+        set(value) { cloudSettings.googleDriveProfilesFolderId = value }
+
+    override var googleDriveLogsFolderId: String?
+        get() = cloudSettings.googleDriveLogsFolderId
+        set(value) { cloudSettings.googleDriveLogsFolderId = value }
+
+    override var lastFolderValidationTime: Long
+        get() = cloudSettings.lastFolderValidationTime
+        set(value) { cloudSettings.lastFolderValidationTime = value }
 
     override var googleDriveFolderName: String?
         get() = cloudSettings.googleDriveFolderName
@@ -1285,8 +1296,6 @@ class SettingsRepositoryImpl @Inject constructor(
             editor.putBoolean(SettingsConstants.KEY_FIREBASE_ANALYTICS_ENABLED, config.firebaseAnalyticsEnabled)
             editor.putInt(SettingsConstants.KEY_STATS_RETENTION_DAYS, config.statsRetentionDays)
             editor.putInt(SettingsConstants.KEY_STATS_AGGREGATION_HOURS, config.statsAggregationHours)
-            editor.putString(SettingsConstants.KEY_ACTION_LOGS_STORAGE, config.actionLogsStorage)
-            editor.putString(SettingsConstants.KEY_SYNC_LOGS_STORAGE, config.syncLogsStorage)
             editor.putLong(SettingsConstants.KEY_WEATHER_CACHE_TIMEOUT, config.weatherCacheTimeout)
             editor.putBoolean(SettingsConstants.KEY_BACKGROUND_LOCATION_ENABLED, config.backgroundLocationEnabled)
             editor.putLong(SettingsConstants.KEY_BACKGROUND_LOCATION_INTERVAL, config.backgroundLocationInterval)
@@ -1311,7 +1320,7 @@ class SettingsRepositoryImpl @Inject constructor(
             editor.putInt(SettingsConstants.KEY_SPEAKER_VOLUME, config.speakerVolume)
             editor.putInt(SettingsConstants.KEY_HEADPHONE_VOLUME, config.headphoneVolume)
             editor.putBoolean(SettingsConstants.KEY_BLOCK_VOLUME_KEYS, config.blockVolumeKeys)
-            editor.putBoolean(SettingsConstants.KEY_CLOUD_SYNC_ENABLED, config.isCloudSyncEnabled)
+            editor.putBoolean(SettingsConstants.KEY_CLOUD_SYNC_ENABLED, config.isDataCloudSyncEnabled)
             editor.putString(SettingsConstants.KEY_GOOGLE_DRIVE_FOLDER_ID, config.googleDriveFolderId)
             editor.putString(SettingsConstants.KEY_GOOGLE_DRIVE_FOLDER_NAME, config.googleDriveFolderName)
             editor.apply()

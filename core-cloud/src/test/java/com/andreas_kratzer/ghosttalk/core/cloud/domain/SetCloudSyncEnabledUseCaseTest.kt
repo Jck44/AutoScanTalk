@@ -38,7 +38,7 @@ class SetCloudSyncEnabledUseCaseTest {
     fun `invoke with true enables setting and enqueues work`() {
         useCase(true)
 
-        verify { settingsRepository.isCloudSyncEnabled = true }
+        verify { settingsRepository.isDataCloudSyncEnabled = true }
         verify { workManager.enqueueUniquePeriodicWork(any(), any(), any()) }
         verify(exactly = 0) { workManager.cancelUniqueWork(any()) }
     }
@@ -47,14 +47,14 @@ class SetCloudSyncEnabledUseCaseTest {
     fun `invoke with false disables setting and cancels work`() {
         useCase(false)
 
-        verify { settingsRepository.isCloudSyncEnabled = false }
+        verify { settingsRepository.isDataCloudSyncEnabled = false }
         verify { workManager.cancelUniqueWork("CloudSyncWorker") }
         verify(exactly = 0) { workManager.enqueueUniquePeriodicWork(any(), any(), any()) }
     }
 
     @Test
     fun `reschedule enqueues work when sync is enabled`() {
-        every { settingsRepository.isCloudSyncEnabled } returns true
+        every { settingsRepository.isDataCloudSyncEnabled } returns true
         every { settingsRepository.syncIntervalMinutes } returns 15
         every { settingsRepository.syncTargetType } returns "GOOGLE_DRIVE"
 
@@ -65,7 +65,7 @@ class SetCloudSyncEnabledUseCaseTest {
 
     @Test
     fun `reschedule does not enqueue work when sync is disabled`() {
-        every { settingsRepository.isCloudSyncEnabled } returns false
+        every { settingsRepository.isDataCloudSyncEnabled } returns false
 
         useCase.reschedule()
 

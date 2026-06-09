@@ -1,7 +1,6 @@
 package com.andreas_kratzer.ghosttalk.core.data.impl.settings
 
 import android.content.SharedPreferences
-import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_ACTION_LOGS_STORAGE
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_BACKGROUND_LOCATION_ENABLED
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_BACKGROUND_LOCATION_INTERVAL
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_BACKGROUND_WEATHER_ENABLED
@@ -23,7 +22,6 @@ class AdvancedSettingsRepository(
 ) : BaseSettingsRepository(prefs, activeBookIdFlow), AdvancedSettings {
 
     private val _persistActionLogs = BooleanSetting(KEY_PERSIST_ACTION_LOGS, true, isScoped = false)
-    private val _actionLogsStorage = StringSetting(KEY_ACTION_LOGS_STORAGE, isScoped = false)
     private val _showTestButtons = BooleanSetting(KEY_SHOW_TEST_BUTTONS, false, isScoped = false)
     private val _showPageIdInLog = BooleanSetting(KEY_SHOW_PAGE_ID_IN_LOG, false, isScoped = false)
     private val _smartPredictionDelay = LongSetting(KEY_SMART_PREDICTION_DELAY, 2000L)
@@ -38,7 +36,6 @@ class AdvancedSettingsRepository(
     private val _backgroundWeatherInterval = LongSetting(KEY_BACKGROUND_WEATHER_INTERVAL, 6L, isScoped = false)
 
     override val persistActionLogsFlow = _persistActionLogs.flow
-    override val actionLogsStorageFlow = _actionLogsStorage.flow
     override val showTestButtonsFlow = _showTestButtons.flow
     override val showPageIdInLogFlow = _showPageIdInLog.flow
     override val smartPredictionDelayFlow = _smartPredictionDelay.flow
@@ -53,7 +50,6 @@ class AdvancedSettingsRepository(
     override val backgroundWeatherIntervalFlow = _backgroundWeatherInterval.flow
 
     override var persistActionLogs: Boolean by _persistActionLogs
-    override var actionLogsStorage: String? by _actionLogsStorage
     override var showTestButtons: Boolean by _showTestButtons
     override var showPageIdInLog: Boolean by _showPageIdInLog
     override var smartPredictionDelay: Long by _smartPredictionDelay
@@ -70,7 +66,6 @@ class AdvancedSettingsRepository(
 
     override fun refresh() {
         _persistActionLogs.refresh()
-        _actionLogsStorage.refresh()
         _showTestButtons.refresh()
         _showPageIdInLog.refresh()
         _smartPredictionDelay.refresh()

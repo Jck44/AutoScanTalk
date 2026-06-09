@@ -24,6 +24,7 @@ private const val MAX_LOG_SIZE = 500
 @Singleton
 class ActionLogUseCase @Inject constructor(
     private val settingsRepository: SettingsRepository,
+    private val bookRepository: com.andreas_kratzer.ghosttalk.core.data.BookRepository,
     private val logger: Logger
 ) : ActionLogProvider {
     private val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
@@ -36,7 +37,12 @@ class ActionLogUseCase @Inject constructor(
         
         if (!settingsRepository.persistActionLogs) return@withContextAndLock emptyList()
         
-        val savedJson = settingsRepository.actionLogsStorage
+        val activeBookId = settingsRepository.activeBookId
+        val savedJson = if (activeBookId != null) {
+            bookRepository.getBookById(activeBookId)?.actionLogsStorage
+        } else {
+            null
+        }
         val entries: List<ActionLogEntry> = if (!savedJson.isNullOrBlank()) {
             withContext(Dispatchers.IO) {
                 try {
@@ -97,7 +103,13 @@ class ActionLogUseCase @Inject constructor(
 
         if (settingsRepository.persistActionLogs) {
             withContext(Dispatchers.IO) {
-                settingsRepository.actionLogsStorage = Json.encodeToString(updatedEntries)
+                val activeBookId = settingsRepository.activeBookId
+                if (activeBookId != null) {
+                    val book = bookRepository.getBookById(activeBookId)
+                    if (book != null) {
+                        bookRepository.updateBook(book.copy(actionLogsStorage = Json.encodeToString(updatedEntries)))
+                    }
+                }
             }
         }
         
@@ -122,7 +134,13 @@ class ActionLogUseCase @Inject constructor(
         cachedEntries = emptyList()
         if (settingsRepository.persistActionLogs) {
             withContext(Dispatchers.IO) {
-                settingsRepository.actionLogsStorage = "[]"
+                val activeBookId = settingsRepository.activeBookId
+                if (activeBookId != null) {
+                    val book = bookRepository.getBookById(activeBookId)
+                    if (book != null) {
+                        bookRepository.updateBook(book.copy(actionLogsStorage = "[]"))
+                    }
+                }
             }
         }
     }

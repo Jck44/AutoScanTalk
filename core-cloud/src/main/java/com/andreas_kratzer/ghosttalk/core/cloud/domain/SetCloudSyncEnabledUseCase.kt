@@ -15,7 +15,7 @@ class SetCloudSyncEnabledUseCase @Inject constructor(
     private val workManager: WorkManager
 ) {
     operator fun invoke(enabled: Boolean) {
-        settingsRepository.isCloudSyncEnabled = enabled
+        settingsRepository.isDataCloudSyncEnabled = enabled
         if (enabled) {
             scheduleCloudSync()
         } else {
@@ -24,7 +24,7 @@ class SetCloudSyncEnabledUseCase @Inject constructor(
     }
 
     fun reschedule() {
-        if (settingsRepository.isCloudSyncEnabled) {
+        if (settingsRepository.isDataCloudSyncEnabled) {
             scheduleCloudSync()
         }
     }

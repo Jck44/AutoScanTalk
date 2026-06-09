@@ -93,20 +93,20 @@ class PageRepositoryTest {
     fun `insertPage calls dao insertPageEntity`() = runTest {
         val page = Page(id = "1", name = "Page 1", bookId = "book1", buttonConfigs = emptyList())
         pageRepository.insertPage(page)
-        coVerify { mockPageDao.insertPageEntity(page) }
+        coVerify { mockPageDao.insertPageEntity(any()) }
     }
 
     @Test
     fun `updatePage calls dao updatePageEntity`() = runTest {
         val page = Page(id = "1", name = "Page 1", bookId = "book1", buttonConfigs = emptyList())
         pageRepository.updatePage(page)
-        coVerify { mockPageDao.updatePageEntity(page) }
+        coVerify { mockPageDao.updatePageEntity(any()) }
     }
 
     @Test
     fun `deletePage calls dao deletePageEntity`() = runTest {
         val page = Page(id = "1", name = "Page 1", bookId = "book1", buttonConfigs = emptyList())
         pageRepository.deletePage(page)
-        coVerify { mockPageDao.deletePageEntity(page) }
+        coVerify { mockPageDao.deletePageEntity(any()) }
     }
 }

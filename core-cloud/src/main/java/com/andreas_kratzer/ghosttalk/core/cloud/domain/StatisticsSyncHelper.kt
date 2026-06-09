@@ -48,12 +48,10 @@ class StatisticsSyncHelper(
         val lastSyncedLocalTime = prefs.getLong("stats_last_synced_local_time_$bookId", 0L)
         val lastSyncedRemoteTime = prefs.getLong("stats_last_synced_remote_time_$bookId", 0L)
 
-        logger.w(TAG, "[STATS-DEBUG] syncStatistics called: syncMode=$syncMode, bookId='$bookId', statsFileName='$statsFileName'")
-        logger.w(TAG, "[STATS-DEBUG] remoteFile found: ${remoteFile != null} (name=${remoteFile?.name}, id=${remoteFile?.id})")
-        logger.w(TAG, "[STATS-DEBUG] localLastModified=$localLastModified, remoteLastModified=$remoteLastModified, lastSyncedLocal=$lastSyncedLocalTime, lastSyncedRemote=$lastSyncedRemoteTime")
+        com.andreas_kratzer.ghosttalk.core.cloud.SyncLogger.logStatus(logger, TAG, statsFileName, localLastModified, remoteLastModified, lastSyncedLocalTime, lastSyncedRemoteTime)
 
         if (localLastModified == 0L && remoteFile == null) {
-            logger.w(TAG, "[STATS-DEBUG] EARLY EXIT: No statistics to sync (localLastModified=0 AND no remote file).")
+            com.andreas_kratzer.ghosttalk.core.cloud.SyncLogger.logSkipped(logger, TAG, statsFileName, "local and remote are empty")
             return@withContext
         }
 
@@ -72,10 +70,10 @@ class StatisticsSyncHelper(
             SyncMode.TWO_WAY -> hasRemoteChanged || localLastModified == 0L
         }
 
-        logger.w(TAG, "[STATS-DEBUG] Decision: hasLocalChanged=$hasLocalChanged, hasRemoteChanged=$hasRemoteChanged, shouldUpload=$shouldUpload, shouldDownload=$shouldDownload")
+        com.andreas_kratzer.ghosttalk.core.cloud.SyncLogger.logDecision(logger, TAG, statsFileName, hasLocalChanged, hasRemoteChanged, shouldUpload, shouldDownload)
 
         if (shouldUpload) {
-            logger.d(TAG, "Uploading statistics...")
+            com.andreas_kratzer.ghosttalk.core.cloud.SyncLogger.logAction(logger, TAG, statsFileName, "Uploading statistics zip")
             val tempFile = File(context.cacheDir, statsFileName)
             try {
                 tempFile.outputStream().use { os ->
@@ -104,7 +102,7 @@ class StatisticsSyncHelper(
                 tempFile.delete()
             }
         } else if (shouldDownload) {
-            logger.d(TAG, "Downloading statistics...")
+            com.andreas_kratzer.ghosttalk.core.cloud.SyncLogger.logAction(logger, TAG, statsFileName, "Downloading statistics zip")
             val tempFile = File(context.cacheDir, "download_$statsFileName")
             try {
                 if (storageProvider.downloadFile(remoteFile!!.id, tempFile) { _ -> }) {
@@ -123,7 +121,7 @@ class StatisticsSyncHelper(
                 tempFile.delete()
             }
         } else {
-            logger.d(TAG, "Statistics are in sync.")
+            com.andreas_kratzer.ghosttalk.core.cloud.SyncLogger.logSkipped(logger, TAG, statsFileName, "Statistics are in sync")
             if (lastSyncedLocalTime == 0L || lastSyncedRemoteTime == 0L) {
                 prefs.edit {
                     putLong("stats_last_synced_local_time_$bookId", localLastModified)

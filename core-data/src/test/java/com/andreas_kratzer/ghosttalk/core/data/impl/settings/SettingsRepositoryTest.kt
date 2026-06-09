@@ -186,15 +186,7 @@ class SettingsRepositoryTest {
         assertNull(repository.ttsVoiceNameFlow.first())
     }
 
-    @Test
-    fun actionLogsStorage_canBeResetToNull() = runBlocking {
-        repository.actionLogsStorage = "temp-storage"
-        repository.actionLogsStorage = null
 
-        assertNull(mockedPrefsStore["action_logs_storage"])
-        assertNull(repository.actionLogsStorage)
-        assertNull(repository.actionLogsStorageFlow.first())
-    }
 
     @Test
     fun persistActionLogs_initializesTrue() = runBlocking {
@@ -212,21 +204,7 @@ class SettingsRepositoryTest {
         assertEquals(true, repository.persistActionLogsFlow.first())
     }
 
-    @Test
-    fun actionLogsStorage_initializesNull() = runBlocking {
-        assertNull(repository.actionLogsStorage)
-        assertNull(repository.actionLogsStorageFlow.first())
-    }
 
-    @Test
-    fun actionLogsStorage_savesAndEmitsValue() = runBlocking {
-        val testStorage = "[\"action1\"]"
-        repository.actionLogsStorage = testStorage
-
-        assertEquals(testStorage, mockedPrefsStore["action_logs_storage"])
-        assertEquals(testStorage, repository.actionLogsStorage)
-        assertEquals(testStorage, repository.actionLogsStorageFlow.first())
-    }
 
     @Test
     fun switchActivationKey_initializesTilde3() = runBlocking {

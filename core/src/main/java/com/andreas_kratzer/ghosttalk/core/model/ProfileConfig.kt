@@ -95,8 +95,6 @@ data class ProfileConfig(
     val statsAggregationHours: Int = 24,
     val logIgnoredActions: Boolean = false,
     val logStopActions: Boolean = false,
-    val actionLogsStorage: String? = null,
-    val syncLogsStorage: String? = null,
     val weatherCacheTimeout: Long = 60,
     val backgroundLocationEnabled: Boolean = false,
     val backgroundLocationInterval: Long = 4,
@@ -132,7 +130,7 @@ data class ProfileConfig(
     val blockVolumeKeys: Boolean = false,
 
     // Cloud Sync
-    val isCloudSyncEnabled: Boolean = false,
+    val isDataCloudSyncEnabled: Boolean = false,
     val googleDriveFolderId: String? = null,
     val googleDriveFolderName: String? = null,
     val firebaseAnalyticsEnabled: Boolean = true

@@ -1,10 +1,14 @@
 package com.andreas_kratzer.ghosttalk.core.domain.actions
 
+import com.andreas_kratzer.ghosttalk.core.data.BookRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.model.Book
 import com.andreas_kratzer.ghosttalk.core.model.ActionLogEntry
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.andreas_kratzer.ghosttalk.core.util.TestLogger
+import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -12,14 +16,24 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
 
 @ExperimentalCoroutinesApi
 class ActionLogUseCaseTest {
 
     private val settingsRepository: SettingsRepository = mockk(relaxed = true)
+    private val bookRepository: BookRepository = mockk(relaxed = true)
     private val logger: Logger = TestLogger()
-    private val useCase = ActionLogUseCase(settingsRepository, logger)
+    private val useCase = ActionLogUseCase(settingsRepository, bookRepository, logger)
+
+    private val testBook = Book(id = "book1", name = "Test Book")
+
+    @Before
+    fun setup() {
+        every { settingsRepository.activeBookId } returns "book1"
+        coEvery { bookRepository.getBookById("book1") } returns testBook
+    }
 
     @Test
     fun `formatAndAddEntry adds entry with current timestamp`() = runTest {
@@ -59,7 +73,7 @@ class ActionLogUseCaseTest {
 
         useCase.formatAndAddEntry("Persisted", emptyList(), 100)
 
-        verify { settingsRepository.actionLogsStorage = any() }
+        coVerify { bookRepository.updateBook(any()) }
     }
 
     @Test
@@ -75,7 +89,7 @@ class ActionLogUseCaseTest {
     fun `loadSavedLogs handles JSON migration from old format`() = runTest {
         every { settingsRepository.persistActionLogs } returns true
         // Old format was List<String>
-        every { settingsRepository.actionLogsStorage } returns """["Old message 1","Old message 2"]"""
+        coEvery { bookRepository.getBookById("book1") } returns testBook.copy(actionLogsStorage = """["Old message 1","Old message 2"]""")
 
         val result = useCase.loadSavedLogEntries()
 
@@ -87,7 +101,7 @@ class ActionLogUseCaseTest {
     @Test
     fun `loadSavedLogs returns current entries`() = runTest {
         every { settingsRepository.persistActionLogs } returns true
-        every { settingsRepository.actionLogsStorage } returns """[{"message":"New message","timestamp":123456789}]"""
+        coEvery { bookRepository.getBookById("book1") } returns testBook.copy(actionLogsStorage = """[{"message":"New message","timestamp":123456789}]""")
 
         val result = useCase.loadSavedLogEntries()
 
@@ -114,13 +128,13 @@ class ActionLogUseCaseTest {
         
         assertEquals(1, result.size)
         assertEquals(action, result[0].action)
-        verify { settingsRepository.actionLogsStorage = any() }
+        coVerify { bookRepository.updateBook(any()) }
     }
 
     @Test
     fun `loadSavedLogEntries decodes ButtonAction correctly`() = runTest {
         every { settingsRepository.persistActionLogs } returns true
-        every { settingsRepository.actionLogsStorage } returns """[{"message":"Speak","timestamp":123456,"action":{"type":"SpeakTextButtonAction","version":1}}]"""
+        coEvery { bookRepository.getBookById("book1") } returns testBook.copy(actionLogsStorage = """[{"message":"Speak","timestamp":123456,"action":{"type":"SpeakTextButtonAction","version":1}}]""")
 
         val result = useCase.loadSavedLogEntries()
 
@@ -134,6 +148,6 @@ class ActionLogUseCaseTest {
 
         useCase.clearLogs()
 
-        verify { settingsRepository.actionLogsStorage = "[]" }
+        coVerify { bookRepository.updateBook(match { it.actionLogsStorage == "[]" }) }
     }
 }

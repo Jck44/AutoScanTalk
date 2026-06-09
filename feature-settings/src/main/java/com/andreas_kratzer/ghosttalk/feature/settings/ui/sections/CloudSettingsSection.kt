@@ -60,7 +60,7 @@ fun CloudSettingsSection(
     val syncModeSettings by viewModel.syncModeSettings.collectAsState()
     val syncIntervalMinutes by viewModel.syncIntervalMinutes.collectAsState()
     val foregroundSyncIntervalMinutes by viewModel.foregroundSyncIntervalMinutes.collectAsState()
-    val isCloudSyncEnabled by viewModel.isCloudSyncEnabled.collectAsState()
+    val isDataCloudSyncEnabled by viewModel.isDataCloudSyncEnabled.collectAsState()
     val lastSyncTime by viewModel.lastSuccessfulSyncTime.collectAsState()
 
     val googleDriveFolderId by viewModel.googleDriveFolderId.collectAsState()
@@ -279,7 +279,7 @@ fun CloudSettingsSection(
             PreferenceCategory(stringResource(R.string.settings_category_cloud_sync)) {
                 SettingsToggleItem(
                     label = stringResource(R.string.settings_cloud_sync_enabled),
-                    checked = isCloudSyncEnabled,
+                    checked = isDataCloudSyncEnabled,
                     onCheckedChange = { viewModel.setCloudSyncEnabled(context, it) },
                     enabled = userEmail != null
                 )
@@ -441,7 +441,7 @@ fun CloudSettingsSection(
                     }
                 }
 
-                if (isCloudSyncEnabled) {
+                if (isDataCloudSyncEnabled) {
                     SettingsDropdownItem(
                         label = stringResource(R.string.settings_cloud_sync_interval),
                         selectedOption = syncIntervalMinutes.toString(),

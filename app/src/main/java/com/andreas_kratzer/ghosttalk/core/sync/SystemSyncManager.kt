@@ -32,7 +32,7 @@ class SystemSyncManager @Inject constructor(
     override fun triggerSync() {
         Log.i(TAG, "triggerSync called")
         
-        if (!settingsRepository.isCloudSyncEnabled) {
+        if (!settingsRepository.isDataCloudSyncEnabled) {
             Log.w(TAG, "Cloud sync is disabled in settings.")
             Toast.makeText(context, "Synchronisation ist in den Einstellungen deaktiviert.", Toast.LENGTH_SHORT).show()
             return

@@ -4,7 +4,10 @@ import android.content.SharedPreferences
 import androidx.core.content.edit
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_CLOUD_SYNC_ENABLED
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_GOOGLE_DRIVE_FOLDER_ID
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_GOOGLE_DRIVE_PROFILES_FOLDER_ID
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_GOOGLE_DRIVE_LOGS_FOLDER_ID
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_GOOGLE_DRIVE_FOLDER_NAME
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_LAST_FOLDER_VALIDATION_TIME
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_LAST_SYNC_TIME
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SYNC_INTERVAL_MINUTES
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SYNC_MODE
@@ -23,7 +26,7 @@ class CloudSettingsRepository(
         get() = super.activeBookId
         set(_) { /* Handled by SettingsRepositoryImpl */ }
 
-    private val _isCloudSyncEnabled = BooleanSetting(KEY_CLOUD_SYNC_ENABLED, false)
+    private val _isDataCloudSyncEnabled = BooleanSetting(KEY_CLOUD_SYNC_ENABLED, false)
     private val _syncIntervalMinutes = LongSetting(KEY_SYNC_INTERVAL_MINUTES, 15L)
     private val _foregroundSyncIntervalMinutes = LongSetting(SettingsConstants.KEY_FOREGROUND_SYNC_INTERVAL_MINUTES, 5L)
     private val _syncModeBook = NonNullStringSetting(SettingsConstants.KEY_SYNC_MODE_BOOK, "TWO_WAY")
@@ -45,6 +48,9 @@ class CloudSettingsRepository(
     private val _spotifyTokenExpiresAt = LongSetting(SettingsConstants.KEY_SPOTIFY_TOKEN_EXPIRES_AT, 0L)
     private val _spotifyUserDisplayName = StringSetting(SettingsConstants.KEY_SPOTIFY_USER_DISPLAY_NAME)
     private val _googleDriveFolderId = StringSetting(KEY_GOOGLE_DRIVE_FOLDER_ID)
+    private val _googleDriveProfilesFolderId = StringSetting(KEY_GOOGLE_DRIVE_PROFILES_FOLDER_ID)
+    private val _googleDriveLogsFolderId = StringSetting(KEY_GOOGLE_DRIVE_LOGS_FOLDER_ID)
+    private val _lastFolderValidationTime = LongSetting(KEY_LAST_FOLDER_VALIDATION_TIME, 0L)
     private val _googleDriveFolderName = StringSetting(KEY_GOOGLE_DRIVE_FOLDER_NAME)
     private val _syncTargetType = NonNullStringSetting(SettingsConstants.KEY_SYNC_TARGET_TYPE, "DRIVE_API")
     private val _localFolderSafUri = StringSetting(SettingsConstants.KEY_LOCAL_FOLDER_SAF_URI)
@@ -77,7 +83,7 @@ class CloudSettingsRepository(
         migrateLogSyncSettings()
     }
 
-    override val isCloudSyncEnabledFlow = _isCloudSyncEnabled.flow
+    override val isDataCloudSyncEnabledFlow = _isDataCloudSyncEnabled.flow
     override val syncIntervalMinutesFlow = _syncIntervalMinutes.flow
     override val foregroundSyncIntervalMinutesFlow = _foregroundSyncIntervalMinutes.flow
     override val syncModeBookFlow = _syncModeBook.flow
@@ -95,6 +101,9 @@ class CloudSettingsRepository(
     override val spotifyTokenExpiresAtFlow = _spotifyTokenExpiresAt.flow
     override val spotifyUserDisplayNameFlow = _spotifyUserDisplayName.flow
     override val googleDriveFolderIdFlow = _googleDriveFolderId.flow
+    override val googleDriveProfilesFolderIdFlow = _googleDriveProfilesFolderId.flow
+    override val googleDriveLogsFolderIdFlow = _googleDriveLogsFolderId.flow
+    override val lastFolderValidationTimeFlow = _lastFolderValidationTime.flow
     override val googleDriveFolderNameFlow = _googleDriveFolderName.flow
     override val syncTargetTypeFlow = _syncTargetType.flow
     override val localFolderSafUriFlow = _localFolderSafUri.flow
@@ -104,7 +113,7 @@ class CloudSettingsRepository(
     override val lastLogsSyncTimeFlow = _lastLogsSyncTime.flow
     override val lastUploadedLogHashFlow = _lastUploadedLogHash.flow
 
-    override var isCloudSyncEnabled: Boolean by _isCloudSyncEnabled
+    override var isDataCloudSyncEnabled: Boolean by _isDataCloudSyncEnabled
     override var syncIntervalMinutes: Long by _syncIntervalMinutes
     override var foregroundSyncIntervalMinutes: Long by _foregroundSyncIntervalMinutes
     override var syncModeBook: String by _syncModeBook
@@ -122,6 +131,9 @@ class CloudSettingsRepository(
     override var spotifyTokenExpiresAt: Long by _spotifyTokenExpiresAt
     override var spotifyUserDisplayName: String? by _spotifyUserDisplayName
     override var googleDriveFolderId: String? by _googleDriveFolderId
+    override var googleDriveProfilesFolderId: String? by _googleDriveProfilesFolderId
+    override var googleDriveLogsFolderId: String? by _googleDriveLogsFolderId
+    override var lastFolderValidationTime: Long by _lastFolderValidationTime
     override var googleDriveFolderName: String? by _googleDriveFolderName
     override var syncTargetType: String by _syncTargetType
     override var localFolderSafUri: String? by _localFolderSafUri
@@ -146,7 +158,7 @@ class CloudSettingsRepository(
 
     override fun refresh() {
         migrateOldSyncMode()
-        _isCloudSyncEnabled.refresh()
+        _isDataCloudSyncEnabled.refresh()
         _syncIntervalMinutes.refresh()
         _foregroundSyncIntervalMinutes.refresh()
         _syncModeBook.refresh()
@@ -163,6 +175,9 @@ class CloudSettingsRepository(
         _spotifyTokenExpiresAt.refresh()
         _spotifyUserDisplayName.refresh()
         _googleDriveFolderId.refresh()
+        _googleDriveProfilesFolderId.refresh()
+        _googleDriveLogsFolderId.refresh()
+        _lastFolderValidationTime.refresh()
         _googleDriveFolderName.refresh()
         _syncTargetType.refresh()
         _localFolderSafUri.refresh()

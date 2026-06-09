@@ -100,7 +100,7 @@
     <string name="settings_security_biometric_unsupported">Nicht vom Gerät unterstützt</string>
 
     <!-- Cloud Sync Settings -->
-    <string name="settings_cloud_sync_enabled">Automatischer Sync</string>
+    <string name="settings_cloud_sync_enabled">Daten-Synchronisation (Bücher &amp; Medien)</string>
     <string name="settings_cloud_sync_mode">Sync-Modus</string>
     <string name="settings_cloud_sync_interval">Sync-Intervall (Minuten)</string>
     <string name="settings_foreground_sync_interval">Prüfintervall bei geöffneter App (Minuten)</string>

@@ -35,7 +35,7 @@ import java.util.UUID
         UserModeSessionEntity::class, VocalProfileEntity::class, DeletedEntity::class,
         SettingsProfileEntity::class
     ],
-    version = 33,
+    version = 34,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -55,6 +55,12 @@ abstract class AppDatabase : RoomDatabase() {
     companion object {
         @Volatile
         private var INSTANCE: AppDatabase? = null
+
+        val MIGRATION_33_34: Migration = object : Migration(33, 34) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `books` ADD COLUMN `actionLogsStorage` TEXT")
+            }
+        }
 
         val MIGRATION_32_33: Migration = object : Migration(32, 33) {
             override fun migrate(db: SupportSQLiteDatabase) {
@@ -581,7 +587,8 @@ abstract class AppDatabase : RoomDatabase() {
                     MIGRATION_29_30,
                     MIGRATION_30_31,
                     MIGRATION_31_32,
-                    MIGRATION_32_33
+                    MIGRATION_32_33,
+                    MIGRATION_33_34
                 )
                 .build()
                 INSTANCE = instance

@@ -39,11 +39,29 @@ class ConfigSyncHelper(
         return hash.joinToString("") { "%02x".format(it) }
     }
 
+    private fun calculateDeterministicMd5(profile: com.andreas_kratzer.ghosttalk.core.model.SettingsProfile): String {
+        val cleanConfig = profile.config.copy(
+            securityPinHash = null,
+            securityPinSalt = null,
+            hueUsername = "",
+            hueBridgeFingerprint = ""
+        )
+        val cleanProfile = profile.copy(
+            config = cleanConfig,
+            profileVersionSequence = 0L,
+            updatedAt = 0L
+        )
+        val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
+        val jsonStr = json.encodeToString(com.andreas_kratzer.ghosttalk.core.model.SettingsProfile.serializer(), cleanProfile)
+        return calculateMd5(jsonStr)
+    }
+
     @android.annotation.SuppressLint("HardwareIds")
     private fun buildConfigPropertiesAndDescription(
         type: String,
         name: String,
-        updatedAt: Long
+        updatedAt: Long,
+        extraProperties: Map<String, String> = emptyMap()
     ): Pair<Map<String, String>, String> {
         val device = "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}"
         val versionName = try {
@@ -60,7 +78,7 @@ class ConfigSyncHelper(
             "source_device" to device,
             "device_id" to androidId,
             "app_version" to versionName
-        )
+        ) + extraProperties
         val displayType = if (type == "profile") "Profile" else "Config"
         val description = "$name $displayType (Uploaded by $device - App v$versionName - Device ID: $androidId)"
         return Pair(properties, description)
@@ -292,18 +310,31 @@ class ConfigSyncHelper(
         val baseBackupFile = File(File(context.filesDir, "local_backups"), profileFileName)
         val baseJson = if (baseBackupFile.exists()) baseBackupFile.readText() else null
 
+        val remoteDeterministicMd5 = remoteFile?.properties?.get("deterministic_md5")
+        val localDeterministicMd5 = calculateDeterministicMd5(activeProfile)
+
+        if (remoteFile != null && remoteDeterministicMd5 != null && remoteDeterministicMd5 == localDeterministicMd5) {
+            com.andreas_kratzer.ghosttalk.core.cloud.SyncLogger.logSkipped(logger, TAG, profileFileName, "Deterministic MD5 matches remote", localDeterministicMd5, remoteDeterministicMd5)
+            return@withContext
+        }
+
         if (remoteFile != null && remoteFile.md5Checksum == localMd5) {
-            logger.d(TAG, "Profile $profileFileName is identical to remote (MD5 match). Skipping sync.")
+            com.andreas_kratzer.ghosttalk.core.cloud.SyncLogger.logSkipped(logger, TAG, profileFileName, "Encrypted MD5 matches remote", localMd5, remoteFile.md5Checksum)
             return@withContext
         }
 
         if (remoteFile == null) {
-            logger.d(TAG, "Uploading profile $profileFileName to cloud...")
+            com.andreas_kratzer.ghosttalk.core.cloud.SyncLogger.logAction(logger, TAG, profileFileName, "Uploading profile", "deterministic MD5: $localDeterministicMd5")
             val tempFile = File(context.cacheDir, profileFileName)
             try {
                 tempFile.writeText(localJson)
                 saveToLocalBackupFolder(profileFileName, tempFile)
-                val (properties, description) = buildConfigPropertiesAndDescription("profile", activeProfile.name, activeProfile.updatedAt)
+                val (properties, description) = buildConfigPropertiesAndDescription(
+                    "profile",
+                    activeProfile.name,
+                    activeProfile.updatedAt,
+                    mapOf("deterministic_md5" to localDeterministicMd5)
+                )
                 storageProvider.uploadFile(tempFile, "application/json", description, properties) { _ -> }
                 syncLogProvider.addLogEntry("Profil ${activeProfile.name} in die Cloud hochgeladen", activeProfile.id, activeProfile.name)
             } finally {
@@ -315,11 +346,12 @@ class ConfigSyncHelper(
         var remoteJson: String? = null
         val downloadFile = File(context.cacheDir, "temp_$profileFileName")
         try {
+            com.andreas_kratzer.ghosttalk.core.cloud.SyncLogger.logAction(logger, TAG, profileFileName, "Downloading profile for evaluation", "remote MD5: ${remoteFile.md5Checksum}, remote deterministic MD5: $remoteDeterministicMd5, local deterministic MD5: $localDeterministicMd5")
             if (storageProvider.downloadFile(remoteFile.id, downloadFile) { _ -> }) {
                 remoteJson = downloadFile.readText()
             }
         } catch (e: Exception) {
-            logger.e(TAG, "Failed to download remote profile", e)
+            logger.e(TAG, "Failed to download remote profile $profileFileName", e)
         } finally {
             downloadFile.delete()
         }
@@ -335,7 +367,7 @@ class ConfigSyncHelper(
             try {
                 jsonSerializer.decodeFromString(com.andreas_kratzer.ghosttalk.core.model.ProfileConfig.serializer(), remoteJson)
             } catch (e2: Exception) {
-                logger.e(TAG, "Failed to parse remote profile config for comparison", e2)
+                logger.e(TAG, "Failed to parse remote profile config for comparison: $profileFileName", e2)
                 null
             }
         }
@@ -343,11 +375,19 @@ class ConfigSyncHelper(
         if (remoteProfileConfig != null && activeProfile.config == remoteProfileConfig && activeProfile.name == (
             try { jsonSerializer.decodeFromString(com.andreas_kratzer.ghosttalk.core.model.SettingsProfile.serializer(), remoteJson).name } catch(_: Exception) { remoteFile.description ?: activeProfile.name }
         )) {
-            logger.d(TAG, "Profile settings and name are identical. Skipping sync.")
+            com.andreas_kratzer.ghosttalk.core.cloud.SyncLogger.logSkipped(logger, TAG, profileFileName, "Profile settings and name are identical (backfilling deterministic MD5: $localDeterministicMd5)")
+            if (remoteDeterministicMd5 != localDeterministicMd5) {
+                try {
+                    storageProvider.updateProperties(remoteFile.id, mapOf("deterministic_md5" to localDeterministicMd5))
+                    logger.d(TAG, "Successfully backfilled deterministic MD5 metadata on remote profile file: $profileFileName")
+                } catch (e: Exception) {
+                    logger.w(TAG, "Failed to backfill deterministic MD5 metadata on remote file $profileFileName: ${e.message}")
+                }
+            }
             return@withContext
         }
 
-        logger.d(TAG, "Profile conflict/delta detected. Performing 3-way merge on profile configurations...")
+        com.andreas_kratzer.ghosttalk.core.cloud.SyncLogger.logAction(logger, TAG, profileFileName, "Profile conflict/delta detected", "Performing 3-way merge")
         
         // Decode remote and base profiles (handling both SettingsProfile and legacy ProfileConfig format)
         val remoteProfile = try {
@@ -423,7 +463,13 @@ class ConfigSyncHelper(
             }
 
             // Update to cloud
-            val (properties, description) = buildConfigPropertiesAndDescription("profile", updatedProfile.name, updatedProfile.updatedAt)
+            val deterministicMd5 = calculateDeterministicMd5(updatedProfile)
+            val (properties, description) = buildConfigPropertiesAndDescription(
+                "profile",
+                updatedProfile.name,
+                updatedProfile.updatedAt,
+                mapOf("deterministic_md5" to deterministicMd5)
+            )
             storageProvider.updateFile(remoteFile.id, tempFile, "application/json", description, properties) { _ -> }
             syncLogProvider.addLogEntry("Profil ${updatedProfile.name} (gemergt) synchronisiert", updatedProfile.id, updatedProfile.name)
         } finally {

@@ -16,6 +16,9 @@ import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.google.api.services.drive.Drive
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
@@ -43,9 +46,9 @@ class CloudSyncUseCase @Inject constructor(
     private val logger: Logger
 ) {
     private val TAG = "CloudSyncUseCase"
-    private val FOLDER_NAME = "GhosTTalk_Sync"
     private val TTS_CACHE_FILE_NAME = "tts_cache.zip"
 
+    private val folderCache = DriveFolderCache(settingsRepository, logger)
     private val bookMergeEngine = BookMergeEngine(logger)
     private val audioSyncHelper = AudioSyncHelper(context, importExportManager, logger)
     private val ttsSyncHelper = TtsSyncHelper(context, importExportManager, syncLogProvider, logger)
@@ -62,9 +65,8 @@ class CloudSyncUseCase @Inject constructor(
             logger.e(TAG, "getStorageProvider: drive is NULL and folderId='$folderId' does not start with content://. syncTargetType=${settingsRepository.syncTargetType}")
             throw IllegalStateException("Drive API client not available.")
         }
-        val actualFolderId = folderId ?: settingsRepository.googleDriveFolderId ?: DriveServiceHelper(
-            actualDrive
-        ).findFolder(FOLDER_NAME) ?: throw IllegalStateException("No valid folder ID found for Drive API.")
+        
+        val actualFolderId = folderId ?: folderCache.resolveParentFolderId(actualDrive)
         logger.d(TAG, "getStorageProvider: Using DriveApiSyncStorageProvider with folderId=$actualFolderId")
         return DriveApiSyncStorageProvider(actualDrive, actualFolderId)
     }
@@ -79,9 +81,8 @@ class CloudSyncUseCase @Inject constructor(
             return DocumentFolderSyncStorageProvider(context, targetUri)
         }
         val actualDrive = drive ?: throw IllegalStateException("Drive API client not available.")
-        val helper = DriveServiceHelper(actualDrive)
-        val parentFolderId = folderId ?: helper.findFolder(FOLDER_NAME) ?: helper.createFolder(FOLDER_NAME) ?: throw IllegalStateException("Failed to resolve sync folder.")
-        val profilesFolderId = helper.findFolder("Profiles", parentFolderId) ?: helper.createFolder("Profiles", parentFolderId) ?: parentFolderId
+        
+        val profilesFolderId = folderCache.resolveProfilesFolderId(actualDrive)
         return DriveApiSyncStorageProvider(actualDrive, profilesFolderId)
     }
 
@@ -200,8 +201,8 @@ class CloudSyncUseCase @Inject constructor(
                     logger.e(TAG, "[SYNC-STAGE-1-ERROR] Stage 1 Profile sync failed (non-fatal): ${e.message}", e)
                 }
 
-                // Check isCloudSyncEnabled. If disabled, skip Stage 2 book sync.
-                if (!settingsRepository.isCloudSyncEnabled) {
+                // Check isDataCloudSyncEnabled. If disabled, skip Stage 2 book sync.
+                if (!settingsRepository.isDataCloudSyncEnabled) {
                     logger.d(TAG, "Cloud sync is disabled in active profile. Skipping Stage 2 book/media sync.")
                     return@withContext true
                 }
@@ -223,10 +224,9 @@ class CloudSyncUseCase @Inject constructor(
                     val remoteStructMd5 = remoteMasterFile?.properties?.get("structure_md5")
                     val remoteSeqFromProps = remoteMasterFile?.properties?.get("version_sequence")?.toLongOrNull()
 
-                    // Schutzgurt: Wenn Sequenzen gleich sind ODER die Struktur-MD5 übereinstimmt, KEIN Konflikt/Download nötig!
                     if ((remoteSeqFromProps != null && localSeq == remoteSeqFromProps) ||
                         (remoteStructMd5 != null && localStructMd5 == remoteStructMd5 && localSeq >= (remoteSeqFromProps ?: 0L))) {
-                        logger.d(TAG, "Sequenzen sind identisch oder Struktur-MD5 stimmt überein ($localSeq). Überspringe Merge-Check und Download.")
+                        com.andreas_kratzer.ghosttalk.core.cloud.SyncLogger.logSkipped(logger, TAG, masterFileName, "Sequences are identical or structural MD5 matches", "seq $localSeq vs $remoteSeqFromProps, struct MD5 $localStructMd5 vs $remoteStructMd5")
                         if (effectiveMasterFile != null) {
                             bookRepository.updateLastModified(bookId, effectiveMasterFile.modifiedTime, incrementSequence = false)
                         }
@@ -692,11 +692,9 @@ class CloudSyncUseCase @Inject constructor(
                                                     }
                                                 }
 
-                                                if (storageProvider is DriveApiSyncStorageProvider) {
-                                                    val folderId = settingsRepository.googleDriveFolderId ?: DriveServiceHelper(drive!!).findFolder(FOLDER_NAME)
-                                                    if (folderId != null) {
-                                                        DriveServiceHelper(drive!!).cleanOldConflictFiles(folderId)
-                                                    }
+                                                if (storageProvider is DriveApiSyncStorageProvider && drive != null) {
+                                                     val folderId = folderCache.resolveParentFolderId(drive)
+                                                     DriveServiceHelper(drive).cleanOldConflictFiles(folderId)
                                                 }
                                                 success = true
                                             } else {
@@ -1152,9 +1150,8 @@ class CloudSyncUseCase @Inject constructor(
             return DocumentFolderSyncStorageProvider(context, targetUri)
         }
         val actualDrive = drive ?: throw IllegalStateException("Drive API client not available.")
-        val helper = DriveServiceHelper(actualDrive)
-        val parentFolderId = folderId ?: helper.findFolder(FOLDER_NAME) ?: helper.createFolder(FOLDER_NAME) ?: throw IllegalStateException("Failed to resolve sync folder.")
-        val logsFolderId = helper.findFolder("Logs", parentFolderId) ?: helper.createFolder("Logs", parentFolderId) ?: parentFolderId
+        
+        val logsFolderId = folderCache.resolveLogsFolderId(actualDrive)
         return DriveApiSyncStorageProvider(actualDrive, logsFolderId)
     }
 
@@ -1168,23 +1165,40 @@ class CloudSyncUseCase @Inject constructor(
                 val profilesProvider = resolveProfilesStorageProvider(drive)
                 val remoteProfileFiles = profilesProvider.listFiles()
 
-                // 1. Sync all local profiles
+                // 1. Sync all local profiles in parallel
                 val localProfiles = settingsRepository.getAllProfiles()
-                logger.d(TAG, "syncProfilesOnly: Syncing ${localProfiles.size} local profiles")
-                localProfiles.forEachIndexed { index, profile ->
-                    onProgress(0.1f + 0.4f * (index.toFloat() / localProfiles.size.coerceAtLeast(1).toFloat()), "Synchronisiere Profil: ${profile.name}")
-                    configSyncHelper.syncProfile(profilesProvider, remoteProfileFiles, profile, settingsRepository)
+                logger.d(TAG, "syncProfilesOnly: Syncing ${localProfiles.size} local profiles in parallel")
+                coroutineScope {
+                    localProfiles.mapIndexed { index, profile ->
+                        async {
+                            try {
+                                onProgress(0.1f + 0.4f * (index.toFloat() / localProfiles.size.coerceAtLeast(1).toFloat()), "Synchronisiere Profil: ${profile.name}")
+                                configSyncHelper.syncProfile(profilesProvider, remoteProfileFiles, profile, settingsRepository)
+                            } catch (e: Exception) {
+                                logger.e(TAG, "Failed to sync profile: ${profile.name}", e)
+                            }
+                        }
+                    }.awaitAll()
                 }
 
-                // 2. Scan and download/import all other remote profiles
+                // 2. Scan and download/import all other remote profiles in parallel
                 val jsonSerializer = kotlinx.serialization.json.Json { ignoreUnknownKeys = true; prettyPrint = true; encodeDefaults = true }
-                remoteProfileFiles.forEachIndexed { index, file ->
+                val newRemoteFiles = remoteProfileFiles.filter { file ->
                     if (file.name.startsWith("profile_") && file.name.endsWith(".json")) {
                         val remoteProfileId = file.name.substringAfter("profile_").substringBefore(".json")
-                        if (settingsRepository.getProfileById(remoteProfileId) == null) {
-                            onProgress(0.5f + 0.4f * (index.toFloat() / remoteProfileFiles.size.coerceAtLeast(1).toFloat()), "Importiere Profil: ${file.name}")
+                        settingsRepository.getProfileById(remoteProfileId) == null
+                    } else {
+                        false
+                    }
+                }
+                logger.d(TAG, "syncProfilesOnly: Auto-importing ${newRemoteFiles.size} new remote profiles")
+                coroutineScope {
+                    newRemoteFiles.mapIndexed { index, file ->
+                        async {
+                            val remoteProfileId = file.name.substringAfter("profile_").substringBefore(".json")
+                            onProgress(0.5f + 0.4f * (index.toFloat() / newRemoteFiles.size.coerceAtLeast(1).toFloat()), "Importiere Profil: ${file.name}")
                             logger.d(TAG, "syncProfilesOnly: Auto-importing new remote profile: ${file.name}")
-                            val tempFile = File(context.cacheDir, "import_${file.name}")
+                            val tempFile = File(context.cacheDir, "import_${file.name}_${System.currentTimeMillis()}")
                             try {
                                 if (profilesProvider.downloadFile(file.id, tempFile)) {
                                     val profileJson = tempFile.readText()
@@ -1199,7 +1213,7 @@ class CloudSyncUseCase @Inject constructor(
                                                 config = config,
                                                 profileVersionSequence = file.version ?: 1L,
                                                 updatedAt = file.modifiedTime
-                                            )
+                                              )
                                         } catch (e2: Exception) {
                                             logger.e(TAG, "syncProfilesOnly: Failed to parse imported profile JSON", e2)
                                             null
@@ -1217,7 +1231,7 @@ class CloudSyncUseCase @Inject constructor(
                                 tempFile.delete()
                             }
                         }
-                    }
+                    }.awaitAll()
                 }
                 onProgress(1.0f, "Fertig")
                 true
@@ -1264,8 +1278,6 @@ class CloudSyncUseCase @Inject constructor(
             return file.readText()
         }
     }
-
-
 
     private fun saveToLocalBackupFolder(fileName: String, tempFile: File) {
         try {
@@ -1334,5 +1346,13 @@ class CloudSyncUseCase @Inject constructor(
         return "App Logcat Extract (Uploaded by $device - App v$versionName - Device ID: $androidId)"
     }
 
+    private fun clearCache(clearSettings: Boolean = false) {
+        DriveFolderCache.clearCache(settingsRepository, clearSettings)
+    }
 
+    companion object {
+        fun clearCache(settingsRepository: SettingsRepository? = null, clearSettings: Boolean = false) {
+            DriveFolderCache.clearCache(settingsRepository, clearSettings)
+        }
+    }
 }

@@ -31,10 +31,10 @@ class AudioSyncHelper(
         val lastSyncedLocalTime = prefs.getLong("audio_last_synced_local_time_$bookId", 0L)
         val lastSyncedRemoteTime = prefs.getLong("audio_last_synced_remote_time_$bookId", 0L)
 
-        logger.d(TAG, "Audio recordings sync: local=$localLastModified, remote=$remoteLastModified, lastSyncedLocal=$lastSyncedLocalTime, lastSyncedRemote=$lastSyncedRemoteTime")
+        com.andreas_kratzer.ghosttalk.core.cloud.SyncLogger.logStatus(logger, TAG, audioFileName, localLastModified, remoteLastModified, lastSyncedLocalTime, lastSyncedRemoteTime)
 
         if (localLastModified == 0L && remoteFile == null) {
-            logger.d(TAG, "No audio recordings to sync.")
+            com.andreas_kratzer.ghosttalk.core.cloud.SyncLogger.logSkipped(logger, TAG, audioFileName, "local and remote are empty")
             return@withContext
         }
 
@@ -43,7 +43,7 @@ class AudioSyncHelper(
         val isLocalAudioEmpty = localLastModified == 0L
 
         if (syncMode == SyncMode.TWO_WAY && hasLocalChanged && hasRemoteChanged && remoteFile != null) {
-            logger.d(TAG, "Zwei-Wege-Audio-Merge: Führe lokale Zusammenführung durch...")
+            com.andreas_kratzer.ghosttalk.core.cloud.SyncLogger.logAction(logger, TAG, audioFileName, "Audio conflict detected", "Performing two-way audio merge")
             val tempDownloadFile = File(context.cacheDir, "download_merge_$audioFileName")
             try {
                 val downloadSuccess = storageProvider.downloadFile(remoteFile.id, tempDownloadFile) { _ -> }
@@ -56,7 +56,7 @@ class AudioSyncHelper(
                     hasLocalChanged = true
                 }
             } catch (e: Exception) {
-                logger.e(TAG, "Audio merge download/extract failed", e)
+                logger.e(TAG, "Audio merge download/extract failed for $audioFileName", e)
             } finally {
                 if (tempDownloadFile.exists()) tempDownloadFile.delete()
             }
@@ -75,7 +75,7 @@ class AudioSyncHelper(
         }
 
         if (shouldUpload) {
-            logger.d(TAG, "Uploading audio recordings...")
+            com.andreas_kratzer.ghosttalk.core.cloud.SyncLogger.logAction(logger, TAG, audioFileName, "Uploading audio recordings zip")
             val tempFile = File(context.cacheDir, audioFileName)
             try {
                 tempFile.outputStream().use { os ->
@@ -96,15 +96,15 @@ class AudioSyncHelper(
                         putLong("audio_last_synced_local_time_$bookId", localLastModified)
                         putLong("audio_last_synced_remote_time_$bookId", newRemoteTime)
                     }
-                    logger.d(TAG, "Audio recordings upload success. synced local=$localLastModified remote=$newRemoteTime")
+                    logger.d(TAG, "Audio recordings upload success for $audioFileName. synced local=$localLastModified remote=$newRemoteTime")
                 }
             } catch (e: Exception) {
-                logger.e(TAG, "Failed to upload audio recordings", e)
+                logger.e(TAG, "Failed to upload audio recordings zip $audioFileName", e)
             } finally {
                 if (tempFile.exists()) tempFile.delete()
             }
         } else if (shouldDownload && remoteFile != null) {
-            logger.d(TAG, "Downloading audio recordings...")
+            com.andreas_kratzer.ghosttalk.core.cloud.SyncLogger.logAction(logger, TAG, audioFileName, "Downloading audio recordings zip")
             val tempFile = File(context.cacheDir, "download_$audioFileName")
             try {
                 val downloadSuccess = storageProvider.downloadFile(remoteFile.id, tempFile) { _ -> }

@@ -41,6 +41,7 @@ class CloudSyncUseCaseTest {
 
     @Before
     fun setup() {
+        CloudSyncUseCase.clearCache()
         mockContext = mockk(relaxed = true)
         mockBookRepository = mockk(relaxed = true)
         mockImportExportManager = mockk(relaxed = true)
@@ -63,10 +64,12 @@ class CloudSyncUseCaseTest {
         coEvery { mockBookRepository.getBookById(any()) } returns mockBook
         
         every { mockSettingsRepository.googleDriveFolderId } returns null
+        every { mockSettingsRepository.googleDriveProfilesFolderId } returns null
+        every { mockSettingsRepository.googleDriveLogsFolderId } returns null
         every { mockSettingsRepository.syncModeBook } returns "TWO_WAY"
         every { mockSettingsRepository.syncModeTts } returns "TWO_WAY"
         every { mockSettingsRepository.syncModeStats } returns "RESTORE_ONLY"
-        every { mockSettingsRepository.isCloudSyncEnabled } returns true
+        every { mockSettingsRepository.isDataCloudSyncEnabled } returns true
         every { mockSettingsRepository.activeProfileId } returns "default-profile"
         coEvery { mockSettingsRepository.getProfileById(any()) } returns null
 
@@ -373,6 +376,11 @@ class CloudSyncUseCaseTest {
         val bookId = "test-book"
         val customFolderId = "custom_folder_123"
         every { mockSettingsRepository.googleDriveFolderId } returns customFolderId
+        val mockFolderFile = com.google.api.services.drive.model.File().apply {
+            id = customFolderId
+            name = "GhosTTalk_Sync"
+        }
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().getFileMetadata(customFolderId) } returns mockFolderFile
         
         val remoteFile = com.google.api.services.drive.model.File().apply {
             id = "file_1"
@@ -643,7 +651,7 @@ class CloudSyncUseCaseTest {
                 bookUpdatedAt = 0L,
                 versionSequence = 0L,
                 sourceDevice = null,
-                isCloudSyncEnabled = null,
+                isDataCloudSyncEnabled = null,
                 syncIntervalMinutes = null,
                 syncModeBook = null,
                 syncModeTts = null,

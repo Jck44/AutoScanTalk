@@ -46,10 +46,10 @@ class TtsSyncHelper(
         val lastSyncedLocalTime = prefs.getLong("tts_cache_last_synced_local_time", 0L)
         val lastSyncedRemoteTime = prefs.getLong("tts_cache_last_synced_remote_time", 0L)
 
-        logger.d(TAG, "TTS cache sync: local=$localLastModified, remote=$remoteLastModified, lastSyncedLocal=$lastSyncedLocalTime, lastSyncedRemote=$lastSyncedRemoteTime")
+        com.andreas_kratzer.ghosttalk.core.cloud.SyncLogger.logStatus(logger, TAG, TTS_CACHE_FILE_NAME, localLastModified, remoteLastModified, lastSyncedLocalTime, lastSyncedRemoteTime)
 
         if (localLastModified == 0L && remoteFile == null) {
-            logger.d(TAG, "No TTS cache to sync.")
+            com.andreas_kratzer.ghosttalk.core.cloud.SyncLogger.logSkipped(logger, TAG, TTS_CACHE_FILE_NAME, "local and remote are empty")
             return@withContext
         }
 
@@ -69,7 +69,7 @@ class TtsSyncHelper(
         }
 
         if (shouldUpload) {
-            logger.d(TAG, "Uploading TTS cache...")
+            com.andreas_kratzer.ghosttalk.core.cloud.SyncLogger.logAction(logger, TAG, TTS_CACHE_FILE_NAME, "Uploading TTS cache zip")
             val tempFile = File(context.cacheDir, TTS_CACHE_FILE_NAME)
             try {
                 tempFile.outputStream().use { os ->
@@ -98,7 +98,7 @@ class TtsSyncHelper(
                 tempFile.delete()
             }
         } else if (shouldDownload) {
-            logger.d(TAG, "Downloading TTS cache...")
+            com.andreas_kratzer.ghosttalk.core.cloud.SyncLogger.logAction(logger, TAG, TTS_CACHE_FILE_NAME, "Downloading TTS cache zip")
             val tempFile = File(context.cacheDir, "download_$TTS_CACHE_FILE_NAME")
             try {
                 if (storageProvider.downloadFile(remoteFile!!.id, tempFile) { _ -> }) {
@@ -117,7 +117,7 @@ class TtsSyncHelper(
                 tempFile.delete()
             }
         } else {
-            logger.d(TAG, "TTS cache is in sync.")
+            com.andreas_kratzer.ghosttalk.core.cloud.SyncLogger.logSkipped(logger, TAG, TTS_CACHE_FILE_NAME, "TTS cache is in sync")
             if (lastSyncedLocalTime == 0L || lastSyncedRemoteTime == 0L) {
                 prefs.edit {
                     putLong("tts_cache_last_synced_local_time", localLastModified)

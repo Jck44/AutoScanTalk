@@ -122,6 +122,9 @@ object SettingsConstants {
     const val KEY_IS_SETUP_COMPLETED = "is_setup_completed"
     
     const val KEY_GOOGLE_DRIVE_FOLDER_ID = "google_drive_folder_id"
+    const val KEY_GOOGLE_DRIVE_PROFILES_FOLDER_ID = "google_drive_profiles_folder_id"
+    const val KEY_GOOGLE_DRIVE_LOGS_FOLDER_ID = "google_drive_logs_folder_id"
+    const val KEY_LAST_FOLDER_VALIDATION_TIME = "last_folder_validation_time"
     const val KEY_GOOGLE_DRIVE_FOLDER_NAME = "google_drive_folder_name"
     const val KEY_SYNC_TARGET_TYPE = "sync_target_type"
     const val KEY_LOCAL_FOLDER_SAF_URI = "local_folder_saf_uri"
